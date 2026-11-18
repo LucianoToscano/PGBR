@@ -4,18 +4,17 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * PT-BR presentation translation for PGBR.
- * Only invoke at a user-visible UI boundary (TextView, dialog, etc.).
- * NEVER translate storage keys, JSON keys, API parameters, protocol values,
- * serialized enums, species identifiers or native transport messages.
- *
- * This class is generated from pgrazor/i18n/pt-BR.json.
+/** Portuguese (Brazil) labels for the unchanged PGRazor app.
+ * Only invoke for text shown to the user. NEVER translate API/data keys. 
+ * Generated from pgrazor/i18n/pt-BR.json.
  */
 public final class PtBr {
     private static final Map<String, String> LABELS;
     static {
         Map<String, String> m = new HashMap<>();
+        m.put(" — not ", " — diferente de ");
+        m.put(" — not the official Niantic signature", " — assinatura oficial da Niantic não reconhecida");
+        m.put(" — supported", " — compatível");
         m.put(" · updated ", " · atualizado há ");
         m.put(" (current)", " (atual)");
         m.put(" away", " de distância");
@@ -23,6 +22,8 @@ public final class PtBr {
         m.put(" requested stops are loaded; starting with ", " paradas solicitadas estão carregadas; iniciando com ");
         m.put(" result", " resultado");
         m.put(" results", " resultados");
+        m.put("; PGRazor will stay off until it matches", "; o PGRazor continuará desligado até que seja compatível");
+        m.put("; update pending, reboot to apply", "; atualização pendente, reinicie para aplicar");
         m.put("1 km", "1 km");
         m.put("1 minute", "1 minuto");
         m.put("15 minutes", "15 minutos");
@@ -38,6 +39,7 @@ public final class PtBr {
         m.put("Active", "Ativo");
         m.put("Add account", "Adicionar conta");
         m.put("Advanced", "Avançado");
+        m.put("After rebooting, turn PGRazor Off again if it came back On.", "Após reiniciar, desligue novamente o PGRazor caso ele tenha sido ativado.");
         m.put("All", "Todos");
         m.put("All battles", "Todas as batalhas");
         m.put("Allow", "Permitir");
@@ -84,6 +86,7 @@ public final class PtBr {
         m.put("Catching", "Capturas");
         m.put("Center the map on the red pin and copy its coordinates", "Centralizar o mapa no marcador vermelho e copiar as coordenadas");
         m.put("Center the map on your current in-game location and copy its coordinates", "Centralizar o mapa na localização atual do jogo e copiar as coordenadas");
+        m.put("Checking device…", "Verificando dispositivo…");
         m.put("Choose a route (", "Escolha uma rota (");
         m.put("Clear", "Limpar");
         m.put("Clear all", "Limpar tudo");
@@ -106,6 +109,7 @@ public final class PtBr {
         m.put("Copy pin location", "Copiar localização do marcador");
         m.put("Costume", "Traje");
         m.put("Could not add account", "Não foi possível adicionar a conta");
+        m.put("Could not read the current on/off choice; module install was not started.", "Não foi possível identificar o estado atual; a instalação do módulo não foi iniciada.");
         m.put("Couldn't load ", "Não foi possível carregar ");
         m.put("Count encounters", "Contar encontros");
         m.put("CP", "PC");
@@ -118,7 +122,9 @@ public final class PtBr {
         m.put("Deleted “", "Excluído: “");
         m.put("Deny", "Negar");
         m.put("Deselect all", "Desmarcar tudo");
+        m.put("disabled", "desativado");
         m.put("Disabled", "Desativado");
+        m.put("Disabled — turn Zygisk on", "Desativado — ative o Zygisk");
         m.put("Discard changes", "Descartar alterações");
         m.put("Distance", "Distância");
         m.put("Done", "Concluído");
@@ -149,6 +155,7 @@ public final class PtBr {
         m.put("Go Plus, Stops & Items", "GO Plus, Poképaradas e itens");
         m.put("GPX", "GPX");
         m.put("GPX routes", "Rotas GPX");
+        m.put("granted", "concedido");
         m.put("Gym Slotter & Berry Feeder", "Colocação em ginásios e uso de frutas");
         m.put("Gyms", "Ginásios");
         m.put("Help", "Ajuda");
@@ -162,6 +169,13 @@ public final class PtBr {
         m.put("Imported route", "Rota importada");
         m.put("In-game Routes", "Rotas do jogo");
         m.put("Inactive", "Inativo");
+        m.put("Install", "Instalar");
+        m.put("Install module", "Instalar módulo");
+        m.put("Install pending — reboot to activate", "Instalação pendente — reinicie para ativar");
+        m.put("Install PGRazor Root module?", "Instalar módulo PGRazor Root?");
+        m.put("Installed", "Instalado");
+        m.put("Installed ", "Instalado ");
+        m.put("Installs PGRazor into the official Pokémon GO ", "Instala o PGRazor no Pokémon GO oficial ");
         m.put("Invalid map coordinates", "Coordenadas inválidas no mapa");
         m.put("Items", "Itens");
         m.put("IV display", "Exibição de IVs");
@@ -178,6 +192,7 @@ public final class PtBr {
         m.put("Keep XXS", "Manter XXS");
         m.put("Keep-all overlay button", "Botão de manter todos na sobreposição");
         m.put("Language", "Idioma");
+        m.put("Later", "Depois");
         m.put("Latitude", "Latitude");
         m.put("Legendary", "Lendário");
         m.put("Level", "Nível");
@@ -191,6 +206,7 @@ public final class PtBr {
         m.put("Lobby wait: ", "Espera na sala: ");
         m.put("Location & Map", "Localização e mapa");
         m.put("Location spoofing", "Localização simulada");
+        m.put("Log", "Registro");
         m.put("Log in", "Entrar");
         m.put("Log out", "Sair");
         m.put("Longitude", "Longitude");
@@ -220,27 +236,46 @@ public final class PtBr {
         m.put("No data", "Sem dados");
         m.put("No locations found", "Nenhum local encontrado");
         m.put("No results", "Nenhum resultado");
+        m.put("No supported root manager detected.", "Nenhum gerenciador root compatível foi encontrado.");
         m.put("None", "Nenhum");
+        m.put("Not detected", "Não detectado");
+        m.put("not granted", "não concedido");
+        m.put("not installed", "não instalado");
+        m.put("Not installed", "Não instalado");
         m.put("Number of stops to visit; leave blank for all nearby locations", "Número de paradas a visitar; deixe em branco para incluir todas as próximas");
+        m.put("off", "desligado");
         m.put("Off", "Desligado");
         m.put("Off (manual)", "Desligado (manual)");
+        m.put("on", "ligado");
         m.put("On", "Ligado");
         m.put("Only ", "Apenas ");
         m.put("Open", "Abrir");
         m.put("Open in Discord app", "Abrir no aplicativo Discord");
+        m.put("Open Pokémon GO to finish switching accounts.", "Abra o Pokémon GO para concluir a troca de conta.");
         m.put("Open route builder", "Abrir planejador de rotas");
         m.put("Options", "Opções");
         m.put("Password", "Senha");
         m.put("Paste", "Colar");
         m.put("Permission required", "Permissão necessária");
+        m.put("PGRazor module: ", "Módulo PGRazor: ");
+        m.put("PGRazor off (module stays installed)", "PGRazor desligado (módulo permanece instalado)");
+        m.put("PGRazor on", "PGRazor ligado");
+        m.put("PGRazor Root installer", "Instalador PGRazor Root");
         m.put("PGRazor version ", "Versão do PGRazor ");
+        m.put("PGRazor was Off; the update keeps it Off (reboot to apply).", "O PGRazor estava desligado e permanecerá desligado (reinicie para aplicar).");
+        m.put("PGRazor: Off", "PGRazor: Desligado");
+        m.put("PGRazor: On", "PGRazor: Ligado");
+        m.put("PGRazor: On / Off", "PGRazor: Ligado / Desligado");
         m.put("Pin location copied", "Localização do marcador copiada");
         m.put("Please wait", "Aguarde");
         m.put("Pokémon", "Pokémon");
         m.put("Pokémon & Transfer", "Pokémon e transferências");
         m.put("Pokémon GO", "Pokémon GO");
+        m.put("Pokémon GO will be closed. PGRazor will be ", "O Pokémon GO será fechado. O PGRazor ficará ");
+        m.put("Pokémon GO: ", "Pokémon GO: ");
         m.put("PokéStops", "Poképaradas");
         m.put("Power Spots", "Pontos de Poder");
+        m.put("Provider disabled or pending removal", "Provedor desativado ou aguardando remoção");
         m.put("Purified", "Purificado");
         m.put("Push notifications", "Notificações push");
         m.put("Quick catch", "Captura rápida");
@@ -251,10 +286,16 @@ public final class PtBr {
         m.put("Raid bosses: ", "Chefes de reide: ");
         m.put("Raid tiers: ", "Níveis de reide: ");
         m.put("Raids", "Reides");
+        m.put("Re-check", "Verificar novamente");
+        m.put("Reboot", "Reiniciar");
+        m.put("Reboot now?", "Reiniciar agora?");
+        m.put("Reboot this device now? Pokémon GO and other apps will close.", "Reiniciar o dispositivo agora? O Pokémon GO e outros aplicativos serão fechados.");
+        m.put("Reboot to activate", "Reiniciar para ativar");
         m.put("Refresh", "Atualizar");
         m.put("Refresh now", "Atualizar agora");
         m.put("Reloading sign-in page…", "Recarregando página de login…");
         m.put("Remote Gym Feeding", "Alimentação remota no ginásio");
+        m.put("removal pending", "remoção pendente");
         m.put("Remove", "Remover");
         m.put("Rename", "Renomear");
         m.put("Repeat the route from the first stop after the last", "Reiniciar a rota após a última parada");
@@ -262,12 +303,15 @@ public final class PtBr {
         m.put("Reset", "Redefinir");
         m.put("Reset sign-in choices", "Redefinir opções de login");
         m.put("Reset sign-in choices?", "Redefinir opções de login?");
+        m.put("Restarting Pokémon GO…", "Reiniciando o Pokémon GO…");
         m.put("Restore", "Restaurar");
         m.put("Results", "Resultados");
         m.put("Results updated", "Resultados atualizados");
         m.put("Retry", "Tentar novamente");
         m.put("Return to nearby PoI planning", "Voltar ao planejamento dos pontos próximos");
         m.put("Revive fainted Pokémon", "Reviver Pokémon desmaiados");
+        m.put("Root access: ", "Acesso root: ");
+        m.put("Root manager: ", "Gerenciador root: ");
         m.put("route", "rota");
         m.put("Route", "Rota");
         m.put("Route ", "Rota ");
@@ -327,11 +371,14 @@ public final class PtBr {
         m.put("Switch", "Trocar");
         m.put("Switch account", "Trocar conta");
         m.put("Switch accounts before deleting the current account", "Troque de conta antes de excluir a conta atual");
+        m.put("Switch confirmation was missing.", "Não foi possível confirmar a alteração.");
         m.put("Switch to ", "Trocar para ");
         m.put("Team Rocket", "Equipe Rocket");
         m.put("Teleport", "Teletransportar");
+        m.put("The installed module cannot be switched. Re-check its status.", "Não é possível alternar o módulo instalado. Verifique novamente o estado.");
         m.put("the route builder", "o planejador de rotas");
         m.put("Theme", "Tema");
+        m.put("This installs the Zygisk module with ", "Isso instala o módulo Zygisk com ");
         m.put("Throw rating: OFF", "Qualidade do arremesso: DESLIGADA");
         m.put("Throw variety: Off", "Variedade de arremessos: desativada");
         m.put("Throws", "Arremessos");
@@ -341,7 +388,15 @@ public final class PtBr {
         m.put("Transfer on catch", "Transferir após captura");
         m.put("Travel to raids: ", "Deslocamento para as reides: ");
         m.put("Try again", "Tentar novamente");
+        m.put("Turn off", "Desligar");
+        m.put("Turn on", "Ligar");
+        m.put("Turn PGRazor off?", "Desligar o PGRazor?");
+        m.put("Turn PGRazor on?", "Ligar o PGRazor?");
         m.put("Unknown", "Desconhecido");
+        m.put("Unknown — check Zygisk in Magisk", "Desconhecido — verifique o Zygisk no Magisk");
+        m.put("Unknown — needs Zygisk Next or ReZygisk", "Desconhecido — requer Zygisk Next ou ReZygisk");
+        m.put("Unknown (root access required)", "Desconhecido (acesso root necessário)");
+        m.put("update and reboot once to use the on/off switch", "atualize e reinicie uma vez para usar a opção de ligar/desligar");
         m.put("Use a Golden Razz Berry on bonus catches", "Usar Fruta Frambo dourada em capturas bônus");
         m.put("Use a Razz Berry on bonus catches", "Usar Fruta Frambo em capturas bônus");
         m.put("Use Premium Battle passes", "Usar passes de batalha premium");
@@ -355,41 +410,45 @@ public final class PtBr {
         m.put("Walk", "Caminhar");
         m.put("Walking speed", "Velocidade de caminhada");
         m.put("Warning", "Aviso");
+        m.put("WARNING: PGRazor was Off, but keeping it Off in the update could not be confirmed. ", "AVISO: o PGRazor estava desligado, mas não foi possível confirmar que continuará desligado. ");
+        m.put("WARNING: PGRazor was Off, but the update may not have kept it Off. ", "AVISO: o PGRazor estava desligado, mas a atualização pode tê-lo reativado. ");
         m.put("World", "Mundo");
         m.put("World map", "Mapa mundial");
         m.put("Yes", "Sim");
         m.put("Your location copied", "Sua localização foi copiada");
+        m.put("Zygisk reads its module list only at boot. Reboot to activate the pending PGRazor Root change.", "O Zygisk carrega os módulos durante a inicialização. Reinicie para aplicar a alteração pendente do PGRazor Root.");
         LABELS = Collections.unmodifiableMap(m);
     }
-
     private PtBr() {}
-
-    public static int tr(int resourceId) {
-        return resourceId;
-    }
-
+    public static int tr(int resourceId) { return resourceId; }
     public static CharSequence tr(CharSequence text) {
         if (text == null) return null;
         if (text instanceof String) return tr((String) text);
-        String out = translateString(text.toString());
-        return out.equals(text.toString()) ? text : out;
+        String original = text.toString();
+        String translated = translateString(original);
+        return translated.equals(original) ? text : translated;
     }
-
-    public static String tr(String text) {
-        return text == null ? null : translateString(text);
-    }
+    public static String tr(String text) { return text == null ? null : translateString(text); }
 
     private static String translateString(String text) {
-        String translated = LABELS.get(text);
-        if (translated != null) return translated;
+        String exact = LABELS.get(text);
+        if (exact != null) return exact;
+        if (text.indexOf('\n') != -1) {
+            String[] lines = text.split("\\n", -1);
+            for (int i = 0; i < lines.length; i++) lines[i] = translateLine(lines[i]);
+            return String.join("\n", lines);
+        }
+        return translateLine(text);
+    }
+    private static String translateLine(String line) {
+        String exact = LABELS.get(line);
+        if (exact != null) return exact;
         for (Map.Entry<String, String> entry : LABELS.entrySet()) {
-            String original = entry.getKey();
-            if (original.length() < 2) continue;
-            if (original.endsWith(" ") && text.startsWith(original)) {
-                return entry.getValue() + text.substring(original.length());
+            String source = entry.getKey();
+            if (source.length() >= 2 && source.endsWith(" ") && line.startsWith(source)) {
+                return entry.getValue() + translateLine(line.substring(source.length()));
             }
         }
-        return text;
+        return line;
     }
-
 }
