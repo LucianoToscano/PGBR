@@ -1,0 +1,49 @@
+name: PGBR - aplicar traducao PT-BR no codigo
+on:
+  push:
+    branches: [feature/pt-br-traducao]
+    paths:
+      - '.github/workflows/pgbr-ptbr.yml'
+permissions:
+  contents: write
+jobs:
+  localize:
+    if: github.repository == 'LucianoToscano/PGBR'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Traduzir somente apresentacao de interface
+        run: |
+          python tools/ptbr_wire.py --apply
+          python -m py_compile tools/ptbr_wire.py
+      - name: Conferir tabela PT-BR e regras de integridade
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          data=json.loads(Path('pgrazor/i18n/pt-BR.json').read_text(encoding='utf-8'))
+          assert data['locale']=='pt-BR'
+          assert len(data['translations']) >= 300
+          source=Path('pgrazor/src/dev/pgrazor/PtBr.java').read_text(encoding='utf-8')
+          for key, value in data['translations'].items():
+              assert key and value
+          assert source.count('m.put(') == len(data['translations'])
+          print('PT-BR keys:',len(data['translations']))
+          PY
+      - name: Verificacao de fontes sem APK e sem executar o jogo
+        run: python -B tools/check.py
+      - name: Registrar alteracoes apenas na branch de traducao
+        run: |
+          git config user.name "PGBR Translation Bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add pgrazor/src/dev/pgrazor
+          if ! git diff --cached --quiet; then
+            git commit -m "feat(i18n): apply PT-BR UI translation at presentation callsites"
+            git push origin HEAD:refs/heads/feature/pt-br-traducao
+          fi
