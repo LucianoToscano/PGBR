@@ -14,6 +14,7 @@ import re
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 JAVA = ROOT / "pgrazor" / "src" / "dev" / "pgrazor"
+ROOT_JAVA = ROOT / "pgrazor" / "root-installer" / "src" / "dev" / "pgrazor" / "root"
 SINGLE = frozenset({
     "setText", "setTitle", "setMessage", "setHint", "setContentDescription",
     "setTextOn", "setTextOff",
@@ -22,6 +23,7 @@ MULTI = frozenset({"setPositiveButton", "setNegativeButton", "setNeutralButton"}
 METHODS = SINGLE | MULTI
 PAT = re.compile(r"\.\s*(" + "|".join(sorted(METHODS, key=len, reverse=True)) + r")\s*\(")
 PREFIX = "dev.pgrazor.PtBr.tr("
+ROOT_PREFIX = "dev.pgrazor.root.RootPtBr.tr("
 
 
 def first_arg_end(source: str, begin: int) -> tuple[int, str] | None:
@@ -59,7 +61,7 @@ def first_arg_end(source: str, begin: int) -> tuple[int, str] | None:
     return None
 
 
-def localize(source: str) -> tuple[str, collections.Counter]:
+def localize(source: str, prefix: str) -> tuple[str, collections.Counter]:
     patches: list[tuple[int, int, str]] = []
     counts = collections.Counter()
     for m in PAT.finditer(source):
@@ -78,11 +80,11 @@ def localize(source: str) -> tuple[str, collections.Counter]:
             continue
         raw = source[m.end():end]
         argument = raw.strip()
-        if not argument or argument.startswith(PREFIX) or "->" in argument:
+        if not argument or argument.startswith(prefix) or "->" in argument:
             continue
         lspace = raw[:len(raw) - len(raw.lstrip())]
         rspace = raw[len(raw.rstrip()):]
-        translated = lspace + PREFIX + argument + ")" + rspace
+        translated = lspace + prefix + argument + ")" + rspace
         patches.append((m.end(), end, translated))
         counts[method] += 1
     for start, end, replacement in reversed(patches):
@@ -96,11 +98,12 @@ def main() -> None:
     args = parser.parse_args()
     summary = collections.Counter()
     changed = []
-    for path in sorted(JAVA.rglob("*.java")):
-        if path.name == "PtBr.java":
+    for path in sorted(list(JAVA.rglob("*.java")) + list(ROOT_JAVA.rglob("*.java"))):
+        if path.name in ("PtBr.java", "RootPtBr.java"):
             continue
         original = path.read_text("utf-8")
-        updated, counts = localize(original)
+        prefix = ROOT_PREFIX if path.is_relative_to(ROOT_JAVA) else PREFIX
+        updated, counts = localize(original, prefix)
         if updated != original:
             changed.append(str(path.relative_to(ROOT)))
             summary.update(counts)
