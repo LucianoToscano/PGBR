@@ -4,6 +4,8 @@ on:
     branches: [feature/pt-br-traducao]
     paths:
       - '.github/workflows/pgbr-ptbr.yml'
+      - 'tools/ptbr_wire.py'
+      - 'pgrazor/i18n/pt-BR.json'
 permissions:
   contents: write
 jobs:
@@ -28,15 +30,17 @@ jobs:
       - name: Compilar classe de localizacao Java e conferir dicionario
         run: |
           mkdir -p /tmp/pgbr-localizacao
-          javac -encoding UTF-8 -d /tmp/pgbr-localizacao pgrazor/src/dev/pgrazor/PtBr.java
+          javac -encoding UTF-8 -d /tmp/pgbr-localizacao pgrazor/src/dev/pgrazor/PtBr.java pgrazor/root-installer/src/dev/pgrazor/root/RootPtBr.java
           python - <<'PY'
           import json
           from pathlib import Path
           data=json.loads(Path('pgrazor/i18n/pt-BR.json').read_text(encoding='utf-8'))
           assert data['locale']=='pt-BR'
-          assert len(data['translations']) >= 300
+          assert len(data['translations']) >= 400
           source=Path('pgrazor/src/dev/pgrazor/PtBr.java').read_text(encoding='utf-8')
+          root=Path('pgrazor/root-installer/src/dev/pgrazor/root/RootPtBr.java').read_text(encoding='utf-8')
           assert source.count('m.put(') == len(data['translations'])
+          assert root.count('m.put(') == len(data['translations'])
           assert 'private static String translateString' in source
           for k,v in data['translations'].items(): assert k and v
           print('PT-BR:',len(data['translations']),'glossary entries verified.')
@@ -45,7 +49,7 @@ jobs:
         run: |
           git config user.name "PGBR Translation Bot"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add pgrazor/src/dev/pgrazor
+          git add pgrazor/src/dev/pgrazor pgrazor/root-installer/src/dev/pgrazor/root
           if ! git diff --cached --quiet; then
             git commit -m "feat(i18n): translate PGRazor UI presentation callsites to PT-BR"
             git push origin HEAD:refs/heads/feature/pt-br-traducao
