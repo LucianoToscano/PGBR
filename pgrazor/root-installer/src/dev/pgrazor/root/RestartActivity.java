@@ -20,7 +20,7 @@ public final class RestartActivity extends Activity {
         }
         TextView text = new TextView(this);
         text.setPadding(32, 64, 32, 32);
-        text.setText("Open Pokémon GO to finish switching accounts.");
+        text.setText(dev.pgrazor.root.RootPtBr.tr("Open Pokémon GO to finish switching accounts."));
         setContentView(text);
     };
 
@@ -32,7 +32,7 @@ public final class RestartActivity extends Activity {
         TextView text = new TextView(this);
         text.setTextSize(20);
         text.setPadding(32, 64, 32, 32);
-        text.setText("Restarting Pokémon GO…");
+        text.setText(dev.pgrazor.root.RootPtBr.tr("Restarting Pokémon GO…"));
         setContentView(text);
     }
 
