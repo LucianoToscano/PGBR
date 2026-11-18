@@ -1,0 +1,41 @@
+name: PGBR - importar replica fiel do PGRazor
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/pgbr-import-pgrazor.yml'
+permissions:
+  contents: write
+jobs:
+  import:
+    if: github.repository == 'LucianoToscano/PGBR'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Importar historico, codigo e branches sem tocar em PokeSearch
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DESTINATION: ${{ github.repository }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          expected="f758746f4e1479f4b3105209bdd1d80958605f37"
+          git clone --mirror https://github.com/jpitty03/PGRazor.git upstream.git
+          cd upstream.git
+          actual="$(git rev-parse refs/heads/main)"
+          if [ "$actual" != "$expected" ]; then
+            echo "::error::Upstream main changed: $actual (expected $expected). No data copied."
+            exit 1
+          fi
+          backup="$(git ls-remote "https://x-access-token:${GITHUB_TOKEN}@github.com/${DESTINATION}.git" 'refs/heads/backup/main-antes-replica-pgrazor-20261118' | cut -f1)"
+          if [ -z "$backup" ]; then
+            echo "::error::Backup of PGBR not found. Aborting."
+            exit 1
+          fi
+          git remote add target "https://x-access-token:${GITHUB_TOKEN}@github.com/${DESTINATION}.git"
+          git push --force target '+refs/heads/*:refs/heads/*'
+          if git show-ref --tags --quiet; then
+            git push target 'refs/tags/*:refs/tags/*'
+          fi
+          echo "Main, source branches and available tags copied. PGBR backup preserved."
+          git ls-remote --heads target
