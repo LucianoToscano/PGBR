@@ -1,0 +1,84 @@
+name: PGBR - arquivar releases root do PGRazor
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/pgbr-archive-root-assets.yml'
+permissions:
+  contents: write
+jobs:
+  archive:
+    if: github.repository == 'LucianoToscano/PGBR'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - name: Baixar, conferir SHA256 e arquivar artefatos separados do jogo
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s upstream-history/PGRazor-upstream-full.bundle
+          test -s docs/PGBR_RELEASES_UPSTREAM_CATALOGO_20261118.json
+          mkdir -p archive
+          cp upstream-history/PGRazor-upstream-full.bundle archive/
+          cp docs/PGBR_RELEASES_UPSTREAM_CATALOGO_20261118.json archive/
+          for version in v0.3.0 v0.3.2 v0.3.3 v0.3.4; do
+            mkdir -p "download/${version}"
+            gh release download "${version}" --repo jpitty03/PGRazor \
+              -p 'PGRazor-Root.apk' \
+              -p 'PGRazor-Root-module.zip' \
+              -p 'root-build-info.json' \
+              -p 'build-info.json' \
+              -p 'SHA256SUMS.txt' \
+              --dir "download/${version}"
+            python3 - "${version}" <<'PY'
+          import sys, json, hashlib, pathlib, shutil
+          version=sys.argv[1]
+          data=json.loads(pathlib.Path("docs/PGBR_RELEASES_UPSTREAM_CATALOGO_20261118.json").read_text())
+          release=next(x for x in data["releases"] if x["tag"]==version)
+          allowed={"PGRazor-Root.apk","PGRazor-Root-module.zip","root-build-info.json","build-info.json","SHA256SUMS.txt"}
+          expected={a["name"]:a["sha256"] for a in release["assets"] if a["name"] in allowed}
+          folder=pathlib.Path("download")/version
+          got={x.name for x in folder.iterdir() if x.is_file()}
+          if got != set(expected):
+              raise SystemExit(f"Expected {sorted(expected)} but got {sorted(got)} for {version}")
+          for p in folder.iterdir():
+              digest="sha256:"+hashlib.sha256(p.read_bytes()).hexdigest()
+              if digest!=expected[p.name]:
+                  raise SystemExit(f"SHA256 mismatch for {version}/{p.name}")
+              shutil.copy2(p, pathlib.Path("archive")/f"{version}_{p.name}")
+          print(f"Verified {version}: {len(expected)} artifact hashes.")
+          PY
+          done
+          cat > RELEASE_ARCHIVE_NOTES.md <<'EOF'
+          # Backup historico do PGRazor para o PGBR
+
+          Esta release e um arquivo de pesquisa de terceiros, NAO e atualizacao
+          oficial do PGBR nem um APK assinado pelo PokeSearch.
+
+          Origem: https://github.com/jpitty03/PGRazor
+
+          Inclui: Git bundle restauravel com branches/tags/historico da origem;
+          catalogo de 28 Releases e 95 assets, nomes, hashes e links; APKs
+          instaladores root e modulos root das versoes v0.3.0, v0.3.2, v0.3.3,
+          v0.3.4, verificados por SHA256.
+
+          APK nao-root PGRazor.apk pode embutir o jogo Pokemon GO modificado.
+          Pacote original de jogo .apkm tambem nao foi redistribuido.
+          Links e hashes destes permanecem no catalogo.
+
+          Licenca MIT cobre codigo original PGRazor mas nao o jogo Pokemon GO
+          e nem todos os componentes de terceiros. Consulte LICENSE e THIRD_PARTY.md.
+          Nao instalar nem executar artefatos antes de auditoria.
+          EOF
+          gh release create "archive-pgrazor-source-root-20261118" \
+            archive/* \
+            --repo "$GITHUB_REPOSITORY" \
+            --target "$GITHUB_SHA" \
+            --title "Arquivo upstream PGRazor - fonte, historico e modulos root (18-11-2026)" \
+            --notes-file RELEASE_ARCHIVE_NOTES.md \
+            --prerelease
+          gh release view "archive-pgrazor-source-root-20261118" --repo "$GITHUB_REPOSITORY" \
+            --json url,assets | python3 -c 'import json,sys; d=json.load(sys.stdin); print("Archive:",d["url"],"Assets:",len(d["assets"]))'
