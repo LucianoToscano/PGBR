@@ -392,16 +392,4 @@ public final class PtBr {
         return text;
     }
 
-    public static String[] tr(String[] options) {
-        if (options == null) return null;
-        String[] out = options.clone();
-        for (int i = 0; i < out.length; i++) out[i] = tr(out[i]);
-        return out;
-    }
-    public static CharSequence[] tr(CharSequence[] options) {
-        if (options == null) return null;
-        CharSequence[] out = options.clone();
-        for (int i = 0; i < out.length; i++) out[i] = tr(out[i]);
-        return out;
-    }
 }
