@@ -561,7 +561,7 @@ final class FeedTheme {
         footer.addView(footerSlot(c, neutral, false), new LinearLayout.LayoutParams(0, dp(c, 46), 1));
         CloseButton close = new CloseButton(c);
         close.setOnClickListener(v -> { if (negative != null && negative.getText() != null && negative.getText().length() > 0) negative.performClick(); else dialog.dismiss(); });
-        if (negative != null && negative.getText() != null) close.setContentDescription(negative.getText());
+        if (negative != null && negative.getText() != null) close.setContentDescription(dev.pgrazor.PtBr.tr(negative.getText()));
         LinearLayout.LayoutParams cl = new LinearLayout.LayoutParams(dp(c, 56), dp(c, 56));
         cl.leftMargin = cl.rightMargin = dp(c, 10);
         footer.addView(close, cl);
@@ -731,9 +731,9 @@ final class FeedTheme {
         layout.addView(scroll, new LinearLayout.LayoutParams(-1, -2));
 
         AlertDialog dialog = new AlertDialog.Builder(context)
-            .setTitle(title)
+            .setTitle(dev.pgrazor.PtBr.tr(title))
             .setView(layout)
-            .setNegativeButton("Close", null)
+            .setNegativeButton(dev.pgrazor.PtBr.tr("Close"), null)
             .create();
 
         list.setBackground(mintBlock(context));
@@ -743,7 +743,7 @@ final class FeedTheme {
             final int index = i;
             if (i > 0) { View line = new View(context); line.setBackgroundColor(dlgMintLine()); list.addView(line, new LinearLayout.LayoutParams(-1, Math.max(1, dp(context, 1)))); }
             TextView row = new TextView(context);
-            row.setText(items[i]); row.setTextSize(15); row.setGravity(Gravity.CENTER_VERTICAL | Gravity.START);
+            row.setText(dev.pgrazor.PtBr.tr(items[i])); row.setTextSize(15); row.setGravity(Gravity.CENTER_VERTICAL | Gravity.START);
             row.setMinHeight(dp(context, 48)); row.setPadding(dp(context, 4), dp(context, 8), dp(context, 4), dp(context, 8));
             row.setClickable(true); row.setFocusable(true); row.setBackground(rowRipple(context));
             row.setOnClickListener(v -> {

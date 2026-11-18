@@ -246,27 +246,27 @@ public final class ShinyScanner {
         int pad = MapTheme.dp(ui, 16); body.setPadding(pad, pad, pad, pad);
 
         TextView description = new TextView(ui);
-        description.setText("Checks wild Pokémon within 80 m for shinies. Each check uses one encounter.");
+        description.setText(dev.pgrazor.PtBr.tr("Checks wild Pokémon within 80 m for shinies. Each check uses one encounter."));
         body.addView(description);
         final TextView status = new TextView(ui); body.addView(status);
-        final CheckBox on = new CheckBox(ui); on.setText("Scan for shinies"); body.addView(on);
-        final CheckBox notifyBox = new CheckBox(ui); notifyBox.setText("Phone notification"); body.addView(notifyBox);
-        final CheckBox stopBox = new CheckBox(ui); stopBox.setText("Stop walking when found"); body.addView(stopBox);
-        final CheckBox holdBox = new CheckBox(ui); holdBox.setText("Hold it (pause checks until caught or dismissed)"); body.addView(holdBox);
+        final CheckBox on = new CheckBox(ui); on.setText(dev.pgrazor.PtBr.tr("Scan for shinies")); body.addView(on);
+        final CheckBox notifyBox = new CheckBox(ui); notifyBox.setText(dev.pgrazor.PtBr.tr("Phone notification")); body.addView(notifyBox);
+        final CheckBox stopBox = new CheckBox(ui); stopBox.setText(dev.pgrazor.PtBr.tr("Stop walking when found")); body.addView(stopBox);
+        final CheckBox holdBox = new CheckBox(ui); holdBox.setText(dev.pgrazor.PtBr.tr("Hold it (pause checks until caught or dismissed)")); body.addView(holdBox);
         final Button speed = button(body), species = button(body), limit = button(body);
         TextView note = new TextView(ui);
-        note.setText("Pauses while VGP+, Shundo Sniper or Auto-Raid runs.");
+        note.setText(dev.pgrazor.PtBr.tr("Pauses while VGP+, Shundo Sniper or Auto-Raid runs."));
         body.addView(note);
 
         final boolean[] refreshing = {false};
         final Runnable update = () -> {
             refreshing[0] = true;
-            status.setText(status());
+            status.setText(dev.pgrazor.PtBr.tr(status()));
             synchronized (LOCK) {
                 on.setChecked(prefs.enabled); notifyBox.setChecked(prefs.notify); stopBox.setChecked(prefs.stopWalking); holdBox.setChecked(prefs.hold);
-                speed.setText("Speed: " + ShinyScanPreferences.speedSummary(prefs.speed));
-                species.setText("Species: " + speciesSummary(prefs.species));
-                limit.setText("Encounter limit: " + ShinyScanPreferences.limitSummary(prefs.dailyLimit));
+                speed.setText(dev.pgrazor.PtBr.tr("Speed: " + ShinyScanPreferences.speedSummary(prefs.speed)));
+                species.setText(dev.pgrazor.PtBr.tr("Species: " + speciesSummary(prefs.species)));
+                limit.setText(dev.pgrazor.PtBr.tr("Encounter limit: " + ShinyScanPreferences.limitSummary(prefs.dailyLimit)));
             }
             refreshing[0] = false;
         };
@@ -298,11 +298,11 @@ public final class ShinyScanner {
 
         update.run();
         ScrollView scroll = new ScrollView(ui); scroll.addView(body);
-        AlertDialog dialog = new AlertDialog.Builder(ui).setTitle("Shiny Scanner").setView(scroll)
-            .setPositiveButton("Done", null).create();
+        AlertDialog dialog = new AlertDialog.Builder(ui).setTitle(dev.pgrazor.PtBr.tr("Shiny Scanner")).setView(scroll)
+            .setPositiveButton(dev.pgrazor.PtBr.tr("Done"), null).create();
         Handler handler = new Handler(Looper.getMainLooper());
         Runnable refresh = new Runnable() {
-            public void run() { if (dialog.isShowing()) { status.setText(status()); handler.postDelayed(this, 1000); } }
+            public void run() { if (dialog.isShowing()) { status.setText(dev.pgrazor.PtBr.tr(status())); handler.postDelayed(this, 1000); } }
         };
         DialogLifecycle.bind(activity, dialog, () -> handler.removeCallbacks(refresh));
         dialog.setOnShowListener(d -> {
@@ -316,7 +316,7 @@ public final class ShinyScanner {
     private interface Choice { void pick(int index); }
     private static void choose(Activity a, String title, String[] labels, Choice choice) {
         Context ui = MapTheme.wrap(a);
-        AlertDialog d = new AlertDialog.Builder(ui).setTitle(title).setNegativeButton("Cancel", null).create();
+        AlertDialog d = new AlertDialog.Builder(ui).setTitle(dev.pgrazor.PtBr.tr(title)).setNegativeButton(dev.pgrazor.PtBr.tr("Cancel"), null).create();
         ChoiceList.attach(d, labels, choice::pick);
         DialogLifecycle.bind(a, d, null);
         d.setOnShowListener(x -> { MapTheme.styleButtons(d);

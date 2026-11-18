@@ -94,7 +94,7 @@ public final class QuickMenu {
         r.setGravity(Gravity.CENTER_VERTICAL); r.setMinimumHeight(dp(48)); r.setPadding(dp(14), dp(6), dp(16), dp(6));
         MenuIcon icon = new MenuIcon(activity, kind); icon.disabled = !enabled;
         r.addView(icon, new LinearLayout.LayoutParams(dp(22), dp(22)));
-        TextView t = new TextView(activity); t.setText(label); t.setTextSize(14.5f); t.setPadding(dp(14), 0, 0, 0);
+        TextView t = new TextView(activity); t.setText(dev.pgrazor.PtBr.tr(label)); t.setTextSize(14.5f); t.setPadding(dp(14), 0, 0, 0);
         r.addView(t, new LinearLayout.LayoutParams(0, -2, 1f));
         if (enabled && action != null) {
             r.setClickable(true); r.setFocusable(true);
@@ -114,7 +114,7 @@ public final class QuickMenu {
     private void updateWalk() {
         if (walkLabel == null) return;
         double speed = Control.engine.speedKmh;
-        walkLabel.setText(String.format(Locale.US, "%.1f km/h", speed));
+        walkLabel.setText(dev.pgrazor.PtBr.tr(String.format(Locale.US, "%.1f km/h", speed)));
     }
 
     private void updateVisibility() {

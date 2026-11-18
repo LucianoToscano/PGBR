@@ -17,11 +17,11 @@ public final class PreviewActivity extends Activity {
     public void onCreate(Bundle saved) {
         super.onCreate(saved);
         LinearLayout screen = new LinearLayout(this); screen.setOrientation(LinearLayout.VERTICAL); screen.setPadding(24,48,24,24); screen.setBackgroundColor(Color.rgb(9,17,29));
-        TextView heading = new TextView(this); heading.setText("PGRazor · control preview"); heading.setTextSize(24); heading.setTextColor(Color.WHITE); screen.addView(heading);
-        TextView description = new TextView(this); description.setText("Joystick and coordinate controls.\nThis preview does not change device GPS or connect to Pokémon GO.\nMovement pauses when you leave the app."); description.setTextSize(15); description.setTextColor(Color.LTGRAY); screen.addView(description);
+        TextView heading = new TextView(this); heading.setText(dev.pgrazor.PtBr.tr("PGRazor · control preview")); heading.setTextSize(24); heading.setTextColor(Color.WHITE); screen.addView(heading);
+        TextView description = new TextView(this); description.setText(dev.pgrazor.PtBr.tr("Joystick and coordinate controls.\nThis preview does not change device GPS or connect to Pokémon GO.\nMovement pauses when you leave the app.")); description.setTextSize(15); description.setTextColor(Color.LTGRAY); screen.addView(description);
         Space space = new Space(this); screen.addView(space,new LinearLayout.LayoutParams(1,0,1));
         consumer = new TextView(this); consumer.setTextColor(Color.WHITE); consumer.setTextSize(16); screen.addView(consumer);
-        Button export = new Button(this); export.setText("Export this run's log (.txt)"); screen.addView(export);
+        Button export = new Button(this); export.setText(dev.pgrazor.PtBr.tr("Export this run's log (.txt)")); screen.addView(export);
         export.setOnClickListener(v -> {
             Intent intent = new Intent(Intent.ACTION_CREATE_DOCUMENT).setType("text/plain").addCategory(Intent.CATEGORY_OPENABLE);
             intent.putExtra(Intent.EXTRA_TITLE, Control.currentLog()==null?"pgrazor-log.txt":Control.currentLog().getName()); startActivityForResult(intent,40);
@@ -33,7 +33,7 @@ public final class PreviewActivity extends Activity {
             double latitude = value.getLatitude(), longitude = value.getLongitude();
             boolean active = Control.active();
             boolean match = active ? Math.abs(latitude-Control.engine.latitude)<1e-8 && Math.abs(longitude-Control.engine.longitude)<1e-8 : latitude==12.5 && longitude==45.25;
-            consumer.setText("Synthetic location consumer\n"+latitude+", "+longitude+"\n"+(match?"PASS":"MISMATCH")+" · "+(active?"override":"original values"));
+            consumer.setText(dev.pgrazor.PtBr.tr("Synthetic location consumer\n"+latitude+", "+longitude+"\n"+(match?"PASS":"MISMATCH")+" · "+(active?"override":"original values")));
             if(samples++ % 5 == 0) Control.event("probe-consumer", "active="+active+" match="+match+" latitude="+latitude+" longitude="+longitude);
             handler.postDelayed(this,1000);
         }

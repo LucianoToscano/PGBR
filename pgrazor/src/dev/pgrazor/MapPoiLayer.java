@@ -100,7 +100,7 @@ final class MapPoiLayer {
         if (poiStatus != null) { String message = layers == 0 ? "Nearby layers off" : "Nearby locations loaded by the game (" + pois.length() + ")";
             if (layers != 0 && snapshot.isEmpty()) message = "Waiting for nearby game locations";
             else if (layers != 0) try { if (new JSONObject(snapshot).has("error")) message = "Nearby layers unavailable"; } catch (Exception ignored) {}
-            poiStatus.setText(message);
+            poiStatus.setText(dev.pgrazor.PtBr.tr(message));
         }
         invalidate.run(); main.removeCallbacks(poiRefresh); main.postDelayed(poiRefresh, 1000);
     }
@@ -235,8 +235,8 @@ final class MapPoiLayer {
         if (closed || hits.isEmpty()) return;
         if (hits.size() == 1) { showPoiDetails(hits.get(0)); return; }
         String[] labels = new String[hits.size()]; for (int i = 0; i < labels.length; i++) labels[i] = poiShortLabel(hits.get(i));
-        AlertDialog chooser = ChoiceList.attach(new AlertDialog.Builder(dialogContext).setTitle("Nearby here (" + hits.size() + ")")
-            .setNegativeButton("Close", null).create(), labels, which -> showPoiDetails(hits.get(which)));
+        AlertDialog chooser = ChoiceList.attach(new AlertDialog.Builder(dialogContext).setTitle(dev.pgrazor.PtBr.tr("Nearby here (" + hits.size() + ")"))
+            .setNegativeButton(dev.pgrazor.PtBr.tr("Close"), null).create(), labels, which -> showPoiDetails(hits.get(which)));
         registerPoiDialog(chooser); chooser.show();
     }
     private String poiShortLabel(JSONObject point) {
@@ -255,9 +255,9 @@ final class MapPoiLayer {
         int pad = dp(18); body.setPadding(pad, pad, pad, pad); body.setTextSize(14);
         final double latitude = initial.optDouble("lat", Double.NaN), longitude = initial.optDouble("lon", Double.NaN);
         final boolean valid = Double.isFinite(latitude) && Double.isFinite(longitude) && Math.abs(latitude) <= 90 && Math.abs(longitude) <= 180;
-        AlertDialog.Builder builder = new AlertDialog.Builder(dialogContext).setTitle(poiTitle(initial)).setView(body).setNegativeButton("Close", null);
-        if (walk != null) builder.setNeutralButton("Walk", null);
-        if (teleport != null) builder.setPositiveButton("Teleport", null);
+        AlertDialog.Builder builder = new AlertDialog.Builder(dialogContext).setTitle(dev.pgrazor.PtBr.tr(poiTitle(initial))).setView(body).setNegativeButton(dev.pgrazor.PtBr.tr("Close"), null);
+        if (walk != null) builder.setNeutralButton(dev.pgrazor.PtBr.tr("Walk"), null);
+        if (teleport != null) builder.setPositiveButton(dev.pgrazor.PtBr.tr("Teleport"), null);
         final AlertDialog dialog = builder.create();
         dialog.setOnShowListener(d -> {
             MapTheme.styleButtons(dialog);
@@ -278,8 +278,8 @@ final class MapPoiLayer {
         refresh[0] = () -> {
             if (closed || !dialog.isShowing()) return;
             JSONObject live = id.isEmpty() ? null : findPoi(id);
-            dialog.setTitle(poiTitle(live != null ? live : initial));
-            body.setText(poiDetailsText(live != null ? live : initial, live == null));
+            dialog.setTitle(dev.pgrazor.PtBr.tr(poiTitle(live != null ? live : initial)));
+            body.setText(dev.pgrazor.PtBr.tr(poiDetailsText(live != null ? live : initial, live == null)));
             main.postDelayed(refresh[0], 1000);
         };
         dialog.setOnDismissListener(d -> { poiDialogs.remove(dialog); main.removeCallbacks(refresh[0]); });

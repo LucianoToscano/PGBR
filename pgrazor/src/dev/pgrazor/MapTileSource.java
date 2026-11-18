@@ -99,7 +99,7 @@ final class MapTileSource {
             if (failedAt != null && now - failedAt < 60000) { blocked++; continue; }
             wanted.add(tile);
         }
-        status.setText(wanted.isEmpty() ? (blocked > 0 ? "Map unavailable in some areas. Check internet, then Retry." : "Zoom " + host.zoom() + " · Tap map to select") : "Loading map…");
+        status.setText(dev.pgrazor.PtBr.tr(wanted.isEmpty() ? (blocked > 0 ? "Map unavailable in some areas. Check internet, then Retry." : "Zoom " + host.zoom() + " · Tap map to select") : "Loading map…"));
         if (wanted.isEmpty()) return;
         // Middle of the screen first: tiles nearest the centre of the placed ones load before the edges.
         float cx = 0, cy = 0; for (Tile tile : visible) { cx += tile.left; cy += tile.top; }
@@ -142,9 +142,9 @@ final class MapTileSource {
                 if (closed || Thread.currentThread().isInterrupted()) return;
                 cache.trim();
                 final int finalErrors = errors.get() + blockedTiles;
-                main.post(() -> { if (!closed && revision == generation) status.setText(finalErrors == 0 ? "Zoom " + host.zoom() + " · Tap map to select" : "Map unavailable in some areas. Check internet, then Retry."); });
+                main.post(() -> { if (!closed && revision == generation) status.setText(dev.pgrazor.PtBr.tr(finalErrors == 0 ? "Zoom " + host.zoom() + " · Tap map to select" : "Map unavailable in some areas. Check internet, then Retry.")); });
             } catch (IOException | RuntimeException e) {
-                main.post(() -> { if (!closed && revision == generation) status.setText("Map cache unavailable. Close map and retry."); });
+                main.post(() -> { if (!closed && revision == generation) status.setText(dev.pgrazor.PtBr.tr("Map cache unavailable. Close map and retry.")); });
             } finally { main.post(() -> { if (!closed) { pending = null; if (revision != generation) loadVisible(); } }); }
         });
     }

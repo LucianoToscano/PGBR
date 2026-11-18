@@ -67,10 +67,10 @@ final class PogoFeedModeFilterDialog {
             default: return;
         }
         AlertDialog dialog = new AlertDialog.Builder(ui)
-            .setTitle(mode.filtersTitle)
+            .setTitle(dev.pgrazor.PtBr.tr(mode.filtersTitle))
             .setView(scroll)
-            .setPositiveButton("Apply", (d, w) -> onApply.apply(working))
-            .setNegativeButton("Cancel", null)
+            .setPositiveButton(dev.pgrazor.PtBr.tr("Apply"), (d, w) -> onApply.apply(working))
+            .setNegativeButton(dev.pgrazor.PtBr.tr("Cancel"), null)
             .create();
         if (sink != null) sink.track(dialog);
         dialog.setOnShowListener(d -> {
@@ -262,7 +262,7 @@ final class PogoFeedModeFilterDialog {
             for (int i = 0; i < PogoFeedModes.SPOT_LEVELS.length; i++) levels.add(new String[]{PogoFeedModes.SPOT_LEVELS[i], String.valueOf(i + 1)});
             body.addView(chips(levels, multi("battle_levels", true)));
             Switch active = new Switch(ui);
-            active.setText("Active battles only");
+            active.setText(dev.pgrazor.PtBr.tr("Active battles only"));
             active.setChecked(spec.optBoolean("active_only", false));
             active.setOnCheckedChangeListener((v, on) -> put("active_only", on));
             LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-1, -2);
@@ -318,14 +318,14 @@ final class PogoFeedModeFilterDialog {
 
         void sectionIn(LinearLayout parent, String title) {
             TextView t = new TextView(ui);
-            t.setText(title); t.setTextSize(13.5f); t.setTypeface(FeedTheme.medium());
+            t.setText(dev.pgrazor.PtBr.tr(title)); t.setTextSize(13.5f); t.setTypeface(FeedTheme.medium());
             t.setPadding(dp(2), dp(12), 0, dp(6));
             parent.addView(t);
         }
 
         TextView note(String text) {
             TextView t = new TextView(ui);
-            t.setText(text); t.setTextSize(12.5f); t.setTextColor(FeedTheme.muted());
+            t.setText(dev.pgrazor.PtBr.tr(text)); t.setTextSize(12.5f); t.setTextColor(FeedTheme.muted());
             t.setPadding(dp(2), dp(4), 0, dp(2));
             return t;
         }
@@ -375,7 +375,7 @@ final class PogoFeedModeFilterDialog {
             box.setBackground(FeedTheme.mintBlock(ui));
             box.setPadding(dp(8), dp(8), dp(8), dp(8));
             EditText search = new EditText(ui);
-            search.setHint(hint); search.setSingleLine(true); search.setTextSize(13.5f);
+            search.setHint(dev.pgrazor.PtBr.tr(hint)); search.setSingleLine(true); search.setTextSize(13.5f);
             if (android.os.Build.VERSION.SDK_INT >= 26) search.setImportantForAutofill(View.IMPORTANT_FOR_AUTOFILL_NO);
             box.addView(search, new LinearLayout.LayoutParams(-1, dp(40)));
             FlowLayout flow = new FlowLayout(ui, dp(6), dp(6));
@@ -429,7 +429,7 @@ final class PogoFeedModeFilterDialog {
             box.addView(help);
 
             final EditText search = new EditText(ui);
-            search.setHint(hint); search.setSingleLine(true); search.setTextSize(13.5f);
+            search.setHint(dev.pgrazor.PtBr.tr(hint)); search.setSingleLine(true); search.setTextSize(13.5f);
             if (android.os.Build.VERSION.SDK_INT >= 26) search.setImportantForAutofill(View.IMPORTANT_FOR_AUTOFILL_NO);
             box.addView(search, new LinearLayout.LayoutParams(-1, dp(40)));
 
@@ -460,10 +460,10 @@ final class PogoFeedModeFilterDialog {
                     buttons.get(i).setVisibility(show ? View.VISIBLE : View.GONE);
                     if (show) visible++;
                 }
-                categoryButton.setText("Category: " + PokemonCategories.LABELS[category[0]]);
-                help.setText(categoryHelp(category[0], raids));
+                categoryButton.setText(dev.pgrazor.PtBr.tr("Category: " + PokemonCategories.LABELS[category[0]]));
+                help.setText(dev.pgrazor.PtBr.tr(categoryHelp(category[0], raids)));
                 // Total is selected catalog options; picks the category/search hide stay counted, not dropped.
-                feedback.setText((visible == 0 ? "No matches" : visible + " shown") + " · " + selected + " selected");
+                feedback.setText(dev.pgrazor.PtBr.tr((visible == 0 ? "No matches" : visible + " shown") + " · " + selected + " selected"));
             };
             for (String[] o : options) {
                 Button b = chip(o[0]);
@@ -512,7 +512,7 @@ final class PogoFeedModeFilterDialog {
             cats.add(PokemonCategories.SELECTED);
             String[] labels = new String[cats.size()];
             for (int i = 0; i < labels.length; i++) labels[i] = PokemonCategories.LABELS[cats.get(i)];
-            AlertDialog d = new AlertDialog.Builder(ui).setTitle("Browse by category").setNegativeButton("Cancel", null).create();
+            AlertDialog d = new AlertDialog.Builder(ui).setTitle(dev.pgrazor.PtBr.tr("Browse by category")).setNegativeButton(dev.pgrazor.PtBr.tr("Cancel"), null).create();
             ChoiceList.attach(d, labels, index -> { category[0] = cats.get(index); onPicked.run(); });
             if (activity != null) DialogLifecycle.bind(activity, d, null);
             if (sink != null) sink.track(d);
@@ -532,7 +532,7 @@ final class PogoFeedModeFilterDialog {
 
         Button chip(String label) {
             Button b = new Button(ui);
-            b.setText(label); b.setAllCaps(false); b.setTextSize(12.5f); b.setSingleLine(true);
+            b.setText(dev.pgrazor.PtBr.tr(label)); b.setAllCaps(false); b.setTextSize(12.5f); b.setSingleLine(true);
             b.setPadding(dp(12), 0, dp(12), 0); b.setMinWidth(0); b.setMinimumWidth(0);
             b.setGravity(Gravity.CENTER);
             return b;

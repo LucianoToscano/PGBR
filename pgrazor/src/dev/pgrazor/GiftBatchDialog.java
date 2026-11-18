@@ -29,33 +29,33 @@ public final class GiftBatchDialog {
         int pad = MapTheme.dp(ui, 16); body.setPadding(pad, pad, pad, pad);
 
         TextView description = new TextView(ui);
-        description.setText("Sends your available gifts to eligible friends, then opens the gifts you have received. "
+        description.setText(dev.pgrazor.PtBr.tr("Sends your available gifts to eligible friends, then opens the gifts you have received. "
             + "Each friend is handled once. The game's own daily limits for sending and opening still apply, so some "
-            + "may be skipped. A single pass runs now — there is no recurring schedule.");
+            + "may be skipped. A single pass runs now — there is no recurring schedule."));
         body.addView(description);
 
         CheckBox fullBag = new CheckBox(ui);
-        fullBag.setText("Open even when item bag is full");
+        fullBag.setText(dev.pgrazor.PtBr.tr("Open even when item bag is full"));
         fullBag.setChecked(GiftBatchSettings.fullBagDefault());
         body.addView(fullBag);
         TextView fullBagCaption = new TextView(ui);
-        fullBagCaption.setText("Uses the game's full-bag reward setting. Full-bag opening may award fewer rewards.");
+        fullBagCaption.setText(dev.pgrazor.PtBr.tr("Uses the game's full-bag reward setting. Full-bag opening may award fewer rewards."));
         body.addView(fullBagCaption);
 
-        TextView status = new TextView(ui); status.setText(GiftBatchSettings.status()); body.addView(status);
-        Button start = new Button(ui); start.setAllCaps(false); start.setText("Start"); body.addView(start);
-        Button stop = new Button(ui); stop.setAllCaps(false); stop.setText("Stop"); body.addView(stop);
+        TextView status = new TextView(ui); status.setText(dev.pgrazor.PtBr.tr(GiftBatchSettings.status())); body.addView(status);
+        Button start = new Button(ui); start.setAllCaps(false); start.setText(dev.pgrazor.PtBr.tr("Start")); body.addView(start);
+        Button stop = new Button(ui); stop.setAllCaps(false); stop.setText(dev.pgrazor.PtBr.tr("Stop")); body.addView(stop);
 
         ScrollView scroll = new ScrollView(ui); scroll.addView(body);
-        AlertDialog dialog = new AlertDialog.Builder(ui).setTitle("Send & Open Gifts").setView(scroll)
-            .setPositiveButton("Close", null).create();
+        AlertDialog dialog = new AlertDialog.Builder(ui).setTitle(dev.pgrazor.PtBr.tr("Send & Open Gifts")).setView(scroll)
+            .setPositiveButton(dev.pgrazor.PtBr.tr("Close"), null).create();
         Handler handler = new Handler(Looper.getMainLooper());
         Runnable update = () -> {
             boolean busy = GiftBatchSettings.running();
             SettingsUi.enabled(fullBag, !busy);
             start.setEnabled(!busy);
             stop.setEnabled(busy && !GiftBatchSettings.stopPending());
-            status.setText(GiftBatchSettings.status());
+            status.setText(dev.pgrazor.PtBr.tr(GiftBatchSettings.status()));
         };
         Runnable refresh = new Runnable() {
             public void run() { if (dialog.isShowing()) { update.run(); handler.postDelayed(this, 1000); } }

@@ -106,21 +106,21 @@ final class SettingsPanel {
     private LinearLayout section(LinearLayout owner,String label,boolean open){
         LinearLayout group=new LinearLayout(activity);group.setOrientation(LinearLayout.VERTICAL);
         LinearLayout head=new LinearLayout(activity);head.setOrientation(LinearLayout.HORIZONTAL);head.setGravity(Gravity.CENTER_VERTICAL);head.setMinimumHeight(dp(46));head.setClickable(true);head.setFocusable(true);
-        TextView title=new TextView(activity);title.setText(label);title.setTextSize(14);head.addView(title,new LinearLayout.LayoutParams(0,-2,1f));
-        TextView chev=new TextView(activity);chev.setTextSize(15);chev.setGravity(Gravity.CENTER);chev.setText(open?"–":"+");head.addView(chev,new LinearLayout.LayoutParams(dp(32),-2));
+        TextView title=new TextView(activity);title.setText(dev.pgrazor.PtBr.tr(label));title.setTextSize(14);head.addView(title,new LinearLayout.LayoutParams(0,-2,1f));
+        TextView chev=new TextView(activity);chev.setTextSize(15);chev.setGravity(Gravity.CENTER);chev.setText(dev.pgrazor.PtBr.tr(open?"–":"+"));head.addView(chev,new LinearLayout.LayoutParams(dp(32),-2));
         LinearLayout content=new LinearLayout(activity);content.setOrientation(LinearLayout.VERTICAL);content.setPadding(dp(6),0,dp(2),dp(8));content.setVisibility(open?View.VISIBLE:View.GONE);
-        head.setOnClickListener(v->{boolean o=content.getVisibility()!=View.VISIBLE;content.setVisibility(o?View.VISIBLE:View.GONE);chev.setText(o?"–":"+");});
+        head.setOnClickListener(v->{boolean o=content.getVisibility()!=View.VISIBLE;content.setVisibility(o?View.VISIBLE:View.GONE);chev.setText(dev.pgrazor.PtBr.tr(o?"–":"+"));});
         group.addView(head);group.addView(content);owner.addView(group);
         sectionHeads.add(title);sectionHeads.add(chev);
         return content;
     }
     private Switch switchRow(LinearLayout owner,String label){
         LinearLayout r=new LinearLayout(activity);r.setOrientation(LinearLayout.HORIZONTAL);r.setGravity(Gravity.CENTER_VERTICAL);r.setMinimumHeight(dp(44));
-        TextView t=new TextView(activity);t.setText(label);t.setTextSize(14);r.addView(t,new LinearLayout.LayoutParams(0,-2,1f));
-        Switch sw=new Switch(activity);sw.setContentDescription(label);sw.setClickable(true);r.addView(sw,new LinearLayout.LayoutParams(-2,-2));
+        TextView t=new TextView(activity);t.setText(dev.pgrazor.PtBr.tr(label));t.setTextSize(14);r.addView(t,new LinearLayout.LayoutParams(0,-2,1f));
+        Switch sw=new Switch(activity);sw.setContentDescription(dev.pgrazor.PtBr.tr(label));sw.setClickable(true);r.addView(sw,new LinearLayout.LayoutParams(-2,-2));
         owner.addView(r);return sw;
     }
-    private TextView caption(LinearLayout owner,String s){TextView t=new TextView(activity);t.setText(s);t.setTextSize(11);owner.addView(t);captions.add(t);return t;}
+    private TextView caption(LinearLayout owner,String s){TextView t=new TextView(activity);t.setText(dev.pgrazor.PtBr.tr(s));t.setTextSize(11);owner.addView(t);captions.add(t);return t;}
 
     /** Shows the destination theme: golden sun in dark mode, indigo moon in light mode. */
     private final class ThemeIcon extends View {
@@ -196,7 +196,7 @@ final class SettingsPanel {
         current=index;refreshHome();
         home.setVisibility(index<0?View.VISIBLE:View.GONE);
         for(int i=0;i<pages.size();i++)pages.get(i).setVisibility(i==index?View.VISIBLE:View.GONE);
-        title.setText(index<0?EncounterCounter.title():pageTitles.get(index));
+        title.setText(dev.pgrazor.PtBr.tr(index<0?EncounterCounter.title():pageTitles.get(index)));
         backIcon.setVisibility(index<0?View.GONE:View.VISIBLE);
         // The theme toggle and version make room for the longer page titles; theme is also under Display & Performance.
         themeIcon.setVisibility(index<0?View.VISIBLE:View.GONE);versionLabel.setVisibility(index<0?View.VISIBLE:View.GONE);
@@ -219,7 +219,7 @@ final class SettingsPanel {
         versionLabel = text(BuildVersion.NAME, 12, muted());
         versionLabel.setSingleLine(true); versionLabel.setGravity(Gravity.CENTER_VERTICAL);
         versionLabel.setPadding(dp(4), 0, dp(8), 0);
-        versionLabel.setContentDescription("PGRazor version " + BuildVersion.NAME);
+        versionLabel.setContentDescription(dev.pgrazor.PtBr.tr("PGRazor version " + BuildVersion.NAME));
         captions.add(versionLabel);
         header.addView(versionLabel, new LinearLayout.LayoutParams(-2, dp(48)));
         closeIcon = new CloseIcon(activity); header.addView(closeIcon, new LinearLayout.LayoutParams(dp(48), dp(48)));
@@ -231,7 +231,7 @@ final class SettingsPanel {
         panel.addView(bodyScroll, new LinearLayout.LayoutParams(-1,0,1));
         TextView discord = text("Join our Discord", 14, accent());
         discord.setGravity(Gravity.CENTER); discord.setMinimumHeight(dp(48));
-        discord.setContentDescription("Join the PGRazor Discord community");
+        discord.setContentDescription(dev.pgrazor.PtBr.tr("Join the PGRazor Discord community"));
         discord.setClickable(true); discord.setFocusable(true); sectionHeads.add(discord);
         panel.addView(discord, new LinearLayout.LayoutParams(-1,dp(48)));
         discord.setOnClickListener(v -> {
@@ -305,7 +305,7 @@ final class SettingsPanel {
         LinearLayout quick = group(page, "Quick catch"); summaryGated.add((View)quick.getParent());
         LinearLayout sumRow = new LinearLayout(activity); sumRow.setOrientation(LinearLayout.HORIZONTAL); sumRow.setGravity(Gravity.CENTER_VERTICAL); sumRow.setMinimumHeight(dp(44));
         quickSummaryLabel = new TextView(activity); quickSummaryLabel.setTextSize(14); sumRow.addView(quickSummaryLabel, new LinearLayout.LayoutParams(0,-2,1f));
-        quickSummarySwitch = new Switch(activity); quickSummarySwitch.setContentDescription("Quick catch"); sumRow.addView(quickSummarySwitch, new LinearLayout.LayoutParams(-2,-2)); quick.addView(sumRow);
+        quickSummarySwitch = new Switch(activity); quickSummarySwitch.setContentDescription(dev.pgrazor.PtBr.tr("Quick catch")); sumRow.addView(quickSummarySwitch, new LinearLayout.LayoutParams(-2,-2)); quick.addView(sumRow);
         quickSummarySwitch.setChecked(Control.quickSummaryEnabled());
         quickSummarySwitch.setOnCheckedChangeListener((v,checked) -> { if(checked==Control.quickSummaryEnabled())return; Control.setQuickSummaryEnabled(quickSummarySwitch.isChecked()); host.refresh(); });
         quickSummaryStatus = caption(quick, "");
@@ -368,7 +368,7 @@ final class SettingsPanel {
         LinearLayout keepC = group(transfer, "Always keep");
         // Indexed by protection bit; costume (bit 7) is listed next to event.
         String[] protections={"Keep legendary / mythical / Ultra Beasts","Keep shiny Pokemon","Keep event Pokemon","Keep background Pokemon","Keep XXS","Keep XXL","Keep 0% IV (0/0/0)","Keep costume Pokemon"};
-        for(int i:new int[]{0,1,2,7,3,4,5,6}){final int bit=1<<i;CheckBox box=new CheckBox(activity);box.setText(protections[i]);box.setChecked((Control.transferProtect()&bit)!=0);transferProtection[i]=box;keepC.addView(box);
+        for(int i:new int[]{0,1,2,7,3,4,5,6}){final int bit=1<<i;CheckBox box=new CheckBox(activity);box.setText(dev.pgrazor.PtBr.tr(protections[i]));box.setChecked((Control.transferProtect()&bit)!=0);transferProtection[i]=box;keepC.addView(box);
             box.setOnClickListener(v->Control.setTransferProtect(box.isChecked()?Control.transferProtect()|bit:Control.transferProtect()&~bit));}
         transferKeepList = button("Custom keep list"); keepC.addView(transferKeepList);
         transferKeepList.setOnClickListener(v -> TransferKeepDialog.show(activity, host::refresh));
@@ -380,9 +380,9 @@ final class SettingsPanel {
         // One row per league: its switch, then the rank it keeps (tap to cycle).
         for(int i=0;i<3;i++){final int league=i;
             LinearLayout row=new LinearLayout(activity);row.setOrientation(LinearLayout.HORIZONTAL);row.setGravity(Gravity.CENTER_VERTICAL);row.setMinimumHeight(dp(44));
-            TextView label=new TextView(activity);label.setText("Keep "+Control.PVP_LEAGUES[i]+" PvP IVs");label.setTextSize(14);row.addView(label,new LinearLayout.LayoutParams(0,-2,1f));
+            TextView label=new TextView(activity);label.setText(dev.pgrazor.PtBr.tr("Keep "+Control.PVP_LEAGUES[i]+" PvP IVs"));label.setTextSize(14);row.addView(label,new LinearLayout.LayoutParams(0,-2,1f));
             Button rank=button("Top "+Control.pvpRank(i));pvpRank[i]=rank;row.addView(rank,new LinearLayout.LayoutParams(-2,-2));
-            Switch sw=new Switch(activity);sw.setContentDescription("Keep "+Control.PVP_LEAGUES[i]+" PvP IVs");sw.setChecked(Control.pvpKeep(i));pvpKeep[i]=sw;
+            Switch sw=new Switch(activity);sw.setContentDescription(dev.pgrazor.PtBr.tr("Keep "+Control.PVP_LEAGUES[i]+" PvP IVs"));sw.setChecked(Control.pvpKeep(i));pvpKeep[i]=sw;
             LinearLayout.LayoutParams swParams=new LinearLayout.LayoutParams(-2,-2);swParams.leftMargin=dp(8);row.addView(sw,swParams);
             sw.setOnCheckedChangeListener((v,checked)->{if(checked==Control.pvpKeep(league))return;Control.setPvpKeep(league,checked);host.refresh();});
             rank.setOnClickListener(v->{
@@ -427,12 +427,12 @@ final class SettingsPanel {
         vgpSwitch=switchRow(vgpC,"VGP overlay");vgpSwitch.setChecked(Control.vgpOverlay());
         vgpSwitch.setOnCheckedChangeListener((b,checked)->{if(checked!=Control.vgpOverlay())Control.setVgpOverlay(checked);host.refresh();});
         String[] vgpLabels={"Nearby Pokémon","Nearby PokéStops","Push notifications"};
-        for(int i=0;i<3;i++){final int bit=1<<i;CheckBox box=new CheckBox(activity);box.setText(vgpLabels[i]);box.setChecked((Control.vgpOptions()&bit)!=0);vgpChoices[i]=box;vgpC.addView(box);
+        for(int i=0;i<3;i++){final int bit=1<<i;CheckBox box=new CheckBox(activity);box.setText(dev.pgrazor.PtBr.tr(vgpLabels[i]));box.setChecked((Control.vgpOptions()&bit)!=0);vgpChoices[i]=box;vgpC.addView(box);
             box.setOnClickListener(v->{Control.setVgpOptions(box.isChecked()?Control.vgpOptions()|bit:Control.vgpOptions()&~bit);
                 if(bit==4&&box.isChecked()&&Build.VERSION.SDK_INT>=33&&activity.checkSelfPermission("android.permission.POST_NOTIFICATIONS")!=android.content.pm.PackageManager.PERMISSION_GRANTED)activity.requestPermissions(new String[]{"android.permission.POST_NOTIFICATIONS"},7301);
             });
         }
-        vgpCooldownStop=new CheckBox(activity);vgpCooldownStop.setText("Stop on cooldown (estimated)");vgpCooldownStop.setContentDescription("Stop Virtual Go Plus during the estimated action cooldown");vgpCooldownStop.setChecked(Control.vgpStopOnCooldown());vgpC.addView(vgpCooldownStop);
+        vgpCooldownStop=new CheckBox(activity);vgpCooldownStop.setText(dev.pgrazor.PtBr.tr("Stop on cooldown (estimated)"));vgpCooldownStop.setContentDescription(dev.pgrazor.PtBr.tr("Stop Virtual Go Plus during the estimated action cooldown"));vgpCooldownStop.setChecked(Control.vgpStopOnCooldown());vgpC.addView(vgpCooldownStop);
         vgpCooldownStop.setOnClickListener(v->{if(vgpCooldownStop.isChecked()!=Control.vgpStopOnCooldown())Control.setVgpStopOnCooldown(vgpCooldownStop.isChecked());host.refresh();});
         vgpStatus=caption(vgpC,Control.vgpStatus());
         smartRefresh=SmartCatchSettings.populate(activity,vgpC);
@@ -459,7 +459,7 @@ final class SettingsPanel {
         // ----- Team Rocket -----
         LinearLayout rocketC = group(battleC, "Team Rocket");
         String[] rocketLabels={"Auto quick attack","Auto charged attack","Auto shield"};
-        for(int i=0;i<3;i++){final int bit=1<<i;CheckBox box=new CheckBox(activity);box.setText(rocketLabels[i]);box.setChecked((Control.rocketOptions()&bit)!=0);rocketChoices[i]=box;rocketC.addView(box);
+        for(int i=0;i<3;i++){final int bit=1<<i;CheckBox box=new CheckBox(activity);box.setText(dev.pgrazor.PtBr.tr(rocketLabels[i]));box.setChecked((Control.rocketOptions()&bit)!=0);rocketChoices[i]=box;rocketC.addView(box);
             box.setOnClickListener(v->Control.setRocketOptions(box.isChecked()?Control.rocketOptions()|bit:Control.rocketOptions()&~bit));}
         caption(rocketC, "While any of these is on, the next Pokémon is picked automatically when one faints.");
         rocketStatus = caption(rocketC, "");
@@ -500,7 +500,7 @@ final class SettingsPanel {
     private void refreshSmartBattle() {
         if(smartBattleSwitch==null)return;
         smartBattleSwitch.setChecked(Control.smartBattle());
-        String status=Control.smartBattleStatus(); smartBattleStatus.setText(status); smartBattleStatus.setVisibility(status.isEmpty()?View.GONE:View.VISIBLE);
+        String status=Control.smartBattleStatus(); smartBattleStatus.setText(dev.pgrazor.PtBr.tr(status)); smartBattleStatus.setVisibility(status.isEmpty()?View.GONE:View.VISIBLE);
     }
 
     private void buildHealing(LinearLayout owner) {
@@ -521,18 +521,18 @@ final class SettingsPanel {
     private void refreshHealing() {
         if(healSwitch==null)return;
         healSwitch.setChecked(Control.healEnabled()); healReviveSwitch.setChecked(Control.healRevive());
-        healWhen.setText("Heal: "+Control.HEAL_WHEN_LABELS[Control.healWhen()]);
-        healThreshold.setText(Control.healThreshold()>=100?"Heal when: Any HP missing":"Heal when: Below "+Control.healThreshold()+"% HP");
-        healItems.setText(Control.healFull()?"Items: Always heal fully":"Items: Smart (saves big potions)");
+        healWhen.setText(dev.pgrazor.PtBr.tr("Heal: "+Control.HEAL_WHEN_LABELS[Control.healWhen()]));
+        healThreshold.setText(dev.pgrazor.PtBr.tr(Control.healThreshold()>=100?"Heal when: Any HP missing":"Heal when: Below "+Control.healThreshold()+"% HP"));
+        healItems.setText(dev.pgrazor.PtBr.tr(Control.healFull()?"Items: Always heal fully":"Items: Smart (saves big potions)"));
         boolean on=Control.healEnabled();
         SettingsUi.enabled(healWhen,on); SettingsUi.enabled(healThreshold,on); SettingsUi.enabled(healItems,on); SettingsUi.enabled(healReviveSwitch,on);
-        String status=Control.healStatus(); healStatus.setText(status); healStatus.setVisibility(status.isEmpty()?View.GONE:View.VISIBLE);
+        String status=Control.healStatus(); healStatus.setText(dev.pgrazor.PtBr.tr(status)); healStatus.setVisibility(status.isEmpty()?View.GONE:View.VISIBLE);
     }
 
     private void battleChoice(LinearLayout owner,int index,String label) {
         // Keep the persisted/native option bits unchanged when moving controls between groups.
         final int bit=1<<index;
-        CheckBox box=new CheckBox(activity);box.setText(label);
+        CheckBox box=new CheckBox(activity);box.setText(dev.pgrazor.PtBr.tr(label));
         box.setChecked((Control.battleOptions()&bit)!=0);battleChoices[index]=box;owner.addView(box);
         box.setOnClickListener(v->Control.setBattleOptions(box.isChecked()?Control.battleOptions()|bit:Control.battleOptions()&~bit));
     }
@@ -558,7 +558,7 @@ final class SettingsPanel {
 
         LinearLayout giftC = group(page, "Friend gifts"); summaryGated.add((View)giftC.getParent());
         String[] giftLabels={"Auto open gifts","Auto send gifts","Add an owned sticker"};
-        for(int i=0;i<3;i++){final int bit=1<<i;CheckBox box=new CheckBox(activity);box.setText(giftLabels[i]);box.setChecked((Control.giftOptions()&bit)!=0);giftChoices[i]=box;giftC.addView(box);box.setOnClickListener(v->Control.setGiftOptions(box.isChecked()?Control.giftOptions()|bit:Control.giftOptions()&~bit));}
+        for(int i=0;i<3;i++){final int bit=1<<i;CheckBox box=new CheckBox(activity);box.setText(dev.pgrazor.PtBr.tr(giftLabels[i]));box.setChecked((Control.giftOptions()&bit)!=0);giftChoices[i]=box;giftC.addView(box);box.setOnClickListener(v->Control.setGiftOptions(box.isChecked()?Control.giftOptions()|bit:Control.giftOptions()&~bit));}
         giftStatus = caption(giftC, "");
         launch(giftC, "Send & Open Gifts", () -> GiftBatchDialog.show(activity));
     }
@@ -591,7 +591,7 @@ final class SettingsPanel {
         darkSwitch.setOnCheckedChangeListener((v,checked) -> { if(checked==Control.darkTheme())return; Control.setDarkTheme(checked); host.applyTheme(); });
         uiScale=button("UI scale: "+Control.uiScalePercent()+"%");page.addView(uiScale);
         uiScale.setOnClickListener(v->{final int[] values={100,75,50,25};String[] labels={"100%","75%","50%","25%"};int selected=0;for(int i=0;i<values.length;i++)if(values[i]==Control.uiScalePercent())selected=i;
-            new AlertDialog.Builder(dialogContext()).setTitle("Overlay scale").setSingleChoiceItems(labels,selected,(dialog,which)->{host.releaseJoystick(true);Control.setUiScalePercent(values[which]);host.refresh();dialog.dismiss();}).setNegativeButton("Cancel",null).show();});
+            new AlertDialog.Builder(dialogContext()).setTitle(dev.pgrazor.PtBr.tr("Overlay scale")).setSingleChoiceItems(labels,selected,(dialog,which)->{host.releaseJoystick(true);Control.setUiScalePercent(values[which]);host.refresh();dialog.dismiss();}).setNegativeButton(dev.pgrazor.PtBr.tr("Cancel"),null).show();});
         skipCutscenesSwitch = switchRow(page, "Skip cutscenes"); skipCutscenesSwitch.setChecked(Control.skipCutscenes());
         skipCutscenesSwitch.setOnCheckedChangeListener((v,checked) -> { if(checked==Control.skipCutscenes())return; Control.setSkipCutscenes(checked); });
         cutsceneStatus = caption(page, "");  // shown only when the native module reports an error
@@ -611,7 +611,7 @@ final class SettingsPanel {
         caption(menu,"Choose which entries appear. This does not turn features on or off. Settings stays visible.");
         for(int i=0;i<QuickMenu.CUSTOMIZABLE.length;i++){
             final int bit=1<<i;
-            CheckBox box=new CheckBox(activity);box.setText(QuickMenu.CUSTOMIZABLE[i]);
+            CheckBox box=new CheckBox(activity);box.setText(dev.pgrazor.PtBr.tr(QuickMenu.CUSTOMIZABLE[i]));
             box.setChecked(Control.quickMenuVisible(bit));quickMenuChoices[i]=box;menu.addView(box);
             box.setOnClickListener(v->{Control.setQuickMenuVisible(bit,box.isChecked());host.refresh();});
         }
@@ -652,7 +652,7 @@ final class SettingsPanel {
         for(int i=0;i+1<pairs.length;i+=2)if(Boolean.TRUE.equals(pairs[i+1])){if(out.length()>0)out.append(" · ");out.append(pairs[i]);}
         return out.length()==0?"All off":out.toString();
     }
-    private void summary(int index,String value){TextView view=pageSummaries.get(index);if(!value.contentEquals(view.getText()))view.setText(value);}
+    private void summary(int index,String value){TextView view=pageSummaries.get(index);if(!value.contentEquals(view.getText()))view.setText(dev.pgrazor.PtBr.tr(value));}
     private void refreshHome(){
         if(current>=0)return;
         summary(0,(Control.desiredEnabled()?"Spoofing on":"Spoofing off")+String.format(Locale.US," · %.1f km/h",Control.engine.speedKmh));
@@ -707,29 +707,29 @@ final class SettingsPanel {
         for(MenuIcon icon:homeIcons)icon.invalidate();
         if(backIcon!=null)backIcon.invalidate();
         if(closeIcon!=null)closeIcon.invalidate();
-        if(themeIcon!=null){themeIcon.setContentDescription(Control.darkTheme()?"Switch to light theme":"Switch to dark theme");themeIcon.invalidate();}
+        if(themeIcon!=null){themeIcon.setContentDescription(dev.pgrazor.PtBr.tr(Control.darkTheme()?"Switch to light theme":"Switch to dark theme"));themeIcon.invalidate();}
     }
 
     private void showItemSettings(){
         Control.requestItemCatalog();
         LinearLayout form=new LinearLayout(activity);form.setOrientation(LinearLayout.VERTICAL);form.setPadding(dp(16),dp(8),dp(16),dp(8));
-        CheckBox enabled=new CheckBox(activity);enabled.setText("Enable automatic item transfer");enabled.setChecked(Control.itemTransferEnabled());form.addView(enabled);
-        TextView explanation=new TextView(activity);explanation.setText("Check items to trim and set the maximum to keep. Saving applies to your current bag and future items. A limit of 0 removes all of that item. Unchecked items are kept.");form.addView(explanation);
+        CheckBox enabled=new CheckBox(activity);enabled.setText(dev.pgrazor.PtBr.tr("Enable automatic item transfer"));enabled.setChecked(Control.itemTransferEnabled());form.addView(enabled);
+        TextView explanation=new TextView(activity);explanation.setText(dev.pgrazor.PtBr.tr("Check items to trim and set the maximum to keep. Saving applies to your current bag and future items. A limit of 0 removes all of that item. Unchecked items are kept."));form.addView(explanation);
         java.util.Map<Integer,Integer> limits=new java.util.HashMap<>();java.util.Set<Integer> selected=new java.util.HashSet<>();
         for(String row:Control.itemLimits().split(";"))try{String[] b=row.split(":");limits.put(Integer.parseInt(b[0]),Integer.parseInt(b[1]));}catch(RuntimeException ignored){}
         for(String row:Control.itemRules().split(";"))try{String[] b=row.split(":");int id=Integer.parseInt(b[0]);selected.add(id);limits.put(id,Integer.parseInt(b[1]));}catch(RuntimeException ignored){}
         LinearLayout rows=new LinearLayout(activity);rows.setOrientation(LinearLayout.VERTICAL);ScrollView scroll=new ScrollView(activity);scroll.addView(rows);form.addView(scroll,new LinearLayout.LayoutParams(-1,dp(380)));
         java.util.Map<Integer,CheckBox> boxes=new java.util.LinkedHashMap<>();java.util.Map<Integer,EditText> inputs=new java.util.LinkedHashMap<>();
-        Runnable populate=()->{for(String row:Control.itemCatalog().split("\n")){String[] b=row.split("\\|",-1);if(b.length!=3)continue;int id;try{id=Integer.parseInt(b[0]);}catch(NumberFormatException invalid){continue;}if(boxes.containsKey(id)){boxes.get(id).setText(b[1]+" ("+b[2]+" in bag)");continue;}
+        Runnable populate=()->{for(String row:Control.itemCatalog().split("\n")){String[] b=row.split("\\|",-1);if(b.length!=3)continue;int id;try{id=Integer.parseInt(b[0]);}catch(NumberFormatException invalid){continue;}if(boxes.containsKey(id)){boxes.get(id).setText(dev.pgrazor.PtBr.tr(b[1]+" ("+b[2]+" in bag)"));continue;}
             LinearLayout line=new LinearLayout(activity);line.setOrientation(LinearLayout.HORIZONTAL);line.setGravity(Gravity.CENTER_VERTICAL);
-            CheckBox box=new CheckBox(activity);box.setText(b[1]+" ("+b[2]+" in bag)");box.setChecked(selected.contains(id));line.addView(box,new LinearLayout.LayoutParams(0,-2,1));
-            EditText cap=new EditText(dialogContext());cap.setInputType(InputType.TYPE_CLASS_NUMBER);cap.setSingleLine(true);cap.setHint("Max");cap.setText(String.valueOf(limits.containsKey(id)?limits.get(id):100));cap.setContentDescription("Maximum "+b[1]+" to keep");SettingsUi.enabled(cap,enabled.isChecked()&&box.isChecked());box.setOnCheckedChangeListener((button,checked)->SettingsUi.enabled(cap,enabled.isChecked()&&checked));line.addView(cap,new LinearLayout.LayoutParams(dp(80),-2));rows.addView(line);styleTree(line);boxes.put(id,box);inputs.put(id,cap);
+            CheckBox box=new CheckBox(activity);box.setText(dev.pgrazor.PtBr.tr(b[1]+" ("+b[2]+" in bag)"));box.setChecked(selected.contains(id));line.addView(box,new LinearLayout.LayoutParams(0,-2,1));
+            EditText cap=new EditText(dialogContext());cap.setInputType(InputType.TYPE_CLASS_NUMBER);cap.setSingleLine(true);cap.setHint(dev.pgrazor.PtBr.tr("Max"));cap.setText(dev.pgrazor.PtBr.tr(String.valueOf(limits.containsKey(id)?limits.get(id):100)));cap.setContentDescription(dev.pgrazor.PtBr.tr("Maximum "+b[1]+" to keep"));SettingsUi.enabled(cap,enabled.isChecked()&&box.isChecked());box.setOnCheckedChangeListener((button,checked)->SettingsUi.enabled(cap,enabled.isChecked()&&checked));line.addView(cap,new LinearLayout.LayoutParams(dp(80),-2));rows.addView(line);styleTree(line);boxes.put(id,box);inputs.put(id,cap);
         }};populate.run();
         Runnable dependencies=()->{for(java.util.Map.Entry<Integer,CheckBox> entry:boxes.entrySet()){SettingsUi.enabled(entry.getValue(),enabled.isChecked());SettingsUi.enabled(inputs.get(entry.getKey()),enabled.isChecked()&&entry.getValue().isChecked());}};
         enabled.setOnCheckedChangeListener((v,on)->dependencies.run());dependencies.run();
-        TextView status=new TextView(activity);status.setText(Control.itemStatus());form.addView(status);
-        AlertDialog dialog=new AlertDialog.Builder(dialogContext()).setTitle("Auto-transfer inventory items").setView(form).setNegativeButton("Cancel",null).setPositiveButton("Save & apply",null).create();
-        final Runnable[] poll=new Runnable[1];poll[0]=()->{if(!dialog.isShowing())return;Control.requestItemCatalog();populate.run();dependencies.run();status.setText(Control.itemStatus());handler.postDelayed(poll[0],1000);};
+        TextView status=new TextView(activity);status.setText(dev.pgrazor.PtBr.tr(Control.itemStatus()));form.addView(status);
+        AlertDialog dialog=new AlertDialog.Builder(dialogContext()).setTitle(dev.pgrazor.PtBr.tr("Auto-transfer inventory items")).setView(form).setNegativeButton(dev.pgrazor.PtBr.tr("Cancel"),null).setPositiveButton(dev.pgrazor.PtBr.tr("Save & apply"),null).create();
+        final Runnable[] poll=new Runnable[1];poll[0]=()->{if(!dialog.isShowing())return;Control.requestItemCatalog();populate.run();dependencies.run();status.setText(dev.pgrazor.PtBr.tr(Control.itemStatus()));handler.postDelayed(poll[0],1000);};
         itemDialogs.add(dialog);
         dialog.setOnDismissListener(d->{handler.removeCallbacks(poll[0]);itemDialogs.remove(dialog);});dialog.show();styleTree(form);handler.post(poll[0]);
         dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v->{StringBuilder rules=new StringBuilder(),all=new StringBuilder();for(java.util.Map.Entry<Integer,EditText> e:inputs.entrySet()){int cap;try{cap=Integer.parseInt(e.getValue().getText().toString().trim());if(cap<0||cap>100000)throw new NumberFormatException();}catch(NumberFormatException invalid){e.getValue().setError("Enter 0 to 100000");return;}String rule=e.getKey()+":"+cap+";";all.append(rule);if(boxes.get(e.getKey()).isChecked())rules.append(rule);}
@@ -754,7 +754,7 @@ final class SettingsPanel {
         refreshQuickCatch();
         refreshLocationOptions();
         refreshThrows();
-        skipCutscenesSwitch.setChecked(Control.skipCutscenes());cutsceneStatus.setText(Control.cutsceneSkipStatus());
+        skipCutscenesSwitch.setChecked(Control.skipCutscenes());cutsceneStatus.setText(dev.pgrazor.PtBr.tr(Control.cutsceneSkipStatus()));
         batteryResSwitch.setChecked(Control.batteryLowRes());batteryFpsSwitch.setChecked(Control.batteryFps20());batteryQualitySwitch.setChecked(Control.batteryLowQuality());
         cutsceneStatus.setVisibility(Control.cutsceneSkipStatus().isEmpty()?View.GONE:View.VISIBLE);
         refreshHealing();
@@ -782,25 +782,25 @@ final class SettingsPanel {
     }
 
     private void refreshLocationStatus() {
-        if(uiScale!=null)uiScale.setText("UI scale: "+Control.uiScalePercent()+"%");
-        coords.setText((Control.desiredEnabled()?"":"Saved spoof location\n")+String.format(Locale.US, "%.6f, %.6f\n%.1f km/h", Control.engine.latitude, Control.engine.longitude, Control.engine.speedKmh));
+        if(uiScale!=null)uiScale.setText(dev.pgrazor.PtBr.tr("UI scale: "+Control.uiScalePercent()+"%"));
+        coords.setText(dev.pgrazor.PtBr.tr((Control.desiredEnabled()?"":"Saved spoof location\n")+String.format(Locale.US, "%.6f, %.6f\n%.1f km/h", Control.engine.latitude, Control.engine.longitude, Control.engine.speedKmh)));
         MotionEngine.RouteProgress route=Control.engine.routeProgress();
         locationSwitch.setChecked(Control.desiredEnabled());
         String movement=!Control.desiredEnabled()?"DEVICE LOCATION":Control.engine.enabled ? (Control.engine.walking ? "WALKING" : "ON") : "WAITING FOR ADAPTER";
         if (route.total>1 && route.active) movement=String.format(Locale.US,"ROUTE %d/%d  ·  %.0f m left",route.visited+1,route.total,route.remainingMeters);
         else if (route.total>1 && route.visited==route.total) movement="ON  ·  route complete";
-        state.setText(Control.connection + "\n" + movement + "  ·  coordinate reads " + Control.latitudeReads + "/" + Control.longitudeReads);
-        steeringStatus.setText(Control.cameraSteeringConfigured() ? Control.cameraSteeringStatus() : "Joystick follows the camera");
+        state.setText(dev.pgrazor.PtBr.tr(Control.connection + "\n" + movement + "  ·  coordinate reads " + Control.latitudeReads + "/" + Control.longitudeReads));
+        steeringStatus.setText(dev.pgrazor.PtBr.tr(Control.cameraSteeringConfigured() ? Control.cameraSteeringStatus() : "Joystick follows the camera"));
     }
 
     private void refreshDiagnostics() {
         cameraRoot.setVisibility(Control.cameraDiagnosticsConfigured() ? View.VISIBLE : View.GONE);
-        cameraStatus.setText(Control.cameraDiagnosticStatus());
-        cameraSample.setText(Control.cameraDiagnosticRunning() ? "Sampling camera..." : "Sample camera (10s)");
+        cameraStatus.setText(dev.pgrazor.PtBr.tr(Control.cameraDiagnosticStatus()));
+        cameraSample.setText(dev.pgrazor.PtBr.tr(Control.cameraDiagnosticRunning() ? "Sampling camera..." : "Sample camera (10s)"));
         cameraSample.setEnabled(Control.cameraDiagnosticsReady() && !Control.cameraSamplePending());
         interactionRoot.setVisibility(Control.interactionDiagnosticsConfigured() ? View.VISIBLE : View.GONE);
-        interactionStatus.setText(Control.interactionDiagnosticStatus());
-        interactionCapture.setText(Control.interactionDiagnosticRunning() ? "Stop capture" : "Capture catch/spin (60s)");
+        interactionStatus.setText(dev.pgrazor.PtBr.tr(Control.interactionDiagnosticStatus()));
+        interactionCapture.setText(dev.pgrazor.PtBr.tr(Control.interactionDiagnosticRunning() ? "Stop capture" : "Capture catch/spin (60s)"));
         interactionCapture.setEnabled(Control.interactionDiagnosticRunning() || (Control.interactionDiagnosticsReady() && !Control.interactionTracePending()));
     }
 
@@ -813,28 +813,28 @@ final class SettingsPanel {
     }
 
     private void refreshTransfer() {
-        quickSummaryStatus.setText(Control.quickSummaryStatus());
+        quickSummaryStatus.setText(dev.pgrazor.PtBr.tr(Control.quickSummaryStatus()));
         autoTransferSwitch.setChecked(Control.autoTransferEnabled());
         for(int i=0;i<transferProtection.length;i++)transferProtection[i].setChecked((Control.transferProtect()&(1<<i))!=0);
-        for(int i=0;i<3;i++){pvpKeep[i].setChecked(Control.pvpKeep(i));pvpRank[i].setText("Top "+Control.pvpRank(i));pvpRank[i].setEnabled(Control.pvpKeep(i));}
-        if(transferKeepList!=null){String kept=Control.transferKeepSpecies();int n=kept.isEmpty()?0:kept.split(",").length;transferKeepList.setText(n>0?"Custom keep list ("+n+")":"Custom keep list");}
+        for(int i=0;i<3;i++){pvpKeep[i].setChecked(Control.pvpKeep(i));pvpRank[i].setText(dev.pgrazor.PtBr.tr("Top "+Control.pvpRank(i)));pvpRank[i].setEnabled(Control.pvpKeep(i));}
+        if(transferKeepList!=null){String kept=Control.transferKeepSpecies();int n=kept.isEmpty()?0:kept.split(",").length;transferKeepList.setText(dev.pgrazor.PtBr.tr(n>0?"Custom keep list ("+n+")":"Custom keep list"));}
         if(transferOverlaySwitch!=null){transferOverlaySwitch.setChecked(Control.transferOverlayEnabled());transferOverlaySwitch.setEnabled(Control.autoTransferEnabled());transferOverlaySwitch.setAlpha(1f);}
         if(evolveTransferSwitch!=null)evolveTransferSwitch.setChecked(Control.evolveTransferEnabled());
-        if(evolveTransferStages!=null)evolveTransferStages.setText("Evolve: "+(Control.evolveTransferStages()==2?"all available stages":"once"));
-        if(evolveTransferMode!=null)evolveTransferMode.setText("Applies to: "+(Control.evolveTransferMode()==1?"selected species only":"current transfer rules"));
-        if(evolveTransferList!=null){String sel=Control.evolveTransferSpecies();int n=sel.isEmpty()?0:sel.split(",").length;evolveTransferList.setText(n>0?"Selected species ("+n+")":"Selected species");}
-        transferStatus.setText(Control.transferStatus());
+        if(evolveTransferStages!=null)evolveTransferStages.setText(dev.pgrazor.PtBr.tr("Evolve: "+(Control.evolveTransferStages()==2?"all available stages":"once")));
+        if(evolveTransferMode!=null)evolveTransferMode.setText(dev.pgrazor.PtBr.tr("Applies to: "+(Control.evolveTransferMode()==1?"selected species only":"current transfer rules")));
+        if(evolveTransferList!=null){String sel=Control.evolveTransferSpecies();int n=sel.isEmpty()?0:sel.split(",").length;evolveTransferList.setText(dev.pgrazor.PtBr.tr(n>0?"Selected species ("+n+")":"Selected species"));}
+        transferStatus.setText(dev.pgrazor.PtBr.tr(Control.transferStatus()));
     }
 
     private void refreshVgpStatus() {
-        vgpSwitch.setChecked(Control.vgpOverlay());vgpStatus.setText(Control.vgpStatus());
+        vgpSwitch.setChecked(Control.vgpOverlay());vgpStatus.setText(dev.pgrazor.PtBr.tr(Control.vgpStatus()));
     }
 
     private void refreshIncubation() {
         incubatorSwitch.setChecked(Control.autoIncubate());
         incubatorSwitch.setEnabled(Control.incubatorAvailable());
-        incubatorPriority.setText("Priority: " + (Control.incubateLongest() ? "longest" : "shortest") + " distance");
-        incubatorStatus.setText(Control.autoIncubate() ? Control.incubatorStatus() : "Off");
+        incubatorPriority.setText(dev.pgrazor.PtBr.tr("Priority: " + (Control.incubateLongest() ? "longest" : "shortest") + " distance"));
+        incubatorStatus.setText(dev.pgrazor.PtBr.tr(Control.autoIncubate() ? Control.incubatorStatus() : "Off"));
     }
 
     private void refreshVgpOptions() {
@@ -842,68 +842,68 @@ final class SettingsPanel {
         vgpCooldownStop.setChecked(Control.vgpStopOnCooldown());
     }
 
-    private void refreshBuddy() {buddyRefresh.run();buddyStatus.setText(BuddyEmotionSettings.status());}
+    private void refreshBuddy() {buddyRefresh.run();buddyStatus.setText(dev.pgrazor.PtBr.tr(BuddyEmotionSettings.status()));}
 
     private void refreshGifts() {
-        for(int i=0;i<3;i++)giftChoices[i].setChecked((Control.giftOptions()&(1<<i))!=0);giftStatus.setText(Control.giftStatus());
+        for(int i=0;i<3;i++)giftChoices[i].setChecked((Control.giftOptions()&(1<<i))!=0);giftStatus.setText(dev.pgrazor.PtBr.tr(Control.giftStatus()));
     }
 
     private void refreshBattles() {
-        for(int i=0;i<10;i++)battleChoices[i].setChecked((Control.battleOptions()&(1<<i))!=0);battleStatus.setText(Control.battleStatus());
+        for(int i=0;i<10;i++)battleChoices[i].setChecked((Control.battleOptions()&(1<<i))!=0);battleStatus.setText(dev.pgrazor.PtBr.tr(Control.battleStatus()));
         gymRepeatSwitch.setChecked(Control.gymRepeatEnabled());
     }
 
     private void refreshRocket() {
-        for(int i=0;i<3;i++)rocketChoices[i].setChecked((Control.rocketOptions()&(1<<i))!=0);rocketStatus.setText(Control.rocketStatus());
+        for(int i=0;i<3;i++)rocketChoices[i].setChecked((Control.rocketOptions()&(1<<i))!=0);rocketStatus.setText(dev.pgrazor.PtBr.tr(Control.rocketStatus()));
     }
 
     private void refreshItems() {
-        itemSettings.setText("Auto-transfer items: "+(Control.itemTransferEnabled()?"ON":"OFF"));itemStatus.setText(Control.itemStatus());
+        itemSettings.setText(dev.pgrazor.PtBr.tr("Auto-transfer items: "+(Control.itemTransferEnabled()?"ON":"OFF")));itemStatus.setText(dev.pgrazor.PtBr.tr(Control.itemStatus()));
     }
 
     private void refreshQuickCatch() {
         berrySwitch.setChecked(Control.encounterBerryEnabled());
-        berryPriority.setText("Berry priority: "+BerryPriorityPicker.summary());
+        berryPriority.setText(dev.pgrazor.PtBr.tr("Berry priority: "+BerryPriorityPicker.summary()));
         berryPicker.refresh();
-        quickSpinSwitch.setChecked(Control.quickSpinEnabled());quickSpinStatus.setText(Control.quickSpinStatus());
-        quickSummaryLabel.setText(Control.quickSummaryAutoDismiss() ? "Quick catch" : "Faster catch summary");
+        quickSpinSwitch.setChecked(Control.quickSpinEnabled());quickSpinStatus.setText(dev.pgrazor.PtBr.tr(Control.quickSpinStatus()));
+        quickSummaryLabel.setText(dev.pgrazor.PtBr.tr(Control.quickSummaryAutoDismiss() ? "Quick catch" : "Faster catch summary"));
         quickSummarySwitch.setChecked(Control.quickSummaryEnabled());
         quickSummarySwitch.setEnabled(Control.quickSummaryConfigured());
-        quickBallStatus.setText(Control.quickBallStatus());
+        quickBallStatus.setText(dev.pgrazor.PtBr.tr(Control.quickBallStatus()));
     }
 
     private void refreshLocationOptions() {
         for(int i=0;i<quickMenuChoices.length;i++)quickMenuChoices[i].setChecked(Control.quickMenuVisible(1<<i));
         idleWalkSwitch.setChecked(Control.idleWalking());idleWalkSwitch.setEnabled(Control.desiredEnabled());idleWalkSwitch.setAlpha(Control.desiredEnabled()?1f:.45f);
-        mapTap.setText("Game map tap: "+new String[]{"Do nothing","Walk","Teleport","Walk / double tap teleport"}[Control.mapTapMode()]);
+        mapTap.setText(dev.pgrazor.PtBr.tr("Game map tap: "+new String[]{"Do nothing","Walk","Teleport","Walk / double tap teleport"}[Control.mapTapMode()]));
         mapTap.setEnabled(Control.quickBallConfigured());
-        spawnSwitch.setChecked(Control.spawnBooster());spawnSwitch.setEnabled(Control.spawnAllowed());spawnStatus.setText(Control.spawnStatus());
+        spawnSwitch.setChecked(Control.spawnBooster());spawnSwitch.setEnabled(Control.spawnAllowed());spawnStatus.setText(dev.pgrazor.PtBr.tr(Control.spawnStatus()));
         localTimeSwitch.setChecked(Control.localTimeOverlay());
         encounterCounterSwitch.setChecked(Control.encounterCounter());encounterOverlaySwitch.setChecked(Control.encounterOverlay());
         SettingsUi.enabled(encounterOverlaySwitch,Control.encounterCounter());
-        if(current<0){String home=EncounterCounter.title();if(!home.contentEquals(title.getText()))title.setText(home);}
+        if(current<0){String home=EncounterCounter.title();if(!home.contentEquals(title.getText()))title.setText(dev.pgrazor.PtBr.tr(home));}
     }
 
     // Indexed by IV mode: 0 off, 1 level and attack/defense/stamina, 2 level and percent, 3 all three.
     private static final String[] IV_MODES={"Off","Lv · 15/14/12","Lv · IV","Lv · IV · 15/14/12","Lv · IV · 15/14/12 · PvP"};
 
     private void refreshThrows() {
-        throwGrade.setText("Throw rating: "+new String[]{"OFF","Nice","Great","Excellent"}[Control.throwRating()]);
+        throwGrade.setText(dev.pgrazor.PtBr.tr("Throw rating: "+new String[]{"OFF","Nice","Great","Excellent"}[Control.throwRating()]));
         throwGrade.setEnabled(Control.quickBallConfigured()&&Control.throwVariety()==0);
-        throwVariety.setText("Throw variety: "+Control.THROW_VARIETY_LABELS[Control.throwVariety()]);
+        throwVariety.setText(dev.pgrazor.PtBr.tr("Throw variety: "+Control.THROW_VARIETY_LABELS[Control.throwVariety()]));
         throwVariety.setEnabled(Control.quickBallConfigured());
         curveSwitch.setChecked(Control.throwCurve());curveSwitch.setEnabled(Control.quickBallConfigured());
         alwaysHitSwitch.setChecked(Control.throwAlwaysHit());alwaysHitSwitch.setEnabled(Control.throwAlwaysHitReady() || Control.throwAlwaysHit());
         arSwitch.setChecked(Control.throwAr());arSwitch.setEnabled(Control.throwArReady());
         catchChanceSwitch.setChecked(Control.catchChanceShown());autoBallSwitch.setChecked(Control.autoBall());
-        autoBallTarget.setText("Auto ball target: "+Control.autoBallTarget()+"%");autoBallTarget.setEnabled(Control.autoBall());
+        autoBallTarget.setText(dev.pgrazor.PtBr.tr("Auto ball target: "+Control.autoBallTarget()+"%"));autoBallTarget.setEnabled(Control.autoBall());
         autoThrowSwitch.setChecked(Control.autoThrow());
         autoThrowMapSwitch.setChecked(Control.autoThrowOnMap());
         autoThrowMapSwitch.setEnabled(Control.autoThrow());
-        ivCatchMode.setText("Encounter: "+IV_MODES[Control.ivCatchMode()]);ivCatchMode.setEnabled(Control.quickBallConfigured());
-        ivOwnedMode.setText("Pokémon stats screen: "+IV_MODES[Control.ivOwnedMode()]);ivOwnedMode.setEnabled(Control.quickBallConfigured());
-        storageIv.setText("Pokémon storage list: "+IV_MODES[Control.storageIvMode()]);
+        ivCatchMode.setText(dev.pgrazor.PtBr.tr("Encounter: "+IV_MODES[Control.ivCatchMode()]));ivCatchMode.setEnabled(Control.quickBallConfigured());
+        ivOwnedMode.setText(dev.pgrazor.PtBr.tr("Pokémon stats screen: "+IV_MODES[Control.ivOwnedMode()]));ivOwnedMode.setEnabled(Control.quickBallConfigured());
+        storageIv.setText(dev.pgrazor.PtBr.tr("Pokémon storage list: "+IV_MODES[Control.storageIvMode()]));
         String ivText=Control.ivDisplayStatus(), storageText=Control.storageIvStatus();
-        ivStatus.setText(ivText.isEmpty()?storageText:storageText.isEmpty()?ivText:ivText+"\n"+storageText);
+        ivStatus.setText(dev.pgrazor.PtBr.tr(ivText.isEmpty()?storageText:storageText.isEmpty()?ivText:ivText+"\n"+storageText));
     }
 }

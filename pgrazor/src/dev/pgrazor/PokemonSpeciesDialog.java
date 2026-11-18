@@ -114,24 +114,24 @@ final class PokemonSpeciesDialog {
             int pad = dp(14); body.setPadding(pad, dp(8), pad, 0);
 
             categoryButton = new android.widget.Button(ui); categoryButton.setAllCaps(false);
-            categoryButton.setText("Category: " + PokemonCategories.LABELS[category]);
+            categoryButton.setText(dev.pgrazor.PtBr.tr("Category: " + PokemonCategories.LABELS[category]));
             categoryButton.setOnClickListener(v -> openCategoryPicker());
             body.addView(categoryButton);
             TextView help = new TextView(ui); help.setTextSize(12);
             categoryHelp = help;
-            help.setText(categoryHelp(category, raid));
+            help.setText(dev.pgrazor.PtBr.tr(categoryHelp(category, raid)));
             body.addView(help);
 
-            search = new EditText(ui); search.setHint("Search name or #dex"); search.setSingleLine(true);
+            search = new EditText(ui); search.setHint(dev.pgrazor.PtBr.tr("Search name or #dex")); search.setSingleLine(true);
             search.setInputType(InputType.TYPE_CLASS_TEXT);
             body.addView(search, new LinearLayout.LayoutParams(-1, dp(48)));
             count = new TextView(ui); count.setTextSize(12); count.setPadding(0, dp(4), 0, dp(4)); body.addView(count);
 
             LinearLayout bulk = new LinearLayout(ui); bulk.setOrientation(LinearLayout.HORIZONTAL);
             android.widget.Button selectBtn = new android.widget.Button(ui); selectBtn.setAllCaps(false);
-            selectBtn.setText("Select shown"); selectBtn.setOnClickListener(v -> selectShown());
+            selectBtn.setText(dev.pgrazor.PtBr.tr("Select shown")); selectBtn.setOnClickListener(v -> selectShown());
             android.widget.Button clearBtn = new android.widget.Button(ui); clearBtn.setAllCaps(false);
-            clearBtn.setText("Clear shown"); clearBtn.setOnClickListener(v -> clearShown());
+            clearBtn.setText(dev.pgrazor.PtBr.tr("Clear shown")); clearBtn.setOnClickListener(v -> clearShown());
             bulk.addView(selectBtn, new LinearLayout.LayoutParams(0, -2, 1f));
             bulk.addView(clearBtn, new LinearLayout.LayoutParams(0, -2, 1f));
             body.addView(bulk);
@@ -162,11 +162,11 @@ final class PokemonSpeciesDialog {
             });
 
             dialog = new AlertDialog.Builder(ui)
-                .setTitle(title)
+                .setTitle(dev.pgrazor.PtBr.tr(title))
                 .setView(body)
-                .setPositiveButton("Save", (d, w) -> commit())
-                .setNeutralButton("Clear all", null)   // click overridden below so it does not dismiss
-                .setNegativeButton("Cancel", null)
+                .setPositiveButton(dev.pgrazor.PtBr.tr("Save"), (d, w) -> commit())
+                .setNeutralButton(dev.pgrazor.PtBr.tr("Clear all"), null)   // click overridden below so it does not dismiss
+                .setNegativeButton(dev.pgrazor.PtBr.tr("Cancel"), null)
                 .create();
             DialogLifecycle.bind(activity, dialog, () -> {
                 closed = true;
@@ -222,12 +222,12 @@ final class PokemonSpeciesDialog {
         }
 
         private void openCategoryPicker() {
-            AlertDialog d = new AlertDialog.Builder(ui).setTitle("Browse by category")
-                .setNegativeButton("Cancel", null).create();
+            AlertDialog d = new AlertDialog.Builder(ui).setTitle(dev.pgrazor.PtBr.tr("Browse by category"))
+                .setNegativeButton(dev.pgrazor.PtBr.tr("Cancel"), null).create();
             ChoiceList.attach(d, PokemonCategories.LABELS, index -> {
                 category = index;
-                categoryButton.setText("Category: " + PokemonCategories.LABELS[category]);
-                categoryHelp.setText(categoryHelp(category, raid));
+                categoryButton.setText(dev.pgrazor.PtBr.tr("Category: " + PokemonCategories.LABELS[category]));
+                categoryHelp.setText(dev.pgrazor.PtBr.tr(categoryHelp(category, raid)));
                 refreshShown();
             });
             categoryDialog = d;
@@ -242,7 +242,7 @@ final class PokemonSpeciesDialog {
             String results = shown.isEmpty() ? "No matches" : shown.size() + " shown";
             String picked = selected.isEmpty() && emptyLabel != null ? emptyLabel
                 : selected.size() + "/" + max + " " + noun + " selected";
-            count.setText(results + " \u00b7 " + picked);
+            count.setText(dev.pgrazor.PtBr.tr(results + " \u00b7 " + picked));
         }
 
         private void commit() {
@@ -283,7 +283,7 @@ final class PokemonSpeciesDialog {
                 }
                 int id = shown.get(position);
                 String name = name(id);
-                cb.setText(name.isEmpty() ? ("#" + id) : (name + "  (#" + id + ")"));
+                cb.setText(dev.pgrazor.PtBr.tr(name.isEmpty() ? ("#" + id) : (name + "  (#" + id + ")")));
                 cb.setChecked(selected.contains(id));
                 return cb;
             }

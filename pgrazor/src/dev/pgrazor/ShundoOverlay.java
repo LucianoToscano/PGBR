@@ -34,7 +34,7 @@ public final class ShundoOverlay extends LinearLayout {
         top.setOrientation(HORIZONTAL);
         top.setGravity(Gravity.CENTER_VERTICAL);
         TextView title = new TextView(activity);
-        title.setText("Shundo Sniper");
+        title.setText(dev.pgrazor.PtBr.tr("Shundo Sniper"));
         title.setTextSize(13);
         title.setTypeface(Typeface.DEFAULT_BOLD);
         top.addView(title, new LayoutParams(0, LayoutParams.WRAP_CONTENT, 1f));
@@ -46,7 +46,7 @@ public final class ShundoOverlay extends LinearLayout {
         badgeLayout.rightMargin = SettingsUi.dp(activity, 6);
         top.addView(badge, badgeLayout);
         dark = button(activity, "Dark");
-        dark.setContentDescription("Black out the screen to save battery while the sniper runs. Tap the black screen to bring the game back.");
+        dark.setContentDescription(dev.pgrazor.PtBr.tr("Black out the screen to save battery while the sniper runs. Tap the black screen to bring the game back."));
         dark.setOnClickListener(v -> ShundoSniper.setDark(true));
         LayoutParams darkLayout = new LayoutParams(LayoutParams.WRAP_CONTENT, SettingsUi.dp(activity, 30));
         darkLayout.rightMargin = SettingsUi.dp(activity, 6);
@@ -55,10 +55,10 @@ public final class ShundoOverlay extends LinearLayout {
         toggle.setOnClickListener(v -> { ShundoSniper.toggle(activity); refresh(true); });
         top.addView(toggle, new LayoutParams(LayoutParams.WRAP_CONTENT, SettingsUi.dp(activity, 30)));
         close = new TextView(activity);
-        close.setText("×");
+        close.setText(dev.pgrazor.PtBr.tr("×"));
         close.setTextSize(18);
         close.setGravity(Gravity.CENTER);
-        close.setContentDescription("Stop Shundo Sniper and hide this card");
+        close.setContentDescription(dev.pgrazor.PtBr.tr("Stop Shundo Sniper and hide this card"));
         close.setOnClickListener(v -> { ShundoSniper.closeOverlay(activity); refresh(true); });
         LayoutParams closeLayout = new LayoutParams(SettingsUi.dp(activity, 28), SettingsUi.dp(activity, 30));
         closeLayout.leftMargin = SettingsUi.dp(activity, 2);
@@ -84,7 +84,7 @@ public final class ShundoOverlay extends LinearLayout {
 
     private static Button button(Activity activity, String label) {
         Button b = new Button(activity);
-        b.setText(label);
+        b.setText(dev.pgrazor.PtBr.tr(label));
         b.setAllCaps(false);
         b.setTextSize(12);
         b.setMinWidth(0); b.setMinimumWidth(0); b.setMinHeight(0); b.setMinimumHeight(0);
@@ -102,10 +102,10 @@ public final class ShundoOverlay extends LinearLayout {
         setBackground(SettingsUi.rounded(activity, MapTheme.surface(), SettingsUi.dp(activity, 14)));
         if (lastRunning == null || running != lastRunning) {
             lastRunning = running;
-            badge.setText(running ? "RUNNING" : "STOPPED");
+            badge.setText(dev.pgrazor.PtBr.tr(running ? "RUNNING" : "STOPPED"));
             badge.setTextColor(running ? Color.WHITE : MapTheme.muted());
             badge.setBackground(SettingsUi.rounded(activity, running ? Color.rgb(56, 181, 112) : 0x22808080, SettingsUi.dp(activity, 9)));
-            toggle.setText(running ? "Stop" : "Start");
+            toggle.setText(dev.pgrazor.PtBr.tr(running ? "Stop" : "Start"));
             dark.setVisibility(running ? VISIBLE : GONE);
             toggle.setTextColor(running ? MapTheme.ink() : MapTheme.accent());
             setContentDescription("Shundo Sniper " + (running ? "running" : "stopped") + ". Drag to reposition.");
@@ -114,8 +114,8 @@ public final class ShundoOverlay extends LinearLayout {
         stats.setTextColor(MapTheme.muted());
         dark.setTextColor(MapTheme.ink());
         close.setTextColor(MapTheme.muted());
-        if (!nowStep.equals(lastStep)) { lastStep = nowStep; step.setText(nowStep); }
-        if (!nowStats.equals(lastStats)) { lastStats = nowStats; stats.setText(nowStats); }
+        if (!nowStep.equals(lastStep)) { lastStep = nowStep; step.setText(dev.pgrazor.PtBr.tr(nowStep)); }
+        if (!nowStats.equals(lastStats)) { lastStats = nowStats; stats.setText(dev.pgrazor.PtBr.tr(nowStats)); }
     }
 
     public void close() { toggle.setOnClickListener(null); dark.setOnClickListener(null); close.setOnClickListener(null); setVisibility(GONE); }

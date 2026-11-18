@@ -18,13 +18,13 @@ public final class HotspotsDialog {
         Context ui=MapTheme.wrap(activity);
         LinearLayout root=new LinearLayout(ui);root.setOrientation(LinearLayout.VERTICAL);
         int pad=MapTheme.dp(ui,12);root.setPadding(pad,pad,pad,pad);
-        TextView note=new TextView(ui);note.setText("Choose a hotspot. Listed UTC offsets are supplied references and may vary seasonally.");note.setTextSize(12);root.addView(note);
+        TextView note=new TextView(ui);note.setText(dev.pgrazor.PtBr.tr("Choose a hotspot. Listed UTC offsets are supplied references and may vary seasonally."));note.setTextSize(12);root.addView(note);
         ScrollView scroll=new ScrollView(ui);LinearLayout rows=new LinearLayout(ui);rows.setOrientation(LinearLayout.VERTICAL);scroll.addView(rows);
         root.addView(scroll,new LinearLayout.LayoutParams(-1,0,1));
-        AlertDialog dialog=new AlertDialog.Builder(ui).setTitle("Hotspots").setView(root).setNegativeButton("Close",null).create();
+        AlertDialog dialog=new AlertDialog.Builder(ui).setTitle(dev.pgrazor.PtBr.tr("Hotspots")).setView(root).setNegativeButton(dev.pgrazor.PtBr.tr("Close"),null).create();
         for(Hotspots.Spot spot:Hotspots.ALL) {
             TextView row=new TextView(ui);row.setTextSize(15);row.setPadding(pad,pad,pad,pad);
-            row.setText(spot.name+"\n"+spot.city+", "+spot.country+"  ·  "+spot.utc);
+            row.setText(dev.pgrazor.PtBr.tr(spot.name+"\n"+spot.city+", "+spot.country+"  ·  "+spot.utc));
             row.setClickable(true);row.setFocusable(true);
             row.setOnClickListener(v->{dialog.dismiss();selection.select(spot);});rows.addView(row);
         }
@@ -35,9 +35,9 @@ public final class HotspotsDialog {
 
     public static void showQuick(Activity activity,Action teleport,Action walk) {
         show(activity,spot->{
-            AlertDialog actions=new AlertDialog.Builder(MapTheme.wrap(activity)).setTitle(spot.name)
-                .setMessage(spot.city+", "+spot.country+String.format(Locale.US,"\n%.6f, %.6f",spot.latitude,spot.longitude))
-                .setNegativeButton("Cancel",null).setNeutralButton("Walk",null).setPositiveButton("Teleport",null).create();
+            AlertDialog actions=new AlertDialog.Builder(MapTheme.wrap(activity)).setTitle(dev.pgrazor.PtBr.tr(spot.name))
+                .setMessage(dev.pgrazor.PtBr.tr(spot.city+", "+spot.country+String.format(Locale.US,"\n%.6f, %.6f",spot.latitude,spot.longitude)))
+                .setNegativeButton(dev.pgrazor.PtBr.tr("Cancel"),null).setNeutralButton(dev.pgrazor.PtBr.tr("Walk"),null).setPositiveButton(dev.pgrazor.PtBr.tr("Teleport"),null).create();
             DialogLifecycle.bind(activity,actions,null);
             actions.setOnShowListener(d->{
                 MapTheme.styleButtons(actions);

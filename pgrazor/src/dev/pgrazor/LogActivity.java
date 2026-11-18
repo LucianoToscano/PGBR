@@ -30,33 +30,33 @@ public final class LogActivity extends Activity {
             settingsBackup=new SettingsBackup(this);settingsBackup.show();return;
         }
         LinearLayout layout = new LinearLayout(this); layout.setOrientation(LinearLayout.VERTICAL); layout.setPadding(20,48,20,20);
-        TextView heading = new TextView(this); heading.setText("PGRazor · current run"); heading.setTextSize(22); layout.addView(heading);
+        TextView heading = new TextView(this); heading.setText(dev.pgrazor.PtBr.tr("PGRazor · current run")); heading.setTextSize(22); layout.addView(heading);
         ScrollView scroll = new ScrollView(this); text = new TextView(this); text.setTextIsSelectable(true); scroll.addView(text); layout.addView(scroll,new LinearLayout.LayoutParams(-1,0,1));
-        Button refresh = new Button(this); refresh.setText("Refresh log"); refresh.setOnClickListener(v -> refresh()); layout.addView(refresh);
-        TextView detail=new TextView(this);detail.setText("ZIP includes the log and a single-line settings.json snapshot of feature preferences. Login tokens, account data and saved locations are excluded.");layout.addView(detail);
-        Button bundle=new Button(this);bundle.setText("Save log + settings (.zip)");layout.addView(bundle);
+        Button refresh = new Button(this); refresh.setText(dev.pgrazor.PtBr.tr("Refresh log")); refresh.setOnClickListener(v -> refresh()); layout.addView(refresh);
+        TextView detail=new TextView(this);detail.setText(dev.pgrazor.PtBr.tr("ZIP includes the log and a single-line settings.json snapshot of feature preferences. Login tokens, account data and saved locations are excluded."));layout.addView(detail);
+        Button bundle=new Button(this);bundle.setText(dev.pgrazor.PtBr.tr("Save log + settings (.zip)"));layout.addView(bundle);
         bundle.setOnClickListener(v -> {
             File file=Control.currentLog();if(file==null)return;
             Intent intent=new Intent(Intent.ACTION_CREATE_DOCUMENT).addCategory(Intent.CATEGORY_OPENABLE).setType("application/zip");
             intent.putExtra(Intent.EXTRA_TITLE,file.getName().replaceFirst("\\.txt$","")+".zip");startActivityForResult(intent,41);
         });
-        Button export = new Button(this); export.setText("Save .txt file"); layout.addView(export);
+        Button export = new Button(this); export.setText(dev.pgrazor.PtBr.tr("Save .txt file")); layout.addView(export);
         export.setOnClickListener(v -> {
             File file = Control.currentLog(); if(file == null) return;
             Intent intent = new Intent(Intent.ACTION_CREATE_DOCUMENT).addCategory(Intent.CATEGORY_OPENABLE).setType("text/plain");
             intent.putExtra(Intent.EXTRA_TITLE,file.getName()); startActivityForResult(intent,40);
         });
-        Button back = new Button(this); back.setText("Back to controls"); back.setOnClickListener(v -> finish()); layout.addView(back);
+        Button back = new Button(this); back.setText(dev.pgrazor.PtBr.tr("Back to controls")); back.setOnClickListener(v -> finish()); layout.addView(back);
         setContentView(layout); refresh();
     }
     private void refresh() {
         File file = Control.currentLog();
-        if(file == null) { text.setText("No log file is available. Android logcat may contain startup errors."); return; }
+        if(file == null) { text.setText(dev.pgrazor.PtBr.tr("No log file is available. Android logcat may contain startup errors.")); return; }
         try (RandomAccessFile input = new RandomAccessFile(file,"r")) {
             long start = Math.max(0,input.length()-65536); input.seek(start);
             byte[] bytes = new byte[(int)(input.length()-start)]; input.readFully(bytes);
-            text.setText((start>0 ? "Showing latest 64 KiB. Export saves the current log segment, including retained startup diagnostics.\n" : "") + new String(bytes,StandardCharsets.UTF_8));
-        } catch(IOException error) { text.setText("Cannot read log: "+error.getMessage()); }
+            text.setText(dev.pgrazor.PtBr.tr((start>0 ? "Showing latest 64 KiB. Export saves the current log segment, including retained startup diagnostics.\n" : "") + new String(bytes,StandardCharsets.UTF_8)));
+        } catch(IOException error) { text.setText(dev.pgrazor.PtBr.tr("Cannot read log: "+error.getMessage())); }
     }
     protected void onActivityResult(int request,int result,Intent data) {
         super.onActivityResult(request,result,data);

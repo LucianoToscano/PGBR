@@ -32,15 +32,15 @@ public final class QuickLocationDialogs {
         final double hereLat = Control.engine.latitude, hereLon = Control.engine.longitude;
         LinearLayout here = new LinearLayout(ctx); here.setGravity(android.view.Gravity.CENTER_VERTICAL);
         android.widget.TextView hereText = new android.widget.TextView(ctx);
-        hereText.setText("You are at\n" + CoordinateClipboard.text(hereLat, hereLon)); hereText.setTextSize(14);
+        hereText.setText(dev.pgrazor.PtBr.tr("You are at\n" + CoordinateClipboard.text(hereLat, hereLon))); hereText.setTextSize(14);
         here.addView(hereText, new LinearLayout.LayoutParams(0, -2, 1));
-        android.widget.Button copy = new android.widget.Button(ctx); copy.setText("Copy"); copy.setAllCaps(false); copy.setTextSize(13);
-        copy.setContentDescription("Copy your current coordinates");
+        android.widget.Button copy = new android.widget.Button(ctx); copy.setText(dev.pgrazor.PtBr.tr("Copy")); copy.setAllCaps(false); copy.setTextSize(13);
+        copy.setContentDescription(dev.pgrazor.PtBr.tr("Copy your current coordinates"));
         MapTheme.setButtonBackground(copy);
         copy.setOnClickListener(v -> CoordinateClipboard.copy(activity, hereLat, hereLon, "Your location copied"));
         here.addView(copy, new LinearLayout.LayoutParams(dp(ctx, 76), dp(ctx, 48)));
-        android.widget.Button favorite = new android.widget.Button(ctx); favorite.setText("Favorite"); favorite.setAllCaps(false); favorite.setTextSize(13);
-        favorite.setContentDescription("Save your current location to Favorites");
+        android.widget.Button favorite = new android.widget.Button(ctx); favorite.setText(dev.pgrazor.PtBr.tr("Favorite")); favorite.setAllCaps(false); favorite.setTextSize(13);
+        favorite.setContentDescription(dev.pgrazor.PtBr.tr("Save your current location to Favorites"));
         MapTheme.setButtonBackground(favorite);
         favorite.setOnClickListener(v -> saveFavorite(activity, hereLat, hereLon));
         LinearLayout.LayoutParams favoriteLp = new LinearLayout.LayoutParams(dp(ctx, 92), dp(ctx, 48)); favoriteLp.leftMargin = dp(ctx, 6);
@@ -49,8 +49,8 @@ public final class QuickLocationDialogs {
         form.addView(here, hereLp);
         EditText coordinates = input(ctx, "Latitude, longitude");
         form.addView(coordinates);
-        AlertDialog dialog = new AlertDialog.Builder(ctx).setTitle("Go to coordinates").setView(form)
-            .setNegativeButton("Cancel", null).setNeutralButton("Walk", null).setPositiveButton("Teleport", null).create();
+        AlertDialog dialog = new AlertDialog.Builder(ctx).setTitle(dev.pgrazor.PtBr.tr("Go to coordinates")).setView(form)
+            .setNegativeButton(dev.pgrazor.PtBr.tr("Cancel"), null).setNeutralButton(dev.pgrazor.PtBr.tr("Walk"), null).setPositiveButton(dev.pgrazor.PtBr.tr("Teleport"), null).create();
         dialog.setOnShowListener(d -> {
             dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
                 double[] point;
@@ -84,10 +84,10 @@ public final class QuickLocationDialogs {
             final SavedPlaces.Snapshot snap = snapshot;
             activity.runOnUiThread(() -> {
                 if (activity.isFinishing() || activity.isDestroyed() || !activity.hasWindowFocus()) return;
-                AlertDialog.Builder b = new AlertDialog.Builder(themed(activity)).setTitle("Favorites").setNegativeButton("Close", null);
-                if (snap == null) { b.setMessage("Saved places could not be read."); show(activity,b.create()); return; }
+                AlertDialog.Builder b = new AlertDialog.Builder(themed(activity)).setTitle(dev.pgrazor.PtBr.tr("Favorites")).setNegativeButton(dev.pgrazor.PtBr.tr("Close"), null);
+                if (snap == null) { b.setMessage(dev.pgrazor.PtBr.tr("Saved places could not be read.")); show(activity,b.create()); return; }
                 if (snap.entries.isEmpty()) {
-                    b.setMessage(snap.damaged ? "Saved places could not be read." : "No saved places yet. Add places from the World map.");
+                    b.setMessage(dev.pgrazor.PtBr.tr(snap.damaged ? "Saved places could not be read." : "No saved places yet. Add places from the World map."));
                     show(activity,b.create()); return;
                 }
                 String[] names = new String[snap.entries.size()];
@@ -111,14 +111,14 @@ public final class QuickLocationDialogs {
         Context ctx = themed(activity);
         LinearLayout form = new LinearLayout(ctx); form.setOrientation(LinearLayout.VERTICAL);
         int p = dp(ctx, 22); form.setPadding(p, dp(ctx, 8), p, dp(ctx, 8));
-        android.widget.TextView where = new android.widget.TextView(ctx); where.setText(CoordinateClipboard.text(latitude, longitude)); where.setTextSize(14);
+        android.widget.TextView where = new android.widget.TextView(ctx); where.setText(dev.pgrazor.PtBr.tr(CoordinateClipboard.text(latitude, longitude))); where.setTextSize(14);
         form.addView(where);
         EditText name = input(ctx, "Place name (up to " + SavedPlaces.NAME_LIMIT + " characters)");
         name.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_CAP_SENTENCES);
         name.setFilters(new android.text.InputFilter[]{new android.text.InputFilter.LengthFilter(SavedPlaces.NAME_LIMIT)});
         form.addView(name);
-        AlertDialog dialog = new AlertDialog.Builder(ctx).setTitle("Add to Favorites").setView(form)
-            .setNegativeButton("Cancel", null).setPositiveButton("Save", null).create();
+        AlertDialog dialog = new AlertDialog.Builder(ctx).setTitle(dev.pgrazor.PtBr.tr("Add to Favorites")).setView(form)
+            .setNegativeButton(dev.pgrazor.PtBr.tr("Cancel"), null).setPositiveButton(dev.pgrazor.PtBr.tr("Save"), null).create();
         dialog.setOnShowListener(d -> dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
             final SavedPlaces.Entry entry;
             try { entry = new SavedPlaces.Entry(name.getText().toString(), latitude, longitude); }
@@ -141,7 +141,7 @@ public final class QuickLocationDialogs {
     }
 
     private static EditText input(Context ctx, String hint) {
-        EditText e = new EditText(ctx); e.setSingleLine(true); e.setHint(hint);
+        EditText e = new EditText(ctx); e.setSingleLine(true); e.setHint(dev.pgrazor.PtBr.tr(hint));
         e.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
         return e;
     }

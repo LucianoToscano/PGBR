@@ -32,7 +32,7 @@ public final class AutomationPanel {
         LinearLayout body = new LinearLayout(ui); body.setOrientation(LinearLayout.VERTICAL);
         int pad = MapTheme.dp(ui, 16); body.setPadding(pad, pad, pad, pad);
         TextView intro = new TextView(ui);
-        intro.setText("Each task runs when you start it.");
+        intro.setText(dev.pgrazor.PtBr.tr("Each task runs when you start it."));
         body.addView(intro);
         final AlertDialog[] holder = new AlertDialog[1];
         entry(ui, body, "Shundo Sniper (Experimental)", () -> { if (holder[0] != null) holder[0].dismiss(); ShundoSniper.show(activity); });
@@ -43,8 +43,8 @@ public final class AutomationPanel {
         entry(ui, body, "Send & Open Gifts", () -> { if (holder[0] != null) holder[0].dismiss(); GiftBatchDialog.show(activity); });
         entry(ui, body, "Mass Evolve", () -> { if (holder[0] != null) holder[0].dismiss(); BatchEvolutionSettings.show(activity); });
         ScrollView scroll = new ScrollView(ui); scroll.addView(body);
-        AlertDialog dialog = new AlertDialog.Builder(ui).setTitle("Automation").setView(scroll)
-            .setPositiveButton("Close", null).create();
+        AlertDialog dialog = new AlertDialog.Builder(ui).setTitle(dev.pgrazor.PtBr.tr("Automation")).setView(scroll)
+            .setPositiveButton(dev.pgrazor.PtBr.tr("Close"), null).create();
         holder[0] = dialog;
         DialogLifecycle.bind(activity, dialog, null);
         dialog.setOnShowListener(d -> {
@@ -61,26 +61,26 @@ public final class AutomationPanel {
         LinearLayout body = new LinearLayout(ui); body.setOrientation(LinearLayout.VERTICAL);
         int pad = MapTheme.dp(ui, 16); body.setPadding(pad, pad, pad, pad);
         TextView description = new TextView(ui);
-        description.setText("Activate Daily Adventure Incense in the game first. This steers a straight line at 10.5 km/h "
+        description.setText(dev.pgrazor.PtBr.tr("Activate Daily Adventure Incense in the game first. This steers a straight line at 10.5 km/h "
             + "for up to 15 minutes. Stop any time. "
-            + "Galarian birds open automatically for you to handle. Walking and VGP stop. Move the joystick to resume idle walking.");
+            + "Galarian birds open automatically for you to handle. Walking and VGP stop. Move the joystick to resume idle walking."));
         body.addView(description);
-        TextView headingLabel = new TextView(ui); headingLabel.setText("Heading (0–359°)"); body.addView(headingLabel);
+        TextView headingLabel = new TextView(ui); headingLabel.setText(dev.pgrazor.PtBr.tr("Heading (0–359°)")); body.addView(headingLabel);
         EditText headingInput = new EditText(ui); headingInput.setSingleLine(true);
-        headingInput.setInputType(InputType.TYPE_CLASS_NUMBER); headingInput.setText(defaultHeading());
+        headingInput.setInputType(InputType.TYPE_CLASS_NUMBER); headingInput.setText(dev.pgrazor.PtBr.tr(defaultHeading()));
         body.addView(headingInput);
-        TextView status = new TextView(ui); status.setText(OneShotAutomation.incenseStatus()); body.addView(status);
-        Button start = new Button(ui); start.setAllCaps(false); start.setText("Start session"); body.addView(start);
-        Button stop = new Button(ui); stop.setAllCaps(false); stop.setText("Stop session"); body.addView(stop);
+        TextView status = new TextView(ui); status.setText(dev.pgrazor.PtBr.tr(OneShotAutomation.incenseStatus())); body.addView(status);
+        Button start = new Button(ui); start.setAllCaps(false); start.setText(dev.pgrazor.PtBr.tr("Start session")); body.addView(start);
+        Button stop = new Button(ui); stop.setAllCaps(false); stop.setText(dev.pgrazor.PtBr.tr("Stop session")); body.addView(stop);
         ScrollView scroll = new ScrollView(ui); scroll.addView(body);
-        AlertDialog dialog = new AlertDialog.Builder(ui).setTitle("Daily Incense Session").setView(scroll)
-            .setPositiveButton("Close", null).create();
+        AlertDialog dialog = new AlertDialog.Builder(ui).setTitle(dev.pgrazor.PtBr.tr("Daily Incense Session")).setView(scroll)
+            .setPositiveButton(dev.pgrazor.PtBr.tr("Close"), null).create();
         Handler handler = new Handler(Looper.getMainLooper());
         Runnable update = () -> {
             boolean running = OneShotAutomation.incenseRunning();
             SettingsUi.enabled(headingInput, !running);
             start.setEnabled(!running); stop.setEnabled(running||OneShotAutomation.idleBlocked());
-            status.setText(OneShotAutomation.incenseStatus());
+            status.setText(dev.pgrazor.PtBr.tr(OneShotAutomation.incenseStatus()));
         };
         Runnable refresh = new Runnable() { public void run() { if (dialog.isShowing()) { update.run(); handler.postDelayed(this, 1000); } } };
         start.setOnClickListener(v -> {
@@ -108,31 +108,31 @@ public final class AutomationPanel {
         LinearLayout body = new LinearLayout(ui); body.setOrientation(LinearLayout.VERTICAL);
         int pad = MapTheme.dp(ui, 16); body.setPadding(pad, pad, pad, pad);
         TextView description = new TextView(ui);
-        description.setText("Feeds the gyms you currently defend once, using surplus berries. Nanab is fed down to its "
+        description.setText(dev.pgrazor.PtBr.tr("Feeds the gyms you currently defend once, using surplus berries. Nanab is fed down to its "
             + "reserve, then surplus Razz. Pinap is optional and off by default. A single batch runs now — there is no "
             + "recurring schedule. The game's own server limits still apply, so some feeds may be declined. No dust or "
-            + "candy payout is promised.");
+            + "candy payout is promised."));
         body.addView(description);
         EditText nanab = numberField(ui, "0");
-        TextView nanabLabel = new TextView(ui); nanabLabel.setText("Nanab Berry reserve (0–1000)"); body.addView(nanabLabel); body.addView(nanab);
+        TextView nanabLabel = new TextView(ui); nanabLabel.setText(dev.pgrazor.PtBr.tr("Nanab Berry reserve (0–1000)")); body.addView(nanabLabel); body.addView(nanab);
         EditText razz = numberField(ui, "20");
-        TextView razzLabel = new TextView(ui); razzLabel.setText("Razz Berry reserve (0–1000)"); body.addView(razzLabel); body.addView(razz);
-        CheckBox pinap = new CheckBox(ui); pinap.setText("Also feed surplus Pinap berries"); pinap.setChecked(false); body.addView(pinap);
+        TextView razzLabel = new TextView(ui); razzLabel.setText(dev.pgrazor.PtBr.tr("Razz Berry reserve (0–1000)")); body.addView(razzLabel); body.addView(razz);
+        CheckBox pinap = new CheckBox(ui); pinap.setText(dev.pgrazor.PtBr.tr("Also feed surplus Pinap berries")); pinap.setChecked(false); body.addView(pinap);
         EditText pinapReserve = numberField(ui, "50");
-        TextView pinapLabel = new TextView(ui); pinapLabel.setText("Pinap Berry reserve (0–1000)"); body.addView(pinapLabel); body.addView(pinapReserve);
-        TextView status = new TextView(ui); status.setText(OneShotAutomation.remoteFeedStatus()); body.addView(status);
-        Button start = new Button(ui); start.setAllCaps(false); start.setText("Start feed"); body.addView(start);
-        Button stop = new Button(ui); stop.setAllCaps(false); stop.setText("Stop feed"); body.addView(stop);
+        TextView pinapLabel = new TextView(ui); pinapLabel.setText(dev.pgrazor.PtBr.tr("Pinap Berry reserve (0–1000)")); body.addView(pinapLabel); body.addView(pinapReserve);
+        TextView status = new TextView(ui); status.setText(dev.pgrazor.PtBr.tr(OneShotAutomation.remoteFeedStatus())); body.addView(status);
+        Button start = new Button(ui); start.setAllCaps(false); start.setText(dev.pgrazor.PtBr.tr("Start feed")); body.addView(start);
+        Button stop = new Button(ui); stop.setAllCaps(false); stop.setText(dev.pgrazor.PtBr.tr("Stop feed")); body.addView(stop);
         ScrollView scroll = new ScrollView(ui); scroll.addView(body);
-        AlertDialog dialog = new AlertDialog.Builder(ui).setTitle("Remote Gym Feeding").setView(scroll)
-            .setPositiveButton("Close", null).create();
+        AlertDialog dialog = new AlertDialog.Builder(ui).setTitle(dev.pgrazor.PtBr.tr("Remote Gym Feeding")).setView(scroll)
+            .setPositiveButton(dev.pgrazor.PtBr.tr("Close"), null).create();
         Handler handler = new Handler(Looper.getMainLooper());
         Runnable update = () -> {
             boolean running = OneShotAutomation.remoteFeedRunning();
             SettingsUi.enabled(nanab, !running); SettingsUi.enabled(razz, !running); pinap.setEnabled(!running);
             SettingsUi.enabled(pinapReserve, !running && pinap.isChecked());
             start.setEnabled(!running); stop.setEnabled(running);
-            status.setText(OneShotAutomation.remoteFeedStatus());
+            status.setText(dev.pgrazor.PtBr.tr(OneShotAutomation.remoteFeedStatus()));
         };
         Runnable refresh = new Runnable() { public void run() { if (dialog.isShowing()) { update.run(); handler.postDelayed(this, 1000); } } };
         pinap.setOnCheckedChangeListener((v, on) -> update.run());
@@ -165,13 +165,13 @@ public final class AutomationPanel {
     }
 
     private static Button entry(Context ui, LinearLayout body, String label, Runnable action) {
-        Button b = new Button(ui); b.setAllCaps(false); b.setText(label); body.addView(b);
+        Button b = new Button(ui); b.setAllCaps(false); b.setText(dev.pgrazor.PtBr.tr(label)); body.addView(b);
         b.setOnClickListener(v -> action.run()); return b;
     }
 
     private static EditText numberField(Context ui, String initial) {
         EditText field = new EditText(ui); field.setSingleLine(true);
-        field.setInputType(InputType.TYPE_CLASS_NUMBER); field.setText(initial); return field;
+        field.setInputType(InputType.TYPE_CLASS_NUMBER); field.setText(dev.pgrazor.PtBr.tr(initial)); return field;
     }
 
     /** The current engine bearing is the sensible default, falling back to due north if non-finite. */

@@ -135,22 +135,22 @@ public final class BatchEvolutionSettings {
         LinearLayout body=new LinearLayout(ui);body.setOrientation(LinearLayout.VERTICAL);
         int pad=MapTheme.dp(ui,16);body.setPadding(pad,pad,pad,pad);
         TextView explanation=new TextView(ui);
-        explanation.setText("Choose a tag to preview eligible Pokemon. Each is evolved once, without the animation. Favorites, your buddy, deployed Pokemon, eggs, Shadow and purified Pokemon, and evolutions needing a branch choice or special condition are skipped. Candy and items are checked before each evolution. Start your Lucky Egg yourself if wanted.");
+        explanation.setText(dev.pgrazor.PtBr.tr("Choose a tag to preview eligible Pokemon. Each is evolved once, without the animation. Favorites, your buddy, deployed Pokemon, eggs, Shadow and purified Pokemon, and evolutions needing a branch choice or special condition are skipped. Candy and items are checked before each evolution. Start your Lucky Egg yourself if wanted."));
         body.addView(explanation);
-        EditText tagInput=new EditText(ui);tagInput.setSingleLine(true);tagInput.setHint("Tag name (for example, Evolve)");
-        synchronized(LOCK) {tagInput.setText(tag);}
+        EditText tagInput=new EditText(ui);tagInput.setSingleLine(true);tagInput.setHint(dev.pgrazor.PtBr.tr("Tag name (for example, Evolve)"));
+        synchronized(LOCK) {tagInput.setText(dev.pgrazor.PtBr.tr(tag));}
         body.addView(tagInput);
         CheckBox remove=new CheckBox(ui);
-        remove.setText("Remove this tag after each confirmed evolution");
+        remove.setText(dev.pgrazor.PtBr.tr("Remove this tag after each confirmed evolution"));
         synchronized(LOCK) {remove.setChecked(removeTag);}
         body.addView(remove);
         TextView status=new TextView(ui);body.addView(status);
-        Button preview=new Button(ui);preview.setAllCaps(false);preview.setText("Preview batch");body.addView(preview);
-        Button start=new Button(ui);start.setAllCaps(false);start.setText("Start batch");body.addView(start);
-        Button stop=new Button(ui);stop.setAllCaps(false);stop.setText("Stop (current evolution may finish)");body.addView(stop);
+        Button preview=new Button(ui);preview.setAllCaps(false);preview.setText(dev.pgrazor.PtBr.tr("Preview batch"));body.addView(preview);
+        Button start=new Button(ui);start.setAllCaps(false);start.setText(dev.pgrazor.PtBr.tr("Start batch"));body.addView(start);
+        Button stop=new Button(ui);stop.setAllCaps(false);stop.setText(dev.pgrazor.PtBr.tr("Stop (current evolution may finish)"));body.addView(stop);
         ScrollView scroll=new ScrollView(ui);scroll.addView(body);
-        AlertDialog dialog=new AlertDialog.Builder(ui).setTitle("Batch evolution").setView(scroll)
-            .setPositiveButton("Close",null).create();
+        AlertDialog dialog=new AlertDialog.Builder(ui).setTitle(dev.pgrazor.PtBr.tr("Batch evolution")).setView(scroll)
+            .setPositiveButton(dev.pgrazor.PtBr.tr("Close"),null).create();
         Handler handler=new Handler(Looper.getMainLooper());
         Runnable refresh=new Runnable(){public void run(){
             if(!dialog.isShowing())return;
@@ -159,7 +159,7 @@ public final class BatchEvolutionSettings {
                 tagInput.setEnabled(!busy);remove.setEnabled(!busy);preview.setEnabled(!busy);
                 start.setEnabled(mode==1&&"ready".equals(phase)&&total>0);
                 stop.setEnabled(mode!=0);
-                status.setText(summary());
+                status.setText(dev.pgrazor.PtBr.tr(summary()));
             }
             handler.postDelayed(this,1000);
         }};
@@ -202,11 +202,11 @@ public final class BatchEvolutionSettings {
             String cost=(candy>=0&&items>=0)
                 ?"Up to "+candy+" candy and "+items+" evolution items may be consumed. Each cost is checked before evolving."
                 :"Candy and evolution item totals are unavailable; each cost is checked before evolving.";
-            AlertDialog confirm=new AlertDialog.Builder(MapTheme.wrap(activity)).setTitle("Start batch evolution?")
-                .setMessage(count+" eligible Pokemon will be evolved once. "+cost
+            AlertDialog confirm=new AlertDialog.Builder(MapTheme.wrap(activity)).setTitle(dev.pgrazor.PtBr.tr("Start batch evolution?"))
+                .setMessage(dev.pgrazor.PtBr.tr(count+" eligible Pokemon will be evolved once. "+cost
                     +(removeAfter?" The selected tag will be removed after each confirmed evolution.":"")
-                    +" No Lucky Egg will be used automatically.")
-                .setNegativeButton("Cancel",null).setPositiveButton("Start batch",(d,which)->{
+                    +" No Lucky Egg will be used automatically."))
+                .setNegativeButton(dev.pgrazor.PtBr.tr("Cancel"),null).setPositiveButton(dev.pgrazor.PtBr.tr("Start batch"),(d,which)->{
                     synchronized(LOCK) {
                         if(token==expectedToken&&mode==1&&"ready".equals(phase)&&total>0) {
                             mode=2;phase="running";message="Starting batch...";
@@ -239,7 +239,7 @@ public final class BatchEvolutionSettings {
             boolean busy="scanning".equals(phase)||"running".equals(phase)||"stopping".equals(phase);
             tagInput.setEnabled(!busy);remove.setEnabled(!busy);preview.setEnabled(!busy);
             start.setEnabled(mode==1&&"ready".equals(phase)&&total>0);
-            stop.setEnabled(mode!=0);status.setText(summary());
+            stop.setEnabled(mode!=0);status.setText(dev.pgrazor.PtBr.tr(summary()));
         }
     }
     private static String summary() {

@@ -87,11 +87,11 @@ public final class LiveFeedFilterDialog {
             populate();
 
             dialog = new AlertDialog.Builder(ui)
-                .setTitle("Filters")
+                .setTitle(dev.pgrazor.PtBr.tr("Filters"))
                 .setView(scroll)
-                .setPositiveButton("Apply", null)   // overridden so invalid input does not dismiss
-                .setNeutralButton("Reset", null)     // overridden so Reset does not dismiss
-                .setNegativeButton("Cancel", null)   // default dismiss: no change applied
+                .setPositiveButton(dev.pgrazor.PtBr.tr("Apply"), null)   // overridden so invalid input does not dismiss
+                .setNeutralButton(dev.pgrazor.PtBr.tr("Reset"), null)     // overridden so Reset does not dismiss
+                .setNegativeButton(dev.pgrazor.PtBr.tr("Cancel"), null)   // default dismiss: no change applied
                 .create();
             if (sink != null) sink.track(dialog);
             dialog.setOnShowListener(d -> {
@@ -216,7 +216,7 @@ public final class LiveFeedFilterDialog {
             if (speciesButton == null) return;
             JSONArray list = working.optJSONArray("species_filter_list");
             int n = list == null ? 0 : list.length();
-            speciesButton.setText(n == 0 ? "Choose species" : "Choose species (" + n + ")");
+            speciesButton.setText(dev.pgrazor.PtBr.tr(n == 0 ? "Choose species" : "Choose species (" + n + ")"));
         }
 
         // ------------------------------------------------------------------ apply / reset
@@ -224,7 +224,7 @@ public final class LiveFeedFilterDialog {
         private void onApplyClicked() {
             collectNumbers();
             if (onApply != null && onApply.apply(working)) { dialog.dismiss(); return; }
-            status.setText("Some values look off (e.g. min above max). Please review and try again.");
+            status.setText(dev.pgrazor.PtBr.tr("Some values look off (e.g. min above max). Please review and try again."));
         }
 
         private void onResetClicked() {
@@ -234,7 +234,7 @@ public final class LiveFeedFilterDialog {
             } catch (JSONException e) { toast("Couldn't reset the filters."); return; }
             copyAll(defaults, working); // same 21-key set; overwrite in place
             populate();
-            status.setText("Filters reset to defaults. Apply to use them.");
+            status.setText(dev.pgrazor.PtBr.tr("Filters reset to defaults. Apply to use them."));
         }
 
         /** Reads every numeric field into the working copy, clamped to its allowed range. */
@@ -248,7 +248,7 @@ public final class LiveFeedFilterDialog {
                 }
                 value = Math.max(f.min, Math.min(f.max, value));
                 put(f.key, value);
-                f.view.setText(Integer.toString(value));
+                f.view.setText(dev.pgrazor.PtBr.tr(Integer.toString(value)));
             }
         }
 
@@ -305,7 +305,7 @@ public final class LiveFeedFilterDialog {
             body.setPadding(pad, dp(8), pad, 0);
 
             final EditText name = new EditText(ui);
-            name.setHint("Name this preset");
+            name.setHint(dev.pgrazor.PtBr.tr("Name this preset"));
             name.setSingleLine(true);
             body.addView(name, new LinearLayout.LayoutParams(-1, dp(48)));
             Button save = button("Save current filters");
@@ -319,9 +319,9 @@ public final class LiveFeedFilterDialog {
             body.addView(sv, new LinearLayout.LayoutParams(-1, 0, 1));
 
             AlertDialog manager = new AlertDialog.Builder(ui)
-                .setTitle("Filter presets")
+                .setTitle(dev.pgrazor.PtBr.tr("Filter presets"))
                 .setView(body)
-                .setNegativeButton("Close", null)
+                .setNegativeButton(dev.pgrazor.PtBr.tr("Close"), null)
                 .create();
             if (sink != null) sink.track(manager);
 
@@ -344,7 +344,7 @@ public final class LiveFeedFilterDialog {
                         if (p != null) {
                             try { working.put("pvp_only", false); } catch (JSONException ignored) { } // older presets
                             copyAll(p, working); populate();
-                            status.setText("Preset \"" + n + "\" loaded. Apply to use it.");
+                            status.setText(dev.pgrazor.PtBr.tr("Preset \"" + n + "\" loaded. Apply to use it."));
                         }
                         manager.dismiss();
                     });
@@ -368,7 +368,7 @@ public final class LiveFeedFilterDialog {
                     writePresets(presets);
                     if (!names.contains(n)) names.add(n);
                     java.util.Collections.sort(names);
-                    name.setText("");
+                    name.setText(dev.pgrazor.PtBr.tr(""));
                     rebuild[0].run();
                     toast("Preset saved.");
                 } catch (JSONException e) { toast("Couldn't save that preset."); }
@@ -400,7 +400,7 @@ public final class LiveFeedFilterDialog {
             field.setInputType(InputType.TYPE_CLASS_NUMBER);
             field.setSingleLine(true);
             field.setGravity(Gravity.CENTER);
-            field.setText(Integer.toString(clamp(working.optInt(key, min), min, max)));
+            field.setText(dev.pgrazor.PtBr.tr(Integer.toString(clamp(working.optInt(key, min), min, max))));
             row.addView(field, new LinearLayout.LayoutParams(dp(84), dp(48)));
             numbers.add(new NumField(key, field, min, max));
             return row;
@@ -408,7 +408,7 @@ public final class LiveFeedFilterDialog {
 
         private CheckBox checkbox(String labelText, String key) {
             CheckBox cb = new CheckBox(ui);
-            cb.setText(labelText);
+            cb.setText(dev.pgrazor.PtBr.tr(labelText));
             cb.setTextSize(14);
             cb.setPadding(dp(4), dp(6), dp(4), dp(6));
             cb.setChecked(working.optBoolean(key, false));
@@ -438,10 +438,10 @@ public final class LiveFeedFilterDialog {
         }
 
         private int dp(float v) { return Math.round(v * activity.getResources().getDisplayMetrics().density); }
-        private TextView label(String text, int size) { TextView v = new TextView(ui); v.setText(text); v.setTextSize(size); return v; }
-        private Button button(String text) { Button b = new Button(ui); b.setText(text); b.setAllCaps(false); b.setTextSize(13.5f); return b; }
+        private TextView label(String text, int size) { TextView v = new TextView(ui); v.setText(dev.pgrazor.PtBr.tr(text)); v.setTextSize(size); return v; }
+        private Button button(String text) { Button b = new Button(ui); b.setText(dev.pgrazor.PtBr.tr(text)); b.setAllCaps(false); b.setTextSize(13.5f); return b; }
         private Button segButton(String text) {
-            Button b = new Button(ui); b.setText(text); b.setAllCaps(false); b.setTextSize(13);
+            Button b = new Button(ui); b.setText(dev.pgrazor.PtBr.tr(text)); b.setAllCaps(false); b.setTextSize(13);
             b.setPadding(dp(10), 0, dp(10), 0); return b;
         }
         private void toast(String message) { Toast.makeText(activity, message, Toast.LENGTH_SHORT).show(); }

@@ -83,14 +83,14 @@ public final class WorldMapDialog {
         selectionRow.addView(saved, new LinearLayout.LayoutParams(0, dp(activity, 48), 1));
         Button hotspots = button(ui, "Hotspots");
         selectionRow.addView(hotspots, new LinearLayout.LayoutParams(0, dp(activity, 48), 1));
-        Button routeMode = button(ui, "Route"); routeMode.setContentDescription("Open route builder");
+        Button routeMode = button(ui, "Route"); routeMode.setContentDescription(dev.pgrazor.PtBr.tr("Open route builder"));
         routeMode.setVisibility(route == null ? View.GONE : View.VISIBLE);
         selectionRow.addView(routeMode,new LinearLayout.LayoutParams(dp(activity, 64),dp(activity, 48)));
         layout.addView(selectionRow);
         TextView attribution = label(ui, "", 12);
         attribution.setGravity(Gravity.RIGHT);
         attribution.setPadding(0, 0, 0, dp(activity, 6));
-        attribution.setText(Html.fromHtml("© <a href=\"https://www.openstreetmap.org/copyright\">OpenStreetMap contributors</a>", Html.FROM_HTML_MODE_LEGACY));
+        attribution.setText(dev.pgrazor.PtBr.tr(Html.fromHtml("© <a href=\"https://www.openstreetmap.org/copyright\">OpenStreetMap contributors</a>", Html.FROM_HTML_MODE_LEGACY)));
         attribution.setMovementMethod(LinkMovementMethod.getInstance());
         layout.addView(attribution);
         TextView status = label(ui, "Loading map…", 12);
@@ -112,7 +112,7 @@ public final class WorldMapDialog {
         SharedPreferences preferences=AccountProfiles.preferences(activity,"pgrazor-map");
         String[] names={"Stops","Gyms","Raids"};
         for(int i=0;i<names.length;i++){
-            final int bit=1<<i;CheckBox toggle=new CheckBox(ui);toggle.setText(names[i]);toggle.setTextSize(13);
+            final int bit=1<<i;CheckBox toggle=new CheckBox(ui);toggle.setText(dev.pgrazor.PtBr.tr(names[i]));toggle.setTextSize(13);
             boolean enabled=preferences.getBoolean(names[i],false);if(enabled)map.setPoiLayer(bit,true);toggle.setChecked(enabled);
             final String key=names[i];toggle.setOnCheckedChangeListener((b,on)->{map.setPoiLayer(bit,on);preferences.edit().putBoolean(key,on).apply();map.refreshPois();});
             layers.addView(toggle,new LinearLayout.LayoutParams(0,-2,1));
@@ -125,21 +125,21 @@ public final class WorldMapDialog {
         layout.map = map;
         // The map fills the space left by the controls (see ResponsiveLayout); this is only a baseline height.
         layout.addView(map, new LinearLayout.LayoutParams(-1, dp(activity, 240)));
-        CheckBox loop = new CheckBox(ui); loop.setText("Loop route"); loop.setTextSize(13);
-        loop.setContentDescription("Repeat the route from the first stop after the last"); loop.setVisibility(View.GONE);
+        CheckBox loop = new CheckBox(ui); loop.setText(dev.pgrazor.PtBr.tr("Loop route")); loop.setTextSize(13);
+        loop.setContentDescription(dev.pgrazor.PtBr.tr("Repeat the route from the first stop after the last")); loop.setVisibility(View.GONE);
         LinearLayout routeTools = new LinearLayout(ui);
         routeTools.setGravity(Gravity.CENTER_VERTICAL);
         routeTools.addView(loop,new LinearLayout.LayoutParams(0,dp(activity,48),1));
         Button clearRoute=button(ui,"Clear route");
-        clearRoute.setContentDescription("Clear all stops from the route draft");
+        clearRoute.setContentDescription(dev.pgrazor.PtBr.tr("Clear all stops from the route draft"));
         clearRoute.setVisibility(View.GONE);
         routeTools.addView(clearRoute,new LinearLayout.LayoutParams(dp(activity,112),dp(activity,48)));
         layout.addView(routeTools);
         // Each centers the map on its location and copies the coordinates.
         LinearLayout copyRow = new LinearLayout(ui);
         Button current=button(ui,"Copy my location"), pin=button(ui,"Copy pin location");
-        current.setContentDescription("Center the map on your current in-game location and copy its coordinates");
-        pin.setContentDescription("Center the map on the red pin and copy its coordinates");
+        current.setContentDescription(dev.pgrazor.PtBr.tr("Center the map on your current in-game location and copy its coordinates"));
+        pin.setContentDescription(dev.pgrazor.PtBr.tr("Center the map on the red pin and copy its coordinates"));
         current.setOnClickListener(v -> {
             map.centerCurrentLocation();
             CoordinateClipboard.copy(activity, Control.engine.latitude, Control.engine.longitude, "Your location copied");
@@ -152,7 +152,7 @@ public final class WorldMapDialog {
         Button globe = button(ui, "World"), center = button(ui, "Selected"), retry = button(ui, "Retry");
         // The GPX menu button only exists when the route builder is available, and stays hidden until route mode.
         Button gpx = route == null ? null : button(ui, "GPX");
-        if (gpx != null) { gpx.setContentDescription("Save, import, or export a GPX route"); gpx.setVisibility(View.GONE); }
+        if (gpx != null) { gpx.setContentDescription(dev.pgrazor.PtBr.tr("Save, import, or export a GPX route")); gpx.setVisibility(View.GONE); }
         Button[] row = gpx == null ? new Button[] {globe, center, retry} : new Button[] {globe, center, retry, gpx};
         for (Button b : row) actions.addView(b, new LinearLayout.LayoutParams(0, dp(activity, 48), 1));
         globe.setOnClickListener(v -> map.worldView());
@@ -161,9 +161,9 @@ public final class WorldMapDialog {
         layout.addView(status);
         RouteUi routes = route == null ? null : new RouteUi(activity,ui,map,routeMode,hint,globe,center,retry,gpx,clearRoute,loop,route,walk != null);
         if(routes!=null)routes.reopen=()->WorldMapDialog.show(activity,Control.engine.latitude,Control.engine.longitude,listener,walk,route);
-        AlertDialog.Builder builder = new AlertDialog.Builder(ui).setTitle("World map").setView(layout)
-            .setNegativeButton("Cancel", null).setPositiveButton("Teleport", null);
-        if (walk != null) builder.setNeutralButton("Walk here", null);
+        AlertDialog.Builder builder = new AlertDialog.Builder(ui).setTitle(dev.pgrazor.PtBr.tr("World map")).setView(layout)
+            .setNegativeButton(dev.pgrazor.PtBr.tr("Cancel"), null).setPositiveButton(dev.pgrazor.PtBr.tr("Teleport"), null);
+        if (walk != null) builder.setNeutralButton(dev.pgrazor.PtBr.tr("Walk here"), null);
         AlertDialog dialog = builder.create();
         map.poiLayer.setDestinationActions(walk == null ? null : (lat, lon) -> {
             if (!walk.onDestination(lat, lon)) return false;
@@ -197,8 +197,8 @@ public final class WorldMapDialog {
     }
 
     private static int dp(Context c, float value) { return Math.round(value * c.getResources().getDisplayMetrics().density); }
-    private static TextView label(Context c, String text, int size) { TextView v = new TextView(c); v.setText(text); v.setTextSize(size); return v; }
-    private static Button button(Context c, String text) { Button b = new Button(c); b.setText(text); b.setAllCaps(false); b.setTextSize(13); b.setPadding(0, 0, 0, 0); return b; }
+    private static TextView label(Context c, String text, int size) { TextView v = new TextView(c); v.setText(dev.pgrazor.PtBr.tr(text)); v.setTextSize(size); return v; }
+    private static Button button(Context c, String text) { Button b = new Button(c); b.setText(dev.pgrazor.PtBr.tr(text)); b.setAllCaps(false); b.setTextSize(13); b.setPadding(0, 0, 0, 0); return b; }
 
     /** Route mode reuses the map toolbar and dialog action rather than consuming another row. */
     private static final class RouteUi {
@@ -236,23 +236,23 @@ public final class WorldMapDialog {
         void refresh() {
             if(draft.isEmpty())imported=false;
             boolean big=draft.size()>LIMIT;
-            mode.setText(editing ? "Map" : "Route");
-            mode.setContentDescription(editing ? "Leave route builder without starting" : "Open route builder");
-            hint.setText(!editing ? "Blue dot: you. Red pin: destination. Tap to select; drag to pan."
+            mode.setText(dev.pgrazor.PtBr.tr(editing ? "Map" : "Route"));
+            mode.setContentDescription(dev.pgrazor.PtBr.tr(editing ? "Leave route builder without starting" : "Open route builder"));
+            hint.setText(dev.pgrazor.PtBr.tr(!editing ? "Blue dot: you. Red pin: destination. Tap to select; drag to pan."
                 : big ? "GPX route: "+draft.size()+" stops. Tap Start to walk it in order."
-                : "Route: "+draft.size()+"/"+LIMIT+" stops. Tap map, then Add stop.");
-            add.setText(editing ? "Add stop" : "World"); add.setContentDescription(editing ? "Add selected destination as next route stop" : "Show world map");
-            undo.setText(editing ? "Undo" : "Selected"); undo.setContentDescription(editing ? "Undo last route stop" : "Center selected destination");
-            stops.setText(editing ? "Stops ("+draft.size()+")" : "Retry"); stops.setContentDescription(editing ? "View ordered route stops and clear route" : "Retry map tiles");
-            gpx.setText("GPX"); gpx.setVisibility(editing ? View.VISIBLE : View.GONE);
+                : "Route: "+draft.size()+"/"+LIMIT+" stops. Tap map, then Add stop."));
+            add.setText(dev.pgrazor.PtBr.tr(editing ? "Add stop" : "World")); add.setContentDescription(dev.pgrazor.PtBr.tr(editing ? "Add selected destination as next route stop" : "Show world map"));
+            undo.setText(dev.pgrazor.PtBr.tr(editing ? "Undo" : "Selected")); undo.setContentDescription(dev.pgrazor.PtBr.tr(editing ? "Undo last route stop" : "Center selected destination"));
+            stops.setText(dev.pgrazor.PtBr.tr(editing ? "Stops ("+draft.size()+")" : "Retry")); stops.setContentDescription(dev.pgrazor.PtBr.tr(editing ? "View ordered route stops and clear route" : "Retry map tiles"));
+            gpx.setText(dev.pgrazor.PtBr.tr("GPX")); gpx.setVisibility(editing ? View.VISIBLE : View.GONE);
             clearRoute.setVisibility(editing ? View.VISIBLE : View.GONE);clearRoute.setEnabled(!draft.isEmpty());
             add.setEnabled(!editing || draft.size()<LIMIT);undo.setEnabled(!editing || !draft.isEmpty());
             loop.setVisibility(editing ? View.VISIBLE : View.GONE); // route-only toggle; defaults to stopping at the last stop
             if(parent!=null) {
-                parent.setTitle(editing ? "Build route" : "World map");
+                parent.setTitle(dev.pgrazor.PtBr.tr(editing ? "Build route" : "World map"));
                 Button action=parent.getButton(AlertDialog.BUTTON_POSITIVE);
-                action.setText(editing ? "Start route" : "Teleport");
-                action.setContentDescription(editing ? "Start route in numbered stop order" : "Teleport to selected destination");
+                action.setText(dev.pgrazor.PtBr.tr(editing ? "Start route" : "Teleport"));
+                action.setContentDescription(dev.pgrazor.PtBr.tr(editing ? "Start route in numbered stop order" : "Teleport to selected destination"));
                 action.setEnabled(!editing || (draft.size()>=(imported?1:2) && draft.size()<=MAX));
                 Button walk=parent.getButton(AlertDialog.BUTTON_NEUTRAL);
                 if(walk!=null && hasWalk)walk.setVisibility(editing ? View.GONE : View.VISIBLE);
@@ -270,9 +270,9 @@ public final class WorldMapDialog {
         void undo() {if(!draft.isEmpty())draft.remove(draft.size()-1);refresh();}
         void clearDraft() {draft.clear();imported=false;routeName="Route";WorldMapDialog.pendingRoute=null;refresh();}
         void showStops() {
-            AlertDialog.Builder builder=new AlertDialog.Builder(ui).setTitle("Route stops ("+draft.size()+(draft.size()>LIMIT?"":"/"+LIMIT)+")")
-                .setNegativeButton("Close",null).setPositiveButton("Clear route",null);
-            if(draft.isEmpty())builder.setMessage("Select a destination on the map and tap Add stop. Add at least two stops before starting.");
+            AlertDialog.Builder builder=new AlertDialog.Builder(ui).setTitle(dev.pgrazor.PtBr.tr("Route stops ("+draft.size()+(draft.size()>LIMIT?"":"/"+LIMIT)+")"))
+                .setNegativeButton(dev.pgrazor.PtBr.tr("Close"),null).setPositiveButton(dev.pgrazor.PtBr.tr("Clear route"),null);
+            if(draft.isEmpty())builder.setMessage(dev.pgrazor.PtBr.tr("Select a destination on the map and tap Add stop. Add at least two stops before starting."));
             AlertDialog dialog=builder.create();dialogs.add(dialog);
             if(!draft.isEmpty()){
                 String[] rows=new String[draft.size()];
@@ -357,10 +357,10 @@ public final class WorldMapDialog {
             });
         }
         private void showLibrary(SavedPlaces.Snapshot snapshot) {
-            AlertDialog.Builder builder = new AlertDialog.Builder(ui).setTitle("Saved places (" + snapshot.entries.size() + "/50)")
-                .setNegativeButton("Close", null).setPositiveButton("Save selected", null);
+            AlertDialog.Builder builder = new AlertDialog.Builder(ui).setTitle(dev.pgrazor.PtBr.tr("Saved places (" + snapshot.entries.size() + "/50)"))
+                .setNegativeButton(dev.pgrazor.PtBr.tr("Close"), null).setPositiveButton(dev.pgrazor.PtBr.tr("Save selected"), null);
             final AlertDialog[] holder = new AlertDialog[1];
-            if (snapshot.entries.isEmpty()) builder.setMessage(snapshot.damaged ? "Saved places could not be read. You can save new destinations here." : "No saved places yet. Save the selected map destination to find it again later.");
+            if (snapshot.entries.isEmpty()) builder.setMessage(dev.pgrazor.PtBr.tr(snapshot.damaged ? "Saved places could not be read. You can save new destinations here." : "No saved places yet. Save the selected map destination to find it again later."));
             else {
                 String[] names = new String[snapshot.entries.size()];
                 for (int i = 0; i < names.length; i++) {
@@ -379,12 +379,12 @@ public final class WorldMapDialog {
             LinearLayout form = new LinearLayout(ui); form.setOrientation(LinearLayout.VERTICAL);
             int pad = dp(activity, 20); form.setPadding(pad, 0, pad, 0);
             form.addView(label(ui, String.format(Locale.US, "%.6f, %.6f", latitude, longitude), 14));
-            EditText name = new EditText(ui); name.setHint("Place name (up to 40 characters)"); name.setSingleLine(true);
+            EditText name = new EditText(ui); name.setHint(dev.pgrazor.PtBr.tr("Place name (up to 40 characters)")); name.setSingleLine(true);
             name.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_CAP_SENTENCES);
             name.setFilters(new InputFilter[] {new InputFilter.LengthFilter(SavedPlaces.NAME_LIMIT)});
             form.addView(name);
-            AlertDialog dialog = new AlertDialog.Builder(ui).setTitle("Save selected place").setView(form)
-                .setNegativeButton("Cancel", null).setPositiveButton("Save", null).create();
+            AlertDialog dialog = new AlertDialog.Builder(ui).setTitle(dev.pgrazor.PtBr.tr("Save selected place")).setView(form)
+                .setNegativeButton(dev.pgrazor.PtBr.tr("Cancel"), null).setPositiveButton(dev.pgrazor.PtBr.tr("Save"), null).create();
             dialog.setOnShowListener(d -> dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
                 final SavedPlaces.Entry entry;
                 try { entry = new SavedPlaces.Entry(name.getText().toString(), latitude, longitude); }
@@ -406,18 +406,18 @@ public final class WorldMapDialog {
             show(dialog);
         }
         private void showPlace(SavedPlaces.Entry entry) {
-            AlertDialog dialog = new AlertDialog.Builder(ui).setTitle(entry.name)
-                .setMessage(String.format(Locale.US, "%.6f, %.6f\n\nSelect shows this destination on the map. Choose Teleport or Walk here there to apply it.", entry.latitude, entry.longitude))
-                .setNegativeButton("Cancel", null)
-                .setPositiveButton("Select on map", (d, which) -> map.select(entry.latitude, entry.longitude))
-                .setNeutralButton("Delete", null).create();
+            AlertDialog dialog = new AlertDialog.Builder(ui).setTitle(dev.pgrazor.PtBr.tr(entry.name))
+                .setMessage(dev.pgrazor.PtBr.tr(String.format(Locale.US, "%.6f, %.6f\n\nSelect shows this destination on the map. Choose Teleport or Walk here there to apply it.", entry.latitude, entry.longitude)))
+                .setNegativeButton(dev.pgrazor.PtBr.tr("Cancel"), null)
+                .setPositiveButton(dev.pgrazor.PtBr.tr("Select on map"), (d, which) -> map.select(entry.latitude, entry.longitude))
+                .setNeutralButton(dev.pgrazor.PtBr.tr("Delete"), null).create();
             dialog.setOnShowListener(d -> dialog.getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener(v -> confirmDelete(entry, dialog)));
             show(dialog);
         }
         private void confirmDelete(SavedPlaces.Entry entry, AlertDialog details) {
-            AlertDialog confirm = new AlertDialog.Builder(ui).setTitle("Delete saved place?")
-                .setMessage(entry.name + " will be removed from your saved places. The current location stays unchanged.")
-                .setNegativeButton("Cancel", null).setPositiveButton("Delete", null).create();
+            AlertDialog confirm = new AlertDialog.Builder(ui).setTitle(dev.pgrazor.PtBr.tr("Delete saved place?"))
+                .setMessage(dev.pgrazor.PtBr.tr(entry.name + " will be removed from your saved places. The current location stays unchanged."))
+                .setNegativeButton(dev.pgrazor.PtBr.tr("Cancel"), null).setPositiveButton(dev.pgrazor.PtBr.tr("Delete"), null).create();
             confirm.setOnShowListener(d -> confirm.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
                 confirm.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(false);
                 storage.execute(() -> {
@@ -537,7 +537,7 @@ public final class WorldMapDialog {
         void refreshPois() { poiLayer.refresh(); }
 
         private void updateSelection() {
-            selectionLabel.setText(String.format(Locale.US, "Selected: %.6f, %.6f", latitude, longitude));
+            selectionLabel.setText(dev.pgrazor.PtBr.tr(String.format(Locale.US, "Selected: %.6f, %.6f", latitude, longitude)));
         }
         private double displayedTileSize() { return (zoom == 0 ? Math.max(1, Math.min(getWidth(), getHeight())) : tileSize)*zoomScale; }
         private double world() { return MapProjection.worldPixels(zoom, displayedTileSize()); }

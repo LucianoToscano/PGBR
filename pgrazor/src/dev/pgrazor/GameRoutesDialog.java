@@ -51,7 +51,7 @@ public final class GameRoutesDialog {
         EditText countField = new EditText(ctx);
         countField.setInputType(InputType.TYPE_CLASS_NUMBER);
         countField.setFilters(new InputFilter[]{new InputFilter.LengthFilter(2)});
-        countField.setText(String.valueOf(DEFAULT_COMPLETIONS));
+        countField.setText(dev.pgrazor.PtBr.tr(String.valueOf(DEFAULT_COMPLETIONS)));
         countField.setSingleLine(true);
         countRow.addView(countField, new LinearLayout.LayoutParams(MapTheme.dp(ctx, 72), -2));
         layout.addView(countRow);
@@ -64,11 +64,11 @@ public final class GameRoutesDialog {
         layout.addView(nearby);
 
         AlertDialog dialog = new AlertDialog.Builder(ctx)
-            .setTitle("Walk Routes")
+            .setTitle(dev.pgrazor.PtBr.tr("Walk Routes"))
             .setView(layout)
-            .setNegativeButton("Close", null)
-            .setNeutralButton("Stop", null)
-            .setPositiveButton("Start walking routes", null)
+            .setNegativeButton(dev.pgrazor.PtBr.tr("Close"), null)
+            .setNeutralButton(dev.pgrazor.PtBr.tr("Stop"), null)
+            .setPositiveButton(dev.pgrazor.PtBr.tr("Start walking routes"), null)
             .create();
 
         Controller controller = new Controller(activity, dialog, countField, status, nearby);
@@ -101,9 +101,9 @@ public final class GameRoutesDialog {
             Control.setGameRoutesPlanning(true); // renew the native discovery stream while visible
             boolean ready = Control.gameRoutesReady(), running = Control.gameRoutesRunning();
             String reward=Control.gameRoutesLastReward();
-            status.setText((ready ? Control.gameRoutesStatus() : "Waiting for Route support…")
-                +(reward.isEmpty()?"":"\nLast rewards received: "+reward));
-            nearby.setText(describeNearby(Control.gameRoutesSnapshot()));
+            status.setText(dev.pgrazor.PtBr.tr((ready ? Control.gameRoutesStatus() : "Waiting for Route support…")
+                +(reward.isEmpty()?"":"\nLast rewards received: "+reward)));
+            nearby.setText(dev.pgrazor.PtBr.tr(describeNearby(Control.gameRoutesSnapshot())));
             Button start = dialog.getButton(AlertDialog.BUTTON_POSITIVE);
             if (start != null) start.setEnabled(ready && !running);
             dialog.getButton(AlertDialog.BUTTON_NEUTRAL).setEnabled(running);
@@ -159,5 +159,5 @@ public final class GameRoutesDialog {
         } catch (org.json.JSONException bad) { return "Nearby Routes are unavailable right now."; }
     }
 
-    private static TextView label(Context c, String text, int size) { TextView v = new TextView(c); v.setText(text); v.setTextSize(size); return v; }
+    private static TextView label(Context c, String text, int size) { TextView v = new TextView(c); v.setText(dev.pgrazor.PtBr.tr(text)); v.setTextSize(size); return v; }
 }

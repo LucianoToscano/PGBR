@@ -20,8 +20,8 @@ public final class EventPanel {
     public static void showSelector(Activity activity, boolean dark) {
         if (activity.isFinishing() || activity.isDestroyed()) return;
         AlertDialog dialog = dev.pgrazor.ChoiceList.attach(new AlertDialog.Builder(theme(activity, dark))
-            .setTitle("Events")
-            .setNegativeButton("Close", null).create(), new String[]{"Halloween 2026", "Go Wild November 2026"},
+            .setTitle(dev.pgrazor.PtBr.tr("Events"))
+            .setNegativeButton(dev.pgrazor.PtBr.tr("Close"), null).create(), new String[]{"Halloween 2026", "Go Wild November 2026"},
             index -> { if (index == 0) showHalloween(activity, dark); else showGoWild(activity, dark); });
         bind(activity, dialog, () -> {});
         dialog.show();
@@ -40,7 +40,7 @@ public final class EventPanel {
         int pad = Math.round(20 * context.getResources().getDisplayMetrics().density);
         content.setPadding(pad, pad / 2, pad, pad / 2);
         TextView description = new TextView(context);
-        description.setText("Opens every visible map box and skips the encounter screen for any Pokemon result.");
+        description.setText(dev.pgrazor.PtBr.tr("Opens every visible map box and skips the encounter screen for any Pokemon result."));
         description.setTextSize(15);
         content.addView(description);
         TextView status = new TextView(context);
@@ -48,15 +48,15 @@ public final class EventPanel {
         status.setTextSize(13);
         content.addView(status);
         Switch collector = new Switch(context);
-        collector.setText("Open boxes and skip encounters");
+        collector.setText(dev.pgrazor.PtBr.tr("Open boxes and skip encounters"));
         collector.setTextSize(15);
         content.addView(collector);
 
         ScrollView scroller = new ScrollView(context);
         scroller.addView(content);
 
-        AlertDialog dialog = new AlertDialog.Builder(context).setTitle("Halloween 2026")
-            .setView(scroller).setNegativeButton("Close", null).create();
+        AlertDialog dialog = new AlertDialog.Builder(context).setTitle(dev.pgrazor.PtBr.tr("Halloween 2026"))
+            .setView(scroller).setNegativeButton(dev.pgrazor.PtBr.tr("Close"), null).create();
         Handler handler = new Handler(Looper.getMainLooper());
         Runnable refresh = new Runnable() {
             public void run() {
@@ -64,9 +64,9 @@ public final class EventPanel {
                 boolean available = EventSettings.boxCollectorAvailable();
                 collector.setEnabled(available);
                 collector.setChecked(EventSettings.boxCollectorEnabled(activity));
-                status.setText(available
+                status.setText(dev.pgrazor.PtBr.tr(available
                     ? "Ready to open visible boxes. Encounter screens are skipped without catching."
-                    : "Unavailable: the box collector has not been verified. Collection is off.");
+                    : "Unavailable: the box collector has not been verified. Collection is off."));
                 handler.postDelayed(this, 500);
             }
         };
@@ -88,29 +88,29 @@ public final class EventPanel {
         int pad = Math.round(20 * context.getResources().getDisplayMetrics().density);
         content.setPadding(pad, pad / 2, pad, pad / 2);
         TextView description = new TextView(context);
-        description.setText("Prefer GO Safari Balls for Mighty Pokemon. If Safari Balls are unavailable"
-            + " or not allowed, your normal ball settings apply.");
+        description.setText(dev.pgrazor.PtBr.tr("Prefer GO Safari Balls for Mighty Pokemon. If Safari Balls are unavailable"
+            + " or not allowed, your normal ball settings apply."));
         description.setTextSize(15);
         content.addView(description);
 
         Switch vgp = new Switch(context);
-        vgp.setText("Use Safari Balls in VGP+");
+        vgp.setText(dev.pgrazor.PtBr.tr("Use Safari Balls in VGP+"));
         vgp.setTextSize(15);
         vgp.setChecked(EventSettings.wildVgpSafari(activity));
         content.addView(vgp);
         TextView vgpHelp = new TextView(context);
-        vgpHelp.setText("Applies while VGP+ is running.");
+        vgpHelp.setText(dev.pgrazor.PtBr.tr("Applies while VGP+ is running."));
         vgpHelp.setTextSize(13);
         vgpHelp.setPadding(0, 0, 0, pad / 2);
         content.addView(vgpHelp);
 
         Switch autoBall = new Switch(context);
-        autoBall.setText("Use Safari Balls in Auto Ball");
+        autoBall.setText(dev.pgrazor.PtBr.tr("Use Safari Balls in Auto Ball"));
         autoBall.setTextSize(15);
         autoBall.setChecked(EventSettings.wildAutoBallSafari(activity));
         content.addView(autoBall);
         TextView autoHelp = new TextView(context);
-        autoHelp.setText("Applies while Auto Ball is enabled.");
+        autoHelp.setText(dev.pgrazor.PtBr.tr("Applies while Auto Ball is enabled."));
         autoHelp.setTextSize(13);
         content.addView(autoHelp);
 
@@ -122,26 +122,26 @@ public final class EventPanel {
         ScrollView scroller = new ScrollView(context);
         scroller.addView(content);
 
-        AlertDialog dialog = new AlertDialog.Builder(context).setTitle("Go Wild November 2026")
-            .setView(scroller).setNegativeButton("Close", null).create();
+        AlertDialog dialog = new AlertDialog.Builder(context).setTitle(dev.pgrazor.PtBr.tr("Go Wild November 2026"))
+            .setView(scroller).setNegativeButton(dev.pgrazor.PtBr.tr("Close"), null).create();
         vgp.setOnCheckedChangeListener((button, checked) -> {
             if (checked == EventSettings.wildVgpSafari(activity)) return;
             if (!EventSettings.setWildVgpSafari(activity, checked)) {
-                status.setText("Couldn't save that change. Please try again.");
+                status.setText(dev.pgrazor.PtBr.tr("Couldn't save that change. Please try again."));
                 button.setChecked(EventSettings.wildVgpSafari(activity));
                 return;
             }
-            status.setText("");
+            status.setText(dev.pgrazor.PtBr.tr(""));
             dev.pgrazor.Control.event("event-wild-safari", "vgp_plus=" + (checked ? "ON" : "OFF"));
         });
         autoBall.setOnCheckedChangeListener((button, checked) -> {
             if (checked == EventSettings.wildAutoBallSafari(activity)) return;
             if (!EventSettings.setWildAutoBallSafari(activity, checked)) {
-                status.setText("Couldn't save that change. Please try again.");
+                status.setText(dev.pgrazor.PtBr.tr("Couldn't save that change. Please try again."));
                 button.setChecked(EventSettings.wildAutoBallSafari(activity));
                 return;
             }
-            status.setText("");
+            status.setText(dev.pgrazor.PtBr.tr(""));
             dev.pgrazor.Control.event("event-wild-safari", "auto_ball=" + (checked ? "ON" : "OFF"));
         });
         bind(activity, dialog, () -> {});

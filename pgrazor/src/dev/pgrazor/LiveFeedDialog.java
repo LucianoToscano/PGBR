@@ -62,9 +62,9 @@ public final class LiveFeedDialog {
         LinearLayout root = new LinearLayout(ui);
         root.setOrientation(LinearLayout.VERTICAL);
         AlertDialog dialog = new AlertDialog.Builder(ui)
-            .setTitle("LivePokeMap")
+            .setTitle(dev.pgrazor.PtBr.tr("LivePokeMap"))
             .setView(root)
-            .setNegativeButton("Close", null)
+            .setNegativeButton(dev.pgrazor.PtBr.tr("Close"), null)
             .create();
         Controller controller = new Controller(activity, ui, dialog, root);
         DialogLifecycle.bind(activity, dialog, controller::close, ()->controller.showingLogin,
@@ -177,7 +177,7 @@ public final class LiveFeedDialog {
             intro.setPadding(0, 0, 0, dp(20));
             form.addView(intro);
             final EditText username = new EditText(ui);
-            username.setHint("Username");
+            username.setHint(dev.pgrazor.PtBr.tr("Username"));
             username.setSingleLine(true);
             username.setInputType(InputType.TYPE_CLASS_TEXT);
             username.setId(View.generateViewId());
@@ -186,7 +186,7 @@ public final class LiveFeedDialog {
             username.setImeOptions(android.view.inputmethod.EditorInfo.IME_ACTION_NEXT);
             addLoginField(form, username);
             final EditText password = new EditText(ui);
-            password.setHint("Password");
+            password.setHint(dev.pgrazor.PtBr.tr("Password"));
             password.setSingleLine(true);
             // Let the user's password manager fill credentials; the app stores only its session.
             password.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
@@ -213,12 +213,12 @@ public final class LiveFeedDialog {
                 String p = password.getText().toString();
                 // Clear the password field immediately; it stays only in the local that is handed to
                 // the worker, never logged or saved by PGRazor.
-                password.setText("");
-                if (u.isEmpty() || p.isEmpty()) { status.setText("Enter your username and password."); return; }
+                password.setText(dev.pgrazor.PtBr.tr(""));
+                if (u.isEmpty() || p.isEmpty()) { status.setText(dev.pgrazor.PtBr.tr("Enter your username and password.")); return; }
                 if (loginInFlight) return;
                 loginInFlight = true;
                 login.setEnabled(false);
-                status.setText("Signing in…");
+                status.setText(dev.pgrazor.PtBr.tr("Signing in…"));
                 submitLogin(u, p, login, username, status);
             });
         }
@@ -247,7 +247,7 @@ public final class LiveFeedDialog {
                     main.post(() -> {
                         loginInFlight = false;
                         if (closed) return;
-                        userField.setText(""); // credentials cleared on completion
+                        userField.setText(dev.pgrazor.PtBr.tr("")); // credentials cleared on completion
                         if (g != generation) return; // superseded by a logout or close
                         showingLogin = false;
                         lastError = null; note = ""; lastUpdated = 0; backoffUntilElapsed = 0;
@@ -260,14 +260,14 @@ public final class LiveFeedDialog {
                     main.post(() -> {
                         loginInFlight = false;
                         if (closed || g != generation) return; // superseded; old login views are gone
-                        login.setEnabled(true); status.setText(msg);
+                        login.setEnabled(true); status.setText(dev.pgrazor.PtBr.tr(msg));
                     });
                 } catch (Exception e) {
                     main.post(() -> {
                         loginInFlight = false;
                         if (closed || g != generation) { return; }
                         login.setEnabled(true);
-                        status.setText("Couldn't reach LivePokeMap. Check your connection and try again.");
+                        status.setText(dev.pgrazor.PtBr.tr("Couldn't reach LivePokeMap. Check your connection and try again."));
                     });
                 }
             });
@@ -518,7 +518,7 @@ public final class LiveFeedDialog {
             long nowE = SystemClock.elapsedRealtime();
             if (nowE < backoffUntilElapsed) {
                 long s = (backoffUntilElapsed - nowE + 999) / 1000;
-                feedStatus.setText("Rate limited by LivePokeMap. Retrying in " + s + "s.");
+                feedStatus.setText(dev.pgrazor.PtBr.tr("Rate limited by LivePokeMap. Retrying in " + s + "s."));
                 return;
             }
             StringBuilder sb = new StringBuilder();
@@ -532,7 +532,7 @@ public final class LiveFeedDialog {
                 if (fetchInFlight) sb.append(" · refreshing…");
             }
             if (note != null && !note.isEmpty()) sb.append('\n').append(note);
-            feedStatus.setText(sb.toString());
+            feedStatus.setText(dev.pgrazor.PtBr.tr(sb.toString()));
         }
 
         // ------------------------------------------------------------------ list model
@@ -592,19 +592,19 @@ public final class LiveFeedDialog {
                     holder.icon.setImageDrawable(null);
                     holder.icon.setVisibility(View.GONE);
                     holder.fallbackShape.setColor(kindColor(e.kind));
-                    holder.fallback.setText(glyphLetter(e.kind));
+                    holder.fallback.setText(dev.pgrazor.PtBr.tr(glyphLetter(e.kind)));
                     holder.fallback.setVisibility(View.VISIBLE);
                 }
                 String description = iconDescription(e, now);
-                holder.icon.setContentDescription(description);
-                holder.fallback.setContentDescription(description);
-                holder.title.setText(displayName(e));
+                holder.icon.setContentDescription(dev.pgrazor.PtBr.tr(description));
+                holder.fallback.setContentDescription(dev.pgrazor.PtBr.tr(description));
+                holder.title.setText(dev.pgrazor.PtBr.tr(displayName(e)));
                 String sub = displaySubtitle(e, now);
                 Double d = distCache.get(e);
                 StringBuilder line = new StringBuilder();
                 if (sub != null && !sub.isEmpty()) line.append(sub);
                 if (d != null) { if (line.length() > 0) line.append("  ·  "); line.append(formatDistance(d)); }
-                holder.subtitle.setText(line.toString());
+                holder.subtitle.setText(dev.pgrazor.PtBr.tr(line.toString()));
                 return holder.view;
             }
         }
@@ -678,9 +678,9 @@ public final class LiveFeedDialog {
             actions.addView(teleport, new LinearLayout.LayoutParams(0, dp(48), 1));
             body.addView(actions);
             AlertDialog detail = new AlertDialog.Builder(ui)
-                .setTitle(displayName(e))
+                .setTitle(dev.pgrazor.PtBr.tr(displayName(e)))
                 .setView(body)
-                .setNegativeButton("Close", null)
+                .setNegativeButton(dev.pgrazor.PtBr.tr("Close"), null)
                 .create();
             trackOwn(detail);
             detail.setOnShowListener(d -> {
@@ -795,10 +795,10 @@ public final class LiveFeedDialog {
         // ------------------------------------------------------------------ view helpers
 
         private int dp(float v) { return Math.round(v * activity.getResources().getDisplayMetrics().density); }
-        private TextView label(String text, int size) { TextView v = new TextView(ui); v.setText(text); v.setTextSize(size); return v; }
-        private Button button(String text) { Button b = new Button(ui); b.setText(text); b.setAllCaps(false); b.setTextSize(13.5f); return b; }
+        private TextView label(String text, int size) { TextView v = new TextView(ui); v.setText(dev.pgrazor.PtBr.tr(text)); v.setTextSize(size); return v; }
+        private Button button(String text) { Button b = new Button(ui); b.setText(dev.pgrazor.PtBr.tr(text)); b.setAllCaps(false); b.setTextSize(13.5f); return b; }
         private Button segButton(String text) {
-            Button b = new Button(ui); b.setText(text); b.setAllCaps(false); b.setTextSize(13);
+            Button b = new Button(ui); b.setText(dev.pgrazor.PtBr.tr(text)); b.setAllCaps(false); b.setTextSize(13);
             b.setPadding(dp(10), 0, dp(10), 0); b.setMinWidth(dp(52)); return b;
         }
     }

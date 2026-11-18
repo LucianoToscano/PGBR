@@ -182,7 +182,7 @@ public final class Pad {
         FrameLayout.LayoutParams encounterLayout=new FrameLayout.LayoutParams(-2,-2,Gravity.TOP|Gravity.RIGHT);encounterLayout.rightMargin=dp(12);encounterLayout.topMargin=dp(186);
         overlays.addView(encounterBadge,encounterLayout);encounterBadge.setVisibility(View.GONE);encounterDrag=OverlayDrag.attach(overlays,encounterBadge,"encounters");
         shinyMark=text("✨",19,Color.WHITE);shinyMark.setGravity(Gravity.CENTER);shinyMark.setShadowLayer(dp(4),0,0,Color.BLACK);shinyMark.setClickable(false);shinyMark.setFocusable(false);
-        shinyMark.setContentDescription("Shiny Pokémon here");overlays.addView(shinyMark,new FrameLayout.LayoutParams(dp(32),dp(32)));shinyMark.setVisibility(View.GONE);
+        shinyMark.setContentDescription(dev.pgrazor.PtBr.tr("Shiny Pokémon here"));overlays.addView(shinyMark,new FrameLayout.LayoutParams(dp(32),dp(32)));shinyMark.setVisibility(View.GONE);
         ShinyScanner.prepare(activity);shinyBadge=text("",13,ink());shinyBadge.setPadding(dp(12),dp(8),dp(12),dp(8));shinyBadge.setMaxLines(2);shinyBadge.setBackground(rounded(surface(),10));
         FrameLayout.LayoutParams shinyLayout=new FrameLayout.LayoutParams(dp(250),-2,Gravity.TOP|Gravity.CENTER_HORIZONTAL);shinyLayout.topMargin=dp(150);
         overlays.addView(shinyBadge,shinyLayout);shinyBadge.setVisibility(View.GONE);shinyBadge.setOnClickListener(v->{ShinyScanner.showFound();refresh();});shinyDrag=OverlayDrag.attach(overlays,shinyBadge,"shiny");
@@ -193,7 +193,7 @@ public final class Pad {
         routesLayout.rightMargin=dp(14);routesLayout.topMargin=dp(100);overlays.addView(gameRoutesOverlay,routesLayout);
         gameRoutesOverlay.setVisibility(View.GONE);gameRoutesDrag=OverlayDrag.attach(overlays,gameRoutesOverlay,"game-routes");
         launcher=new RazorIcon(host);FrameLayout.LayoutParams iconLayout=new FrameLayout.LayoutParams(dp(48),dp(48),Gravity.TOP|Gravity.LEFT);iconLayout.leftMargin=dp(12);iconLayout.topMargin=dp(100);overlays.addView(launcher,iconLayout);
-        launcher.setContentDescription("Open PGRazor quick menu. Drag to reposition.");
+        launcher.setContentDescription(dev.pgrazor.PtBr.tr("Open PGRazor quick menu. Drag to reposition."));
         // The R launcher now toggles the compact quick menu; Settings there opens this panel full screen.
         quickMenu=new QuickMenu(host,parent,launcher,new QuickMenu.Listener(){
             public void onMap(){openWorldMap();}
@@ -316,18 +316,18 @@ public final class Pad {
             shinyMark.setX(ShinyScanner.targetX()*parent.getWidth()-dp(16));shinyMark.setY(ShinyScanner.targetY()*parent.getHeight()-dp(34));}}
         {String[] found=ShinyScanner.takePopup();if(found!=null&&!closed&&!activity.isFinishing()&&!activity.isDestroyed()){
             if(shinyPopup!=null&&shinyPopup.isShowing())shinyPopup.dismiss();
-            AlertDialog.Builder popup=new AlertDialog.Builder(MapTheme.wrap(activity)).setTitle(found[0]).setMessage(found[1]);
+            AlertDialog.Builder popup=new AlertDialog.Builder(MapTheme.wrap(activity)).setTitle(dev.pgrazor.PtBr.tr(found[0])).setMessage(dev.pgrazor.PtBr.tr(found[1]));
             // A found shiny: Catch it throws for you, Dismiss lets it go, Close keeps it (the badge reopens this).
-            if("found".equals(found[2]))popup.setPositiveButton("Catch it",(d,w)->{ShinyScanner.requestCatch();refresh();}).setNeutralButton("Dismiss",(d,w)->{ShinyScanner.dismissFound();refresh();}).setNegativeButton("Close",null);
-            else popup.setPositiveButton("OK",null);
+            if("found".equals(found[2]))popup.setPositiveButton(dev.pgrazor.PtBr.tr("Catch it"),(d,w)->{ShinyScanner.requestCatch();refresh();}).setNeutralButton(dev.pgrazor.PtBr.tr("Dismiss"),(d,w)->{ShinyScanner.dismissFound();refresh();}).setNegativeButton(dev.pgrazor.PtBr.tr("Close"),null);
+            else popup.setPositiveButton(dev.pgrazor.PtBr.tr("OK"),null);
             shinyPopup=popup.create();
             final AlertDialog shown=shinyPopup;shown.setCanceledOnTouchOutside(false);DialogLifecycle.bind(activity,shown,null);shown.setOnShowListener(d->MapTheme.styleButtons(shown));shown.show();}}
         if(shinyBadge!=null){String found=settings.isVisible()||(quickMenu!=null&&quickMenu.isShowing())?"":ShinyScanner.foundLabel();
             shinyBadge.setVisibility(found.isEmpty()?View.GONE:View.VISIBLE);
-            if(!found.isEmpty()){setTextIfChanged(shinyBadge,found);shinyBadge.setContentDescription(found+". Tap for options.");shinyBadge.setTextColor(ink());shinyBadge.setBackground(rounded(surface(),10));if(shinyDrag!=null)shinyDrag.refreshBounds();}}
+            if(!found.isEmpty()){setTextIfChanged(shinyBadge,found);shinyBadge.setContentDescription(dev.pgrazor.PtBr.tr(found+". Tap for options."));shinyBadge.setTextColor(ink());shinyBadge.setBackground(rounded(surface(),10));if(shinyDrag!=null)shinyDrag.refreshBounds();}}
         if(shundoOverlay!=null){shundoOverlay.refresh(!settings.isVisible()&&!(quickMenu!=null&&quickMenu.isShowing()));if(shundoDrag!=null)shundoDrag.refreshBounds();}
         if(gymAutomationStatus!=null){gymAutomationStatus.setVisibility(gymFeedOverlay.getVisibility());setTextIfChanged(gymAutomationStatus,GymAutomationSettings.overlayStatus());gymAutomationStatus.setTextColor(ink());gymFeedDrag.refreshBounds();}
-        if(vgpToggle!=null){vgpToggle.setVisibility(Control.vgpOverlayVisible()&&!settings.isVisible()&&!(quickMenu!=null&&quickMenu.isShowing())?View.VISIBLE:View.GONE);vgpToggle.setContentDescription("Virtual Go Plus "+(Control.vgpEnabled()?"on; tap to turn off":"off; tap to turn on")+". "+Control.vgpStatus());vgpToggle.invalidate();}
+        if(vgpToggle!=null){vgpToggle.setVisibility(Control.vgpOverlayVisible()&&!settings.isVisible()&&!(quickMenu!=null&&quickMenu.isShowing())?View.VISIBLE:View.GONE);vgpToggle.setContentDescription(dev.pgrazor.PtBr.tr("Virtual Go Plus "+(Control.vgpEnabled()?"on; tap to turn off":"off; tap to turn on")+". "+Control.vgpStatus()));vgpToggle.invalidate();}
 
         // Pair the status line with the toggle so the cooldown shutoff reason is visible even when VGP is off.
         if(buddyEmotionStatus!=null){buddyEmotionStatus.setVisibility(BuddyEmotionSettings.overlayEnabled()&&!settings.isVisible()&&!(quickMenu!=null&&quickMenu.isShowing())?View.VISIBLE:View.GONE);setTextIfChanged(buddyEmotionStatus,BuddyEmotionSettings.status());buddyEmotionStatus.setTextColor(ink());}
@@ -336,7 +336,7 @@ public final class Pad {
         if(vgpActivity!=null){vgpActivity.setVisibility(Control.vgpOverlayVisible()&&!settings.isVisible()&&!(quickMenu!=null&&quickMenu.isShowing())?View.VISIBLE:View.GONE);setTextIfChanged(vgpActivity,"VGP  |  "+Control.vgpStatus());vgpActivity.setTextColor(ink());}
         if(mapCatchBadge!=null)mapCatchBadge.refresh(!settings.isVisible()&&!(quickMenu!=null&&quickMenu.isShowing())&&!Control.catchScreenVisible());
         if(vgpMarker!=null){boolean show=Control.vgpTargetVisible()&&!settings.isVisible();vgpMarker.setVisibility(show?View.VISIBLE:View.GONE);if(show){vgpMarker.setX(Control.vgpTargetX()*parent.getWidth()-dp(19)*vgpMarker.getScaleX());vgpMarker.setY(Control.vgpTargetY()*parent.getHeight()-dp(36)-dp(46)*vgpMarker.getScaleY());vgpMarker.invalidate();}}
-        if(transferToggle!=null){transferToggle.setVisibility(Control.transferOverlayVisible()&&!settings.isVisible()&&!(quickMenu!=null&&quickMenu.isShowing())?View.VISIBLE:View.GONE);transferToggle.setContentDescription(transferToggleDescription());transferToggle.invalidate();}
+        if(transferToggle!=null){transferToggle.setVisibility(Control.transferOverlayVisible()&&!settings.isVisible()&&!(quickMenu!=null&&quickMenu.isShowing())?View.VISIBLE:View.GONE);transferToggle.setContentDescription(dev.pgrazor.PtBr.tr(transferToggleDescription()));transferToggle.invalidate();}
 
         String routeReward=Control.takeGameRoutesRewardNotice();
         if(!routeReward.isEmpty()&&!overlaysHidden)Toast.makeText(activity,routeReward,Toast.LENGTH_LONG).show();
@@ -353,7 +353,7 @@ public final class Pad {
     }
     /** TextView.setText requests a layout pass even for identical text; this tick runs every 100 ms. */
     private static void setTextIfChanged(TextView view,CharSequence value){
-        if(!android.text.TextUtils.equals(view.getText(),value))view.setText(value);
+        if(!android.text.TextUtils.equals(view.getText(),value))view.setText(dev.pgrazor.PtBr.tr(value));
     }
     private final Runnable tick = new Runnable() {
         public void run() {
@@ -387,7 +387,7 @@ public final class Pad {
         }
     };
     private EditText input(String value, String hint) {
-        EditText e = new EditText(dialogContext()); e.setSingleLine(true); e.setHint(hint); e.setText(value);
+        EditText e = new EditText(dialogContext()); e.setSingleLine(true); e.setHint(dev.pgrazor.PtBr.tr(hint)); e.setText(dev.pgrazor.PtBr.tr(value));
         e.setInputType(InputType.TYPE_CLASS_NUMBER|InputType.TYPE_NUMBER_FLAG_DECIMAL|InputType.TYPE_NUMBER_FLAG_SIGNED); return e;
     }
     private void edit() {
@@ -398,7 +398,7 @@ public final class Pad {
         EditText lon = input(Double.toString(Control.engine.longitude), "Longitude (-180 to 180)");
         EditText speed = input(Double.toString(Control.engine.speedKmh), "Speed (0.5–30 km/h)");
         for (EditText field : new EditText[]{lat, lon, speed}) form.addView(field);
-        AlertDialog dialog = new AlertDialog.Builder(dialogContext()).setTitle("Coordinates & speed").setView(form).setNegativeButton("Cancel",null).setPositiveButton("Apply",null).create();
+        AlertDialog dialog = new AlertDialog.Builder(dialogContext()).setTitle(dev.pgrazor.PtBr.tr("Coordinates & speed")).setView(form).setNegativeButton(dev.pgrazor.PtBr.tr("Cancel"),null).setPositiveButton(dev.pgrazor.PtBr.tr("Apply"),null).create();
         final AlertDialog[] confirmation = {null};
         DialogLifecycle.bind(activity,dialog,()->{if(confirmation[0]!=null)confirmation[0].dismiss();});
         dialog.setOnShowListener(d -> dialog.getButton(-1).setOnClickListener(v -> {
@@ -418,10 +418,10 @@ public final class Pad {
     void confirmHideOverlays() {
         if(closed||overlaysHidden||activity.isFinishing()||activity.isDestroyed()||hideOverlaysDialog!=null)return;
         AlertDialog dialog=new AlertDialog.Builder(dialogContext())
-            .setTitle("Hide overlay?")
-            .setMessage("All PGRazor buttons, status bars, messages and in-game IV text will be hidden so the game looks stock. To show them again, tap the screen with three fingers at once.")
-            .setNegativeButton("Cancel",null)
-            .setPositiveButton("Hide",(d,w)->setOverlaysHidden(true)).create();
+            .setTitle(dev.pgrazor.PtBr.tr("Hide overlay?"))
+            .setMessage(dev.pgrazor.PtBr.tr("All PGRazor buttons, status bars, messages and in-game IV text will be hidden so the game looks stock. To show them again, tap the screen with three fingers at once."))
+            .setNegativeButton(dev.pgrazor.PtBr.tr("Cancel"),null)
+            .setPositiveButton(dev.pgrazor.PtBr.tr("Hide"),(d,w)->setOverlaysHidden(true)).create();
         hideOverlaysDialog=dialog;
         DialogLifecycle.bind(activity,dialog,()->{if(hideOverlaysDialog==dialog)hideOverlaysDialog=null;});
         dialog.setOnShowListener(d->MapTheme.styleButtons(dialog));
@@ -468,10 +468,10 @@ public final class Pad {
         if(closed||activity.isFinishing()||activity.isDestroyed()||stopRouteDialog!=null)return;
         final long token=Control.engine.activeRouteToken();if(token==0)return;
         AlertDialog dialog=new AlertDialog.Builder(dialogContext())
-            .setTitle("Stop route?")
-            .setMessage("A route or Autowalk is running. Do you want to stop it?")
-            .setNegativeButton("Keep walking",null)
-            .setPositiveButton("Stop route",(d,w)->{
+            .setTitle(dev.pgrazor.PtBr.tr("Stop route?"))
+            .setMessage(dev.pgrazor.PtBr.tr("A route or Autowalk is running. Do you want to stop it?"))
+            .setNegativeButton(dev.pgrazor.PtBr.tr("Keep walking"),null)
+            .setPositiveButton(dev.pgrazor.PtBr.tr("Stop route"),(d,w)->{
                 if(!closed&&Control.engine.stopRoute(token)){
                     Control.saveState();Control.event("route-stopped","Confirmed after map tap");refresh();
                 }
