@@ -16,7 +16,7 @@ ROOT = pathlib.Path(__file__).resolve().parents[1]
 JAVA = ROOT / "pgrazor" / "src" / "dev" / "pgrazor"
 SINGLE = frozenset({
     "setText", "setTitle", "setMessage", "setHint", "setContentDescription",
-    "setTextOn", "setTextOff", "setItems",
+    "setTextOn", "setTextOff",
 })
 MULTI = frozenset({"setPositiveButton", "setNegativeButton", "setNeutralButton"})
 METHODS = SINGLE | MULTI
