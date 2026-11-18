@@ -4,6 +4,8 @@ on:
     branches: [feature/pt-br-traducao]
     paths:
       - '.github/workflows/pgbr-ptbr-windows-ci.yml'
+      - 'pgrazor/i18n/pt-BR.json'
+      - 'pgrazor/root-installer/src/dev/pgrazor/root/**'
   workflow_dispatch:
 permissions:
   contents: read
@@ -42,6 +44,12 @@ jobs:
         run: python -B pgrazor/build.py
       - name: Compilar instalador Root do projeto (nao o jogo)
         run: python -B pgrazor/rooted_installer.py --check
+      - name: Verificar instrumentacao PT-BR sem alteracoes pendentes
+        shell: pwsh
+        run: |
+          $result = python tools/ptbr_wire.py
+          $result | Write-Host
+          if ($result -notmatch "0 Java files") { throw "Ainda ha chamadas UI nao instrumentadas" }
       - name: Empacotar fontes e ferramentas do PGBR
         run: python -B tools/source_bundle.py
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
