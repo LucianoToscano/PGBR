@@ -203,12 +203,12 @@ public final class EventPanel {
         });
         refresh.run();
         android.widget.Button reset=new android.widget.Button(ui);
-        reset.setText("Zerar contagem confirmada");layout.addView(reset);
+        reset.setText(dev.pgrazor.PtBr.tr("Zerar contagem confirmada"));layout.addView(reset);
         reset.setOnClickListener(v->new AlertDialog.Builder(ui)
-            .setTitle("Zerar progresso da Rota Doces Eternatus?")
-            .setMessage("A contagem manual de missões confirmadas será zerada nesta conta. Isso não modifica o inventário nem as pesquisas do jogo.")
-            .setNegativeButton("Cancelar",null)
-            .setPositiveButton("Zerar",(d,w)->{
+            .setTitle(dev.pgrazor.PtBr.tr("Zerar progresso da Rota Doces Eternatus?"))
+            .setMessage(dev.pgrazor.PtBr.tr("A contagem manual de missões confirmadas será zerada nesta conta. Isso não modifica o inventário nem as pesquisas do jogo."))
+            .setNegativeButton(dev.pgrazor.PtBr.tr("Cancelar"),null)
+            .setPositiveButton(dev.pgrazor.PtBr.tr("Zerar"),(d,w)->{
                 if(dev.pgrazor.EternatusProgress.clear(activity)){
                     completed[0]=0;refresh.run();
                 }else android.widget.Toast.makeText(activity,"Não foi possível zerar o progresso.",android.widget.Toast.LENGTH_LONG).show();
