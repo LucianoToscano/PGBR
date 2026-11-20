@@ -41,6 +41,18 @@ public final class Cooldown {
     }
     private static synchronized ArrayList<CooldownState.Entry> entries(){return new ArrayList<>(state.rows);}
     private static synchronized void remove(long id){state.rows.removeIf(e->e.id==id);save();}
+    private static void renderCurrent(Runnable[] callbacks){
+        if(callbacks!=null&&callbacks.length>0&&callbacks[0]!=null)callbacks[0].run();
+    }
+    private static android.widget.ImageButton iconButton(Context ui,int icon,String description){
+        android.widget.ImageButton button=new android.widget.ImageButton(ui);
+        button.setImageResource(icon);button.setContentDescription(description);
+        button.setScaleType(android.widget.ImageView.ScaleType.CENTER_INSIDE);
+        button.setPadding(8,8,8,8);
+        button.setColorFilter(MapTheme.dark()?0xff30dfb5:0xff087767);
+        button.setBackground(SettingsUi.rounded(ui,MapTheme.dark()?0xff26384b:0xffdce8f0,9));
+        return button;
+    }
     private static Button button(Context c,String text){Button b=new Button(c);b.setText(dev.pgrazor.PtBr.tr(text));b.setAllCaps(false);b.setTextSize(12);return b;}
     private static void country(TextView label,CooldownState.Entry e){String key=String.format(Locale.US,"%.2f,%.2f",e.lat,e.lon);String cached=countries.get(key);if(cached!=null){label.setText(dev.pgrazor.PtBr.tr(cached));return;}label.setText(dev.pgrazor.PtBr.tr("??"));geo.execute(()->{String value="??";try{if(Geocoder.isPresent()){List<Address> found=new Geocoder(context,Locale.US).getFromLocation(e.lat,e.lon,1);if(found!=null&&!found.isEmpty()){String code=found.get(0).getCountryCode();if(code!=null&&code.matches("[A-Z]{2}"))value=new String(Character.toChars(0x1f1e6+code.charAt(0)-'A'))+new String(Character.toChars(0x1f1e6+code.charAt(1)-'A'));}}}catch(Exception ignored){}countries.put(key,value);final String result=value;main.post(()->label.setText(dev.pgrazor.PtBr.tr(result)));});}
     public static void show(Activity a){
@@ -55,7 +67,67 @@ public final class Cooldown {
         Button previous=button(ui,"Previous"),next=button(ui,"Next"); TextView pageLabel=new TextView(ui);pageLabel.setGravity(Gravity.CENTER);
         paging.addView(previous,new LinearLayout.LayoutParams(-2,-2));paging.addView(pageLabel,new LinearLayout.LayoutParams(0,-2,1));paging.addView(next,new LinearLayout.LayoutParams(-2,-2));root.addView(paging);
         ScrollView scroll=new ScrollView(ui);LinearLayout list=new LinearLayout(ui);list.setOrientation(1);scroll.addView(list);root.addView(scroll,new LinearLayout.LayoutParams(-1,0,1));
-        Runnable render=()->{list.removeAllViews();ArrayList<CooldownState.Entry> rows=entries();summary.setText(dev.pgrazor.PtBr.tr(rows.isEmpty()?"Nenhuma ação registrada nesta conta.":"Ações registradas: "+rows.size()+" · Última: "+dev.pgrazor.PtBr.tr(rows.get(0).action)));int pages=Math.max(1,(rows.size()+39)/40);page[0]=Math.min(page[0],pages-1);previous.setEnabled(page[0]>0);next.setEnabled(page[0]+1<pages);pageLabel.setText(dev.pgrazor.PtBr.tr((page[0]+1)+" / "+pages));if(rows.isEmpty()){TextView empty=new TextView(ui);empty.setText(dev.pgrazor.PtBr.tr("No recorded actions yet"));list.addView(empty);}for(CooldownState.Entry e:rows.subList(page[0]*40,Math.min(rows.size(),(page[0]+1)*40))){LinearLayout row=new LinearLayout(ui);row.setGravity(Gravity.CENTER_VERTICAL);TextView flag=new TextView(ui);flag.setTextSize(20);row.addView(flag,new LinearLayout.LayoutParams(unit/2,-2));country(flag,e);TextView info=new TextView(ui);info.setText(dev.pgrazor.PtBr.tr(new SimpleDateFormat("MM-dd HH:mm:ss",Locale.US).format(new Date(e.time))+"\n"+e.action+String.format(Locale.US,"\n%.5f, %.5f",e.lat,e.lon)));info.setTextSize(12);row.addView(info,new LinearLayout.LayoutParams(0,-2,1));Button copy=button(ui,"Copy"),map=button(ui,"Map"),del=button(ui,"Delete");row.addView(copy,new LinearLayout.LayoutParams(unit,-2));row.addView(map,new LinearLayout.LayoutParams(unit,-2));row.addView(del,new LinearLayout.LayoutParams(unit,-2));copy.setOnClickListener(v->{((ClipboardManager)a.getSystemService(Context.CLIPBOARD_SERVICE)).setPrimaryClip(ClipData.newPlainText("Coordinates",String.format(Locale.US,"%.7f, %.7f",e.lat,e.lon)));Toast.makeText(a,"Coordinates copied",Toast.LENGTH_SHORT).show();});map.setOnClickListener(v->WorldMapDialog.show(a,e.lat,e.lon,(lat,lon)->mapApply(a,lat,lon,false),(lat,lon)->mapApply(a,lat,lon,true)));del.setOnClickListener(v->{remove(e.id);list.removeView(row);});list.addView(row);}MapTheme.style(list);};
+        final AlertDialog[] historyDialog={null};
+        Runnable render=()->{
+            list.removeAllViews();
+            ArrayList<CooldownState.Entry> rows=entries();
+            summary.setText(rows.isEmpty()?"Nenhuma ação registrada.":"Ações registradas: "+rows.size());
+            final int perPage=20, pages=Math.max(1,(rows.size()+perPage-1)/perPage);
+            page[0]=Math.min(page[0],pages-1);
+            previous.setEnabled(page[0]>0);next.setEnabled(page[0]+1<pages);
+            pageLabel.setText((page[0]+1)+" / "+pages);
+            if(rows.isEmpty()){
+                TextView empty=new TextView(ui);empty.setText("Nenhuma ação registrada ainda.");
+                list.addView(empty);
+            }
+            for(CooldownState.Entry e:rows.subList(page[0]*perPage,Math.min(rows.size(),(page[0]+1)*perPage))){
+                LinearLayout row=new LinearLayout(ui);
+                row.setGravity(Gravity.CENTER_VERTICAL);
+                int margin=(int)(6*a.getResources().getDisplayMetrics().density);
+                row.setPadding(margin,margin,margin,margin);
+                row.setBackground(SettingsUi.rounded(ui,MapTheme.dark()?0xff202b3b:0xffeaf0f5,12));
+                LinearLayout.LayoutParams rowParams=new LinearLayout.LayoutParams(-1,-2);
+                rowParams.bottomMargin=margin;
+                TextView flag=new TextView(ui);flag.setTextSize(19);
+                row.addView(flag,new LinearLayout.LayoutParams(unit/2,-2));country(flag,e);
+                TextView info=new TextView(ui);
+                String timestamp=new SimpleDateFormat("dd/MM/yy HH:mm",new Locale("pt","BR")).format(new Date(e.time));
+                info.setText(timestamp+"  •  "+dev.pgrazor.PtBr.tr(e.action)
+                    +String.format(Locale.US,"\n%.5f, %.5f",e.lat,e.lon));
+                info.setTextColor(MapTheme.ink());info.setTextSize(12);
+                info.setPadding(margin/2,0,margin/2,0);
+                row.addView(info,new LinearLayout.LayoutParams(0,-2,1));
+                android.widget.ImageButton copy=iconButton(ui,android.R.drawable.ic_menu_copy,"Copiar coordenadas");
+                android.widget.ImageButton map=iconButton(ui,android.R.drawable.ic_menu_mapmode,"Abrir no mapa");
+                android.widget.ImageButton del=iconButton(ui,android.R.drawable.ic_menu_delete,"Excluir registro");
+                row.addView(copy,new LinearLayout.LayoutParams(unit*4/5,unit));
+                row.addView(map,new LinearLayout.LayoutParams(unit*4/5,unit));
+                row.addView(del,new LinearLayout.LayoutParams(unit*4/5,unit));
+                copy.setOnClickListener(v->{
+                    ((ClipboardManager)a.getSystemService(Context.CLIPBOARD_SERVICE))
+                        .setPrimaryClip(ClipData.newPlainText("Coordenadas",
+                            String.format(Locale.US,"%.7f, %.7f",e.lat,e.lon)));
+                    Toast.makeText(a,"Coordenadas copiadas",Toast.LENGTH_SHORT).show();
+                });
+                map.setOnClickListener(v->WorldMapDialog.show(a,e.lat,e.lon,
+                    (lat,lon)->mapApply(a,lat,lon,false),(lat,lon)->mapApply(a,lat,lon,true)));
+                del.setOnClickListener(v->new AlertDialog.Builder(ui)
+                    .setTitle("Excluir registro?")
+                    .setMessage("Esta ação remove apenas o registro local do histórico.")
+                    .setNegativeButton("Cancelar",null)
+                    .setPositiveButton("Excluir",(d,which)->{remove(e.id);renderCurrent(repaint);})
+                    .show());
+                row.setClickable(true);row.setFocusable(true);
+                row.setContentDescription("Teletransportar para "+info.getText());
+                row.setOnClickListener(v->TeleportDialog.confirm(a,e.lat,e.lon,(lat,lon)->{
+                    boolean ok=mapApply(a,lat,lon,false);
+                    if(ok&&historyDialog[0]!=null)historyDialog[0].dismiss();
+                    return ok;
+                }));
+                list.addView(row,rowParams);
+            }
+            MapTheme.style(list);
+        };
         repaint[0]=render;
         previous.setOnClickListener(v->{if(page[0]>0){page[0]--;repaint[0].run();scroll.scrollTo(0,0);}});
         next.setOnClickListener(v->{page[0]++;repaint[0].run();scroll.scrollTo(0,0);});
@@ -65,6 +137,7 @@ public final class Cooldown {
             pick.setOnShowListener(d->MapTheme.styleButtons(pick));pick.show();});render.run();
         AlertDialog dialog=new AlertDialog.Builder(ui).setTitle(dev.pgrazor.PtBr.tr("Cooldown history")).setView(root).setPositiveButton(dev.pgrazor.PtBr.tr("Done"),null).create();
         dialog.setOnShowListener(d->{MapTheme.fullScreen(dialog);MapTheme.style(root);MapTheme.styleButtons(dialog);});
+        historyDialog[0]=dialog;
         DialogLifecycle.bind(a,dialog,null);
         dialog.show();
     }
