@@ -496,23 +496,22 @@ public final class Pad {
         }
     }
     private void applyHudAppearance(){
-        int opacity=Control.hudLabelOpacity()*Control.overlayBackgroundOpacity()/100,font=Control.hudLabelTextSp();
-        int key=(opacity*100+font)*2+(Control.darkTheme()?1:0);
+        int font=Control.hudLabelTextSp();
+        int key=(Control.hudAppearanceRevision()*101+font)*2+(Control.darkTheme()?1:0);
         if(key==lastHudAppearanceKey)return;
         lastHudAppearanceKey=key;
-        int alpha=Math.round(opacity*255f/100f);
-        int bg=(surface()&0x00ffffff)|(alpha<<24);
-        for(TextView label:new TextView[]{vgpActivity,buddyEmotionStatus,automationStatus,gymAutomationStatus,catchChance,encounterBadge,shinyBadge}){
-            if(label==null)continue;
+        TextView[] labels={vgpActivity,buddyEmotionStatus,automationStatus,gymAutomationStatus,
+            catchChance,encounterBadge,shinyBadge,cooldownTimer};
+        int[] bits={Control.HUD_VGP,Control.HUD_BUDDY,Control.HUD_AUTOMATION,Control.HUD_GYM,
+            Control.HUD_CATCH,Control.HUD_ENCOUNTERS,Control.HUD_SHINY,Control.HUD_COOLDOWN};
+        for(int i=0;i<labels.length;i++){
+            TextView label=labels[i];if(label==null)continue;
+            int alpha=Math.round(Control.hudBackgroundOpacity(bits[i])*255f/100f);
             label.setTextSize(font);
             label.setPadding(dp(4),dp(2),dp(4),dp(2));
-            label.setBackground(alpha==0?null:rounded(bg,7));
-            label.setShadowLayer(dp(1.5f),0,dp(.5f),Control.darkTheme()?Color.BLACK:Color.WHITE);
-        }
-        if(cooldownTimer!=null){
-            cooldownTimer.setTextSize(font);
-            cooldownTimer.setBackground(alpha==0?null:rounded(bg,7));
-            cooldownTimer.setShadowLayer(dp(1.5f),0,dp(.5f),Control.darkTheme()?Color.BLACK:Color.WHITE);
+            label.setBackground(alpha==0?null:rounded((alpha<<24)|0x101924,7));
+            label.setTextColor(Control.hudLabelColor(bits[i]));
+            label.setShadowLayer(dp(2.2f),0,dp(.6f),Color.BLACK);
         }
     }
     private static String compactBuddyStatus(String full){
@@ -540,7 +539,7 @@ public final class Pad {
         refreshGymAppearance();
         if(encounterBadge!=null){String count=!Control.encounterOverlay()||settings.isVisible()||(quickMenu!=null&&quickMenu.isShowing())?"":EncounterCounter.label();
             encounterBadge.setVisibility(count.isEmpty()||!Control.hudLabelVisible(Control.HUD_ENCOUNTERS)?View.GONE:View.VISIBLE);
-            if(!count.isEmpty()){setTextIfChanged(encounterBadge,count);encounterBadge.setTextColor(ink());if(encounterDrag!=null)encounterDrag.refreshBounds();}}
+            if(!count.isEmpty()){setTextIfChanged(encounterBadge,count);if(encounterDrag!=null)encounterDrag.refreshBounds();}}
         if(shinyMark!=null){boolean mark=ShinyScanner.targetVisible()&&!settings.isVisible();shinyMark.setVisibility(mark?View.VISIBLE:View.GONE);
             if(mark){// The point is the top of the Pokémon; the symbol sits just above it.
             shinyMark.setX(ShinyScanner.targetX()*parent.getWidth()-dp(16));shinyMark.setY(ShinyScanner.targetY()*parent.getHeight()-dp(34));}}
@@ -554,16 +553,16 @@ public final class Pad {
             final AlertDialog shown=shinyPopup;shown.setCanceledOnTouchOutside(false);DialogLifecycle.bind(activity,shown,null);shown.setOnShowListener(d->MapTheme.styleButtons(shown));shown.show();}}
         if(shinyBadge!=null){String found=settings.isVisible()||(quickMenu!=null&&quickMenu.isShowing())?"":ShinyScanner.foundLabel();
             shinyBadge.setVisibility(found.isEmpty()||!Control.hudLabelVisible(Control.HUD_SHINY)?View.GONE:View.VISIBLE);
-            if(!found.isEmpty()){setTextIfChanged(shinyBadge,found);shinyBadge.setContentDescription(dev.pgrazor.PtBr.tr(found+". Tap for options."));shinyBadge.setTextColor(ink());if(shinyDrag!=null)shinyDrag.refreshBounds();}}
+            if(!found.isEmpty()){setTextIfChanged(shinyBadge,found);shinyBadge.setContentDescription(dev.pgrazor.PtBr.tr(found+". Tap for options."));if(shinyDrag!=null)shinyDrag.refreshBounds();}}
         if(shundoOverlay!=null){shundoOverlay.refresh(!settings.isVisible()&&!(quickMenu!=null&&quickMenu.isShowing()));if(shundoDrag!=null)shundoDrag.refreshBounds();}
-        if(gymAutomationStatus!=null){gymAutomationStatus.setVisibility(Control.hudLabelVisible(Control.HUD_GYM)?gymFeedOverlay.getVisibility():View.GONE);setTextIfChanged(gymAutomationStatus,GymAutomationSettings.overlayStatus());gymAutomationStatus.setTextColor(ink());gymFeedDrag.refreshBounds();}
+        if(gymAutomationStatus!=null){gymAutomationStatus.setVisibility(Control.hudLabelVisible(Control.HUD_GYM)?gymFeedOverlay.getVisibility():View.GONE);setTextIfChanged(gymAutomationStatus,GymAutomationSettings.overlayStatus());gymFeedDrag.refreshBounds();}
         if(vgpToggle!=null){vgpToggle.setVisibility(Control.vgpOverlayVisible()&&!settings.isVisible()&&!(quickMenu!=null&&quickMenu.isShowing())?View.VISIBLE:View.GONE);vgpToggle.setContentDescription(dev.pgrazor.PtBr.tr("Virtual Go Plus "+(Control.vgpEnabled()?"on; tap to turn off":"off; tap to turn on")+". "+Control.vgpStatus()));vgpToggle.invalidate();}
 
         // Pair the status line with the toggle so the cooldown shutoff reason is visible even when VGP is off.
-        if(buddyEmotionStatus!=null){buddyEmotionStatus.setVisibility(Control.hudLabelVisible(Control.HUD_BUDDY)&&BuddyEmotionSettings.overlayEnabled()&&!settings.isVisible()&&!(quickMenu!=null&&quickMenu.isShowing())?View.VISIBLE:View.GONE);setTextIfChanged(buddyEmotionStatus,compactBuddyStatus(BuddyEmotionSettings.status()));buddyEmotionStatus.setTextColor(ink());}
-        if(catchChance!=null){catchChance.setVisibility(Control.hudLabelVisible(Control.HUD_CATCH)&&CatchChance.visible()&&!settings.isVisible()&&!(quickMenu!=null&&quickMenu.isShowing())?View.VISIBLE:View.GONE);setTextIfChanged(catchChance,CatchChance.text());catchChance.setTextColor(ink());}
-        if(automationStatus!=null){automationStatus.setVisibility(Control.hudLabelVisible(Control.HUD_AUTOMATION)&&(EternatusRouteRunner.active()||OneShotAutomation.overlayVisible()||AutoRaid.running())&&!settings.isVisible()&&!(quickMenu!=null&&quickMenu.isShowing())?View.VISIBLE:View.GONE);setTextIfChanged(automationStatus,EternatusRouteRunner.active()?"Eternatus "+EternatusRouteRunner.currentStop()+"/"+EternatusRouteRunner.totalStops()+" · "+EternatusRouteRunner.status():AutoRaid.running()?"Auto-Raid | "+AutoRaid.status():OneShotAutomation.overlayStatus());automationStatus.setTextColor(ink());automationDrag.refreshBounds();}
-        if(vgpActivity!=null){vgpActivity.setVisibility(Control.hudLabelVisible(Control.HUD_VGP)&&Control.vgpOverlayVisible()&&!settings.isVisible()&&!(quickMenu!=null&&quickMenu.isShowing())?View.VISIBLE:View.GONE);setTextIfChanged(vgpActivity,Control.vgpEnabled()?"VGP · Ligado":"VGP · Desligado");vgpActivity.setContentDescription(dev.pgrazor.PtBr.tr("Status completo do VGP: "+Control.vgpStatus()));vgpActivity.setTextColor(ink());}
+        if(buddyEmotionStatus!=null){buddyEmotionStatus.setVisibility(Control.hudLabelVisible(Control.HUD_BUDDY)&&BuddyEmotionSettings.overlayEnabled()&&!settings.isVisible()&&!(quickMenu!=null&&quickMenu.isShowing())?View.VISIBLE:View.GONE);setTextIfChanged(buddyEmotionStatus,compactBuddyStatus(BuddyEmotionSettings.status()));}
+        if(catchChance!=null){catchChance.setVisibility(Control.hudLabelVisible(Control.HUD_CATCH)&&CatchChance.visible()&&!settings.isVisible()&&!(quickMenu!=null&&quickMenu.isShowing())?View.VISIBLE:View.GONE);setTextIfChanged(catchChance,CatchChance.text());}
+        if(automationStatus!=null){automationStatus.setVisibility(Control.hudLabelVisible(Control.HUD_AUTOMATION)&&(EternatusRouteRunner.active()||OneShotAutomation.overlayVisible()||AutoRaid.running())&&!settings.isVisible()&&!(quickMenu!=null&&quickMenu.isShowing())?View.VISIBLE:View.GONE);setTextIfChanged(automationStatus,EternatusRouteRunner.active()?"Eternatus "+EternatusRouteRunner.currentStop()+"/"+EternatusRouteRunner.totalStops()+" · "+EternatusRouteRunner.status():AutoRaid.running()?"Auto-Raid | "+AutoRaid.status():OneShotAutomation.overlayStatus());automationDrag.refreshBounds();}
+        if(vgpActivity!=null){vgpActivity.setVisibility(Control.hudLabelVisible(Control.HUD_VGP)&&Control.vgpOverlayVisible()&&!settings.isVisible()&&!(quickMenu!=null&&quickMenu.isShowing())?View.VISIBLE:View.GONE);setTextIfChanged(vgpActivity,Control.vgpEnabled()?"●":"○");vgpActivity.setContentDescription(dev.pgrazor.PtBr.tr("Status completo do VGP: "+Control.vgpStatus()));}
         if(mapCatchBadge!=null)mapCatchBadge.refresh(!settings.isVisible()&&!(quickMenu!=null&&quickMenu.isShowing())&&!Control.catchScreenVisible());
         if(vgpMarker!=null){boolean show=Control.vgpTargetVisible()&&!settings.isVisible();vgpMarker.setVisibility(show?View.VISIBLE:View.GONE);if(show){vgpMarker.setX(Control.vgpTargetX()*parent.getWidth()-dp(19)*vgpMarker.getScaleX());vgpMarker.setY(Control.vgpTargetY()*parent.getHeight()-dp(36)-dp(46)*vgpMarker.getScaleY());vgpMarker.invalidate();}}
         if(transferToggle!=null){transferToggle.setVisibility(Control.transferOverlayVisible()&&!settings.isVisible()&&!(quickMenu!=null&&quickMenu.isShowing())?View.VISIBLE:View.GONE);transferToggle.setContentDescription(dev.pgrazor.PtBr.tr(transferToggleDescription()));transferToggle.invalidate();}
@@ -571,7 +570,7 @@ public final class Pad {
         String routeReward=Control.takeGameRoutesRewardNotice();
         if(!routeReward.isEmpty()&&!overlaysHidden)Toast.makeText(activity,routeReward,Toast.LENGTH_LONG).show();
         if(gameRoutesOverlay!=null)gameRoutesOverlay.refresh(!settings.isVisible()&&!(quickMenu!=null&&quickMenu.isShowing()));
-        if(cooldownTimer!=null){cooldownTimer.setVisibility(Control.hudLabelVisible(Control.HUD_COOLDOWN)&&Control.cooldownOverlay()?View.VISIBLE:View.GONE);setTextIfChanged(cooldownTimer,"☰  "+Cooldown.label());cooldownTimer.setTextColor(Cooldown.remaining()>0?Color.rgb(255,186,95):accent());}
+        if(cooldownTimer!=null){cooldownTimer.setVisibility(Control.hudLabelVisible(Control.HUD_COOLDOWN)&&Control.cooldownOverlay()?View.VISIBLE:View.GONE);setTextIfChanged(cooldownTimer,Cooldown.compactLabel());cooldownTimer.setContentDescription(Cooldown.label());}
         // The view combines this Pad-side gate with Control.localTimeOverlay()/desiredEnabled() and its own throttle;
         // a false gate (settings open, quick menu up, or overlays hidden) stops its clock work entirely.
         if(localTime!=null){localTime.refresh(Control.hudLabelVisible(Control.HUD_LOCALTIME)&&!overlaysHidden&&!settings.isVisible()&&!(quickMenu!=null&&quickMenu.isShowing()));if(localTimeDrag!=null&&localTime.getVisibility()==View.VISIBLE)localTimeDrag.refreshBounds();}
