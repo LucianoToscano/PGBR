@@ -135,7 +135,7 @@ final class EternatusVisualEffects {
     }
 
     /** Rotating charged atmosphere behind the Poké Ball, without rotating its face. */
-    void ballBehind(Canvas canvas, Bitmap aura, float cx, float cy, float radius,
+    void ballBehind(Canvas canvas, Bitmap vortex, Bitmap aura, float cx, float cy, float radius,
                     long now, int intensity, int speed) {
         float energy = EternatusFxTiming.strength(now, intensity);
         if (energy < .001f || radius <= 0f) return;
@@ -150,6 +150,17 @@ final class EternatusVisualEffects {
         plasma.setAlpha(Math.min(255, Math.round(242f * energy)));
         canvas.drawCircle(0f, 0f, .97f, plasma);
         plasma.setShader(null);
+        if (vortex != null) {
+            int vortexRotation = canvas.save();
+            canvas.rotate(EternatusFxTiming.rotation(now, speed, false));
+            art.setColor(Color.WHITE);
+            art.setColorFilter(vortexTint);
+            art.setAlpha(Math.min(255, Math.round(235f * energy)));
+            canvas.drawBitmap(vortex, null, sourceBounds, art);
+            art.setColorFilter(null);
+            art.setAlpha(255);
+            canvas.restoreToCount(vortexRotation);
+        }
         if (aura != null) {
             int rotation = canvas.save();
             canvas.rotate(EternatusFxTiming.rotation(now, speed, true));
