@@ -197,9 +197,9 @@ public final class Pad {
         // The toggle is the drag handle; the status pill follows it as one coherent unit. Tap still flips VGP.
         vgpDrag=OverlayDrag.attach(overlays,vgpToggle,vgpActivity,"vgp");
         vgpActivity.setOnClickListener(v->new AlertDialog.Builder(MapTheme.wrap(activity))
-            .setTitle("Status do VGP")
+            .setTitle(dev.pgrazor.PtBr.tr("Status do VGP"))
             .setMessage(dev.pgrazor.PtBr.tr(Control.vgpStatus()))
-            .setPositiveButton("Fechar",null).show());
+            .setPositiveButton(dev.pgrazor.PtBr.tr("Fechar"),null).show());
         mapCatchBadge=new MapCatchBadge(host);FrameLayout.LayoutParams mapCatchLayout=new FrameLayout.LayoutParams(dp(54),dp(54),Gravity.TOP|Gravity.LEFT);mapCatchLayout.leftMargin=dp(72);mapCatchLayout.topMargin=dp(100);overlays.addView(mapCatchBadge,mapCatchLayout);mapCatchBadge.setVisibility(View.GONE);
         vgpMarker=new VgpMarker(host);overlays.addView(vgpMarker,new FrameLayout.LayoutParams(dp(38),dp(46)));vgpMarker.setVisibility(View.GONE);
         // Compact Keep All / transfer-rules overlay; tap toggles Keep All, drag repositions (persists transfer.fx/fy).
@@ -508,7 +508,7 @@ public final class Pad {
         if(buddyEmotionStatus!=null){buddyEmotionStatus.setVisibility(Control.hudLabelsVisible()&&BuddyEmotionSettings.overlayEnabled()&&!settings.isVisible()&&!(quickMenu!=null&&quickMenu.isShowing())?View.VISIBLE:View.GONE);setTextIfChanged(buddyEmotionStatus,compactBuddyStatus(BuddyEmotionSettings.status()));buddyEmotionStatus.setTextColor(ink());}
         if(catchChance!=null){catchChance.setVisibility(Control.hudLabelsVisible()&&CatchChance.visible()&&!settings.isVisible()&&!(quickMenu!=null&&quickMenu.isShowing())?View.VISIBLE:View.GONE);setTextIfChanged(catchChance,CatchChance.text());catchChance.setTextColor(ink());}
         if(automationStatus!=null){automationStatus.setVisibility(Control.hudLabelsVisible()&&(OneShotAutomation.overlayVisible()||AutoRaid.running())&&!settings.isVisible()&&!(quickMenu!=null&&quickMenu.isShowing())?View.VISIBLE:View.GONE);setTextIfChanged(automationStatus,AutoRaid.running()?"Auto-Raid | "+AutoRaid.status():OneShotAutomation.overlayStatus());automationStatus.setTextColor(ink());automationDrag.refreshBounds();}
-        if(vgpActivity!=null){vgpActivity.setVisibility(Control.hudLabelsVisible()&&Control.vgpOverlayVisible()&&!settings.isVisible()&&!(quickMenu!=null&&quickMenu.isShowing())?View.VISIBLE:View.GONE);setTextIfChanged(vgpActivity,Control.vgpEnabled()?"VGP · Ligado":"VGP · Desligado");vgpActivity.setContentDescription("Status completo do VGP: "+Control.vgpStatus());vgpActivity.setTextColor(ink());}
+        if(vgpActivity!=null){vgpActivity.setVisibility(Control.hudLabelsVisible()&&Control.vgpOverlayVisible()&&!settings.isVisible()&&!(quickMenu!=null&&quickMenu.isShowing())?View.VISIBLE:View.GONE);setTextIfChanged(vgpActivity,Control.vgpEnabled()?"VGP · Ligado":"VGP · Desligado");vgpActivity.setContentDescription(dev.pgrazor.PtBr.tr("Status completo do VGP: "+Control.vgpStatus()));vgpActivity.setTextColor(ink());}
         if(mapCatchBadge!=null)mapCatchBadge.refresh(!settings.isVisible()&&!(quickMenu!=null&&quickMenu.isShowing())&&!Control.catchScreenVisible());
         if(vgpMarker!=null){boolean show=Control.vgpTargetVisible()&&!settings.isVisible();vgpMarker.setVisibility(show?View.VISIBLE:View.GONE);if(show){vgpMarker.setX(Control.vgpTargetX()*parent.getWidth()-dp(19)*vgpMarker.getScaleX());vgpMarker.setY(Control.vgpTargetY()*parent.getHeight()-dp(36)-dp(46)*vgpMarker.getScaleY());vgpMarker.invalidate();}}
         if(transferToggle!=null){transferToggle.setVisibility(Control.transferOverlayVisible()&&!settings.isVisible()&&!(quickMenu!=null&&quickMenu.isShowing())?View.VISIBLE:View.GONE);transferToggle.setContentDescription(dev.pgrazor.PtBr.tr(transferToggleDescription()));transferToggle.invalidate();}

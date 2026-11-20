@@ -214,8 +214,8 @@ public final class AutoWalkDialog {
             Button start = dialog.getButton(AlertDialog.BUTTON_POSITIVE);
             if (start == null) return;
             if (selectedGpx != null) {
-                gpxInfo.setText(String.format(Locale.getDefault(), "Rota GPX: %s (%d %s). Ao iniciar, a caminhada seguirá as paradas na ordem.",
-                    selectedGpx.name, selectedCount, selectedCount == 1 ? "parada" : "paradas"));
+                gpxInfo.setText(dev.pgrazor.PtBr.tr(String.format(Locale.getDefault(), "Rota GPX: %s (%d %s). Ao iniciar, a caminhada seguirá as paradas na ordem.",
+                    selectedGpx.name, selectedCount, selectedCount == 1 ? "parada" : "paradas")));
                 start.setEnabled(true);
                 return;
             }
@@ -321,7 +321,7 @@ public final class AutoWalkDialog {
                 walkGpx(route, points, looping, 0);
                 return true;
             }));
-            AlertDialog choose = ChoiceList.attach(new AlertDialog.Builder(MapTheme.wrap(activity)).setTitle("Iniciar “" + route.name + "”")
+            AlertDialog choose = ChoiceList.attach(new AlertDialog.Builder(MapTheme.wrap(activity)).setTitle(dev.pgrazor.PtBr.tr("Iniciar “" + route.name + "”"))
                 .setNegativeButton(dev.pgrazor.PtBr.tr("Cancel"), null).create(), labels.toArray(new String[0]), which -> actions.get(which).run());
             DialogLifecycle.bind(activity, choose, null);
             choose.setOnShowListener(d -> MapTheme.styleButtons(choose));
@@ -350,7 +350,7 @@ public final class AutoWalkDialog {
                 ? new String[]{"Retomar rota", "Parar rota definitivamente", "Cancelar"}
                 : new String[]{"Pausar rota", "Parar rota definitivamente", "Cancelar"};
             AlertDialog confirm = new AlertDialog.Builder(MapTheme.wrap(activity))
-                .setTitle("O que deseja fazer com a rota?")
+                .setTitle(dev.pgrazor.PtBr.tr("O que deseja fazer com a rota?"))
                 .setItems(choices, (d, which) -> {
                     if (which == 2) return;
                     if (which == 0) {

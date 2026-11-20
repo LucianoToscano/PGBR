@@ -105,17 +105,17 @@ final class UpdateChecker {
             "\n\n"+(notes.isEmpty()?"Confira as novidades.":notes)+
             "\n\nO Android solicitará sua confirmação para instalar a atualização.";
         new AlertDialog.Builder(MapTheme.wrap(activity))
-            .setTitle("Nova atualização do PGBR")
-            .setMessage(text)
-            .setNegativeButton("Depois",null)
-            .setPositiveButton("Baixar atualização",(dialog,which)->{
+            .setTitle(dev.pgrazor.PtBr.tr("Nova atualização do PGBR"))
+            .setMessage(dev.pgrazor.PtBr.tr(text))
+            .setNegativeButton(dev.pgrazor.PtBr.tr("Depois"),null)
+            .setPositiveButton(dev.pgrazor.PtBr.tr("Baixar atualização"),(dialog,which)->{
                 try{activity.startActivity(new Intent(Intent.ACTION_VIEW,Uri.parse(release.url)));}
                 catch(Exception problem){Toast.makeText(activity,"Não foi possível abrir o download.",Toast.LENGTH_LONG).show();}
             }).show();
     }
     private static void message(Activity a,String text){
-        new AlertDialog.Builder(MapTheme.wrap(a)).setTitle("Atualizações do PGBR")
-            .setMessage(text).setPositiveButton("Entendi",null).show();
+        new AlertDialog.Builder(MapTheme.wrap(a)).setTitle(dev.pgrazor.PtBr.tr("Atualizações do PGBR"))
+            .setMessage(dev.pgrazor.PtBr.tr(text)).setPositiveButton(dev.pgrazor.PtBr.tr("Entendi"),null).show();
     }
     private static Release fetch() throws Exception{
         HttpURLConnection c=null;

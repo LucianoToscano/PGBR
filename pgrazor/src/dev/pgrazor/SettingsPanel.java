@@ -270,8 +270,8 @@ final class SettingsPanel {
         settingsSearch = new EditText(activity);
         settingsSearch.setSingleLine(true);
         settingsSearch.setTextSize(15);
-        settingsSearch.setHint("Buscar configurações, ferramentas e opções");
-        settingsSearch.setContentDescription("Buscar nas configurações do PGBR");
+        settingsSearch.setHint(dev.pgrazor.PtBr.tr("Buscar configurações, ferramentas e opções"));
+        settingsSearch.setContentDescription(dev.pgrazor.PtBr.tr("Buscar nas configurações do PGBR"));
         settingsSearch.setInputType(InputType.TYPE_CLASS_TEXT);
         settingsSearch.setPadding(dp(12),dp(10),dp(12),dp(10));
         home.addView(settingsSearch,new LinearLayout.LayoutParams(-1,dp(52)));
@@ -309,23 +309,23 @@ final class SettingsPanel {
         joystickSwitch.setOnCheckedChangeListener((v,checked) -> { if(checked==Control.joystickVisible())return; host.setJoystickVisible(checked); });
         LinearLayout joystickArt=group(loc,"Aparência do joystick");
         TextView joystickSizeLabel=new TextView(activity);joystickSizeLabel.setTextSize(13);
-        joystickSizeLabel.setText("Tamanho do joystick: "+Control.joystickSizeDp()+" dp");joystickArt.addView(joystickSizeLabel);
+        joystickSizeLabel.setText(dev.pgrazor.PtBr.tr("Tamanho do joystick: "+Control.joystickSizeDp()+" dp"));joystickArt.addView(joystickSizeLabel);
         SeekBar joystickSize=new SeekBar(activity);joystickSize.setMax(132);joystickSize.setProgress(Control.joystickSizeDp()-88);
         joystickArt.addView(joystickSize);
         joystickSize.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){
             public void onProgressChanged(SeekBar bar,int progress,boolean user){
-                if(user){Control.setJoystickSizeDp(88+progress);joystickSizeLabel.setText("Tamanho do joystick: "+Control.joystickSizeDp()+" dp");host.refresh();}
+                if(user){Control.setJoystickSizeDp(88+progress);joystickSizeLabel.setText(dev.pgrazor.PtBr.tr("Tamanho do joystick: "+Control.joystickSizeDp()+" dp"));host.refresh();}
             }
             public void onStartTrackingTouch(SeekBar bar){}
             public void onStopTrackingTouch(SeekBar bar){}
         });
         TextView joystickOpacityLabel=new TextView(activity);joystickOpacityLabel.setTextSize(13);
-        joystickOpacityLabel.setText("Opacidade do joystick: "+Control.joystickOpacity()+"%");joystickArt.addView(joystickOpacityLabel);
+        joystickOpacityLabel.setText(dev.pgrazor.PtBr.tr("Opacidade do joystick: "+Control.joystickOpacity()+"%"));joystickArt.addView(joystickOpacityLabel);
         SeekBar joystickOpacity=new SeekBar(activity);joystickOpacity.setMax(90);joystickOpacity.setProgress(Control.joystickOpacity()-10);
         joystickArt.addView(joystickOpacity);
         joystickOpacity.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){
             public void onProgressChanged(SeekBar bar,int progress,boolean user){
-                if(user){Control.setJoystickOpacity(10+progress);joystickOpacityLabel.setText("Opacidade do joystick: "+Control.joystickOpacity()+"%");host.refresh();}
+                if(user){Control.setJoystickOpacity(10+progress);joystickOpacityLabel.setText(dev.pgrazor.PtBr.tr("Opacidade do joystick: "+Control.joystickOpacity()+"%"));host.refresh();}
             }
             public void onStartTrackingTouch(SeekBar bar){}
             public void onStopTrackingTouch(SeekBar bar){}
@@ -366,27 +366,27 @@ final class SettingsPanel {
         hudVisible.setOnCheckedChangeListener((v,on)->{Control.setHudLabelsVisible(on);host.refresh();});
         caption(hud,"Oculta os textos de estado, relógio e contadores sem desativar suas funções. Alertas importantes de Pokémon Shiny continuam visíveis.");
         TextView fontLabel=new TextView(activity);fontLabel.setTextSize(13);
-        fontLabel.setText("Tamanho das legendas: "+Control.hudLabelTextSp()+" sp");hud.addView(fontLabel);
+        fontLabel.setText(dev.pgrazor.PtBr.tr("Tamanho das legendas: "+Control.hudLabelTextSp()+" sp"));hud.addView(fontLabel);
         SeekBar fontSlider=new SeekBar(activity);fontSlider.setMax(5);
         fontSlider.setProgress(Control.hudLabelTextSp()-9);hud.addView(fontSlider);
         fontSlider.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){
             public void onProgressChanged(SeekBar bar,int progress,boolean fromUser){
                 if(!fromUser)return;
                 Control.setHudLabelTextSp(progress+9);
-                fontLabel.setText("Tamanho das legendas: "+Control.hudLabelTextSp()+" sp");host.refresh();
+                fontLabel.setText(dev.pgrazor.PtBr.tr("Tamanho das legendas: "+Control.hudLabelTextSp()+" sp"));host.refresh();
             }
             public void onStartTrackingTouch(SeekBar bar){}
             public void onStopTrackingTouch(SeekBar bar){}
         });
         TextView opacityLabel=new TextView(activity);opacityLabel.setTextSize(13);
-        opacityLabel.setText("Fundo dos indicadores: "+Control.hudLabelOpacity()+"%");hud.addView(opacityLabel);
+        opacityLabel.setText(dev.pgrazor.PtBr.tr("Fundo dos indicadores: "+Control.hudLabelOpacity()+"%"));hud.addView(opacityLabel);
         SeekBar opacitySlider=new SeekBar(activity);opacitySlider.setMax(100);
         opacitySlider.setProgress(Control.hudLabelOpacity());hud.addView(opacitySlider);
         opacitySlider.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){
             public void onProgressChanged(SeekBar bar,int progress,boolean fromUser){
                 if(!fromUser)return;
                 Control.setHudLabelOpacity(progress);
-                opacityLabel.setText("Fundo dos indicadores: "+progress+"%");host.refresh();
+                opacityLabel.setText(dev.pgrazor.PtBr.tr("Fundo dos indicadores: "+progress+"%"));host.refresh();
             }
             public void onStartTrackingTouch(SeekBar bar){}
             public void onStopTrackingTouch(SeekBar bar){}
@@ -471,17 +471,17 @@ final class SettingsPanel {
             String[] labels={"Manter IV 90% ou mais","Manter IV 95% ou mais","Manter IV 97% ou mais",
                 "Manter IV 98% ou mais","Manter IV 99% ou mais","Manter somente IV 100%",
                 "Manter apenas os Pokémon protegidos / marcados"};
-            new AlertDialog.Builder(dialogContext()).setTitle("Transferência por IV")
+            new AlertDialog.Builder(dialogContext()).setTitle(dev.pgrazor.PtBr.tr("Transferência por IV"))
                 .setSingleChoiceItems(labels,java.util.Arrays.binarySearch(values,Control.transferIvKeepPercent()),(dlg,i)->{
                     dlg.dismiss();
                     if(values[i]==101){
-                        new AlertDialog.Builder(dialogContext()).setTitle("Confirmar regra irreversível")
-                            .setMessage("Este modo poderá transferir até Pokémon com IV 100%! Apenas favoritos, espécies marcadas, Pokémon protegidos por categorias e pelas regras PvP serão preservados. Transferências não podem ser desfeitas.")
-                            .setNegativeButton("Cancelar",null)
-                            .setPositiveButton("Confirmar",(d,w)->{Control.setTransferIvKeepPercent(101);host.refresh();})
+                        new AlertDialog.Builder(dialogContext()).setTitle(dev.pgrazor.PtBr.tr("Confirmar regra irreversível"))
+                            .setMessage(dev.pgrazor.PtBr.tr("Este modo poderá transferir até Pokémon com IV 100%! Apenas favoritos, espécies marcadas, Pokémon protegidos por categorias e pelas regras PvP serão preservados. Transferências não podem ser desfeitas."))
+                            .setNegativeButton(dev.pgrazor.PtBr.tr("Cancelar"),null)
+                            .setPositiveButton(dev.pgrazor.PtBr.tr("Confirmar"),(d,w)->{Control.setTransferIvKeepPercent(101);host.refresh();})
                             .show();
                     }else{Control.setTransferIvKeepPercent(values[i]);host.refresh();}
-                }).setNegativeButton("Cancelar",null).show();
+                }).setNegativeButton(dev.pgrazor.PtBr.tr("Cancelar"),null).show();
         });
         caption(txC,"As transferências são permanentes e só se aplicam a novas capturas. Favoritos e Pokémon com dados desconhecidos são preservados.");
         transferStatus = caption(txC, "");
@@ -716,14 +716,14 @@ final class SettingsPanel {
     private interface VisualChange{void set(int value);}
     private void visualSlider(LinearLayout owner,String title,int min,int max,int initial,VisualChange change){
         TextView label=new TextView(activity);label.setTextSize(13);
-        label.setText(title+": "+initial+(title.contains("Opacidade")?"%":" dp"));
+        label.setText(dev.pgrazor.PtBr.tr(title+": "+initial+(title.contains("Opacidade")?"%":" dp")));
         owner.addView(label);
         SeekBar slider=new SeekBar(activity);slider.setMax(max-min);slider.setProgress(initial-min);
         owner.addView(slider);
         slider.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){
             public void onProgressChanged(SeekBar bar,int progress,boolean fromUser){
                 if(!fromUser)return;int value=min+progress;change.set(value);
-                label.setText(title+": "+value+(title.contains("Opacidade")?"%":" dp"));
+                label.setText(dev.pgrazor.PtBr.tr(title+": "+value+(title.contains("Opacidade")?"%":" dp")));
             }
             public void onStartTrackingTouch(SeekBar bar){}
             public void onStopTrackingTouch(SeekBar bar){}
@@ -991,9 +991,9 @@ final class SettingsPanel {
     private void refreshTransfer() {
         quickSummaryStatus.setText(dev.pgrazor.PtBr.tr(Control.quickSummaryStatus()));
         autoTransferSwitch.setChecked(Control.autoTransferEnabled());
-        if(transferIvLimit!=null)transferIvLimit.setText(Control.transferIvKeepPercent()==101?
+        if(transferIvLimit!=null)transferIvLimit.setText(dev.pgrazor.PtBr.tr(Control.transferIvKeepPercent()==101?
             "IV: manter apenas protegidos / marcados":
-            "IV: manter "+Control.transferIvKeepPercent()+"% ou mais");
+            "IV: manter "+Control.transferIvKeepPercent()+"% ou mais"));
         for(int i=0;i<transferProtection.length;i++)transferProtection[i].setChecked((Control.transferProtect()&(1<<i))!=0);
         for(int i=0;i<3;i++){pvpKeep[i].setChecked(Control.pvpKeep(i));pvpRank[i].setText(dev.pgrazor.PtBr.tr("Top "+Control.pvpRank(i)));pvpRank[i].setEnabled(Control.pvpKeep(i));}
         if(transferKeepList!=null){String kept=Control.transferKeepSpecies();int n=kept.isEmpty()?0:kept.split(",").length;transferKeepList.setText(dev.pgrazor.PtBr.tr(n>0?"Custom keep list ("+n+")":"Custom keep list"));}
@@ -1021,7 +1021,7 @@ final class SettingsPanel {
         content.setOrientation(LinearLayout.VERTICAL);
         content.setPadding(dp(16),dp(14),dp(16),dp(8));
         TextView hint=new TextView(activity);
-        hint.setText("Escolha uma imagem. A aparência muda conforme o VGP está desligado, ativo ou com falha.");
+        hint.setText(dev.pgrazor.PtBr.tr("Escolha uma imagem. A aparência muda conforme o VGP está desligado, ativo ou com falha."));
         hint.setTextSize(14);content.addView(hint);
         LinearLayout previews=new LinearLayout(activity);
         previews.setGravity(Gravity.CENTER);previews.setOrientation(LinearLayout.HORIZONTAL);
@@ -1042,35 +1042,35 @@ final class SettingsPanel {
             image.setPadding(dp(10),dp(10),dp(10),dp(10));
             LinearLayout.LayoutParams params=new LinearLayout.LayoutParams(0,dp(96),1f);
             previews.addView(image,params);
-            image.setContentDescription(i==0?"Ícone LED verde":"Ícone GO Plus com três estados");
+            image.setContentDescription(dev.pgrazor.PtBr.tr(i==0?"Ícone LED verde":"Ícone GO Plus com três estados"));
             image.setOnClickListener(v->{
                 Control.setVgpIconStyle(choice);
                 for(int j=0;j<2;j++)choices[j].setBackgroundColor(j==choice?0x3340BDAA:android.graphics.Color.TRANSPARENT);
                 host.refresh();
-                vgpIconStyleButton.setText("Ícone do VGP: "+(choice==0?"LED":"GO Plus"));
+                vgpIconStyleButton.setText(dev.pgrazor.PtBr.tr("Ícone do VGP: "+(choice==0?"LED":"GO Plus")));
             });
         }
         choices[Control.vgpIconStyle()].setBackgroundColor(0x3340BDAA);
         TextView sizeLabel=new TextView(activity);
-        sizeLabel.setText("Tamanho: "+Control.vgpIconSize()+" dp");
+        sizeLabel.setText(dev.pgrazor.PtBr.tr("Tamanho: "+Control.vgpIconSize()+" dp"));
         sizeLabel.setTextSize(14);content.addView(sizeLabel);
         SeekBar slider=new SeekBar(activity);
         slider.setMax(44);slider.setProgress(Control.vgpIconSize()-28);
         content.addView(slider);
         slider.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){
             public void onProgressChanged(SeekBar bar,int progress,boolean user){
-                if(user){Control.setVgpIconSize(progress+28);sizeLabel.setText("Tamanho: "+Control.vgpIconSize()+" dp");host.refresh();}
+                if(user){Control.setVgpIconSize(progress+28);sizeLabel.setText(dev.pgrazor.PtBr.tr("Tamanho: "+Control.vgpIconSize()+" dp"));host.refresh();}
             }
             public void onStartTrackingTouch(SeekBar bar){}
             public void onStopTrackingTouch(SeekBar bar){}
         });
-        new AlertDialog.Builder(dialogContext()).setTitle("Aparência do VGP")
-            .setView(content).setPositiveButton("Concluir",null).show();
+        new AlertDialog.Builder(dialogContext()).setTitle(dev.pgrazor.PtBr.tr("Aparência do VGP"))
+            .setView(content).setPositiveButton(dev.pgrazor.PtBr.tr("Concluir"),null).show();
     }
     private void refreshVgpOptions() {
         if(vgpIconStyleButton!=null){
             String[] choices={"LED","GO Plus"};
-            vgpIconStyleButton.setText("Ícone do VGP: "+choices[Control.vgpIconStyle()]);
+            vgpIconStyleButton.setText(dev.pgrazor.PtBr.tr("Ícone do VGP: "+choices[Control.vgpIconStyle()]));
         }
         for(int i=0;i<3;i++)vgpChoices[i].setChecked((Control.vgpOptions()&(1<<i))!=0);
         vgpCooldownStop.setChecked(Control.vgpStopOnCooldown());

@@ -157,30 +157,30 @@ public final class EventPanel {
         int pad=Math.round(16*ui.getResources().getDisplayMetrics().density);
         layout.setPadding(pad,pad,pad,pad);
         TextView information=new TextView(ui);
-        information.setText("Modo uma por vez: confira a missão de jogada excelente com recompensa de 25 doces Eternatus, complete-a, resgate e só então avance para a próxima parada GPX.");
+        information.setText(dev.pgrazor.PtBr.tr("Modo uma por vez: confira a missão de jogada excelente com recompensa de 25 doces Eternatus, complete-a, resgate e só então avance para a próxima parada GPX."));
         information.setTextSize(14);layout.addView(information);
         TextView limitation=new TextView(ui);
-        limitation.setText("A identificação exata da recompensa ainda não foi validada no jogo. Este painel é um acompanhamento manual: não gira paradas, captura, resgata ou avança coordenadas automaticamente.");
+        limitation.setText(dev.pgrazor.PtBr.tr("A identificação exata da recompensa ainda não foi validada no jogo. Este painel é um acompanhamento manual: não gira paradas, captura, resgata ou avança coordenadas automaticamente."));
         limitation.setTextSize(12);layout.addView(limitation);
         android.widget.Button route=new android.widget.Button(ui);
-        route.setText("Abrir caminhada GPX");layout.addView(route);
+        route.setText(dev.pgrazor.PtBr.tr("Abrir caminhada GPX"));layout.addView(route);
         android.widget.Button research=new android.widget.Button(ui);
-        research.setText("Configurar pesquisas e resgates");layout.addView(research);
+        research.setText(dev.pgrazor.PtBr.tr("Configurar pesquisas e resgates"));layout.addView(research);
         TextView tally=new TextView(ui);tally.setTextSize(15);layout.addView(tally);
         android.widget.CheckBox received=new android.widget.CheckBox(ui);
-        received.setText("Recebi a missão correta (25 doces)");layout.addView(received);
+        received.setText(dev.pgrazor.PtBr.tr("Recebi a missão correta (25 doces)"));layout.addView(received);
         android.widget.CheckBox excellent=new android.widget.CheckBox(ui);
-        excellent.setText("Fiz a jogada excelente e concluí a missão");layout.addView(excellent);
+        excellent.setText(dev.pgrazor.PtBr.tr("Fiz a jogada excelente e concluí a missão"));layout.addView(excellent);
         android.widget.CheckBox claimed=new android.widget.CheckBox(ui);
-        claimed.setText("Resgatei os 25 doces no jogo");layout.addView(claimed);
+        claimed.setText(dev.pgrazor.PtBr.tr("Resgatei os 25 doces no jogo"));layout.addView(claimed);
         android.widget.Button next=new android.widget.Button(ui);
-        next.setText("Confirmar resgate e preparar próxima parada");layout.addView(next);
+        next.setText(dev.pgrazor.PtBr.tr("Confirmar resgate e preparar próxima parada"));layout.addView(next);
         final int[] completed={0};
         Runnable refresh=()->{
             excellent.setEnabled(received.isChecked());
             claimed.setEnabled(received.isChecked()&&excellent.isChecked());
             next.setEnabled(received.isChecked()&&excellent.isChecked()&&claimed.isChecked());
-            tally.setText("Missões resgatadas nesta sessão: "+completed[0]+" | Doces confirmados: "+(completed[0]*25));
+            tally.setText(dev.pgrazor.PtBr.tr("Missões resgatadas nesta sessão: "+completed[0]+" | Doces confirmados: "+(completed[0]*25)));
         };
         received.setOnCheckedChangeListener((v,checked)->{
             if(!checked){excellent.setChecked(false);claimed.setChecked(false);}
@@ -198,11 +198,11 @@ public final class EventPanel {
         });
         refresh.run();
         TextView note=new TextView(ui);
-        note.setText("Se a parada entregar outra missão, não marque como recebida. Confira o tempo de espera e o estado da rota antes de seguir.");
+        note.setText(dev.pgrazor.PtBr.tr("Se a parada entregar outra missão, não marque como recebida. Confira o tempo de espera e o estado da rota antes de seguir."));
         note.setTextSize(13);layout.addView(note);
         ScrollView scroll=new ScrollView(ui);scroll.addView(layout);
-        AlertDialog dialog=new AlertDialog.Builder(ui).setTitle("Evento Rota Doces Eternatus")
-            .setView(scroll).setNegativeButton("Fechar",null).create();
+        AlertDialog dialog=new AlertDialog.Builder(ui).setTitle(dev.pgrazor.PtBr.tr("Evento Rota Doces Eternatus"))
+            .setView(scroll).setNegativeButton(dev.pgrazor.PtBr.tr("Fechar"),null).create();
         route.setOnClickListener(v->{dialog.dismiss();dev.pgrazor.AutoWalkDialog.show(activity);});
         research.setOnClickListener(v->{dialog.dismiss();dev.pgrazor.ResearchSettings.show(activity);});
         bind(activity,dialog,()->{});
