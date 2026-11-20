@@ -88,6 +88,7 @@ final class Control {
     static double currentLongitude(){return lon;}
     static void event(String type,String message){}
     static boolean quickSpinAllowed(){return quickspin&&live;}
+    static String quickSpinStatus(){return "Pronto";}
 }
 """
 
