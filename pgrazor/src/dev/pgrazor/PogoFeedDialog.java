@@ -48,7 +48,7 @@ import java.util.concurrent.Executors;
 public final class PogoFeedDialog {
     private PogoFeedDialog() {}
 
-    /** PGRazorX: the site's search modes, shown as the top row; Filters follows the selected one. */
+    /** PGBRX: the site's search modes, shown as the top row; Filters follows the selected one. */
     private static final PogoFeedModes.Mode[] MODES = PogoFeedModes.Mode.values();
     /** Results of the other modes (Raids, Quests, ...), kept per mode for the process lifetime. */
     private static final java.util.EnumMap<PogoFeedModes.Mode, List<PogoFeedData.Entry>> MODE_STORE =
@@ -61,7 +61,7 @@ public final class PogoFeedDialog {
     /** Auto-refresh choices picked from the Auto refresh list; 0 = "Off" (manual, Refresh button only). */
     private static final int[] REFRESH_INTERVALS_SEC = {30, 60, 300, 900, 1800, 0};
     private static final String[] REFRESH_LABELS = {"30s", "1m", "5m", "15m", "30m", "Off"};
-    /** PGRazorX: the same choices, spelled out for the Auto refresh picker. */
+    /** PGBRX: the same choices, spelled out for the Auto refresh picker. */
     private static final String[] REFRESH_NAMES = {"30 seconds", "1 minute", "5 minutes", "15 minutes", "30 minutes", "Off (manual)"};
     private static final int DEFAULT_REFRESH_SECONDS = 300;
     /** A 429 always backs off at least this long regardless of a shorter server Retry-After. */
@@ -70,7 +70,7 @@ public final class PogoFeedDialog {
     private static final long SEARCH_GAP_MS = 10_000L;
     /** Found-Pokémon list shared by every opening of the feed (main thread only). */
     private static final List<PogoFeedData.Entry> STORE = new ArrayList<>();
-    /** PGRazorX: Pokémon first found by the latest refresh (its IV/GL/UL searches); cleared when the next one starts. */
+    /** PGBRX: Pokémon first found by the latest refresh (its IV/GL/UL searches); cleared when the next one starts. */
     private static final java.util.Set<String> NEW_IDS = new java.util.HashSet<>();
     private static boolean storeLoaded;
     private static final String STORE_KEY = "found_pokemon_v1";
@@ -82,9 +82,9 @@ public final class PogoFeedDialog {
         LinearLayout root = new LinearLayout(ui);
         root.setOrientation(LinearLayout.VERTICAL);
         AlertDialog dialog = new AlertDialog.Builder(ui)
-            .setTitle("PoGoCoordinates")
+            .setTitle(dev.pgrazor.PtBr.tr("PoGoCoordinates"))
             .setView(root)
-            .setNegativeButton("Close", null)
+            .setNegativeButton(dev.pgrazor.PtBr.tr("Close"), null)
             .create();
         Controller controller = new Controller(activity, ui, dialog, root);
         bindLifecycle(activity, dialog, controller);
@@ -134,7 +134,7 @@ public final class PogoFeedDialog {
          *  only Log out (or each Pokémon's despawn) removes rows. */
         private List<PogoFeedData.Entry> entries = STORE;
         private final List<PogoFeedData.Entry> visible = new ArrayList<>();
-        /** PGRazorX: section title shown above visible[i] when a section starts there (Pokémon mode), else null. */
+        /** PGBRX: section title shown above visible[i] when a section starts there (Pokémon mode), else null. */
         private final List<String> sections = new ArrayList<>();
         private HashMap<PogoFeedData.Entry, Double> distCache = new HashMap<>();
         private final FeedAdapter adapter = new FeedAdapter();
@@ -404,7 +404,7 @@ public final class PogoFeedDialog {
         /** Shows a sign-in hint/error above the WebView (null restores the default prompt). */
         private void showLoginNote(String note) {
             if (loginPrompt == null || closed) return;
-            loginPrompt.setText(note == null ? "Sign in with Discord on PoGoCoordinates:" : note);
+            loginPrompt.setText(dev.pgrazor.PtBr.tr(note == null ? "Sign in with Discord on PoGoCoordinates:" : note));
         }
 
         /** Checks for the site's JWT a few times after /callback (the token is saved asynchronously). */
@@ -433,16 +433,16 @@ public final class PogoFeedDialog {
                 + "3. Paste it below.", 12);
             box.addView(help);
             EditText input = new EditText(ui);
-            input.setHint("eyJ…");
+            input.setHint(dev.pgrazor.PtBr.tr("eyJ…"));
             input.setSingleLine(true);
             input.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS | InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD);
             noAutofill(input);
             box.addView(input);
             AlertDialog ask = new AlertDialog.Builder(ui)
-                .setTitle("Sign in with a token")
+                .setTitle(dev.pgrazor.PtBr.tr("Sign in with a token"))
                 .setView(box)
-                .setPositiveButton("Use token", null)
-                .setNegativeButton("Cancel", null)
+                .setPositiveButton(dev.pgrazor.PtBr.tr("Use token"), null)
+                .setNegativeButton(dev.pgrazor.PtBr.tr("Cancel"), null)
                 .create();
             trackOwn(ask);
             ask.setOnShowListener(d -> {
@@ -580,7 +580,7 @@ public final class PogoFeedDialog {
             filtersRow.setOnClickListener(v -> openFilters());
             intervalRow = FeedUi.button(ui, "Auto refresh");
             intervalRow.setOnClickListener(v -> {
-                // PGRazorX: pick the interval from a list; the current one carries a tick.
+                // PGBRX: pick the interval from a list; the current one carries a tick.
                 String[] names = new String[REFRESH_LABELS.length];
                 for (int i = 0; i < names.length; i++)
                     names[i] = REFRESH_NAMES[i] + (i == refreshIntervalIndex ? "   \u2713" : "");
@@ -622,14 +622,14 @@ public final class PogoFeedDialog {
             list.setVerticalScrollBarEnabled(false);
             list.setClipToPadding(false);
             list.setPadding(dp(2), 0, dp(2), dp(4));
-            // PGRazorX: let the cards' soft shadow draw past their own bounds, so the empty-results card's rounded
+            // PGBRX: let the cards' soft shadow draw past their own bounds, so the empty-results card's rounded
             // corners are not left with square, see-through patches where its shadow was cut off.
             list.setClipChildren(false);
             list.addHeaderView(top, null, false);
             // Empty state: a small card in place of the rows (an empty view would hide the SEARCH header too).
             FrameLayout emptyHolder = new FrameLayout(ui);
             emptyCard = new TextView(ui);
-            emptyCard.setText("No live results in range.");
+            emptyCard.setText(dev.pgrazor.PtBr.tr("No live results in range."));
             emptyCard.setGravity(Gravity.CENTER);
             emptyCard.setPadding(dp(16), dp(22), dp(16), dp(22));
             emptyHolder.setClipChildren(false); emptyHolder.setClipToPadding(false);
@@ -688,11 +688,11 @@ public final class PogoFeedDialog {
             h.setOrientation(LinearLayout.HORIZONTAL);
             h.setGravity(Gravity.CENTER_VERTICAL);
             h.setPadding(dp(8), dp(14), dp(6), dp(6));
-            TextView t = new TextView(ui); t.setText(title);
+            TextView t = new TextView(ui); t.setText(dev.pgrazor.PtBr.tr(title));
             h.addView(t, new LinearLayout.LayoutParams(0, -2, 1));
             feedHeaders.add(t);
             if (action != null) {
-                TextView a = new TextView(ui); a.setText(action); a.setPadding(dp(10), dp(4), dp(4), dp(4));
+                TextView a = new TextView(ui); a.setText(dev.pgrazor.PtBr.tr(action)); a.setPadding(dp(10), dp(4), dp(4), dp(4));
                 a.setClickable(true); a.setFocusable(true); a.setBackground(FeedTheme.rowRipple(ui));
                 a.setOnClickListener(v -> onAction.run());
                 a.setTag("action");
@@ -759,21 +759,21 @@ public final class PogoFeedDialog {
             radiusInput = new EditText(ui);
             radiusInput.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL);
             radiusInput.setSingleLine(true);
-            radiusInput.setHint("km");
+            radiusInput.setHint(dev.pgrazor.PtBr.tr("km"));
             radiusInput.setTextSize(16);
             radiusInput.setImeOptions(android.view.inputmethod.EditorInfo.IME_ACTION_DONE);
             noAutofill(radiusInput);
-            if (radiusKm > 0) radiusInput.setText(formatKm(radiusKm));
+            if (radiusKm > 0) radiusInput.setText(dev.pgrazor.PtBr.tr(formatKm(radiusKm)));
             body.addView(radiusInput, new LinearLayout.LayoutParams(-1, dp(46)));
             TextView hint = label("Up to " + formatKm(MAX_RADIUS_KM) + " km around your current location. Global searches worldwide.", 12);
             hint.setPadding(0, dp(8), 0, 0);
             body.addView(hint);
             AlertDialog d = new AlertDialog.Builder(ui)
-                .setTitle("Search radius")
+                .setTitle(dev.pgrazor.PtBr.tr("Search radius"))
                 .setView(body)
-                .setPositiveButton("Set", (x, w) -> applyRadiusInput())
-                .setNeutralButton("Global", (x, w) -> { radiusInput.setText(""); setRadius(0); })
-                .setNegativeButton("Cancel", null)
+                .setPositiveButton(dev.pgrazor.PtBr.tr("Set"), (x, w) -> applyRadiusInput())
+                .setNeutralButton(dev.pgrazor.PtBr.tr("Global"), (x, w) -> { radiusInput.setText(dev.pgrazor.PtBr.tr("")); setRadius(0); })
+                .setNegativeButton(dev.pgrazor.PtBr.tr("Cancel"), null)
                 .create();
             trackOwn(d);
             radiusInput.setOnEditorActionListener((v, actionId, ev) -> { applyRadiusInput(); d.dismiss(); return true; });
@@ -938,7 +938,7 @@ public final class PogoFeedDialog {
             fetchInFlight = true;
             lastFetchStartedElapsed = nowE;
             final int g = generation;
-            // PGRazorX: a radius search is centred on the current location (the spoofed one while the spoof is on,
+            // PGBRX: a radius search is centred on the current location (the spoofed one while the spoof is on,
             // otherwise the real one the game sees), never on a stale spoof point.
             final double lat = Control.currentLatitude(), lon = Control.currentLongitude();
             final double radiusKm = this.radiusKm > 0 ? this.radiusKm : Double.POSITIVE_INFINITY; // ∞ → Global
@@ -1141,7 +1141,7 @@ public final class PogoFeedDialog {
             long nowE = SystemClock.elapsedRealtime();
             if (nowE < backoffUntilElapsed) {
                 long s = (backoffUntilElapsed - nowE + 999) / 1000;
-                feedStatus.setText("Rate limited by PoGoCoordinates. Retrying in " + s + "s.");
+                feedStatus.setText(dev.pgrazor.PtBr.tr("Rate limited by PoGoCoordinates. Retrying in " + s + "s."));
                 return;
             }
             StringBuilder sb = new StringBuilder();
@@ -1161,14 +1161,14 @@ public final class PogoFeedDialog {
                 }
             }
             if (note != null && !note.isEmpty()) sb.append('\n').append(note);
-            feedStatus.setText(sb.toString());
+            feedStatus.setText(dev.pgrazor.PtBr.tr(sb.toString()));
         }
 
         // ------------------------------------------------------------------ list model
 
         private void rebuildVisible() {
             long now = System.currentTimeMillis();
-            // PGRazorX: distances from the current location (the last spoof point only while it is unknown).
+            // PGBRX: distances from the current location (the last spoof point only while it is unknown).
             final double clat = Control.currentLatitude(), clon = Control.currentLongitude(), here = Double.isFinite(clat) && Double.isFinite(clon) ? 1 : 0;
             final double elat = here > 0 ? clat : Control.engine.latitude, elon = here > 0 ? clon : Control.engine.longitude;
             final HashMap<PogoFeedData.Entry, Double> dist = new HashMap<>();
@@ -1188,7 +1188,7 @@ public final class PogoFeedDialog {
             }
             sections.clear();
             if (entries == STORE) {
-                // PGRazorX: NEWS (found by the latest refresh), UNSEEN (still without coordinates), then
+                // PGBRX: NEWS (found by the latest refresh), UNSEEN (still without coordinates), then
                 // SEEN by distance. Rows are kept in found order, so a later index is a newer find.
                 final HashMap<PogoFeedData.Entry, Integer> found = new HashMap<>();
                 for (int i = 0; i < STORE.size(); i++) found.put(STORE.get(i), i);
@@ -1236,13 +1236,13 @@ public final class PogoFeedDialog {
                     holder.icon.setImageDrawable(null);
                     holder.icon.setVisibility(View.GONE);
                     holder.fallbackShape.setColor(kindColor(e.kind));
-                    holder.fallback.setText(glyphLetter(e.kind));
+                    holder.fallback.setText(dev.pgrazor.PtBr.tr(glyphLetter(e.kind)));
                     holder.fallback.setVisibility(View.VISIBLE);
                 }
                 String description = iconDescription(e, now);
-                holder.icon.setContentDescription(description);
-                holder.fallback.setContentDescription(description);
-                // PGRazorX: country flag from the place, NEW tag for the latest refresh's finds.
+                holder.icon.setContentDescription(dev.pgrazor.PtBr.tr(description));
+                holder.fallback.setContentDescription(dev.pgrazor.PtBr.tr(description));
+                // PGBRX: country flag from the place, NEW tag for the latest refresh's finds.
                 String flag = PogoFeedData.countryFlag(e.details);
                 android.text.SpannableStringBuilder title = new android.text.SpannableStringBuilder(flag.isEmpty() ? "" : flag + " ");
                 title.append(displayName(e));
@@ -1251,17 +1251,17 @@ public final class PogoFeedDialog {
                     int from = title.length(); title.append("NEW");
                     title.setSpan(new NewTag(dp(8), dp(7)), from, title.length(), android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
                 }
-                holder.title.setText(title);
+                holder.title.setText(dev.pgrazor.PtBr.tr(title));
                 String section = position < sections.size() ? sections.get(position) : null;
                 holder.section.setVisibility(section == null ? View.GONE : View.VISIBLE);
-                holder.section.setText(section == null ? "" : section);
+                holder.section.setText(dev.pgrazor.PtBr.tr(section == null ? "" : section));
                 String sub = displaySubtitle(e, now);
                 Double d = distCache.get(e);
                 StringBuilder line = new StringBuilder();
                 if (sub != null && !sub.isEmpty()) line.append(sub);
                 if (d != null && Double.isFinite(d)) { if (line.length() > 0) line.append("  ·  "); line.append(formatDistance(d)); }
                 else if (!e.hasCoords()) { if (line.length() > 0) line.append("  ·  "); line.append("🔒 tap to get coords"); }
-                holder.subtitle.setText(line.toString());
+                holder.subtitle.setText(dev.pgrazor.PtBr.tr(line.toString()));
                 return holder.view;
             }
         }
@@ -1297,7 +1297,7 @@ public final class PogoFeedDialog {
             h.subtitle = new TextView(context); h.subtitle.setTextSize(12.5f); h.subtitle.setTextColor(FeedTheme.muted());
             text.addView(h.title); text.addView(h.subtitle);
             row.addView(text, new LinearLayout.LayoutParams(0, -2, 1));
-            // PGRazorX: a section title (NEWS / UNSEEN / SEEN) above the first row of each group.
+            // PGBRX: a section title (NEWS / UNSEEN / SEEN) above the first row of each group.
             LinearLayout outer = new LinearLayout(context);
             outer.setOrientation(LinearLayout.VERTICAL);
             h.section = new TextView(context);
@@ -1331,7 +1331,7 @@ public final class PogoFeedDialog {
             View view; ImageView icon; TextView fallback, title, subtitle, section; GradientDrawable fallbackShape;
         }
 
-        /** PGRazorX: small orange pill with white bold text, drawn inline after a row's title. */
+        /** PGBRX: small orange pill with white bold text, drawn inline after a row's title. */
         private static final class NewTag extends android.text.style.ReplacementSpan {
             private final int pad, radius;
             NewTag(int pad, int radius) { this.pad = pad; this.radius = radius; }
@@ -1381,9 +1381,9 @@ public final class PogoFeedDialog {
             actions.addView(teleport, new LinearLayout.LayoutParams(0, dp(48), 1));
             body.addView(actions);
             AlertDialog detail = new AlertDialog.Builder(ui)
-                .setTitle(displayName(e))
+                .setTitle(dev.pgrazor.PtBr.tr(displayName(e)))
                 .setView(body)
-                .setNegativeButton("Close", null)
+                .setNegativeButton(dev.pgrazor.PtBr.tr("Close"), null)
                 .create();
             trackOwn(detail);
             detail.setOnShowListener(d -> {
@@ -1410,15 +1410,15 @@ public final class PogoFeedDialog {
             lp.topMargin = dp(14);
             body.addView(get, lp);
             AlertDialog detail = new AlertDialog.Builder(ui)
-                .setTitle(displayName(e))
+                .setTitle(dev.pgrazor.PtBr.tr(displayName(e)))
                 .setView(body)
-                .setNegativeButton("Close", null)
+                .setNegativeButton(dev.pgrazor.PtBr.tr("Close"), null)
                 .create();
             trackOwn(detail);
             detail.setOnShowListener(d -> {
                 FeedTheme.style(body); FeedTheme.styleGameButtons(body); FeedTheme.styleButtons(detail);
                 get.setOnClickListener(v -> {
-                    get.setEnabled(false); get.setText("Getting coords…");
+                    get.setEnabled(false); get.setText(dev.pgrazor.PtBr.tr("Getting coords…"));
                     final String id = e.id.startsWith("shiny:") ? e.id.substring(6) : e.id.startsWith("pokemon:") ? e.id.substring(8) : e.id;
                     net.execute(() -> {
                         double[] ll = null; String err = null;
@@ -1430,7 +1430,7 @@ public final class PogoFeedDialog {
                             if (closed) return;
                             if (got == null) {
                                 toast(error);
-                                if (detail.isShowing()) { get.setEnabled(true); get.setText("Get coords"); }
+                                if (detail.isShowing()) { get.setEnabled(true); get.setText(dev.pgrazor.PtBr.tr("Get coords")); }
                                 return;
                             }
                             PogoFeedData.Entry located = e.withCoords(got[0], got[1]);
@@ -1513,7 +1513,7 @@ public final class PogoFeedDialog {
 
         // ------------------------------------------------------------------ child dialog tracking + teardown
 
-        /** PGRazorX: the Auto refresh list's tick in the theme accent, bold. */
+        /** PGBRX: the Auto refresh list's tick in the theme accent, bold. */
         private void tintTick(View v) {
             if (v instanceof TextView) {
                 CharSequence t = ((TextView) v).getText(); int at = t == null ? -1 : t.toString().lastIndexOf('\u2713');
@@ -1521,7 +1521,7 @@ public final class PogoFeedDialog {
                     android.text.SpannableString sp = new android.text.SpannableString(t.toString());
                     sp.setSpan(new android.text.style.ForegroundColorSpan(FeedTheme.accent()), at, at + 1, 0);
                     sp.setSpan(new android.text.style.StyleSpan(android.graphics.Typeface.BOLD), at, at + 1, 0);
-                    ((TextView) v).setText(sp);
+                    ((TextView) v).setText(dev.pgrazor.PtBr.tr(sp));
                 }
             } else if (v instanceof android.view.ViewGroup) {
                 android.view.ViewGroup g = (android.view.ViewGroup) v;
@@ -1560,10 +1560,10 @@ public final class PogoFeedDialog {
         // ------------------------------------------------------------------ view helpers
 
         private int dp(float v) { return Math.round(v * activity.getResources().getDisplayMetrics().density); }
-        private TextView label(String text, int size) { TextView v = new TextView(ui); v.setText(text); v.setTextSize(size); return v; }
-        private Button button(String text) { Button b = new Button(ui); b.setText(text); b.setAllCaps(false); b.setTextSize(13.5f); return b; }
+        private TextView label(String text, int size) { TextView v = new TextView(ui); v.setText(dev.pgrazor.PtBr.tr(text)); v.setTextSize(size); return v; }
+        private Button button(String text) { Button b = new Button(ui); b.setText(dev.pgrazor.PtBr.tr(text)); b.setAllCaps(false); b.setTextSize(13.5f); return b; }
         private Button segButton(String text) {
-            Button b = new Button(ui); b.setText(text); b.setAllCaps(false); b.setTextSize(13);
+            Button b = new Button(ui); b.setText(dev.pgrazor.PtBr.tr(text)); b.setAllCaps(false); b.setTextSize(13);
             b.setPadding(dp(10), 0, dp(10), 0); b.setMinWidth(dp(52)); return b;
         }
         private void noAutofill(View v) {

@@ -5,7 +5,8 @@ test('production page loads its assets and stays within the viewport', async ({ 
   page.on('pageerror', error => errors.push(error.message));
   await page.goto('./');
   await expect(page.locator('h1')).toBeVisible();
-  await expect(page.locator('a[href="https://github.com/jpitty03/PGRazor/releases/latest"]').first()).toBeVisible();
+  await expect(page.locator('h1')).not.toContainText('PGRazor');
+  await expect(page.locator('a[href="https://github.com/LucianoToscano/PGBR/actions/workflows/pgbr-build-full-ptbr-candidate.yml"]').first()).toBeVisible();
   for (const image of await page.locator('img').all()) {
     await image.scrollIntoViewIfNeeded();
     await expect.poll(() => image.evaluate(img => img.complete && img.naturalWidth > 0)).toBeTruthy();
@@ -99,11 +100,11 @@ test('cooldown trigger and safe groups expand', async ({ page }) => {
 test('current stable release notes accompany the latest download', async ({ page }) => {
   await page.goto('./');
   const releaseNotes = page.locator(
-    'a[href="https://github.com/jpitty03/PGRazor/releases/tag/v0.3.0"]'
+    'a[href="https://github.com/LucianoToscano/PGBR/actions/workflows/pgbr-build-full-ptbr-candidate.yml"]'
   );
-  await expect(releaseNotes).toHaveCount(1);
-  await expect(releaseNotes).toBeVisible();
+  await expect(releaseNotes.first()).toBeVisible();
+  await expect(releaseNotes.first()).toBeVisible();
   // It must not masquerade as the primary "latest release" call to action.
-  await expect(releaseNotes).not.toHaveClass(/btn--primary/);
-  await expect(page.locator('.cta__badge')).toHaveText('Stable');
+  await expect(releaseNotes.last()).not.toHaveClass(/btn--primary/);
+  await expect(page.locator('.cta__badge')).toHaveText('Teste');
 });

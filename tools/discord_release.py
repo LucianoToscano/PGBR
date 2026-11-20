@@ -14,7 +14,7 @@ class NoRedirect(urllib.request.HTTPRedirectHandler):
 
 
 def request(url, *, token=None, payload=None):
-    headers = {'User-Agent': 'PGRazor-release-announcer', 'Accept': 'application/json'}
+    headers = {'User-Agent': 'PGBR-release-announcer', 'Accept': 'application/json'}
     if token:
         headers['Authorization'] = 'Bearer ' + token
     data = None
@@ -35,11 +35,15 @@ def message(release, role_id=''):
     if len(notes) > 3000:
         notes = notes[:2997] + '...'
     assets = release.get('assets', [])
-    apk = next((a['browser_download_url'] for a in assets if a.get('name') == 'PGRazor.apk'), None)
+    tag = release.get('tag_name') or ''
+    apk_asset = next((a for a in assets if a.get('name') in (f'PGBR-{tag}.apk', 'PGBR.apk')), None)
+    apk = apk_asset['browser_download_url'] if apk_asset else None
     highlight = next((a['browser_download_url'] for a in assets if a.get('name') == 'release-highlight.png'), None)
-    fields = [{'name': 'Download', 'value': '[Install PGRazor.apk](' + apk + ')'}] if apk else []
-    for filename, label in (('PGRazor-Root.apk', 'Root installer APK'),
-                            ('PGRazor-Root-module.zip', 'Root module ZIP')):
+    fields = [{'name': 'Download', 'value': '[Install ' + apk_asset['name'] + '](' + apk + ')'}] if apk else []
+    for filename, label in ((f'PGBR-{tag}-Root.apk', 'Root installer APK'),
+                            (f'PGBR-{tag}-Root-module.zip', 'Root module ZIP'),
+                            ('PGBR-Root.apk', 'Root installer APK'),
+                            ('PGBR-Root-module.zip', 'Root module ZIP')):
         asset = next((a for a in assets if a.get('name') == filename), None)
         if asset:
             fields.append({'name': label, 'value': '[' + filename + '](' + asset['browser_download_url'] + ')'})
@@ -49,14 +53,14 @@ def message(release, role_id=''):
     embed = {'title': (release.get('name') or release['tag_name'])[:256],
              'url': release['html_url'], 'description': notes,
              'color': 0x35DAB4, 'fields': fields,
-             'footer': {'text': 'PGRazor | ' + kind}}
+             'footer': {'text': 'PGBR | ' + kind}}
     # Optional release highlight screenshot shown inline in the embed when present.
     if highlight:
         embed['image'] = {'url': highlight}
-    payload = {'username': 'PGRazor Releases', 'allowed_mentions': {'parse': []},
+    payload = {'username': 'PGBR Releases', 'allowed_mentions': {'parse': []},
             'embeds': [embed]}
     if role_id:
-        payload['content'] = '<@&' + role_id + '> A new PGRazor release is available!'
+        payload['content'] = '<@&' + role_id + '> A new PGBR release is available!'
         payload['allowed_mentions']['roles'] = [role_id]
     return payload
 

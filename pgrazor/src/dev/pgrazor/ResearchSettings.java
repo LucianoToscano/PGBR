@@ -76,31 +76,31 @@ public final class ResearchSettings {
         LinearLayout body = new LinearLayout(ui); body.setOrientation(LinearLayout.VERTICAL);
         int pad = MapTheme.dp(ui, 16); body.setPadding(pad, pad, pad, pad);
 
-        CheckBox claim = new CheckBox(ui); claim.setText("Auto-claim completed field research");
+        CheckBox claim = new CheckBox(ui); claim.setText(dev.pgrazor.PtBr.tr("Auto-claim completed field research"));
         claim.setChecked(preferences.claim()); body.addView(claim);
         TextView claimHelp = new TextView(ui);
-        claimHelp.setText("Claims field research once its goal is met. Pokémon encounter rewards wait in the game's research view for you to catch. Special, timed and story research stay manual.");
+        claimHelp.setText(dev.pgrazor.PtBr.tr("Claims field research once its goal is met. Pokémon encounter rewards wait in the game's research view for you to catch. Special, timed and story research stay manual."));
         body.addView(claimHelp);
 
-        CheckBox remove = new CheckBox(ui); remove.setText("Auto-delete selected tasks");
+        CheckBox remove = new CheckBox(ui); remove.setText(dev.pgrazor.PtBr.tr("Auto-delete selected tasks"));
         remove.setChecked(preferences.remove()); body.addView(remove);
         TextView removeHelp = new TextView(ui);
-        removeHelp.setText("Deletes unfinished field research whose task is ticked below. Gym bonus tasks are never deleted.");
+        removeHelp.setText(dev.pgrazor.PtBr.tr("Deletes unfinished field research whose task is ticked below. Gym bonus tasks are never deleted."));
         body.addView(removeHelp);
 
-        CheckBox catchEncounters = new CheckBox(ui); catchEncounters.setText("Auto-catch research encounters");
+        CheckBox catchEncounters = new CheckBox(ui); catchEncounters.setText(dev.pgrazor.PtBr.tr("Auto-catch research encounters"));
         catchEncounters.setChecked(preferences.catchEncounters()); body.addView(catchEncounters);
         TextView catchHelp = new TextView(ui);
-        catchHelp.setText("Catches waiting field research encounters without the encounter screen, using your VGP+ ball and throw settings. Each throw uses a ball. Caught Pokémon follow your transfer rules, including Keep All. Works alongside VGP.");
+        catchHelp.setText(dev.pgrazor.PtBr.tr("Catches waiting field research encounters without the encounter screen, using your VGP+ ball and throw settings. Each throw uses a ball. Caught Pokémon follow your transfer rules, including Keep All. Works alongside VGP."));
         body.addView(catchHelp);
 
-        EditText search = new EditText(ui); search.setHint("Search tasks or rewards"); search.setSingleLine(true);
+        EditText search = new EditText(ui); search.setHint(dev.pgrazor.PtBr.tr("Search tasks or rewards")); search.setSingleLine(true);
         body.addView(search);
         TextView empty = new TextView(ui);
-        empty.setText("No field research seen yet. Tasks appear here as the game gives them to you while PGRazor runs.");
+        empty.setText(dev.pgrazor.PtBr.tr("No field research seen yet. Tasks appear here as the game gives them to you while PGBR runs."));
         body.addView(empty);
         LinearLayout list = new LinearLayout(ui); list.setOrientation(LinearLayout.VERTICAL); body.addView(list);
-        TextView status = new TextView(ui); status.setText(status()); body.addView(status);
+        TextView status = new TextView(ui); status.setText(dev.pgrazor.PtBr.tr(status())); body.addView(status);
 
         Runnable[] fill = new Runnable[1];
         Runnable refill = () -> list.post(fill[0]);
@@ -139,11 +139,11 @@ public final class ResearchSettings {
         fill[0].run();
 
         ScrollView scroll = new ScrollView(ui); scroll.addView(body);
-        AlertDialog dialog = new AlertDialog.Builder(ui).setTitle("Research").setView(scroll)
-            .setPositiveButton("Done", null).create();
+        AlertDialog dialog = new AlertDialog.Builder(ui).setTitle(dev.pgrazor.PtBr.tr("Research")).setView(scroll)
+            .setPositiveButton(dev.pgrazor.PtBr.tr("Done"), null).create();
         Handler handler = new Handler(Looper.getMainLooper());
         Runnable refresh = new Runnable() {
-            public void run() { if (dialog.isShowing()) { status.setText(status()); handler.postDelayed(this, 1000); } }
+            public void run() { if (dialog.isShowing()) { status.setText(dev.pgrazor.PtBr.tr(status())); handler.postDelayed(this, 1000); } }
         };
         DialogLifecycle.bind(activity, dialog, () -> handler.removeCallbacks(refresh));
         dialog.setOnShowListener(d -> {
@@ -173,7 +173,7 @@ public final class ResearchSettings {
         TextView title = new TextView(ui);
         String text = (collapsible ? (open ? "▾ " : "▸ ") : "") + categoryName(category) + " (" + templates.size() + ")";
         if (picked > 0) text += " · " + picked + " ticked";
-        title.setText(text);
+        title.setText(dev.pgrazor.PtBr.tr(text));
         title.setTypeface(title.getTypeface(), android.graphics.Typeface.BOLD);
         title.setPadding(0, MapTheme.dp(ui, 8), 0, MapTheme.dp(ui, 8));
         if (collapsible) title.setOnClickListener(v -> {
@@ -182,7 +182,7 @@ public final class ResearchSettings {
         });
         row.addView(title, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
         CheckBox all = new CheckBox(ui);
-        all.setText("All");
+        all.setText(dev.pgrazor.PtBr.tr("All"));
         all.setChecked(picked == templates.size());
         all.setOnCheckedChangeListener((v, on) -> {
             try { preferences.selectAll(templates, on); Control.saveSettings(); }
@@ -198,7 +198,7 @@ public final class ResearchSettings {
         CheckBox box = new CheckBox(ui);
         String label = task[2].isEmpty() ? task[1] : task[1] + "\n" + task[2];
         if (same.get(task[1] + "\n" + task[2]) > 1) label += "\n" + task[0];
-        box.setText(label);
+        box.setText(dev.pgrazor.PtBr.tr(label));
         box.setChecked(preferences.selected(task[0]));
         box.setOnCheckedChangeListener((v, on) -> {
             try { preferences.select(task[0], on); Control.saveSettings(); }

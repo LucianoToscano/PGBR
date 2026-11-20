@@ -23,9 +23,9 @@ public final class TeleportDialog {
         if(!CooldownState.valid(lat,lon))throw new IllegalArgumentException("Invalid teleport coordinates");
         if(active!=null&&active.isShowing())return active;
         Handler main=new Handler(Looper.getMainLooper());
-        AlertDialog dialog=new AlertDialog.Builder(MapTheme.wrap(activity)).setTitle("Teleport cooldown")
-            .setMessage(warning(lat,lon)).setNegativeButton("Cancel",null).setPositiveButton("Teleport",null).create();
-        Runnable refresh=new Runnable(){public void run(){if(dialog.isShowing()){dialog.setMessage(warning(lat,lon));main.postDelayed(this,1000);}}};
+        AlertDialog dialog=new AlertDialog.Builder(MapTheme.wrap(activity)).setTitle(dev.pgrazor.PtBr.tr("Teleport cooldown"))
+            .setMessage(dev.pgrazor.PtBr.tr(warning(lat,lon))).setNegativeButton(dev.pgrazor.PtBr.tr("Cancel"),null).setPositiveButton(dev.pgrazor.PtBr.tr("Teleport"),null).create();
+        Runnable refresh=new Runnable(){public void run(){if(dialog.isShowing()){dialog.setMessage(dev.pgrazor.PtBr.tr(warning(lat,lon)));main.postDelayed(this,1000);}}};
         active=dialog;
         DialogLifecycle.bind(activity,dialog,()->{main.removeCallbacksAndMessages(null);if(active==dialog)active=null;});
         dialog.setOnShowListener(d->{MapTheme.styleButtons(dialog);main.post(refresh);

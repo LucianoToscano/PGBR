@@ -18,7 +18,7 @@ import java.io.RandomAccessFile;
 import java.nio.charset.StandardCharsets;
 
 /**
- * PGRazor Root run log, shown as an in-game dialog on the game's own activity. The patched APK uses
+ * PGBR Root run log, shown as an in-game dialog on the game's own activity. The patched APK uses
  * {@link LogActivity}, a private activity it declares in its manifest; the untouched game APK has no
  * such entry, so the same run log is surfaced here with {@link MapTheme} styling instead.
  *
@@ -59,22 +59,22 @@ final class RootedLogDialog {
         actions.setOrientation(LinearLayout.HORIZONTAL);
         body.addView(actions);
         Button refresh = new Button(ui);
-        refresh.setText("Refresh");
+        refresh.setText(dev.pgrazor.PtBr.tr("Refresh"));
         actions.addView(refresh, new LinearLayout.LayoutParams(0, -2, 1));
         Button save = new Button(ui);
-        save.setText("Save .txt");
+        save.setText(dev.pgrazor.PtBr.tr("Save .txt"));
         actions.addView(save, new LinearLayout.LayoutParams(0, -2, 1));
         Button bundle=new Button(ui);
-        bundle.setText("Save log + settings (.zip)");
+        bundle.setText(dev.pgrazor.PtBr.tr("Save log + settings (.zip)"));
         body.addView(bundle);
 
         Runnable reload = () -> load(hint, text);
         refresh.setOnClickListener(v -> reload.run());
 
         AlertDialog dialog = new AlertDialog.Builder(ui)
-                .setTitle("PGRazor · current run")
+                .setTitle(dev.pgrazor.PtBr.tr("PGBR · current run"))
                 .setView(body)
-                .setPositiveButton("Close", null)
+                .setPositiveButton(dev.pgrazor.PtBr.tr("Close"), null)
                 .create();
 
         // Export off the main thread; the copy re-reads and digests the whole file.
@@ -117,8 +117,8 @@ final class RootedLogDialog {
     private static void load(TextView hint, TextView text) {
         File file = Control.currentLog();
         if (file == null) {
-            hint.setText("");
-            text.setText("No log file is available yet. Android logcat may contain startup errors.");
+            hint.setText(dev.pgrazor.PtBr.tr(""));
+            text.setText(dev.pgrazor.PtBr.tr("No log file is available yet. Android logcat may contain startup errors."));
             return;
         }
         try (RandomAccessFile input = new RandomAccessFile(file, "r")) {
@@ -126,12 +126,12 @@ final class RootedLogDialog {
             input.seek(start);
             byte[] bytes = new byte[(int) (input.length() - start)];
             input.readFully(bytes);
-            hint.setText((start > 0 ? "Showing the latest 64 KiB. " : "")
-                    + "Save exports the current log segment with retained startup diagnostics to this device. ZIP also includes a single-line settings.json; the settings snapshot excludes login tokens, account data and saved locations.");
-            text.setText(new String(bytes, StandardCharsets.UTF_8));
+            hint.setText(dev.pgrazor.PtBr.tr((start > 0 ? "Showing the latest 64 KiB. " : "")
+                    + "Save exports the current log segment with retained startup diagnostics to this device. ZIP also includes a single-line settings.json; the settings snapshot excludes login tokens, account data and saved locations."));
+            text.setText(dev.pgrazor.PtBr.tr(new String(bytes, StandardCharsets.UTF_8)));
         } catch (IOException error) {
-            hint.setText("");
-            text.setText("Cannot read log: " + error.getMessage());
+            hint.setText(dev.pgrazor.PtBr.tr(""));
+            text.setText(dev.pgrazor.PtBr.tr("Cannot read log: " + error.getMessage()));
         }
     }
 }

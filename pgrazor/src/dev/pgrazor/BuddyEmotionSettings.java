@@ -41,21 +41,21 @@ public final class BuddyEmotionSettings {
     public static Runnable populate(Activity activity,LinearLayout body){
         Context ui=body.getContext();
         TextView description=new TextView(ui);
-        description.setText("Builds buddy mood with snapshots and petting while the game is in the foreground, including menus when buddy services are available. EP comes from the game; maintenance is an estimate. Walking and battles remain manual.");body.addView(description);
-        CheckBox master=new CheckBox(ui);master.setText("Run the Buddy Emotion Engine");body.addView(master);
+        description.setText(dev.pgrazor.PtBr.tr("Builds buddy mood with snapshots and petting while the game is in the foreground, including menus when buddy services are available. EP comes from the game; maintenance is an estimate. Walking and battles remain manual."));body.addView(description);
+        CheckBox master=new CheckBox(ui);master.setText(dev.pgrazor.PtBr.tr("Run the Buddy Emotion Engine"));body.addView(master);
         TextView progress=new TextView(ui);body.addView(progress);
         TextView priority=button(body,"");
         TextView reserve=button(body,"");
-        CheckBox gifts=new CheckBox(ui);gifts.setText("Open gifts your buddy brings back");body.addView(gifts);
-        CheckBox overlay=new CheckBox(ui);overlay.setText("Show EP overlay");body.addView(overlay);
-        TextView explanation=new TextView(ui);explanation.setText("Feeds the first selected berry with stock above its reserve. The reserve applies separately to every berry. Golden Razz and Silver Pinap are optional premium choices; none are selected by default. Clear the list to disable feeding.");body.addView(explanation);
+        CheckBox gifts=new CheckBox(ui);gifts.setText(dev.pgrazor.PtBr.tr("Open gifts your buddy brings back"));body.addView(gifts);
+        CheckBox overlay=new CheckBox(ui);overlay.setText(dev.pgrazor.PtBr.tr("Show EP overlay"));body.addView(overlay);
+        TextView explanation=new TextView(ui);explanation.setText(dev.pgrazor.PtBr.tr("Feeds the first selected berry with stock above its reserve. The reserve applies separately to every berry. Golden Razz and Silver Pinap are optional premium choices; none are selected by default. Clear the list to disable feeding."));body.addView(explanation);
         final boolean[] refreshing={false};
         Runnable refresh=()->{
             refreshing[0]=true;
             boolean on=preferences.enabled();master.setChecked(on);gifts.setChecked(preferences.gifts());
             overlay.setChecked(preferences.overlay());
-            progress.setText(status());priority.setText("Feeding priority: "+priorityLabel(preferences.berries()));
-            reserve.setText("Reserve per berry: "+preferences.reserve());
+            progress.setText(dev.pgrazor.PtBr.tr(status()));priority.setText(dev.pgrazor.PtBr.tr("Feeding priority: "+priorityLabel(preferences.berries())));
+            reserve.setText(dev.pgrazor.PtBr.tr("Reserve per berry: "+preferences.reserve()));
             for(android.view.View v:new android.view.View[]{priority,reserve,gifts,overlay,explanation}){v.setEnabled(on);v.setAlpha(on?1f:0.45f);}
             refreshing[0]=false;
         };
@@ -71,14 +71,14 @@ public final class BuddyEmotionSettings {
         Context ui=MapTheme.wrap(activity);LinearLayout body=new LinearLayout(ui);body.setOrientation(LinearLayout.VERTICAL);
         int pad=MapTheme.dp(ui,16);body.setPadding(pad,pad,pad,pad);
         Runnable update=populate(activity,body);ScrollView scroll=new ScrollView(ui);scroll.addView(body);
-        AlertDialog dialog=new AlertDialog.Builder(ui).setTitle("Buddy Emotion Engine").setView(scroll).setPositiveButton("Done",null).create();
+        AlertDialog dialog=new AlertDialog.Builder(ui).setTitle(dev.pgrazor.PtBr.tr("Buddy Emotion Engine")).setView(scroll).setPositiveButton(dev.pgrazor.PtBr.tr("Done"),null).create();
         android.os.Handler handler=new android.os.Handler(android.os.Looper.getMainLooper());
         Runnable refresh=new Runnable(){public void run(){if(dialog.isShowing()){update.run();handler.postDelayed(this,1000);}}};
         DialogLifecycle.bind(activity,dialog,()->handler.removeCallbacks(refresh));
         dialog.setOnShowListener(d->{MapTheme.style(body);MapTheme.styleButtons(dialog);dialog.getWindow().setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(MapTheme.surface()));handler.post(refresh);});dialog.show();
     }
     private static TextView button(LinearLayout body,String text){
-        android.widget.Button b=new android.widget.Button(body.getContext());b.setText(text);b.setAllCaps(false);body.addView(b);return b;
+        android.widget.Button b=new android.widget.Button(body.getContext());b.setText(dev.pgrazor.PtBr.tr(text));b.setAllCaps(false);body.addView(b);return b;
     }
     private static String priorityLabel(String value){
         if(value.isEmpty())return "No feeding";
@@ -94,11 +94,11 @@ public final class BuddyEmotionSettings {
         java.util.ArrayList<String> order=new java.util.ArrayList<>();
         if(!preferences.berries().isEmpty())java.util.Collections.addAll(order,preferences.berries().split(","));
         LinearLayout body=new LinearLayout(ui);body.setOrientation(LinearLayout.VERTICAL);
-        TextView help=new TextView(ui);help.setText("Tap berries in the order to try them. Uncheck and reselect a berry to move it to the end. Premium berries require an explicit selection.");body.addView(help);
+        TextView help=new TextView(ui);help.setText(dev.pgrazor.PtBr.tr("Tap berries in the order to try them. Uncheck and reselect a berry to move it to the end. Premium berries require an explicit selection."));body.addView(help);
         CheckBox[] rows=new CheckBox[BERRIES.length];boolean[] syncing={false};
         Runnable redraw=()->{syncing[0]=true;for(int i=0;i<rows.length;i++){
             int position=order.indexOf(String.valueOf(BERRIES[i]));rows[i].setChecked(position>=0);
-            rows[i].setText((position<0?"":(position+1)+". ")+BERRY_LABELS[i]);
+            rows[i].setText(dev.pgrazor.PtBr.tr((position<0?"":(position+1)+". ")+BERRY_LABELS[i]));
         }syncing[0]=false;};
         for(int i=0;i<rows.length;i++){final String id=String.valueOf(BERRIES[i]);rows[i]=new CheckBox(ui);body.addView(rows[i]);rows[i].setOnCheckedChangeListener((v,on)->{
             if(syncing[0])return;if(on){if(!order.contains(id))order.add(id);}else order.remove(id);redraw.run();
@@ -112,15 +112,15 @@ public final class BuddyEmotionSettings {
         clear.setOnClickListener(v->{order.clear();redraw.run();});
         reset.setOnClickListener(v->{order.clear();java.util.Collections.addAll(order,"703","701","705");redraw.run();});
         redraw.run();ScrollView scroll=new ScrollView(ui);scroll.addView(body);
-        AlertDialog d=new AlertDialog.Builder(ui).setTitle("Feeding priority").setView(scroll).setPositiveButton("Save",null).setNegativeButton("Cancel",null).create();
+        AlertDialog d=new AlertDialog.Builder(ui).setTitle(dev.pgrazor.PtBr.tr("Feeding priority")).setView(scroll).setPositiveButton(dev.pgrazor.PtBr.tr("Save"),null).setNegativeButton(dev.pgrazor.PtBr.tr("Cancel"),null).create();
         DialogLifecycle.bind(activity,d,null);d.setOnShowListener(x->{MapTheme.style(body);MapTheme.styleButtons(d);d.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v->{
             if(sameAccount(account)&&preferences.enabled())set("Berries",android.text.TextUtils.join(",",order));refresh.run();d.dismiss();
         });});d.show();
     }
     private static void reservePicker(Activity activity,Runnable refresh){
         Context ui=MapTheme.wrap(activity);String account=AccountProfiles.currentId();EditText edit=new EditText(ui);
-        edit.setSingleLine(true);edit.setText(String.valueOf(preferences.reserve()));edit.setInputType(InputType.TYPE_CLASS_NUMBER);
-        AlertDialog d=new AlertDialog.Builder(ui).setTitle("Reserve per berry (0-1000)").setView(edit).setPositiveButton("Save",null).setNegativeButton("Cancel",null).create();
+        edit.setSingleLine(true);edit.setText(dev.pgrazor.PtBr.tr(String.valueOf(preferences.reserve())));edit.setInputType(InputType.TYPE_CLASS_NUMBER);
+        AlertDialog d=new AlertDialog.Builder(ui).setTitle(dev.pgrazor.PtBr.tr("Reserve per berry (0-1000)")).setView(edit).setPositiveButton(dev.pgrazor.PtBr.tr("Save"),null).setNegativeButton(dev.pgrazor.PtBr.tr("Cancel"),null).create();
         DialogLifecycle.bind(activity,d,null);d.setOnShowListener(x->{MapTheme.style(edit);MapTheme.styleButtons(d);d.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v->{
             if(!sameAccount(account)||!preferences.enabled()){refresh.run();d.dismiss();return;}
             try{int n=Integer.parseInt(edit.getText().toString().trim());if(n<0||n>1000)throw new NumberFormatException();set("Reserve",n);refresh.run();d.dismiss();}

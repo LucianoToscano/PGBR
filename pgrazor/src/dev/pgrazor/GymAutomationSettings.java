@@ -98,15 +98,15 @@ public final class GymAutomationSettings {
         LinearLayout body=new LinearLayout(ui);body.setOrientation(LinearLayout.VERTICAL);
         int pad=MapTheme.dp(ui,16);body.setPadding(pad,pad,pad,pad);
         TextView description=new TextView(ui);
-        TextView progress=new TextView(ui);progress.setText(status());body.addView(progress);
-        description.setText("Acts only within 80 m of a Gym while the game is on the map screen. It slots eligible #Gym-tagged Pokémon first; the lowest-CP fallback is used only when enabled and no eligible #Gym defender is available, and it never picks favorite, buddy, or protected Pokémon. Feeding uses Nanab before Razz and only above the reserves you set. It obeys the game's own server limits, so some actions may be declined. No dust or coin payout is promised.");body.addView(description);
-        CheckBox master=new CheckBox(ui);master.setText("Run Gym Slotter & Berry Feeder");body.addView(master);
-        CheckBox deploy=new CheckBox(ui);deploy.setText("Auto-deploy to open Gym slots");deploy.setChecked(preferences.deploy());body.addView(deploy);
+        TextView progress=new TextView(ui);progress.setText(dev.pgrazor.PtBr.tr(status()));body.addView(progress);
+        description.setText(dev.pgrazor.PtBr.tr("Acts only within 80 m of a Gym while the game is on the map screen. It slots eligible #Gym-tagged Pokémon first; the lowest-CP fallback is used only when enabled and no eligible #Gym defender is available, and it never picks favorite, buddy, or protected Pokémon. Feeding uses Nanab before Razz and only above the reserves you set. It obeys the game's own server limits, so some actions may be declined. No dust or coin payout is promised."));body.addView(description);
+        CheckBox master=new CheckBox(ui);master.setText(dev.pgrazor.PtBr.tr("Run Gym Slotter & Berry Feeder"));body.addView(master);
+        CheckBox deploy=new CheckBox(ui);deploy.setText(dev.pgrazor.PtBr.tr("Auto-deploy to open Gym slots"));deploy.setChecked(preferences.deploy());body.addView(deploy);
 
-        CheckBox feed=new CheckBox(ui);feed.setText("Auto-feed berries to your Gym defenders");feed.setChecked(preferences.feed());body.addView(feed);
-        CheckBox overlay=new CheckBox(ui);overlay.setText("Show gym automation overlay");overlay.setChecked(preferences.overlay());body.addView(overlay);
+        CheckBox feed=new CheckBox(ui);feed.setText(dev.pgrazor.PtBr.tr("Auto-feed berries to your Gym defenders"));feed.setChecked(preferences.feed());body.addView(feed);
+        CheckBox overlay=new CheckBox(ui);overlay.setText(dev.pgrazor.PtBr.tr("Show gym automation overlay"));overlay.setChecked(preferences.overlay());body.addView(overlay);
 
-        CheckBox fallback=new CheckBox(ui);fallback.setText("Allow lowest-CP fallback when no eligible #Gym defenders");fallback.setChecked(preferences.fallback());body.addView(fallback);
+        CheckBox fallback=new CheckBox(ui);fallback.setText(dev.pgrazor.PtBr.tr("Allow lowest-CP fallback when no eligible #Gym defenders"));fallback.setChecked(preferences.fallback());body.addView(fallback);
         fallback.setOnCheckedChangeListener((v,on)->{set("Fallback",on);});
         LinearLayout reserves=new LinearLayout(ui);reserves.setOrientation(LinearLayout.VERTICAL);body.addView(reserves);
         input(activity,reserves,"Nanab Berry reserve (0–1000)",String.valueOf(preferences.nanabReserve()),value->{int n=bounded(value,1000);set("NanabReserve",n);});
@@ -116,7 +116,7 @@ public final class GymAutomationSettings {
             refreshing[0]=true;master.setChecked(running());deploy.setChecked(preferences.deploy());
             feed.setChecked(preferences.feed());overlay.setChecked(preferences.overlay());
             SettingsUi.enabled(fallback,preferences.deploy());SettingsUi.enabled(reserves,preferences.feed());
-            progress.setText(status());refreshing[0]=false;
+            progress.setText(dev.pgrazor.PtBr.tr(status()));refreshing[0]=false;
         };
         master.setOnCheckedChangeListener((v,on)->{if(!refreshing[0]){setRunning(on);update.run();}});
         deploy.setOnCheckedChangeListener((v,on)->{if(!refreshing[0]){set("Deploy",on);update.run();}});
@@ -126,7 +126,7 @@ public final class GymAutomationSettings {
         body.removeView(overlay);body.addView(overlay,body.indexOfChild(feed)+1);
         update.run();
         ScrollView scroll=new ScrollView(ui);scroll.addView(body);
-        AlertDialog dialog=new AlertDialog.Builder(ui).setTitle("Gym Slotter & Berry Feeder").setView(scroll).setPositiveButton("Done",null).create();
+        AlertDialog dialog=new AlertDialog.Builder(ui).setTitle(dev.pgrazor.PtBr.tr("Gym Slotter & Berry Feeder")).setView(scroll).setPositiveButton(dev.pgrazor.PtBr.tr("Done"),null).create();
         android.os.Handler handler=new android.os.Handler(android.os.Looper.getMainLooper());
         Runnable refresh=new Runnable(){public void run(){if(dialog.isShowing()){update.run();handler.postDelayed(this,1000);}}};
         DialogLifecycle.bind(activity,dialog,()->handler.removeCallbacks(refresh));
@@ -138,16 +138,16 @@ public final class GymAutomationSettings {
         throw new IllegalArgumentException("Enter a whole number from 0 to "+max+".");
     }
     private static TextView button(LinearLayout body,String text){
-        android.widget.Button b=new android.widget.Button(body.getContext());b.setText(text);b.setAllCaps(false);body.addView(b);return b;
+        android.widget.Button b=new android.widget.Button(body.getContext());b.setText(dev.pgrazor.PtBr.tr(text));b.setAllCaps(false);body.addView(b);return b;
     }
     private static void input(Activity a,LinearLayout body,String title,String initial,Value save){
         TextView button=button(body,title+": "+initial);final String[] current={initial};
         button.setOnClickListener(v->{
-            Context ui=MapTheme.wrap(a);EditText edit=new EditText(ui);edit.setSingleLine(true);edit.setText(current[0]);
+            Context ui=MapTheme.wrap(a);EditText edit=new EditText(ui);edit.setSingleLine(true);edit.setText(dev.pgrazor.PtBr.tr(current[0]));
             edit.setInputType(InputType.TYPE_CLASS_NUMBER);
-            AlertDialog d=new AlertDialog.Builder(ui).setTitle(title).setView(edit).setPositiveButton("Save",null).setNegativeButton("Cancel",null).create();
+            AlertDialog d=new AlertDialog.Builder(ui).setTitle(dev.pgrazor.PtBr.tr(title)).setView(edit).setPositiveButton(dev.pgrazor.PtBr.tr("Save"),null).setNegativeButton(dev.pgrazor.PtBr.tr("Cancel"),null).create();
             DialogLifecycle.bind(a,d,null);d.setOnShowListener(x->{MapTheme.style(edit);MapTheme.styleButtons(d);d.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(w->{
-                try{String value=edit.getText().toString();save.set(value);current[0]=value.trim();button.setText(title+": "+current[0]);d.dismiss();}
+                try{String value=edit.getText().toString();save.set(value);current[0]=value.trim();button.setText(dev.pgrazor.PtBr.tr(title+": "+current[0]));d.dismiss();}
                 catch(IllegalArgumentException e){edit.setError(e.getMessage());}
             });});d.show();
         });

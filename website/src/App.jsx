@@ -10,11 +10,11 @@ import GuideDetail from './components/GuideDetail.jsx';
 import { featureGuides } from './components/guideData.js';
 import { useTheme } from './hooks/useTheme.js';
 
-const HOME_TITLE = 'PGRazor — smoother Pokémon GO sessions';
+const HOME_TITLE = 'PGBR-v0.00.01-LT — edição brasileira';
 const HOME_DESCRIPTION =
-  'PGRazor is a compact, open-source Android interface for Pokémon GO: location controls, catching helpers, and optional automation. One APK for ARM64 Android phones and the MuMu emulator, no root required.';
+  'PGBR: controles de localização, joystick, rotas e opções de automação em português brasileiro para Android ARM64.';
 
-// Query-string routing for a static GitHub Pages build (base /PGRazor/):
+// Query-string routing for a static GitHub Pages build (base /PGBR/):
 //   ?guide=all  → the feature-guide index
 //   ?guide=<id> → one feature guide
 //   (no query)  → the marketing homepage
@@ -44,16 +44,16 @@ export default function App() {
     let title = HOME_TITLE;
     let description = HOME_DESCRIPTION;
     if (route.view === 'index') {
-      title = 'Feature guides — PGRazor';
+      title = 'Feature guides — PGBR';
       description =
-        'Step-by-step how-to guides for PGRazor’s catching, location, automation, and personalisation features.';
+        'Step-by-step how-to guides for PGBR’s catching, location, automation, and personalisation features.';
     } else if (route.view === 'detail' && guide) {
-      title = `${guide.title} — PGRazor feature guide`;
+      title = `${guide.title} — PGBR feature guide`;
       description = guide.summary || description;
     } else if (route.view === 'detail') {
-      title = 'Guide not found — PGRazor';
+      title = 'Guide not found — PGBR';
       description =
-        'That PGRazor feature guide could not be found. Browse the full list of feature guides.';
+        'That PGBR feature guide could not be found. Browse the full list of feature guides.';
     }
     document.title = title;
     if (meta && description) meta.content = description;

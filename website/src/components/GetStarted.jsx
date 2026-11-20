@@ -26,19 +26,17 @@ export default function GetStarted() {
 
       <div className="cta">
         <a className="btn btn--primary" href={links.releasesLatest}>
-          Get the latest release
+          Baixar a versão de teste
           <ArrowIcon />
         </a>
         <a className="btn btn--ghost" href={links.discord}>
-          Join the Discord
+          Ver projeto de origem
         </a>
       </div>
 
       <p className="cta__release">
-        <span className="cta__badge">Stable</span>
-        The published{' '}
-        <a href={links.releasesCurrent}>v0.3.0 release</a> adds Auto Throw with catch on map,
-        Auto-Raid and the experimental PGRazor Root installer.
+        <span className="cta__badge">Teste</span>
+        A compilação <a href={links.releasesCurrent}>PGBR-v0.00.01-LT</a> é experimental e inclui o instalador Root opcional.
       </p>
 
       <div className="faq">

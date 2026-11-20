@@ -2,12 +2,12 @@
 // edits (wording, new settings, extra screenshots) never touch layout code.
 
 export const links = {
-  releasesLatest: 'https://github.com/jpitty03/PGRazor/releases/latest',
+  releasesLatest: 'https://github.com/LucianoToscano/PGBR/actions/workflows/pgbr-build-full-ptbr-candidate.yml',
   releasesCurrent:
-    'https://github.com/jpitty03/PGRazor/releases/tag/v0.3.0',
-  github: 'https://github.com/jpitty03/PGRazor',
-  discord: 'https://discord.gg/9QqfkDSQX3',
-  kofi: 'https://ko-fi.com/pgrazor',
+    'https://github.com/LucianoToscano/PGBR/actions/workflows/pgbr-build-full-ptbr-candidate.yml',
+  github: 'https://github.com/LucianoToscano/PGBR',
+  discord: 'https://github.com/jpitty03/PGRazor',
+  kofi: 'https://github.com/LucianoToscano/PGBR/blob/main/THIRD_PARTY.md',
 };
 
 export const nav = [
@@ -19,7 +19,7 @@ export const nav = [
 
 export const heroFacts = [
   { term: 'Runs on', detail: 'ARM64 Android & MuMu — one APK' },
-  { term: 'Root option', detail: 'PGRazor Root for the official game (experimental)' },
+  { term: 'Root option', detail: 'PGBR Root for the official game (experimental)' },
   { term: 'License', detail: 'MIT (original source)' },
 ];
 
@@ -89,13 +89,13 @@ export const settingGroups = [
     label: 'Personalize',
     intro: 'Found across the interface and General Settings.',
     items: [
-      { name: 'Light / dark themes', detail: 'The whole interface follows your chosen PGRazor theme.' },
+      { name: 'Light / dark themes', detail: 'The whole interface follows your chosen PGBR theme.' },
       { name: 'Overlay scaling', detail: 'Size the launcher, quick menu, joystick, timer, and overlays at 100 / 75 / 50 / 25%.' },
       { name: 'Reposition overlays', detail: 'Drag the cooldown timer, local time clock, VGP icon, and Keep All toggle anywhere.' },
       { name: 'Quick menu', detail: 'Reach Map, speed, Autowalk, In-game Routes, Hotspots, Feeds, Favorites, Teleport, Automation, Research, Events, Switch account, and Settings fast. Customize Quick Menu hides entries you don’t use; Settings always stays visible.' },
       { name: 'Skip cutscenes', detail: 'Bypass evolution, hatch, new-species, power-up, level-up, feature-unlock, medal, and Team GO Rocket cutscenes and result screens so they are never drawn. Battles still start only when you press Battle.' },
       { name: 'Battery usage', detail: 'Lower resolution, a 20 FPS limit, or low graphics quality to save battery and keep the phone cooler.' },
-      { name: 'Hide overlay', detail: 'Make the game look stock: hide every PGRazor button, status, and IV text; tap with three fingers to bring them back.' },
+      { name: 'Hide overlay', detail: 'Make the game look stock: hide every PGBR button, status, and IV text; tap with three fingers to bring them back.' },
       { name: 'Settings backup', detail: 'Export / import settings as JSON; tokens, location, and routes are left out.' },
     ],
   },
@@ -108,7 +108,7 @@ export const screenshots = [
     id: 'world-map',
     src: 'images/world-map.png',
     title: 'World map',
-    caption: 'The PGRazor world map, with saved places, routes, nearby layers, and Walk here / Teleport controls. Map data © OpenStreetMap contributors.',
+    caption: 'The PGBR world map, with saved places, routes, nearby layers, and Walk here / Teleport controls. Map data © OpenStreetMap contributors.',
     width: 1080,
     height: 1920,
   },
@@ -136,7 +136,7 @@ export const steps = [
   {
     n: '01',
     title: 'Download',
-    body: 'Open the latest release and download PGRazor.apk — not a source archive, and not the Root files unless your device is rooted.',
+    body: 'Abra a última compilação aprovada no GitHub Actions, baixe o artefato PGBR-v0.00.01-LT-APKs e extraia PGBR-v0.00.01-LT.apk.',
   },
   {
     n: '02',
@@ -153,15 +153,15 @@ export const steps = [
 export const faqs = [
   {
     q: 'What does it run on?',
-    a: 'One APK runs on ARM64 Android phones and the MuMu emulator. No root is required. Rooted devices can use the experimental PGRazor Root installer with the official game instead.',
+    a: 'One APK runs on ARM64 Android phones and the MuMu emulator. No root is required. Rooted devices can use the experimental PGBR Root installer with the official game instead.',
   },
   {
     q: 'Can I install it over the Play Store app?',
-    a: 'No. A store install is signed with a different certificate, so a PGRazor build can’t update it in place. Installing PGRazor replaces that copy instead of upgrading it.',
+    a: 'No. A store install is signed with a different certificate, so a PGBR build can’t update it in place. Installing PGBR replaces that copy instead of upgrading it.',
   },
   {
-    q: 'What is PGRazor Root?',
-    a: 'A separate, experimental installer for rooted devices. It loads PGRazor into the official Pokémon GO app through a Zygisk module, so the game’s own APK and signature stay untouched. It needs Magisk 27 or newer, KernelSU, or APatch, and the exact game version each release supports.',
+    q: 'What is PGBR Root?',
+    a: 'A separate, experimental installer for rooted devices. It loads PGBR into the official Pokémon GO app through a Zygisk module, so the game’s own APK and signature stay untouched. It needs Magisk 27 or newer, KernelSU, or APatch, and the exact game version each release supports.',
   },
   {
     q: 'Is LivePokeMap included?',
@@ -182,7 +182,7 @@ export const faqs = [
 // Cooldown component for how trigger / safe groups and the chart are rendered.
 export const cooldown = {
   intro:
-    'Measure the distance between your last location-sensitive action and the next one. Time already spent waiting counts; teleporting alone does not restart the clock. The community chart below reaches a two-hour maximum. Acting too early can cause fleeing catches or refused spins. PGRazor estimates the wait locally; it does not read a server countdown.',
+    'Measure the distance between your last location-sensitive action and the next one. Time already spent waiting counts; teleporting alone does not restart the clock. The community chart below reaches a two-hour maximum. Acting too early can cause fleeing catches or refused spins. PGBR estimates the wait locally; it does not read a server countdown.',
   // Actions widely reported to start the clock.
   triggers: [
     'Wild catches, including incense and lure spawns',

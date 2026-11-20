@@ -1,4 +1,4 @@
-"""Create a single installable PGRazor APK from a validated ARM64 package run.
+"""Create a single installable PGBR APK from a validated ARM64 package run.
 Only library-only configuration splits can be merged; resource/code splits fail closed.
 """
 import argparse
@@ -107,13 +107,14 @@ def release(run, destination):
     if not isinstance(game_version, str) or not game_version or not isinstance(game_code, int):
         raise ValueError('Base game must declare versionName and numeric versionCode')
     destination.mkdir(parents=True, exist_ok=True)
-    unsigned, aligned, signed = (destination/name for name in ('unsigned.apk', 'aligned.apk', 'PGRazor.apk'))
+    release_name = f'PGBR-{build.release_version(build.ROOT)}.apk'
+    unsigned, aligned, signed = (destination/name for name in ('unsigned.apk', 'aligned.apk', release_name))
     merge(apks, unsigned)
     nonroot.command(build.TOOLS/'zipalign.exe', '-f', '-P', '16', '4', unsigned, aligned)
     nonroot.command(build.TOOLS/'apksigner.bat', 'sign', *build.signing_args(), '--out', signed, aligned)
     nonroot.command(build.TOOLS/'apksigner.bat', 'verify', signed)
     nonroot.command(build.TOOLS/'zipalign.exe', '-c', '-P', '16', '4', signed)
-    (destination/'SHA256SUMS.txt').write_text(runtime_assets.sha256(signed)+'  PGRazor.apk\n', encoding='utf8')
+    (destination/'SHA256SUMS.txt').write_text(runtime_assets.sha256(signed)+ '  ' + release_name + '\n', encoding='utf8')
     (destination/'build-info.json').write_text(json.dumps({'game_version':game_version,'game_version_code':game_code,'architecture':'arm64-v8a','hook_runtime_architectures':report.get('runtime_abis',[report.get('runtime_abi','arm64-v8a')]),'input_sha256':report['input_sha256'],'apk_sha256':runtime_assets.sha256(signed),'source_commit':os.environ.get('GITHUB_SHA'),'device_tested':False},indent=2)+'\n',encoding='utf8')
     unsigned.unlink(); aligned.unlink()
     print('Release candidate:', signed)

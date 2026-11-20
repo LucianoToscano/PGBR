@@ -49,10 +49,10 @@ public final class GameRoutesDetailsDialog {
         layout.addView(note);
 
         AlertDialog dialog = new AlertDialog.Builder(ctx)
-            .setTitle("Route run")
+            .setTitle(dev.pgrazor.PtBr.tr("Route run"))
             .setView(layout)
-            .setNegativeButton("Close", null)
-            .setNeutralButton("Stop", null)
+            .setNegativeButton(dev.pgrazor.PtBr.tr("Close"), null)
+            .setNeutralButton(dev.pgrazor.PtBr.tr("Stop"), null)
             .create();
 
         Controller controller = new Controller(activity, dialog, name, meta, path, note);
@@ -93,7 +93,7 @@ public final class GameRoutesDetailsDialog {
                 JSONObject o = new JSONObject(json == null ? "{}" : json);
                 running = o.optBoolean("running");
                 String routeName = o.optString("name", "");
-                name.setText(routeName.isEmpty() ? (running ? "Route run" : "No Route running") : routeName);
+                name.setText(dev.pgrazor.PtBr.tr(routeName.isEmpty() ? (running ? "Route run" : "No Route running") : routeName));
 
                 StringBuilder sb = new StringBuilder();
                 sb.append(phaseText(o.optString("phase", "IDLE")));
@@ -107,13 +107,13 @@ public final class GameRoutesDetailsDialog {
                 sb.append('\n').append(o.optString("status", ""));
                 String reward=o.optString("lastReward", "");
                 if(!reward.isEmpty())sb.append("\nLast rewards received: ").append(reward);
-                meta.setText(sb.toString());
+                meta.setText(dev.pgrazor.PtBr.tr(sb.toString()));
 
                 path.setData(parsePolyline(o.optJSONArray("points")), parsePoint(o.optJSONArray("currentPosition")));
-                note.setText("Green: start / Red: finish / Ring: you");
+                note.setText(dev.pgrazor.PtBr.tr("Green: start / Red: finish / Ring: you"));
             } catch (JSONException bad) {
-                name.setText("Route run");
-                meta.setText("Route details are unavailable right now.");
+                name.setText(dev.pgrazor.PtBr.tr("Route run"));
+                meta.setText(dev.pgrazor.PtBr.tr("Route details are unavailable right now."));
                 path.setData(null, null);
             }
             Button stop = dialog.getButton(AlertDialog.BUTTON_NEUTRAL);
@@ -161,5 +161,5 @@ public final class GameRoutesDetailsDialog {
         return Double.isFinite(lat) && Double.isFinite(lon) ? new double[]{lat, lon} : null;
     }
 
-    private static TextView label(Context c, String text, int size) { TextView v = new TextView(c); v.setText(text); v.setTextSize(size); return v; }
+    private static TextView label(Context c, String text, int size) { TextView v = new TextView(c); v.setText(dev.pgrazor.PtBr.tr(text)); v.setTextSize(size); return v; }
 }

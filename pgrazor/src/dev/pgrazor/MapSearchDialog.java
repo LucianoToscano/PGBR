@@ -58,7 +58,7 @@ public final class MapSearchDialog {
         layout.addView(label(ui, "Search near the map area, or enter coordinates (latitude, longitude). Add a city for places farther away.", 13));
 
         EditText input = new EditText(ui);
-        input.setHint("Place, address or coordinates");
+        input.setHint(dev.pgrazor.PtBr.tr("Place, address or coordinates"));
         input.setSingleLine(true);
         // No live autocomplete: results appear only on an explicit Search action.
         input.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_CAP_WORDS | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
@@ -95,17 +95,17 @@ public final class MapSearchDialog {
             return false;
         });
 
-        AlertDialog dialog = new AlertDialog.Builder(ui).setTitle("Find a place").setView(layout)
-            .setNegativeButton("Close", null).create();
+        AlertDialog dialog = new AlertDialog.Builder(ui).setTitle(dev.pgrazor.PtBr.tr("Find a place")).setView(layout)
+            .setNegativeButton(dev.pgrazor.PtBr.tr("Close"), null).create();
         controller.dialog = dialog;
         DialogLifecycle.bind(activity, dialog, controller::close);
         dialog.setOnShowListener(d -> {
             MapTheme.fullScreen(dialog); MapTheme.style(layout); MapTheme.styleButtons(dialog);
             if (controller.client == null) {
                 searchButton.setEnabled(false);
-                status.setText("Place search is unavailable right now.");
+                status.setText(dev.pgrazor.PtBr.tr("Place search is unavailable right now."));
             } else {
-                status.setText("Type a place or coordinates and tap Search.");
+                status.setText(dev.pgrazor.PtBr.tr("Type a place or coordinates and tap Search."));
             }
             input.requestFocus();
         });
@@ -152,19 +152,19 @@ public final class MapSearchDialog {
                 InputMethodManager typed=(InputMethodManager)activity.getSystemService(Context.INPUT_METHOD_SERVICE);
                 if(typed!=null)typed.hideSoftInputFromWindow(input.getWindowToken(),0);
                 resultList.removeAllViews();
-                status.setText("Coordinates");
+                status.setText(dev.pgrazor.PtBr.tr("Coordinates"));
                 resultList.addView(resultRow(new Place(String.format(java.util.Locale.US, "%.6f, %.6f", point[0], point[1]),
                     "Select to place the destination pin here, then choose Teleport or Walk here.", point[0], point[1])));
                 return;
             }
             if (client == null || !searchButton.isEnabled()) return;
-            if (query.length() < 2) { status.setText("Enter at least two characters to search."); return; }
+            if (query.length() < 2) { status.setText(dev.pgrazor.PtBr.tr("Enter at least two characters to search.")); return; }
             InputMethodManager keyboard=(InputMethodManager)activity.getSystemService(Context.INPUT_METHOD_SERVICE);
             if(keyboard!=null)keyboard.hideSoftInputFromWindow(input.getWindowToken(),0);
             // A new query supersedes any in-flight lookup and clears the previous matches immediately.
             final int gen = ++generation;
             resultList.removeAllViews();
-            status.setText("Searching…");
+            status.setText(dev.pgrazor.PtBr.tr("Searching…"));
             searchButton.setEnabled(false);
             final PlaceSearchClient c = client;
             final double lat = biasLat, lon = biasLon;
@@ -188,12 +188,12 @@ public final class MapSearchDialog {
             if (closed || gen != generation) return; // superseded or torn down
             searchButton.setEnabled(true);
             resultList.removeAllViews();
-            if (error != null) { status.setText(error); return; }
+            if (error != null) { status.setText(dev.pgrazor.PtBr.tr(error)); return; }
             if (found == null || found.isEmpty()) {
-                status.setText("No matching places found. Try a broader name or add a city.");
+                status.setText(dev.pgrazor.PtBr.tr("No matching places found. Try a broader name or add a city."));
                 return;
             }
-            status.setText(found.size() == 1 ? "1 match" : found.size() + " matches");
+            status.setText(dev.pgrazor.PtBr.tr(found.size() == 1 ? "1 match" : found.size() + " matches"));
             for (Place place : found) {
                 if (place == null) continue;
                 resultList.addView(resultRow(place));
@@ -212,7 +212,7 @@ public final class MapSearchDialog {
                 row.addView(detail);
             }
             final double lat = place.latitude, lon = place.longitude;
-            row.setContentDescription("Show " + (place.name == null ? "place" : place.name) + " on the map");
+            row.setContentDescription(dev.pgrazor.PtBr.tr("Show " + (place.name == null ? "place" : place.name) + " on the map"));
             // Selecting only reports coordinates; the world-map integration decides to centre the map.
             row.setOnClickListener(w -> { if(closed)return; callback.select(lat, lon); if (dialog != null) dialog.dismiss(); });
             return row;
@@ -233,6 +233,6 @@ public final class MapSearchDialog {
     }
 
     private static int dp(Context c, float value) { return Math.round(value * c.getResources().getDisplayMetrics().density); }
-    private static TextView label(Context c, String text, int size) { TextView v = new TextView(c); v.setText(text); v.setTextSize(size); return v; }
-    private static Button button(Context c, String text) { Button b = new Button(c); b.setText(text); b.setAllCaps(false); b.setTextSize(13); b.setPadding(0, 0, 0, 0); return b; }
+    private static TextView label(Context c, String text, int size) { TextView v = new TextView(c); v.setText(dev.pgrazor.PtBr.tr(text)); v.setTextSize(size); return v; }
+    private static Button button(Context c, String text) { Button b = new Button(c); b.setText(dev.pgrazor.PtBr.tr(text)); b.setAllCaps(false); b.setTextSize(13); b.setPadding(0, 0, 0, 0); return b; }
 }

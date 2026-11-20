@@ -38,9 +38,9 @@ public final class AutoRaidDialog {
         final org.json.JSONObject[] names = {null};
 
         TextView description = new TextView(ui);
-        description.setText("Finds the nearest matching raid the game has loaded, travels there, waits for enough players, "
+        description.setText(dev.pgrazor.PtBr.tr("Finds the nearest matching raid the game has loaded, travels there, waits for enough players, "
             + "then battles using your raid auto-attack settings and catches the boss. Stops at the raid limit, after a shiny "
-            + "is caught if selected, or after two consecutive losses. Stop ends the session after its current raid.");
+            + "is caught if selected, or after two consecutive losses. Stop ends the session after its current raid."));
         body.addView(description);
 
         TextView status = new TextView(ui); body.addView(status);
@@ -54,40 +54,40 @@ public final class AutoRaidDialog {
         final TextView distance = button(body, "");
 
         final CheckBox stopShiny = new CheckBox(ui);
-        stopShiny.setText("Stop after catching a shiny (it still counts toward the maximum)"); body.addView(stopShiny);
+        stopShiny.setText(dev.pgrazor.PtBr.tr("Stop after catching a shiny (it still counts toward the maximum)")); body.addView(stopShiny);
         final CheckBox freePass = new CheckBox(ui);
-        freePass.setText("Use the free daily raid pass"); body.addView(freePass);
+        freePass.setText(dev.pgrazor.PtBr.tr("Use the free daily raid pass")); body.addView(freePass);
         final CheckBox premiumPass = new CheckBox(ui);
-        premiumPass.setText("Use Premium Battle passes"); body.addView(premiumPass);
+        premiumPass.setText(dev.pgrazor.PtBr.tr("Use Premium Battle passes")); body.addView(premiumPass);
         TextView passNote = new TextView(ui);
-        passNote.setText("Uses an allowed free pass before a Premium Battle Pass. Remote Raid Passes are never used.");
+        passNote.setText(dev.pgrazor.PtBr.tr("Uses an allowed free pass before a Premium Battle Pass. Remote Raid Passes are never used."));
         body.addView(passNote);
 
         final CheckBox razzBerry = new CheckBox(ui);
-        razzBerry.setText("Use a Razz Berry on bonus catches"); body.addView(razzBerry);
+        razzBerry.setText(dev.pgrazor.PtBr.tr("Use a Razz Berry on bonus catches")); body.addView(razzBerry);
         final CheckBox goldenRazzBerry = new CheckBox(ui);
-        goldenRazzBerry.setText("Use a Golden Razz Berry on bonus catches"); body.addView(goldenRazzBerry);
+        goldenRazzBerry.setText(dev.pgrazor.PtBr.tr("Use a Golden Razz Berry on bonus catches")); body.addView(goldenRazzBerry);
         TextView berryNote = new TextView(ui);
-        berryNote.setText("Golden Razz takes priority and falls back to Razz when unavailable. Leave both unchecked to use no berries. "
-            + "Auto-Raid uses Excellent curveballs with Always Hit (never miss). Pokémon can still break out.");
+        berryNote.setText(dev.pgrazor.PtBr.tr("Golden Razz takes priority and falls back to Razz when unavailable. Leave both unchecked to use no berries. "
+            + "Auto-Raid uses Excellent curveballs with Always Hit (never miss). Pokémon can still break out."));
         body.addView(berryNote);
 
-        final Button start = new Button(ui); start.setAllCaps(false); start.setText("Start"); body.addView(start);
-        final Button stop = new Button(ui); stop.setAllCaps(false); stop.setText("Stop"); body.addView(stop);
+        final Button start = new Button(ui); start.setAllCaps(false); start.setText(dev.pgrazor.PtBr.tr("Start")); body.addView(start);
+        final Button stop = new Button(ui); stop.setAllCaps(false); stop.setText(dev.pgrazor.PtBr.tr("Stop")); body.addView(stop);
 
         final boolean[] refreshing = {false};
         final View[] config = {tiers, bosses, maxRaids, minPlayers, waitSeconds, travel, distance, stopShiny, freePass, premiumPass, razzBerry, goldenRazzBerry};
         final Runnable update = () -> {
             refreshing[0] = true;
             boolean running = AutoRaid.running();
-            status.setText(AutoRaid.status());
-            tiers.setText("Raid tiers: " + AutoRaidPreferences.tierSummary(draft.tierMask));
-            bosses.setText("Raid bosses: " + bossSummary(draft.bosses, names[0]));
-            maxRaids.setText("Maximum raids: " + draft.maxRaids);
-            minPlayers.setText("Minimum players in lobby: " + draft.minPlayers);
-            waitSeconds.setText("Lobby wait: " + draft.waitSeconds + " s");
-            travel.setText("Travel to raids: " + (draft.walk ? "Walk" : "Teleport"));
-            distance.setText("Stay within: " + AutoRaidPreferences.distanceSummary(draft.maxDistanceKm));
+            status.setText(dev.pgrazor.PtBr.tr(AutoRaid.status()));
+            tiers.setText(dev.pgrazor.PtBr.tr("Raid tiers: " + AutoRaidPreferences.tierSummary(draft.tierMask)));
+            bosses.setText(dev.pgrazor.PtBr.tr("Raid bosses: " + bossSummary(draft.bosses, names[0])));
+            maxRaids.setText(dev.pgrazor.PtBr.tr("Maximum raids: " + draft.maxRaids));
+            minPlayers.setText(dev.pgrazor.PtBr.tr("Minimum players in lobby: " + draft.minPlayers));
+            waitSeconds.setText(dev.pgrazor.PtBr.tr("Lobby wait: " + draft.waitSeconds + " s"));
+            travel.setText(dev.pgrazor.PtBr.tr("Travel to raids: " + (draft.walk ? "Walk" : "Teleport")));
+            distance.setText(dev.pgrazor.PtBr.tr("Stay within: " + AutoRaidPreferences.distanceSummary(draft.maxDistanceKm)));
             stopShiny.setChecked(draft.stopOnShiny);
             freePass.setChecked(draft.freePass);
             premiumPass.setChecked(draft.premiumPass);
@@ -127,8 +127,8 @@ public final class AutoRaidDialog {
 
         update.run();
         ScrollView scroll = new ScrollView(ui); scroll.addView(body);
-        AlertDialog dialog = new AlertDialog.Builder(ui).setTitle("Auto-Raid").setView(scroll)
-            .setPositiveButton("Done", null).create();
+        AlertDialog dialog = new AlertDialog.Builder(ui).setTitle(dev.pgrazor.PtBr.tr("Auto-Raid")).setView(scroll)
+            .setPositiveButton(dev.pgrazor.PtBr.tr("Done"), null).create();
         Handler handler = new Handler(Looper.getMainLooper());
         Runnable refresh = new Runnable() {
             public void run() { if (dialog.isShowing()) { update.run(); handler.postDelayed(this, 1000); } }
@@ -166,10 +166,10 @@ public final class AutoRaidDialog {
     private static void intInput(Activity a, AutoRaidPreferences draft, Runnable update,
                                  String title, int min, int max, int current, IntSetter save) {
         Context ui = MapTheme.wrap(a);
-        EditText edit = new EditText(ui); edit.setSingleLine(true); edit.setText(String.valueOf(current));
+        EditText edit = new EditText(ui); edit.setSingleLine(true); edit.setText(dev.pgrazor.PtBr.tr(String.valueOf(current)));
         edit.setInputType(InputType.TYPE_CLASS_NUMBER);
-        AlertDialog d = new AlertDialog.Builder(ui).setTitle(title).setView(edit)
-            .setPositiveButton("Save", null).setNegativeButton("Cancel", null).create();
+        AlertDialog d = new AlertDialog.Builder(ui).setTitle(dev.pgrazor.PtBr.tr(title)).setView(edit)
+            .setPositiveButton(dev.pgrazor.PtBr.tr("Save"), null).setNegativeButton(dev.pgrazor.PtBr.tr("Cancel"), null).create();
         DialogLifecycle.bind(a, d, null);
         d.setOnShowListener(x -> { MapTheme.style(edit); MapTheme.styleButtons(d);
             d.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(w -> {
@@ -209,18 +209,18 @@ public final class AutoRaidDialog {
         Context ui = MapTheme.wrap(a);
         LinearLayout body = new LinearLayout(ui); body.setOrientation(LinearLayout.VERTICAL);
         TextView help = new TextView(ui);
-        help.setText("Select the raid tiers to join. Select none to join any tier."); body.addView(help);
+        help.setText(dev.pgrazor.PtBr.tr("Select the raid tiers to join. Select none to join any tier.")); body.addView(help);
         final int[] mask = {draft.tierMask};
         for (int i = 0; i < AutoRaidPreferences.TIER_LABELS.length; i++) {
             final int bit = 1 << i;
-            CheckBox row = new CheckBox(ui); row.setText(AutoRaidPreferences.TIER_LABELS[i]);
+            CheckBox row = new CheckBox(ui); row.setText(dev.pgrazor.PtBr.tr(AutoRaidPreferences.TIER_LABELS[i]));
             row.setChecked((mask[0] & bit) != 0);
             row.setOnCheckedChangeListener((v, on) -> { if (on) mask[0] |= bit; else mask[0] &= ~bit; });
             body.addView(row);
         }
         ScrollView scroll = new ScrollView(ui); scroll.addView(body);
-        AlertDialog d = new AlertDialog.Builder(ui).setTitle("Raid tiers").setView(scroll)
-            .setPositiveButton("Save", null).setNegativeButton("Cancel", null).create();
+        AlertDialog d = new AlertDialog.Builder(ui).setTitle(dev.pgrazor.PtBr.tr("Raid tiers")).setView(scroll)
+            .setPositiveButton(dev.pgrazor.PtBr.tr("Save"), null).setNegativeButton(dev.pgrazor.PtBr.tr("Cancel"), null).create();
         DialogLifecycle.bind(a, d, null);
         d.setOnShowListener(x -> { MapTheme.style(body); MapTheme.styleButtons(d);
             d.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
@@ -232,8 +232,8 @@ public final class AutoRaidDialog {
 
     private static void travelPicker(Activity a, AutoRaidPreferences draft, Runnable update) {
         Context ui = MapTheme.wrap(a);
-        AlertDialog d = new AlertDialog.Builder(ui).setTitle("Travel to raids")
-            .setNegativeButton("Cancel", null).create();
+        AlertDialog d = new AlertDialog.Builder(ui).setTitle(dev.pgrazor.PtBr.tr("Travel to raids"))
+            .setNegativeButton(dev.pgrazor.PtBr.tr("Cancel"), null).create();
         ChoiceList.attach(d, new String[]{
             "Teleport\nJump straight to the raid",
             "Walk\nMove there at walking speed"
@@ -247,8 +247,8 @@ public final class AutoRaidDialog {
 
     private static void distancePicker(Activity a, AutoRaidPreferences draft, Runnable update) {
         Context ui = MapTheme.wrap(a);
-        AlertDialog d = new AlertDialog.Builder(ui).setTitle("Stay within")
-            .setNegativeButton("Cancel", null).create();
+        AlertDialog d = new AlertDialog.Builder(ui).setTitle(dev.pgrazor.PtBr.tr("Stay within"))
+            .setNegativeButton(dev.pgrazor.PtBr.tr("Cancel"), null).create();
         final int[] choices = AutoRaidPreferences.DISTANCE_CHOICES_KM;
         String[] labels = new String[choices.length];
         for (int i = 0; i < choices.length; i++)
@@ -263,7 +263,7 @@ public final class AutoRaidDialog {
     }
 
     private static TextView button(LinearLayout body, String text) {
-        Button b = new Button(body.getContext()); b.setText(text); b.setAllCaps(false); body.addView(b); return b;
+        Button b = new Button(body.getContext()); b.setText(dev.pgrazor.PtBr.tr(text)); b.setAllCaps(false); body.addView(b); return b;
     }
 
     private static void toast(Activity activity, String message) {

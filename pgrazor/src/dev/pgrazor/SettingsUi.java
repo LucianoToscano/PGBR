@@ -7,7 +7,7 @@ import android.view.*;
 import android.widget.*;
 
 /**
- * Shared PGRazor settings styling. Single home for the theme palette and the recursive
+ * Shared PGBR settings styling. Single home for the theme palette and the recursive
  * {@code styleTree} implementation so {@link Pad} (overlays/launcher/joystick) and
  * {@link SettingsPanel} (the settings body) apply identical colors without duplicating it.
  */
@@ -32,10 +32,10 @@ final class SettingsUi {
     static Context dialogContext(Context context){return new ContextThemeWrapper(context,Control.darkTheme()?android.R.style.Theme_Material_Dialog_Alert:android.R.style.Theme_Material_Light_Dialog_Alert);}
 
     static TextView text(Context context,String label,int size,int color){
-        TextView v = new TextView(context); v.setText(label); v.setTextSize(size); v.setTextColor(color); return v;
+        TextView v = new TextView(context); v.setText(dev.pgrazor.PtBr.tr(label)); v.setTextSize(size); v.setTextColor(color); return v;
     }
     static Button button(Context context,String label){
-        Button v = new Button(context); v.setText(label); v.setAllCaps(false); v.setTextSize(13); return v;
+        Button v = new Button(context); v.setText(dev.pgrazor.PtBr.tr(label)); v.setAllCaps(false); v.setTextSize(13); return v;
     }
 
     static void styleTree(Context context,View view){
@@ -47,7 +47,7 @@ final class SettingsUi {
             if(!(view instanceof CompoundButton))MapTheme.setButtonBackground(view);
         }
         if(view instanceof CompoundButton)((CompoundButton)view).setButtonTintList(new android.content.res.ColorStateList(new int[][]{new int[]{-android.R.attr.state_enabled},new int[]{android.R.attr.state_checked},new int[]{}},new int[]{muted(),accent(),muted()}));
-        if(view instanceof Switch){Switch s=(Switch)view;int off=Control.darkTheme()?0xff4a5a6a:0xffb4c2ce;s.setText("");s.setMinHeight(0);s.setPadding(dp(context,8),0,0,0);
+        if(view instanceof Switch){Switch s=(Switch)view;int off=Control.darkTheme()?0xff4a5a6a:0xffb4c2ce;s.setText(dev.pgrazor.PtBr.tr(""));s.setMinHeight(0);s.setPadding(dp(context,8),0,0,0);
             s.setThumbTintList(new android.content.res.ColorStateList(new int[][]{new int[]{-android.R.attr.state_enabled},new int[]{android.R.attr.state_checked},new int[]{}},new int[]{0xff6b7883,accent(),off}));
             s.setTrackTintList(new android.content.res.ColorStateList(new int[][]{new int[]{-android.R.attr.state_enabled},new int[]{android.R.attr.state_checked},new int[]{}},new int[]{0x33808080,(accent()&0x00ffffff)|0x66000000,(off&0x00ffffff)|0x55000000}));
         }

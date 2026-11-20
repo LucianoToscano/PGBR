@@ -68,7 +68,7 @@ public final class AutoWalkDialog {
         Button importBtn = button(ctx, "Import GPX");
         Button savedBtn = button(ctx, "Saved routes");
         Button nearbyBtn = button(ctx, "Nearby"); nearbyBtn.setVisibility(View.GONE);
-        nearbyBtn.setContentDescription("Return to nearby PoI planning");
+        nearbyBtn.setContentDescription(dev.pgrazor.PtBr.tr("Return to nearby PoI planning"));
         gpxRow.addView(importBtn, new LinearLayout.LayoutParams(0, dp(activity, 46), 1));
         gpxRow.addView(savedBtn, new LinearLayout.LayoutParams(0, dp(activity, 46), 1));
         gpxRow.addView(nearbyBtn, new LinearLayout.LayoutParams(0, dp(activity, 46), 1));
@@ -84,15 +84,15 @@ public final class AutoWalkDialog {
         EditText countField = new EditText(ctx);
         countField.setInputType(InputType.TYPE_CLASS_NUMBER);
         countField.setFilters(new InputFilter[]{new InputFilter.LengthFilter(String.valueOf(NEARBY_LIMIT).length())});
-        countField.setHint("All");
-        countField.setText("50");
+        countField.setHint(dev.pgrazor.PtBr.tr("All"));
+        countField.setText(dev.pgrazor.PtBr.tr("50"));
         countField.setSingleLine(true);
-        countField.setContentDescription("Number of stops to visit; leave blank for all nearby locations");
+        countField.setContentDescription(dev.pgrazor.PtBr.tr("Number of stops to visit; leave blank for all nearby locations"));
         countRow.addView(countField, new LinearLayout.LayoutParams(dp(activity, 72), -2));
         layout.addView(countRow);
 
         CheckBox loop = new CheckBox(ctx);
-        loop.setText("Loop route");
+        loop.setText(dev.pgrazor.PtBr.tr("Loop route"));
         loop.setTextSize(14);
         loop.setChecked(false);
         layout.addView(loop);
@@ -104,17 +104,17 @@ public final class AutoWalkDialog {
         gpxInfo.setPadding(0, dp(activity, 10), 0, 0);
         gpxInfo.setVisibility(View.GONE);
         layout.addView(gpxInfo);
-        Button saveGpx = new Button(ctx);saveGpx.setText("Save GPX");saveGpx.setAllCaps(false);saveGpx.setVisibility(View.GONE);layout.addView(saveGpx);
+        Button saveGpx = new Button(ctx);saveGpx.setText(dev.pgrazor.PtBr.tr("Save GPX"));saveGpx.setAllCaps(false);saveGpx.setVisibility(View.GONE);layout.addView(saveGpx);
         TextView running = label(ctx, "", 13);
         running.setPadding(0, dp(activity, 4), 0, dp(activity, 4));
         layout.addView(running);
 
         AlertDialog dialog = new AlertDialog.Builder(ctx)
-            .setTitle("Auto-walk")
+            .setTitle(dev.pgrazor.PtBr.tr("Auto-walk"))
             .setView(layout)
-            .setNegativeButton("Close", null)
-            .setNeutralButton("Stop auto-walk", null)
-            .setPositiveButton("Start", null)
+            .setNegativeButton(dev.pgrazor.PtBr.tr("Close"), null)
+            .setNeutralButton(dev.pgrazor.PtBr.tr("Stop auto-walk"), null)
+            .setPositiveButton(dev.pgrazor.PtBr.tr("Start"), null)
             .create();
 
         Controller controller = new Controller(activity, dialog, descr, countLabel, countRow, countField, loop,
@@ -185,8 +185,8 @@ public final class AutoWalkDialog {
             boolean gpx = selectedGpx != null;
             saveGpx.setVisibility(gpx ? View.VISIBLE : View.GONE);
             if(gpx)Control.setAutoWalkPlanning(false);
-            descr.setText(gpx ? "Follow the selected GPX route in its saved order."
-                : "Visit nearby PokéStops and Gyms, nearest first.");
+            descr.setText(dev.pgrazor.PtBr.tr(gpx ? "Follow the selected GPX route in its saved order."
+                : "Visit nearby PokéStops and Gyms, nearest first."));
             countRow.setVisibility(gpx ? View.GONE : View.VISIBLE);
             status.setVisibility(gpx ? View.GONE : View.VISIBLE);
             gpxInfo.setVisibility(gpx ? View.VISIBLE : View.GONE);
@@ -213,14 +213,14 @@ public final class AutoWalkDialog {
             Button start = dialog.getButton(AlertDialog.BUTTON_POSITIVE);
             if (start == null) return;
             if (selectedGpx != null) {
-                gpxInfo.setText(String.format(Locale.US, "GPX route: %s (%d %s). Start walks it in order.",
-                    selectedGpx.name, selectedCount, selectedCount == 1 ? "stop" : "stops"));
+                gpxInfo.setText(dev.pgrazor.PtBr.tr(String.format(Locale.US, "GPX route: %s (%d %s). Start walks it in order.",
+                    selectedGpx.name, selectedCount, selectedCount == 1 ? "stop" : "stops")));
                 start.setEnabled(true);
                 return;
             }
             String snapshot = Control.mapPoiSnapshot();
             boolean canStart = false;
-            countLabel.setText("Stops (loading):");
+            countLabel.setText(dev.pgrazor.PtBr.tr("Stops (loading):"));
             String message;
             if (snapshot.isEmpty()) {
                 message = "Waiting for nearby game locations…";
@@ -231,7 +231,7 @@ public final class AutoWalkDialog {
                 } else {
                     int unique = AutoWalkPlanner.filter(points).length;
                     int maximum = Math.min(unique, NEARBY_LIMIT);
-                    countLabel.setText(maximum == 0 ? "Stops (none nearby):" : "Stops (1–" + maximum + "; blank = all):");
+                    countLabel.setText(dev.pgrazor.PtBr.tr(maximum == 0 ? "Stops (none nearby):" : "Stops (1–" + maximum + "; blank = all):"));
                     if (unique == 0) {
                         message = "No nearby locations loaded yet. Move around in-game to load some.";
                     } else {
@@ -243,15 +243,15 @@ public final class AutoWalkDialog {
                     }
                 }
             }
-            status.setText(message);
+            status.setText(dev.pgrazor.PtBr.tr(message));
             start.setEnabled(canStart);
         }
 
         private void updateRunning() {
             MotionEngine.RouteProgress progress = Control.engine.routeProgress();
-            running.setText(Control.engine.speedKmh==0 ? "Speed is 0 km/h. Use the walking icon to resume travel." : progress.active
+            running.setText(dev.pgrazor.PtBr.tr(Control.engine.speedKmh==0 ? "Speed is 0 km/h. Use the walking icon to resume travel." : progress.active
                 ? String.format(Locale.US, "A route is running: %d of %d stops done.", progress.visited, progress.total)
-                : "");
+                : ""));
             dialog.getButton(AlertDialog.BUTTON_NEUTRAL).setEnabled(progress.active);
         }
 
@@ -320,8 +320,8 @@ public final class AutoWalkDialog {
                 walkGpx(route, points, looping, 0);
                 return true;
             }));
-            AlertDialog choose = ChoiceList.attach(new AlertDialog.Builder(MapTheme.wrap(activity)).setTitle("Start “" + route.name + "”")
-                .setNegativeButton("Cancel", null).create(), labels.toArray(new String[0]), which -> actions.get(which).run());
+            AlertDialog choose = ChoiceList.attach(new AlertDialog.Builder(MapTheme.wrap(activity)).setTitle(dev.pgrazor.PtBr.tr("Start “" + route.name + "”"))
+                .setNegativeButton(dev.pgrazor.PtBr.tr("Cancel"), null).create(), labels.toArray(new String[0]), which -> actions.get(which).run());
             DialogLifecycle.bind(activity, choose, null);
             choose.setOnShowListener(d -> MapTheme.styleButtons(choose));
             choose.show();
@@ -382,6 +382,6 @@ public final class AutoWalkDialog {
     }
 
     private static int dp(Activity a, float value) { return Math.round(value * a.getResources().getDisplayMetrics().density); }
-    private static TextView label(Context c, String text, int size) { TextView v = new TextView(c); v.setText(text); v.setTextSize(size); return v; }
-    private static Button button(Context c, String text) { Button b = new Button(c); b.setText(text); b.setAllCaps(false); b.setTextSize(13); return b; }
+    private static TextView label(Context c, String text, int size) { TextView v = new TextView(c); v.setText(dev.pgrazor.PtBr.tr(text)); v.setTextSize(size); return v; }
+    private static Button button(Context c, String text) { Button b = new Button(c); b.setText(dev.pgrazor.PtBr.tr(text)); b.setAllCaps(false); b.setTextSize(13); return b; }
 }

@@ -7,10 +7,10 @@ import android.view.*;
 import android.widget.*;
 
 /**
- * Shared PGRazor settings styling. Single home for the theme palette and the recursive
+ * Shared PGBR settings styling. Single home for the theme palette and the recursive
  * {@code styleTree} implementation so {@link Pad} (overlays/launcher/joystick) and
  * {@link SettingsPanel} (the settings body) apply identical colors without duplicating it.
- * PGRazorX: the palette and sizes come from the {@link FeedTheme} game-style design system.
+ * PGBRX: the palette and sizes come from the {@link FeedTheme} game-style design system.
  */
 /** PR #2 settings widgets (RowButton, styleTree), used only by the PoGoCoordinates feed. */
 final class FeedUi {
@@ -34,15 +34,15 @@ final class FeedUi {
     static Context dialogContext(Context context){return FeedTheme.wrap((android.app.Activity)context);}
 
     static TextView text(Context context,String label,int size,int color){
-        TextView v = new TextView(context); v.setText(label); v.setTextSize(size); v.setTextColor(color); return v;
+        TextView v = new TextView(context); v.setText(dev.pgrazor.PtBr.tr(label)); v.setTextSize(size); v.setTextColor(color); return v;
     }
     /** A list row with a chevron, as used throughout the game's settings. */
     static Button button(Context context,String label){
-        Button v = new RowButton(context); v.setText(label); v.setAllCaps(false); v.setTextSize(FeedTheme.Size.ROW_TEXT_SP); return v;
+        Button v = new RowButton(context); v.setText(dev.pgrazor.PtBr.tr(label)); v.setAllCaps(false); v.setTextSize(FeedTheme.Size.ROW_TEXT_SP); return v;
     }
     /** A plain floating button for on-map overlays (berry picker, cooldown timer). */
     static Button overlayButton(Context context,String label){
-        Button v = new Button(context); v.setText(label); v.setAllCaps(false); v.setTextSize(13); v.setStateListAnimator(null); return v;
+        Button v = new Button(context); v.setText(dev.pgrazor.PtBr.tr(label)); v.setAllCaps(false); v.setTextSize(13); v.setStateListAnimator(null); return v;
     }
     /** Shrinks a fixed-size overlay's text (down to 8sp) when its label would not fit; maxSp is the configured size. */
     static void fitText(TextView t,float maxSp){
@@ -57,9 +57,9 @@ final class FeedUi {
     /** "Label .......... Value >" row: the label stays left, the current value is drawn in teal on the right. */
     static void setOption(Button b,String label,String value,boolean enabled){
         b.setEnabled(enabled);
-        if(b instanceof RowButton){b.setText(label);((RowButton)b).setValue(value);return;}
+        if(b instanceof RowButton){b.setText(dev.pgrazor.PtBr.tr(label));((RowButton)b).setValue(value);return;}
         android.text.SpannableString t=new android.text.SpannableString(label+"   "+value);int start=label.length()+3;
-        t.setSpan(new android.text.style.ForegroundColorSpan(enabled?FeedTheme.value():muted()),start,t.length(),0);b.setText(t);
+        t.setSpan(new android.text.style.ForegroundColorSpan(enabled?FeedTheme.value():muted()),start,t.length(),0);b.setText(dev.pgrazor.PtBr.tr(t));
     }
 
     /** True when the nearest visible sibling above is also a list row, so a divider belongs between them. */
@@ -113,7 +113,7 @@ final class FeedUi {
         else if(view instanceof Button&&!(view instanceof CompoundButton)){Button b=(Button)view;b.setBackground(FeedTheme.secondaryPill(context));b.setTypeface(FeedTheme.bold());b.setTextColor(FeedTheme.value());b.setStateListAnimator(null);FeedTheme.elevate(b,1.5f);}
         if(view instanceof CompoundButton){FeedTheme.styleCompound((CompoundButton)view);
             if(!(view instanceof Switch)){TextView t=(TextView)view;t.setTextSize(FeedTheme.Size.ROW_TEXT_SP-1);t.setTypeface(FeedTheme.medium());t.setMinHeight(dp(context,44));t.setPadding(dp(context,8),dp(context,6),0,dp(context,6));}}
-        if(view instanceof Switch){Switch s=(Switch)view;s.setText("");s.setMinHeight(dp(context,48));s.setMinimumHeight(dp(context,48));s.setMinimumWidth(dp(context,48));s.setPadding(dp(context,8),0,0,0);FeedTheme.styleSwitch(s);}
+        if(view instanceof Switch){Switch s=(Switch)view;s.setText(dev.pgrazor.PtBr.tr(""));s.setMinHeight(dp(context,48));s.setMinimumHeight(dp(context,48));s.setMinimumWidth(dp(context,48));s.setPadding(dp(context,8),0,0,0);FeedTheme.styleSwitch(s);}
         if(view instanceof EditText)FeedTheme.styleField((EditText)view);
         if(view instanceof ViewGroup){ViewGroup group=(ViewGroup)view;for(int i=0;i<group.getChildCount();i++)styleTree(context,group.getChildAt(i));}
     }

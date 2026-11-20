@@ -83,8 +83,8 @@ public final class GpxRouteDialog {
     public static void menu(Activity activity, Source source, Selection selection) {
         if (!alive(activity)) return;
         String[] items = {"Save route", "Import GPX", "Saved routes", "Export route"};
-        AlertDialog dialog = ChoiceList.attach(new AlertDialog.Builder(MapTheme.wrap(activity)).setTitle("GPX routes")
-            .setNegativeButton("Close", null).create(), items, which -> {
+        AlertDialog dialog = ChoiceList.attach(new AlertDialog.Builder(MapTheme.wrap(activity)).setTitle(dev.pgrazor.PtBr.tr("GPX routes"))
+            .setNegativeButton(dev.pgrazor.PtBr.tr("Close"), null).create(), items, which -> {
                 switch (which) {
                     case 0: saveRoute(activity, source); break;
                     case 1: importGpx(activity, "the route builder", selection); break;
@@ -127,8 +127,8 @@ public final class GpxRouteDialog {
             GpxRoute r = routes.get(i);
             names[i] = String.format(Locale.US, "%s\n%d stops", title(r.name, i), r.points().length);
         }
-        AlertDialog dialog = ChoiceList.attach(new AlertDialog.Builder(MapTheme.wrap(activity)).setTitle("Choose a route (" + routes.size() + ")")
-            .setNegativeButton("Cancel", null).create(), names, which -> deliverImported(activity, routes.get(which), where, selection));
+        AlertDialog dialog = ChoiceList.attach(new AlertDialog.Builder(MapTheme.wrap(activity)).setTitle(dev.pgrazor.PtBr.tr("Choose a route (" + routes.size() + ")"))
+            .setNegativeButton(dev.pgrazor.PtBr.tr("Cancel"), null).create(), names, which -> deliverImported(activity, routes.get(which), where, selection));
         present(activity, dialog);
     }
 
@@ -176,8 +176,8 @@ public final class GpxRouteDialog {
 
     private static void showList(Activity activity, List<GpxStore.Entry> entries, Selection selection) {
         AlertDialog.Builder builder = new AlertDialog.Builder(MapTheme.wrap(activity))
-            .setTitle("Saved routes (" + entries.size() + ")").setNegativeButton("Close", null);
-        if (entries.isEmpty()) { builder.setMessage("No saved routes yet. Import a GPX file, or save a route you build on the map."); present(activity, builder.create()); return; }
+            .setTitle(dev.pgrazor.PtBr.tr("Saved routes (" + entries.size() + ")")).setNegativeButton(dev.pgrazor.PtBr.tr("Close"), null);
+        if (entries.isEmpty()) { builder.setMessage(dev.pgrazor.PtBr.tr("No saved routes yet. Import a GPX file, or save a route you build on the map.")); present(activity, builder.create()); return; }
         String[] rows = new String[entries.size()];
         for (int i = 0; i < rows.length; i++) {
             GpxStore.Entry e = entries.get(i);
@@ -187,11 +187,11 @@ public final class GpxRouteDialog {
     }
 
     private static void showEntry(Activity activity, GpxStore.Entry entry, Selection selection) {
-        AlertDialog dialog = new AlertDialog.Builder(MapTheme.wrap(activity)).setTitle(entry.name)
-            .setMessage(String.format(Locale.US, "%d stops.\n\nUse this route loads it as a draft; Start it yourself afterwards.", entry.count))
-            .setNegativeButton("Cancel", null)
-            .setPositiveButton("Use this route", null)
-            .setNeutralButton("Delete", null).create();
+        AlertDialog dialog = new AlertDialog.Builder(MapTheme.wrap(activity)).setTitle(dev.pgrazor.PtBr.tr(entry.name))
+            .setMessage(dev.pgrazor.PtBr.tr(String.format(Locale.US, "%d stops.\n\nUse this route loads it as a draft; Start it yourself afterwards.", entry.count)))
+            .setNegativeButton(dev.pgrazor.PtBr.tr("Cancel"), null)
+            .setPositiveButton(dev.pgrazor.PtBr.tr("Use this route"), null)
+            .setNeutralButton(dev.pgrazor.PtBr.tr("Delete"), null).create();
         dialog.setOnShowListener(d -> {
             dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> loadRoute(activity, entry, selection, dialog));
             dialog.getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener(v -> confirmDelete(activity, entry, dialog, selection));
@@ -223,9 +223,9 @@ public final class GpxRouteDialog {
     }
 
     private static void confirmDelete(Activity activity, GpxStore.Entry entry, AlertDialog detail, Selection selection) {
-        AlertDialog confirm = new AlertDialog.Builder(MapTheme.wrap(activity)).setTitle("Delete saved route?")
-            .setMessage("“" + entry.name + "” will be removed. Any active walk is unaffected.")
-            .setNegativeButton("Cancel", null).setPositiveButton("Delete", null).create();
+        AlertDialog confirm = new AlertDialog.Builder(MapTheme.wrap(activity)).setTitle(dev.pgrazor.PtBr.tr("Delete saved route?"))
+            .setMessage(dev.pgrazor.PtBr.tr("“" + entry.name + "” will be removed. Any active walk is unaffected."))
+            .setNegativeButton(dev.pgrazor.PtBr.tr("Cancel"), null).setPositiveButton(dev.pgrazor.PtBr.tr("Delete"), null).create();
         confirm.setOnShowListener(d -> confirm.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
             confirm.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(false);
             run(() -> {
@@ -261,14 +261,14 @@ public final class GpxRouteDialog {
         int count = current.points().length;
         form.addView(label(ui, count + (count == 1 ? " stop" : " stops") + " will be saved.", 14));
         EditText name = new EditText(ui);
-        name.setHint("Route name");
+        name.setHint(dev.pgrazor.PtBr.tr("Route name"));
         name.setSingleLine(true);
         name.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_CAP_SENTENCES);
         name.setFilters(new InputFilter[]{new InputFilter.LengthFilter(NAME_LIMIT)});
-        name.setText(current.name);
+        name.setText(dev.pgrazor.PtBr.tr(current.name));
         form.addView(name);
-        AlertDialog dialog = new AlertDialog.Builder(ui).setTitle("Save route").setView(form)
-            .setNegativeButton("Cancel", null).setPositiveButton("Save", null).create();
+        AlertDialog dialog = new AlertDialog.Builder(ui).setTitle(dev.pgrazor.PtBr.tr("Save route")).setView(form)
+            .setNegativeButton(dev.pgrazor.PtBr.tr("Cancel"), null).setPositiveButton(dev.pgrazor.PtBr.tr("Save"), null).create();
         dialog.setOnShowListener(d -> dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
             final GpxRoute toSave;
             try { toSave = new GpxRoute(name.getText().toString(), current.points()); }
@@ -367,7 +367,7 @@ public final class GpxRouteDialog {
 
     private static TextView label(Context c, String text, int size) {
         TextView v = new TextView(c);
-        v.setText(text);
+        v.setText(dev.pgrazor.PtBr.tr(text));
         v.setTextSize(size);
         return v;
     }

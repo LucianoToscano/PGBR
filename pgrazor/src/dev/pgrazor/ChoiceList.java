@@ -31,7 +31,7 @@ public final class ChoiceList {
         for (int i = 0; i < labels.length; i++) {
             final int index = i;
             TextView option = new TextView(c);
-            option.setText(label(c, labels[i]));
+            option.setText(dev.pgrazor.PtBr.tr(label(c, labels[i])));
             option.setGravity(Gravity.CENTER_VERTICAL | Gravity.START);
             option.setMinHeight(dp(c, 52));
             option.setPadding(dp(c, 16), dp(c, 10), dp(c, 16), dp(c, 10));
