@@ -4,7 +4,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-/** Portuguese (Brazil) labels for the unchanged PGRazor app.
+/** Portuguese (Brazil) labels for the unchanged PGBR app.
  * Only invoke for text shown to the user. NEVER translate API/data keys. 
  * Generated from pgrazor/i18n/pt-BR.json.
  */
@@ -22,7 +22,7 @@ public final class PtBr {
         m.put(" requested stops are loaded; starting with ", " paradas solicitadas estão carregadas; iniciando com ");
         m.put(" result", " resultado");
         m.put(" results", " resultados");
-        m.put("; PGRazor will stay off until it matches", "; o PGRazor continuará desligado até que seja compatível");
+        m.put("; PGBR will stay off until it matches", "; o PGBR continuará desligado até que seja compatível");
         m.put("; update pending, reboot to apply", "; atualização pendente, reinicie para aplicar");
         m.put("1 km", "1 km");
         m.put("1 minute", "1 minuto");
@@ -39,7 +39,7 @@ public final class PtBr {
         m.put("Active", "Ativo");
         m.put("Add account", "Adicionar conta");
         m.put("Advanced", "Avançado");
-        m.put("After rebooting, turn PGRazor Off again if it came back On.", "Após reiniciar, desligue novamente o PGRazor caso ele tenha sido ativado.");
+        m.put("After rebooting, turn PGBR Off again if it came back On.", "Após reiniciar, desligue novamente o PGBR caso ele tenha sido ativado.");
         m.put("All", "Todos");
         m.put("All battles", "Todas as batalhas");
         m.put("Allow", "Permitir");
@@ -94,7 +94,7 @@ public final class PtBr {
         m.put("Clear filters", "Limpar filtros");
         m.put("Clear route", "Limpar rota");
         m.put("Close", "Fechar");
-        m.put("Close PGRazor settings", "Fechar configurações do PGRazor");
+        m.put("Close PGBR settings", "Fechar configurações do PGBR");
         m.put("Connection failed", "Falha na conexão");
         m.put("Continue", "Continuar");
         m.put("Continue to Feed", "Continuar para os resultados");
@@ -172,15 +172,15 @@ public final class PtBr {
         m.put("Install", "Instalar");
         m.put("Install module", "Instalar módulo");
         m.put("Install pending — reboot to activate", "Instalação pendente — reinicie para ativar");
-        m.put("Install PGRazor Root module?", "Instalar módulo PGRazor Root?");
+        m.put("Install PGBR Root module?", "Instalar módulo PGBR Root?");
         m.put("Installed", "Instalado");
         m.put("Installed ", "Instalado ");
-        m.put("Installs PGRazor into the official Pokémon GO ", "Instala o PGRazor no Pokémon GO oficial ");
+        m.put("Installs PGBR into the official Pokémon GO ", "Instala o PGBR no Pokémon GO oficial ");
         m.put("Invalid map coordinates", "Coordenadas inválidas no mapa");
         m.put("Items", "Itens");
         m.put("IV display", "Exibição de IVs");
         m.put("Join our Discord", "Entre no nosso Discord");
-        m.put("Join the PGRazor Discord community", "Participe da comunidade PGRazor no Discord");
+        m.put("Join the PGBR Discord community", "Participe da comunidade PGBR no Discord");
         m.put("Joystick follows the camera", "Joystick acompanha a câmera");
         m.put("Keep ", "Manter ");
         m.put("Keep background Pokemon", "Manter Pokémon com fundo");
@@ -257,21 +257,21 @@ public final class PtBr {
         m.put("Password", "Senha");
         m.put("Paste", "Colar");
         m.put("Permission required", "Permissão necessária");
-        m.put("PGRazor module: ", "Módulo PGRazor: ");
-        m.put("PGRazor off (module stays installed)", "PGRazor desligado (módulo permanece instalado)");
-        m.put("PGRazor on", "PGRazor ligado");
-        m.put("PGRazor Root installer", "Instalador PGRazor Root");
-        m.put("PGRazor version ", "Versão do PGRazor ");
-        m.put("PGRazor was Off; the update keeps it Off (reboot to apply).", "O PGRazor estava desligado e permanecerá desligado (reinicie para aplicar).");
-        m.put("PGRazor: Off", "PGRazor: Desligado");
-        m.put("PGRazor: On", "PGRazor: Ligado");
-        m.put("PGRazor: On / Off", "PGRazor: Ligado / Desligado");
+        m.put("PGBR module: ", "Módulo PGBR: ");
+        m.put("PGBR off (module stays installed)", "PGBR desligado (módulo permanece instalado)");
+        m.put("PGBR on", "PGBR ligado");
+        m.put("PGBR Root installer", "Instalador PGBR Root");
+        m.put("PGBR version ", "Versão do PGBR ");
+        m.put("PGBR was Off; the update keeps it Off (reboot to apply).", "O PGBR estava desligado e permanecerá desligado (reinicie para aplicar).");
+        m.put("PGBR: Off", "PGBR: Desligado");
+        m.put("PGBR: On", "PGBR: Ligado");
+        m.put("PGBR: On / Off", "PGBR: Ligado / Desligado");
         m.put("Pin location copied", "Localização do marcador copiada");
         m.put("Please wait", "Aguarde");
         m.put("Pokémon", "Pokémon");
         m.put("Pokémon & Transfer", "Pokémon e transferências");
         m.put("Pokémon GO", "Pokémon GO");
-        m.put("Pokémon GO will be closed. PGRazor will be ", "O Pokémon GO será fechado. O PGRazor ficará ");
+        m.put("Pokémon GO will be closed. PGBR will be ", "O Pokémon GO será fechado. O PGBR ficará ");
         m.put("Pokémon GO: ", "Pokémon GO: ");
         m.put("PokéStops", "Poképaradas");
         m.put("Power Spots", "Pontos de Poder");
@@ -390,8 +390,8 @@ public final class PtBr {
         m.put("Try again", "Tentar novamente");
         m.put("Turn off", "Desligar");
         m.put("Turn on", "Ligar");
-        m.put("Turn PGRazor off?", "Desligar o PGRazor?");
-        m.put("Turn PGRazor on?", "Ligar o PGRazor?");
+        m.put("Turn PGBR off?", "Desligar o PGBR?");
+        m.put("Turn PGBR on?", "Ligar o PGBR?");
         m.put("Unknown", "Desconhecido");
         m.put("Unknown — check Zygisk in Magisk", "Desconhecido — verifique o Zygisk no Magisk");
         m.put("Unknown — needs Zygisk Next or ReZygisk", "Desconhecido — requer Zygisk Next ou ReZygisk");
@@ -410,13 +410,13 @@ public final class PtBr {
         m.put("Walk", "Caminhar");
         m.put("Walking speed", "Velocidade de caminhada");
         m.put("Warning", "Aviso");
-        m.put("WARNING: PGRazor was Off, but keeping it Off in the update could not be confirmed. ", "AVISO: o PGRazor estava desligado, mas não foi possível confirmar que continuará desligado. ");
-        m.put("WARNING: PGRazor was Off, but the update may not have kept it Off. ", "AVISO: o PGRazor estava desligado, mas a atualização pode tê-lo reativado. ");
+        m.put("WARNING: PGBR was Off, but keeping it Off in the update could not be confirmed. ", "AVISO: o PGBR estava desligado, mas não foi possível confirmar que continuará desligado. ");
+        m.put("WARNING: PGBR was Off, but the update may not have kept it Off. ", "AVISO: o PGBR estava desligado, mas a atualização pode tê-lo reativado. ");
         m.put("World", "Mundo");
         m.put("World map", "Mapa mundial");
         m.put("Yes", "Sim");
         m.put("Your location copied", "Sua localização foi copiada");
-        m.put("Zygisk reads its module list only at boot. Reboot to activate the pending PGRazor Root change.", "O Zygisk carrega os módulos durante a inicialização. Reinicie para aplicar a alteração pendente do PGRazor Root.");
+        m.put("Zygisk reads its module list only at boot. Reboot to activate the pending PGBR Root change.", "O Zygisk carrega os módulos durante a inicialização. Reinicie para aplicar a alteração pendente do PGBR Root.");
         LABELS = Collections.unmodifiableMap(m);
     }
     private PtBr() {}
@@ -449,6 +449,6 @@ public final class PtBr {
                 return entry.getValue() + translateLine(line.substring(source.length()));
             }
         }
-        return line;
+        return line.replace("PGRazor", "PGBR");
     }
 }

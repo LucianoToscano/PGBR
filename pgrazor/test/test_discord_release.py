@@ -7,15 +7,15 @@ import discord_release
 
 
 def release(assets, **extra):
-    base = {'tag_name': 'v0.1.6', 'name': 'PGRazor v0.1.6',
+    base = {'tag_name': 'v0.1.6', 'name': 'PGBR v0.1.6',
             'html_url': 'https://github.com/example/pgrazor/releases/tag/v0.1.6',
             'body': 'Quick menu improvements.', 'assets': assets}
     base.update(extra)
     return base
 
 
-APK = {'name': 'PGRazor.apk',
-       'browser_download_url': 'https://example.com/PGRazor.apk'}
+APK = {'name': 'PGBR.apk',
+       'browser_download_url': 'https://example.com/PGBR.apk'}
 HIGHLIGHT = {'name': 'release-highlight.png',
              'browser_download_url': 'https://example.com/release-highlight.png'}
 
@@ -23,7 +23,7 @@ HIGHLIGHT = {'name': 'release-highlight.png',
 class DiscordReleaseTests(unittest.TestCase):
     def test_both_root_downloads_are_linked_alongside_normal_apk(self):
         roots = [{'name': name, 'browser_download_url': 'https://example.com/' + name}
-                 for name in ('PGRazor-Root.apk', 'PGRazor-Root-module.zip')]
+                 for name in ('PGBR-Root.apk', 'PGBR-Root-module.zip')]
         fields = discord_release.message(release([APK, *roots]))['embeds'][0]['fields']
         for asset in [APK, *roots]:
             self.assertTrue(any(asset['browser_download_url'] in field['value'] for field in fields))
@@ -33,7 +33,7 @@ class DiscordReleaseTests(unittest.TestCase):
         embed = payload['embeds'][0]
         self.assertEqual(embed['image']['url'], HIGHLIGHT['browser_download_url'])
         # APK download link is preserved alongside the screenshot.
-        self.assertTrue(any(f['value'] == '[Install PGRazor.apk](' + APK['browser_download_url'] + ')'
+        self.assertTrue(any(f['value'] == '[Install PGBR.apk](' + APK['browser_download_url'] + ')'
                             for f in embed['fields']))
 
     def test_no_highlight_asset_omits_embed_image(self):
@@ -47,7 +47,7 @@ class DiscordReleaseTests(unittest.TestCase):
         # Without a role id there is no ping content at all.
         self.assertNotIn('content', discord_release.message(release([APK, HIGHLIGHT])))
         payload = discord_release.message(release([APK, HIGHLIGHT]), role)
-        self.assertEqual(payload['content'], '<@&' + role + '> A new PGRazor release is available!')
+        self.assertEqual(payload['content'], '<@&' + role + '> A new PGBR release is available!')
         self.assertEqual(payload['allowed_mentions']['roles'], [role])
         self.assertEqual(payload['allowed_mentions']['parse'], [])
         self.assertEqual(payload['embeds'][0]['image']['url'], HIGHLIGHT['browser_download_url'])

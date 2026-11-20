@@ -122,7 +122,7 @@ class PackageTests(unittest.TestCase):
                 info=axml.inspect_manifest(after.read('AndroidManifest.xml'))
                 self.assertTrue(any(p['name']==axml.PROVIDER and p['exported'] is False for p in info['providers']))
             self.assertEqual(original_hash,runtime_assets.sha256(source))
-            with self.assertRaisesRegex(ValueError,'already has PGRazor'):
+            with self.assertRaisesRegex(ValueError,'already has PGBR'):
                 nonroot.rewrite_apk(output,Path(temp)/'twice.apk',base=True,preview=True)
 
     def test_bundle_paths_are_never_used_as_output_paths(self):

@@ -1,4 +1,4 @@
-# Compila o MESMO aplicativo completo PGRazor em PGBR, sem dividir seus recursos.
+# Compila o MESMO aplicativo completo PGBR em PGBR, sem dividir seus recursos.
 # NUNCA publica GitHub Release. Builds automaticos da branch PT-BR usam a entrada e chave nos Secrets.
 name: PGBR - compilar APK completo PT-BR (nuvem)
 on:
@@ -12,7 +12,7 @@ on:
       tag:
         description: Versao de teste (exemplo v0.3.4-ptbr.1)
         required: true
-        default: v0.3.4-ptbr.1
+        default: v0.00.01-LT
         type: string
 permissions:
   contents: read
@@ -33,7 +33,7 @@ jobs:
     env:
       PGRAZOR_BUILD_TOOLS: 36.0.0
       PGRAZOR_ANDROID_PLATFORM: android-36
-      PGBR_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || format('v0.3.4-ptbr.auto.{0}', github.run_number) }}
+      PGBR_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || 'v0.00.01-LT' }}
       PGRAZOR_KEY_ALIAS: ${{ secrets.PGRAZOR_KEY_ALIAS }}
       PGRAZOR_STORE_PASSWORD: ${{ secrets.PGRAZOR_STORE_PASSWORD }}
       PGRAZOR_KEY_PASSWORD: ${{ secrets.PGRAZOR_KEY_PASSWORD }}
@@ -137,11 +137,10 @@ jobs:
         run: python -B tools/verify_release.py dist/release --tag $env:RELEASE_TAG
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: PGBR-PTBR-APK-completo-candidato
+          name: PGBR-${{ env.PGBR_TAG }}-APKs
           path: |
-            dist/release/PGRazor.apk
-            dist/release/PGRazor-Root.apk
-            dist/release/PGRazor-Root-module.zip
+            dist/release/PGBR-*.apk
+            dist/release/PGBR-*.zip
             dist/release/root-build-info.json
             dist/release/SHA256SUMS.txt
             dist/release/build-info.json

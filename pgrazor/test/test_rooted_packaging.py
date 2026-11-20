@@ -21,7 +21,7 @@ class RootedPackagingTests(unittest.TestCase):
                 rooted.require_supported_target(dict(target, **{field: value}))
 
     def test_shared_version_and_manifest(self):
-        for version, code in [('v0.2.2-root', 2002), ('1.23.456-rc.1', 1023456)]:
+        for version, code in [('v0.2.2-root', 2002), ('1.23.456-rc.1', 1023456), ('v0.00.01-LT', 100000001)]:
             self.assertEqual(rooted.version_code(version), code)
             manifest = ET.fromstring(rooted_installer._manifest(version))
             self.assertEqual(manifest.attrib['{http://schemas.android.com/apk/res/android}versionCode'], str(code))
@@ -34,7 +34,7 @@ class RootedPackagingTests(unittest.TestCase):
 
 
 class ToggleCapabilityTests(unittest.TestCase):
-    """The launch-time PGRazor: On / Off switch: capability marker, preservation script, loader."""
+    """The launch-time PGBR: On / Off switch: capability marker, preservation script, loader."""
 
     def test_capability_marker_is_an_empty_file_under_pgrazor(self):
         entries = rooted.capability_module_entries()

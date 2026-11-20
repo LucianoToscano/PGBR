@@ -31,7 +31,7 @@ public final class QuickMenu {
         void onTeleport();
         void onAccounts();
         void onSettings();
-        /** Asks to hide every PGRazor overlay (three fingers on screen show them again). */
+        /** Asks to hide every PGBR overlay (three fingers on screen show them again). */
         void onHideOverlays();
     }
 

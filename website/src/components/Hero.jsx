@@ -43,7 +43,7 @@ export default function Hero() {
         <figure className="hero__shot">
           <img
             src={asset('images/encounter.png')}
-            alt="PGRazor overlays during a Pokémon GO encounter: a CP, level and IV read-out above the Pokémon, a berry count, a transfer shield, and the VGP status indicator."
+            alt="PGBR overlays during a Pokémon GO encounter: a CP, level and IV read-out above the Pokémon, a berry count, a transfer shield, and the VGP status indicator."
             width="1080"
             height="2404"
             loading="eager"
