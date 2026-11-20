@@ -28,6 +28,12 @@ jobs:
           mkdir -p build/pgbr-unit
           javac -encoding UTF-8 -d build/pgbr-unit pgrazor/src/dev/pgrazor/TrainerAliasPolicy.java pgrazor/test/TrainerAliasPolicyTest.java
           java -cp build/pgbr-unit dev.pgrazor.TrainerAliasPolicyTest
+      - name: Testar proteção PvP Top 1 versus limite IV 100%
+        run: |
+          g++ -std=c++17 -O2 -Ipgrazor/native pgrazor/native/transfer_policy.cpp pgrazor/native/pvp_rank.cpp pgrazor/native/transfer_or_pvp_regression_test.cpp -o /tmp/pgbr-pvp-transfer-test
+          /tmp/pgbr-pvp-transfer-test
+      - name: Conferir 37 sprites de itens e os três empacotadores
+        run: python -B -m unittest discover -s pgrazor/test -p 'test_item_icon_assets.py' -v
       - name: Verificar integridade do diff
         run: git diff --check HEAD~1 HEAD
 
