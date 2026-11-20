@@ -19,6 +19,7 @@ public final class EternatusRouteRunner {
     private static GpxRoute planned;
     private static String template = "";
     private static boolean running, previousVgpOverlay, previousVgpEnabled, previousQuickSpin;
+    private static int previousThrowGrade, previousThrowVariety;
     private static boolean awaitingClaim, advancementQueued;
     private static final java.util.HashSet<String> confirmedQuestIds=new java.util.HashSet<>();
     private static int at;
@@ -80,6 +81,8 @@ public final class EternatusRouteRunner {
             previousVgpOverlay = Control.vgpOverlay();
             previousVgpEnabled = Control.vgpEnabled();
             previousQuickSpin = Control.quickSpinEnabled();
+            previousThrowGrade = Control.throwRating();
+            previousThrowVariety = Control.throwVariety();
             running = true;
             at = 0;
             lastTick = 0;
@@ -91,6 +94,9 @@ public final class EternatusRouteRunner {
         // Preserve old preferences so Cancel restores the user's previous mode.
         Control.setVgpEnabled(false);
         Control.setVgpOverlay(true);
+        // Request the native throwing layer's Excellent grade, not the random variety mode.
+        Control.setThrowVariety(0);
+        Control.setThrowGrade(3);
         Control.setQuickSpinEnabled(false); // Never spin until the destination cooldown is clear.
         if (!travel(0)) {
             stop("Falha ao posicionar a primeira parada.");
@@ -208,6 +214,7 @@ public final class EternatusRouteRunner {
     /** Always restores feature preferences on explicit cancellation. */
     public static void stop(String reason) {
         boolean restoreOverlay, restoreQuickSpin, restoreVgp;
+        int restoreThrowGrade, restoreThrowVariety;
         synchronized (LOCK) {
             if (!running) return;
             running = false;
@@ -216,11 +223,15 @@ public final class EternatusRouteRunner {
             restoreOverlay = previousVgpOverlay;
             restoreQuickSpin = previousQuickSpin;
             restoreVgp = previousVgpEnabled;
+            restoreThrowGrade = previousThrowGrade;
+            restoreThrowVariety = previousThrowVariety;
             status = reason == null || reason.isEmpty() ? "Execução cancelada." : reason;
         }
         EternatusMission.stop(status());
         Control.setVgpEnabled(false);
         Control.setQuickSpinEnabled(restoreQuickSpin);
+        Control.setThrowGrade(restoreThrowGrade);
+        Control.setThrowVariety(restoreThrowVariety);
         Control.setVgpOverlay(restoreOverlay);
         if (restoreVgp && Control.active() && Control.canEnable() && Cooldown.remaining() == 0)
             Control.setVgpEnabled(true);
