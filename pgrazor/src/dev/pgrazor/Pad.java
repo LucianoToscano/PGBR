@@ -264,9 +264,9 @@ public final class Pad {
         private final RectF dst=new RectF();
         private final Bitmap ledOff=decodeMapIcon("vgp-led-off.png");
         private final Bitmap ring=decodeMapIcon("vgp-ring.png");
-        private final Bitmap deviceOn=decodeMapIcon("vgp-device-on.png");
-        private final Bitmap deviceError=decodeMapIcon("vgp-device-error.png");
-        private final Bitmap deviceOff=decodeMapIcon("vgp-device-off.png");
+        private final Bitmap deviceOn=decodeMapIcon("vgp-device-off.png");
+        private final Bitmap deviceError=decodeMapIcon("vgp-device-on.png");
+        private final Bitmap deviceOff=decodeMapIcon("vgp-device-error.png");
         VgpToggle(Context context){super(context);setFocusable(true);setClickable(true);}
         private boolean failed(){
             String status=Control.vgpStatus().toLowerCase(java.util.Locale.ROOT);
