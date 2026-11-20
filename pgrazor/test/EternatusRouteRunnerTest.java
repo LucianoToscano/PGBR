@@ -46,8 +46,12 @@ public final class EternatusRouteRunnerTest {
         check(!EternatusMission.enabled, "Native research mode disarmed");
         check(!Control.quickspin && !Control.vgpEnabled && !Control.vgpOverlay,
             "Existing overlay/tool preferences restored");
-        check(!EternatusRouteRunner.chooseRoute(new GpxRoute("invalid",
-            new double[][]{{91, 0}})), "Invalid coordinates rejected by parser");
+        try {
+            new GpxRoute("invalid", new double[][]{{91, 0}});
+            throw new AssertionError("Invalid coordinates were accepted");
+        } catch (IllegalArgumentException expected) {
+            // Real GPX validation runs before the coordinator is given a route.
+        }
         System.out.println("PASS: EternatusRouteRunner");
     }
 }
