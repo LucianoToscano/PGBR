@@ -38,6 +38,7 @@ public final class GymFeedOverlay extends View {
         setVisibility(visible&&GymAutomationSettings.overlayEnabled()?VISIBLE:GONE);
         setContentDescription("Gym Slotter and Berry Feeder "+(on?"on; tap to stop":"off; tap to start")
             +". Drag to reposition. "+GymAutomationSettings.status());
+        setAlpha(Control.gymIconOpacity()/100f);
         invalidate();
     }
 
@@ -46,7 +47,7 @@ public final class GymFeedOverlay extends View {
     private static Bitmap loadIcon(Context context,String name){
         try(InputStream in=PgAssets.open(context, "pgrazor/map-icons/"+name)){
             BitmapFactory.Options options=new BitmapFactory.Options();
-            options.inSampleSize="gym-automation.png".equals(name)?8:1;
+            options.inSampleSize="gym-automation.png".equals(name)?2:1;
             return BitmapFactory.decodeStream(in,null,options);
         }catch(Exception ignored){return null;}
     }
@@ -62,13 +63,13 @@ public final class GymFeedOverlay extends View {
         super.onDraw(canvas);
         boolean on=GymAutomationSettings.running();
         canvas.save();canvas.scale(getWidth()/54f,getHeight()/54f);
-        paint.setStyle(Paint.Style.FILL);paint.setColor(MapTheme.surface());
+        paint.setStyle(Paint.Style.FILL);paint.setColor((MapTheme.surface()&0x00ffffff)|(Math.round(Control.overlayBackgroundOpacity()*255f/100f)<<24));
         canvas.drawRoundRect(1,1,53,53,14,14,paint);
         // User-supplied transparent gym symbol with the bundled Razz Berry badge.
         paint.setColorFilter(new PorterDuffColorFilter(MapTheme.ink(),PorterDuff.Mode.SRC_IN));
         drawIcon(canvas,gymIcon,6,4,39,39);
         paint.setColorFilter(null);
-        paint.setColor(MapTheme.surface());canvas.drawCircle(38,30,13,paint);
+        paint.setColor((MapTheme.surface()&0x00ffffff)|(Math.round(Control.overlayBackgroundOpacity()*255f/100f)<<24));canvas.drawCircle(38,30,13,paint);
         drawIcon(canvas,berryIcon,26,17,50,41);
         paint.setColor(on?Color.rgb(56,181,112):MapTheme.ink());
         paint.setTextSize(11);paint.setTypeface(Typeface.DEFAULT_BOLD);paint.setTextAlign(Paint.Align.CENTER);
