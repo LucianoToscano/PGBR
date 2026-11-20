@@ -24,7 +24,8 @@ final class LocalTimeClock {
     private int compactFormat = -1;
     private SimpleDateFormat compactFormatter;
     private static final String[] PATTERNS = {
-        "'🕒' HH:mm '🗓' dd/MM/yy", "HH:mm - dd/MM/yy", "HH:mm 'GMT'XXX", "'🕒' HH:mm '🗓' dd/MM/yy"
+        "'🕒' HH:mm '🗓' dd/MM/yy", "HH:mm - dd/MM/yy", "HH:mm 'GMT'XXX", "'🕒' HH:mm '🗓' dd/MM/yy",
+        "HH:mm", "HH:mm · dd/MM/yy"
     };
 
     String compactLabel(double latitude, double longitude, long now, int format) {

@@ -528,10 +528,17 @@ public final class Pad {
             TextView label=labels[i];if(label==null)continue;
             int alpha=Math.round(Control.hudBackgroundOpacity(bits[i])*255f/100f);
             if (label == cooldownTimer) {
-                label.setTextSize(Control.cooldownTextSp() == 0 ? font + 2 : Control.cooldownTextSp());
-                label.setBackground(alpha == 0 ? null : new android.graphics.drawable.InsetDrawable(
-                    rounded((alpha << 24) | 0x101924, 16), 0, dp(9), 0, dp(9)));
-                label.setPadding(dp(9), dp(10), dp(9), dp(10));
+                boolean emphasis = Control.cooldownEmphasis();
+                int size = Control.cooldownTextSp();
+                label.setTextSize(size != 0 ? size : emphasis ? Math.max(18, font + 5) : font + 2);
+                label.setTypeface(Typeface.create(emphasis ? "sans-serif-condensed" : "sans-serif-medium",
+                    emphasis ? Typeface.BOLD : Typeface.NORMAL));
+                GradientDrawable badge = rounded((alpha << 24) | 0x101924, emphasis ? 10 : 16);
+                if (emphasis) badge.setStroke(dp(2), Control.hudLabelColor(Control.HUD_COOLDOWN));
+                int inset = dp(emphasis ? 5 : 9);
+                label.setBackground(alpha == 0 && !emphasis ? null :
+                    new android.graphics.drawable.InsetDrawable(badge, 0, inset, 0, inset));
+                label.setPadding(dp(emphasis ? 12 : 8), inset + dp(3), dp(emphasis ? 12 : 8), inset + dp(3));
             } else {
                 label.setTextSize(font);
                 label.setBackground(alpha==0?null:rounded((alpha<<24)|0x101924,7));
@@ -829,7 +836,8 @@ public final class Pad {
     }
     private final class Stick extends View {
         final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG|Paint.FILTER_BITMAP_FLAG);
-        private Bitmap customImage, builtinBase, builtinThumb;
+        private Bitmap customImage, builtinBase, builtinThumb, stormRim, stormVortex;
+        private final RectF artBounds = new RectF();
         private int imageGeneration=-1,loadedStyle=-1;
         private final Paint effect=new Paint(Paint.ANTI_ALIAS_FLAG);
         private final EternatusStorm storm = new EternatusStorm();
@@ -864,11 +872,15 @@ public final class Pad {
             int style=Control.joystickStyle();
             if(style==loadedStyle)return;
             loadedStyle=style;
-            builtinBase=builtinThumb=null;
+            builtinBase=builtinThumb=stormRim=stormVortex=null;
             if(style==1||style==2){
                 String variant=style==1?"eternatus":"hud";
                 builtinBase=art("joystick-"+variant+"-base.webp");
                 builtinThumb=art("joystick-"+variant+"-thumb.webp");
+                if (style == 1) {
+                    stormRim = art("joystick-eternatus-rim.webp");
+                    stormVortex = art("joystick-eternatus-vortex.webp");
+                }
                 if(builtinBase==null||builtinThumb==null)
                     Control.event("joystick-art","Could not load bundled "+variant+" layers; original control remains active");
             }
@@ -903,16 +915,27 @@ public final class Pad {
                 paint.setStyle(Paint.Style.FILL);
                 paint.setAlpha(255);
                 paint.setColor(Color.WHITE);
-                canvas.drawBitmap(builtinBase,null,new RectF(cx-outer,cy-outer,cx+outer,cy+outer),paint);
+                artBounds.set(cx-outer,cy-outer,cx+outer,cy+outer);
+                boolean stormOn = style == 1 && Control.joystickEternatusEffects();
+                if (stormOn && stormVortex != null && stormRim != null) {
+                    int saved = canvas.save();
+                    float angle = (SystemClock.uptimeMillis() % 18000L) * (360f / 18000f);
+                    canvas.rotate(angle, cx, cy);
+                    canvas.drawBitmap(stormVortex, null, artBounds, paint);
+                    canvas.restoreToCount(saved);
+                    canvas.drawBitmap(stormRim, null, artBounds, paint);
+                } else {
+                    canvas.drawBitmap(builtinBase,null,artBounds,paint);
+                }
                 float thumbR=outer*(style==1?.355f:.319f);
                 float travel=Math.max(0,outer-thumbR-dp(4));
                 float knobX=cx+x*travel,knobY=cy+y*travel;
-                if(style==1&&Control.joystickEternatusEffects())
+                if(stormOn)
                     drawEternatusEffects(canvas,cx,cy,outer,knobX,knobY,thumbR);
                 // Only the circular hub moves; the arrows, shield and outer artwork remain fixed.
                 canvas.drawBitmap(builtinThumb,null,
                     new RectF(knobX-thumbR,knobY-thumbR,knobX+thumbR,knobY+thumbR),paint);
-                if(style==1&&Control.joystickEternatusEffects()&&isShown()&&!closed)
+                if(stormOn&&isShown()&&!closed)
                     postInvalidateDelayed(80); // bounded ~12.5 FPS, no extra worker or timer
                 return;
             }

@@ -14,6 +14,11 @@ public class SettingsBackupRulesTest {
     }
     public static void main(String[] args)throws Exception{
         SettingsBackupRules.validate(valid());
+        JSONObject display=valid();
+        display.getJSONObject("settings").put("localTimeFormat","5").put("cooldownEmphasis","true");
+        SettingsBackupRules.validate(display);
+        display.getJSONObject("settings").put("cooldownEmphasis","yes");rejects(display);
+        display.getJSONObject("settings").put("cooldownEmphasis","false").put("localTimeFormat","6");rejects(display);
         JSONObject legacy=valid();legacy.put("format","PGRazor settings");SettingsBackupRules.validate(legacy);
         JSONObject protect=valid();protect.getJSONObject("settings").put("transferProtect","255").put("transferProtectSplit","1");
         SettingsBackupRules.validate(protect);

@@ -20,7 +20,7 @@ final class LocalTimeOverlay extends TextView {
         setGravity(Gravity.CENTER); setSingleLine(true);
         int padding = SettingsUi.dp(activity, 4);
         setPadding(padding, 0, padding, 0);
-        setMinWidth(SettingsUi.dp(activity, 78));
+        setIncludeFontPadding(false);
         setVisibility(GONE);
         applyTheme();
     }

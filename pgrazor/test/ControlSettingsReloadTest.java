@@ -27,12 +27,13 @@ public final class ControlSettingsReloadTest {
         java.util.Properties incoming=new java.util.Properties();
         Control.setLocalTimeFormat(3);
         Control.setCooldownTextSp(11);
-        incoming.setProperty("localTimeFormat","2");
+        incoming.setProperty("localTimeFormat","5");
+        incoming.setProperty("cooldownEmphasis","true");
         incoming.setProperty("cooldownTextSp","18");
         incoming.setProperty("localTimeOverlay","false");
         incoming.setProperty("idleWalking","false"); incoming.setProperty("battleOptions","5"); incoming.setProperty("autoBerry","701"); incoming.setProperty("gymRepeatEnabled","false");
         Control.importSettings(app,incoming,9.3); Control.flushSettings(5000);
-        if(Control.localTimeFormat()!=2 || Control.cooldownTextSp()!=18)
+        if(Control.localTimeFormat()!=5 || Control.cooldownTextSp()!=18 || !Control.cooldownEmphasis())
             throw new AssertionError("Imported clock and cooldown appearance did not load");
         if(Control.idleWalking())throw new AssertionError("Idle walking import did not apply false");
         if(Control.gymRepeatEnabled())throw new AssertionError("Gym repeat import did not apply false");

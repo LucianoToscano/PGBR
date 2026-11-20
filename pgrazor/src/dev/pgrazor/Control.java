@@ -361,6 +361,14 @@ public final class Control {
     // device time). Off by default; the overlay view reads engine coordinates and formats time offline.
     private static volatile boolean localTimeOverlay;
     private static volatile int localTimeFormat, cooldownTextSp;
+    private static volatile boolean cooldownEmphasis;
+    public static boolean cooldownEmphasis() { return cooldownEmphasis; }
+    public static void setCooldownEmphasis(boolean enabled) {
+        if (cooldownEmphasis == enabled) return;
+        cooldownEmphasis = enabled;
+        hudAppearanceRevision++;
+        saveSettings();
+    }
     public static int cooldownTextSp() { return cooldownTextSp; }
     public static void setCooldownTextSp(int value) {
         if ((value != 0 && (value < 9 || value > 20)) || value == cooldownTextSp) return;
@@ -370,7 +378,7 @@ public final class Control {
     }
     public static int localTimeFormat() { return localTimeFormat; }
     public static void setLocalTimeFormat(int value) {
-        if (value < 0 || value > 3 || value == localTimeFormat) return;
+        if (value < 0 || value > 5 || value == localTimeFormat) return;
         localTimeFormat = value;
         saveSettings();
     }
@@ -1367,7 +1375,7 @@ public final class Control {
             try { settingsWriter.flush(SETTINGS_FLUSH_MS); }
             catch(IOException pending) { event("settings-load-error","Pending save not flushed: "+pending); return; }
             StrictMode.ThreadPolicy policy=StrictMode.allowThreadDiskReads();
-            localTimeFormat=0;cooldownTextSp=0;
+            localTimeFormat=0;cooldownTextSp=0;cooldownEmphasis=false;
             quickMenuHidden=0;
             vgpIconStyle=0;
             vgpIconSize=48;
@@ -1434,7 +1442,8 @@ public final class Control {
                 cooldownOverlay=Boolean.parseBoolean(p.getProperty("cooldownOverlay","false"));
                 cooldownTextSp=readBoundedVisual(p,"cooldownTextSp",0,0,20);
                 if(cooldownTextSp<9)cooldownTextSp=0;
-                localTimeFormat=readBoundedVisual(p,"localTimeFormat",0,0,3);
+                localTimeFormat=readBoundedVisual(p,"localTimeFormat",0,0,5);
+                cooldownEmphasis=Boolean.parseBoolean(p.getProperty("cooldownEmphasis","false"));
                 localTimeOverlay=Boolean.parseBoolean(p.getProperty("localTimeOverlay","false"));
                 encounterCounter=Boolean.parseBoolean(p.getProperty("encounterCounter","true"));encounterOverlay=Boolean.parseBoolean(p.getProperty("encounterOverlay","false"));
                 quickSummaryEnabled=Boolean.parseBoolean(p.getProperty("autoDismiss","false"));
@@ -1644,6 +1653,7 @@ public final class Control {
         p.setProperty("hudLabelsMask",String.valueOf(hudLabelsMask));
         p.setProperty("hudLabelOpacity",String.valueOf(hudLabelOpacity));
         p.setProperty("cooldownTextSp",String.valueOf(cooldownTextSp));
+        p.setProperty("cooldownEmphasis",String.valueOf(cooldownEmphasis));
         p.setProperty("localTimeFormat",String.valueOf(localTimeFormat));
         p.setProperty("hudLabelTextSp",String.valueOf(hudLabelTextSp));
         for(int i=0;i<HUD_BITS.length;i++){
