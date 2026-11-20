@@ -190,6 +190,7 @@ public final class Control {
     // 0=original, 1=simple, 2=glossy, 3=GO Plus. Visual preference only.
     private static volatile int vgpIconStyle=0;
     private static volatile int vgpIconSize=48;
+    private static volatile int vgpIconOpacity=100,vgpBackgroundOpacity=75;
     // Map status captions can be hidden independently of the feature itself.
     // The saved master defaults to visible for compatibility with older installations.
     private static volatile boolean hudLabelsVisible=true;
@@ -221,7 +222,11 @@ public final class Control {
     public static boolean vgpOverlayVisible(){return vgpOverlay&&hostLive();}
     public static int vgpOptions(){return vgpOptions;}
     public static int vgpIconStyle(){return vgpIconStyle;}
-    public static void setVgpIconStyle(int value){vgpIconStyle=value==1?1:0;saveSettings();}
+    public static void setVgpIconStyle(int value){if(value<0||value>2)return;vgpIconStyle=value;saveSettings();}
+    public static int vgpIconOpacity(){return vgpIconOpacity;}
+    public static void setVgpIconOpacity(int percent){vgpIconOpacity=Math.max(10,Math.min(100,percent));saveSettings();}
+    public static int vgpBackgroundOpacity(){return vgpBackgroundOpacity;}
+    public static void setVgpBackgroundOpacity(int percent){vgpBackgroundOpacity=Math.max(0,Math.min(100,percent));saveSettings();}
     public static int vgpIconSize(){return vgpIconSize;}
     public static void setVgpIconSize(int value){vgpIconSize=Math.max(28,Math.min(72,value));saveSettings();}
     public static boolean vgpStopOnCooldown(){return vgpStopOnCooldown;}
@@ -1191,6 +1196,7 @@ public final class Control {
     private static volatile int joystickStyle;
     private static volatile boolean joystickEternatusEffects=true;
     private static volatile int menuIconSizeDp=22,gymIconSizeDp=54,gymIconOpacity=100,overlayBackgroundOpacity=45;
+    private static volatile int menuLauncherSizeDp=48,menuLauncherOpacity=100,menuLauncherBgOpacity=0,gymBackgroundOpacity=45;
     // Client-only privacy mask. Do not override PlayerService, account data or RPC fields.
     private static volatile boolean trainerAliasEnabled;
     private static volatile String trainerAlias="";
@@ -1245,6 +1251,14 @@ public final class Control {
     public static void setJoystickStyle(int style){if(style<0||style>3)return;joystickStyle=style;saveSettings();}
     public static boolean joystickEternatusEffects(){return joystickEternatusEffects;}
     public static void setJoystickEternatusEffects(boolean value){joystickEternatusEffects=value;saveSettings();}
+    public static int menuLauncherSizeDp(){return menuLauncherSizeDp;}
+    public static void setMenuLauncherSizeDp(int size){menuLauncherSizeDp=Math.max(28,Math.min(96,size));saveSettings();}
+    public static int menuLauncherOpacity(){return menuLauncherOpacity;}
+    public static void setMenuLauncherOpacity(int alpha){menuLauncherOpacity=Math.max(10,Math.min(100,alpha));saveSettings();}
+    public static int menuLauncherBgOpacity(){return menuLauncherBgOpacity;}
+    public static void setMenuLauncherBgOpacity(int alpha){menuLauncherBgOpacity=Math.max(0,Math.min(100,alpha));saveSettings();}
+    public static int gymBackgroundOpacity(){return gymBackgroundOpacity;}
+    public static void setGymBackgroundOpacity(int alpha){gymBackgroundOpacity=Math.max(0,Math.min(100,alpha));saveSettings();}
     public static int menuIconSizeDp(){return menuIconSizeDp;}
     public static void setMenuIconSizeDp(int value){menuIconSizeDp=Math.max(16,Math.min(40,value));saveSettings();}
     public static int gymIconSizeDp(){return gymIconSizeDp;}
@@ -1281,6 +1295,8 @@ public final class Control {
             joystickSizeDp=136;joystickOpacity=60;
             joystickStyle=0;joystickEternatusEffects=true;
             menuIconSizeDp=22;gymIconSizeDp=54;gymIconOpacity=100;overlayBackgroundOpacity=45;
+            menuLauncherSizeDp=48;menuLauncherOpacity=100;menuLauncherBgOpacity=0;gymBackgroundOpacity=45;
+            vgpIconOpacity=100;vgpBackgroundOpacity=75;
             transferIvKeepPercent=90;
             trainerAliasEnabled=false;trainerAlias="";
             idleWalking=false;engine.setIdleWalking(false);
@@ -1321,6 +1337,12 @@ public final class Control {
                 gymIconSizeDp=readBoundedVisual(p,"gymIconSizeDp",54,32,110);
                 gymIconOpacity=readBoundedVisual(p,"gymIconOpacity",100,10,100);
                 overlayBackgroundOpacity=readBoundedVisual(p,"overlayBackgroundOpacity",45,0,100);
+                menuLauncherSizeDp=readBoundedVisual(p,"menuLauncherSizeDp",48,28,96);
+                menuLauncherOpacity=readBoundedVisual(p,"menuLauncherOpacity",100,10,100);
+                menuLauncherBgOpacity=readBoundedVisual(p,"menuLauncherBgOpacity",0,0,100);
+                gymBackgroundOpacity=readBoundedVisual(p,"gymBackgroundOpacity",45,0,100);
+                vgpIconOpacity=readBoundedVisual(p,"vgpIconOpacity",100,10,100);
+                vgpBackgroundOpacity=readBoundedVisual(p,"vgpBackgroundOpacity",75,0,100);
                 try{joystickSizeDp=Math.max(88,Math.min(220,Integer.parseInt(p.getProperty("joystickSizeDp","136"))));}
                 catch(NumberFormatException invalid){joystickSizeDp=136;}
                 try{joystickOpacity=Math.max(10,Math.min(100,Integer.parseInt(p.getProperty("joystickOpacity","60"))));}
@@ -1507,6 +1529,10 @@ public final class Control {
         p.setProperty("gymIconSizeDp",String.valueOf(gymIconSizeDp));
         p.setProperty("gymIconOpacity",String.valueOf(gymIconOpacity));
         p.setProperty("overlayBackgroundOpacity",String.valueOf(overlayBackgroundOpacity));
+        p.setProperty("menuLauncherSizeDp",String.valueOf(menuLauncherSizeDp));
+        p.setProperty("menuLauncherOpacity",String.valueOf(menuLauncherOpacity));
+        p.setProperty("menuLauncherBgOpacity",String.valueOf(menuLauncherBgOpacity));
+        p.setProperty("gymBackgroundOpacity",String.valueOf(gymBackgroundOpacity));
         p.setProperty("quickMenuHidden",String.valueOf(quickMenuHidden));
         p.setProperty("idleWalking",String.valueOf(idleWalking));
         p.setProperty("spawnBooster",String.valueOf(spawnBooster));
@@ -1514,6 +1540,8 @@ public final class Control {
         p.setProperty("vgpOverlay",String.valueOf(vgpOverlay));
         p.setProperty("vgpIconStyle",String.valueOf(vgpIconStyle));
         p.setProperty("vgpIconSize",String.valueOf(vgpIconSize));
+        p.setProperty("vgpIconOpacity",String.valueOf(vgpIconOpacity));
+        p.setProperty("vgpBackgroundOpacity",String.valueOf(vgpBackgroundOpacity));
         p.setProperty("hudLabelsVisible",String.valueOf(hudLabelsVisible));
         p.setProperty("hudLabelOpacity",String.valueOf(hudLabelOpacity));
         p.setProperty("hudLabelTextSp",String.valueOf(hudLabelTextSp));
