@@ -403,11 +403,13 @@ public final class Pad {
         if(encounterBerry!=null)encounterBerry.applyUiScale(scale);
         if(quickMenu!=null)quickMenu.applyScale(scale);
     }
-    private int lastJoystickSize=-1,lastJoystickOpacity=-1;
+    private int lastJoystickSize=-1,lastJoystickOpacity=-1,lastJoystickStyle=-1;
     private void refreshJoystickAppearance(){
         if(stick==null||joystickOverlay==null)return;
         int size=Control.joystickSizeDp(),opacity=Control.joystickOpacity();
-        if(stick.imageGeneration!=JoystickImage.generation())stick.invalidate();
+        int style=Control.joystickStyle();
+        if(lastJoystickStyle!=style){lastJoystickStyle=style;stick.invalidate();}
+        if(style==3&&stick.imageGeneration!=JoystickImage.generation())stick.invalidate();
         if(size!=lastJoystickSize){
             lastJoystickSize=size;
             ViewGroup.LayoutParams current=stick.getLayoutParams();
@@ -748,8 +750,10 @@ public final class Pad {
     }
     private final class Stick extends View {
         final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG|Paint.FILTER_BITMAP_FLAG);
-        private Bitmap customImage;
-        private int imageGeneration=-1;
+        private Bitmap customImage, builtinBase, builtinThumb;
+        private int imageGeneration=-1,loadedStyle=-1;
+        private final Paint effect=new Paint(Paint.ANTI_ALIAS_FLAG);
+        private final Path spark=new Path();
         float x, y;
         int pointer = -1;
         long cameraGesture=-1;
@@ -770,20 +774,106 @@ public final class Pad {
             } else Control.engine.input(x,-y);
             if (wasWalking) Control.event("walk-cancelled", "Manual joystick input");
         }
+        private Bitmap art(String name){
+            try(java.io.InputStream in=PgAssets.open(getContext(),"pgrazor/map-icons/"+name)){
+                return BitmapFactory.decodeStream(in);
+            }catch(Exception missing){
+                return null;  // Never interrupt steering when a decorative asset is unavailable.
+            }
+        }
+        private void loadArtIfNeeded(){
+            int style=Control.joystickStyle();
+            if(style==loadedStyle)return;
+            loadedStyle=style;
+            builtinBase=builtinThumb=null;
+            if(style==1||style==2){
+                String variant=style==1?"eternatus":"hud";
+                builtinBase=art("joystick-"+variant+"-base.webp");
+                builtinThumb=art("joystick-"+variant+"-thumb.webp");
+                if(builtinBase==null||builtinThumb==null)
+                    Control.event("joystick-art","Could not load bundled "+variant+" layers; original control remains active");
+            }
+        }
+        private void drawEternatusEffects(Canvas canvas,float cx,float cy,float r,float knobX,float knobY,float knobR){
+            long now=SystemClock.uptimeMillis();
+            float phase=(now%2000L)/2000f;
+            float pulse=(float)(.55+.45*Math.sin(2*Math.PI*phase));
+            effect.setShader(null);
+            effect.setStyle(Paint.Style.STROKE);
+            effect.setStrokeCap(Paint.Cap.ROUND);
+            effect.setStrokeJoin(Paint.Join.ROUND);
+            // Slow cyan/fuchsia scans travel around the frame, without full-screen invalidation.
+            for(int i=0;i<4;i++){
+                float angle=(now*.035f+i*91f)%360f;
+                float rr=r*(i%2==0?.90f:.86f);
+                effect.setStrokeWidth(dp(i%2==0?1.7f:1.25f));
+                effect.setColor(i%2==0?Color.argb(105,15,220,255):Color.argb(95,255,22,197));
+                canvas.drawArc(cx-rr,cy-rr,cx+rr,cy+rr,angle,33,false,effect);
+            }
+            // Four small lightning forks rotate around the ring. They are purely decorative.
+            for(int i=0;i<4;i++){
+                double a=(now*.00057+i*Math.PI/2);
+                float ca=(float)Math.cos(a),sa=(float)Math.sin(a);
+                float tx=-sa,ty=ca;
+                float px=cx+ca*r*.78f,py=cy+sa*r*.78f;
+                spark.reset();
+                spark.moveTo(px,py);
+                spark.lineTo(px+ca*r*.065f+tx*r*.031f,py+sa*r*.065f+ty*r*.031f);
+                spark.lineTo(px+ca*r*.10f-tx*r*.023f,py+sa*r*.10f-ty*r*.023f);
+                spark.lineTo(px+ca*r*.14f,py+sa*r*.14f);
+                effect.setStrokeWidth(dp(1.2f));
+                effect.setColor(i%2==0?Color.argb(65,27,218,255):Color.argb(72,255,41,189));
+                canvas.drawPath(spark,effect);
+            }
+            // Knob corona also follows the thumb rather than remaining fixed in the background.
+            effect.setStrokeWidth(dp(2.3f));
+            effect.setColor(Color.argb(Math.round(55+70*pulse),255,27,217));
+            canvas.drawCircle(knobX,knobY,knobR*.98f,effect);
+            effect.setStrokeWidth(dp(1.2f));
+            effect.setColor(Color.argb(Math.round(80+85*pulse),26,230,255));
+            canvas.drawArc(knobX-knobR*1.04f,knobY-knobR*1.04f,
+                knobX+knobR*1.04f,knobY+knobR*1.04f,(now*.09f)%360f,68,false,effect);
+            effect.setStyle(Paint.Style.FILL);
+        }
         protected void onDraw(Canvas canvas) {
-            float cx=getWidth()/2f, cy=getHeight()/2f, radius=Math.min(cx,cy)-dp(12);
-            if(imageGeneration!=JoystickImage.generation()){
+            super.onDraw(canvas);
+            float cx=getWidth()/2f,cy=getHeight()/2f;
+            float radius=Math.max(dp(8),Math.min(cx,cy)-dp(12));
+            loadArtIfNeeded();
+            int style=Control.joystickStyle();
+            if((style==1||style==2)&&builtinBase!=null&&builtinThumb!=null){
+                float outer=Math.max(dp(16),Math.min(cx,cy)-dp(2));
+                paint.setStyle(Paint.Style.FILL);
+                paint.setAlpha(255);
+                paint.setColor(Color.WHITE);
+                canvas.drawBitmap(builtinBase,null,new RectF(cx-outer,cy-outer,cx+outer,cy+outer),paint);
+                float thumbR=outer*(style==1?.355f:.319f);
+                float travel=Math.max(0,outer-thumbR-dp(4));
+                float knobX=cx+x*travel,knobY=cy+y*travel;
+                if(style==1&&Control.joystickEternatusEffects())
+                    drawEternatusEffects(canvas,cx,cy,outer,knobX,knobY,thumbR);
+                // Only the circular hub moves; the arrows, shield and outer artwork remain fixed.
+                canvas.drawBitmap(builtinThumb,null,
+                    new RectF(knobX-thumbR,knobY-thumbR,knobX+thumbR,knobY+thumbR),paint);
+                if(style==1&&Control.joystickEternatusEffects()&&isShown()&&!closed)
+                    postInvalidateDelayed(80); // bounded ~12.5 FPS, no extra worker or timer
+                return;
+            }
+            if(style==3&&imageGeneration!=JoystickImage.generation()){
                 imageGeneration=JoystickImage.generation();
                 customImage=JoystickImage.load(getContext());
             }
-            if(customImage!=null){
+            if(style==3&&customImage!=null){
                 paint.setAlpha(255);paint.setColor(Color.WHITE);paint.setStyle(Paint.Style.FILL);
                 canvas.drawBitmap(customImage,null,new RectF(cx-radius,cy-radius,cx+radius,cy+radius),paint);
             }else{
-                paint.setColor(Control.darkTheme()?0xff202e3e:0xffe1e9ef);canvas.drawCircle(cx,cy,radius,paint);
+                paint.setColor(Control.darkTheme()?0xff202e3e:0xffe1e9ef);
+                paint.setStyle(Paint.Style.FILL);
+                canvas.drawCircle(cx,cy,radius,paint);
             }
-            paint.setColor(Color.rgb(72,102,125)); paint.setStrokeWidth(dp(1));
-            canvas.drawLine(cx-radius,cy,cx+radius,cy,paint); canvas.drawLine(cx,cy-radius,cx,cy+radius,paint);
+            paint.setColor(Color.rgb(72,102,125));paint.setStrokeWidth(dp(1));
+            canvas.drawLine(cx-radius,cy,cx+radius,cy,paint);
+            canvas.drawLine(cx,cy-radius,cx,cy+radius,paint);
             paint.setColor(Control.engine.enabled?accent():muted());
             canvas.drawCircle(cx+x*radius*.65f,cy+y*radius*.65f,dp(22),paint);
         }
