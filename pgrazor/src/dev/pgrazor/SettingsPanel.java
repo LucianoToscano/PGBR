@@ -329,7 +329,9 @@ final class SettingsPanel {
             option.addView(preview,new LinearLayout.LayoutParams(dp(60),dp(60)));
             if(style==1||style==2||style==4){
                 String name=style==2?"hud":"eternatus";
-                String[] layers = style == 1 ? new String[]{"clean", "thumb"}
+                String[] layers = style == 1 ? (Control.joystickEternatusEffects()
+                    ? new String[]{"clean", "storm", "thumb"}
+                    : new String[]{"clean", "thumb"})
                     : style == 4 && Control.joystickEternatusEffects()
                         ? new String[]{"vortex", "rim", "thumb"}
                         : new String[]{"base", "thumb"};
@@ -342,6 +344,7 @@ final class SettingsPanel {
                         if(bitmap==null)continue;
                         ImageView thumbnail=new ImageView(ui);
                         thumbnail.setImageBitmap(bitmap);
+                        if(style==1 && layer.equals("storm"))thumbnail.setAlpha(.65f);
                         thumbnail.setScaleType(ImageView.ScaleType.FIT_CENTER);
                         int size = dp(layer.equals("thumb") ? (style == 2 ? 20 : 22) : 60);
                         FrameLayout.LayoutParams artParams=new FrameLayout.LayoutParams(size,size,Gravity.CENTER);
