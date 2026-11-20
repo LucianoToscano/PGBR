@@ -166,7 +166,7 @@ public final class Pad {
                 }
                 canvas.drawBitmap(logo,null,imageBounds,paint);
                 if (morphReady && stormOn) {
-                    // Image-based storm dissolves into the clean ball and back.
+                    // The stationary Poké Ball texture breathes independently of moving clouds.
                     // No synthetic zigzag lightning overlays or unbounded redraw loop.
                     paint.setAlpha(EternatusMorph.overlayAlpha(now));
                     canvas.drawBitmap(morphBallStorm,null,imageBounds,paint);
@@ -979,8 +979,8 @@ public final class Pad {
         }
         private void drawEternatusEffects(Canvas canvas,float cx,float cy,float r,float knobX,float knobY,float knobR){
             long now=SystemClock.uptimeMillis();
-            float phase=(now%2000L)/2000f;
-            float pulse=(float)(.55+.45*Math.sin(2*Math.PI*phase));
+            float pulse=EternatusMorph.blend(now);
+            // The thumb's arc and halo drift independently of the outer storm.
             effect.setShader(null);
             effect.setStyle(Paint.Style.STROKE);
             effect.setStrokeCap(Paint.Cap.ROUND);
@@ -993,7 +993,7 @@ public final class Pad {
             effect.setStrokeWidth(dp(1.2f));
             effect.setColor(Color.argb(Math.round(80+85*pulse),26,230,255));
             canvas.drawArc(knobX-knobR*1.04f,knobY-knobR*1.04f,
-                knobX+knobR*1.04f,knobY+knobR*1.04f,(now*.09f)%360f,68,false,effect);
+                knobX+knobR*1.04f,knobY+knobR*1.04f,EternatusFxTiming.rotation(now,Control.eternatusFxSpeed(),false),68,false,effect);
             effect.setStyle(Paint.Style.FILL);
         }
         protected void onDraw(Canvas canvas) {
@@ -1018,8 +1018,8 @@ public final class Pad {
                         paint.setAlpha(Math.round(255f*blend));
                         canvas.drawBitmap(morphStorm,null,artBounds,paint);
                         paint.setAlpha(255);
-                        // The actual 2-layer storm now rotates visibly in opposing directions,
-                        // with diffused flashes. Clip keeps the crystal frame/knob stationary.
+                        // Independent rotating vortex and outward drifting clouds stay clipped.
+                        // The crystal frame and movable knob remain upright.
                         stormFx.joystick(canvas,fxVortex!=null?fxVortex:stormVortex,
                             fxSmoke!=null?fxSmoke:morphStorm,fxWispy,
                             cx,cy,outer,now,
@@ -1027,7 +1027,8 @@ public final class Pad {
                     }
                 } else if (stormOn && stormVortex != null && stormRim != null) {
                     int saved = canvas.save();
-                    float angle = (SystemClock.uptimeMillis() % 18000L) * (360f / 18000f);
+                    float angle = EternatusFxTiming.rotation(SystemClock.uptimeMillis(),
+                        Control.eternatusFxSpeed(),false);
                     canvas.rotate(angle, cx, cy);
                     canvas.drawBitmap(stormVortex, null, artBounds, paint);
                     canvas.restoreToCount(saved);
