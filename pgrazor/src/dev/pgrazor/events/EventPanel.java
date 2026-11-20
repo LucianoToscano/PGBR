@@ -225,10 +225,14 @@ public final class EventPanel {
         next.setText(dev.pgrazor.PtBr.tr("Confirmar resgate e preparar próxima parada"));layout.addView(next);
         final int[] completed={dev.pgrazor.EternatusProgress.confirmed(activity)};
         Runnable refresh=()->{
-            excellent.setEnabled(received.isChecked());
-            claimed.setEnabled(received.isChecked()&&excellent.isChecked());
-            next.setEnabled(received.isChecked()&&excellent.isChecked()&&claimed.isChecked());
-            tally.setText(dev.pgrazor.PtBr.tr("Resgates confirmados nesta conta: "+completed[0]+" | Doces informados: "+(completed[0]*25)));
+            boolean automatic=dev.pgrazor.EternatusMission.active();
+            received.setEnabled(!automatic);
+            excellent.setEnabled(!automatic&&received.isChecked());
+            claimed.setEnabled(!automatic&&received.isChecked()&&excellent.isChecked());
+            next.setEnabled(!automatic&&received.isChecked()&&excellent.isChecked()&&claimed.isChecked());
+            tally.setText(dev.pgrazor.PtBr.tr("Resgates confirmados nesta conta: "+completed[0]+
+                " | Recompensas de 25 doces informadas: "+(completed[0]*25))+
+                (automatic?"\nModo automático ativo: checklist manual bloqueado para evitar contagem duplicada.":""));
         };
         received.setOnCheckedChangeListener((v,checked)->{
             if(!checked){excellent.setChecked(false);claimed.setChecked(false);}
