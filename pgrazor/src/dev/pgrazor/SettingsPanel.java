@@ -1003,17 +1003,34 @@ final class SettingsPanel {
         skipCutscenesSwitch.setOnCheckedChangeListener((v,checked) -> { if(checked==Control.skipCutscenes())return; Control.setSkipCutscenes(checked); });
         cutsceneStatus = caption(page, "");  // shown only when the native module reports an error
 
-        // Display-only masking currently covers PGBR-owned Android labels, not Unity.
-        // This warning must remain until map and trainer-profile hooks are verified.
+        // The game UI hook is a best-effort compatibility probe, not an attested privacy shield.
         LinearLayout privacy=group(page,"Privacidade do treinador");
-        caption(privacy,"ATENÇÃO: proteção para lives ainda não está completa. "
-            +"Ocultar nome substitui por ***** apenas nos menus do PGBR. "
-            +"Seu nome real continua visível no mapa e no perfil Eu do Pokémon GO. "
-            +"Não use esta opção como proteção para gravações ou transmissões.");
+        caption(privacy,"Oculta o nome nos menus do PGBR e tenta substituir somente o texto "
+            +"do próprio treinador por ***** em componentes de exibição do Unity. "
+            +"A cobertura do mapa e do perfil Eu ainda precisa ser confirmada no aparelho. "
+            +"Não considere esta opção uma proteção garantida para lives e gravações.");
+        final Switch hideTrainer=switchRow(privacy,"Ocultar nome visualmente");
         final TextView preview=caption(privacy,"");
-        Runnable updatePrivacy=()->preview.setText(dev.pgrazor.PtBr.tr(
-            "Exibição no PGBR: "+(Control.trainerPrivacyMode()==1?"*****":
-                Control.trainerPrivacyMode()==2?Control.trainerAlias():"Nome original")));
+        final TextView gamePrivacy=caption(privacy,"");
+        Runnable updatePrivacy=()->{
+            hideTrainer.setChecked(Control.trainerPrivacyMode()!=0);
+            preview.setText(dev.pgrazor.PtBr.tr(
+                "Exibição no PGBR: "+(Control.trainerPrivacyMode()==1?"*****":
+                    Control.trainerPrivacyMode()==2?Control.trainerAlias():"Nome original")));
+            int status=Control.trainerPrivacyDisplayStatus();
+            int sinks=status & 0x0F;
+            String detail=status<0?"Módulo visual indisponível":
+                (status & 0x10)==0?"Aguardando confirmação da identidade do treinador":
+                sinks==0?"Nenhum componente de texto Unity validado":
+                sinks+" componente(s) de texto Unity interceptado(s)";
+            gamePrivacy.setText(dev.pgrazor.PtBr.tr(
+                "Jogo: "+detail+". Proteção em tela não verificada."));
+        };
+        hideTrainer.setOnCheckedChangeListener((button,checked)->{
+            if(checked==(Control.trainerPrivacyMode()!=0))return;
+            Control.setTrainerPrivacyMode(checked?1:0);
+            updatePrivacy.run();host.refresh();
+        });
         launch(privacy,"Nome exibido nos menus do PGBR",()->{
             String[] options={"Nome original","Ocultar nome no PGBR","Mostrar apelido no PGBR"};
             new AlertDialog.Builder(dialogContext()).setTitle("Nome exibido no PGBR")
