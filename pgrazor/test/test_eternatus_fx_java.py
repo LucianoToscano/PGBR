@@ -54,6 +54,8 @@ class EternatusStormFxTests(unittest.TestCase):
         self.assertIn("void ballFront(",fx)
         self.assertIn("stormFx.ballBehind(canvas",pad)
         self.assertIn('stormSmoke=read("pgrazor/map-icons/eternatus-fx-smoke-wispy.png")',pad)
+        self.assertIn('stormBallVortex=read("pgrazor/map-icons/eternatus-fx-vortex.png")',pad)
+        self.assertIn("stormFx.ballBehind(canvas, stormBallVortex,",pad)
         self.assertIn("stormFx.ballFront(canvas",pad)
         self.assertIn("canvas.drawBitmap(morphBallStorm",pad)
         self.assertIn("EternatusMorph.overlayAlpha(now)",pad)
