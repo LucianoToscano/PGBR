@@ -50,6 +50,29 @@ public final class EternatusRouteRunnerTest {
             "Existing overlay/tool preferences restored");
         check(Control.throwGrade == 2 && Control.throwVariety == 2,
             "Original throw configuration must be restored");
+        // A stop without the chosen research may only be skipped by the player,
+        // never recorded as a candy claim or advanced by a duplicate native reply.
+        check(EternatusRouteRunner.start(activity),"Second route starts after clean shutdown");
+        Cooldown.remainingMs=9000;
+        check(!EternatusRouteRunner.skipCurrentStop(),"Manual skip obeys cooldown");
+        Cooldown.remainingMs=0;
+        check(EternatusRouteRunner.skipCurrentStop(),"Manual skip moves only to next stop");
+        check(EternatusRouteRunner.currentStop()==2 && Control.teleports==5,
+            "Manual skip goes to second stop exactly once");
+        check(!EternatusRouteRunner.onClaim("THROW_EXCELLENT","quest1"),
+            "Old duplicate quest id never counts on new stop");
+        EternatusRouteRunner.onResearchError("THROW_EXCELLENT","Quest refused");
+        check(EternatusRouteRunner.status().contains("Quest refused"),"Native error details preserved");
+        SystemClock.now+=4500;
+        EternatusRouteRunner.tick();
+        check(EternatusRouteRunner.status().contains("Quest refused"),"Native error persists after heartbeat");
+        check(!EternatusRouteRunner.onClaim("THROW_EXCELLENT",""),
+            "Missing quest identity cannot advance or count");
+        EternatusRouteRunner.stop("Teste encerrado.");
+        Control.live=false;
+        check(EternatusRouteRunner.readinessError(activity).contains("desativado"),
+            "Preflight identifies the exact reason instead of generic failure");
+        Control.live=true;
         try {
             new GpxRoute("invalid", new double[][]{{91, 0}});
             throw new AssertionError("Invalid coordinates were accepted");

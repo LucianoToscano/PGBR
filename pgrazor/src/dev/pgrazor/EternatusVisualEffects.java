@@ -40,6 +40,7 @@ final class EternatusVisualEffects {
     private final RectF outerArc = new RectF(-.79f, -.79f, .79f, .79f);
     private final RectF innerArc = new RectF(-.52f, -.52f, .52f, .52f);
     private final RectF ballArc = new RectF(-.94f, -.94f, .94f, .94f);
+    private final RectF ballInnerArc = new RectF(-.77f, -.77f, .77f, .77f);
 
     private final RadialGradient vortexHaze = new RadialGradient(0f, 0f, .85f,
         new int[]{Color.TRANSPARENT, 0x0C29CFFF, 0x5C7827E5, 0x66F91AC8, Color.TRANSPARENT},
@@ -196,17 +197,22 @@ final class EternatusVisualEffects {
         plasma.setShader(stormArcs);
         plasma.setStyle(Paint.Style.STROKE);
         plasma.setStrokeCap(Paint.Cap.ROUND);
-        plasma.setStrokeWidth(.046f);
-        plasma.setAlpha(Math.min(255, Math.round(215f * energy)));
+        // At 48dp the LT011 halo was under 1px and nearly invisible; two stronger
+        // overlapping graded rings now occupy the border reserved around the ball.
+        plasma.setStrokeWidth(.11f);
+        plasma.setAlpha(Math.min(255, Math.round(245f * energy)));
         canvas.drawArc(ballArc, 0f, 350f, false, plasma);
+        plasma.setStrokeWidth(.048f);
+        plasma.setAlpha(Math.min(255, Math.round(235f * energy)));
+        canvas.drawArc(ballInnerArc, 65f, 245f, false, plasma);
         canvas.restoreToCount(orbit);
 
         float flash = EternatusFxTiming.flash(now, intensity);
         if (flash > .001f) {
             plasma.setShader(ballHaze);
             plasma.setStyle(Paint.Style.FILL);
-            plasma.setAlpha(Math.min(125, Math.round(190f * flash)));
-            canvas.drawCircle(0f, 0f, .47f, plasma);
+            plasma.setAlpha(Math.min(220, Math.round(250f * flash)));
+            canvas.drawCircle(0f, 0f, .57f, plasma);
         }
         plasma.setAlpha(255);
         plasma.setShader(null);

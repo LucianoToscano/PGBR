@@ -18,6 +18,7 @@ public final class ControlSettingsTest {
             Control.setLocalTimeOverlay(true);
             Control.setVgpTapProtection(false);
             Control.setRocketOptions(5);
+            Control.setTrainerPrivacyMode(1);
             Control.setItemCatalog("1|Poke Ball|150\n101|Potion|4");
             Control.saveItemRules(true,"1:100;101:0;","1:100;101:0;2:250;");
             try{Control.saveItemRules(true,"1:-1;","");throw new AssertionError("Negative cap accepted");}catch(IllegalArgumentException expected){}
@@ -44,6 +45,8 @@ public final class ControlSettingsTest {
         if(!Control.localTimeOverlay())throw new AssertionError("Local clock not persisted across process restart");
         if(Control.vgpTapProtection())throw new AssertionError("VGP tap protection not persisted across cold start");
         if(Control.rocketOptions()!=5||Control.rocketAllowed())throw new AssertionError("Rocket persistence/readiness");
+        if(Control.trainerPrivacyMode()!=1||!"*****".equals(Control.visibleTrainerName("RealTrainer")))
+            throw new AssertionError("Privacy mask was not restored or leaked original name");
         if(Control.itemAccessAllowed())throw new AssertionError("Item settings bypassed readiness");
         if(!Control.quickSpinEnabled()||!Control.autoTransferEnabled()||Control.transferProtect()!=13||!Control.quickBallEnabled()||!Control.quickSummaryEnabled()||Control.throwGrade()!=3||
            !Control.throwCurve()||Control.mapTapMode()!=2||!Control.cameraRelative())

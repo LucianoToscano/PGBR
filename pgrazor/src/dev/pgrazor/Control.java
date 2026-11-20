@@ -1274,8 +1274,8 @@ public final class Control {
     public static String trainerAlias(){return trainerAlias;}
     /** PGBR-only presentation, never the identity sent to the game. */
     public static String visibleTrainerName(String original){
-        if(trainerPrivacyMode==1)return "Treinador";
-        if(trainerPrivacyMode==2&&TrainerAliasPolicy.validCustom(trainerAlias))return trainerAlias;
+        if(trainerPrivacyMode==1)return "*****";
+        if(trainerPrivacyMode==2)return TrainerAliasPolicy.validCustom(trainerAlias)?trainerAlias:"*****";
         return original==null?"":original;
     }
     public static void setTrainerPrivacyMode(int mode){

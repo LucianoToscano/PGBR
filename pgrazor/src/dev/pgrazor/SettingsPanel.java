@@ -1007,7 +1007,7 @@ final class SettingsPanel {
         caption(privacy,"O apelido aparece nos menus de contas do PGBR. O mapa e o perfil do Pokémon GO exibem o nome do jogo.");
         final TextView preview=caption(privacy,"");
         Runnable updatePrivacy=()->preview.setText(dev.pgrazor.PtBr.tr(
-            "Exibição no PGBR: "+(Control.trainerPrivacyMode()==1?"Treinador (oculto)":
+            "Exibição no PGBR: "+(Control.trainerPrivacyMode()==1?"*****":
                 Control.trainerPrivacyMode()==2?Control.trainerAlias():"Nome original")));
         launch(privacy,"Escolher como exibir meu nome",()->{
             String[] options={"Nome original","Ocultar nome no PGBR","Mostrar apelido no PGBR"};
