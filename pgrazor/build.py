@@ -122,7 +122,8 @@ def main():
         out.write(BUILD/'dex/classes.dex','classes.dex')
         for name,path in map_icon_assets().items(): out.write(path,'assets/pgrazor/map-icons/'+name)
         for name,path in feed_icon_assets().items(): out.write(path,'assets/pgrazor/feed-icons/pokemon/'+name)
-        out.write(ROOT/'branding/pgbr-logo.webp','assets/pgrazor/branding/pgbr-logo.webp')
+        logo=ROOT/'branding/pgbr-logo.webp'
+        if logo.is_file(): out.write(logo,'assets/pgrazor/branding/pgbr-logo.webp')
     run(TOOLS/'zipalign.exe','-f','4',unsigned,BUILD/'preview-aligned.apk')
     apk=BUILD/'pgrazor-preview.apk'
     run(TOOLS/'apksigner.bat','sign',*signing_args(),'--out',apk,BUILD/'preview-aligned.apk')
