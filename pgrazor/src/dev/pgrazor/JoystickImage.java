@@ -70,6 +70,9 @@ final class JoystickImage {
                         }finally{if(output!=null)atomic.failWrite(output);}
                         bitmap.recycle();
                         GENERATION.incrementAndGet();
+                        activity.runOnUiThread(()->{
+                            if(!activity.isFinishing()&&!activity.isDestroyed())Control.setJoystickStyle(3);
+                        });
                         notifyUser(activity,"Imagem do joystick atualizada.");
                     }catch(Exception error){notifyUser(activity,"Não foi possível importar a imagem. Escolha PNG, WebP ou JPEG de até 2 MB.");}
                 },"pgbr-joystick-image").start();
@@ -85,6 +88,7 @@ final class JoystickImage {
                 notifyUser(activity,"Não foi possível remover a imagem personalizada.");return;
             }
             GENERATION.incrementAndGet();
+            if(Control.joystickStyle()==3)Control.setJoystickStyle(0);
             notifyUser(activity,"Joystick original restaurado.");
         }catch(RuntimeException error){notifyUser(activity,"Não foi possível restaurar a imagem.");}
     }
