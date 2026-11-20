@@ -43,7 +43,7 @@ class EternatusStormFxTests(unittest.TestCase):
             self.assertTrue(sprite.is_file(),str(sprite))
             raw=sprite.read_bytes()
             self.assertGreater(len(raw),5000)
-            self.assertEqual(raw[:8],b"\\x89PNG\\r\\n\\x1a\\n")
+            self.assertEqual(raw[:8],b"\x89PNG\r\n\x1a\n")
             self.assertEqual(raw[25],6,"RGBA is required to preserve the map transparency")
             self.assertGreaterEqual(int.from_bytes(raw[16:20],"big"),128)
             self.assertGreaterEqual(int.from_bytes(raw[20:24],"big"),128)
