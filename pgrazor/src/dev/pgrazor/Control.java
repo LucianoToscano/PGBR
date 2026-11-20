@@ -309,11 +309,25 @@ public final class Control {
     public static boolean encounterOverlay(){return encounterOverlay;}
     public static void setEncounterOverlay(boolean value){encounterOverlay=value;saveSettings();}
     public static void setCooldownEncounter(String value){cooldownEncounter=value==null?"":value.toLowerCase(java.util.Locale.US);}
+    // Rate-limited diagnostics only; keep all existing safety guards.
+    private static long lastCooldownSkipAt;
+    private static String lastCooldownSkip="";
+    private static synchronized boolean logCooldownSkipNeeded(String reason){
+        long now=SystemClock.elapsedRealtime();
+        if(reason.equals(lastCooldownSkip)&&now-lastCooldownSkipAt<15000)return false;
+        lastCooldownSkip=reason;lastCooldownSkipAt=now;return true;
+    }
+    private static void cooldownSkipped(String action,String reason){
+        if(logCooldownSkipNeeded(reason))event("cooldown-action-skipped","action="+action+" reason="+reason);
+    }
     public static void cooldownAction(String action){
-        if(!foreground||!backendReady||!connected())return;
+        if(action==null||action.isEmpty())return;
+        if(!foreground){cooldownSkipped(action,"background");return;}
+        if(!backendReady){cooldownSkipped(action,"backend-not-ready");return;}
+        if(!connected()){cooldownSkipped(action,"adapter-lease-expired");return;}
         if(action.equals("Ball throw")||action.equals("Ball drop")||action.equals("Berry feeding")){
             boolean wild=cooldownEncounter.contains("wild"),raid=cooldownEncounter.contains("raid");
-            if(!wild&&!(raid&&!action.equals("Ball throw")))return;
+            if(!wild&&!(raid&&!action.equals("Ball throw"))){cooldownSkipped(action,"encounter-ineligible");return;}
         }
         Cooldown.record(action);
     }
