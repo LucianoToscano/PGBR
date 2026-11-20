@@ -149,7 +149,7 @@ public final class EventPanel {
     }
 
 
-    /** Guided GPX + research workspace. Exact candy-reward classification is not verified. */
+    /** One-at-a-time Eternatus research tracking; no unverified reward recognition. */
     public static void showEternatus(Activity activity,boolean dark){
         if(activity.isFinishing()||activity.isDestroyed())return;
         Context ui=theme(activity,dark);
@@ -157,28 +157,48 @@ public final class EventPanel {
         int pad=Math.round(16*ui.getResources().getDisplayMetrics().density);
         layout.setPadding(pad,pad,pad,pad);
         TextView information=new TextView(ui);
-        information.setText("Use uma GPX com as Poképaradas do evento. Confira no jogo se cada parada realmente oferece a pesquisa de uma jogada excelente com recompensa de 25 doces.");
+        information.setText("Modo uma por vez: confira a missão de jogada excelente com recompensa de 25 doces Eternatus, complete-a, resgate e só então avance para a próxima parada GPX.");
         information.setTextSize(14);layout.addView(information);
         TextView limitation=new TextView(ui);
-        limitation.setText("A identificação automática dessa recompensa ainda não foi validada. O acompanhamento abaixo é manual; ele não gira paradas, captura ou teletransporta sozinho.");
+        limitation.setText("A identificação exata da recompensa ainda não foi validada no jogo. Este painel é um acompanhamento manual: não gira paradas, captura, resgata ou avança coordenadas automaticamente.");
         limitation.setTextSize(12);layout.addView(limitation);
         android.widget.Button route=new android.widget.Button(ui);
         route.setText("Abrir caminhada GPX");layout.addView(route);
         android.widget.Button research=new android.widget.Button(ui);
         research.setText("Configurar pesquisas e resgates");layout.addView(research);
-        TextView tally=new TextView(ui);tally.setTextSize(14);layout.addView(tally);
-        android.widget.CheckBox[] slots=new android.widget.CheckBox[3];
-        Runnable updateCount=()->{int count=0;for(android.widget.CheckBox cb:slots)if(cb!=null&&cb.isChecked())count++;
-            tally.setText("Pesquisas verificadas nesta sessão: "+count+"/3");};
-        for(int i=0;i<3;i++){
-            slots[i]=new android.widget.CheckBox(ui);
-            slots[i].setText("Pesquisa "+(i+1)+": jogada excelente / 25 doces (confirmada)");
-            layout.addView(slots[i]);
-            slots[i].setOnCheckedChangeListener((button,checked)->updateCount.run());
-        }
-        updateCount.run();
+        TextView tally=new TextView(ui);tally.setTextSize(15);layout.addView(tally);
+        android.widget.CheckBox received=new android.widget.CheckBox(ui);
+        received.setText("Recebi a missão correta (25 doces)");layout.addView(received);
+        android.widget.CheckBox excellent=new android.widget.CheckBox(ui);
+        excellent.setText("Fiz a jogada excelente e concluí a missão");layout.addView(excellent);
+        android.widget.CheckBox claimed=new android.widget.CheckBox(ui);
+        claimed.setText("Resgatei os 25 doces no jogo");layout.addView(claimed);
+        android.widget.Button next=new android.widget.Button(ui);
+        next.setText("Confirmar resgate e preparar próxima parada");layout.addView(next);
+        final int[] completed={0};
+        Runnable refresh=()->{
+            excellent.setEnabled(received.isChecked());
+            claimed.setEnabled(received.isChecked()&&excellent.isChecked());
+            next.setEnabled(received.isChecked()&&excellent.isChecked()&&claimed.isChecked());
+            tally.setText("Missões resgatadas nesta sessão: "+completed[0]+" | Doces confirmados: "+(completed[0]*25));
+        };
+        received.setOnCheckedChangeListener((v,checked)->{
+            if(!checked){excellent.setChecked(false);claimed.setChecked(false);}
+            refresh.run();
+        });
+        excellent.setOnCheckedChangeListener((v,checked)->{
+            if(!checked)claimed.setChecked(false);
+            refresh.run();
+        });
+        claimed.setOnCheckedChangeListener((v,checked)->refresh.run());
+        next.setOnClickListener(v->{
+            if(!received.isChecked()||!excellent.isChecked()||!claimed.isChecked())return;
+            completed[0]++;received.setChecked(false);excellent.setChecked(false);claimed.setChecked(false);
+            refresh.run();
+        });
+        refresh.run();
         TextView note=new TextView(ui);
-        note.setText("Após conferir as três pesquisas, execute a jogada excelente e resgate os prêmios. Confira o tempo de espera antes de continuar para as outras coordenadas.");
+        note.setText("Se a parada entregar outra missão, não marque como recebida. Confira o tempo de espera e o estado da rota antes de seguir.");
         note.setTextSize(13);layout.addView(note);
         ScrollView scroll=new ScrollView(ui);scroll.addView(layout);
         AlertDialog dialog=new AlertDialog.Builder(ui).setTitle("Evento Rota Doces Eternatus")
