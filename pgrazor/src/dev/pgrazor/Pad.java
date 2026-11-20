@@ -54,9 +54,6 @@ public final class Pad {
     // Draggable, position-persisting handles for the cooldown and VGP overlays.
     private OverlayDrag cooldownDrag, vgpDrag;
     private OverlayDrag localTimeDrag;
-    // Privacy mask stays visible even when the user hides other PGBR overlays.
-    private TextView trainerAliasMask;
-    private OverlayDrag trainerAliasDrag;
     private QuickMenu quickMenu;
     // Draggable, position-persisting Keep All / transfer-rules overlay button.
     private TransferToggle transferToggle;
@@ -154,21 +151,6 @@ public final class Pad {
         // The settings panel is a full-screen modal; it consumes taps so the game behind it stays inert.
         parent.addView(settings.view(), new FrameLayout.LayoutParams(-1, -1));
         overlays=new FrameLayout(host);parent.addView(overlays,new FrameLayout.LayoutParams(-1,-1));
-        // Opaque, draggable cover for the map HUD's displayed trainer name.
-        // This does not hook account/name getters or change network data.
-        trainerAliasMask=text("",14,Color.WHITE);
-        trainerAliasMask.setTextColor(Color.WHITE);
-        trainerAliasMask.setGravity(Gravity.CENTER);
-        trainerAliasMask.setSingleLine(true);
-        trainerAliasMask.setBackground(rounded(Color.rgb(20,27,38),5));
-        trainerAliasMask.setPadding(dp(4),0,dp(4),0);
-        trainerAliasMask.setVisibility(View.GONE);
-        trainerAliasMask.setContentDescription(dev.pgrazor.PtBr.tr("Apelido de privacidade do treinador. Arraste para cobrir o nome no mapa."));
-        FrameLayout.LayoutParams aliasLayout=new FrameLayout.LayoutParams(dp(178),dp(30),Gravity.LEFT|Gravity.BOTTOM);
-        aliasLayout.leftMargin=dp(3);aliasLayout.bottomMargin=dp(5);
-        parent.addView(trainerAliasMask,aliasLayout);
-        trainerAliasMask.setOnClickListener(v->Toast.makeText(activity,"Arraste para cobrir o nome no mapa.",Toast.LENGTH_SHORT).show());
-        trainerAliasDrag=OverlayDrag.attach(parent,trainerAliasMask,"trainer-alias");
         blackScreen=new FrameLayout(host);blackScreen.setBackgroundColor(Color.BLACK);blackScreen.setVisibility(View.GONE);
         blackHint=text("Black screen saves battery while Shundo Sniper runs.\nTap anywhere to show the game.",13,Color.rgb(140,140,140));blackHint.setGravity(Gravity.CENTER);
         blackScreen.addView(blackHint,new FrameLayout.LayoutParams(-1,-2,Gravity.CENTER));
@@ -418,14 +400,6 @@ public final class Pad {
         if(cooldownTimer!=null){cooldownTimer.setVisibility(Control.cooldownOverlay()?View.VISIBLE:View.GONE);setTextIfChanged(cooldownTimer,"☰  "+Cooldown.label());cooldownTimer.setTextColor(Cooldown.remaining()>0?Color.rgb(255,186,95):accent());}
         // The view combines this Pad-side gate with Control.localTimeOverlay()/desiredEnabled() and its own throttle;
         // a false gate (settings open, quick menu up, or overlays hidden) stops its clock work entirely.
-        if(trainerAliasMask!=null){
-            boolean show=Control.trainerAliasEnabled()&&!settings.isVisible();
-            trainerAliasMask.setVisibility(show?View.VISIBLE:View.GONE);
-            if(show){
-                setTextIfChanged(trainerAliasMask,Control.trainerAlias());
-                if(trainerAliasDrag!=null)trainerAliasDrag.refreshBounds();
-            }
-        }
         if(localTime!=null){localTime.refresh(!overlaysHidden&&!settings.isVisible()&&!(quickMenu!=null&&quickMenu.isShowing()));if(localTimeDrag!=null&&localTime.getVisibility()==View.VISIBLE)localTimeDrag.refreshBounds();}
         if (lastEnabled != Control.engine.enabled) { lastEnabled = Control.engine.enabled; stick.invalidate(); }
         if(encounterBerry!=null)encounterBerry.refresh();
@@ -645,8 +619,6 @@ public final class Pad {
         if(shundoDrag!=null){shundoDrag.detach();shundoDrag=null;}if(shundoOverlay!=null){shundoOverlay.close();overlays.removeView(shundoOverlay);shundoOverlay=null;}
         if(gymAutomationStatus!=null){overlays.removeView(gymAutomationStatus);gymAutomationStatus=null;}
         if(gymFeedOverlay!=null){gymFeedOverlay.close();overlays.removeView(gymFeedOverlay);gymFeedOverlay=null;}
-        if(trainerAliasDrag!=null){trainerAliasDrag.detach();trainerAliasDrag=null;}
-        if(trainerAliasMask!=null){parent.removeView(trainerAliasMask);trainerAliasMask=null;}
         settings.close();if(hideOverlaysDialog!=null)hideOverlaysDialog.dismiss();
         parent.removeView(settings.view());overlays.removeView(launcher);overlays.removeView(joystickOverlay);if(encounterBerry!=null){encounterBerry.close();overlays.removeView(encounterBerry);}if(cooldownTimer!=null)overlays.removeView(cooldownTimer);if(vgpToggle!=null)overlays.removeView(vgpToggle);if(vgpActivity!=null)overlays.removeView(vgpActivity);if(vgpMarker!=null)overlays.removeView(vgpMarker);if(mapCatchBadge!=null){overlays.removeView(mapCatchBadge);mapCatchBadge=null;}if(transferToggle!=null)overlays.removeView(transferToggle);if(gameRoutesOverlay!=null){gameRoutesOverlay.close();overlays.removeView(gameRoutesOverlay);}
         parent.removeView(overlays);if(unhideWatcher!=null)parent.removeView(unhideWatcher);
