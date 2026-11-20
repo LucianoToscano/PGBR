@@ -97,11 +97,32 @@ public final class Pad {
                 if(a==MotionEvent.ACTION_UP){if(!moved&&clickable)v.performClick();return true;}return true;}
         });
     }
+    /** Botão flutuante com a marca brasileira fornecida para o PGBR. */
     private final class RazorIcon extends View {
-        private final Paint paint=new Paint(Paint.ANTI_ALIAS_FLAG);
-        RazorIcon(Context c){super(c);setContentDescription("Open PGBR settings. Drag to reposition.");setFocusable(true);setClickable(true);}
-        protected void onDraw(Canvas c){super.onDraw(c);float scale=Math.min(getWidth(),getHeight())/48f;c.save();c.scale(scale,scale);paint.setColor(surface());c.drawCircle(24,24,23,paint);paint.setStyle(Paint.Style.STROKE);paint.setStrokeWidth(1.5f);paint.setColor(accent());c.drawCircle(24,24,22,paint);paint.setStyle(Paint.Style.FILL);
-            Path r=new Path();r.moveTo(13,11);r.lineTo(29,11);r.lineTo(36,18);r.lineTo(29,26);r.lineTo(36,37);r.lineTo(26,37);r.lineTo(19,26);r.lineTo(19,37);r.lineTo(12,37);r.lineTo(17,19);r.lineTo(24,19);r.lineTo(23,22);r.lineTo(27,22);r.lineTo(30,18);r.lineTo(27,16);r.lineTo(12,16);r.close();c.drawPath(r,paint);c.restore();}
+        private final Paint paint=new Paint(Paint.ANTI_ALIAS_FLAG|Paint.FILTER_BITMAP_FLAG);
+        private final Bitmap logo;
+        RazorIcon(Context c) {
+            super(c);
+            Bitmap loaded=null;
+            try(java.io.InputStream stream=PgAssets.open(c,"pgrazor/branding/pgbr-logo.webp")){
+                loaded=BitmapFactory.decodeStream(stream);
+            }catch(Exception ignored){/* Marcador neutro somente se o asset estiver ausente. */}
+            logo=loaded;
+            setContentDescription(PtBr.tr("Open PGBR quick menu. Drag to reposition."));
+            setFocusable(true);setClickable(true);
+        }
+        protected void onDraw(Canvas canvas) {
+            super.onDraw(canvas);
+            float size=Math.min(getWidth(),getHeight());
+            float left=(getWidth()-size)/2f,top=(getHeight()-size)/2f;
+            if(logo!=null){
+                paint.setAlpha(255);
+                canvas.drawBitmap(logo,null,new RectF(left,top,left+size,top+size),paint);
+            }else{
+                paint.setColor(accent());
+                canvas.drawCircle(getWidth()/2f,getHeight()/2f,size*.42f,paint);
+            }
+        }
     }
 
     private long lastTick = SystemClock.elapsedRealtime(), lastLog, lastPositionCheck;
@@ -194,7 +215,7 @@ public final class Pad {
         gameRoutesOverlay.setVisibility(View.GONE);gameRoutesDrag=OverlayDrag.attach(overlays,gameRoutesOverlay,"game-routes");
         launcher=new RazorIcon(host);FrameLayout.LayoutParams iconLayout=new FrameLayout.LayoutParams(dp(48),dp(48),Gravity.TOP|Gravity.LEFT);iconLayout.leftMargin=dp(12);iconLayout.topMargin=dp(100);overlays.addView(launcher,iconLayout);
         launcher.setContentDescription(dev.pgrazor.PtBr.tr("Open PGBR quick menu. Drag to reposition."));
-        // The R launcher now toggles the compact quick menu; Settings there opens this panel full screen.
+        // O botão da marca PGBR abre o menu rápido; Configurações abre o painel completo.
         quickMenu=new QuickMenu(host,parent,launcher,new QuickMenu.Listener(){
             public void onMap(){openWorldMap();}
             public double onCycleWalkSpeed(){double s=Control.cycleWalkSpeed();refresh();return s;}

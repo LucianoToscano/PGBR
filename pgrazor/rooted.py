@@ -168,6 +168,7 @@ def payload_assets(download=False):
     for name, source in zip(names, sources): assets['pgrazor/art-notices/' + name] = Path(source)
     for name, path in build.map_icon_assets().items(): assets['pgrazor/map-icons/' + name] = Path(path)
     for name, path in build.feed_icon_assets().items(): assets['pgrazor/feed-icons/pokemon/' + name] = Path(path)
+    assets['pgrazor/branding/pgbr-logo.webp'] = ROOT / 'branding/pgbr-logo.webp'
     return assets
 
 

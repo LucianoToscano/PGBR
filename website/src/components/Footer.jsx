@@ -8,25 +8,24 @@ export default function Footer({ onGuide = false }) {
       <div className="site-footer__inner">
         <div className="site-footer__top">
           <a className="brand" href={onGuide ? homeHref : '#top'}>
-            <img className="brand__mark" src={asset('logo.svg')} alt="" width="26" height="26" />
+            <img className="brand__mark" src={asset('logo.webp')} alt="" width="26" height="26" />
             <span className="brand__name">PGBR</span>
           </a>
-          <nav className="site-footer__links" aria-label="Footer">
-            <a href={indexHref}>Feature guides</a>
+          <nav className="site-footer__links" aria-label="Rodapé">
+            <a href={indexHref}>Guias de recursos</a>
             <a href={links.github}>GitHub</a>
             <a href={links.releasesLatest}>Releases</a>
-            <a href={links.discord}>Código de origem</a>
+            
             <a href={links.kofi}>Licenças</a>
-            <a href={`${links.github}/blob/main/THIRD_PARTY.md`}>Credits</a>
+            <a href={`${links.github}/blob/main/THIRD_PARTY.md`}>Créditos</a>
           </nav>
         </div>
         <p className="site-footer__legal">
-          PGBR is based on the upstream project released under the MIT License; original credits and
-          bundled third-party licenses remain. PGBR is an independent project and is not
-          affiliated with the publisher of Pokémon GO. Pokémon and its assets belong to their
-          respective owners.
+          O PGBR é baseado em um projeto de código aberto sob licença MIT. Os créditos originais e
+          as licenças de terceiros são preservados. O PGBR é independente e não possui vínculo
+          com os responsáveis por Pokémon GO. Pokémon e seus recursos pertencem aos respectivos titulares.
         </p>
-        <p className="site-footer__legal">Map screenshot © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>.</p>
+        <p className="site-footer__legal">Imagem do mapa © <a href="https://www.openstreetmap.org/copyright">colaboradores do OpenStreetMap</a>.</p>
       </div>
     </footer>
   );

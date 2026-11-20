@@ -1,4 +1,4 @@
-<p align="center"><img src="pgrazor/branding/pgrazor.svg" width="92" alt="Logotipo PGBR"></p>
+<p align="center"><img src="pgrazor/branding/pgbr-logo.webp" width="92" alt="Logotipo PGBR"></p>
 
 <h1 align="center">PGBR</h1>
 <p align="center"><strong>PGBR-v0.00.01-LT · Edição brasileira para Android</strong></p>

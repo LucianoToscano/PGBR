@@ -290,6 +290,7 @@ def package(source, *,research_runtime=False,panel_only=False,download=False,pre
     # POI marker art loaded by the Java map via AssetManager at pgrazor/map-icons/<name>.
     for icon_name,icon_path in build.map_icon_assets().items(): assets['assets/pgrazor/map-icons/'+icon_name]=icon_path
     for icon_name,icon_path in build.feed_icon_assets().items(): assets['assets/pgrazor/feed-icons/pokemon/'+icon_name]=icon_path
+    assets['assets/pgrazor/branding/pgbr-logo.webp'] = ROOT/'branding/pgbr-logo.webp'
     certificates=[]
     for path,_ in rows:
         verified=command(build.TOOLS/'apksigner.bat','verify','--print-certs',path,capture=True)

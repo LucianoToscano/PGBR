@@ -5,12 +5,12 @@ export default function GetStarted() {
   return (
     <section className="section" id="get-started" aria-labelledby="get-started-heading">
       <div className="section__head">
-        <p className="section__num">03 / Get started</p>
+        <p className="section__num">03 / Primeiros passos</p>
         <h2 id="get-started-heading" className="section__title">
-          Three steps to your first session.
+          Três passos para a primeira sessão.
         </h2>
         <p className="section__lead">
-          Every release ships with a changelog, a SHA-256 checksum, and build information.
+          Cada versão inclui histórico de alterações, checksum SHA-256 e informações da compilação.
         </p>
       </div>
 
@@ -29,9 +29,7 @@ export default function GetStarted() {
           Baixar a versão de teste
           <ArrowIcon />
         </a>
-        <a className="btn btn--ghost" href={links.discord}>
-          Ver projeto de origem
-        </a>
+        {/* Link do projeto de origem temporariamente oculto, mantendo os créditos legais. */}
       </div>
 
       <p className="cta__release">
@@ -40,7 +38,7 @@ export default function GetStarted() {
       </p>
 
       <div className="faq">
-        <h3 className="faq__heading">Good to know</h3>
+        <h3 className="faq__heading">Informações importantes</h3>
         {faqs.map((item) => (
           <details className="faq__item" key={item.q}>
             <summary>
