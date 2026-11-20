@@ -626,7 +626,7 @@ public final class Pad {
         LinearLayout form = new LinearLayout(activity); form.setOrientation(LinearLayout.VERTICAL); form.setPadding(dp(24),dp(8),dp(24),dp(8));
         EditText lat = input(Double.toString(Control.engine.latitude), "Latitude (-90 to 90)");
         EditText lon = input(Double.toString(Control.engine.longitude), "Longitude (-180 to 180)");
-        EditText speed = input(Double.toString(Control.engine.speedKmh), "Speed (0.5–30 km/h)");
+        EditText speed = input(Double.toString(Control.engine.speedKmh), "Speed (0.5–60 km/h)");
         for (EditText field : new EditText[]{lat, lon, speed}) form.addView(field);
         AlertDialog dialog = new AlertDialog.Builder(dialogContext()).setTitle(dev.pgrazor.PtBr.tr("Coordinates & speed")).setView(form).setNegativeButton(dev.pgrazor.PtBr.tr("Cancel"),null).setPositiveButton(dev.pgrazor.PtBr.tr("Apply"),null).create();
         final AlertDialog[] confirmation = {null};
@@ -641,7 +641,7 @@ public final class Pad {
                     Control.event("coordinates-set", latitude + "," + longitude + " speed=" + check.speedKmh);
                     refresh(); dialog.dismiss(); return true;
                 });
-            } catch (IllegalArgumentException error) { speed.setError("Enter valid coordinates and speed (0.5–30)."); }
+            } catch (IllegalArgumentException error) { speed.setError("Enter valid coordinates and speed (0.5–60)."); }
         })); dialog.show();styleTree(form);
     }
     /** "Hide overlay": confirm first, naming the three-finger tap that shows the overlays again. */
