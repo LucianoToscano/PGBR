@@ -189,6 +189,17 @@ public final class Control {
     // 0=original, 1=simple, 2=glossy, 3=GO Plus. Visual preference only.
     private static volatile int vgpIconStyle=0;
     private static volatile int vgpIconSize=48;
+    // Map status captions can be hidden independently of the feature itself.
+    // The saved master defaults to visible for compatibility with older installations.
+    private static volatile boolean hudLabelsVisible=true;
+    private static volatile int hudLabelOpacity=0;
+    private static volatile int hudLabelTextSp=11;
+    public static boolean hudLabelsVisible(){return hudLabelsVisible;}
+    public static void setHudLabelsVisible(boolean value){hudLabelsVisible=value;saveSettings();}
+    public static int hudLabelOpacity(){return hudLabelOpacity;}
+    public static void setHudLabelOpacity(int value){hudLabelOpacity=Math.max(0,Math.min(80,value));saveSettings();}
+    public static int hudLabelTextSp(){return hudLabelTextSp;}
+    public static void setHudLabelTextSp(int value){hudLabelTextSp=Math.max(9,Math.min(14,value));saveSettings();}
     /**
      * Runtime-only VGP state (guard reason, status text, on-screen target), the enable/cooldown
      * guard decision and the result notification live in {@link VgpController}. The persistent
@@ -1225,6 +1236,7 @@ public final class Control {
             quickMenuHidden=0;
             vgpIconStyle=0;
             vgpIconSize=48;
+            hudLabelsVisible=true;hudLabelOpacity=0;hudLabelTextSp=11;
             trainerAliasEnabled=false;trainerAlias="";
             idleWalking=false;engine.setIdleWalking(false);
             SmartCatchSettings.read(new Properties());
@@ -1271,6 +1283,11 @@ public final class Control {
                 catch(NumberFormatException ignored){vgpIconStyle=0;}
                 try{vgpIconSize=Math.max(28,Math.min(72,Integer.parseInt(p.getProperty("vgpIconSize","48"))));}
                 catch(NumberFormatException ignored){vgpIconSize=48;}
+                hudLabelsVisible=Boolean.parseBoolean(p.getProperty("hudLabelsVisible","true"));
+                try{hudLabelOpacity=Math.max(0,Math.min(80,Integer.parseInt(p.getProperty("hudLabelOpacity","0"))));}
+                catch(NumberFormatException ignored){hudLabelOpacity=0;}
+                try{hudLabelTextSp=Math.max(9,Math.min(14,Integer.parseInt(p.getProperty("hudLabelTextSp","11")));}
+                catch(NumberFormatException ignored){hudLabelTextSp=11;}
                 vgpStopOnCooldown=Boolean.parseBoolean(p.getProperty("vgpStopOnCooldown","false"));
                 try{vgpOptions=Integer.parseInt(p.getProperty("vgpOptions","3"))&7;}catch(NumberFormatException ignored){vgpOptions=3;}
                 try{buddyBerry=Integer.parseInt(p.getProperty("buddyBerry","0"));}catch(NumberFormatException ignored){buddyBerry=0;}
@@ -1420,6 +1437,9 @@ public final class Control {
         p.setProperty("vgpOverlay",String.valueOf(vgpOverlay));
         p.setProperty("vgpIconStyle",String.valueOf(vgpIconStyle));
         p.setProperty("vgpIconSize",String.valueOf(vgpIconSize));
+        p.setProperty("hudLabelsVisible",String.valueOf(hudLabelsVisible));
+        p.setProperty("hudLabelOpacity",String.valueOf(hudLabelOpacity));
+        p.setProperty("hudLabelTextSp",String.valueOf(hudLabelTextSp));
         p.setProperty("vgpStopOnCooldown",String.valueOf(vgpStopOnCooldown));
         p.setProperty("vgpOptions",String.valueOf(vgpOptions));
         p.setProperty("buddyBerry",String.valueOf(buddyBerry));
