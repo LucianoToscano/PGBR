@@ -27,10 +27,10 @@ final class MapTheme {
     private MapTheme() {}
 
     static boolean dark() { return Control.darkTheme(); }
-    static int ink()     { return dark() ? Color.rgb(235, 241, 246) : Color.rgb(25, 35, 47); }
-    static int muted()   { return dark() ? Color.rgb(154, 171, 187) : Color.rgb(88, 105, 121); }
-    static int surface() { return dark() ? Color.rgb(20, 27, 37)    : Color.rgb(249, 251, 253); }
-    static int accent()  { return dark() ? Color.rgb(69, 225, 186)  : Color.rgb(0, 116, 92); }
+    static int ink()     { return FeedTheme.chromeInk(); }
+    static int muted()   { return FeedTheme.chromeMuted(); }
+    static int surface() { return FeedTheme.chromeSurface(); }
+    static int accent()  { return FeedTheme.chromeAccent(); }
 
     /** A dialog-themed context so nested AlertDialogs follow the chosen dark/light appearance. */
     static Context wrap(Activity activity) {
