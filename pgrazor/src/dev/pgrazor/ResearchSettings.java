@@ -37,7 +37,8 @@ public final class ResearchSettings {
 
     public static void read(Properties p) { preferences.read(p); }
     public static void write(Properties p) { preferences.write(p); }
-    public static String config() { return preferences.config(); }
+    public static String config() { return EternatusMission.researchConfig(preferences.config()); }
+    public static java.util.List<String[]> observedTemplates(){return preferences.tasks("");}
 
     /** Native "research" events: the observed catalog, or one request result. */
     public static void publish(String detail) {
@@ -54,6 +55,7 @@ public final class ResearchSettings {
                 if (changed) Control.saveSettings();
                 return;
             }
+            EternatusMission.onResult(phase,o.optString("template",""));
             synchronized (LOCK) {
                 if ("claimed".equals(phase)) claimed++;
                 if ("removed".equals(phase)) removed++;
