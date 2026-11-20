@@ -60,6 +60,18 @@ public final class PokemonOptionFilterTest {
         expect(aggron[1].equals("306000000"), "Matching preserves the packed selection key");
         expect(PokemonOptionFilter.dexOf(new String[]{"Charizard", "6|0|mega"}) == 6, "Raid options fall back to composite Dex");
 
+        // Human PT-BR searches: accent-insensitive, token order independent, padded #Dex.
+        expect(PokemonOptionFilter.visible(ALL, "alola", "Raichu de Alola", "26|2|normal", false), "Alola plain text");
+        expect(PokemonOptionFilter.visible(ALL, "alÓla", "Raichu de Alola", "26|2|normal", false), "Accent in user query");
+        expect(PokemonOptionFilter.visible(ALL, "pokemon", "Pokémon de evento", "25|0|costume", false), "Accent in catalog label");
+        expect(PokemonOptionFilter.visible(ALL, "  SHINY   150 ", "Mewtwo Shiny", "150|0|shiny", false), "Combined Dex and name tokens");
+        expect(PokemonOptionFilter.visible(ALL, "mega charizard", "Charizard Mega", "6|0|mega", false), "Reordered form tokens");
+        expect(PokemonOptionFilter.visible(ALL, "#006", "Charizard Mega", "6|0|mega", false), "Leading zero Dex");
+        expect(PokemonOptionFilter.visible(ALL, "#6", "Charizard Mega", "60|0|normal", false), "Existing partial Dex behavior");
+        expect(!PokemonOptionFilter.visible(ALL, "#000", "Charizard", "6|0|mega", false), "Zero padding cannot match wrong Dex");
+        expect(!PokemonOptionFilter.visible(ALL, "alola shiny", "Raichu de Alola", "26|2|normal", false), "All text tokens required");
+        expect(!PokemonOptionFilter.visible(SELECTED, "alola", "Raichu de Alola", "26|2|normal", false), "Search cannot override selection");
+
         System.out.println("PASS: Dex extraction, variant preservation, category/search intersection, unknown IDs, Selected and #Dex search");
     }
 }
