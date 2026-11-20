@@ -42,9 +42,13 @@ public final class EternatusRouteRunnerTest {
         check(EternatusRouteRunner.currentStop() == 2, "Duplicate reply must not skip stop");
         SystemClock.now += 4000;
         EternatusRouteRunner.tick();
+        SystemClock.now += 3100;
+        EternatusRouteRunner.tick();
         EternatusRouteRunner.onClaim("THROW_EXCELLENT","quest2");
         check(EternatusRouteRunner.currentStop() == 3 && Control.teleports == 3, "Second claim advances");
         SystemClock.now += 4000;
+        EternatusRouteRunner.tick();
+        SystemClock.now += 3100;
         EternatusRouteRunner.tick();
         EternatusRouteRunner.onClaim("THROW_EXCELLENT","quest3");
         check(!EternatusRouteRunner.active(), "Last stop should finish");
@@ -92,6 +96,8 @@ public final class EternatusRouteRunnerTest {
         check(EternatusRouteRunner.start(activity,450),"Start no-VGP timed route");
         check(!Control.vgpEnabled,"No VGP while waiting for cooldown");
         SystemClock.now+=4000;
+        EternatusRouteRunner.tick();
+        SystemClock.now+=3100;
         EternatusRouteRunner.tick();
         check(Control.quickspin && Control.autoThrowOnMap && !Control.vgpEnabled,
             "Quick spin and map-tap auto throw available with VGP disabled");
