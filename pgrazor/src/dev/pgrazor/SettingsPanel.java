@@ -66,7 +66,7 @@ final class SettingsPanel {
         quickSpinSwitch, berrySwitch, quickSummarySwitch, curveSwitch, alwaysHitSwitch, arSwitch, transferOverlaySwitch, catchChanceSwitch, autoBallSwitch, autoThrowSwitch, autoThrowMapSwitch, skipCutscenesSwitch,
         batteryResSwitch, batteryFpsSwitch, batteryQualitySwitch;
     private Button autoBallTarget, berryPriority;
-    private Button vgpIconStyleButton;
+    private Button vgpIconStyleButton, joystickStyleButton;
     private BerryPriorityPicker berryPicker;
     private TextView quickSummaryLabel, vgpStatus, cutsceneStatus, healStatus, smartBattleStatus;
     private Switch healSwitch, healReviveSwitch, smartBattleSwitch, gymRepeatSwitch;
@@ -298,6 +298,85 @@ final class SettingsPanel {
         panel.setClickable(true);
     }
 
+    private static String joystickStyleName(int style){
+        switch(style){
+            case 1:return "Eternatus • Energia sombria";
+            case 2:return "HUD translúcido • Setas";
+            case 3:return "Imagem personalizada";
+            default:return "Joystick original";
+        }
+    }
+    private void showJoystickStyles(){
+        Context ui=dialogContext();
+        LinearLayout content=new LinearLayout(ui);
+        content.setOrientation(LinearLayout.VERTICAL);
+        content.setPadding(dp(12),dp(8),dp(12),dp(8));
+        ScrollView scroll=new ScrollView(ui);scroll.addView(content);
+        final AlertDialog[] chosen={null};
+        for(int style=0;style<4;style++){
+            final int selection=style;
+            LinearLayout option=new LinearLayout(ui);
+            option.setOrientation(LinearLayout.HORIZONTAL);
+            option.setGravity(Gravity.CENTER_VERTICAL);
+            option.setPadding(dp(8),dp(6),dp(8),dp(6));
+            option.setBackground(SettingsUi.rounded(activity,style==Control.joystickStyle()?0x3041d9cc:0x138c92a0,dp(14)));
+            LinearLayout.LayoutParams optionParams=new LinearLayout.LayoutParams(-1,dp(78));
+            optionParams.bottomMargin=dp(6);
+            content.addView(option,optionParams);
+            FrameLayout preview=new FrameLayout(ui);
+            option.addView(preview,new LinearLayout.LayoutParams(dp(60),dp(60)));
+            if(style==1||style==2){
+                String name=style==1?"eternatus":"hud";
+                for(int layer=0;layer<2;layer++){
+                    String file="pgrazor/map-icons/joystick-"+name+(layer==0?"-base.webp":"-thumb.webp");
+                    try(java.io.InputStream image=PgAssets.open(activity,file)){
+                        Bitmap bitmap=BitmapFactory.decodeStream(image);
+                        if(bitmap==null)continue;
+                        ImageView thumbnail=new ImageView(ui);
+                        thumbnail.setImageBitmap(bitmap);
+                        thumbnail.setScaleType(ImageView.ScaleType.FIT_CENTER);
+                        FrameLayout.LayoutParams artParams=new FrameLayout.LayoutParams(dp(layer==0?60:style==1?22:20),dp(layer==0?60:style==1?22:20),Gravity.CENTER);
+                        preview.addView(thumbnail,artParams);
+                    }catch(Exception ignored){}
+                }
+            }else{
+                TextView glyph=new TextView(ui);
+                glyph.setText(dev.pgrazor.PtBr.tr(style==0?"◉":"▣"));
+                glyph.setTextSize(30);glyph.setGravity(Gravity.CENTER);
+                glyph.setTextColor(SettingsUi.accent());
+                preview.addView(glyph,new FrameLayout.LayoutParams(-1,-1));
+            }
+            TextView name=new TextView(ui);
+            name.setText(dev.pgrazor.PtBr.tr(joystickStyleName(style)));
+            name.setTextSize(14);
+            name.setTextColor(SettingsUi.ink());
+            name.setPadding(dp(8),0,0,0);
+            option.addView(name,new LinearLayout.LayoutParams(0,-2,1f));
+            RadioButton radio=new RadioButton(ui);
+            radio.setChecked(Control.joystickStyle()==style);
+            radio.setClickable(false);radio.setFocusable(false);
+            option.addView(radio);
+            option.setClickable(true);option.setFocusable(true);
+            option.setContentDescription(dev.pgrazor.PtBr.tr(joystickStyleName(style)));
+            option.setOnClickListener(v->{
+                if(chosen[0]!=null)chosen[0].dismiss();
+                if(selection==3){JoystickImage.select(activity);return;}
+                host.releaseJoystick(true);
+                Control.setJoystickStyle(selection);
+                if(joystickStyleButton!=null)
+                    joystickStyleButton.setText(dev.pgrazor.PtBr.tr("Estilo do joystick: "+joystickStyleName(selection)));
+                host.refresh();
+            });
+        }
+        chosen[0]=new AlertDialog.Builder(ui)
+            .setTitle(dev.pgrazor.PtBr.tr("Escolher estilo do joystick"))
+            .setView(scroll)
+            .setNegativeButton(dev.pgrazor.PtBr.tr("Fechar"),null)
+            .create();
+        chosen[0].setOnShowListener(dialog->MapTheme.styleButtons(chosen[0]));
+        chosen[0].show();
+    }
+
     private void buildLocationPage() {
         LinearLayout loc = page(MenuIcon.TELEPORT, "Location & Map");
         locationSwitch=switchRow(loc,"Location spoofing");locationSwitch.setChecked(Control.desiredEnabled());
@@ -331,6 +410,14 @@ final class SettingsPanel {
             public void onStopTrackingTouch(SeekBar bar){}
         });
         caption(joystickArt,"Tamanho e transparência são alterados sem interromper a caminhada automática.");
+        joystickStyleButton=launch(joystickArt,
+            "Estilo do joystick: "+joystickStyleName(Control.joystickStyle()),this::showJoystickStyles);
+        Switch neonEffects=switchRow(joystickArt,"Eternatus: brilho e raios animados");
+        neonEffects.setChecked(Control.joystickEternatusEffects());
+        neonEffects.setOnCheckedChangeListener((v,on)->{
+            Control.setJoystickEternatusEffects(on);host.refresh();
+        });
+        caption(joystickArt,"O núcleo acompanha o toque. Efeitos temáticos podem ser desligados para economizar bateria; o movimento permanece o mesmo.");
         launch(joystickArt,"Escolher imagem do joystick no celular",()->{
             if(Control.engine.routeProgress().active){
                 android.widget.Toast.makeText(activity,"Pause ou encerre a rota antes de abrir o seletor de imagens do Android.",android.widget.Toast.LENGTH_LONG).show();
@@ -909,6 +996,11 @@ final class SettingsPanel {
 
     void refresh() {
         refreshHome();
+        if(joystickStyleButton!=null){
+            String desired="Estilo do joystick: "+joystickStyleName(Control.joystickStyle());
+            if(!desired.contentEquals(joystickStyleButton.getText()))
+                joystickStyleButton.setText(dev.pgrazor.PtBr.tr(desired));
+        }
         for(MenuIcon icon:homeIcons){
             ViewGroup.LayoutParams lp=icon.getLayoutParams();int size=dp(Control.menuIconSizeDp()+4);
             if(lp!=null&&(lp.width!=size||lp.height!=size)){lp.width=size;lp.height=size;icon.setLayoutParams(lp);}
