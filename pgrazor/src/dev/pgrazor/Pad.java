@@ -257,10 +257,19 @@ public final class Pad {
         private final RectF dst=new RectF();
         private final Bitmap ledOff=decodeMapIcon("vgp-led-off.png");
         private final Bitmap ring=decodeMapIcon("vgp-ring.png");
-        // HD assets originate from the user's supplied pictures; old PNGs remain a fallback.
-        private final Bitmap deviceOn=decodePreferredMapIcon("vgp-hd-on.webp","vgp-device-off.png");
-        private final Bitmap deviceError=decodePreferredMapIcon("vgp-hd-error.webp","vgp-device-on.png");
-        private final Bitmap deviceOff=decodePreferredMapIcon("vgp-hd-off.webp","vgp-device-error.png");
+        // HD atlas: rows 0=OFF gray, 1=ERROR orange, 2=ON blue.
+        // Load the user's full-quality transparent art once, not 48px thumbnail assets.
+        private final Bitmap atlas=decodeMapIcon("vgp-hd-states.webp");
+        private Bitmap hdState(int row,String fallback){
+            if(atlas!=null&&atlas.getHeight()==atlas.getWidth()*3){
+                try{return Bitmap.createBitmap(atlas,0,atlas.getWidth()*row,atlas.getWidth(),atlas.getWidth());}
+                catch(RuntimeException ignored){}
+            }
+            return decodeMapIcon(fallback);
+        }
+        private final Bitmap deviceOff=hdState(0,"vgp-device-error.png");
+        private final Bitmap deviceError=hdState(1,"vgp-device-on.png");
+        private final Bitmap deviceOn=hdState(2,"vgp-device-off.png");
         VgpToggle(Context context){super(context);setFocusable(true);setClickable(true);}
         private boolean failed(){
             String status=Control.vgpStatus().toLowerCase(java.util.Locale.ROOT);
