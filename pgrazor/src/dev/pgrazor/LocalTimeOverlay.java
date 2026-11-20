@@ -9,6 +9,7 @@ import android.widget.TextView;
 /** Small local clock driven by Pad's existing lifecycle/tick, with no background timer. */
 final class LocalTimeOverlay extends TextView {
     private final LocalTimeClock clock = new LocalTimeClock();
+    private final LocalTimeCityLookup cityLookup = new LocalTimeCityLookup();
     private long lastRefresh;
     private int lastFormat = -1;
     private boolean closed;
@@ -54,13 +55,17 @@ final class LocalTimeOverlay extends TextView {
         double latitude=Control.engine.latitude, longitude=Control.engine.longitude;
         String label = clock.compactLabel(latitude, longitude, System.currentTimeMillis(), format);
         // ICU maps the IANA time zone to a country region; no network or location permission needed.
-        if (format < 2 && !"--:--".equals(label)) try {
+        if ((format < 2 || format == 6) && !"--:--".equals(label)) try {
             String zone=TimeZoneLookup.zoneId(latitude,longitude);
             String region=android.icu.util.TimeZone.getRegion(zone);
             if(region!=null&&region.matches("[A-Z]{2}")){
                 String flag=new String(Character.toChars(0x1f1e6+region.charAt(0)-'A'))
                     +new String(Character.toChars(0x1f1e6+region.charAt(1)-'A'));
-                label=flag+"  "+label;
+                if(format==6){
+                    String city=cityLookup.resolve(getContext(),latitude,longitude,
+                        ()->post(()->{ if(!closed)lastRefresh=0; }));
+                    label=flag+"  "+(city.isEmpty()?"":city+"  •  ")+label;
+                }else label=flag+"  "+label;
             }
         } catch(RuntimeException ignored){ /* Ocean and unknown region: show time without flag. */ }
         if (!label.contentEquals(getText())) {
@@ -69,5 +74,5 @@ final class LocalTimeOverlay extends TextView {
         }
     }
 
-    void close() { closed = true; setVisibility(GONE); }
+    void close() { closed = true; cityLookup.close(); setVisibility(GONE); }
 }

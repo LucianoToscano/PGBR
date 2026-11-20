@@ -382,7 +382,7 @@ public final class Control {
     }
     public static int localTimeFormat() { return localTimeFormat; }
     public static void setLocalTimeFormat(int value) {
-        if (value < 0 || value > 5 || value == localTimeFormat) return;
+        if (value < 0 || value > 6 || value == localTimeFormat) return;
         localTimeFormat = value;
         saveSettings();
     }
@@ -494,8 +494,18 @@ public final class Control {
         itemRules=rules;itemLimits=limits;itemTransferEnabled=enabled;saveSettings();event("item-rules",enabled?"Enabled":"Disabled");
     }
     private static volatile boolean quickSpinEnabled, quickSpinReady;
+    // Optional event route behavior. Both are opt-in, persisted, and never imply a candy reward.
+    private static volatile boolean eternatusWithoutVgp, eternatusTimedAdvance;
     private static volatile String quickSpinStatus="Waiting for game";
     public static boolean quickSpinEnabled() { return quickSpinEnabled; }
+    public static boolean eternatusWithoutVgp(){return eternatusWithoutVgp;}
+    public static void setEternatusWithoutVgp(boolean value){
+        if(eternatusWithoutVgp!=value){eternatusWithoutVgp=value;saveSettings();}
+    }
+    public static boolean eternatusTimedAdvance(){return eternatusTimedAdvance;}
+    public static void setEternatusTimedAdvance(boolean value){
+        if(eternatusTimedAdvance!=value){eternatusTimedAdvance=value;saveSettings();}
+    }
     public static String quickSpinStatus() { return quickSpinStatus; }
     public static void setQuickSpinEnabled(boolean value) { quickSpinEnabled=value; saveSettings(); event("quick-spin-setting",value?"ON":"OFF"); }
     public static void setQuickSpinReady(boolean value,String status) { quickSpinReady=value; quickSpinStatus=status; }
@@ -1461,7 +1471,7 @@ public final class Control {
                 cooldownOverlay=Boolean.parseBoolean(p.getProperty("cooldownOverlay","false"));
                 cooldownTextSp=readBoundedVisual(p,"cooldownTextSp",0,0,20);
                 if(cooldownTextSp<9)cooldownTextSp=0;
-                localTimeFormat=readBoundedVisual(p,"localTimeFormat",0,0,5);
+                localTimeFormat=readBoundedVisual(p,"localTimeFormat",0,0,6);
                 cooldownEmphasis=Boolean.parseBoolean(p.getProperty("cooldownEmphasis","false"));
                 localTimeOverlay=Boolean.parseBoolean(p.getProperty("localTimeOverlay","false"));
                 encounterCounter=Boolean.parseBoolean(p.getProperty("encounterCounter","true"));encounterOverlay=Boolean.parseBoolean(p.getProperty("encounterOverlay","false"));
@@ -1514,6 +1524,8 @@ public final class Control {
                 itemRules=p.getProperty("itemRules","");itemLimits=p.getProperty("itemLimits","");itemCatalog=p.getProperty("itemCatalog","");
                 if(!validItemRules(itemRules)||!validItemRules(itemLimits)){itemTransferEnabled=false;itemRules="";itemLimits="";}
                 quickSpinEnabled=Boolean.parseBoolean(p.getProperty("quickSpin","false"));
+                eternatusWithoutVgp=Boolean.parseBoolean(p.getProperty("eternatusWithoutVgp","false"));
+                eternatusTimedAdvance=Boolean.parseBoolean(p.getProperty("eternatusTimedAdvance","false"));
                 autoTransferEnabled=Boolean.parseBoolean(p.getProperty("autoTransfer","false"));
                 try{
                     int value=Integer.parseInt(p.getProperty("transferIvKeepPercent","90"));
@@ -1696,6 +1708,8 @@ public final class Control {
         p.setProperty("rocketOptions",String.valueOf(rocketOptions));
         p.setProperty("itemTransfer",String.valueOf(itemTransferEnabled));p.setProperty("itemRules",itemRules);p.setProperty("itemLimits",itemLimits);p.setProperty("itemCatalog",itemCatalog);
         p.setProperty("quickSpin",String.valueOf(quickSpinEnabled));
+        p.setProperty("eternatusWithoutVgp",String.valueOf(eternatusWithoutVgp));
+        p.setProperty("eternatusTimedAdvance",String.valueOf(eternatusTimedAdvance));
         p.setProperty("autoTransfer",String.valueOf(autoTransferEnabled)); p.setProperty("transferProtect",String.valueOf(transferProtect));p.setProperty("transferIvKeepPercent",String.valueOf(transferIvKeepPercent));p.setProperty("transferProtectSplit","1");
         p.setProperty("transferKeepAll",String.valueOf(transferKeepAll)); p.setProperty("transferOverlay",String.valueOf(transferOverlayEnabled)); p.setProperty("transferKeepSpecies",transferKeepSpecies);
         p.setProperty("evolveTransferEnabled",String.valueOf(evolveTransferEnabled)); p.setProperty("evolveTransferMode",String.valueOf(evolveTransferMode)); p.setProperty("evolveTransferStages",String.valueOf(evolveTransferStages)); p.setProperty("evolveTransferSpecies",evolveTransferSpecies);

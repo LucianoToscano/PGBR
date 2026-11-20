@@ -15,15 +15,19 @@ import java.util.List;
  */
 public final class EternatusRouteRunner {
     private static final Object LOCK = new Object();
-    private static final int MAX_STOPS = 400;
+    private static final int MAX_STOPS = GpxCodec.MAX_POINTS; // Full GPX route capacity, including 550+ stops.
     private static GpxRoute planned;
     private static String template = "";
     private static boolean running, previousVgpOverlay, previousVgpEnabled, previousQuickSpin;
+    private static boolean previousAutoThrow, previousAutoThrowOnMap, withoutVgp, timedAdvance;
     private static int previousThrowGrade, previousThrowVariety;
     private static boolean awaitingClaim, advancementQueued;
     private static final java.util.HashSet<String> confirmedQuestIds=new java.util.HashSet<>();
-    private static int at;
-    private static long arrivedAt, lastTick;
+    private static int at, resumeAt;
+    private static long arrivedAt, lastTick, cooldownClearedAt, actionsSince;
+    // The 3-second margin starts when the estimate actually reaches zero, not at teleport.
+    static final long SAFETY_MARGIN_MS=3000L, UNVERIFIED_DWELL_MS=22000L;
+    private static int unverifiedStops;
     private static String status = "Nenhuma rota GPX selecionada.";
     private static String lastResearchIssue = "";
 
@@ -33,8 +37,10 @@ public final class EternatusRouteRunner {
         if (value == null || value.size() > MAX_STOPS) return false;
         synchronized (LOCK) {
             if (running) return false;
+            if(planned != value)resumeAt = 0;
             planned = value;
-            status = "GPX preparado: " + value.name + " · " + value.size() + " paradas.";
+            status = "GPX preparado: " + value.name + " · " + value.size()
+                + " paradas. Reinício selecionável de 1 a " + value.size() + ".";
             return true;
         }
     }
@@ -57,8 +63,23 @@ public final class EternatusRouteRunner {
     public static String selectedTemplate() { synchronized (LOCK) { return template; } }
     public static boolean active() { synchronized (LOCK) { return running; } }
     public static String status() { synchronized (LOCK) { return status; } }
+    public static String compactStatus(){
+        String detail=status();
+        int separator=detail.indexOf(" · ");
+        return detail.startsWith("Parada ") && separator>0
+            ? detail.substring(separator+3) : detail;
+    }
     public static int currentStop() { synchronized (LOCK) { return running ? at + 1 : 0; } }
+    /** Last visited 1-based position remains available after a failure or cancellation. */
+    public static int resumePosition() {
+        synchronized (LOCK) { return planned == null ? 1 : Math.max(1,Math.min(planned.size(),resumeAt+1)); }
+    }
     public static int totalStops() { synchronized (LOCK) { return planned == null ? 0 : planned.size(); } }
+    public static int unverifiedStops() { synchronized (LOCK) { return unverifiedStops; } }
+    public static String actionMode(){
+        synchronized (LOCK) { return withoutVgp ? "Sem VGP (giro rápido + captura no mapa)"
+            : "VGP+ e giro rápido"; }
+    }
 
     /** Human-readable, specific preflight reason used by the Event panel. */
     public static String readinessError(Activity activity) {
@@ -78,7 +99,7 @@ public final class EternatusRouteRunner {
         }
         if (route == null) return "Escolha ou importe uma rota GPX primeiro.";
         if (route.size() <= 0 || route.size() > MAX_STOPS)
-            return "A rota GPX precisa conter de 1 a 400 paradas válidas.";
+            return "A rota GPX precisa conter de 1 a " + MAX_STOPS + " paradas válidas.";
         if (!ResearchPreferences.validTemplate(chosen))
             return "Selecione a missão exata observada no jogo.";
         boolean present = false;
@@ -107,6 +128,11 @@ public final class EternatusRouteRunner {
      * A controller for another automated travel mode is never displaced.
      */
     public static boolean start(Activity activity) {
+        return start(activity, resumePosition());
+    }
+
+    /** Start at a user-selected 1-based GPX point, without replaying prior coordinates. */
+    public static boolean start(Activity activity,int startAtOneBased) {
         String problem = readinessError(activity);
         if (!problem.isEmpty()) {
             synchronized (LOCK) { status = problem; }
@@ -116,6 +142,10 @@ public final class EternatusRouteRunner {
         final String exactTemplate;
         synchronized (LOCK) {
             if (running || planned == null || planned.size() > MAX_STOPS || template.isEmpty()) return false;
+            if(startAtOneBased<1 || startAtOneBased>planned.size()){
+                status="Escolha uma posição válida entre 1 e "+planned.size()+".";
+                return false;
+            }
             route = planned;
             exactTemplate = template;
         }
@@ -130,26 +160,41 @@ public final class EternatusRouteRunner {
             previousVgpOverlay = Control.vgpOverlay();
             previousVgpEnabled = Control.vgpEnabled();
             previousQuickSpin = Control.quickSpinEnabled();
+            previousAutoThrow = Control.autoThrow();
+            previousAutoThrowOnMap = Control.autoThrowOnMap();
+            withoutVgp = Control.eternatusWithoutVgp();
+            timedAdvance = Control.eternatusTimedAdvance();
+            unverifiedStops = 0;
             previousThrowGrade = Control.throwRating();
             previousThrowVariety = Control.throwVariety();
             running = true;
-            at = 0;
+            at = startAtOneBased - 1;
+            resumeAt = at;
             lastTick = 0;
+            cooldownClearedAt = 0;
+            actionsSince = 0;
             lastResearchIssue = "";
             awaitingClaim = false;
             advancementQueued = false;
             confirmedQuestIds.clear();
-            status = "Preparando a primeira parada.";
+            status = "Preparando a parada " + (at+1) + "/" + route.size() + ".";
         }
         // Preserve old preferences so Cancel restores the user's previous mode.
         Control.setVgpEnabled(false);
-        Control.setVgpOverlay(true);
+        if(!withoutVgp){
+            Control.setVgpOverlay(true);
+        }else{
+            // Native quick spin runs when a spinner is opened; auto throw operates on
+            // clicked map encounters. Neither fakes a spin/catch or requires VGP.
+            Control.setAutoThrowOnMap(false);
+            Control.setAutoThrow(false);
+        }
         // Request the native throwing layer's Excellent grade, not the random variety mode.
         Control.setThrowVariety(0);
         Control.setThrowGrade(3);
         Control.setQuickSpinEnabled(false); // Never spin until the destination cooldown is clear.
-        if (!travel(0)) {
-            stop("Falha ao posicionar a primeira parada.");
+        if (!travel(startAtOneBased-1)) {
+            stop("Falha ao posicionar a parada selecionada.");
             return false;
         }
         Control.event("eternatus-route", "started; stops=" + route.size());
@@ -164,15 +209,22 @@ public final class EternatusRouteRunner {
             awaitingClaim = false;
             advancementQueued = false;
             at = destinationIndex;
+            resumeAt = at;
+            cooldownClearedAt = 0;
+            actionsSince = 0;
             lastResearchIssue = "";
             arrivedAt = SystemClock.elapsedRealtime();
             status = "Teletransportando para a parada " + (at + 1) + "/" + route.size() + ".";
         }
-        double[] point = route.points()[destinationIndex];
+        double[] point = route.point(destinationIndex);
         try {
             if (!Control.active() || !Control.canEnable()) return false;
             Control.setVgpEnabled(false);
             Control.setQuickSpinEnabled(false);
+            if(withoutVgp){
+                Control.setAutoThrowOnMap(false);
+                Control.setAutoThrow(false);
+            }
             Control.teleport(point[0], point[1]);
             tick();
             return true;
@@ -203,7 +255,7 @@ public final class EternatusRouteRunner {
         final long arrived;
         synchronized (LOCK) { route = planned; index = at; arrived = arrivedAt; }
         if (route == null) { stop("Rota GPX indisponível."); return; }
-        double[] point = route.points()[index];
+        double[] point = route.point(index);
         if (CooldownState.distance(point[0], point[1], Control.currentLatitude(), Control.currentLongitude()) > 0.2) {
             stop("Coordenada alterada durante a execução. Nenhuma nova ação será iniciada.");
             return;
@@ -212,30 +264,75 @@ public final class EternatusRouteRunner {
         if (cooldown > 0) {
             if (Control.vgpEnabled()) Control.setVgpEnabled(false);
             if (Control.quickSpinEnabled()) Control.setQuickSpinEnabled(false);
+            if(withoutVgp && Control.autoThrowOnMap())Control.setAutoThrowOnMap(false);
+            if(withoutVgp && Control.autoThrow())Control.setAutoThrow(false);
             synchronized (LOCK) {
+                cooldownClearedAt=0;
+                actionsSince=0;
                 awaitingClaim = false;
                 status = "Parada " + (index + 1) + "/" + route.size()
-                    + " · aguardando cooldown estimado: " + ((cooldown + 999) / 1000) + " s.";
+                    + " · aguardando cooldown estimado: " + ((cooldown + 999) / 1000) + " s."
+                    + (lastResearchIssue.isEmpty() ? "" : " " + lastResearchIssue);
             }
             return;
         }
-        // Let the location adapter and nearby world state settle after each teleport.
-        if (now - arrived < 3500) {
-            synchronized (LOCK) { status = "Aguardando mapa na parada " + (index + 1) + "/" + route.size() + "."; }
-            return;
+        // Cooldown is an estimate. Always require an EXTRA 3s AFTER it turns green,
+        // and at least 3.5s after the last teleport for the game map to settle.
+        synchronized (LOCK) {
+            if (cooldownClearedAt == 0L) cooldownClearedAt = now;
+            if (now-arrived < 3500L || now-cooldownClearedAt < SAFETY_MARGIN_MS) {
+                status = "Parada " + (index+1) + "/" + route.size()
+                    + " · cooldown liberado; margem de segurança "
+                    + Math.max(1,(SAFETY_MARGIN_MS-(now-cooldownClearedAt)+999)/1000) + " s."
+                    + (lastResearchIssue.isEmpty() ? "" : " " + lastResearchIssue);
+                return;
+            }
         }
         if (!Control.quickSpinEnabled()) Control.setQuickSpinEnabled(true);
-        if (!Control.vgpEnabled()) Control.setVgpEnabled(true);
-        boolean available = Control.vgpEnabled() && Control.quickSpinAllowed();
+        if (!withoutVgp) {
+            if (!Control.vgpEnabled()) Control.setVgpEnabled(true);
+        } else {
+            if (Control.vgpEnabled()) Control.setVgpEnabled(false);
+            if (!Control.autoThrow()) Control.setAutoThrow(true);
+            if (!Control.autoThrowOnMap()) Control.setAutoThrowOnMap(true);
+        }
+        boolean ready=Control.quickSpinAllowed()
+            && (withoutVgp ? Control.autoThrow() && Control.autoThrowOnMap()
+                : Control.vgpEnabled());
+        boolean advance=false;
+        int next=-1;
         synchronized (LOCK) {
-            awaitingClaim = available;
-            status = available
-                ? "Parada " + (index + 1) + "/" + route.size()
-                    + " · VGP+/giro ativos. Aguardando resgate confirmado da pesquisa."
-                    + (lastResearchIssue.isEmpty() ? "" : " " + lastResearchIssue)
-                : "Parada " + (index + 1) + "/" + route.size()
-                    + " · VGP+ ou giro indisponível; verifique o jogo antes de continuar."
-                    + (lastResearchIssue.isEmpty() ? "" : " " + lastResearchIssue);
+            awaitingClaim=ready;
+            if(ready && actionsSince==0L)actionsSince=now;
+            // This opt-in mode advances WITHOUT crediting any candy or research.
+            // Quick Spin requires opening the disc and Map Auto Throw requires
+            // tapping the spawn; noVgp alone cannot initiate those gestures.
+            if(ready && timedAdvance && !advancementQueued && !Control.catchScreenVisible()
+                && actionsSince>0 && now-actionsSince >= UNVERIFIED_DWELL_MS) {
+                advancementQueued=true;
+                awaitingClaim=false;
+                unverifiedStops++;
+                next=index+1;
+                advance=true;
+            }else{
+                String mode=!ready
+                    ? "Giro/captura ainda indisponíveis ("+Control.quickSpinStatus()+")."
+                    : withoutVgp
+                        ? "VGP desligada; abra PokéParada e toque Pokémon no mapa (assistido)."
+                        : "VGP+ e giro habilitados.";
+                status="Parada "+(index+1)+"/"+route.size()+" · "+mode
+                    +(timedAdvance && ready
+                        ? " Continuação por tempo em "
+                          +Math.max(0,(UNVERIFIED_DWELL_MS-(now-actionsSince)+999)/1000)+" s; sem confirmação de doces."
+                        : " Aguardando resgate da pesquisa.")
+                    +(lastResearchIssue.isEmpty() ? "" : " "+lastResearchIssue);
+            }
+        }
+        if(advance){
+            Control.event("eternatus-route","unverified-stop; no candy credited; position="+(index+1));
+            if(next>=route.size())stop("GPX percorrido. "+unverifiedStops()
+                +" paradas sem resgate confirmado; nenhum doce presumido.");
+            else if(!travel(next))stop("Não foi possível avançar à próxima coordenada após a espera.");
         }
     }
 
@@ -293,7 +390,7 @@ public final class EternatusRouteRunner {
 
     /** Always restores feature preferences on explicit cancellation. */
     public static void stop(String reason) {
-        boolean restoreOverlay, restoreQuickSpin, restoreVgp;
+        boolean restoreOverlay, restoreQuickSpin, restoreVgp, restoreAutoThrow, restoreMapThrow, usedWithoutVgp;
         int restoreThrowGrade, restoreThrowVariety;
         synchronized (LOCK) {
             if (!running) return;
@@ -304,6 +401,9 @@ public final class EternatusRouteRunner {
             restoreOverlay = previousVgpOverlay;
             restoreQuickSpin = previousQuickSpin;
             restoreVgp = previousVgpEnabled;
+            restoreAutoThrow=previousAutoThrow;
+            restoreMapThrow=previousAutoThrowOnMap;
+            usedWithoutVgp=withoutVgp;
             restoreThrowGrade = previousThrowGrade;
             restoreThrowVariety = previousThrowVariety;
             status = reason == null || reason.isEmpty() ? "Execução cancelada." : reason;
@@ -311,6 +411,10 @@ public final class EternatusRouteRunner {
         EternatusMission.stop(status());
         Control.setVgpEnabled(false);
         Control.setQuickSpinEnabled(restoreQuickSpin);
+        if(usedWithoutVgp){
+            Control.setAutoThrowOnMap(restoreMapThrow);
+            Control.setAutoThrow(restoreAutoThrow);
+        }
         Control.setThrowGrade(restoreThrowGrade);
         Control.setThrowVariety(restoreThrowVariety);
         Control.setVgpOverlay(restoreOverlay);

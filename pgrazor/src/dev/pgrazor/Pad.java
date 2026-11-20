@@ -584,6 +584,10 @@ public final class Pad {
     private void applyHudAppearance(){
         int font=Control.hudLabelTextSp();
         int key=(Control.hudAppearanceRevision()*101+font)*2+(Control.darkTheme()?1:0);
+        // Reapply text/border styling on the exact tick the cooldown becomes 00:00.
+        // "-" (missing history/location) never counts as ready.
+        String cooldownNumber=Cooldown.compactLabel();
+        key=key*2+(CooldownVisual.ready(cooldownNumber)?1:0);
         if(key==lastHudAppearanceKey)return;
         lastHudAppearanceKey=key;
         TextView[] labels={vgpActivity,buddyEmotionStatus,automationStatus,gymAutomationStatus,
@@ -593,6 +597,9 @@ public final class Pad {
         for(int i=0;i<labels.length;i++){
             TextView label=labels[i];if(label==null)continue;
             int alpha=Math.round(Control.hudBackgroundOpacity(bits[i])*255f/100f);
+            int tint=label==cooldownTimer
+                ? CooldownVisual.color(cooldownNumber,Control.hudLabelColor(Control.HUD_COOLDOWN))
+                : Control.hudLabelColor(bits[i]);
             if (label == cooldownTimer) {
                 boolean emphasis = Control.cooldownEmphasis();
                 int size = Control.cooldownTextSp();
@@ -600,7 +607,7 @@ public final class Pad {
                 label.setTypeface(Typeface.create(emphasis ? "sans-serif-condensed" : "sans-serif-medium",
                     emphasis ? Typeface.BOLD : Typeface.NORMAL));
                 GradientDrawable badge = rounded((alpha << 24) | 0x101924, emphasis ? 10 : 16);
-                if (emphasis) badge.setStroke(dp(2), Control.hudLabelColor(Control.HUD_COOLDOWN));
+                if (emphasis) badge.setStroke(dp(2), tint);
                 int inset = dp(emphasis ? 5 : 9);
                 label.setBackground(alpha == 0 && !emphasis ? null :
                     new android.graphics.drawable.InsetDrawable(badge, 0, inset, 0, inset));
@@ -610,7 +617,7 @@ public final class Pad {
                 label.setBackground(alpha==0?null:rounded((alpha<<24)|0x101924,7));
                 label.setPadding(dp(4),dp(2),dp(4),dp(2));
             }
-            label.setTextColor(Control.hudLabelColor(bits[i]));
+            label.setTextColor(tint);
             label.setShadowLayer(dp(2.2f),0,dp(.6f),Color.BLACK);
         }
     }
@@ -661,7 +668,7 @@ public final class Pad {
         // Pair the status line with the toggle so the cooldown shutoff reason is visible even when VGP is off.
         if(buddyEmotionStatus!=null){buddyEmotionStatus.setVisibility(Control.hudLabelVisible(Control.HUD_BUDDY)&&BuddyEmotionSettings.overlayEnabled()&&!settings.isVisible()&&!(quickMenu!=null&&quickMenu.isShowing())?View.VISIBLE:View.GONE);setTextIfChanged(buddyEmotionStatus,compactBuddyStatus(BuddyEmotionSettings.status()));}
         if(catchChance!=null){catchChance.setVisibility(Control.hudLabelVisible(Control.HUD_CATCH)&&CatchChance.visible()&&!settings.isVisible()&&!(quickMenu!=null&&quickMenu.isShowing())?View.VISIBLE:View.GONE);setTextIfChanged(catchChance,CatchChance.text());}
-        if(automationStatus!=null){automationStatus.setVisibility(Control.hudLabelVisible(Control.HUD_AUTOMATION)&&(EternatusRouteRunner.active()||OneShotAutomation.overlayVisible()||AutoRaid.running())&&!settings.isVisible()&&!(quickMenu!=null&&quickMenu.isShowing())?View.VISIBLE:View.GONE);setTextIfChanged(automationStatus,EternatusRouteRunner.active()?"Eternatus "+EternatusRouteRunner.currentStop()+"/"+EternatusRouteRunner.totalStops()+" · "+EternatusRouteRunner.status():AutoRaid.running()?"Auto-Raid | "+AutoRaid.status():OneShotAutomation.overlayStatus());automationDrag.refreshBounds();}
+        if(automationStatus!=null){automationStatus.setVisibility(Control.hudLabelVisible(Control.HUD_AUTOMATION)&&(EternatusRouteRunner.active()||OneShotAutomation.overlayVisible()||AutoRaid.running())&&!settings.isVisible()&&!(quickMenu!=null&&quickMenu.isShowing())?View.VISIBLE:View.GONE);setTextIfChanged(automationStatus,EternatusRouteRunner.active()?"Eternatus "+EternatusRouteRunner.currentStop()+"/"+EternatusRouteRunner.totalStops()+" · "+EternatusRouteRunner.compactStatus():AutoRaid.running()?"Auto-Raid | "+AutoRaid.status():OneShotAutomation.overlayStatus());automationDrag.refreshBounds();}
         if(vgpActivity!=null){vgpActivity.setVisibility(Control.hudLabelVisible(Control.HUD_VGP)&&Control.vgpOverlayVisible()&&!settings.isVisible()&&!(quickMenu!=null&&quickMenu.isShowing())?View.VISIBLE:View.GONE);setTextIfChanged(vgpActivity,Control.vgpEnabled()?"●":"○");vgpActivity.setContentDescription(dev.pgrazor.PtBr.tr("Status completo do VGP: "+Control.vgpStatus()));}
         if(mapCatchBadge!=null)mapCatchBadge.refresh(!settings.isVisible()&&!(quickMenu!=null&&quickMenu.isShowing())&&!Control.catchScreenVisible());
         if(vgpMarker!=null){boolean show=Control.vgpTargetVisible()&&!settings.isVisible();vgpMarker.setVisibility(show?View.VISIBLE:View.GONE);if(show){vgpMarker.setX(Control.vgpTargetX()*parent.getWidth()-dp(19)*vgpMarker.getScaleX());vgpMarker.setY(Control.vgpTargetY()*parent.getHeight()-dp(36)-dp(46)*vgpMarker.getScaleY());vgpMarker.invalidate();}}

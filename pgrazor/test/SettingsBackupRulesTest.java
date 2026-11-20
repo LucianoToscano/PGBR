@@ -17,6 +17,8 @@ public class SettingsBackupRulesTest {
         JSONObject display=valid();
         display.getJSONObject("settings").put("localTimeFormat","5").put("cooldownEmphasis","true");
         SettingsBackupRules.validate(display);
+        display.getJSONObject("settings").put("localTimeFormat","6");
+        SettingsBackupRules.validate(display);
         JSONObject vgpTap=valid();vgpTap.getJSONObject("settings").put("vgpTapProtection","true");SettingsBackupRules.validate(vgpTap);
         vgpTap.getJSONObject("settings").put("vgpTapProtection","false");SettingsBackupRules.validate(vgpTap);
         vgpTap.getJSONObject("settings").put("vgpTapProtection","yes");rejects(vgpTap);
@@ -34,7 +36,15 @@ public class SettingsBackupRulesTest {
         JSONObject morphJoy=valid();morphJoy.getJSONObject("settings").put("joystickStyle","4");SettingsBackupRules.validate(morphJoy);
         morphJoy.getJSONObject("settings").put("joystickStyle","5");rejects(morphJoy);
         display.getJSONObject("settings").put("cooldownEmphasis","yes");rejects(display);
-        display.getJSONObject("settings").put("cooldownEmphasis","false").put("localTimeFormat","6");rejects(display);
+        display.getJSONObject("settings").put("cooldownEmphasis","false").put("localTimeFormat","7");rejects(display);
+        JSONObject eternity=valid();
+        eternity.getJSONObject("settings").put("eternatusWithoutVgp","true")
+            .put("eternatusTimedAdvance","false");
+        SettingsBackupRules.validate(eternity);
+        eternity.getJSONObject("settings").put("eternatusTimedAdvance","true");
+        SettingsBackupRules.validate(eternity);
+        eternity.getJSONObject("settings").put("eternatusTimedAdvance","yes");
+        rejects(eternity);
         JSONObject legacy=valid();legacy.put("format","PGRazor settings");SettingsBackupRules.validate(legacy);
         JSONObject protect=valid();protect.getJSONObject("settings").put("transferProtect","255").put("transferProtectSplit","1");
         SettingsBackupRules.validate(protect);

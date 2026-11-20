@@ -40,6 +40,7 @@ public final class LocalTimeClockTest {
         equal("11:30", clock.compactLabel(40.7128,-74.0060,now,4));
         equal("11:30 · 10/11/26", clock.compactLabel(40.7128,-74.0060,now,5));
         equal("01:30 · 11/11/26", clock.compactLabel(35.6762,139.6503,now,5));
+        equal("01:30 · 11/11/26", clock.compactLabel(35.6762,139.6503,now,6));
         equal("22:15 GMT+05:45", clock.compactLabel(27.7172,85.3240,now,2));
         equal("16:30 GMT+00:00", clock.compactLabel(51.5,-0.12,now,2));
         equal("--:--",clock.compactLabel(Double.NaN,0,now,0));

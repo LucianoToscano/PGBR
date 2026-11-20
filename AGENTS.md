@@ -1,6 +1,6 @@
 # PGBR — Instruções para desenvolvimento e auditoria
 
-Leia `README.md`, `docs/BUILDING.md`, `docs/ARCHITECTURE.md`, `docs/ROOTED.md`, `docs/releases/v0.00.12-LT.md` e `AUDITORIA_IA_COMECE_AQUI_LT012.md`.
+Leia `README.md`, `docs/BUILDING.md`, `docs/ARCHITECTURE.md`, `docs/ROOTED.md`, `docs/releases/v0.00.13-LT.md` e `AUDITORIA_IA_COMECE_AQUI_LT013.md`.
 
 **Enriquecer, nunca empobrecer.** Preserve funções e permissões, sem alterar o PokeSearch. Não invente hooks Unity, IDs de itens, resultados de pesquisas ou testes. Separe implementação, testes em stub/JVM, compilação Android, homologação física e release publicada.
 
