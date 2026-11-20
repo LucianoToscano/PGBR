@@ -1,0 +1,48 @@
+name: PGBR - importar artes Eternatus morph (uma vez)
+on:
+  push:
+    branches:
+      - feature/eternatus-morph-tempestade-lt010
+    paths:
+      - .github/workflows/pgbr-import-morph-assets-lt010.yml
+permissions:
+  contents: write
+jobs:
+  import-visuals:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - name: Instalar Pillow
+        run: python3 -m pip install --user Pillow
+      - name: Importar as quatro imagens enviadas e gerar camadas com transparencia
+        env:
+          PGBR_JOY_CLEAN: 'https://media.canva.com/v2/image-resize/format:PNG/height:200/quality:100/uri:ifs%3A%2F%2FM%2F7926f67d-aa08-461d-952a-04e181729eec/watermark:F/width:200?csig=AAAAAAAAAAAAAAAAAAAAABglMekZjHwHqu9MEN6WVoq9jyLl0ItBFE_FR3PnjXgo&exp=1795225952&osig=AAAAAAAAAAAAAAAAAAAAAPEWI5zAzRr4PTZ2ZA7Q-Bn21y2gZbHTHHqhiXPzPrAW&signer=media-rpc&token=AAIAAU0AJDc5MjZmNjdkLWFhMDgtNDYxZC05NTJhLTA0ZTE4MTcyOWVlYwAAAAABofvOHwCrK2c1yhPkafUgYCXOEj2ZCgp1pujb91dB9z0mbqXrhA&x-canva-quality=thumbnail'
+          PGBR_JOY_STORM: 'https://media.canva.com/v2/image-resize/format:PNG/height:200/quality:100/uri:ifs%3A%2F%2FM%2F43fef0b7-63e3-412c-9681-3c72a034d99c/watermark:F/width:200?csig=AAAAAAAAAAAAAAAAAAAAAKKogTiKvmQyS556XacIWR40bUCjnXLzo_ssudh0YUn-&exp=1795227191&osig=AAAAAAAAAAAAAAAAAAAAAOW0QuD1NSOJBt7SFqZQAxy5KyvFLNTLWO0HL5sD65N-&signer=media-rpc&token=AAIAAU0AJDQzZmVmMGI3LTYzZTMtNDEyYy05NjgxLTNjNzJhMDM0ZDk5YwAAAAABofvhBthXBjP9mGgqfsWRUTg-9gaTRTkZmXq_oTWmQ4UEyFRKZg&x-canva-quality=thumbnail'
+          PGBR_BALL_CLEAN: 'https://media.canva.com/v2/image-resize/format:PNG/height:200/quality:100/uri:ifs%3A%2F%2FM%2F0904aef2-dd2c-48df-a485-cbcc3481b1be/watermark:F/width:200?csig=AAAAAAAAAAAAAAAAAAAAAGKopsqDMZmCdrYHqTBJ9GbM7gn9ZWOqnTbGkasOlyRO&exp=1795226776&osig=AAAAAAAAAAAAAAAAAAAAAAwXddXgsit7wLe0mb8STtXLjfz0r9E7F5dsm4_N_sFY&signer=media-rpc&token=AAIAAU0AJDA5MDRhZWYyLWRkMmMtNDhkZi1hNDg1LWNiY2MzNDgxYjFiZQAAAAABofvascD0BqdDD7JR_CjUqIjksNv6ermkh6RiHykZWkcoVTKhHQ&x-canva-quality=thumbnail'
+          PGBR_BALL_STORM: 'https://media.canva.com/v2/image-resize/format:PNG/height:200/quality:100/uri:ifs%3A%2F%2FM%2Fbab2b563-b54a-46d3-ac9f-86dee25f0927/watermark:F/width:200?csig=AAAAAAAAAAAAAAAAAAAAAAXjoYKB8H-fcTQ5gLXyYKEoIrWWQnJSs2GO0BJXCMmJ&exp=1795227063&osig=AAAAAAAAAAAAAAAAAAAAAOSdF8bILpknnhBE2TpV2mHjWZF566fwUPY5IMmuLkQJ&signer=media-rpc&token=AAIAAU0AJGJhYjJiNTYzLWI1NGEtNDZkMy1hYzlmLTg2ZGVlMjVmMDkyNwAAAAABofvfEtg0Au8cHrLu3-XH8BzQUCd0AswLQbRgGYnrHenmmDwDEA&x-canva-quality=thumbnail'
+        run: python3 pgrazor/tools/build_eternatus_morph_assets.py
+      - name: Validar arquivos e fazer commit das sprites editaveis
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          from PIL import Image
+          folder=Path("pgrazor/assets/map-icons")
+          for stem in ["joystick-eternatus-morph-clean","joystick-eternatus-morph-storm",
+                       "joystick-eternatus-morph-thumb","eternatus-ball-morph-clean",
+                       "eternatus-ball-morph-storm"]:
+              path=folder/(stem+".webp")
+              assert path.is_file(), path
+              with Image.open(path) as img:
+                  assert img.size[0]>=120 and img.mode=="RGBA", (path,img.size,img.mode)
+                  assert img.getpixel((0,0))[3]==0, f"Expected transparency: {path}"
+              print(stem,path.stat().st_size)
+          PY
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add pgrazor/assets/map-icons/*-morph-*.webp
+          git diff --cached --check
+          git commit -m "assets(eternatus): importar 4 artes do usuario em camadas alpha para morph"
+          git push origin "HEAD:${GITHUB_REF_NAME}"
