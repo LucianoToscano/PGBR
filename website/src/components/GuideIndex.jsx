@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { featureGuias, guideHref, homeHref } from './guideData.js';
+import { featureGuides, guideHref, homeHref } from './guideData.js';
 
 // The feature-guide index: a short explainer, an optional text filter, and the
 // guides grouped by their category. Every card is an ordinary link to
@@ -9,8 +9,8 @@ export default function GuideIndex() {
   const term = query.trim().toLowerCase();
 
   const filtered = useMemo(() => {
-    if (!term) return featureGuias;
-    return featureGuias.filter((guide) =>
+    if (!term) return featureGuides;
+    return featureGuides.filter((guide) =>
       [guide.title, guide.summary, guide.category]
         .filter(Boolean)
         .some((field) => String(field).toLowerCase().includes(term)),
@@ -26,7 +26,7 @@ export default function GuideIndex() {
     return seen;
   }, [filtered]);
 
-  const empty = featureGuias.length === 0;
+  const empty = featureGuides.length === 0;
 
   return (
     <section className="section guide-index" aria-labelledby="guide-index-heading">
