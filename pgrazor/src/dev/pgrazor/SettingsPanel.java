@@ -698,6 +698,7 @@ final class SettingsPanel {
             else activity.startActivity(new Intent(activity,LogActivity.class).putExtra("settingsBackup",true));
         });
         launch(page, "Run log / export", () -> LogActivity.open(activity));
+        launch(page, "Verificar atualizações do PGBR", () -> UpdateChecker.check(activity));
 
         // ----- Diagnostics (status plumbing kept out of everyday settings) -----
         LinearLayout diag = section(page, "Diagnostics", false);
