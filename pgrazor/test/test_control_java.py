@@ -210,6 +210,7 @@ public final class GoogleBrowserAuth {
  public static void onHostPaused(android.app.Activity activity){}
 }''',
     'dev/pgrazor/GoogleAuthActivity.java': 'package dev.pgrazor; public class GoogleAuthActivity extends android.app.Activity {}',
+    'dev/pgrazor/UpdateChecker.java': 'package dev.pgrazor; public final class UpdateChecker { static void checkAutomatically(android.app.Activity activity){} }',
 }
 
 
