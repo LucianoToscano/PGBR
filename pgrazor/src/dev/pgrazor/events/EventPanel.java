@@ -167,6 +167,7 @@ public final class EventPanel {
         autoHeader.setTextSize(14);autoHeader.setPadding(0,pad,0,0);layout.addView(autoHeader);
         TextView autoStatus=new TextView(ui);autoStatus.setTextSize(12);layout.addView(autoStatus);
         final String[] selected={dev.pgrazor.EternatusMission.selected()};
+        if(!selected[0].isEmpty())dev.pgrazor.EternatusRouteRunner.chooseTemplate(selected[0]);
         android.widget.Button select=new android.widget.Button(ui);
         select.setText("Selecionar missão do catálogo do jogo");layout.addView(select);
         select.setOnClickListener(v->{
@@ -244,7 +245,7 @@ public final class EventPanel {
         Runnable refresh=()->{
             excellent.setEnabled(received.isChecked());
             claimed.setEnabled(received.isChecked()&&excellent.isChecked());
-            next.setEnabled(received.isChecked()&&excellent.isChecked()&&claimed.isChecked());
+            next.setEnabled(!dev.pgrazor.EternatusRouteRunner.active()&&received.isChecked()&&excellent.isChecked()&&claimed.isChecked());
             tally.setText(dev.pgrazor.PtBr.tr("Resgates confirmados nesta conta: "+completed[0]+" | Doces informados: "+(completed[0]*25)));
         };
         received.setOnCheckedChangeListener((v,checked)->{
@@ -324,7 +325,7 @@ public final class EventPanel {
                     +"\\nModelo: "+dev.pgrazor.EternatusRouteRunner.selectedTemplate()));
                 importGpx.setEnabled(!active);savedGpx.setEnabled(!active);select.setEnabled(!active);
                 startAuto.setEnabled(!active&&planned!=null&&verifiedReward.isChecked()&&!dev.pgrazor.EternatusRouteRunner.selectedTemplate().isEmpty());
-                stopAuto.setEnabled(active);
+                stopAuto.setEnabled(active);reset.setEnabled(!active);
                 received.setEnabled(!active);next.setEnabled(!active&&received.isChecked()&&excellent.isChecked()&&claimed.isChecked());
                 int confirmed=dev.pgrazor.EternatusProgress.confirmed(activity);
                 if(completed[0]!=confirmed){completed[0]=confirmed;refresh.run();}
