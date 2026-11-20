@@ -41,7 +41,12 @@ class EternatusStormFxTests(unittest.TestCase):
         for texture in ("vortex", "soft-smoke", "smoke-wispy"):
             sprite=ROOT/"assets"/"map-icons"/f"eternatus-fx-{texture}.png"
             self.assertTrue(sprite.is_file(),str(sprite))
-            self.assertGreater(sprite.stat().st_size,5000)
+            raw=sprite.read_bytes()
+            self.assertGreater(len(raw),5000)
+            self.assertEqual(raw[:8],b"\\x89PNG\\r\\n\\x1a\\n")
+            self.assertEqual(raw[25],6,"RGBA is required to preserve the map transparency")
+            self.assertGreaterEqual(int.from_bytes(raw[16:20],"big"),128)
+            self.assertGreaterEqual(int.from_bytes(raw[20:24],"big"),128)
         self.assertIn("knobX=cx+x*travel,knobY=cy+y*travel",pad)
         self.assertIn("Control.engine.input(x,-y)",pad)
         self.assertIn("canvas.drawBitmap(builtinThumb",pad)
