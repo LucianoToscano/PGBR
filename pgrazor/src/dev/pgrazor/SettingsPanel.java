@@ -688,6 +688,10 @@ final class SettingsPanel {
         });
         launch(page, "Run log / export", () -> LogActivity.open(activity));
         launch(page, "Verificar atualizações do PGBR", () -> UpdateChecker.check(activity));
+        Switch autoUpdateNotice=switchRow(page,"Avisar automaticamente sobre novas versões");
+        autoUpdateNotice.setChecked(UpdateChecker.automaticEnabled(activity));
+        autoUpdateNotice.setOnCheckedChangeListener((button,on)->UpdateChecker.setAutomaticEnabled(activity,on));
+        caption(page,"O aviso aparece automaticamente ao abrir o PGBR quando há uma versão pública mais recente. Baixar e instalar exigem confirmação.");
 
         // ----- Diagnostics (status plumbing kept out of everyday settings) -----
         LinearLayout diag = section(page, "Diagnostics", false);
