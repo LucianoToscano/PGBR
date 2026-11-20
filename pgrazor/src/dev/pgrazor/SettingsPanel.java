@@ -383,6 +383,16 @@ final class SettingsPanel {
         locationSwitch.setOnCheckedChangeListener((v,checked)->{if(checked==Control.desiredEnabled())return;host.releaseJoystick(true);Control.setLocationSpoofing(checked);host.refresh();});
         steeringStatus = caption(loc, "Joystick follows the camera");
         launch(loc, "Coordinates & speed", host::editLocation);
+        launch(loc, "Velocidades rápidas: 0 / 9,3 / 18,6 / 30 / 60 km/h",()->{
+            final double[] speeds={0,9.3,18.6,30,60};
+            final String[] labels={"0,0 km/h · Parado","9,3 km/h","18,6 km/h","30 km/h","60 km/h"};
+            int current=0;
+            for(int i=0;i<speeds.length;i++)if(Math.abs(Control.engine.speedKmh-speeds[i])<0.001)current=i;
+            new AlertDialog.Builder(dialogContext()).setTitle("Velocidade de movimento")
+                .setSingleChoiceItems(labels,current,(d,index)->{
+                    Control.engine.speed(speeds[index]);Control.saveState();host.refresh();d.dismiss();
+                }).setNegativeButton("Cancelar",null).show();
+        });
         launch(loc, "World map", host::openMap);
         joystickSwitch = switchRow(loc, "Show joystick"); joystickSwitch.setChecked(Control.joystickVisible());
         joystickSwitch.setOnCheckedChangeListener((v,checked) -> { if(checked==Control.joystickVisible())return; host.setJoystickVisible(checked); });
@@ -620,7 +630,7 @@ final class SettingsPanel {
                 for(int j=0;j<ranks.length;j++)if(ranks[j]==Control.pvpRank(league)){next=ranks[(j+1)%ranks.length];break;}
                 Control.setPvpRank(league,next);host.refresh();});
             pvpC.addView(row);}
-        caption(pvpC, "PvP keeps a catch whose IVs rank within the chosen top in a league that is on, for it or anything it evolves into. That species must be in PvPoke's top "+Control.PVP_META+" for the league, and it must still fit under the league's CP cap. Ranks allow levels up to 50.");
+        caption(pvpC, "O limite geral de IV (inclusive 100%) não elimina as proteções selecionadas. Se o Pokémon for Top 1 ou estiver dentro do Top configurado em qualquer liga ativada, ele será mantido mesmo abaixo de 100% IV. A checagem inclui evoluções, limites de PC e a lista de "+Control.PVP_META+" espécies relevantes por liga.");
 
         LinearLayout evolveC = group(transfer, "Evolve before transferring");
         evolveTransferSwitch = switchRow(evolveC, "Evolve before transferring");
