@@ -29,6 +29,11 @@ final class AccountProfiles {
     private static volatile String message = "Waiting for game account";
     private static final AccountCommandState commands = new AccountCommandState();
     private static String observed = "";
+    // Never persisted: the authenticated name is used only for exact visual-text matching.
+    private static volatile String authenticatedTrainer = "";
+    static String authenticatedTrainerName(){
+        return verified && !switching && !restarting && !deleting ? authenticatedTrainer : "";
+    }
 
     /**
      * Bounded account-lifecycle diagnostics. Routed through the shared event log so a user report
@@ -102,6 +107,7 @@ final class AccountProfiles {
             if(switching||restarting||deleting||id.equals(observed))return;
             storageMissingNoted=false;
             verified=false; observed=id;
+            authenticatedTrainer="";Control.syncTrainerPrivacyDisplay();
             final long epoch=generation;
             io.execute(()->{
                 try {
@@ -115,7 +121,11 @@ final class AccountProfiles {
                     final AccountProfileStore.Profile actual=found;
                     main.post(()->{
                         if(epoch!=generation)return;
-                        if(actual.id.equals(startupId)){verified=true;message=actual.label;diag("account-state","active account verified");return;}
+                        if(actual.id.equals(startupId)){
+                            authenticatedTrainer=trainer;verified=true;
+                            Control.syncTrainerPrivacyDisplay();
+                            message=actual.label;diag("account-state","active account verified");return;
+                        }
                         switching=true;message="Restoring " + actual.label;diag("account-state",created?"new account profile created; restarting with default settings":"restoring a saved account");
                         try{Control.quiesceAccounts();}catch(IOException error){fail("Could not save outgoing location. Reopen the game.");return;}
                         io.execute(()->{
@@ -129,7 +139,7 @@ final class AccountProfiles {
     }
     static void sessionEnded(){
         verified=false;generation++;
-        main.post(()->{observed="";try{Control.quiesceAccounts();}catch(IOException ignored){}message="Signed out; choose Google or PTC to continue";diag("account-state","session ended; sign-in required");});
+        main.post(()->{observed="";authenticatedTrainer="";Control.syncTrainerPrivacyDisplay();try{Control.quiesceAccounts();}catch(IOException ignored){}message="Signed out; choose Google or PTC to continue";diag("account-state","session ended; sign-in required");});
     }
     static void logoutComplete(){
         main.post(()->{
@@ -151,7 +161,7 @@ final class AccountProfiles {
     });}
     static void switchTo(Activity activity,String id) {
         if(!canSwitch())return;
-        switching=true;verified=false;generation++;diag("account-command","switch requested");
+        switching=true;verified=false;authenticatedTrainer="";Control.syncTrainerPrivacyDisplay();generation++;diag("account-command","switch requested");
         try{Control.quiesceAccounts();}catch(IOException error){fail("Could not save outgoing location. Reopen the game.");return;}
         message="Saving account...";
         io.execute(()->{
