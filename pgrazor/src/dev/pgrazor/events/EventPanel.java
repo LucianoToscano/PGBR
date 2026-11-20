@@ -175,12 +175,12 @@ public final class EventPanel {
         claimed.setText(dev.pgrazor.PtBr.tr("Resgatei os 25 doces no jogo"));layout.addView(claimed);
         android.widget.Button next=new android.widget.Button(ui);
         next.setText(dev.pgrazor.PtBr.tr("Confirmar resgate e preparar próxima parada"));layout.addView(next);
-        final int[] completed={0};
+        final int[] completed={dev.pgrazor.EternatusProgress.confirmed(activity)};
         Runnable refresh=()->{
             excellent.setEnabled(received.isChecked());
             claimed.setEnabled(received.isChecked()&&excellent.isChecked());
             next.setEnabled(received.isChecked()&&excellent.isChecked()&&claimed.isChecked());
-            tally.setText(dev.pgrazor.PtBr.tr("Missões resgatadas nesta sessão: "+completed[0]+" | Doces confirmados: "+(completed[0]*25)));
+            tally.setText(dev.pgrazor.PtBr.tr("Resgates confirmados nesta conta: "+completed[0]+" | Doces informados: "+(completed[0]*25)));
         };
         received.setOnCheckedChangeListener((v,checked)->{
             if(!checked){excellent.setChecked(false);claimed.setChecked(false);}
@@ -193,10 +193,26 @@ public final class EventPanel {
         claimed.setOnCheckedChangeListener((v,checked)->refresh.run());
         next.setOnClickListener(v->{
             if(!received.isChecked()||!excellent.isChecked()||!claimed.isChecked())return;
-            completed[0]++;received.setChecked(false);excellent.setChecked(false);claimed.setChecked(false);
+            if(!dev.pgrazor.EternatusProgress.confirm(activity)){
+                android.widget.Toast.makeText(activity,"Não foi possível salvar o progresso. Tente novamente.",android.widget.Toast.LENGTH_LONG).show();
+                return;
+            }
+            completed[0]=dev.pgrazor.EternatusProgress.confirmed(activity);
+            received.setChecked(false);excellent.setChecked(false);claimed.setChecked(false);
             refresh.run();
         });
         refresh.run();
+        android.widget.Button reset=new android.widget.Button(ui);
+        reset.setText("Zerar contagem confirmada");layout.addView(reset);
+        reset.setOnClickListener(v->new AlertDialog.Builder(ui)
+            .setTitle("Zerar progresso da Rota Doces Eternatus?")
+            .setMessage("A contagem manual de missões confirmadas será zerada nesta conta. Isso não modifica o inventário nem as pesquisas do jogo.")
+            .setNegativeButton("Cancelar",null)
+            .setPositiveButton("Zerar",(d,w)->{
+                if(dev.pgrazor.EternatusProgress.clear(activity)){
+                    completed[0]=0;refresh.run();
+                }else android.widget.Toast.makeText(activity,"Não foi possível zerar o progresso.",android.widget.Toast.LENGTH_LONG).show();
+            }).show());
         TextView note=new TextView(ui);
         note.setText(dev.pgrazor.PtBr.tr("Se a parada entregar outra missão, não marque como recebida. Confira o tempo de espera e o estado da rota antes de seguir."));
         note.setTextSize(13);layout.addView(note);
