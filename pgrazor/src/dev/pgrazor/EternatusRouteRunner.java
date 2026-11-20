@@ -63,6 +63,12 @@ public final class EternatusRouteRunner {
     public static String selectedTemplate() { synchronized (LOCK) { return template; } }
     public static boolean active() { synchronized (LOCK) { return running; } }
     public static String status() { synchronized (LOCK) { return status; } }
+    public static String compactStatus(){
+        String detail=status();
+        int separator=detail.indexOf(" · ");
+        return detail.startsWith("Parada ") && separator>0
+            ? detail.substring(separator+3) : detail;
+    }
     public static int currentStop() { synchronized (LOCK) { return running ? at + 1 : 0; } }
     /** Last visited 1-based position remains available after a failure or cancellation. */
     public static int resumePosition() {
