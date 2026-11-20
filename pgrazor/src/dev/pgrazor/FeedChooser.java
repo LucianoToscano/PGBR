@@ -8,9 +8,9 @@ final class FeedChooser {
     private FeedChooser() {}
 
     static void show(Activity activity) {
-        String[] labels = {"LivePokeMap\nNearby Pokémon, stops, gyms, raids and power spots",
-                           "PoGoCoordinates\nPokémon search by IV, PvP rank and more; sign in with Discord"};
-        AlertDialog choose = ChoiceList.attach(new AlertDialog.Builder(MapTheme.wrap(activity)).setTitle(dev.pgrazor.PtBr.tr("Feeds"))
+        String[] labels = {"LivePokeMap\nPokémon próximos, Poképaradas, Ginásios, Reides e Pontos de Poder",
+                           "PoGoCoordinates\nBusca por IV, Shiny, rankings PvP, tamanho e espécie (conta Discord necessária)"};
+        AlertDialog choose = ChoiceList.attach(new AlertDialog.Builder(MapTheme.wrap(activity)).setTitle(dev.pgrazor.PtBr.tr("Busca de Pokémon e rastreadores"))
             .setNegativeButton(dev.pgrazor.PtBr.tr("Cancel"), null).create(), labels, which -> {
                 if (which == 0) LiveFeedDialog.show(activity); else PogoFeedDialog.show(activity);
             });
