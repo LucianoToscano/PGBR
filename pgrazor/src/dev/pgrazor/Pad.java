@@ -904,11 +904,11 @@ public final class Pad {
             if(style==loadedStyle)return;
             loadedStyle=style;
             builtinBase=builtinThumb=stormRim=stormVortex=null;
-            if(style==1||style==2){
-                String variant=style==1?"eternatus":"hud";
+            if(style==1||style==2||style==4){
+                String variant=style==2?"hud":"eternatus";
                 builtinBase=art("joystick-"+variant+"-base.webp");
                 builtinThumb=art("joystick-"+variant+"-thumb.webp");
-                if (style == 1) {
+                if (style == 1 || style == 4) {
                     stormRim = art("joystick-eternatus-rim.webp");
                     stormVortex = art("joystick-eternatus-vortex.webp");
                 }
@@ -941,28 +941,44 @@ public final class Pad {
             float radius=Math.max(dp(8),Math.min(cx,cy)-dp(12));
             loadArtIfNeeded();
             int style=Control.joystickStyle();
-            if((style==1||style==2)&&builtinBase!=null&&builtinThumb!=null){
+            if((style==1||style==2||style==4)&&builtinBase!=null&&builtinThumb!=null){
                 float outer=Math.max(dp(16),Math.min(cx,cy)-dp(2));
                 paint.setStyle(Paint.Style.FILL);
                 paint.setAlpha(255);
                 paint.setColor(Color.WHITE);
                 artBounds.set(cx-outer,cy-outer,cx+outer,cy+outer);
-                boolean stormOn = style == 1 && Control.joystickEternatusEffects();
+                boolean stormOn = (style == 1 || style == 4) && Control.joystickEternatusEffects();
+                // The new style crossfades from the clean original art to a stormy vortex and back.
+                // Legacy style 4 retains the previous continuously rotating vortex without morphing.
+                float stormMix = style == 1 && stormOn
+                    ? (float)(.5 - .5 * Math.cos(2 * Math.PI * (SystemClock.uptimeMillis() % 8000L) / 8000d))
+                    : 1f;
                 if (stormOn && stormVortex != null && stormRim != null) {
                     int saved = canvas.save();
                     float angle = (SystemClock.uptimeMillis() % 18000L) * (360f / 18000f);
                     canvas.rotate(angle, cx, cy);
+                    paint.setAlpha(Math.round(255 * stormMix));
                     canvas.drawBitmap(stormVortex, null, artBounds, paint);
                     canvas.restoreToCount(saved);
                     canvas.drawBitmap(stormRim, null, artBounds, paint);
+                    if (style == 1) {
+                        // In the clear phase the map stays readable and the original geometry returns.
+                        paint.setAlpha(Math.round(255 * (1f - stormMix)));
+                        canvas.drawBitmap(builtinBase, null, artBounds, paint);
+                    }
+                    paint.setAlpha(255);
                 } else {
                     canvas.drawBitmap(builtinBase,null,artBounds,paint);
                 }
-                float thumbR=outer*(style==1?.355f:.319f);
+                float thumbR=outer*(style==1||style==4?.355f:.319f);
                 float travel=Math.max(0,outer-thumbR-dp(4));
                 float knobX=cx+x*travel,knobY=cy+y*travel;
-                if(stormOn)
+                if(stormOn && stormMix > .02f){
+                    // Layer alpha keeps the lightning from popping abruptly during the morph.
+                    int fxSave=canvas.saveLayerAlpha(0,0,getWidth(),getHeight(),Math.round(255*stormMix));
                     drawEternatusEffects(canvas,cx,cy,outer,knobX,knobY,thumbR);
+                    canvas.restoreToCount(fxSave);
+                }
                 // Only the circular hub moves; the arrows, shield and outer artwork remain fixed.
                 canvas.drawBitmap(builtinThumb,null,
                     new RectF(knobX-thumbR,knobY-thumbR,knobX+thumbR,knobY+thumbR),paint);
