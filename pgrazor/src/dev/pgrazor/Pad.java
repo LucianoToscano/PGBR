@@ -163,7 +163,7 @@ public final class Pad {
         trainerAliasMask.setBackground(rounded(Color.rgb(20,27,38),5));
         trainerAliasMask.setPadding(dp(4),0,dp(4),0);
         trainerAliasMask.setVisibility(View.GONE);
-        trainerAliasMask.setContentDescription("Apelido de privacidade do treinador. Arraste para cobrir o nome no mapa.");
+        trainerAliasMask.setContentDescription(dev.pgrazor.PtBr.tr("Apelido de privacidade do treinador. Arraste para cobrir o nome no mapa."));
         FrameLayout.LayoutParams aliasLayout=new FrameLayout.LayoutParams(dp(178),dp(30),Gravity.LEFT|Gravity.BOTTOM);
         aliasLayout.leftMargin=dp(3);aliasLayout.bottomMargin=dp(5);
         parent.addView(trainerAliasMask,aliasLayout);
