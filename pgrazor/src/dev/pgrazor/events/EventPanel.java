@@ -212,6 +212,13 @@ public final class EventPanel {
         startAuto.setAllCaps(false);startAuto.setText("Ativar rota");layout.addView(startAuto);
         android.widget.Button stopAuto=new android.widget.Button(ui);
         stopAuto.setAllCaps(false);stopAuto.setText("Desativar");layout.addView(stopAuto);
+        android.widget.Button skipMissing=new android.widget.Button(ui);
+        skipMissing.setAllCaps(false);skipMissing.setText("Pular parada sem missão (manual)");
+        layout.addView(skipMissing);
+        TextView diagnostic=new TextView(ui);
+        diagnostic.setTextSize(12);
+        diagnostic.setText("O avanço automático exige resgate real da missão. Se uma parada não tiver pesquisa, pule manualmente; isso não registra doces.");
+        layout.addView(diagnostic);
         TextView tally = new TextView(ui);
         tally.setPadding(0,pad/2,0,0);
         tally.setTextSize(13);
@@ -238,7 +245,7 @@ public final class EventPanel {
                 .setNegativeButton("Cancelar",null)
                 .setPositiveButton("Iniciar e teleportar",(d,w)->{
                     if(!dev.pgrazor.EternatusRouteRunner.start(activity))
-                        android.widget.Toast.makeText(activity,"Não foi possível iniciar. Confira rota, missão observada e prontidão do jogo.",android.widget.Toast.LENGTH_LONG).show();
+                        android.widget.Toast.makeText(activity,dev.pgrazor.EternatusRouteRunner.status(),android.widget.Toast.LENGTH_LONG).show();
                     else dialog.dismiss();
                 }).show();
         });
@@ -246,6 +253,16 @@ public final class EventPanel {
             dev.pgrazor.EternatusRouteRunner.stop("Rota desativada.");
             dev.pgrazor.EternatusMission.stop("Desativado.");
         });
+        skipMissing.setOnClickListener(v->new AlertDialog.Builder(ui)
+            .setTitle("Pular esta parada sem resgate?")
+            .setMessage("Avançar manualmente para a próxima coordenada? Esta ação NÃO confirma uma missão, NÃO registra doces e respeita o cooldown.")
+            .setNegativeButton("Cancelar",null)
+            .setPositiveButton("Pular parada",(d,w)->{
+                if(!dev.pgrazor.EternatusRouteRunner.skipCurrentStop())
+                    android.widget.Toast.makeText(activity,
+                        "Não foi possível pular: aguarde cooldown, verifique a rota ou encerre a última parada.",
+                        android.widget.Toast.LENGTH_LONG).show();
+            }).show());
         android.os.Handler clock=new android.os.Handler(android.os.Looper.getMainLooper());
         bind(activity,dialog,()->clock.removeCallbacksAndMessages(null));
         dialog.show();
@@ -262,6 +279,8 @@ public final class EventPanel {
                 verifiedReward.setEnabled(!active);
                 startAuto.setEnabled(!active && planned != null && verifiedReward.isChecked() && !selected[0].isEmpty());
                 stopAuto.setEnabled(active || dev.pgrazor.EternatusMission.active());
+                skipMissing.setEnabled(active && dev.pgrazor.EternatusRouteRunner.totalStops() >
+                    dev.pgrazor.EternatusRouteRunner.currentStop());
                 tally.setText("Resgates registrados nesta conta: " + dev.pgrazor.EternatusProgress.confirmed(activity));
                 clock.postDelayed(this,1000);
             }
