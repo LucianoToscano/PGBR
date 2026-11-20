@@ -15,14 +15,14 @@ import java.util.List;
  */
 public final class EternatusRouteRunner {
     private static final Object LOCK = new Object();
-    private static final int MAX_STOPS = 400;
+    private static final int MAX_STOPS = GpxCodec.MAX_POINTS; // Full GPX route capacity, including 550+ stops.
     private static GpxRoute planned;
     private static String template = "";
     private static boolean running, previousVgpOverlay, previousVgpEnabled, previousQuickSpin;
     private static int previousThrowGrade, previousThrowVariety;
     private static boolean awaitingClaim, advancementQueued;
     private static final java.util.HashSet<String> confirmedQuestIds=new java.util.HashSet<>();
-    private static int at;
+    private static int at, resumeAt;
     private static long arrivedAt, lastTick;
     private static String status = "Nenhuma rota GPX selecionada.";
     private static String lastResearchIssue = "";
@@ -33,8 +33,10 @@ public final class EternatusRouteRunner {
         if (value == null || value.size() > MAX_STOPS) return false;
         synchronized (LOCK) {
             if (running) return false;
+            if(planned != value)resumeAt = 0;
             planned = value;
-            status = "GPX preparado: " + value.name + " · " + value.size() + " paradas.";
+            status = "GPX preparado: " + value.name + " · " + value.size()
+                + " paradas. Reinício selecionável de 1 a " + value.size() + ".";
             return true;
         }
     }
@@ -58,6 +60,10 @@ public final class EternatusRouteRunner {
     public static boolean active() { synchronized (LOCK) { return running; } }
     public static String status() { synchronized (LOCK) { return status; } }
     public static int currentStop() { synchronized (LOCK) { return running ? at + 1 : 0; } }
+    /** Last visited 1-based position remains available after a failure or cancellation. */
+    public static int resumePosition() {
+        synchronized (LOCK) { return planned == null ? 1 : Math.max(1,Math.min(planned.size(),resumeAt+1)); }
+    }
     public static int totalStops() { synchronized (LOCK) { return planned == null ? 0 : planned.size(); } }
 
     /** Human-readable, specific preflight reason used by the Event panel. */
@@ -78,7 +84,7 @@ public final class EternatusRouteRunner {
         }
         if (route == null) return "Escolha ou importe uma rota GPX primeiro.";
         if (route.size() <= 0 || route.size() > MAX_STOPS)
-            return "A rota GPX precisa conter de 1 a 400 paradas válidas.";
+            return "A rota GPX precisa conter de 1 a " + MAX_STOPS + " paradas válidas.";
         if (!ResearchPreferences.validTemplate(chosen))
             return "Selecione a missão exata observada no jogo.";
         boolean present = false;
@@ -107,6 +113,11 @@ public final class EternatusRouteRunner {
      * A controller for another automated travel mode is never displaced.
      */
     public static boolean start(Activity activity) {
+        return start(activity, resumePosition());
+    }
+
+    /** Start at a user-selected 1-based GPX point, without replaying prior coordinates. */
+    public static boolean start(Activity activity,int startAtOneBased) {
         String problem = readinessError(activity);
         if (!problem.isEmpty()) {
             synchronized (LOCK) { status = problem; }
@@ -116,6 +127,10 @@ public final class EternatusRouteRunner {
         final String exactTemplate;
         synchronized (LOCK) {
             if (running || planned == null || planned.size() > MAX_STOPS || template.isEmpty()) return false;
+            if(startAtOneBased<1 || startAtOneBased>planned.size()){
+                status="Escolha uma posição válida entre 1 e "+planned.size()+".";
+                return false;
+            }
             route = planned;
             exactTemplate = template;
         }
@@ -133,13 +148,14 @@ public final class EternatusRouteRunner {
             previousThrowGrade = Control.throwRating();
             previousThrowVariety = Control.throwVariety();
             running = true;
-            at = 0;
+            at = startAtOneBased - 1;
+            resumeAt = at;
             lastTick = 0;
             lastResearchIssue = "";
             awaitingClaim = false;
             advancementQueued = false;
             confirmedQuestIds.clear();
-            status = "Preparando a primeira parada.";
+            status = "Preparando a parada " + (at+1) + "/" + route.size() + ".";
         }
         // Preserve old preferences so Cancel restores the user's previous mode.
         Control.setVgpEnabled(false);
@@ -148,8 +164,8 @@ public final class EternatusRouteRunner {
         Control.setThrowVariety(0);
         Control.setThrowGrade(3);
         Control.setQuickSpinEnabled(false); // Never spin until the destination cooldown is clear.
-        if (!travel(0)) {
-            stop("Falha ao posicionar a primeira parada.");
+        if (!travel(startAtOneBased-1)) {
+            stop("Falha ao posicionar a parada selecionada.");
             return false;
         }
         Control.event("eternatus-route", "started; stops=" + route.size());
@@ -164,11 +180,12 @@ public final class EternatusRouteRunner {
             awaitingClaim = false;
             advancementQueued = false;
             at = destinationIndex;
+            resumeAt = at;
             lastResearchIssue = "";
             arrivedAt = SystemClock.elapsedRealtime();
             status = "Teletransportando para a parada " + (at + 1) + "/" + route.size() + ".";
         }
-        double[] point = route.points()[destinationIndex];
+        double[] point = route.point(destinationIndex);
         try {
             if (!Control.active() || !Control.canEnable()) return false;
             Control.setVgpEnabled(false);
@@ -203,7 +220,7 @@ public final class EternatusRouteRunner {
         final long arrived;
         synchronized (LOCK) { route = planned; index = at; arrived = arrivedAt; }
         if (route == null) { stop("Rota GPX indisponível."); return; }
-        double[] point = route.points()[index];
+        double[] point = route.point(index);
         if (CooldownState.distance(point[0], point[1], Control.currentLatitude(), Control.currentLongitude()) > 0.2) {
             stop("Coordenada alterada durante a execução. Nenhuma nova ação será iniciada.");
             return;
