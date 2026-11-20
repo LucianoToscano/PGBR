@@ -7,10 +7,10 @@ import android.view.*;
 import android.widget.*;
 
 /**
- * Shared PGRazor settings styling. Single home for the theme palette and the recursive
+ * Shared PGBR settings styling. Single home for the theme palette and the recursive
  * {@code styleTree} implementation so {@link Pad} (overlays/launcher/joystick) and
  * {@link SettingsPanel} (the settings body) apply identical colors without duplicating it.
- * PGRazorX: the palette and sizes come from the {@link FeedTheme} game-style design system.
+ * PGBRX: the palette and sizes come from the {@link FeedTheme} game-style design system.
  */
 /** PR #2 settings widgets (RowButton, styleTree), used only by the PoGoCoordinates feed. */
 final class FeedUi {

@@ -19,7 +19,7 @@
 
 - **Shiny Scanner (Experimental):** Automation can check wild Pokémon within 80 m for shinies without catching them. A shiny gets a popup, a phone notification, a ✨ above it on the map and a badge; walking stops and the shiny is held so it can still be caught after it leaves the map. Catch it on the popup opens the encounter, or throws for you once it has left the map. Speed, species and a 24-hour encounter limit are adjustable.
 - **VGP+ Catch only shinies:** VGP+ still opens every Pokémon but throws only at shinies and leaves the rest on the map.
-- **Encounter counter:** Wild encounters per account over a rolling 24 hours, shown next to the PGRazor title with an optional map badge. It counts encounters made on this device while PGRazor is running.
+- **Encounter counter:** Wild encounters per account over a rolling 24 hours, shown next to the PGBR title with an optional map badge. It counts encounters made on this device while PGBR is running.
 - **Auto-Raid Stay within:** Limits raids to 1, 2, 5 or 10 km from where the session started, and returns there once when nothing is left in range. No limit is the default.
 
 ### Improvements & fixes
@@ -56,7 +56,7 @@
 - **Auto Throw:** Throws has a default-off toggle for automatic throws using your throw settings, selected ball and berry, with Always Hit, plus optional Catch on map for tapped wild, lure and incense Pokémon, with a pin above the one being caught. A tap made while VGP+ is busy waits for it, caught Pokémon are removed from the map, and reward Pokémon from Go Pass and research are left for manual throws. Auto-Raid shares the throwing logic and always uses it, even when the toggle is off, with built-in Excellent curveballs.
 - **Go Wild November 2026:** Events has separate, default-off Safari Ball preferences for Mighty Pokémon in VGP+ and Auto Ball. Normal ball settings apply when Safari Balls are unavailable or the encounter is ineligible.
 - **Auto-Raid:** Automation can find nearby matching raids, travel to them, wait for enough players, battle using your auto-attack settings, and attempt the bonus catch. Run it by going to Automation -> Auto-Raid
-- **PGRazor Root (experimental):** A separate installer loads PGRazor into the official game with logs, settings backups, account switching, an on/off switch that takes effect on the next game launch, and an always-available Reboot button. This update needs one reboot to install the new loader; switching afterward needs no reboot, and the choice survives updates.
+- **PGBR Root (experimental):** A separate installer loads PGBR into the official game with logs, settings backups, account switching, an on/off switch that takes effect on the next game launch, and an always-available Reboot button. This update needs one reboot to install the new loader; switching afterward needs no reboot, and the choice survives updates.
 
 ### Improvements & fixes
 
@@ -72,7 +72,7 @@
 - Added more cutscene skips, including the "New level unlocks" and other feature-unlock cards. A hidden level-up screen no longer blocks taps for up to 30 seconds.
 - Added a startup fallback for phones where features sometimes did not load until the game was restarted. Exported logs now record the reason if it still happens, plus more account and settings details.
 - Shundo Sniper: stops and asks you to restart the game when the map stops loading Pokémon, instead of teleporting with no results. It also uses less data and searches the map less often while waiting.
-- Run logs keep more history, and PGRazor no longer leaves 5 MB of old files behind each time the game starts.
+- Run logs keep more history, and PGBR no longer leaves 5 MB of old files behind each time the game starts.
 
 ## v0.2.5
 
@@ -132,7 +132,7 @@
 
 - **Skip cutscenes:** Off by default; turn it on under Settings > General Settings.
 - **Smart healing:** Heals damaged Pokémon after battles, periodically, or both, choosing the mix of potions (and optionally revives) that wastes the least, so a Pokémon missing 5 HP gets a Potion, not a Max Potion. Choose the HP threshold (below 25%, 50% or 75%, or any HP missing) under Settings > Team Rocket, Gyms, Raids & Dynamax.
-- **Shundo Sniper (experimental):** Teleports to 100% IV Pokémon from the PGRazor 100% IV feed (no sign-in needed, you're welcome you greedy bastards), LivePokeMap and PoGoCoordinates, checks each one in the background for shiny and catches only shinies. A shiny found during a cooldown is held until the cooldown ends, then caught. Open it from Automation. Its constant teleporting raises the risk of an account warning or ban, so use an alt account.
+- **Shundo Sniper (experimental):** Teleports to 100% IV Pokémon from the PGBR 100% IV feed (no sign-in needed, you're welcome you greedy bastards), LivePokeMap and PoGoCoordinates, checks each one in the background for shiny and catches only shinies. A shiny found during a cooldown is held until the cooldown ends, then caught. Open it from Automation. Its constant teleporting raises the risk of an account warning or ban, so use an alt account.
 
 ### Improvements & fixes
 
@@ -165,7 +165,7 @@
 [Full release notes](docs/releases/v0.2.0.md)
 
 - **Research:** Auto-claims completed field research, auto-deletes the field research tasks you select from a list grouped into Item, Encounter and Event, and can catch waiting field research encounters without the encounter screen, applying your transfer rules. Open it from the quick menu.
-- **Hide overlay:** A new quick menu entry makes the game look stock after a confirmation: it hides every PGRazor button, status bar and message, plus the in-game IV text. Tap the screen with three fingers at once to show them again.
+- **Hide overlay:** A new quick menu entry makes the game look stock after a confirmation: it hides every PGBR button, status bar and message, plus the in-game IV text. Tap the screen with three fingers at once to show them again.
 - **Storage list IVs:** Shows each Pokémon's IVs under its CP in the Pokémon storage list, as attack/defense/HP, a percentage, or both, colored like the encounter IV overlay. All IV display settings (inventory, encounter and storage list) are now together under Settings > Location & overlays > IV Display.
 - **Encounter IVs:** The encounter IV overlay now also shows on field research reward encounters, not only wild spawns.
 - **Always Hit:** Now also works when catching after a Max Battle.
@@ -287,7 +287,7 @@ These controls are included in v0.1.7-experimental.3.
 **Gym defenders**
 
 1. In Pokémon GO's Pokémon storage, open **Tags**, create a tag named `Gym`, and apply it to Pokémon you want to deploy. `#Gym` is also recognized, but `Gym` is the simplest name to use.
-2. Open **PGRazor Settings → Raids, gyms & Dynamax → Gym Slotter & Berry Feeder**, then enable **Auto-deploy to open Gym slots**.
+2. Open **PGBR Settings → Raids, gyms & Dynamax → Gym Slotter & Berry Feeder**, then enable **Auto-deploy to open Gym slots**.
 3. Start the feature with its gym-and-berry overlay icon or **Run Gym Slotter & Berry Feeder**, then stay on the game map near a friendly gym within 40 m with an open slot. VGP does not need to be running. The slotter prefers eligible tagged defenders; favorites, your current buddy, injured or deployed Pokémon, and other ineligible defenders are skipped. It also avoids species already defending that gym.
 4. Leave **Allow lowest-CP fallback** off to restrict deployment to your tagged choices. Enable it only if you also want eligible untagged Pokémon considered when none of your tagged defenders can be used. Deployment does not remove the `Gym` tag.
 
@@ -295,7 +295,7 @@ Deployment and berry feeding have separate selection switches; the overlay start
 
 **Batch evolution**
 
-1. Create a tag such as `Evolve` in Pokémon storage and apply it only to Pokémon you want evolved. You can use another tag name; enter that name in **PGRazor Settings → Batch evolution**.
+1. Create a tag such as `Evolve` in Pokémon storage and apply it only to Pokémon you want evolved. You can use another tag name; enter that name in **PGBR Settings → Batch evolution**.
 2. Optionally check **Remove this tag after each confirmed evolution** before previewing. It defaults off. When enabled, it removes only the selected tag from successful evolutions; other tags and skipped or failed entries are preserved.
 3. Select **Preview batch** and review the eligible count, candy/item costs, and skip reasons. Favorites, your buddy, deployed Pokémon, eggs, Shadow/purified Pokémon, and conditional or ambiguous evolution branches are skipped.
 4. Activate a Lucky Egg yourself if wanted, then choose **Start batch** and confirm. Each selected Pokémon evolves once per batch, even if another evolution is available afterward. **Stop** prevents further requests; an in-flight action may still finish.
@@ -330,7 +330,7 @@ If an error appears, check Pokémon storage and the completed count before retry
 
 - Add experimental account profiles under Settings for Google/PTC sign-in, with separate settings, last location, cooldown history, favorites and saved routes. Switching stops automation and restores an encrypted saved session after restarting; each account needs an initial sign-in, with normal sign-in fallback when its session expires.
 
-- Show the PGRazor version beside the theme button in Settings.
+- Show the PGBR version beside the theme button in Settings.
 
 - Automatically dismiss Adventure Sync prompts when location spoofing is enabled and Android location permission is denied.
 
@@ -427,7 +427,7 @@ Quick menu, map layers and routes, LivePokeMap integration, movable overlays, un
 
 ## Earlier pre-release work
 
-- Rename the project, Java namespace, assets, settings, logs, signing alias, and tooling to PGRazor throughout; remove legacy settings migrations. A fresh installation is required.
+- Rename the project, Java namespace, assets, settings, logs, signing alias, and tooling to PGBR throughout; remove legacy settings migrations. A fresh installation is required.
 
 - Added independent XXS and XXL keep rules for caught-Pokémon transfers, shared by manual catches and VGP.
 - Changed the VGP settings switch to control overlay visibility; the overlay power button starts/stops VGP and displays ON/OFF.

@@ -24,7 +24,7 @@ import android.widget.Switch;
 import android.widget.TextView;
 
 /**
- * The single design system for every PGRazor surface (settings panel, quick menu, overlays and
+ * The single design system for every PGBR surface (settings panel, quick menu, overlays and
  * every dialog). The light theme follows the game's own settings screen: a lime-to-mint gradient
  * page, white rounded cards with hairline dividers, slate-teal bold text, grey chevrons, teal
  * values and toggles, gradient pill buttons and a round teal close button. The dark theme is a
@@ -327,7 +327,7 @@ final class FeedTheme {
             ? android.R.style.Theme_Material_Dialog_Alert : android.R.style.Theme_Material_Light_Dialog_Alert);
     }
     /**
-     * PGRazorX: a dialog is drawn once before its OnShowListener restyles it, so for a frame the stock Material
+     * PGBRX: a dialog is drawn once before its OnShowListener restyles it, so for a frame the stock Material
      * dialog showed through. Every dialog built on this context (its layout is inflated through it) holds back that
      * first frame until the show listener has run; at most a few frames are held, so a dialog is never left blank.
      */

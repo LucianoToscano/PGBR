@@ -31,7 +31,7 @@ export const featureGuides = [
     category: 'Map',
     summary:
       'A full-screen map with place search, loaded nearby layers, a live location dot, and per-pin Walk or Teleport.',
-    where: 'Quick Menu > Map (full screen, in your chosen PGRazor theme).',
+    where: 'Quick Menu > Map (full screen, in your chosen PGBR theme).',
     steps: [
       'Open the Quick Menu and tap Map.',
       'Search for a business, park, landmark, or address; results are biased toward the area you are viewing and selecting one centers the red destination pin.',
@@ -97,7 +97,7 @@ export const featureGuides = [
     where: 'Quick Menu > In-game Routes (experimental).',
     steps: [
       'Open In-game Routes from the Quick Menu and choose a completion limit from 1 to 50.',
-      'Start — PGRazor selects a nearby Route by travel to its start plus its length, then walks the recorded path.',
+      'Start — PGBR selects a nearby Route by travel to its start plus its length, then walks the recorded path.',
       'Let it wait for the game’s reward confirmation before continuing; it can reverse reversible Routes and skips Routes already completed in that run.',
       'Tap the draggable Routes icon for the current path and run status.',
       'Press Stop to end automated movement.',
@@ -159,13 +159,13 @@ export const featureGuides = [
     title: 'Auto throw & catch on map',
     category: 'Catching',
     summary:
-      'Let PGRazor throw for you in encounters, or catch a tapped Pokémon straight from the map without opening the encounter.',
+      'Let PGBR throw for you in encounters, or catch a tapped Pokémon straight from the map without opening the encounter.',
     where: 'Settings > Throws > Auto throw and Catch on map (tap Pokémon).',
     steps: [
       'In Throws, turn on Auto throw. It is off by default.',
       'Open an encounter as usual. Each throw uses your throw rating, curveball, selected ball, and berry priority, with Always Hit.',
       'To catch without the encounter screen, also turn on Catch on map (tap Pokémon), then tap a Pokémon on the map.',
-      'During a map catch, watch the badge near the PGRazor icon: WAIT, CATCH, RETRY, then CAUGHT or FLED. A pin sits above the Pokémon being caught.',
+      'During a map catch, watch the badge near the PGBR icon: WAIT, CATCH, RETRY, then CAUGHT or FLED. A pin sits above the Pokémon being caught.',
     ],
     notes: [
       'Catch on map works for wild, lure, and incense Pokémon. Any other kind opens the normal encounter, where Auto throw takes over.',
@@ -386,7 +386,7 @@ export const featureGuides = [
     steps: [
       'Read the warning first: constant teleporting and remote catching raise the risk of an account warning or ban. Use an alt account, not your main.',
       'Open Automation and choose Shundo Sniper (Experimental).',
-      'Pick where sightings come from: the PGRazor feed, LivePokeMap with your own sign-in, or PoGoCoordinates, which is slower.',
+      'Pick where sightings come from: the PGBR feed, LivePokeMap with your own sign-in, or PoGoCoordinates, which is slower.',
       'Optionally limit it with Shundo Sniper species, and set Time between teleports.',
       'Turn on Shundo Sniper. Its card shows progress; tap Dark to black out the screen and save battery, and tap the screen to bring the game back.',
     ],
@@ -628,7 +628,7 @@ export const featureGuides = [
     ],
     notes: [
       'Special, timed, and story research stay manual, and gym bonus tasks are never deleted.',
-      'Tasks appear in the list as the game gives them to you while PGRazor runs.',
+      'Tasks appear in the list as the game gives them to you while PGBR runs.',
       'Auto-catch uses your VGP+ ball and throw settings, and each throw uses a ball. Caught Pokémon follow your transfer rules, including Keep All. It works alongside VGP.',
       'If you open a research reward encounter yourself, Auto throw leaves it for you to throw by hand.',
     ],
@@ -637,11 +637,11 @@ export const featureGuides = [
     id: 'hide-overlay',
     title: 'Hide overlay',
     category: 'Interface',
-    summary: 'Make the game look stock by hiding every PGRazor control, status, and IV text.',
+    summary: 'Make the game look stock by hiding every PGBR control, status, and IV text.',
     where: 'Quick Menu > Hide overlay.',
     steps: [
       'Open the Quick Menu and tap Hide overlay, then confirm.',
-      'Every PGRazor button, status bar, message, and in-game IV text disappears.',
+      'Every PGBR button, status bar, message, and in-game IV text disappears.',
       'Tap the screen with three fingers at once to show them again.',
     ],
     notes: [
@@ -690,25 +690,25 @@ export const featureGuides = [
   },
   {
     id: 'pgrazor-root',
-    title: 'PGRazor Root (experimental)',
+    title: 'PGBR Root (experimental)',
     category: 'Reference',
     summary:
-      'Run PGRazor inside the official Pokémon GO app on a rooted device, with no patched game APK.',
-    where: 'A separate download: PGRazor-Root.apk from the release page.',
+      'Run PGBR inside the official Pokémon GO app on a rooted device, with no patched game APK.',
+    where: 'A separate download: PGBR-Root.apk from the release page.',
     steps: [
       'Check your setup: Magisk 27 or newer, KernelSU, or APatch. KernelSU and APatch also need a Zygisk provider.',
-      'Install the official Pokémon GO version named in the release notes, then install PGRazor-Root.apk and open it.',
+      'Install the official Pokémon GO version named in the release notes, then install PGBR-Root.apk and open it.',
       'Grant the installer root access in your root manager and confirm the game version it shows matches yours.',
       'Tap Install module, then Reboot. Installing or updating the module needs one reboot.',
-      'Open Pokémon GO. The PGRazor panel appears when the module has started.',
-      'To switch PGRazor off or on later, use the switch in the installer. It takes effect the next time the game starts, with no reboot.',
+      'Open Pokémon GO. The PGBR panel appears when the module has started.',
+      'To switch PGBR off or on later, use the switch in the installer. It takes effect the next time the game starts, with no reboot.',
     ],
     notes: [
       'Experimental. It is tested less widely than the regular APK, and native features can still fail to load on some devices.',
-      'The game’s APK and signing certificate are not modified. The module only runs for the exact game version the release supports; on any other version PGRazor stays off.',
+      'The game’s APK and signing certificate are not modified. The module only runs for the exact game version the release supports; on any other version PGBR stays off.',
       'Your on or off choice survives module updates. Switching off leaves the module installed; remove it in your root manager to uninstall.',
       'Logs, settings backups, and account switching work as in the regular build.',
-      'PGRazor-Root-module.zip is the same module for installing through your root manager by hand.',
+      'PGBR-Root-module.zip is the same module for installing through your root manager by hand.',
     ],
   },
   {
@@ -729,7 +729,7 @@ export const featureGuides = [
       'Saved sessions are stored encrypted on this device and excluded from settings exports. Passwords are not saved.',
       'If the sign-in choices are missing while you are signed out, Accounts > Reset sign-in choices restarts the game and asks for your date of birth again.',
       'LivePokeMap authentication is shared; its filters are separate for each profile.',
-      'Account switching also works in PGRazor Root.',
+      'Account switching also works in PGBR Root.',
     ],
   },
 ];

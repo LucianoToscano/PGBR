@@ -4,10 +4,10 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" type="image/svg+xml" href="%BASE_URL%logo.svg" />
-    <title>PGBR — smoother Pokémon GO sessions</title>
+    <title>PGBR-v0.00.01-LT — Edição brasileira</title>
     <meta
       name="description"
-      content="PGBR is a compact, open-source Android interface for Pokémon GO: location controls, catching helpers, and optional automation. One APK for ARM64 Android phones and the MuMu emulator, no root required."
+      content="PGBR-v0.00.01-LT: interface em português brasileiro, localização, joystick, rotas e ferramentas para Pokémon GO no Android ARM64."
     />
     <meta name="color-scheme" content="dark light" />
     <meta name="theme-color" content="#141b25" />
@@ -19,12 +19,12 @@
     />
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://github.com/LucianoToscano/PGBR" />
-    <meta property="og:image" content="https://github.com/LucianoToscano/PGBRimages/main-menu.png" />
+    <meta property="og:image" content="https://raw.githubusercontent.com/LucianoToscano/PGBR/main/pgrazor/branding/pgrazor.svg" />
     <!-- Apply the saved theme before first paint (default dark) to avoid a flash. -->
     <script>
       (function () {
         try {
-          var stored = localStorage.getItem('pgrazor-theme');
+          var stored = localStorage.getItem('pgbr-theme');
           document.documentElement.dataset.theme = stored === 'light' ? 'light' : 'dark';
         } catch (error) {
           document.documentElement.dataset.theme = 'dark';
@@ -35,7 +35,7 @@
   </head>
   <body>
     <div id="root"></div>
-    <noscript>PGBR is an open-source Android toolkit for Pokémon GO. <a href="https://github.com/LucianoToscano/PGBR/actions/workflows/pgbr-build-full-ptbr-candidate.yml">Download the latest release</a>. Enable JavaScript to explore the settings guide.</noscript>
+    <noscript>PGBR é uma ferramenta experimental independente para Android. <a href="https://github.com/LucianoToscano/PGBR/actions/workflows/pgbr-build-full-ptbr-candidate.yml">Baixar a versão de teste</a>. Enable JavaScript to explore the settings guide.</noscript>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

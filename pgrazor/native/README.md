@@ -1,4 +1,4 @@
-# PGRazor native pilot
+# PGBR native pilot
 
 See [migration gates and build instructions](../../docs/NATIVE_MIGRATION.md).
 

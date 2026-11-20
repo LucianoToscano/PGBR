@@ -10,9 +10,9 @@ import GuideDetail from './components/GuideDetail.jsx';
 import { featureGuides } from './components/guideData.js';
 import { useTheme } from './hooks/useTheme.js';
 
-const HOME_TITLE = 'PGBR — smoother Pokémon GO sessions';
+const HOME_TITLE = 'PGBR-v0.00.01-LT — edição brasileira';
 const HOME_DESCRIPTION =
-  'PGBR is a compact, open-source Android interface for Pokémon GO: location controls, catching helpers, and optional automation. One APK for ARM64 Android phones and the MuMu emulator, no root required.';
+  'PGBR: controles de localização, joystick, rotas e opções de automação em português brasileiro para Android ARM64.';
 
 // Query-string routing for a static GitHub Pages build (base /PGBR/):
 //   ?guide=all  → the feature-guide index

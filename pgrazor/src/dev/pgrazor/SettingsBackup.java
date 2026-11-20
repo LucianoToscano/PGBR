@@ -41,7 +41,7 @@ final class SettingsBackup {
             dialog.setCancelable(false);dialog.show();
         }else activity.setContentView(scroll);
     }
-    private File rootedFile(){File dir=activity.getExternalFilesDir(null);return dir==null?null:new File(dir,"PGRazor-settings.json");}
+    private File rootedFile(){File dir=activity.getExternalFilesDir(null);return dir==null?null:new File(dir,"PGBR-settings.json");}
     private void pick(int code){
         if(PgAssets.rooted()){
             File file=rootedFile();
@@ -52,7 +52,7 @@ final class SettingsBackup {
             return;
         }
         Intent i=new Intent(code==EXPORT?Intent.ACTION_CREATE_DOCUMENT:Intent.ACTION_OPEN_DOCUMENT).addCategory(Intent.CATEGORY_OPENABLE).setType("application/json");
-        if(code==EXPORT)i.putExtra(Intent.EXTRA_TITLE,"PGRazor-settings.json");
+        if(code==EXPORT)i.putExtra(Intent.EXTRA_TITLE,"PGBR-settings.json");
         try{activity.startActivityForResult(i,code);}catch(android.content.ActivityNotFoundException e){status.setText(dev.pgrazor.PtBr.tr("No file picker is available."));}
     }
     void result(int request,int result,Intent data){
@@ -83,7 +83,7 @@ final class SettingsBackup {
     }
     boolean isBusy(){return busy;}
     private static synchronized JSONObject snapshot(Context context)throws Exception{
-        JSONObject result=new JSONObject();result.put("format","PGRazor settings");result.put("version",1);result.put("speedKmh",Control.engine.speedKmh);
+        JSONObject result=new JSONObject();result.put("format","PGBR settings");result.put("version",1);result.put("speedKmh",Control.engine.speedKmh);
         JSONObject settings=new JSONObject();Properties p=Control.exportSettings();
         for(String key:SettingsBackupRules.SETTINGS)if(p.containsKey(key))settings.put(key,p.getProperty(key));result.put("settings",settings);
         JSONObject prefs=new JSONObject();for(int i=0;i<SCOPES.length;i++){

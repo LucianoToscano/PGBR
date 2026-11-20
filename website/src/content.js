@@ -6,8 +6,8 @@ export const links = {
   releasesCurrent:
     'https://github.com/LucianoToscano/PGBR/actions/workflows/pgbr-build-full-ptbr-candidate.yml',
   github: 'https://github.com/LucianoToscano/PGBR',
-  discord: 'https://discord.gg/9QqfkDSQX3',
-  kofi: 'https://ko-fi.com/pgrazor',
+  discord: 'https://github.com/jpitty03/PGRazor',
+  kofi: 'https://github.com/LucianoToscano/PGBR/blob/main/THIRD_PARTY.md',
 };
 
 export const nav = [
@@ -136,7 +136,7 @@ export const steps = [
   {
     n: '01',
     title: 'Download',
-    body: 'Open the latest release and download PGBR.apk — not a source archive, and not the Root files unless your device is rooted.',
+    body: 'Abra a última compilação aprovada no GitHub Actions, baixe o artefato PGBR-v0.00.01-LT-APKs e extraia PGBR-v0.00.01-LT.apk.',
   },
   {
     n: '02',

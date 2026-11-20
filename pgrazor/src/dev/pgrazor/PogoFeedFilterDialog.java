@@ -72,7 +72,7 @@ public final class PogoFeedFilterDialog {
         private final List<NumField> numbers = new ArrayList<>();
         private Button speciesButton;   // "Choose species (N)"; label refreshed on change
         private Button[] speciesModeButtons;
-        private String editingPreset;   // PGRazorX: the saved preset being edited (Edit in Saved presets), or null
+        private String editingPreset;   // PGBRX: the saved preset being edited (Edit in Saved presets), or null
 
         Editor(Activity activity, Context ui, boolean myShinies, JSONObject working,
                JSONObject speciesNames, SharedPreferences prefs, DialogSink sink, ApplyHandler onApply) {
@@ -207,7 +207,7 @@ public final class PogoFeedFilterDialog {
             Button presets = button("Saved presets…");
             presets.setOnClickListener(v -> openPresets());
             content.addView(presets, new LinearLayout.LayoutParams(-1, dp(44)));
-            // PGRazorX: while a saved preset is being edited, its changes are written back to it here.
+            // PGBRX: while a saved preset is being edited, its changes are written back to it here.
             if (editingPreset != null) {
                 final String n = editingPreset;
                 content.addView(caption("Editing \"" + n + "\": change the filters below, then save."));
@@ -376,7 +376,7 @@ public final class PogoFeedFilterDialog {
                 listCol.removeAllViews();
                 if (names.isEmpty()) { listCol.addView(caption("No saved presets yet.")); }
                 for (String n : new ArrayList<>(names)) {
-                    // PGRazorX: name on its own line, then Apply / Edit / Rename / Delete.
+                    // PGBRX: name on its own line, then Apply / Edit / Rename / Delete.
                     LinearLayout row = new LinearLayout(ui);
                     row.setOrientation(LinearLayout.VERTICAL);
                     row.setPadding(0, dp(4), 0, dp(6));

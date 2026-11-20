@@ -20,7 +20,7 @@ import android.widget.TextView;
 
 /**
  * Shared dark/light palette and full-screen helpers so the world map and cooldown history match the
- * PGRazor settings panel ({@link Pad}). Map tiles keep their original raster colours; only the
+ * PGBR settings panel ({@link Pad}). Map tiles keep their original raster colours; only the
  * surrounding chrome — text, buttons, checkboxes and nested dialogs — is themed.
  */
 final class MapTheme {

@@ -17,7 +17,7 @@ public final class PreviewActivity extends Activity {
     public void onCreate(Bundle saved) {
         super.onCreate(saved);
         LinearLayout screen = new LinearLayout(this); screen.setOrientation(LinearLayout.VERTICAL); screen.setPadding(24,48,24,24); screen.setBackgroundColor(Color.rgb(9,17,29));
-        TextView heading = new TextView(this); heading.setText(dev.pgrazor.PtBr.tr("PGRazor · control preview")); heading.setTextSize(24); heading.setTextColor(Color.WHITE); screen.addView(heading);
+        TextView heading = new TextView(this); heading.setText(dev.pgrazor.PtBr.tr("PGBR · control preview")); heading.setTextSize(24); heading.setTextColor(Color.WHITE); screen.addView(heading);
         TextView description = new TextView(this); description.setText(dev.pgrazor.PtBr.tr("Joystick and coordinate controls.\nThis preview does not change device GPS or connect to Pokémon GO.\nMovement pauses when you leave the app.")); description.setTextSize(15); description.setTextColor(Color.LTGRAY); screen.addView(description);
         Space space = new Space(this); screen.addView(space,new LinearLayout.LayoutParams(1,0,1));
         consumer = new TextView(this); consumer.setTextColor(Color.WHITE); consumer.setTextSize(16); screen.addView(consumer);

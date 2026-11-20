@@ -1,77 +1,52 @@
-> **PGBR v0.00.01-LT** — edição independente em PT-BR. APKs gerados pelo GitHub Actions na branch `feature/pt-br-traducao`; a compilação candidata não deve publicar o pacote do jogo original. Código derivado de [jpitty03/PGRazor](https://github.com/jpitty03/PGRazor) com créditos e licenças preservados.
+<p align="center"><img src="pgrazor/branding/pgrazor.svg" width="92" alt="Logotipo PGBR"></p>
 
-<p align="center"><img src="pgrazor/branding/pgrazor.svg" width="88" alt="PGBR logo"></p>
 <h1 align="center">PGBR</h1>
-<p align="center">A compact Android interface for location controls and Pokémon GO automation.</p>
+<p align="center"><strong>PGBR-v0.00.01-LT · Edição brasileira para Android</strong></p>
+<p align="center">Controles de localização, joystick, captura, rotas e recursos opcionais de automação para Pokémon GO.</p>
 
-PGBR adds an in-game menu, an independent joystick, encounter controls, and optional automation to Pokémon GO. Settings persist across restarts, with light and dark themes.
+> **Status:** versão experimental PT-BR. A compilação automatizada passou nos testes; o funcionamento em aparelhos Android e a cobertura integral da tradução ainda precisam ser validados.
 
-<p align="center"><img src="website/public/images/main-menu.png" width="320" alt="PGBR dark-theme main settings menu with feature sections and Discord footer"></p>
+## Baixar o PGBR
 
-## Features and guides
+Acesse **[Compilações do PGBR no GitHub Actions](https://github.com/LucianoToscano/PGBR/actions/workflows/pgbr-build-full-ptbr-candidate.yml)**, abra a execução mais recente com ✓ e, em **Artifacts**, baixe o pacote `PGBR-v0.00.01-LT-APKs`.
 
-The feature list and how-to guides live on the website, so there is one place to keep them current:
+O pacote ZIP contém:
+- **`PGBR-v0.00.01-LT.apk`** — instalador principal para Android ARM64, sem Root.
+- **`PGBR-v0.00.01-LT-Root.apk`** — instalador para aparelhos com Root.
+- **`PGBR-v0.00.01-LT-Root-module.zip`** — módulo Root para Magisk, KernelSU ou APatch.
+- Comprovantes de compilação e arquivo `SHA256SUMS.txt`.
 
-- **[PGBR website](https://github.com/LucianoToscano/PGBR)**: overview, screenshots, and the cooldown chart.
-- **[Feature guides](https://github.com/LucianoToscano/PGBR?guide=all)**: where each feature is in the app and how to use it.
-- **[Changelog](CHANGELOG.md)** and [release notes](https://github.com/LucianoToscano/PGBR/releases): what each version added.
+É necessário entrar no GitHub para baixar artefatos, que expiram conforme o prazo do workflow. O APK é assinado com a chave própria do PGBR e **não atualiza diretamente** instalações assinadas por outras chaves. Não desinstale sua versão anterior sem salvar os dados necessários.
 
-## Install
+## Recursos
 
-There are two builds. Each release lists the Pokémon GO version it supports; native features are built for that exact version.
+O PGBR mantém os recursos da base de código: joystick, teletransporte, caminhada automática, rotas GPX, mapa, filtros, ferramentas de captura, gestão de contas e configurações visuais. Alguns recursos dependem da versão exata do jogo, de serviços externos ou de testes no aparelho.
 
-**PGBR (no root).** One APK for ARM64 Android phones and the MuMu emulator.
+A interface do aplicativo e do instalador Root está sendo traduzida para **português brasileiro**. Consulte a [auditoria de tradução](docs/PGBR_AUDITORIA_PTBR_LT001_20261120.md); novas telas e mensagens ainda podem conter termos em inglês.
 
-1. Open [Releases](https://github.com/LucianoToscano/PGBR/releases/latest) and download **PGBR.apk**, not a source archive.
-2. Open the APK on your device and allow installation from your file manager.
-3. Launch **Pokémon GO** and tap the small **R** icon for the quick menu. Choose **Settings** for the full controls.
+## Desenvolvimento na nuvem
 
-A Play Store install is signed with a different certificate, so PGBR cannot update it in place; it replaces that copy.
+O repositório é **[LucianoToscano/PGBR](https://github.com/LucianoToscano/PGBR)**.
 
-**PGBR Root (experimental).** For rooted devices using the official game. It installs a Zygisk module through Magisk 27+, KernelSU, or APatch and leaves the game's APK untouched. Download **PGBR-Root.apk** from the same release and follow [the Root guide](docs/ROOTED.md).
+- **`main`**: código público principal e documentação do PGBR.
+- **`feature/pt-br-traducao`**: desenvolvimento, testes e compilações PT-BR.
+- **[GitHub Actions](https://github.com/LucianoToscano/PGBR/actions)**: compila, testa e assina os instaladores. Não é necessário um computador local para cada atualização.
 
-Each release includes a changelog, SHA-256 checksums, and build information. See [installation and builds](docs/BUILDING.md) for details.
+O pacote original do jogo é mantido fora do controle de versão, como entrada temporária da compilação. As senhas e chaves de assinatura ficam nos Secrets do GitHub Actions; nunca devem ser publicadas no repositório.
 
-## Good to know
+## Informações importantes
 
-These are experimental client modifications. Server outcomes are not guaranteed, the cooldown timer is a local estimate, and nothing here prevents account action by the game's publisher.
+O PGBR é um projeto experimental independente. O tempo de espera (*cooldown*) é uma estimativa local, e nenhuma alteração de cliente garante resultados no servidor ou proteção contra medidas aplicadas pelo publicador de Pokémon GO.
 
-## Community
+## Documentação
 
-Join the [PGBR Discord](https://discord.gg/9QqfkDSQX3), also linked from the settings footer. If you enjoy PGBR, you can support development on [Ko-fi](https://ko-fi.com/pgrazor). Donations are optional.
+- [Instalação, assinatura e compilação](docs/BUILDING.md)
+- [Compatibilidade e arquitetura](docs/ARCHITECTURE.md)
+- [Instalador Root](docs/ROOTED.md)
+- [Atualizações do jogo](docs/GAME_UPDATES.md)
+- [Auditoria PT-BR](docs/PGBR_AUDITORIA_PTBR_LT001_20261120.md)
+- [Licenças e dependências de terceiros](THIRD_PARTY.md)
 
-## Build and contribute
+## Créditos e licença
 
-- [Build, signing, release CI, and installation](docs/BUILDING.md)
-- [Architecture and compatibility](docs/ARCHITECTURE.md)
-- [PGBR Root](docs/ROOTED.md)
-- [Native migration verification and history](docs/NATIVE_MIGRATION.md)
-- [Maintainability review and refactoring priorities](docs/MAINTAINABILITY.md)
-- [Contributing and checks](CONTRIBUTING.md)
-- [Third-party notices](THIRD_PARTY.md)
-
-```powershell
-python -B tools/check.py
-```
-
-Source CI runs device-free checks and compiles both the Android controls and the Root installer. Its downloadable artifact contains source and tools only, not a playable APK. Playable releases come from the manually triggered **Android release (non-root and rooted)** workflow. Signing keys, original build inputs, and investigation logs are kept out of Git.
-
-## Repository layout
-
-```text
-.github/workflows/    Source CI, release, and website workflows
-docs/                 Build, architecture, and release notes
-pgrazor/src/          Android UI and control bridge
-pgrazor/native/       Compiled gameplay runtime and native tests
-pgrazor/art/          Compiled Android runtime bridges
-pgrazor/zygisk/       PGBR Root loader
-pgrazor/root-installer/  PGBR Root installer app
-pgrazor/test/         Regression tests
-pgrazor/vendor/       Pinned dependencies, provenance, and licenses
-tools/                Checks, source packaging, release CI setup
-website/              React site and feature guides, deployed to GitHub Pages
-```
-
-## License
-
-Original PGBR source is available under the [MIT License](LICENSE). Third-party components retain their own licenses. Pokémon GO and its assets are not covered by this license. PGBR is an independent project and is not affiliated with the game publisher.
+O PGBR é uma adaptação independente do código aberto do projeto original **[PGRazor](https://github.com/jpitty03/PGRazor)**, disponibilizado sob licença MIT. A atribuição ao autor e os avisos de licença de terceiros são preservados conforme os respectivos termos. Pokémon e Pokémon GO pertencem aos seus titulares. O PGBR não é afiliado à Niantic, à The Pokémon Company nem aos publicadores do jogo.

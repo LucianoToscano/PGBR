@@ -44,7 +44,7 @@ public final class ShundoSniper {
     // The shortest time between two teleports, chosen by the user (seconds; 0 = right away).
     static final int[] GAPS = {0, 30, 60, 90};
     static final String[] GAP_LABELS = {"Right away", "30 seconds", "60 seconds", "90 seconds"};
-    // The PGRazor feed: one server polls LivePokeMap's whole-map 100% IV list and publishes it as a compact
+    // The PGBR feed: one server polls LivePokeMap's whole-map 100% IV list and publishes it as a compact
     // file, {"v":1,"fetched_ms":..,"interval_s":..,"hundos":[[encounter_id,dex,form,lat,lon,despawn_ms,cp,level],..]},
     // so no sign-in is needed. About 130 KB gzipped; ShundoPacing decides how often it is read.
     static final String FEED_URL = "https://feed.faustusfoundry.com/pgrazor/hundos.json";
@@ -186,7 +186,7 @@ public final class ShundoSniper {
         synchronized (LOCK) { return "Species: " + (species.isEmpty() ? "All" : species.size() + " selected"); }
     }
     public static boolean active() { return enabled; }
-    /** The card's black screen: it covers the game (PGRazor's overlays stay on top) while the sniper runs. */
+    /** The card's black screen: it covers the game (PGBR's overlays stay on top) while the sniper runs. */
     private static volatile boolean dark;
     static boolean dark() { return dark && enabled; }
     static void setDark(boolean on) {
@@ -358,8 +358,8 @@ public final class ShundoSniper {
         synchronized (LOCK) { liveClient = live; pogoClient = pogo; wantLive = useLive; wantPogo = usePogo; wantFeed = useFeed; queued = candidates.size(); }
         if (wantFeed && now - lastFeed >= ShundoPacing.feedDelay(queued, feedFailed)) {
             lastFeed = now;
-            try { feedNote = "PGRazor feed: " + readFeed(now) + " seen"; feedFailed = false; }
-            catch (Exception e) { feedNote = "PGRazor feed: unavailable"; feedFailed = true; }
+            try { feedNote = "PGBR feed: " + readFeed(now) + " seen"; feedFailed = false; }
+            catch (Exception e) { feedNote = "PGBR feed: unavailable"; feedFailed = true; }
         }
         if (wantLive && liveClient != null && now >= nextLive) {
             try {
@@ -407,12 +407,12 @@ public final class ShundoSniper {
         String name = names == null || dex <= 0 ? "" : names.optString(Integer.toString(dex), "");
         return name.isEmpty() ? fallback : name;
     }
-    /** Reads the PGRazor feed and adds its rows; returns how many were taken. Worker thread only. */
+    /** Reads the PGBR feed and adds its rows; returns how many were taken. Worker thread only. */
     private static int readFeed(long now) throws Exception {
         java.net.HttpURLConnection http = (java.net.HttpURLConnection) new java.net.URL(FEED_URL).openConnection();
         http.setConnectTimeout(15_000); http.setReadTimeout(20_000);
         http.setRequestProperty("Accept", "application/json");
-        http.setRequestProperty("User-Agent", "PGRazor-ShundoSniper");
+        http.setRequestProperty("User-Agent", "PGBR-ShundoSniper");
         try {
             if (http.getResponseCode() != 200) throw new java.io.IOException("HTTP " + http.getResponseCode());
             java.io.ByteArrayOutputStream bytes = new java.io.ByteArrayOutputStream();
@@ -430,7 +430,7 @@ public final class ShundoSniper {
                 long despawn = r.optLong(5, 0);
                 if (despawn > 0 && despawn <= now) continue;
                 int dex = r.optInt(1, 0);
-                added += add("pokemon:" + r.optString(0, ""), dex, speciesName(dex, dex > 0 ? "#" + dex : "Pokémon"), "PGRazor feed",
+                added += add("pokemon:" + r.optString(0, ""), dex, speciesName(dex, dex > 0 ? "#" + dex : "Pokémon"), "PGBR feed",
                     r.optDouble(3, Double.NaN), r.optDouble(4, Double.NaN), despawn, null);
             }
             return added;
@@ -609,7 +609,7 @@ public final class ShundoSniper {
         TextView help = new TextView(ui);
         help.setText(dev.pgrazor.PtBr.tr("Teleports to 100% IV Pokémon and checks each for shiny. A shiny is held in its encounter until your cooldown ends, then caught. VGP+ pauses while this runs."));
         body.addView(help);
-        CheckBox feedBox = new CheckBox(ui); feedBox.setText(dev.pgrazor.PtBr.tr("PGRazor feed"));
+        CheckBox feedBox = new CheckBox(ui); feedBox.setText(dev.pgrazor.PtBr.tr("PGBR feed"));
         CheckBox liveBox = new CheckBox(ui); liveBox.setText(dev.pgrazor.PtBr.tr("LivePokeMap (sign-in)"));
         CheckBox pogoBox = new CheckBox(ui); pogoBox.setText(dev.pgrazor.PtBr.tr("PoGoCoordinates (slow)"));
         synchronized (LOCK) { feedBox.setChecked(useFeed); liveBox.setChecked(useLive); pogoBox.setChecked(usePogo); }
