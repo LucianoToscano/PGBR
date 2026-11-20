@@ -47,3 +47,15 @@ Arquitetura desejada: substituir **somente o conteúdo dos widgets de renderiza�
 **Comparação parcial dos APKs:** análise estática efetiva do APK PGSharp; descrição funcional oficial para Pokemod e iPogo. Não houve descompilação ou teste dos APKs desses dois últimos. A função de substituição real **não foi implementada** no PGBR; não apresentá-la como concluída.
 
 O PokeSearch, a assinatura e a branch `main` devem continuar intactos.
+
+## Pista adicional: texto "The Pokemod Group" (20/11/2026)
+
+O usuário observou que o modo Incognito do Pokemod exibe **"The Pokemod Group"** onde normalmente apareceria o nickname do treinador. Essa observação é relevante como **string-alvo de busca na renderização**. O fornecedor se apresenta oficialmente com esse mesmo nome, o que é consistente, mas não identifica um método técnico específico.
+
+**Importante distinguir ocorrências:** a auditoria estática anterior do APK Pokemod 14.2.1, registrada no repositório PokeSearch em `docs/LT359_AUDITORIA_POKEMOD_MULTICLIENTE_20261115.md`, comprovou `CN=The Pokemod Group` no certificado `META-INF/CERT.RSA`. Uma correspondência dessa string no certificado **não comprova** que ela seja usada no código de substituição de nick.
+
+A mesma auditoria estudou `classes.dex`, `classes2.dex`, bibliotecas `.so` e `assets/pokemod-injector`, mas **não identificou** o hook de Incognito Mode nem disponibilizou código-fonte desse mecanismo. O APK local daquela auditoria não está disponível na sessão atual; seus resultados anteriores são evidências de estrutura, não inspeção binária nova.
+
+Próxima investigação, quando houver acesso ao artefato original: localizar ocorrências da frase em recursos, DEX e módulo ARM64; separar texto de metadados de assinatura, log e material publicitário de referências executáveis; examinar chamadas que alterem **somente** componentes de texto de UI Unity, sem modificar `PlayerService.get_PlayerName` nem os valores de identidade persistidos. Testar mapa/perfil separadamente antes de declarar suporte.
+
+Fonte adicional: documentação do fornecedor `https://pokemod.dev/` (Incognito Mode: substituição por nome genérico na maioria das telas).
