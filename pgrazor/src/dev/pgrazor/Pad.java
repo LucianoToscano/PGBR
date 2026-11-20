@@ -884,6 +884,7 @@ public final class Pad {
         private final RectF artBounds = new RectF();
         private int imageGeneration=-1,loadedStyle=-1;
         private final Paint effect=new Paint(Paint.ANTI_ALIAS_FLAG);
+        private final Path smokeClip=new Path();
           float x, y;
         int pointer = -1;
         long cameraGesture=-1;
@@ -978,8 +979,25 @@ public final class Pad {
                 if (morphReady) {
                     canvas.drawBitmap(builtinBase,null,artBounds,paint);
                     if (stormOn) {
-                        paint.setAlpha(EternatusMorph.overlayAlpha(SystemClock.uptimeMillis()));
+                        long now=SystemClock.uptimeMillis();
+                        float blend=EternatusMorph.blend(now);
+                        paint.setAlpha(Math.round(255f*blend));
                         canvas.drawBitmap(morphStorm,null,artBounds,paint);
+                        // Drift only the translucent storm annulus; leave the crystalline rim
+                        // and movable center fixed. Uses the actual smoke/bolts in the source art.
+                        // No procedural zigzag lightning or extra animation worker.
+                        if(blend>.01f){
+                            smokeClip.rewind();
+                            smokeClip.setFillType(Path.FillType.EVEN_ODD);
+                            smokeClip.addCircle(cx,cy,outer*.76f,Path.Direction.CW);
+                            smokeClip.addCircle(cx,cy,outer*.41f,Path.Direction.CW);
+                            int saved=canvas.save();
+                            canvas.clipPath(smokeClip);
+                            canvas.rotate((now%52000L)*(360f/52000f),cx,cy);
+                            paint.setAlpha(Math.round(42f*blend));
+                            canvas.drawBitmap(morphStorm,null,artBounds,paint);
+                            canvas.restoreToCount(saved);
+                        }
                         paint.setAlpha(255);
                     }
                 } else if (stormOn && stormVortex != null && stormRim != null) {
