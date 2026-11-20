@@ -31,7 +31,7 @@ public final class Cooldown {
     /** Read-only destination estimate: never records teleporting as a cooldown action. */
     public static synchronized long remainingAt(double lat,double lon){return state.remaining(System.currentTimeMillis(),lat,lon);}
     public static synchronized boolean hasHistory(){return !state.rows.isEmpty();}
-    public static synchronized String label(){if(state.rows.isEmpty())return "Est. 0:00:00";if(!Control.locationKnown())return "Waiting for GPS";long seconds=(remaining()+999)/1000;return String.format(Locale.US,"Est. %d:%02d:%02d",seconds/3600,(seconds/60)%60,seconds%60);}
+    public static synchronized String label(){if(state.rows.isEmpty())return "Sem ações registradas";if(!Control.locationKnown())return "Aguardando localização";long seconds=(remaining()+999)/1000;if(seconds==0)return "Sem espera estimada";return String.format(Locale.US,"Espera est. %d:%02d:%02d",seconds/3600,(seconds/60)%60,seconds%60);}
     private static synchronized ArrayList<CooldownState.Entry> entries(){return new ArrayList<>(state.rows);}
     private static synchronized void remove(long id){state.rows.removeIf(e->e.id==id);save();}
     private static Button button(Context c,String text){Button b=new Button(c);b.setText(dev.pgrazor.PtBr.tr(text));b.setAllCaps(false);b.setTextSize(12);return b;}
