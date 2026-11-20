@@ -37,7 +37,7 @@ final class GameRoutesOverlay extends View {
 
     @Override protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);canvas.save();canvas.scale(getWidth()/48f,getHeight()/48f);
-        paint.setStyle(Paint.Style.FILL);paint.setColor(MapTheme.surface());canvas.drawCircle(24,24,23,paint);
+        paint.setStyle(Paint.Style.FILL);paint.setColor((MapTheme.surface()&0x00ffffff)|(Math.round(Control.overlayBackgroundOpacity()*255f/100f)<<24));canvas.drawCircle(24,24,23,paint);
         paint.setStyle(Paint.Style.STROKE);paint.setStrokeWidth(1.5f);paint.setColor(MapTheme.accent());canvas.drawCircle(24,24,22,paint);
         paint.setStyle(Paint.Style.FILL);
         if(icon!=null){float ratio=Math.min(32f/icon.getWidth(),32f/icon.getHeight()),w=icon.getWidth()*ratio,h=icon.getHeight()*ratio;
@@ -47,7 +47,7 @@ final class GameRoutesOverlay extends View {
             Path path=new Path();path.moveTo(14,32);path.lineTo(32,32);path.lineTo(32,17);path.lineTo(17,17);canvas.drawPath(path,paint);
             canvas.drawCircle(14,32,3,paint);canvas.drawCircle(17,17,3,paint);paint.setStyle(Paint.Style.FILL);
         }
-        paint.setColor(MapTheme.surface());canvas.drawCircle(38,38,6,paint);
+        paint.setColor((MapTheme.surface()&0x00ffffff)|(Math.round(Control.overlayBackgroundOpacity()*255f/100f)<<24));canvas.drawCircle(38,38,6,paint);
         paint.setColor(MapTheme.accent());canvas.drawCircle(38,38,4,paint);canvas.restore();
     }
 }

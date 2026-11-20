@@ -99,7 +99,7 @@ public final class ShundoOverlay extends LinearLayout {
         if (getVisibility() != VISIBLE) return;
         boolean running = ShundoSniper.active();
         String nowStep = ShundoSniper.overlayStep(), nowStats = ShundoSniper.overlayStats();
-        setBackground(SettingsUi.rounded(activity, MapTheme.surface(), SettingsUi.dp(activity, 14)));
+        setBackground(SettingsUi.rounded(activity, (MapTheme.surface()&0x00ffffff)|(Math.round(Control.overlayBackgroundOpacity()*255f/100f)<<24), SettingsUi.dp(activity, 14)));
         if (lastRunning == null || running != lastRunning) {
             lastRunning = running;
             badge.setText(dev.pgrazor.PtBr.tr(running ? "RUNNING" : "STOPPED"));

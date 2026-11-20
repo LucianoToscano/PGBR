@@ -33,7 +33,7 @@ final class BerryOverlay extends View {
     void close(){picker.close();}
     protected void onDraw(Canvas c){
         super.onDraw(c);float w=getWidth(),h=getHeight();
-        paint.setStyle(Paint.Style.FILL);paint.setColor(MapTheme.surface());c.drawRoundRect(0,0,w,h,dp(14),dp(14),paint);
+        paint.setStyle(Paint.Style.FILL);paint.setColor((MapTheme.surface()&0x00ffffff)|(Math.round(Control.overlayBackgroundOpacity()*255f/100f)<<24));c.drawRoundRect(0,0,w,h,dp(14),dp(14),paint);
         paint.setStyle(Paint.Style.STROKE);paint.setStrokeWidth(dp(1));paint.setColor(MapTheme.accent());c.drawRoundRect(dp(0.5f),dp(0.5f),w-dp(0.5f),h-dp(0.5f),dp(14),dp(14),paint);
         paint.setStyle(Paint.Style.FILL);
         int id=Control.autoBerrySelected(),i=index(id);Bitmap icon=icons[i];

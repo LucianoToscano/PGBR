@@ -362,7 +362,7 @@ public final class Pad {
             boolean keep=Control.transferKeepAll(),master=Control.autoTransferEnabled();
             int tint=keep?Color.rgb(33,188,125):(master?Color.rgb(230,150,40):muted());
             canvas.save();canvas.scale(getWidth()/54f,getHeight()/54f);
-            paint.setStyle(Paint.Style.FILL);paint.setColor(surface());canvas.drawRoundRect(1,1,53,53,14,14,paint);
+            paint.setStyle(Paint.Style.FILL);paint.setColor((surface()&0x00ffffff)|(Math.round(Control.overlayBackgroundOpacity()*255f/100f)<<24));canvas.drawRoundRect(1,1,53,53,14,14,paint);
             // Shield outline frames the state glyph.
             paint.setStyle(Paint.Style.STROKE);paint.setStrokeWidth(2.4f);paint.setColor(tint);paint.setStrokeCap(Paint.Cap.ROUND);
             Path shield=new Path();shield.moveTo(27,7);shield.lineTo(40,12);shield.lineTo(40,25);shield.cubicTo(40,34,34,39,27,42);shield.cubicTo(20,39,14,34,14,25);shield.lineTo(14,12);shield.close();canvas.drawPath(shield,paint);
