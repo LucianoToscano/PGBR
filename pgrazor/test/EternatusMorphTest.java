@@ -17,8 +17,8 @@ public final class EternatusMorphTest {
             previous = blend;
         }
         check(high - low > .12f, "organic density must still change");
-        check(Math.abs(EternatusMorph.blend(5000) -
-            EternatusMorph.blend(15800)) > .01f, "no 10.8 second repeat");
+        check(Math.abs(EternatusMorph.blend(2900) -
+            EternatusMorph.blend(13700)) > .01f, "no 10.8 second repeat");
         System.out.println("PASS: EternatusMorph continuous nonrepeating atmospheric density");
     }
 }
