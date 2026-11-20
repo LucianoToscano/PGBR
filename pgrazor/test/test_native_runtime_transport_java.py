@@ -92,6 +92,10 @@ def control_shell():
         else:
             body = 'return true;' if expected_result == 'boolean' else ''
         methods.append('public static ' + expected_result + ' ' + name + '(' + signature + '){' + body + '}')
+    # The wire ID remains transferProtect for ABI stability; production resolves it to
+    # a separate getter whose high byte carries the configured IV threshold.
+    assert re.search(r'public static int nativeTransferProtect\(\)', source)
+    methods.append('public static int nativeTransferProtect(){reads++;return 0;}')
     return '''package dev.pgrazor;
 public final class Control {
  public static int connects, renewals, disconnects;
