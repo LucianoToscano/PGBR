@@ -1,0 +1,30 @@
+name: PGBR - testar limpeza segura de builds
+on:
+  push:
+    branches: [maintenance/limpeza-retencao-lt014-20261120]
+    paths:
+      - pgrazor/cleanup.ps1
+      - pgrazor/test/test_nonroot_cleanup.py
+      - .github/workflows/pgbr-cleanup-tests.yml
+  pull_request:
+    paths:
+      - pgrazor/cleanup.ps1
+      - pgrazor/test/test_nonroot_cleanup.py
+      - .github/workflows/pgbr-cleanup-tests.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  cleanup-regression:
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.12'
+      - name: Verificar exclusao seletiva e protecao de backups
+        shell: pwsh
+        run: python -B -m unittest discover -s pgrazor/test -p test_nonroot_cleanup.py -v
