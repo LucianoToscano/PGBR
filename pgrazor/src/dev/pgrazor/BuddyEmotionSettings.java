@@ -18,7 +18,32 @@ public final class BuddyEmotionSettings {
     private static final int[] BERRIES={701,703,705,706,708};
     private static final String[] BERRY_LABELS={"Razz Berry","Nanab Berry","Pinap Berry","Golden Razz Berry (premium)","Silver Pinap Berry (premium)"};
     private static volatile String status="Off", savedHistory="", metric="EP: waiting";
-    public static String status(){return metric+"\n"+status;}
+    /** Translate native status text only on display, keeping its original value for diagnostics. */
+    public static String status(){return displayMetric(metric)+"\n"+displayStatus(status);}
+    private static String displayMetric(String input){
+        return input.replace("EP: waiting","EP: aguardando")
+            .replace(" | Excited"," | Animado")
+            .replace(" | Maintenance ~"," | Manutenção ~");
+    }
+    private static String displayStatus(String raw){
+        if(raw==null||raw.isEmpty())return "";
+        if(raw.startsWith("Paused: buddy action declined (")){
+            int open=raw.indexOf('('),close=raw.indexOf(')',open);
+            String result=open>=0&&close>open?raw.substring(open,close+1):"";
+            return "Pausado: ação do companheiro recusada "+result+". Desligue e ligue para retomar.";
+        }
+        if(raw.equals("Paused: buddy request rejected; toggle off to resume"))
+            return "Pausado: solicitação ao companheiro recusada. Desligue e ligue para retomar.";
+        if(raw.equals("Paused: request timed out; toggle off to resume"))
+            return "Pausado: a solicitação demorou demais. Desligue e ligue para retomar.";
+        if(raw.startsWith("Gift declined ("))
+            return "Presente recusado; o cuidado do companheiro continua.";
+        if(raw.equals("Canceled request expired; refreshing buddy"))
+            return "Solicitação cancelada; atualizando dados do companheiro.";
+        if(raw.equals("Canceled request ended; refreshing buddy"))
+            return "Solicitação cancelada; atualizando dados do companheiro.";
+        return dev.pgrazor.PtBr.tr(raw);
+    }
     public static String history(){return savedHistory;}
     public static void publish(String json){try{
         org.json.JSONObject event=new org.json.JSONObject(json);status=event.optString("message","Waiting");
