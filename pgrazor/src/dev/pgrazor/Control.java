@@ -198,7 +198,7 @@ public final class Control {
     public static boolean hudLabelsVisible(){return hudLabelsVisible;}
     public static void setHudLabelsVisible(boolean value){hudLabelsVisible=value;saveSettings();}
     public static int hudLabelOpacity(){return hudLabelOpacity;}
-    public static void setHudLabelOpacity(int value){hudLabelOpacity=Math.max(0,Math.min(80,value));saveSettings();}
+    public static void setHudLabelOpacity(int value){hudLabelOpacity=Math.max(0,Math.min(100,value));saveSettings();}
     public static int hudLabelTextSp(){return hudLabelTextSp;}
     public static void setHudLabelTextSp(int value){hudLabelTextSp=Math.max(9,Math.min(14,value));saveSettings();}
     /**
@@ -1177,6 +1177,7 @@ public final class Control {
         saveState();
     }
     private static boolean darkTheme=true, joystickVisible=true;
+    private static volatile int joystickSizeDp=136,joystickOpacity=60;
     // Client-only privacy mask. Do not override PlayerService, account data or RPC fields.
     private static volatile boolean trainerAliasEnabled;
     private static volatile String trainerAlias="";
@@ -1224,6 +1225,10 @@ public final class Control {
         engine.step(seconds);
     }
     public static boolean joystickVisible(){return joystickVisible;}
+    public static int joystickSizeDp(){return joystickSizeDp;}
+    public static void setJoystickSizeDp(int value){joystickSizeDp=Math.max(88,Math.min(220,value));saveSettings();}
+    public static int joystickOpacity(){return joystickOpacity;}
+    public static void setJoystickOpacity(int value){joystickOpacity=Math.max(10,Math.min(100,value));saveSettings();}
     public static void setDarkTheme(boolean value){darkTheme=value;saveSettings();}
     public static void setJoystickVisible(boolean value){joystickVisible=value;saveSettings();}
     private static void loadSettings(Application app) {
@@ -1248,6 +1253,7 @@ public final class Control {
             vgpIconStyle=0;
             vgpIconSize=48;
             hudLabelsVisible=true;hudLabelOpacity=0;hudLabelTextSp=11;
+            joystickSizeDp=136;joystickOpacity=60;
             transferIvKeepPercent=90;
             trainerAliasEnabled=false;trainerAlias="";
             idleWalking=false;engine.setIdleWalking(false);
@@ -1278,6 +1284,10 @@ public final class Control {
                 try{uiScalePercent=Integer.parseInt(p.getProperty("uiScalePercent","100"));}catch(NumberFormatException invalid){uiScalePercent=100;}
                 if(uiScalePercent!=25&&uiScalePercent!=50&&uiScalePercent!=75&&uiScalePercent!=100)uiScalePercent=100;
                 joystickVisible=Boolean.parseBoolean(p.getProperty("joystickVisible","true"));
+                try{joystickSizeDp=Math.max(88,Math.min(220,Integer.parseInt(p.getProperty("joystickSizeDp","136"))));}
+                catch(NumberFormatException invalid){joystickSizeDp=136;}
+                try{joystickOpacity=Math.max(10,Math.min(100,Integer.parseInt(p.getProperty("joystickOpacity","60"))));}
+                catch(NumberFormatException invalid){joystickOpacity=60;}
                 idleWalking=Boolean.parseBoolean(p.getProperty("idleWalking","false"));engine.setIdleWalking(idleWalking);
                 cooldownOverlay=Boolean.parseBoolean(p.getProperty("cooldownOverlay","false"));
                 localTimeOverlay=Boolean.parseBoolean(p.getProperty("localTimeOverlay","false"));
@@ -1296,7 +1306,7 @@ public final class Control {
                 try{vgpIconSize=Math.max(28,Math.min(72,Integer.parseInt(p.getProperty("vgpIconSize","48"))));}
                 catch(NumberFormatException ignored){vgpIconSize=48;}
                 hudLabelsVisible=Boolean.parseBoolean(p.getProperty("hudLabelsVisible","true"));
-                try{hudLabelOpacity=Math.max(0,Math.min(80,Integer.parseInt(p.getProperty("hudLabelOpacity","0"))));}
+                try{hudLabelOpacity=Math.max(0,Math.min(100,Integer.parseInt(p.getProperty("hudLabelOpacity","0"))));}
                 catch(NumberFormatException ignored){hudLabelOpacity=0;}
                 try{hudLabelTextSp=Math.max(9,Math.min(14,Integer.parseInt(p.getProperty("hudLabelTextSp","11"))));}
                 catch(NumberFormatException ignored){hudLabelTextSp=11;}
@@ -1448,6 +1458,8 @@ public final class Control {
         p.setProperty("trainerAliasEnabled",String.valueOf(trainerAliasEnabled));
         p.setProperty("trainerAlias",trainerAlias);
         p.setProperty("joystickVisible",String.valueOf(joystickVisible));
+        p.setProperty("joystickSizeDp",String.valueOf(joystickSizeDp));
+        p.setProperty("joystickOpacity",String.valueOf(joystickOpacity));
         p.setProperty("quickMenuHidden",String.valueOf(quickMenuHidden));
         p.setProperty("idleWalking",String.valueOf(idleWalking));
         p.setProperty("spawnBooster",String.valueOf(spawnBooster));
