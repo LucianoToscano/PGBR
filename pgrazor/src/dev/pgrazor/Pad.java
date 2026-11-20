@@ -137,17 +137,17 @@ public final class Pad {
             shine.setShader(null);shine.setStyle(Paint.Style.STROKE);shine.setStrokeCap(Paint.Cap.ROUND);
             if(style==1&&Control.joystickEternatusEffects()){
                 shine.setStrokeWidth(dp(1.8f));
-                shine.setColor(Color.argb(Math.round(50+85*pulse),15,220,255));
+                shine.setColor(Color.argb(Math.round((50+85*pulse)*Control.menuLauncherOpacity()/100f),15,220,255));
                 canvas.drawArc(cx-sz*.48f,cy-sz*.48f,cx+sz*.48f,cy+sz*.48f,(now*.075f)%360,65,false,shine);
-                shine.setColor(Color.argb(Math.round(50+80*pulse),255,39,195));
+                shine.setColor(Color.argb(Math.round((50+80*pulse)*Control.menuLauncherOpacity()/100f),255,39,195));
                 canvas.drawArc(cx-sz*.46f,cy-sz*.46f,cx+sz*.46f,cy+sz*.46f,-(now*.060f)%360,56,false,shine);
             }else if(style==0){
                 shine.setStrokeWidth(dp(2));
-                shine.setColor(Color.argb(Math.round(28+85*pulse),25,171,255));
+                shine.setColor(Color.argb(Math.round((28+85*pulse)*Control.menuLauncherOpacity()/100f),25,171,255));
                 canvas.drawCircle(cx,cy,sz*.455f,shine);
             }
             if(logo!=null){
-                paint.setColor(Color.WHITE);paint.setAlpha(255);paint.setStyle(Paint.Style.FILL);
+                paint.setColor(Color.WHITE);paint.setAlpha(Math.round(Control.menuLauncherOpacity()*2.55f));paint.setStyle(Paint.Style.FILL);
                 float margin=style==1?sz*.09f:sz*.015f;
                 canvas.drawBitmap(logo,null,new RectF(cx-sz*.5f+margin,cy-sz*.5f+margin,cx+sz*.5f-margin,cy+sz*.5f-margin),paint);
             }else{
@@ -448,7 +448,7 @@ public final class Pad {
             launcherSize=size;ViewGroup.LayoutParams lp=launcher.getLayoutParams();
             if(lp!=null){lp.width=dp(size);lp.height=dp(size);launcher.setLayoutParams(lp);}
         }
-        if(launcherOpacity!=opacity){launcherOpacity=opacity;launcher.setAlpha(opacity/100f);}
+        if(launcherOpacity!=opacity){launcherOpacity=opacity;launcher.setAlpha(1f);launcher.invalidate();}
         if(launcherStyle!=Control.menuLauncherIconStyle()){
             launcherStyle=Control.menuLauncherIconStyle();launcher.invalidate();
         }
