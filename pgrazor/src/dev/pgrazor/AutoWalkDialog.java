@@ -213,8 +213,8 @@ public final class AutoWalkDialog {
             Button start = dialog.getButton(AlertDialog.BUTTON_POSITIVE);
             if (start == null) return;
             if (selectedGpx != null) {
-                gpxInfo.setText(dev.pgrazor.PtBr.tr(String.format(Locale.US, "GPX route: %s (%d %s). Start walks it in order.",
-                    selectedGpx.name, selectedCount, selectedCount == 1 ? "stop" : "stops")));
+                gpxInfo.setText(String.format(Locale.getDefault(), "Rota GPX: %s (%d %s). Ao iniciar, a caminhada seguirá as paradas na ordem.",
+                    selectedGpx.name, selectedCount, selectedCount == 1 ? "parada" : "paradas"));
                 start.setEnabled(true);
                 return;
             }
