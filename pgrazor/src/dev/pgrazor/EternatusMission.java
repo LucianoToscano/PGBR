@@ -14,7 +14,8 @@ public final class EternatusMission {
     private static Context context;
     private EternatusMission() {}
     public static synchronized boolean start(Context current,String exactTemplate) {
-        if(current==null||!Control.active()||!ResearchPreferences.validTemplate(exactTemplate))return false;
+        if(current==null||!Control.active()||!Control.engine.routeProgress().active||
+            !ResearchPreferences.validTemplate(exactTemplate))return false;
         boolean observed=false;
         List<String[]> quests=ResearchSettings.observedTemplates();
         for(String[] row:quests)if(row.length>=4&&exactTemplate.equals(row[0])){observed=true;break;}
@@ -39,7 +40,9 @@ public final class EternatusMission {
     public static String researchConfig(String original) {
         if(!enabled)return original;
         // Suspended/closed game must never auto-reactivate a destructive research policy.
-        if(!Control.active()){stop("Modo desligado ao deixar o jogo ou perder conexão.");return original;}
+        if(!Control.active()||!Control.engine.routeProgress().active){
+            stop("Modo desligado: o jogo ou a rota GPX não está mais ativo.");return original;
+        }
         String chosen=template;
         if(!ResearchPreferences.validTemplate(chosen)){stop("Modelo de pesquisa inválido.");return original;}
         // R4 = selective claim, selective discard. All unselected completed rewards are preserved.
