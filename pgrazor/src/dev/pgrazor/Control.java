@@ -195,10 +195,24 @@ public final class Control {
     // Map status captions can be hidden independently of the feature itself.
     // The saved master defaults to visible for compatibility with older installations.
     private static volatile boolean hudLabelsVisible=true;
+    // Each caption can be shown/hidden without disabling its underlying feature.
+    public static final int HUD_VGP=1,HUD_BUDDY=2,HUD_AUTOMATION=4,HUD_GYM=8,
+        HUD_CATCH=16,HUD_ENCOUNTERS=32,HUD_SHINY=64,HUD_COOLDOWN=128,HUD_LOCALTIME=256;
+    public static final int HUD_ALL=HUD_VGP|HUD_BUDDY|HUD_AUTOMATION|HUD_GYM|
+        HUD_CATCH|HUD_ENCOUNTERS|HUD_SHINY|HUD_COOLDOWN|HUD_LOCALTIME;
+    private static volatile int hudLabelsMask=HUD_ALL;
     private static volatile int hudLabelOpacity=0;
     private static volatile int hudLabelTextSp=11;
-    public static boolean hudLabelsVisible(){return hudLabelsVisible;}
-    public static void setHudLabelsVisible(boolean value){hudLabelsVisible=value;saveSettings();}
+    public static boolean hudLabelsVisible(){return hudLabelsMask!=0;}
+    public static boolean hudLabelVisible(int bit){return bit>0&&(bit&(bit-1))==0&&(hudLabelsMask&bit)!=0;}
+    public static void setHudLabelVisible(int bit,boolean visible){
+        if(bit<=0||(bit&(bit-1))!=0||(bit&HUD_ALL)==0)return;
+        hudLabelsMask=visible?hudLabelsMask|bit:hudLabelsMask&~bit;
+        hudLabelsVisible=hudLabelsMask!=0;saveSettings();
+    }
+    public static void setHudLabelsVisible(boolean value){
+        hudLabelsVisible=value;hudLabelsMask=value?HUD_ALL:0;saveSettings();
+    }
     public static int hudLabelOpacity(){return hudLabelOpacity;}
     public static void setHudLabelOpacity(int value){hudLabelOpacity=Math.max(0,Math.min(100,value));saveSettings();}
     public static int hudLabelTextSp(){return hudLabelTextSp;}
@@ -700,7 +714,7 @@ public final class Control {
     // pvpKeepLeagues has a bit per league that is on; each league keeps its rank while off.
     static final String[] PVP_LEAGUES={"Great League","Ultra League","Master League"};
     static final String[] PVP_RANK_KEYS={"pvpGreatRank","pvpUltraRank","pvpMasterRank"};
-    static final int[] PVP_RANKS={10,25,50,100}, PVP_DEFAULT_RANKS={50,10,10};
+    static final int[] PVP_RANKS={1,10,25,50,100}, PVP_DEFAULT_RANKS={50,10,10};
     static final int PVP_META=150;
     private static volatile int pvpKeepLeagues=3;
     private static final int[] pvpRanks=PVP_DEFAULT_RANKS.clone();
@@ -1111,7 +1125,7 @@ public final class Control {
         event("autowalk-started","stops="+waypoints.length+" loop="+loop+" speed="+engine.speedKmh);
     }
     public static double cycleWalkSpeed() {
-        double[] presets={0,9.3,16,30};double next=0;
+        double[] presets={0,9.3,18.6,30,60};double next=0;
         synchronized(engine){for(int i=0;i<presets.length;i++)if(Math.abs(engine.speedKmh-presets[i])<0.001){next=presets[(i+1)%presets.length];break;}engine.speed(next);}
         saveState();return next;
     }
@@ -1321,7 +1335,7 @@ public final class Control {
             quickMenuHidden=0;
             vgpIconStyle=0;
             vgpIconSize=48;
-            hudLabelsVisible=true;hudLabelOpacity=0;hudLabelTextSp=11;
+            hudLabelsVisible=true;hudLabelsMask=HUD_ALL;hudLabelOpacity=0;hudLabelTextSp=11;
             joystickSizeDp=136;joystickOpacity=60;
             joystickStyle=0;joystickEternatusEffects=true;
             menuIconSizeDp=22;gymIconSizeDp=54;gymIconOpacity=100;overlayBackgroundOpacity=45;
@@ -1398,6 +1412,8 @@ public final class Control {
                 try{vgpIconSize=Math.max(28,Math.min(72,Integer.parseInt(p.getProperty("vgpIconSize","48"))));}
                 catch(NumberFormatException ignored){vgpIconSize=48;}
                 hudLabelsVisible=Boolean.parseBoolean(p.getProperty("hudLabelsVisible","true"));
+                hudLabelsMask=readBoundedVisual(p,"hudLabelsMask",hudLabelsVisible?HUD_ALL:0,0,HUD_ALL);
+                hudLabelsVisible=hudLabelsMask!=0;
                 try{hudLabelOpacity=Math.max(0,Math.min(100,Integer.parseInt(p.getProperty("hudLabelOpacity","0"))));}
                 catch(NumberFormatException ignored){hudLabelOpacity=0;}
                 try{hudLabelTextSp=Math.max(9,Math.min(14,Integer.parseInt(p.getProperty("hudLabelTextSp","11"))));}
@@ -1577,7 +1593,8 @@ public final class Control {
         p.setProperty("vgpIconSize",String.valueOf(vgpIconSize));
         p.setProperty("vgpIconOpacity",String.valueOf(vgpIconOpacity));
         p.setProperty("vgpBackgroundOpacity",String.valueOf(vgpBackgroundOpacity));
-        p.setProperty("hudLabelsVisible",String.valueOf(hudLabelsVisible));
+        p.setProperty("hudLabelsVisible",String.valueOf(hudLabelsMask!=0));
+        p.setProperty("hudLabelsMask",String.valueOf(hudLabelsMask));
         p.setProperty("hudLabelOpacity",String.valueOf(hudLabelOpacity));
         p.setProperty("hudLabelTextSp",String.valueOf(hudLabelTextSp));
         p.setProperty("vgpStopOnCooldown",String.valueOf(vgpStopOnCooldown));
