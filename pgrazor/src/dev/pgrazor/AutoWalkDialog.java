@@ -306,12 +306,12 @@ public final class AutoWalkDialog {
             java.util.List<String> labels = new java.util.ArrayList<>();
             java.util.List<Runnable> actions = new java.util.ArrayList<>();
             if (offerNearest) {
-                labels.add("Walk from the closest point\nStop " + (nearest + 1) + " of " + points.length + ", " + RouteStart.distance(toNearest) + " away");
+                labels.add("Caminhar a partir do ponto mais próximo\nParada " + (nearest + 1) + " de " + points.length + " · " + RouteStart.distance(toNearest) + " de distância");
                 actions.add(() -> walkGpx(route, RouteStart.from(points, nearest, looping), looping, nearest));
             }
-            labels.add("Walk from the beginning\n" + RouteStart.distance(toStart) + " away");
+            labels.add("Caminhar desde o início\n" + RouteStart.distance(toStart) + " de distância");
             actions.add(() -> walkGpx(route, points, looping, 0));
-            labels.add("Teleport to the beginning\nThen walk the whole route");
+            labels.add("Teletransportar para o início\nDepois percorrer toda a rota");
             actions.add(() -> TeleportDialog.confirm(activity, points[0][0], points[0][1], (tlat, tlon) -> {
                 if (closed) return false;
                 try { Control.teleport(tlat, tlon); }
@@ -320,7 +320,7 @@ public final class AutoWalkDialog {
                 walkGpx(route, points, looping, 0);
                 return true;
             }));
-            AlertDialog choose = ChoiceList.attach(new AlertDialog.Builder(MapTheme.wrap(activity)).setTitle(dev.pgrazor.PtBr.tr("Start “" + route.name + "”"))
+            AlertDialog choose = ChoiceList.attach(new AlertDialog.Builder(MapTheme.wrap(activity)).setTitle("Iniciar “" + route.name + "”")
                 .setNegativeButton(dev.pgrazor.PtBr.tr("Cancel"), null).create(), labels.toArray(new String[0]), which -> actions.get(which).run());
             DialogLifecycle.bind(activity, choose, null);
             choose.setOnShowListener(d -> MapTheme.styleButtons(choose));
