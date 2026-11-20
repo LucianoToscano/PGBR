@@ -917,7 +917,7 @@ final class SettingsPanel {
             Control.setMenuLauncherOpacity(value);host.refresh();});
         visualSlider(appearance,"Opacidade do fundo principal",0,100,Control.menuLauncherBgOpacity(),value->{
             Control.setMenuLauncherBgOpacity(value);host.refresh();});
-        visualSlider(appearance,"Tamanho do ícone de ginásios",32,110,Control.gymIconSizeDp(),value->{
+        visualSlider(appearance,"Tamanho do ícone de ginásios",24,110,Control.gymIconSizeDp(),value->{
             Control.setGymIconSizeDp(value);host.refresh();});
         visualSlider(appearance,"Opacidade do ícone de ginásios",10,100,Control.gymIconOpacity(),value->{
             Control.setGymIconOpacity(value);host.refresh();});
