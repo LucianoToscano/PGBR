@@ -1144,6 +1144,25 @@ public final class Control {
         saveState();
     }
     private static boolean darkTheme=true, joystickVisible=true;
+    // Client-only privacy mask. Do not override PlayerService, account data or RPC fields.
+    private static volatile boolean trainerAliasEnabled;
+    private static volatile String trainerAlias="";
+    private static final java.security.SecureRandom trainerAliasRandom=new java.security.SecureRandom();
+    public static boolean trainerAliasEnabled(){return trainerAliasEnabled;}
+    public static String trainerAlias(){return trainerAlias;}
+    public static void setTrainerAliasEnabled(boolean value){
+        if(value&&!TrainerAliasPolicy.valid(trainerAlias))
+            trainerAlias=TrainerAliasPolicy.generate(trainerAliasRandom);
+        trainerAliasEnabled=value;saveSettings();
+    }
+    public static void regenerateTrainerAlias(){
+        String old=trainerAlias;
+        for(int i=0;i<3;i++){
+            trainerAlias=TrainerAliasPolicy.generate(trainerAliasRandom);
+            if(!trainerAlias.equals(old))break;
+        }
+        saveSettings();
+    }
     // Visibility only. Bits are stable menu-entry IDs, independent of feature settings.
     private static volatile int quickMenuHidden;
     public static int quickMenuHidden(){return quickMenuHidden;}
@@ -1193,6 +1212,7 @@ public final class Control {
             catch(IOException pending) { event("settings-load-error","Pending save not flushed: "+pending); return; }
             StrictMode.ThreadPolicy policy=StrictMode.allowThreadDiskReads();
             quickMenuHidden=0;
+            trainerAliasEnabled=false;trainerAlias="";
             idleWalking=false;engine.setIdleWalking(false);
             SmartCatchSettings.read(new Properties());
             GymAutomationSettings.read(new Properties());
@@ -1212,6 +1232,11 @@ public final class Control {
                 ShinyScanner.read(p);
                 desiredEnabled=Boolean.parseBoolean(p.getProperty("locationSpoofing","true"));
                 darkTheme=Boolean.parseBoolean(p.getProperty("darkTheme","true"));
+                trainerAliasEnabled=Boolean.parseBoolean(p.getProperty("trainerAliasEnabled","false"));
+                trainerAlias=p.getProperty("trainerAlias","");
+                if(!TrainerAliasPolicy.valid(trainerAlias))trainerAlias="";
+                if(trainerAliasEnabled&&trainerAlias.isEmpty())
+                    trainerAlias=TrainerAliasPolicy.generate(trainerAliasRandom);
                 quickMenuHidden=boundedSetting(p,"quickMenuHidden",8191);
                 try{uiScalePercent=Integer.parseInt(p.getProperty("uiScalePercent","100"));}catch(NumberFormatException invalid){uiScalePercent=100;}
                 if(uiScalePercent!=25&&uiScalePercent!=50&&uiScalePercent!=75&&uiScalePercent!=100)uiScalePercent=100;
@@ -1368,6 +1393,8 @@ public final class Control {
         ShinyScanner.write(p);
         p.setProperty("locationSpoofing",String.valueOf(desiredEnabled));
         p.setProperty("darkTheme",String.valueOf(darkTheme));p.setProperty("uiScalePercent",String.valueOf(uiScalePercent));
+        p.setProperty("trainerAliasEnabled",String.valueOf(trainerAliasEnabled));
+        p.setProperty("trainerAlias",trainerAlias);
         p.setProperty("joystickVisible",String.valueOf(joystickVisible));
         p.setProperty("quickMenuHidden",String.valueOf(quickMenuHidden));
         p.setProperty("idleWalking",String.valueOf(idleWalking));

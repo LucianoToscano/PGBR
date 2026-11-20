@@ -1337,6 +1337,11 @@ public final class PtBr {
         m.put("Save a backup outside the app to keep settings through reinstalls. Includes favorites and their coordinates. Login tokens, current location, cooldown history and active routes are excluded.", "Salve um backup fora do aplicativo para preservar as configurações após reinstalações. Ele inclui os favoritos e suas coordenadas. Tokens de acesso, localização atual, histórico do tempo de espera e rotas ativas ficam de fora.");
         m.put("Import replaces the included settings and favorites. VGP stays off.", "A importação substitui as configurações e os favoritos incluídos no backup. O VGP permanece desligado.");
         m.put("Set favourite", "Definir como favorito");
+        m.put("Privacidade do treinador", "Privacidade do treinador");
+        m.put("Proteger nome no mapa (visual)", "Proteger nome no mapa (visual)");
+        m.put("Novo apelido aleatório", "Novo apelido aleatório");
+        m.put("Gerar novo apelido: ", "Gerar novo apelido: ");
+        m.put("Cobre visualmente o nome no canto do mapa com um apelido fictício. Arraste a tarja para alinhar. Funciona apenas como máscara local: perfil, amigos e outras telas podem continuar mostrando o nome verdadeiro. O nome da conta não muda.", "Cobre visualmente o nome no canto do mapa com um apelido fictício. Arraste a tarja para alinhar. Funciona apenas como máscara local: perfil, amigos e outras telas podem continuar mostrando o nome verdadeiro. O nome da conta não muda.");
         LABELS = Collections.unmodifiableMap(m);
     }
     private PtBr() {}

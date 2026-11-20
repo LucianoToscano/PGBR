@@ -30,7 +30,8 @@ jobs:
       - name: Compilar classe de localizacao Java e conferir dicionario
         run: |
           mkdir -p /tmp/pgbr-localizacao
-          javac -encoding UTF-8 -d /tmp/pgbr-localizacao pgrazor/src/dev/pgrazor/PtBr.java pgrazor/root-installer/src/dev/pgrazor/root/RootPtBr.java pgrazor/test/PtBrDynamicTest.java
+          javac -encoding UTF-8 -d /tmp/pgbr-localizacao pgrazor/src/dev/pgrazor/PtBr.java pgrazor/root-installer/src/dev/pgrazor/root/RootPtBr.java pgrazor/test/PtBrDynamicTest.java pgrazor/src/dev/pgrazor/TrainerAliasPolicy.java pgrazor/test/TrainerAliasPolicyTest.java
+          java -cp /tmp/pgbr-localizacao dev.pgrazor.TrainerAliasPolicyTest
           java -cp /tmp/pgbr-localizacao dev.pgrazor.PtBrDynamicTest
           python - <<'PY'
           import json
