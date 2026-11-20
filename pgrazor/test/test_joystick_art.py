@@ -52,7 +52,7 @@ class JoystickArtTests(unittest.TestCase):
             self.assertIn('p.setProperty("' + key + '"', control)
             self.assertIn(key, backup)
         self.assertIn("showJoystickStyles()", settings)
-        self.assertIn("Imagem do celular", settings)
+        self.assertIn("Imagem personalizada", settings)
         self.assertIn("joystick-eternatus", (ASSETS / "joystick-eternatus-base.webp").name)
         self.assertIn("Control.setJoystickStyle(3)", chooser)
         build = (ROOT / "build.py").read_text("utf-8")
