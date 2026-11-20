@@ -50,6 +50,7 @@ public final class QuickMenu {
     private final LinearLayout card;
     private final ScrollView viewport;
     private TextView walkLabel;
+    private View walkAction;
     private final List<TextView> rowLabels = new ArrayList<>();
     private final List<MenuIcon> rowIcons = new ArrayList<>();
     private int lastMenuIconDp=-1;
@@ -65,7 +66,7 @@ public final class QuickMenu {
         card = new LinearLayout(activity); card.setOrientation(LinearLayout.VERTICAL);
         card.setPadding(0, dp(6), 0, dp(6)); card.setElevation(dp(12));
         card.addView(row(MAP, "Map", true, listener::onMap, 1));
-        LinearLayout walkRow = (LinearLayout) row(WALK, "Walk", true, this::onWalk, 2); walkLabel = (TextView) walkRow.getChildAt(1);
+        LinearLayout walkRow = (LinearLayout) row(WALK, "Walk", true, this::onWalk, 2); walkLabel = (TextView) walkRow.getChildAt(1); walkAction = walkRow;
         card.addView(walkRow);
         card.addView(row(AUTOWALK, "Autowalk", true, listener::onAutoWalk, 4));
         card.addView(row(ROUTES, "In-game Routes", true, listener::onGameRoutes, 8));
@@ -97,6 +98,7 @@ public final class QuickMenu {
         r.addView(icon, new LinearLayout.LayoutParams(dp(Control.menuIconSizeDp()), dp(Control.menuIconSizeDp())));
         TextView t = new TextView(activity); t.setText(dev.pgrazor.PtBr.tr(label)); t.setTextSize(14.5f); t.setPadding(dp(14), 0, 0, 0);
         r.addView(t, new LinearLayout.LayoutParams(0, -2, 1f));
+        r.setContentDescription(dev.pgrazor.PtBr.tr(label));
         if (enabled && action != null) {
             r.setClickable(true); r.setFocusable(true);
             r.setBackground(new RippleDrawable(ColorStateList.valueOf(0x3345e1ba), null, rounded(0xffffffff, 10)));
@@ -116,6 +118,7 @@ public final class QuickMenu {
         if (walkLabel == null) return;
         double speed = Control.engine.speedKmh;
         walkLabel.setText(dev.pgrazor.PtBr.tr(String.format(Locale.forLanguageTag("pt-BR"), "%.1f km/h", speed)));
+        if (walkAction != null) walkAction.setContentDescription("Velocidade de caminhada: " + walkLabel.getText());
     }
 
     private void updateVisibility() {
@@ -175,9 +178,9 @@ public final class QuickMenu {
     }
 
     private int dp(float x) { return Math.round(x * activity.getResources().getDisplayMetrics().density); }
-    private int ink() { return Control.darkTheme() ? Color.rgb(235, 241, 246) : Color.rgb(25, 35, 47); }
-    private int muted() { return Control.darkTheme() ? Color.rgb(154, 171, 187) : Color.rgb(88, 105, 121); }
-    private int surface() { return Control.darkTheme() ? Color.rgb(20, 27, 37) : Color.rgb(249, 251, 253); }
+    private int ink() { return FeedTheme.chromeInk(); }
+    private int muted() { return FeedTheme.chromeMuted(); }
+    private int surface() { return FeedTheme.chromeSurface(); }
     private GradientDrawable rounded(int color, int radius) {
         GradientDrawable d = new GradientDrawable(); d.setColor(color); d.setCornerRadius(dp(radius)); return d;
     }
