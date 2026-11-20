@@ -30,14 +30,18 @@ final class ItemBadge extends View {
         if(cached!=null)return cached;
         if(MISSED.get(id))return null;
         if(id<=0||id>999999){MISSED.put(id,true);return null;}
-        String file=id>=701&&id<=707?"pgrazor/map-icons/berry-"+id+".png":
-            "pgrazor/item-icons/item-"+id+".png";
-        try(java.io.InputStream stream=PgAssets.open(context,file)){
-            BitmapFactory.Options options=new BitmapFactory.Options();
-            options.inSampleSize=2; // Crisp for 26dp while avoiding 256px per-row allocations.
-            Bitmap bitmap=BitmapFactory.decodeStream(stream,null,options);
-            if(bitmap!=null){CACHE.put(id,bitmap);return bitmap;}
-        }catch(Exception ignored){}
+        // Prefer an ID-exact inventory sprite; old map berries are a compatibility fallback.
+        String[] choices=id>=701&&id<=707?
+            new String[]{"pgrazor/item-icons/item-"+id+".png","pgrazor/map-icons/berry-"+id+".png"}:
+            new String[]{"pgrazor/item-icons/item-"+id+".png"};
+        for(String file:choices){
+            try(java.io.InputStream stream=PgAssets.open(context,file)){
+                BitmapFactory.Options options=new BitmapFactory.Options();
+                options.inSampleSize=2; // Crisp at 26dp without full-resolution per-row allocations.
+                Bitmap bitmap=BitmapFactory.decodeStream(stream,null,options);
+                if(bitmap!=null){CACHE.put(id,bitmap);return bitmap;}
+            }catch(Exception ignored){}
+        }
         MISSED.put(id,true);return null;
     }
     private void fill(int color){paint.setColor(color);paint.setStyle(Paint.Style.FILL);paint.setStrokeWidth(1);}
