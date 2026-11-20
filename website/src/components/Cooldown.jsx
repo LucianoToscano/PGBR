@@ -6,9 +6,9 @@ export default function Cooldown() {
   return (
     <section className="section" id="cooldown" aria-labelledby="cooldown-heading">
       <div className="section__head">
-        <p className="section__num">02 / Cooldown</p>
+        <p className="section__num">02 / Tempo de espera</p>
         <h2 id="cooldown-heading" className="section__title">
-          Cooldown between locations.
+          Tempo de espera entre locais.
         </h2>
         <p className="section__lead">{cooldown.intro}</p>
       </div>
@@ -16,7 +16,7 @@ export default function Cooldown() {
       <div className="cooldown__groups">
         <details className="cooldown__group" open>
           <summary>
-            <span>Starts the cooldown</span>
+            <span>Inicia a espera</span>
             <span className="faq__mark" aria-hidden="true" />
           </summary>
           <ul className="cooldown__list cooldown__list--trigger">
@@ -28,7 +28,7 @@ export default function Cooldown() {
 
         <details className="cooldown__group">
           <summary>
-            <span>Does not start it</span>
+            <span>Não inicia a espera</span>
             <span className="faq__mark" aria-hidden="true" />
           </summary>
           <ul className="cooldown__list cooldown__list--safe">
@@ -41,14 +41,14 @@ export default function Cooldown() {
 
       <figure className="cooldown__chart">
         <figcaption className="cooldown__chart-cap">
-          Distance between actions and estimated wait. Read down each column.
+          Distância entre ações e tempo estimado de espera. Leia cada coluna de cima para baixo.
         </figcaption>
         <div className="cooldown__tables">
           {[cooldown.chart.slice(0, 15), cooldown.chart.slice(15)].map((rows, index) => (
             <div className="cooldown__table-wrap" key={index}>
               <table className="cooldown__table">
-                <caption className="visually-hidden">Distance and estimated wait, part {index + 1} of 2. Read each table from top to bottom.</caption>
-                <thead><tr><th scope="col">Distance (km)</th><th scope="col">Wait (est.)</th></tr></thead>
+                <caption className="visually-hidden">Distância e espera estimada, parte {index + 1} de 2. Leia cada tabela de cima para baixo.</caption>
+                <thead><tr><th scope="col">Distância (km)</th><th scope="col">Espera (est.)</th></tr></thead>
                 <tbody>{rows.map(row => (
                   <tr key={row.km}><th scope="row">{row.km}</th><td>{row.wait}</td></tr>
                 ))}</tbody>
@@ -59,8 +59,7 @@ export default function Cooldown() {
       </figure>
 
       <p className="cooldown__note">
-        PGBR's timer is a local estimate, not a server countdown. Waiting does not
-        guarantee that an action will succeed.
+        O cronômetro do PGBR faz uma estimativa local, não lê o servidor. Esperar não garante o sucesso das ações.
       </p>
     </section>
   );
