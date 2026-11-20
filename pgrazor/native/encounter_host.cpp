@@ -787,6 +787,7 @@ static void handle_vgp_transfer_ready(const PgrVgpControllerOut &out, uint64_t t
   tp_in.protect = protect_mask;
   tp_in.known = tf_out.known;
   tp_in.flags = tf_out.flags;
+  tp_in.reserved=static_cast<uint32_t>(g_opts.transfer_protect)>>8;
   tp_in.keep_all = keep_all ? 1 : 0; // VGP/VGP+ use main protection settings; research catches honor Keep All.
   tp_in.keep_count = g_keep_species_count;
   tp_in.keep_ids = g_keep_species_count ? g_keep_species : nullptr;
