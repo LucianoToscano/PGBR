@@ -1025,7 +1025,11 @@ public final class Control {
         if (pad != null) pad.close();
         foreground = true;
         restoreRuntime("foreground");
-        try { pad = new Pad(activity); event("panel-ready", activity.getClass().getName()); }
+        try {
+            pad = new Pad(activity);
+            event("panel-ready", activity.getClass().getName());
+            UpdateChecker.checkAutomatically(activity);
+        }
         catch (RuntimeException error) { suspendForBackground(); event("panel-error", error.toString()); }
     }
     public static void disconnect() {
