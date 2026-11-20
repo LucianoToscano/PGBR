@@ -55,6 +55,7 @@ public final class ResearchPreferences {
         selected.clear(); catalog.clear();
         for (String t : p.getProperty("researchSelected", "").split(",", -1))
             if (validTemplate(t) && selected.size() < MAX_TEMPLATES) selected.add(t);
+        if (selected.isEmpty()) keepSelected = false;
         // Categories saved before format 2 were derived without the event tag, so they are re-read.
         boolean categorized = "2".equals(p.getProperty("researchCatalogFormat"));
         for (String line : p.getProperty("researchCatalog", "").split("\n", -1)) {
@@ -102,7 +103,7 @@ public final class ResearchPreferences {
     public synchronized int selectedCount() { return selected.size(); }
     public synchronized void select(String template, boolean on) {
         if (!validTemplate(template)) throw new IllegalArgumentException("Unknown research task.");
-        if (!on) { selected.remove(template); return; }
+        if (!on) { selected.remove(template); if (selected.isEmpty()) keepSelected = false; return; }
         if (!selected.contains(template) && selected.size() >= MAX_TEMPLATES)
             throw new IllegalArgumentException("Select at most " + MAX_TEMPLATES + " tasks.");
         selected.add(template);
@@ -110,7 +111,7 @@ public final class ResearchPreferences {
     /** Selects or clears every listed template, or none of them when the selection would overflow. */
     public synchronized void selectAll(List<String> templates, boolean on) {
         for (String t : templates) if (!validTemplate(t)) throw new IllegalArgumentException("Unknown research task.");
-        if (!on) { selected.removeAll(templates); return; }
+        if (!on) { selected.removeAll(templates); if (selected.isEmpty()) keepSelected = false; return; }
         TreeSet<String> next = new TreeSet<>(selected);
         next.addAll(templates);
         if (next.size() > MAX_TEMPLATES) throw new IllegalArgumentException("Select at most " + MAX_TEMPLATES + " tasks.");

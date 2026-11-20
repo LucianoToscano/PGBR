@@ -116,6 +116,8 @@ public final class ResearchSettings {
         Runnable[] fill = new Runnable[1];
         Runnable refill = () -> list.post(fill[0]);
         fill[0] = () -> {
+            // Clearing the last protected task turns this mode off, never resumes without consent.
+            if (keep.isChecked() != preferences.keepSelected()) keep.setChecked(preferences.keepSelected());
             list.removeAllViews();
             String query = search.getText().toString().trim();
             List<String[]> tasks = preferences.tasks(query);

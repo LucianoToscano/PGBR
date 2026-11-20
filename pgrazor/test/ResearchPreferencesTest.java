@@ -82,7 +82,9 @@ public final class ResearchPreferencesTest {
         safe.setKeepSelected(true);
         require(safe.config().equals("R3|2|0|0|PREFERRED_QUEST"), "chosen task enables inverse mode");
         safe.select("PREFERRED_QUEST", false);
-        require(safe.config().equals("R3|0|0|0|"), "clearing last target automatically stops deletion");
+        require(!safe.keepSelected() && safe.config().equals("R3|0|0|0|"), "clearing last target disables the mode until reconfirmed");
+        safe.select("SECOND_QUEST", true);
+        require(!safe.keepSelected() && safe.config().equals("R3|0|0|0|"), "adding another target does not secretly reactivate deletion");
 
         ResearchPreferences full = new ResearchPreferences();
         full.read(new Properties());
