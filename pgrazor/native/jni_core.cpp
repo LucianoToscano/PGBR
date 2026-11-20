@@ -10,6 +10,7 @@
 #include "runtime_transport_jni.h"
 #include "runtime_bootstrap.h"
 #include "runtime_host.h"
+#include "trainer_privacy_ui.h"
 
 namespace {
 
@@ -47,6 +48,24 @@ jlongArray JNICALL jni_runtime_health(JNIEnv *env,jclass){
     return result;
 }
 
+// Configuration only. JNI never invokes Unity or reads/writes PlayerService.
+jint JNICALL jni_trainer_privacy_configure(JNIEnv *env, jclass, jboolean enabled, jstring trainer) {
+    if (trainer == nullptr)
+        return pgrazor_trainer_privacy_configure(enabled == JNI_TRUE ? 1 : 0, nullptr, 0);
+    const jsize length = env->GetStringLength(trainer);
+    if (length < 0 || length > 128) return -1;
+    const jchar *chars = env->GetStringChars(trainer, nullptr);
+    if (!chars) return -1;
+    const int result = pgrazor_trainer_privacy_configure(
+        enabled == JNI_TRUE ? 1 : 0,
+        reinterpret_cast<const uint16_t *>(chars), static_cast<uint32_t>(length));
+    env->ReleaseStringChars(trainer, chars);
+    return result;
+}
+jint JNICALL jni_trainer_privacy_status(JNIEnv *, jclass) {
+    return pgrazor_trainer_privacy_status();
+}
+
 const JNINativeMethod kMethods[] = {
     {const_cast<char *>("apiVersion"), const_cast<char *>("()I"),
      reinterpret_cast<void *>(&jni_api_version)},
@@ -55,6 +74,10 @@ const JNINativeMethod kMethods[] = {
     {const_cast<char *>("bootstrapProbe"),const_cast<char *>("()J"),reinterpret_cast<void *>(&jni_bootstrap_probe)},
     {const_cast<char *>("runtimeStart"),const_cast<char *>("(I)I"),reinterpret_cast<void *>(&jni_runtime_start)},
     {const_cast<char *>("runtimeHealth"),const_cast<char *>("()[J"),reinterpret_cast<void *>(&jni_runtime_health)},
+    {const_cast<char *>("trainerPrivacyConfigure"),const_cast<char *>("(ZLjava/lang/String;)I"),
+     reinterpret_cast<void *>(&jni_trainer_privacy_configure)},
+    {const_cast<char *>("trainerPrivacyStatus"),const_cast<char *>("()I"),
+     reinterpret_cast<void *>(&jni_trainer_privacy_status)},
 };
 
 } // namespace
