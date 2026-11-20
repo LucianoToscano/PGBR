@@ -53,6 +53,7 @@ public final class EternatusMission {
                 state="Pesquisa selecionada resgatada. Progresso salvo: "+EternatusProgress.confirmed(app)+
                     " resgates (a quantidade real de doces precisa ser conferida no jogo).";
                 Control.event("eternatus-research-claim",observedTemplate);
+                EternatusRouteRunner.onClaim(observedTemplate);
             }else state="A pesquisa foi resgatada, mas o registro local não foi salvo.";
         }else if("error".equals(phase))state="Erro ao processar pesquisa selecionada. Confira as pesquisas no jogo.";
     }
