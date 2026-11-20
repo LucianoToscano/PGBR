@@ -295,7 +295,7 @@ public final class GpxRouteDialog {
     }
 
     /** File results arrive before resume; reopen only after this activity has focus. */
-    static void whenResumed(Activity activity,Runnable action) {
+    public static void whenResumed(Activity activity,Runnable action) {
         final long until=android.os.SystemClock.uptimeMillis()+5000;
         MAIN.post(new Runnable(){public void run(){
             if(!alive(activity))return;
