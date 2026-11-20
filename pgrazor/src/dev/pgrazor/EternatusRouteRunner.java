@@ -20,6 +20,7 @@ public final class EternatusRouteRunner {
     private static String template = "";
     private static boolean running, previousVgpOverlay, previousVgpEnabled, previousQuickSpin;
     private static boolean awaitingClaim, advancementQueued;
+    private static final java.util.HashSet<String> confirmedQuestIds=new java.util.HashSet<>();
     private static int at;
     private static long arrivedAt, lastTick;
     private static String status = "Nenhuma rota GPX selecionada.";
@@ -84,6 +85,7 @@ public final class EternatusRouteRunner {
             lastTick = 0;
             awaitingClaim = false;
             advancementQueued = false;
+            confirmedQuestIds.clear();
             status = "Preparando a primeira parada.";
         }
         // Preserve old preferences so Cancel restores the user's previous mode.
@@ -179,10 +181,12 @@ public final class EternatusRouteRunner {
     }
 
     /** Native research owner sends only a successful claim of the exact selected quest. */
-    public static void onClaim(String claimedTemplate) {
+    public static void onClaim(String claimedTemplate,String questId) {
         final int completedStop;
         synchronized (LOCK) {
-            if (!running || !awaitingClaim || advancementQueued || !template.equals(claimedTemplate)) return;
+            if (!running || !awaitingClaim || advancementQueued || !template.equals(claimedTemplate)
+                || questId == null || questId.isEmpty() || questId.length() > 256
+                || !confirmedQuestIds.add(questId)) return;
             advancementQueued = true;
             awaitingClaim = false;
             completedStop = at;
