@@ -84,7 +84,7 @@ public final class RuntimeMailbox {
         "throwGrade::int",
         "transferKeepAll::boolean",
         "transferKeepSpecies::String",
-        "nativeTransferProtect::int",
+        "transferProtect::int",
         "vgpAllowed::boolean",
         "vgpEnabled::boolean",
         "vgpMapVisible::boolean",
@@ -192,7 +192,7 @@ public final class RuntimeMailbox {
         for(String spec:specs){String[] fields=spec.split(":",-1);
             String[] args=fields[1].isEmpty()?new String[0]:fields[1].split(",");
             Class<?>[] signature=new Class<?>[args.length];for(int i=0;i<args.length;i++)signature[i]=type(args[i]);
-            Method method=Control.class.getMethod(fields[0],signature);
+            Method method=Control.class.getMethod("transferProtect".equals(fields[0]) ? "nativeTransferProtect" : fields[0],signature);
             if(!Modifier.isStatic(method.getModifiers())||method.getReturnType()!=type(fields[2]))throw invalid();
             target.put(fields[0],method);
         }

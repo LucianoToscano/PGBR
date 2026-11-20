@@ -51,7 +51,7 @@ public final class NativeRuntimeTransport {
     };
     private static final String[] INT_READERS = {
         "battleOptions", "buddyBerry", "giftOptions", "itemCatalogMode", "mapTapEpoch", "mapTapMode",
-        "rocketOptions", "throwGrade", "nativeTransferProtect", "vgpOptions"
+        "rocketOptions", "throwGrade", "transferProtect", "vgpOptions"
     };
     private static final String[] DOUBLE_READERS = {"latitude", "longitude"};
     private static final String[] STRING_READERS = {
@@ -190,7 +190,7 @@ public final class NativeRuntimeTransport {
         }
     }
     private static Method reader(String name, Class<?> expected) throws Exception {
-        Method method = Control.class.getMethod(name);
+        Method method = Control.class.getMethod("transferProtect".equals(name) ? "nativeTransferProtect" : name);
         if (!Modifier.isStatic(method.getModifiers()) || method.getReturnType() != expected) throw invalid();
         return method;
     }
