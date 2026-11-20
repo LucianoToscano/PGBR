@@ -844,10 +844,34 @@ final class SettingsPanel {
         LinearLayout appearance=group(page,"Personalização dos ícones e fundos");
         visualSlider(appearance,"Tamanho dos ícones dos menus",16,40,Control.menuIconSizeDp(),value->{
             Control.setMenuIconSizeDp(value);host.refresh();});
+        launch(appearance,"Ícone do menu principal: PGBR / PGEterna / Personalizado",()->{
+            String[] labels={"PGBR (azul pulsante)","PGEterna (efeitos Eternatus)","Imagem escolhida no celular"};
+            new AlertDialog.Builder(dialogContext()).setTitle("Ícone do menu principal")
+                .setSingleChoiceItems(labels,Control.menuLauncherIconStyle(),(dialog,which)->{
+                    dialog.dismiss();
+                    if(which==2){
+                        OverlayArtwork.select(activity,"launcher",()->{Control.setMenuLauncherIconStyle(2);host.refresh();});
+                    }else{Control.setMenuLauncherIconStyle(which);host.refresh();}
+                }).setNegativeButton("Cancelar",null).show();
+        });
+        visualSlider(appearance,"Tamanho do botão principal",28,96,Control.menuLauncherSizeDp(),value->{
+            Control.setMenuLauncherSizeDp(value);host.refresh();});
+        visualSlider(appearance,"Opacidade do ícone principal",10,100,Control.menuLauncherOpacity(),value->{
+            Control.setMenuLauncherOpacity(value);host.refresh();});
+        visualSlider(appearance,"Opacidade do fundo principal",0,100,Control.menuLauncherBgOpacity(),value->{
+            Control.setMenuLauncherBgOpacity(value);host.refresh();});
         visualSlider(appearance,"Tamanho do ícone de ginásios",32,110,Control.gymIconSizeDp(),value->{
             Control.setGymIconSizeDp(value);host.refresh();});
         visualSlider(appearance,"Opacidade do ícone de ginásios",10,100,Control.gymIconOpacity(),value->{
             Control.setGymIconOpacity(value);host.refresh();});
+        visualSlider(appearance,"Opacidade do fundo de ginásios",0,100,Control.gymBackgroundOpacity(),value->{
+            Control.setGymBackgroundOpacity(value);host.refresh();});
+        launch(appearance,"Exibir ou ocultar ícone do ginásio e frutas",()->GymAutomationSettings.show(activity));
+        launch(appearance,"Escolher símbolo do ginásio no celular",()->OverlayArtwork.select(activity,"gym",host::refresh));
+        launch(appearance,"Escolher fruta do botão no celular",()->OverlayArtwork.select(activity,"berry",host::refresh));
+        launch(appearance,"Restaurar símbolos originais do ginásio e fruta",()->{
+            OverlayArtwork.reset(activity,"gym",()->OverlayArtwork.reset(activity,"berry",host::refresh));
+        });
         visualSlider(appearance,"Opacidade dos fundos flutuantes",0,100,Control.overlayBackgroundOpacity(),value->{
             Control.setOverlayBackgroundOpacity(value);host.applyTheme();host.refresh();});
         caption(appearance,"0% deixa os fundos flutuantes transparentes. Janelas de confirmação permanecem legíveis para evitar ações acidentais.");
@@ -1109,59 +1133,58 @@ final class SettingsPanel {
     }
 
     private void showVgpAppearance(){
-        LinearLayout content=new LinearLayout(activity);
-        content.setOrientation(LinearLayout.VERTICAL);
-        content.setPadding(dp(16),dp(14),dp(16),dp(8));
+        LinearLayout content=new LinearLayout(activity);content.setOrientation(LinearLayout.VERTICAL);
+        content.setPadding(dp(16),dp(10),dp(16),dp(8));
         TextView hint=new TextView(activity);
-        hint.setText(dev.pgrazor.PtBr.tr("Escolha uma imagem. A aparência muda conforme o VGP está desligado, ativo ou com falha."));
-        hint.setTextSize(14);content.addView(hint);
+        hint.setText(dev.pgrazor.PtBr.tr("Ícone e fundo são independentes. O fundo redondo cinza mantém o tamanho do GO Plus e pode ficar totalmente transparente."));
+        hint.setTextSize(13);content.addView(hint);
         LinearLayout previews=new LinearLayout(activity);
         previews.setGravity(Gravity.CENTER);previews.setOrientation(LinearLayout.HORIZONTAL);
         content.addView(previews);
-        final ImageView[] choices=new ImageView[2];
-        final String[] files={"vgp-ring.png","vgp-hd-states.webp"};
-        for(int i=0;i<2;i++){
-            final int choice=i;
-            ImageView image=new ImageView(activity);choices[i]=image;
-            try(java.io.InputStream input=PgAssets.open(activity,"pgrazor/map-icons/"+files[i])){
-                Bitmap bitmap=BitmapFactory.decodeStream(input);
-                if(i==1&&bitmap!=null&&bitmap.getHeight()==bitmap.getWidth()*3){
-                    bitmap=Bitmap.createBitmap(bitmap,0,bitmap.getWidth()*2,bitmap.getWidth(),bitmap.getWidth());
-                }
+        final ImageView[] choices=new ImageView[3];
+        final String[] files={"vgp-ring.png","vgp-hd-states.webp","vgp-hd-states.webp"};
+        for(int i=0;i<choices.length;i++){
+            final int style=i;ImageView image=new ImageView(activity);choices[i]=image;
+            try(java.io.InputStream in=PgAssets.open(activity,"pgrazor/map-icons/"+files[i])){
+                Bitmap bitmap=BitmapFactory.decodeStream(in);
+                if(i>0&&bitmap!=null&&bitmap.getHeight()==bitmap.getWidth()*3)
+                    bitmap=Bitmap.createBitmap(bitmap,0,2*bitmap.getWidth(),bitmap.getWidth(),bitmap.getWidth());
                 image.setImageBitmap(bitmap);
             }catch(java.io.IOException|RuntimeException ignored){}
             image.setScaleType(ImageView.ScaleType.FIT_CENTER);
-            image.setPadding(dp(10),dp(10),dp(10),dp(10));
-            LinearLayout.LayoutParams params=new LinearLayout.LayoutParams(0,dp(96),1f);
+            image.setPadding(dp(5),dp(5),dp(5),dp(5));
+            LinearLayout.LayoutParams params=new LinearLayout.LayoutParams(0,dp(85),1f);
             previews.addView(image,params);
-            image.setContentDescription(dev.pgrazor.PtBr.tr(i==0?"Ícone LED verde":"Ícone GO Plus com três estados"));
+            image.setContentDescription(style==0?"LED":style==1?"GO Plus com fundo cinza":"GO Plus sem fundo");
             image.setOnClickListener(v->{
-                Control.setVgpIconStyle(choice);
-                for(int j=0;j<2;j++)choices[j].setBackgroundColor(j==choice?0x3340BDAA:android.graphics.Color.TRANSPARENT);
+                Control.setVgpIconStyle(style);
+                for(int j=0;j<choices.length;j++)
+                    choices[j].setBackgroundColor(j==style?0x3340BDAA:Color.TRANSPARENT);
                 host.refresh();
-                vgpIconStyleButton.setText(dev.pgrazor.PtBr.tr("Ícone do VGP: "+(choice==0?"LED":"GO Plus")));
+                if(vgpIconStyleButton!=null)
+                    vgpIconStyleButton.setText("Ícone do VGP: "+new String[]{"LED","GO Plus cinza","GO Plus transparente"}[style]);
             });
         }
-        choices[Control.vgpIconStyle()].setBackgroundColor(0x3340BDAA);
-        TextView sizeLabel=new TextView(activity);
-        sizeLabel.setText(dev.pgrazor.PtBr.tr("Tamanho: "+Control.vgpIconSize()+" dp"));
-        sizeLabel.setTextSize(14);content.addView(sizeLabel);
-        SeekBar slider=new SeekBar(activity);
-        slider.setMax(44);slider.setProgress(Control.vgpIconSize()-28);
-        content.addView(slider);
-        slider.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){
-            public void onProgressChanged(SeekBar bar,int progress,boolean user){
-                if(user){Control.setVgpIconSize(progress+28);sizeLabel.setText(dev.pgrazor.PtBr.tr("Tamanho: "+Control.vgpIconSize()+" dp"));host.refresh();}
-            }
-            public void onStartTrackingTouch(SeekBar bar){}
-            public void onStopTrackingTouch(SeekBar bar){}
-        });
-        new AlertDialog.Builder(dialogContext()).setTitle(dev.pgrazor.PtBr.tr("Aparência do VGP"))
-            .setView(content).setPositiveButton(dev.pgrazor.PtBr.tr("Concluir"),null).show();
+        if(Control.vgpIconStyle()<choices.length)
+            choices[Control.vgpIconStyle()].setBackgroundColor(0x3340BDAA);
+        visualSlider(content,"Tamanho do VGP",28,72,Control.vgpIconSize(),value->{
+            Control.setVgpIconSize(value);host.refresh();});
+        visualSlider(content,"Opacidade do ícone VGP",10,100,Control.vgpIconOpacity(),value->{
+            Control.setVgpIconOpacity(value);host.refresh();});
+        visualSlider(content,"Opacidade do fundo cinza VGP",0,100,Control.vgpBackgroundOpacity(),value->{
+            Control.setVgpBackgroundOpacity(value);host.refresh();});
+        launch(content,"Escolher imagem VGP no celular",()->OverlayArtwork.select(activity,"vgp",()->{
+            Control.setVgpIconStyle(3);host.refresh();
+        }));
+        launch(content,"Restaurar imagem original VGP",()->OverlayArtwork.reset(activity,"vgp",()->{
+            Control.setVgpIconStyle(1);host.refresh();
+        }));
+        new AlertDialog.Builder(dialogContext()).setTitle("Aparência do VGP")
+            .setView(content).setPositiveButton("Concluir",null).show();
     }
     private void refreshVgpOptions() {
         if(vgpIconStyleButton!=null){
-            String[] choices={"LED","GO Plus"};
+            String[] choices={"LED","GO Plus cinza","GO Plus transparente","Personalizado"};
             vgpIconStyleButton.setText(dev.pgrazor.PtBr.tr("Ícone do VGP: "+choices[Control.vgpIconStyle()]));
         }
         for(int i=0;i<3;i++)vgpChoices[i].setChecked((Control.vgpOptions()&(1<<i))!=0);
