@@ -1,0 +1,32 @@
+name: PGBR - verificacao incremental Eternatus e privacidade
+on:
+  push:
+    branches: [feature/eternatus-rota-automatica-lt]
+  pull_request:
+    branches: [feature/pt-br-traducao]
+permissions:
+  contents: read
+jobs:
+  unit-java:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Testar coordenador GPX e cooldown
+        run: python -B -m unittest discover -s pgrazor/test -p 'test_eternatus_route_java.py' -v
+      - name: Validar apelidos de treinador
+        run: |
+          mkdir -p build/pgbr-unit
+          javac -encoding UTF-8 -d build/pgbr-unit pgrazor/src/dev/pgrazor/TrainerAliasPolicy.java pgrazor/test/TrainerAliasPolicyTest.java
+          java -cp build/pgbr-unit dev.pgrazor.TrainerAliasPolicyTest
+      - name: Verificar integridade do diff
+        run: git diff --check HEAD~1 HEAD

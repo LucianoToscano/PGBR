@@ -48,7 +48,7 @@ public final class EternatusMission {
         // R4 = selective claim, selective discard. All unselected completed rewards are preserved.
         return "R4|3|1|0|"+chosen;
     }
-    public static void onResult(String phase,String observedTemplate) {
+    public static void onResult(String phase,String observedTemplate,String questId) {
         if(!enabled||!template.equals(observedTemplate))return;
         if("claimed".equals(phase)){
             Context app=context;
@@ -56,6 +56,7 @@ public final class EternatusMission {
                 state="Pesquisa selecionada resgatada. Progresso salvo: "+EternatusProgress.confirmed(app)+
                     " resgates (a quantidade real de doces precisa ser conferida no jogo).";
                 Control.event("eternatus-research-claim",observedTemplate);
+                EternatusRouteRunner.onClaim(observedTemplate,questId);
             }else state="A pesquisa foi resgatada, mas o registro local não foi salvo.";
         }else if("error".equals(phase))state="Erro ao processar pesquisa selecionada. Confira as pesquisas no jogo.";
     }

@@ -205,7 +205,7 @@ public final class Pad {
         panelView.setOnApplyWindowInsetsListener((view,insets) -> {settings.applyInsets(insets);return insets;});
         panelView.requestApplyInsets();
 
-        vgpToggle=new VgpToggle(host);FrameLayout.LayoutParams vgpButtonLayout=new FrameLayout.LayoutParams(dp(Math.max(48,Control.vgpIconSize())),dp(Math.max(48,Control.vgpIconSize())),Gravity.TOP|Gravity.LEFT);vgpButtonLayout.leftMargin=dp(12);vgpButtonLayout.topMargin=dp(156);overlays.addView(vgpToggle,vgpButtonLayout);vgpToggle.setOnClickListener(v->{Control.setVgpEnabled(!Control.vgpEnabled());refresh();});
+        vgpToggle=new VgpToggle(host);FrameLayout.LayoutParams vgpButtonLayout=new FrameLayout.LayoutParams(dp(Math.max(48,Control.vgpIconSize())),dp(Math.max(48,Control.vgpIconSize())),Gravity.TOP|Gravity.LEFT);vgpButtonLayout.leftMargin=dp(12);vgpButtonLayout.topMargin=dp(156);overlays.addView(vgpToggle,vgpButtonLayout);vgpToggle.setOnClickListener(v->{if(EternatusRouteRunner.active())EternatusRouteRunner.stop("Controle manual do VGP+ assumido.");Control.setVgpEnabled(!Control.vgpEnabled());refresh();});
         vgpActivity=text("VGP",11,ink());vgpActivity.setPadding(dp(4),dp(2),dp(4),dp(2));vgpActivity.setMaxLines(1);vgpActivity.setEllipsize(android.text.TextUtils.TruncateAt.END);
         FrameLayout.LayoutParams vgpLayout=new FrameLayout.LayoutParams(dp(140),-2,Gravity.TOP|Gravity.LEFT);vgpLayout.leftMargin=dp(12);vgpLayout.topMargin=dp(216);overlays.addView(vgpActivity,vgpLayout);vgpActivity.setVisibility(View.GONE);
         buddyEmotionStatus=text("EP: aguardando",11,ink());buddyEmotionStatus.setPadding(dp(4),dp(2),dp(4),dp(2));buddyEmotionStatus.setMaxLines(1);buddyEmotionStatus.setEllipsize(android.text.TextUtils.TruncateAt.END);
@@ -218,7 +218,7 @@ public final class Pad {
         automationStatus=text("",11,ink());automationStatus.setPadding(dp(8),dp(5),dp(8),dp(5));automationStatus.setMaxLines(3);
         FrameLayout.LayoutParams automationLayout=new FrameLayout.LayoutParams(dp(220),-2,Gravity.TOP|Gravity.LEFT);automationLayout.leftMargin=dp(12);automationLayout.topMargin=dp(440);
         overlays.addView(automationStatus,automationLayout);automationStatus.setVisibility(View.GONE);
-        automationStatus.setOnClickListener(v->AutomationPanel.show(activity));automationDrag=OverlayDrag.attach(overlays,automationStatus,"automation");
+        automationStatus.setOnClickListener(v->{if(EternatusRouteRunner.active())dev.pgrazor.events.EventPanel.showEternatus(activity,Control.darkTheme());else AutomationPanel.show(activity);});automationDrag=OverlayDrag.attach(overlays,automationStatus,"automation");
         // Catch chance for the open encounter, under the game's nameplate; drag to move it.
         catchChance=text("",12,ink());catchChance.setPadding(dp(10),dp(6),dp(10),dp(6));catchChance.setMaxLines(2);catchChance.setGravity(Gravity.CENTER);
         FrameLayout.LayoutParams catchLayout=new FrameLayout.LayoutParams(-2,-2,Gravity.TOP|Gravity.CENTER_HORIZONTAL);catchLayout.topMargin=dp(400);
@@ -562,7 +562,7 @@ public final class Pad {
         // Pair the status line with the toggle so the cooldown shutoff reason is visible even when VGP is off.
         if(buddyEmotionStatus!=null){buddyEmotionStatus.setVisibility(Control.hudLabelsVisible()&&BuddyEmotionSettings.overlayEnabled()&&!settings.isVisible()&&!(quickMenu!=null&&quickMenu.isShowing())?View.VISIBLE:View.GONE);setTextIfChanged(buddyEmotionStatus,compactBuddyStatus(BuddyEmotionSettings.status()));buddyEmotionStatus.setTextColor(ink());}
         if(catchChance!=null){catchChance.setVisibility(Control.hudLabelsVisible()&&CatchChance.visible()&&!settings.isVisible()&&!(quickMenu!=null&&quickMenu.isShowing())?View.VISIBLE:View.GONE);setTextIfChanged(catchChance,CatchChance.text());catchChance.setTextColor(ink());}
-        if(automationStatus!=null){automationStatus.setVisibility(Control.hudLabelsVisible()&&(OneShotAutomation.overlayVisible()||AutoRaid.running())&&!settings.isVisible()&&!(quickMenu!=null&&quickMenu.isShowing())?View.VISIBLE:View.GONE);setTextIfChanged(automationStatus,AutoRaid.running()?"Auto-Raid | "+AutoRaid.status():OneShotAutomation.overlayStatus());automationStatus.setTextColor(ink());automationDrag.refreshBounds();}
+        if(automationStatus!=null){automationStatus.setVisibility(Control.hudLabelsVisible()&&(EternatusRouteRunner.active()||OneShotAutomation.overlayVisible()||AutoRaid.running())&&!settings.isVisible()&&!(quickMenu!=null&&quickMenu.isShowing())?View.VISIBLE:View.GONE);setTextIfChanged(automationStatus,EternatusRouteRunner.active()?"Eternatus "+EternatusRouteRunner.currentStop()+"/"+EternatusRouteRunner.totalStops()+" · "+EternatusRouteRunner.status():AutoRaid.running()?"Auto-Raid | "+AutoRaid.status():OneShotAutomation.overlayStatus());automationStatus.setTextColor(ink());automationDrag.refreshBounds();}
         if(vgpActivity!=null){vgpActivity.setVisibility(Control.hudLabelsVisible()&&Control.vgpOverlayVisible()&&!settings.isVisible()&&!(quickMenu!=null&&quickMenu.isShowing())?View.VISIBLE:View.GONE);setTextIfChanged(vgpActivity,Control.vgpEnabled()?"VGP · Ligado":"VGP · Desligado");vgpActivity.setContentDescription(dev.pgrazor.PtBr.tr("Status completo do VGP: "+Control.vgpStatus()));vgpActivity.setTextColor(ink());}
         if(mapCatchBadge!=null)mapCatchBadge.refresh(!settings.isVisible()&&!(quickMenu!=null&&quickMenu.isShowing())&&!Control.catchScreenVisible());
         if(vgpMarker!=null){boolean show=Control.vgpTargetVisible()&&!settings.isVisible();vgpMarker.setVisibility(show?View.VISIBLE:View.GONE);if(show){vgpMarker.setX(Control.vgpTargetX()*parent.getWidth()-dp(19)*vgpMarker.getScaleX());vgpMarker.setY(Control.vgpTargetY()*parent.getHeight()-dp(36)-dp(46)*vgpMarker.getScaleY());vgpMarker.invalidate();}}
@@ -933,6 +933,7 @@ public final class Pad {
         public boolean onTouchEvent(MotionEvent e) {
             int action=e.getActionMasked();
             if (action==MotionEvent.ACTION_DOWN) {
+                if(EternatusRouteRunner.active())EternatusRouteRunner.stop("Movimento manual pelo joystick.");
                 getParent().requestDisallowInterceptTouchEvent(true);
                 // A deliberate manual takeover cancels even when a fresh camera
                 // heading is unavailable. Passive camera loss preserves a walk.

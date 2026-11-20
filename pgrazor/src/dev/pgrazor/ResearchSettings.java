@@ -55,7 +55,7 @@ public final class ResearchSettings {
                 if (changed) Control.saveSettings();
                 return;
             }
-            EternatusMission.onResult(phase,o.optString("template",""));
+            EternatusMission.onResult(phase,o.optString("template",""),o.optString("questId",""));
             synchronized (LOCK) {
                 if ("claimed".equals(phase)) claimed++;
                 if ("removed".equals(phase)) removed++;

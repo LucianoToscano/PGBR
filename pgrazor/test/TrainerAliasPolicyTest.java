@@ -11,6 +11,11 @@ public final class TrainerAliasPolicyTest {
         }
         if(TrainerAliasPolicy.valid(null)||TrainerAliasPolicy.valid("PGBR_Treinador")||
            TrainerAliasPolicy.valid("PGBR_Treinador000A"))throw new AssertionError("Invalid alias accepted");
+        for(String alias:new String[]{"PGBR Treinador","Treinador LT","João-42","PGEterna_2026"})
+            if(!TrainerAliasPolicy.validCustom(alias))throw new AssertionError("Alias valid rejected: "+alias);
+        for(String alias:new String[]{"","x"," a","a ","a  b","<script>","Joe\\n42","🚀","aaaaaaaaaaaaaaaaaaaaaaaaa"})
+            if(TrainerAliasPolicy.validCustom(alias))throw new AssertionError("Unsafe alias accepted: "+alias);
+        if(TrainerAliasPolicy.validCustom(null))throw new AssertionError("Null alias accepted");
         System.out.println("PGBR: gerador de apelidos visuais aprovado");
     }
 }

@@ -160,7 +160,7 @@ public final class EventPanel {
         information.setText(dev.pgrazor.PtBr.tr("Modo uma por vez: confira a missão de jogada excelente com recompensa de 25 doces Eternatus, complete-a, resgate e só então avance para a próxima parada GPX."));
         information.setTextSize(14);layout.addView(information);
         TextView limitation=new TextView(ui);
-        limitation.setText(dev.pgrazor.PtBr.tr("A identificação exata da recompensa ainda não foi validada no jogo. Este painel é um acompanhamento manual: não gira paradas, captura, resgata ou avança coordenadas automaticamente."));
+        limitation.setText(dev.pgrazor.PtBr.tr("O modo automático é experimental: o jogo precisa confirmar o modelo exato e o resgate; capturas excelentes, PokéStop escolhido e quantidade de doces ainda exigem conferência no aparelho. O registro manual permanece disponível."));
         limitation.setTextSize(12);layout.addView(limitation);
         TextView autoHeader=new TextView(ui);
         autoHeader.setText("PESQUISA AUTOMÁTICA POR MODELO EXATO");
@@ -184,6 +184,7 @@ public final class EventPanel {
             new AlertDialog.Builder(ui).setTitle("Escolher pesquisa observada")
                 .setItems(labels,(d,choice)->{
                     selected[0]=catalog.get(choice)[0];
+                    dev.pgrazor.EternatusRouteRunner.chooseTemplate(selected[0]);
                     autoStatus.setText("Modelo selecionado: "+selected[0]);
                 }).setNegativeButton("Cancelar",null).show();
         });
@@ -206,10 +207,26 @@ public final class EventPanel {
         android.widget.Button disableResearch=new android.widget.Button(ui);
         disableResearch.setText("Desativar filtro automático do Eternatus");layout.addView(disableResearch);
         disableResearch.setOnClickListener(v->{
+            dev.pgrazor.EternatusRouteRunner.stop("Modo encerrado pelo treinador.");
             dev.pgrazor.EternatusMission.stop("Desativado pelo treinador.");
             autoStatus.setText(dev.pgrazor.EternatusMission.status());
         });
         autoStatus.setText(dev.pgrazor.EternatusMission.status());
+        TextView gpxStatus=new TextView(ui);gpxStatus.setTextSize(13);layout.addView(gpxStatus);
+        android.widget.Button importGpx=new android.widget.Button(ui);
+        importGpx.setText(dev.pgrazor.PtBr.tr("Importar GPX do Eternatus"));layout.addView(importGpx);
+        android.widget.Button savedGpx=new android.widget.Button(ui);
+        savedGpx.setText(dev.pgrazor.PtBr.tr("Escolher GPX salvo"));layout.addView(savedGpx);
+        android.widget.CheckBox verifiedReward=new android.widget.CheckBox(ui);
+        verifiedReward.setText(dev.pgrazor.PtBr.tr("Conferi que a missão selecionada concede 25 doces Eternatus"));
+        layout.addView(verifiedReward);
+        android.widget.Button startAuto=new android.widget.Button(ui);
+        startAuto.setText(dev.pgrazor.PtBr.tr("Iniciar e teleportar para a primeira parada"));layout.addView(startAuto);
+        android.widget.Button stopAuto=new android.widget.Button(ui);
+        stopAuto.setText(dev.pgrazor.PtBr.tr("Cancelar rota automática"));layout.addView(stopAuto);
+        TextView autoNote=new TextView(ui);
+        autoNote.setText(dev.pgrazor.PtBr.tr("Após o teleporte, o PGBR aguarda cooldown, ativa VGP+ e giro e só avança após o resgate confirmado da pesquisa exata. Se os serviços estiverem indisponíveis, para de avançar. Não há garantia de lançamento Excelente; as exclusões de pesquisas incompatíveis são irreversíveis."));
+        autoNote.setTextSize(12);layout.addView(autoNote);
         android.widget.Button route=new android.widget.Button(ui);
         route.setText(dev.pgrazor.PtBr.tr("Abrir caminhada GPX"));layout.addView(route);
         android.widget.Button research=new android.widget.Button(ui);
@@ -273,6 +290,30 @@ public final class EventPanel {
             .setView(scroll).setNegativeButton(dev.pgrazor.PtBr.tr("Fechar"),null).create();
         route.setOnClickListener(v->{dialog.dismiss();dev.pgrazor.AutoWalkDialog.show(activity);});
         research.setOnClickListener(v->{dialog.dismiss();dev.pgrazor.ResearchSettings.show(activity);});
+        importGpx.setOnClickListener(v->{dialog.dismiss();dev.pgrazor.GpxRouteDialog.importGpx(activity,"Eternatus",selectedRoute->{
+            if(!dev.pgrazor.EternatusRouteRunner.chooseRoute(selectedRoute))
+                android.widget.Toast.makeText(activity,"Rota indisponível ou com mais de 400 paradas.",android.widget.Toast.LENGTH_LONG).show();
+            dev.pgrazor.GpxRouteDialog.whenResumed(activity,()->showEternatus(activity,dark));
+        });});
+        savedGpx.setOnClickListener(v->{dialog.dismiss();dev.pgrazor.GpxRouteDialog.chooseSaved(activity,selectedRoute->{
+            if(!dev.pgrazor.EternatusRouteRunner.chooseRoute(selectedRoute))
+                android.widget.Toast.makeText(activity,"Rota indisponível ou com mais de 400 paradas.",android.widget.Toast.LENGTH_LONG).show();
+            dev.pgrazor.GpxRouteDialog.whenResumed(activity,()->showEternatus(activity,dark));
+        });});
+        startAuto.setOnClickListener(v->{
+            if(!verifiedReward.isChecked()){
+                android.widget.Toast.makeText(activity,"Confirme primeiro a recompensa de 25 doces no jogo.",android.widget.Toast.LENGTH_LONG).show();return;
+            }
+            new AlertDialog.Builder(ui).setTitle("Iniciar rota Eternatus?")
+                .setMessage("Teleportar para a primeira coordenada e ativar temporariamente VGP+, giro e o filtro da missão escolhida? Pesquisas de campo inacabadas diferentes podem ser excluídas. Cada nova coordenada aguardará cooldown estimado.")
+                .setNegativeButton("Cancelar",null)
+                .setPositiveButton("Iniciar e teleportar",(d,w)->{
+                    if(!dev.pgrazor.EternatusRouteRunner.start(activity))
+                        android.widget.Toast.makeText(activity,"Não foi possível iniciar. Confira rota, missão observada e prontidão do jogo.",android.widget.Toast.LENGTH_LONG).show();
+                    else dialog.dismiss();
+                }).show();
+        });
+        stopAuto.setOnClickListener(v->dev.pgrazor.EternatusRouteRunner.stop("Rota cancelada pelo treinador."));
         android.os.Handler clock=new android.os.Handler(android.os.Looper.getMainLooper());
         bind(activity,dialog,()->clock.removeCallbacksAndMessages(null));
         dialog.show();
@@ -280,6 +321,15 @@ public final class EventPanel {
             public void run(){
                 if(!dialog.isShowing())return;
                 autoStatus.setText(dev.pgrazor.EternatusMission.status());
+                dev.pgrazor.GpxRoute planned=dev.pgrazor.EternatusRouteRunner.plannedRoute();
+                boolean active=dev.pgrazor.EternatusRouteRunner.active();
+                gpxStatus.setText(dev.pgrazor.PtBr.tr(dev.pgrazor.EternatusRouteRunner.status()
+                    +"\\nGPX: "+(planned==null?"não selecionado":planned.name+" · "+planned.size()+" paradas")
+                    +"\\nModelo: "+dev.pgrazor.EternatusRouteRunner.selectedTemplate()));
+                importGpx.setEnabled(!active);savedGpx.setEnabled(!active);select.setEnabled(!active);
+                startAuto.setEnabled(!active&&planned!=null&&verifiedReward.isChecked()&&!dev.pgrazor.EternatusRouteRunner.selectedTemplate().isEmpty());
+                stopAuto.setEnabled(active);
+                received.setEnabled(!active);next.setEnabled(!active&&received.isChecked()&&excellent.isChecked()&&claimed.isChecked());
                 int confirmed=dev.pgrazor.EternatusProgress.confirmed(activity);
                 if(completed[0]!=confirmed){completed[0]=confirmed;refresh.run();}
                 clock.postDelayed(this,1000);
