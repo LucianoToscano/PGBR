@@ -38,6 +38,7 @@ public final class Control {
     public static void accountSessionSaved(){AccountProfiles.sessionSaved();}
     static Activity accountActivity(){return pad==null?null:pad.activity;}
     static void quiesceAccounts() throws IOException {
+        EternatusRouteRunner.stop("Troca de conta solicitada.");
         OneShotAutomation.reset();
         AutoRaid.reset();
         GiftBatchSettings.reset();
@@ -1115,6 +1116,7 @@ public final class Control {
         saveState();return next;
     }
     public static void suspendForBackground() {
+        EternatusRouteRunner.stop("O aplicativo deixou o primeiro plano.");
         gameRoutes.stop("App left foreground; check the active in-game Route before restarting");
         gameRoutesPlanning=false;gameRoutes.setPlanning(false);
         requestInteractionStop();
@@ -1240,6 +1242,7 @@ public final class Control {
     public static void stepMotion(double seconds,boolean joystickHeld){
         OneShotAutomation.tick(joystickHeld);
         AutoRaid.tick(joystickHeld);
+        EternatusRouteRunner.tick();
         engine.setIdleWalkingAllowed(hostLive()&&desiredEnabled&&!joystickHeld&&!OneShotAutomation.idleBlocked()&&!AutoRaid.running()
             &&!autoWalkPlanning&&!gameRoutesPlanning&&!gameRoutes.running()
             &&!cameraSamplePending()&&!interactionDiagnosticRunning());
