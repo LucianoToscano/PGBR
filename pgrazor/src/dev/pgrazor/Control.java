@@ -1186,6 +1186,10 @@ public final class Control {
     }
     private static boolean darkTheme=true, joystickVisible=true;
     private static volatile int joystickSizeDp=136,joystickOpacity=60;
+    // Visual style is independent from movement, camera-relative steering and saved route state.
+    // 0=original, 1=Eternatus (animated), 2=translucent directional HUD, 3=user image.
+    private static volatile int joystickStyle;
+    private static volatile boolean joystickEternatusEffects=true;
     private static volatile int menuIconSizeDp=22,gymIconSizeDp=54,gymIconOpacity=100,overlayBackgroundOpacity=45;
     // Client-only privacy mask. Do not override PlayerService, account data or RPC fields.
     private static volatile boolean trainerAliasEnabled;
@@ -1237,6 +1241,10 @@ public final class Control {
     public static int joystickSizeDp(){return joystickSizeDp;}
     public static void setJoystickSizeDp(int value){joystickSizeDp=Math.max(88,Math.min(220,value));saveSettings();}
     public static int joystickOpacity(){return joystickOpacity;}
+    public static int joystickStyle(){return joystickStyle;}
+    public static void setJoystickStyle(int style){if(style<0||style>3)return;joystickStyle=style;saveSettings();}
+    public static boolean joystickEternatusEffects(){return joystickEternatusEffects;}
+    public static void setJoystickEternatusEffects(boolean value){joystickEternatusEffects=value;saveSettings();}
     public static int menuIconSizeDp(){return menuIconSizeDp;}
     public static void setMenuIconSizeDp(int value){menuIconSizeDp=Math.max(16,Math.min(40,value));saveSettings();}
     public static int gymIconSizeDp(){return gymIconSizeDp;}
@@ -1271,6 +1279,7 @@ public final class Control {
             vgpIconSize=48;
             hudLabelsVisible=true;hudLabelOpacity=0;hudLabelTextSp=11;
             joystickSizeDp=136;joystickOpacity=60;
+            joystickStyle=0;joystickEternatusEffects=true;
             menuIconSizeDp=22;gymIconSizeDp=54;gymIconOpacity=100;overlayBackgroundOpacity=45;
             transferIvKeepPercent=90;
             trainerAliasEnabled=false;trainerAlias="";
@@ -1302,6 +1311,12 @@ public final class Control {
                 try{uiScalePercent=Integer.parseInt(p.getProperty("uiScalePercent","100"));}catch(NumberFormatException invalid){uiScalePercent=100;}
                 if(uiScalePercent!=25&&uiScalePercent!=50&&uiScalePercent!=75&&uiScalePercent!=100)uiScalePercent=100;
                 joystickVisible=Boolean.parseBoolean(p.getProperty("joystickVisible","true"));
+                joystickEternatusEffects=Boolean.parseBoolean(p.getProperty("joystickEternatusEffects","true"));
+                try{
+                    int saved=Integer.parseInt(p.getProperty("joystickStyle","-1"));
+                    joystickStyle=saved>=0&&saved<=3?saved:
+                        AccountProfiles.file(app,"joystick-custom.png").isFile()?3:0;
+                }catch(RuntimeException invalid){joystickStyle=0;}
                 menuIconSizeDp=readBoundedVisual(p,"menuIconSizeDp",22,16,40);
                 gymIconSizeDp=readBoundedVisual(p,"gymIconSizeDp",54,32,110);
                 gymIconOpacity=readBoundedVisual(p,"gymIconOpacity",100,10,100);
@@ -1486,6 +1501,8 @@ public final class Control {
         p.setProperty("joystickVisible",String.valueOf(joystickVisible));
         p.setProperty("joystickSizeDp",String.valueOf(joystickSizeDp));
         p.setProperty("joystickOpacity",String.valueOf(joystickOpacity));
+        p.setProperty("joystickStyle",String.valueOf(joystickStyle));
+        p.setProperty("joystickEternatusEffects",String.valueOf(joystickEternatusEffects));
         p.setProperty("menuIconSizeDp",String.valueOf(menuIconSizeDp));
         p.setProperty("gymIconSizeDp",String.valueOf(gymIconSizeDp));
         p.setProperty("gymIconOpacity",String.valueOf(gymIconOpacity));
