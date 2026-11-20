@@ -27,16 +27,16 @@ final class LocalTimeOverlay extends TextView {
     }
 
     void applyTheme() {
-        int opacity=Control.hudLabelOpacity(), font=Control.hudLabelTextSp();
-        int key=(opacity*100+font)*2+(Control.darkTheme()?1:0);
+        int opacity=Control.hudBackgroundOpacity(Control.HUD_LOCALTIME), font=Control.hudLabelTextSp();
+        int key=(Control.hudAppearanceRevision()*101+font)*2+(Control.darkTheme()?1:0);
         if(key==lastAppearanceKey)return;
         lastAppearanceKey=key;
-        int alpha=Math.round(opacity*Control.overlayBackgroundOpacity()*255f/10000f);
-        int rgb=Control.darkTheme()?0x141b25:0xf1f5f8;
+        int alpha=Math.round(opacity*255f/100f);
+        int rgb=0x101924;
         setBackground(alpha==0?null:SettingsUi.rounded(getContext(),(alpha<<24)|rgb,7));
         setTextSize(font);
-        setTextColor(SettingsUi.ink());
-        setShadowLayer(SettingsUi.dp(getContext(),1),0,0,Control.darkTheme()?0xff000000:0xffffffff);
+        setTextColor(Control.hudLabelColor(Control.HUD_LOCALTIME));
+        setShadowLayer(SettingsUi.dp(getContext(),2),0,0,0xff000000);
     }
 
     void refresh(boolean allowed) {
