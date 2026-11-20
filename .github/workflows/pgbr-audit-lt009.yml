@@ -1,0 +1,80 @@
+name: PGBR - gerar pacote integral de auditoria LT009
+on:
+  push:
+    branches:
+      - audit/pgbr-lt009-20261120
+    paths:
+      - .github/workflows/pgbr-audit-lt009.yml
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  archive:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout source snapshot
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Build complete tracked-source audit ZIP
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          git archive --format=zip --prefix=PGBR_LT009_AUDITORIA/ HEAD -o dist/PGBR_LT009_AUDITORIA_COMPLETA.zip
+          python3 - <<'PY'
+          import os, zipfile, hashlib
+          name='dist/PGBR_LT009_AUDITORIA_COMPLETA.zip'
+          size=os.path.getsize(name)
+          assert 0 < size < 199_000_000, f'ZIP outside requested limit: {size}'
+          with zipfile.ZipFile(name) as archive:
+              names=set(archive.namelist())
+              prefix='PGBR_LT009_AUDITORIA/'
+              required=[
+                  'AUDITORIA_IA_COMECE_AQUI.md','AGENTS.md','README.md',
+                  'pgrazor/VERSION','pgrazor/src/dev/pgrazor/Pad.java',
+                  'pgrazor/src/dev/pgrazor/EternatusRouteRunner.java',
+                  'pgrazor/src/dev/pgrazor/ItemBadge.java',
+                  'pgrazor/test/test_item_icon_assets.py',
+                  'upstream-history/PGRazor-upstream-full.bundle',
+              ]
+              for path in required:
+                  assert prefix+path in names, f'Missing {path}'
+              assert archive.testzip() is None, 'ZIP CRC error'
+              assert not any(n.endswith(('.jks','.keystore','.apkm','.apk','.p12')) for n in names), 'Private build input leaked'
+              count=len(names)
+          digest=hashlib.file_digest(open(name,'rb'),'sha256').hexdigest()
+          with open('dist/SHA256_AUDITORIA.txt','w',encoding='utf-8') as out:
+              out.write(f'{digest}  PGBR_LT009_AUDITORIA_COMPLETA.zip\n')
+          print('AUDIT_ARCHIVE_BYTES',size)
+          print('AUDIT_TRACKED_ENTRIES',count)
+          print('AUDIT_SHA256',digest)
+          PY
+      - name: Upload audit package as backup artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: PGBR-LT009-AUDITORIA-FONTE-COMPLETA
+          path: |
+            dist/PGBR_LT009_AUDITORIA_COMPLETA.zip
+            dist/SHA256_AUDITORIA.txt
+          if-no-files-found: error
+          retention-days: 14
+      - name: Publish direct downloadable source ZIP
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          tag='audit-pgbr-lt009-20261120'
+          if gh release view "$tag" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "Refusing to overwrite existing audit release: $tag" >&2
+            exit 1
+          fi
+          gh release create "$tag" dist/PGBR_LT009_AUDITORIA_COMPLETA.zip dist/SHA256_AUDITORIA.txt \
+            --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \
+            --title 'PGBR LT009 - Projeto completo para auditoria de outra IA' \
+            --notes 'Código rastreado integral do PGBR, documentação, testes, efeitos, fontes, guia AUDITORIA_IA_COMECE_AQUI.md e bundle histórico upstream. Não inclui segredos, APKM privado, binários de release nem biblioteca externa bruta.' \
+            --prerelease
+          gh release view "$tag" --repo "$GITHUB_REPOSITORY" --json tagName,url,assets
