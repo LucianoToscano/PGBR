@@ -4,8 +4,7 @@ import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
-import android.graphics.PorterDuff;
-import android.graphics.PorterDuffColorFilter;
+import android.graphics.ColorMatrixColorFilter;
 import android.graphics.Path;
 import android.graphics.RadialGradient;
 import android.graphics.RectF;
@@ -23,12 +22,20 @@ final class EternatusVisualEffects {
     private final Paint art = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.FILTER_BITMAP_FLAG);
     private final Paint plasma = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Path clip = new Path();
-    private final PorterDuffColorFilter vortexTint =
-        new PorterDuffColorFilter(0xFFF82DE6, PorterDuff.Mode.SRC_IN);
-    private final PorterDuffColorFilter smokeTint =
-        new PorterDuffColorFilter(0xFF8F5AFF, PorterDuff.Mode.SRC_IN);
-    private final PorterDuffColorFilter glowTint =
-        new PorterDuffColorFilter(0xFF4CE3FF, PorterDuff.Mode.SRC_IN);
+    // Palette conversion plus alpha gain: the real PokeMiners particles are intentionally
+    // very faint on dark backgrounds, so a straight alpha copy looks invisible at 48dp.
+    private final ColorMatrixColorFilter vortexTint = tint(248f, 45f, 230f, 2.7f);
+    private final ColorMatrixColorFilter smokeTint = tint(151f, 80f, 255f, 2.15f);
+    private final ColorMatrixColorFilter glowTint = tint(62f, 219f, 255f, 1.65f);
+
+    private static ColorMatrixColorFilter tint(float red, float green, float blue, float alphaGain) {
+        return new ColorMatrixColorFilter(new float[]{
+            0f,0f,0f,0f,red,
+            0f,0f,0f,0f,green,
+            0f,0f,0f,0f,blue,
+            0f,0f,0f,alphaGain,0f
+        });
+    }
     private final RectF sourceBounds = new RectF(-1f, -1f, 1f, 1f);
     private final RectF outerArc = new RectF(-.79f, -.79f, .79f, .79f);
     private final RectF innerArc = new RectF(-.52f, -.52f, .52f, .52f);
