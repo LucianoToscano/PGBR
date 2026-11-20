@@ -105,8 +105,7 @@ public final class Pad {
     private final class PgbrIcon extends View {
         private final Paint paint=new Paint(Paint.ANTI_ALIAS_FLAG|Paint.FILTER_BITMAP_FLAG);
         private final Paint shine=new Paint(Paint.ANTI_ALIAS_FLAG);
-        private final Bitmap classic, eterna, eternaAura;
-        private final EternatusStorm storm = new EternatusStorm();
+        private final Bitmap classic, eterna, eternaAura, morphBallClean, morphBallStorm;
         private Bitmap personal;
         private int artworkVersion=-1;
         PgbrIcon(Context context){
@@ -114,6 +113,8 @@ public final class Pad {
             classic=read("pgrazor/branding/pgbr-logo.webp");
             eterna=read("pgrazor/map-icons/eternatus-ball.webp");
             eternaAura=read("pgrazor/map-icons/eternatus-ball-aura.webp");
+            morphBallClean=read("pgrazor/map-icons/eternatus-ball-morph-clean.webp");
+            morphBallStorm=read("pgrazor/map-icons/eternatus-ball-morph-storm.webp");
             setContentDescription(PtBr.tr("Abrir o menu principal PGBR. Arraste para reposicionar."));
             setFocusable(true);setClickable(true);
         }
@@ -127,7 +128,9 @@ public final class Pad {
             if(artworkVersion!=version){artworkVersion=version;personal=OverlayArtwork.load(getContext(),"launcher");}
             int style=Control.menuLauncherIconStyle();
             boolean stormOn = style == 1 && Control.joystickEternatusEffects();
-            Bitmap logo = style == 1 ? (stormOn && eternaAura != null ? eternaAura : eterna)
+            boolean morphReady = style == 1 && morphBallClean != null && morphBallStorm != null;
+            Bitmap logo = style == 1 ? (morphReady ? morphBallClean
+                : stormOn && eternaAura != null ? eternaAura : eterna)
                 : style == 2 ? personal : classic;
             if(logo==null)logo=classic;
             float sz=Math.min(getWidth(),getHeight()),cx=getWidth()*.5f,cy=getHeight()*.5f;
@@ -147,13 +150,20 @@ public final class Pad {
             }
             if(logo!=null){
                 paint.setColor(Color.WHITE);paint.setAlpha(255);paint.setStyle(Paint.Style.FILL);
-                float margin=stormOn?sz*.045f:sz*.015f;
-                canvas.drawBitmap(logo,null,new RectF(cx-sz*.5f+margin,cy-sz*.5f+margin,cx+sz*.5f-margin,cy+sz*.5f-margin),paint);
+                float margin=(stormOn && !morphReady)?sz*.045f:sz*.015f;
+                RectF imageBounds=new RectF(cx-sz*.5f+margin,cy-sz*.5f+margin,cx+sz*.5f-margin,cy+sz*.5f-margin);
+                canvas.drawBitmap(logo,null,imageBounds,paint);
+                if (morphReady && stormOn) {
+                    // Image-based storm dissolves into the clean ball and back.
+                    // No synthetic zigzag lightning overlays or unbounded redraw loop.
+                    paint.setAlpha(EternatusMorph.overlayAlpha(now));
+                    canvas.drawBitmap(morphBallStorm,null,imageBounds,paint);
+                    paint.setAlpha(255);
+                }
             }else{
                 paint.setColor(SettingsUi.accent());canvas.drawCircle(cx,cy,sz*.4f,paint);
             }
-            if (stormOn) storm.draw(canvas, cx, cy, sz * .50f, now, false);
-            if (isShown() && !closed && (stormOn || style == 0)) postInvalidateDelayed(stormOn ? 80 : 150);
+            if (isShown() && !closed && (stormOn || style == 0)) postInvalidateDelayed(stormOn ? 50 : 150);
         }
     }
 
@@ -506,12 +516,15 @@ public final class Pad {
         if(launcher instanceof PgbrIcon&&((PgbrIcon)launcher).artworkVersion!=OverlayArtwork.version())
             launcher.invalidate();
     }
-    private int lastJoystickSize=-1,lastJoystickOpacity=-1,lastJoystickStyle=-1;
+    private int lastJoystickSize=-1,lastJoystickOpacity=-1,lastJoystickStyle=-1,lastJoystickEffects=-1;
     private void refreshJoystickAppearance(){
         if(stick==null||joystickOverlay==null)return;
         int size=Control.joystickSizeDp(),opacity=Control.joystickOpacity();
         int style=Control.joystickStyle();
-        if(lastJoystickStyle!=style){lastJoystickStyle=style;stick.invalidate();}
+        int effects=Control.joystickEternatusEffects()?1:0;
+        if(lastJoystickStyle!=style||lastJoystickEffects!=effects){
+            lastJoystickStyle=style;lastJoystickEffects=effects;stick.invalidate();
+        }
         if(style==3&&stick.imageGeneration!=JoystickImage.generation())stick.invalidate();
         if(size!=lastJoystickSize){
             lastJoystickSize=size;
@@ -867,12 +880,12 @@ public final class Pad {
     }
     private final class Stick extends View {
         final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG|Paint.FILTER_BITMAP_FLAG);
-        private Bitmap customImage, builtinBase, builtinThumb, stormRim, stormVortex;
+        private Bitmap customImage, builtinBase, builtinThumb, stormRim, stormVortex, morphStorm;
         private final RectF artBounds = new RectF();
         private int imageGeneration=-1,loadedStyle=-1;
         private final Paint effect=new Paint(Paint.ANTI_ALIAS_FLAG);
-        private final EternatusStorm storm = new EternatusStorm();
-        float x, y;
+        private final Path smokeClip=new Path();
+          float x, y;
         int pointer = -1;
         long cameraGesture=-1;
         boolean gestureCamera;
@@ -903,18 +916,32 @@ public final class Pad {
             int style=Control.joystickStyle();
             if(style==loadedStyle)return;
             loadedStyle=style;
-            builtinBase=builtinThumb=stormRim=stormVortex=null;
-            if(style==1||style==2){
-                String variant=style==1?"eternatus":"hud";
+            builtinBase=builtinThumb=stormRim=stormVortex=morphStorm=null;
+            if(style==1){
+                // New reversible visual transition. The center is a separate movable bitmap.
+                builtinBase=art("joystick-eternatus-morph-clean.webp");
+                morphStorm=art("joystick-eternatus-morph-storm.webp");
+                builtinThumb=art("joystick-eternatus-morph-thumb.webp");
+                if(builtinBase==null || morphStorm==null || builtinThumb==null){
+                    // Safe fallback if an older package lacks the imported art.
+                    builtinBase=art("joystick-eternatus-base.webp");
+                    builtinThumb=art("joystick-eternatus-thumb.webp");
+                    stormRim=art("joystick-eternatus-rim.webp");
+                    stormVortex=art("joystick-eternatus-vortex.webp");
+                    morphStorm=null;
+                    Control.event("joystick-art","Morph art unavailable; retaining prior Eternatus joystick");
+                }
+            }else if(style==2||style==4){
+                String variant=style==4?"eternatus":"hud";
                 builtinBase=art("joystick-"+variant+"-base.webp");
                 builtinThumb=art("joystick-"+variant+"-thumb.webp");
-                if (style == 1) {
-                    stormRim = art("joystick-eternatus-rim.webp");
-                    stormVortex = art("joystick-eternatus-vortex.webp");
+                if(style==4){
+                    stormRim=art("joystick-eternatus-rim.webp");
+                    stormVortex=art("joystick-eternatus-vortex.webp");
                 }
-                if(builtinBase==null||builtinThumb==null)
-                    Control.event("joystick-art","Could not load bundled "+variant+" layers; original control remains active");
             }
+            if(style!=0 && style!=3 && (builtinBase==null||builtinThumb==null))
+                Control.event("joystick-art","Could not load bundled joystick layers; original control remains active");
         }
         private void drawEternatusEffects(Canvas canvas,float cx,float cy,float r,float knobX,float knobY,float knobR){
             long now=SystemClock.uptimeMillis();
@@ -924,8 +951,8 @@ public final class Pad {
             effect.setStyle(Paint.Style.STROKE);
             effect.setStrokeCap(Paint.Cap.ROUND);
             effect.setStrokeJoin(Paint.Join.ROUND);
-            storm.draw(canvas, cx, cy, r, now, true);
-            // Knob corona also follows the thumb rather than remaining fixed in the background.
+            // Keep a soft moving glow, not the previous repetitive hand-drawn zigzag rays.
+            // Knob corona follows the thumb rather than remaining fixed in the background.
             effect.setStrokeWidth(dp(2.3f));
             effect.setColor(Color.argb(Math.round(55+70*pulse),255,27,217));
             canvas.drawCircle(knobX,knobY,knobR*.98f,effect);
@@ -941,14 +968,39 @@ public final class Pad {
             float radius=Math.max(dp(8),Math.min(cx,cy)-dp(12));
             loadArtIfNeeded();
             int style=Control.joystickStyle();
-            if((style==1||style==2)&&builtinBase!=null&&builtinThumb!=null){
+            if((style==1||style==2||style==4)&&builtinBase!=null&&builtinThumb!=null){
                 float outer=Math.max(dp(16),Math.min(cx,cy)-dp(2));
                 paint.setStyle(Paint.Style.FILL);
                 paint.setAlpha(255);
                 paint.setColor(Color.WHITE);
                 artBounds.set(cx-outer,cy-outer,cx+outer,cy+outer);
-                boolean stormOn = style == 1 && Control.joystickEternatusEffects();
-                if (stormOn && stormVortex != null && stormRim != null) {
+                boolean stormOn = (style==1 || style==4) && Control.joystickEternatusEffects();
+                boolean morphReady = style==1 && morphStorm!=null;
+                if (morphReady) {
+                    canvas.drawBitmap(builtinBase,null,artBounds,paint);
+                    if (stormOn) {
+                        long now=SystemClock.uptimeMillis();
+                        float blend=EternatusMorph.blend(now);
+                        paint.setAlpha(Math.round(255f*blend));
+                        canvas.drawBitmap(morphStorm,null,artBounds,paint);
+                        // Drift only the translucent storm annulus; leave the crystalline rim
+                        // and movable center fixed. Uses the actual smoke/bolts in the source art.
+                        // No procedural zigzag lightning or extra animation worker.
+                        if(blend>.01f){
+                            smokeClip.rewind();
+                            smokeClip.setFillType(Path.FillType.EVEN_ODD);
+                            smokeClip.addCircle(cx,cy,outer*.76f,Path.Direction.CW);
+                            smokeClip.addCircle(cx,cy,outer*.41f,Path.Direction.CW);
+                            int saved=canvas.save();
+                            canvas.clipPath(smokeClip);
+                            canvas.rotate((now%52000L)*(360f/52000f),cx,cy);
+                            paint.setAlpha(Math.round(42f*blend));
+                            canvas.drawBitmap(morphStorm,null,artBounds,paint);
+                            canvas.restoreToCount(saved);
+                        }
+                        paint.setAlpha(255);
+                    }
+                } else if (stormOn && stormVortex != null && stormRim != null) {
                     int saved = canvas.save();
                     float angle = (SystemClock.uptimeMillis() % 18000L) * (360f / 18000f);
                     canvas.rotate(angle, cx, cy);
@@ -958,16 +1010,18 @@ public final class Pad {
                 } else {
                     canvas.drawBitmap(builtinBase,null,artBounds,paint);
                 }
-                float thumbR=outer*(style==1?.355f:.319f);
+                float thumbR=outer*(style==2?.319f:.355f);
                 float travel=Math.max(0,outer-thumbR-dp(4));
                 float knobX=cx+x*travel,knobY=cy+y*travel;
-                if(stormOn)
+                if(stormOn && !morphReady)
                     drawEternatusEffects(canvas,cx,cy,outer,knobX,knobY,thumbR);
                 // Only the circular hub moves; the arrows, shield and outer artwork remain fixed.
                 canvas.drawBitmap(builtinThumb,null,
                     new RectF(knobX-thumbR,knobY-thumbR,knobX+thumbR,knobY+thumbR),paint);
-                if(stormOn&&isShown()&&!closed)
-                    postInvalidateDelayed(80); // bounded ~12.5 FPS, no extra worker or timer
+                if(stormOn&&isShown()&&!closed){
+                    if(morphReady)postInvalidateDelayed(50); // ~20 fps, no animation thread
+                    else postInvalidateDelayed(80); // legacy vortex option, bounded redraw
+                }
                 return;
             }
             if(style==3&&imageGeneration!=JoystickImage.generation()){

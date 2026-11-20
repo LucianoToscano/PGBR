@@ -20,6 +20,8 @@ public class SettingsBackupRulesTest {
         JSONObject vgpTap=valid();vgpTap.getJSONObject("settings").put("vgpTapProtection","true");SettingsBackupRules.validate(vgpTap);
         vgpTap.getJSONObject("settings").put("vgpTapProtection","false");SettingsBackupRules.validate(vgpTap);
         vgpTap.getJSONObject("settings").put("vgpTapProtection","yes");rejects(vgpTap);
+        JSONObject morphJoy=valid();morphJoy.getJSONObject("settings").put("joystickStyle","4");SettingsBackupRules.validate(morphJoy);
+        morphJoy.getJSONObject("settings").put("joystickStyle","5");rejects(morphJoy);
         display.getJSONObject("settings").put("cooldownEmphasis","yes");rejects(display);
         display.getJSONObject("settings").put("cooldownEmphasis","false").put("localTimeFormat","6");rejects(display);
         JSONObject legacy=valid();legacy.put("format","PGRazor settings");SettingsBackupRules.validate(legacy);
