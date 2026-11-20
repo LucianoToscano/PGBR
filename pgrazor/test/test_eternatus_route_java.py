@@ -56,6 +56,7 @@ final class EternatusMission {
 }
 final class Control {
     static boolean live=true,can=true,location=true,vgpOverlay,vgpEnabled,quickspin;
+    static int throwGrade=2,throwVariety=2;
     static double lat,lon;
     static int teleports;
     static final Engine engine=new Engine();
@@ -70,6 +71,10 @@ final class Control {
     static void setVgpEnabled(boolean value){vgpEnabled=value;}
     static void setVgpOverlay(boolean value){vgpOverlay=value;if(!value)vgpEnabled=false;}
     static void setQuickSpinEnabled(boolean value){quickspin=value;}
+    static int throwRating(){return throwGrade;}
+    static int throwVariety(){return throwVariety;}
+    static void setThrowGrade(int grade){throwGrade=grade;}
+    static void setThrowVariety(int variety){throwVariety=variety;}
     static void teleport(double latitude,double longitude){lat=latitude;lon=longitude;teleports++;}
     static double currentLatitude(){return lat;}
     static double currentLongitude(){return lon;}
