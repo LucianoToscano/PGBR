@@ -25,7 +25,9 @@ public final class ControlSettingsTest {
             Control.setEvolveTransferMode(5); Control.setEvolveTransferStages(9); Control.setEvolveTransferSpecies("1,abc"); // invalid: all ignored, prior choices kept
             if(Control.evolveTransferMode()!=1||Control.evolveTransferStages()!=2||!Control.evolveTransferSpecies().equals("1,4,25"))throw new AssertionError("Invalid evolve-transfer setter input was not ignored");
             Control.setQuickBallEnabled(true); Control.setQuickSummaryEnabled(true);
-            Control.setIvCatchEnabled(false); Control.setIvOwnedEnabled(true); Control.setStorageIvMode(3); Control.setStorageIvFormat(2); Control.setStorageIvEnabled(false); Control.setIvOwnedMode(3); Control.setIvCatchMode(1); Control.setIvCatchMode(0); Control.setCatchChanceShown(false); Control.setAutoBall(true); Control.setAutoThrow(true); Control.setAutoThrowOnMap(true); Control.setAutoBallTarget(85); Control.setPvpKeep(0,false); Control.setPvpKeep(2,true); Control.setPvpRank(1,25);
+            Control.setIvCatchEnabled(false); Control.setIvOwnedEnabled(true); Control.setStorageIvMode(3); Control.setStorageIvFormat(2); Control.setStorageIvEnabled(false); Control.setIvOwnedMode(3); Control.setIvCatchMode(1); Control.setIvCatchMode(0); Control.setCatchChanceShown(false); Control.setAutoBall(true); Control.setAutoThrow(true); Control.setAutoThrowOnMap(true); Control.setAutoBallTarget(85); Control.setPvpKeep(0,true); Control.setPvpKeep(2,true); Control.setPvpRank(0,1); Control.setPvpRank(1,25);
+            Control.setHudLabelVisible(Control.HUD_BUDDY,false);
+            Control.setHudLabelVisible(Control.HUD_SHINY,false);
             Control.setThrowGrade(3); Control.setThrowCurve(true); Control.setMapTapMode(2);
             Control.setQuickBallReady(false,"Loading"); Control.setQuickSummaryReady(false,"Loading");
         }
@@ -51,7 +53,10 @@ public final class ControlSettingsTest {
         if(Control.ivCatchEnabled()||!Control.ivOwnedEnabled()||Control.ivCatchMode()!=0||Control.ivOwnedMode()!=3||Control.nextIvMode(0)!=4||Control.nextIvMode(4)!=3||Control.nextIvMode(1)!=0)throw new AssertionError("IV display preferences lost across process restart");
         if(Control.storageIvEnabled()||Control.storageIvFormat()!=2||!Control.storageIvConfig().equals("S2|0|1|3"))throw new AssertionError("Storage IV setting lost across process restart");
         if(!Control.autoThrow()||!Control.autoThrowOnMap()||Control.catchChanceShown()||!Control.autoBall()||Control.autoBallTarget()!=85||!Control.catchChanceConfig().startsWith("C4|0|1|85|"))throw new AssertionError("Catch chance settings lost across process restart");
-        if(Control.pvpKeep(0)||!Control.pvpKeep(1)||Control.pvpRank(0)!=50||Control.pvpRank(1)!=25||!Control.pvpKeepConfig().equals("P2|0|25|10|150"))throw new AssertionError("PvP keep settings lost across process restart");
+        if(!Control.pvpKeep(0)||!Control.pvpKeep(1)||Control.pvpRank(0)!=1||Control.pvpRank(1)!=25||!Control.pvpKeepConfig().equals("P2|1|25|10|150"))throw new AssertionError("PvP keep settings lost across process restart");
+        if(Control.hudLabelVisible(Control.HUD_BUDDY)||Control.hudLabelVisible(Control.HUD_SHINY)
+           ||!Control.hudLabelVisible(Control.HUD_VGP)||!Control.hudLabelVisible(Control.HUD_COOLDOWN))
+            throw new AssertionError("Independent HUD visibility state was lost");
         // Pending off-thread writes must reach disk before this process exits, or the restart cannot see them.
         Control.flushSettings(5000);
         if(args[0].equals("save")) {

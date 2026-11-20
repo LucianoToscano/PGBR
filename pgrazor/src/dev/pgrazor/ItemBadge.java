@@ -14,19 +14,35 @@ import android.view.View;
 final class ItemBadge extends View {
     private final int itemId;
     private final Paint paint=new Paint(Paint.ANTI_ALIAS_FLAG|Paint.FILTER_BITMAP_FLAG);
-    private final Bitmap berry;
+    private final Bitmap itemSprite;
+    // Decode each catalog icon at most once; a live catalog may render dozens of rows.
+    private static final android.util.SparseArray<Bitmap> CACHE=new android.util.SparseArray<>();
+    private static final android.util.SparseBooleanArray MISSED=new android.util.SparseBooleanArray();
 
     ItemBadge(Context context,int itemId){
         super(context);
         this.itemId=itemId;
-        Bitmap loaded=null;
-        if(itemId==701||itemId==703||itemId==705||itemId==706||itemId==707){
-            try(java.io.InputStream stream=PgAssets.open(context,"pgrazor/map-icons/berry-"+itemId+".png")){
-                loaded=BitmapFactory.decodeStream(stream);
+        itemSprite=load(context,itemId);
+        setImportantForAccessibility(IMPORTANT_FOR_ACCESSIBILITY_NO);
+    }
+    private static synchronized Bitmap load(Context context,int id){
+        Bitmap cached=CACHE.get(id);
+        if(cached!=null)return cached;
+        if(MISSED.get(id))return null;
+        if(id<=0||id>999999){MISSED.put(id,true);return null;}
+        // Prefer an ID-exact inventory sprite; old map berries are a compatibility fallback.
+        String[] choices=id>=701&&id<=707?
+            new String[]{"pgrazor/item-icons/item-"+id+".png","pgrazor/map-icons/berry-"+id+".png"}:
+            new String[]{"pgrazor/item-icons/item-"+id+".png"};
+        for(String file:choices){
+            try(java.io.InputStream stream=PgAssets.open(context,file)){
+                BitmapFactory.Options options=new BitmapFactory.Options();
+                options.inSampleSize=2; // Crisp at 26dp without full-resolution per-row allocations.
+                Bitmap bitmap=BitmapFactory.decodeStream(stream,null,options);
+                if(bitmap!=null){CACHE.put(id,bitmap);return bitmap;}
             }catch(Exception ignored){}
         }
-        berry=loaded;
-        setImportantForAccessibility(IMPORTANT_FOR_ACCESSIBILITY_NO);
+        MISSED.put(id,true);return null;
     }
     private void fill(int color){paint.setColor(color);paint.setStyle(Paint.Style.FILL);paint.setStrokeWidth(1);}
     private void stroke(int color,float width){paint.setColor(color);paint.setStyle(Paint.Style.STROKE);paint.setStrokeWidth(width);}
@@ -36,9 +52,9 @@ final class ItemBadge extends View {
         c.save();c.translate(getWidth()/2f,getHeight()/2f);
         float scale=Math.min(getWidth(),getHeight())/32f;
         c.scale(scale,scale);
-        if(berry!=null){
+        if(itemSprite!=null){
             fill(Color.WHITE);
-            c.drawBitmap(berry,null,new RectF(-15,-15,15,15),paint);
+            c.drawBitmap(itemSprite,null,new RectF(-15,-15,15,15),paint);
         }else if(itemId>=1&&itemId<=3){
             drawBall(c);
         }else if(itemId>=100&&itemId<200){

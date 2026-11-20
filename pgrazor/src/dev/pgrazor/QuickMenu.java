@@ -115,7 +115,7 @@ public final class QuickMenu {
     private void updateWalk() {
         if (walkLabel == null) return;
         double speed = Control.engine.speedKmh;
-        walkLabel.setText(dev.pgrazor.PtBr.tr(String.format(Locale.US, "%.1f km/h", speed)));
+        walkLabel.setText(dev.pgrazor.PtBr.tr(String.format(Locale.forLanguageTag("pt-BR"), "%.1f km/h", speed)));
     }
 
     private void updateVisibility() {

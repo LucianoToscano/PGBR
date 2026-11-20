@@ -44,6 +44,20 @@ def map_icon_assets():
             icons.setdefault(names.name, names)
     return icons
 
+def item_icon_assets():
+    """Verified original item sprites (numeric item ID); no recursion or path traversal."""
+    source = ROOT / 'assets/item-icons'
+    icons = {}
+    if source.is_dir():
+        for path in sorted(source.glob('item-*.png')):
+            if not re.fullmatch(r'item-[1-9][0-9]{0,5}\.png', path.name):
+                continue
+            if path.is_symlink() or not path.resolve().is_relative_to(source.resolve()):
+                raise ValueError('Item icon escapes asset directory')
+            if path.is_file():
+                icons[path.name] = path
+    return icons
+
 def feed_icon_assets():
     """Only numeric base-species PNGs under the bundled feed sprite directory."""
     source = ROOT / 'assets/feed-icons/pokemon'
@@ -121,6 +135,7 @@ def main():
     with zipfile.ZipFile(unsigned,'a',zipfile.ZIP_DEFLATED) as out:
         out.write(BUILD/'dex/classes.dex','classes.dex')
         for name,path in map_icon_assets().items(): out.write(path,'assets/pgrazor/map-icons/'+name)
+        for name,path in item_icon_assets().items(): out.write(path,'assets/pgrazor/item-icons/'+name)
         for name,path in feed_icon_assets().items(): out.write(path,'assets/pgrazor/feed-icons/pokemon/'+name)
         logo=ROOT/'branding/pgbr-logo.webp'
         if logo.is_file(): out.write(logo,'assets/pgrazor/branding/pgbr-logo.webp')

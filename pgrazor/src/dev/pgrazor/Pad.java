@@ -539,7 +539,7 @@ public final class Pad {
         refreshJoystickAppearance();
         refreshGymAppearance();
         if(encounterBadge!=null){String count=!Control.encounterOverlay()||settings.isVisible()||(quickMenu!=null&&quickMenu.isShowing())?"":EncounterCounter.label();
-            encounterBadge.setVisibility(count.isEmpty()||!Control.hudLabelsVisible()?View.GONE:View.VISIBLE);
+            encounterBadge.setVisibility(count.isEmpty()||!Control.hudLabelVisible(Control.HUD_ENCOUNTERS)?View.GONE:View.VISIBLE);
             if(!count.isEmpty()){setTextIfChanged(encounterBadge,count);encounterBadge.setTextColor(ink());if(encounterDrag!=null)encounterDrag.refreshBounds();}}
         if(shinyMark!=null){boolean mark=ShinyScanner.targetVisible()&&!settings.isVisible();shinyMark.setVisibility(mark?View.VISIBLE:View.GONE);
             if(mark){// The point is the top of the Pokémon; the symbol sits just above it.
@@ -553,17 +553,17 @@ public final class Pad {
             shinyPopup=popup.create();
             final AlertDialog shown=shinyPopup;shown.setCanceledOnTouchOutside(false);DialogLifecycle.bind(activity,shown,null);shown.setOnShowListener(d->MapTheme.styleButtons(shown));shown.show();}}
         if(shinyBadge!=null){String found=settings.isVisible()||(quickMenu!=null&&quickMenu.isShowing())?"":ShinyScanner.foundLabel();
-            shinyBadge.setVisibility(found.isEmpty()?View.GONE:View.VISIBLE);
+            shinyBadge.setVisibility(found.isEmpty()||!Control.hudLabelVisible(Control.HUD_SHINY)?View.GONE:View.VISIBLE);
             if(!found.isEmpty()){setTextIfChanged(shinyBadge,found);shinyBadge.setContentDescription(dev.pgrazor.PtBr.tr(found+". Tap for options."));shinyBadge.setTextColor(ink());if(shinyDrag!=null)shinyDrag.refreshBounds();}}
         if(shundoOverlay!=null){shundoOverlay.refresh(!settings.isVisible()&&!(quickMenu!=null&&quickMenu.isShowing()));if(shundoDrag!=null)shundoDrag.refreshBounds();}
-        if(gymAutomationStatus!=null){gymAutomationStatus.setVisibility(Control.hudLabelsVisible()?gymFeedOverlay.getVisibility():View.GONE);setTextIfChanged(gymAutomationStatus,GymAutomationSettings.overlayStatus());gymAutomationStatus.setTextColor(ink());gymFeedDrag.refreshBounds();}
+        if(gymAutomationStatus!=null){gymAutomationStatus.setVisibility(Control.hudLabelVisible(Control.HUD_GYM)?gymFeedOverlay.getVisibility():View.GONE);setTextIfChanged(gymAutomationStatus,GymAutomationSettings.overlayStatus());gymAutomationStatus.setTextColor(ink());gymFeedDrag.refreshBounds();}
         if(vgpToggle!=null){vgpToggle.setVisibility(Control.vgpOverlayVisible()&&!settings.isVisible()&&!(quickMenu!=null&&quickMenu.isShowing())?View.VISIBLE:View.GONE);vgpToggle.setContentDescription(dev.pgrazor.PtBr.tr("Virtual Go Plus "+(Control.vgpEnabled()?"on; tap to turn off":"off; tap to turn on")+". "+Control.vgpStatus()));vgpToggle.invalidate();}
 
         // Pair the status line with the toggle so the cooldown shutoff reason is visible even when VGP is off.
-        if(buddyEmotionStatus!=null){buddyEmotionStatus.setVisibility(Control.hudLabelsVisible()&&BuddyEmotionSettings.overlayEnabled()&&!settings.isVisible()&&!(quickMenu!=null&&quickMenu.isShowing())?View.VISIBLE:View.GONE);setTextIfChanged(buddyEmotionStatus,compactBuddyStatus(BuddyEmotionSettings.status()));buddyEmotionStatus.setTextColor(ink());}
-        if(catchChance!=null){catchChance.setVisibility(Control.hudLabelsVisible()&&CatchChance.visible()&&!settings.isVisible()&&!(quickMenu!=null&&quickMenu.isShowing())?View.VISIBLE:View.GONE);setTextIfChanged(catchChance,CatchChance.text());catchChance.setTextColor(ink());}
-        if(automationStatus!=null){automationStatus.setVisibility(Control.hudLabelsVisible()&&(EternatusRouteRunner.active()||OneShotAutomation.overlayVisible()||AutoRaid.running())&&!settings.isVisible()&&!(quickMenu!=null&&quickMenu.isShowing())?View.VISIBLE:View.GONE);setTextIfChanged(automationStatus,EternatusRouteRunner.active()?"Eternatus "+EternatusRouteRunner.currentStop()+"/"+EternatusRouteRunner.totalStops()+" · "+EternatusRouteRunner.status():AutoRaid.running()?"Auto-Raid | "+AutoRaid.status():OneShotAutomation.overlayStatus());automationStatus.setTextColor(ink());automationDrag.refreshBounds();}
-        if(vgpActivity!=null){vgpActivity.setVisibility(Control.hudLabelsVisible()&&Control.vgpOverlayVisible()&&!settings.isVisible()&&!(quickMenu!=null&&quickMenu.isShowing())?View.VISIBLE:View.GONE);setTextIfChanged(vgpActivity,Control.vgpEnabled()?"VGP · Ligado":"VGP · Desligado");vgpActivity.setContentDescription(dev.pgrazor.PtBr.tr("Status completo do VGP: "+Control.vgpStatus()));vgpActivity.setTextColor(ink());}
+        if(buddyEmotionStatus!=null){buddyEmotionStatus.setVisibility(Control.hudLabelVisible(Control.HUD_BUDDY)&&BuddyEmotionSettings.overlayEnabled()&&!settings.isVisible()&&!(quickMenu!=null&&quickMenu.isShowing())?View.VISIBLE:View.GONE);setTextIfChanged(buddyEmotionStatus,compactBuddyStatus(BuddyEmotionSettings.status()));buddyEmotionStatus.setTextColor(ink());}
+        if(catchChance!=null){catchChance.setVisibility(Control.hudLabelVisible(Control.HUD_CATCH)&&CatchChance.visible()&&!settings.isVisible()&&!(quickMenu!=null&&quickMenu.isShowing())?View.VISIBLE:View.GONE);setTextIfChanged(catchChance,CatchChance.text());catchChance.setTextColor(ink());}
+        if(automationStatus!=null){automationStatus.setVisibility(Control.hudLabelVisible(Control.HUD_AUTOMATION)&&(EternatusRouteRunner.active()||OneShotAutomation.overlayVisible()||AutoRaid.running())&&!settings.isVisible()&&!(quickMenu!=null&&quickMenu.isShowing())?View.VISIBLE:View.GONE);setTextIfChanged(automationStatus,EternatusRouteRunner.active()?"Eternatus "+EternatusRouteRunner.currentStop()+"/"+EternatusRouteRunner.totalStops()+" · "+EternatusRouteRunner.status():AutoRaid.running()?"Auto-Raid | "+AutoRaid.status():OneShotAutomation.overlayStatus());automationStatus.setTextColor(ink());automationDrag.refreshBounds();}
+        if(vgpActivity!=null){vgpActivity.setVisibility(Control.hudLabelVisible(Control.HUD_VGP)&&Control.vgpOverlayVisible()&&!settings.isVisible()&&!(quickMenu!=null&&quickMenu.isShowing())?View.VISIBLE:View.GONE);setTextIfChanged(vgpActivity,Control.vgpEnabled()?"VGP · Ligado":"VGP · Desligado");vgpActivity.setContentDescription(dev.pgrazor.PtBr.tr("Status completo do VGP: "+Control.vgpStatus()));vgpActivity.setTextColor(ink());}
         if(mapCatchBadge!=null)mapCatchBadge.refresh(!settings.isVisible()&&!(quickMenu!=null&&quickMenu.isShowing())&&!Control.catchScreenVisible());
         if(vgpMarker!=null){boolean show=Control.vgpTargetVisible()&&!settings.isVisible();vgpMarker.setVisibility(show?View.VISIBLE:View.GONE);if(show){vgpMarker.setX(Control.vgpTargetX()*parent.getWidth()-dp(19)*vgpMarker.getScaleX());vgpMarker.setY(Control.vgpTargetY()*parent.getHeight()-dp(36)-dp(46)*vgpMarker.getScaleY());vgpMarker.invalidate();}}
         if(transferToggle!=null){transferToggle.setVisibility(Control.transferOverlayVisible()&&!settings.isVisible()&&!(quickMenu!=null&&quickMenu.isShowing())?View.VISIBLE:View.GONE);transferToggle.setContentDescription(dev.pgrazor.PtBr.tr(transferToggleDescription()));transferToggle.invalidate();}
@@ -571,10 +571,10 @@ public final class Pad {
         String routeReward=Control.takeGameRoutesRewardNotice();
         if(!routeReward.isEmpty()&&!overlaysHidden)Toast.makeText(activity,routeReward,Toast.LENGTH_LONG).show();
         if(gameRoutesOverlay!=null)gameRoutesOverlay.refresh(!settings.isVisible()&&!(quickMenu!=null&&quickMenu.isShowing()));
-        if(cooldownTimer!=null){cooldownTimer.setVisibility(Control.hudLabelsVisible()&&Control.cooldownOverlay()?View.VISIBLE:View.GONE);setTextIfChanged(cooldownTimer,"☰  "+Cooldown.label());cooldownTimer.setTextColor(Cooldown.remaining()>0?Color.rgb(255,186,95):accent());}
+        if(cooldownTimer!=null){cooldownTimer.setVisibility(Control.hudLabelVisible(Control.HUD_COOLDOWN)&&Control.cooldownOverlay()?View.VISIBLE:View.GONE);setTextIfChanged(cooldownTimer,"☰  "+Cooldown.label());cooldownTimer.setTextColor(Cooldown.remaining()>0?Color.rgb(255,186,95):accent());}
         // The view combines this Pad-side gate with Control.localTimeOverlay()/desiredEnabled() and its own throttle;
         // a false gate (settings open, quick menu up, or overlays hidden) stops its clock work entirely.
-        if(localTime!=null){localTime.refresh(!overlaysHidden&&!settings.isVisible()&&!(quickMenu!=null&&quickMenu.isShowing()));if(localTimeDrag!=null&&localTime.getVisibility()==View.VISIBLE)localTimeDrag.refreshBounds();}
+        if(localTime!=null){localTime.refresh(Control.hudLabelVisible(Control.HUD_LOCALTIME)&&!overlaysHidden&&!settings.isVisible()&&!(quickMenu!=null&&quickMenu.isShowing()));if(localTimeDrag!=null&&localTime.getVisibility()==View.VISIBLE)localTimeDrag.refreshBounds();}
         if (lastEnabled != Control.engine.enabled) { lastEnabled = Control.engine.enabled; stick.invalidate(); }
         if(encounterBerry!=null)encounterBerry.refresh();
         if(quickMenu!=null)quickMenu.onRefresh();
@@ -626,7 +626,7 @@ public final class Pad {
         LinearLayout form = new LinearLayout(activity); form.setOrientation(LinearLayout.VERTICAL); form.setPadding(dp(24),dp(8),dp(24),dp(8));
         EditText lat = input(Double.toString(Control.engine.latitude), "Latitude (-90 to 90)");
         EditText lon = input(Double.toString(Control.engine.longitude), "Longitude (-180 to 180)");
-        EditText speed = input(Double.toString(Control.engine.speedKmh), "Speed (0.5–30 km/h)");
+        EditText speed = input(Double.toString(Control.engine.speedKmh), "Speed (0.5–60 km/h)");
         for (EditText field : new EditText[]{lat, lon, speed}) form.addView(field);
         AlertDialog dialog = new AlertDialog.Builder(dialogContext()).setTitle(dev.pgrazor.PtBr.tr("Coordinates & speed")).setView(form).setNegativeButton(dev.pgrazor.PtBr.tr("Cancel"),null).setPositiveButton(dev.pgrazor.PtBr.tr("Apply"),null).create();
         final AlertDialog[] confirmation = {null};
@@ -641,7 +641,7 @@ public final class Pad {
                     Control.event("coordinates-set", latitude + "," + longitude + " speed=" + check.speedKmh);
                     refresh(); dialog.dismiss(); return true;
                 });
-            } catch (IllegalArgumentException error) { speed.setError("Enter valid coordinates and speed (0.5–30)."); }
+            } catch (IllegalArgumentException error) { speed.setError("Enter valid coordinates and speed (0.5–60)."); }
         })); dialog.show();styleTree(form);
     }
     /** "Hide overlay": confirm first, naming the three-finger tap that shows the overlays again. */

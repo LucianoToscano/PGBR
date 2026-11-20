@@ -151,6 +151,11 @@ public class MotionTest {
         e.pause(); e.step(.25); check(e.latitude==0&&e.longitude==0,"Pause stops");
         boolean invalid=false; try{e.position(Double.NaN,0);}catch(IllegalArgumentException expected){invalid=true;} check(invalid,"Reject NaN");
         invalid=false; try{e.speed(-1);}catch(IllegalArgumentException expected){invalid=true;} check(invalid,"Reject negative speed");
+        e.speed(60);check(e.speedKmh==60,"60 km/h must be available");
+        invalid=false;try{e.speed(60.1);}catch(IllegalArgumentException expected){invalid=true;}
+        check(invalid,"Reject movement above 60 km/h");
+        e.speed(0);check(e.metersPerSecond()==0,"Zero is stationary");
+        e.speed(3.6);
         e.enabled=true; e.input(0,1); e.step(600); check(e.latitude<.000003,"No background time jump");
         testWalking();testInterruption();testRouteValidation();testMultipleStops();
         MotionEngine guard=new MotionEngine();guard.position(0,0);

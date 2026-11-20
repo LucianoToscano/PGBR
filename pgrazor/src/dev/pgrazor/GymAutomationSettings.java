@@ -104,7 +104,21 @@ public final class GymAutomationSettings {
         CheckBox deploy=new CheckBox(ui);deploy.setText(dev.pgrazor.PtBr.tr("Auto-deploy to open Gym slots"));deploy.setChecked(preferences.deploy());body.addView(deploy);
 
         CheckBox feed=new CheckBox(ui);feed.setText(dev.pgrazor.PtBr.tr("Auto-feed berries to your Gym defenders"));feed.setChecked(preferences.feed());body.addView(feed);
-        CheckBox overlay=new CheckBox(ui);overlay.setText(dev.pgrazor.PtBr.tr("Show gym automation overlay"));overlay.setChecked(preferences.overlay());body.addView(overlay);
+        CheckBox overlay=new CheckBox(ui);overlay.setText("Exibir ícone flutuante Gym Slotter & Berry Feeder");overlay.setChecked(preferences.overlay());body.addView(overlay);
+        TextView appearanceTitle=new TextView(ui);appearanceTitle.setText("Personalizar botão flutuante");
+        appearanceTitle.setTextSize(16);appearanceTitle.setPadding(0,pad/2,0,pad/4);body.addView(appearanceTitle);
+        slider(body,"Tamanho do ícone",24,110,Control.gymIconSizeDp(),Control::setGymIconSizeDp);
+        slider(body,"Opacidade do ícone",10,100,Control.gymIconOpacity(),Control::setGymIconOpacity);
+        slider(body,"Opacidade do fundo",0,100,Control.gymBackgroundOpacity(),Control::setGymBackgroundOpacity);
+        TextView chooseGym=button(body,"Escolher ícone do ginásio no celular");
+        chooseGym.setOnClickListener(v->OverlayArtwork.select(activity,"gym",()->{}));
+        TextView chooseBerry=button(body,"Escolher ícone da fruta no celular");
+        chooseBerry.setOnClickListener(v->OverlayArtwork.select(activity,"berry",()->{}));
+        TextView resetGym=button(body,"Restaurar ícones originais");
+        resetGym.setOnClickListener(v->OverlayArtwork.reset(activity,"gym",
+            ()->OverlayArtwork.reset(activity,"berry",()->{})));
+        TextView help=new TextView(ui);help.setText("O ícone, a fruta e o fundo são independentes. Ocultar o botão não desativa o Gym Slotter.");
+        help.setTextSize(12);body.addView(help);
 
         CheckBox fallback=new CheckBox(ui);fallback.setText(dev.pgrazor.PtBr.tr("Allow lowest-CP fallback when no eligible #Gym defenders"));fallback.setChecked(preferences.fallback());body.addView(fallback);
         fallback.setOnCheckedChangeListener((v,on)->{set("Fallback",on);});
@@ -131,6 +145,25 @@ public final class GymAutomationSettings {
         Runnable refresh=new Runnable(){public void run(){if(dialog.isShowing()){update.run();handler.postDelayed(this,1000);}}};
         DialogLifecycle.bind(activity,dialog,()->handler.removeCallbacks(refresh));
         dialog.setOnShowListener(d->{MapTheme.style(body);MapTheme.styleButtons(dialog);dialog.getWindow().setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(MapTheme.surface()));handler.post(refresh);});dialog.show();
+    }
+    /** Lightweight, persisted controls shared with the main icon appearance section. */
+    private static void slider(LinearLayout body,String title,int min,int max,int initial,
+                               java.util.function.IntConsumer apply){
+        TextView label=new TextView(body.getContext());
+        label.setText(title+": "+initial+(title.contains("Opacidade")?"%":" dp"));
+        label.setTextSize(13);body.addView(label);
+        android.widget.SeekBar bar=new android.widget.SeekBar(body.getContext());
+        bar.setMax(max-min);bar.setProgress(Math.max(0,Math.min(max-min,initial-min)));
+        body.addView(bar);
+        bar.setOnSeekBarChangeListener(new android.widget.SeekBar.OnSeekBarChangeListener(){
+            public void onProgressChanged(android.widget.SeekBar b,int progress,boolean byUser){
+                if(!byUser)return;
+                int current=progress+min;apply.accept(current);
+                label.setText(title+": "+current+(title.contains("Opacidade")?"%":" dp"));
+            }
+            public void onStartTrackingTouch(android.widget.SeekBar b){}
+            public void onStopTrackingTouch(android.widget.SeekBar b){}
+        });
     }
     private interface Value {void set(String value);}
     private static int bounded(String value,int max){
