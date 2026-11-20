@@ -307,6 +307,30 @@ final class SettingsPanel {
         launch(loc, "World map", host::openMap);
         joystickSwitch = switchRow(loc, "Show joystick"); joystickSwitch.setChecked(Control.joystickVisible());
         joystickSwitch.setOnCheckedChangeListener((v,checked) -> { if(checked==Control.joystickVisible())return; host.setJoystickVisible(checked); });
+        LinearLayout joystickArt=group(loc,"Aparência do joystick");
+        TextView joystickSizeLabel=new TextView(activity);joystickSizeLabel.setTextSize(13);
+        joystickSizeLabel.setText("Tamanho do joystick: "+Control.joystickSizeDp()+" dp");joystickArt.addView(joystickSizeLabel);
+        SeekBar joystickSize=new SeekBar(activity);joystickSize.setMax(132);joystickSize.setProgress(Control.joystickSizeDp()-88);
+        joystickArt.addView(joystickSize);
+        joystickSize.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){
+            public void onProgressChanged(SeekBar bar,int progress,boolean user){
+                if(user){Control.setJoystickSizeDp(88+progress);joystickSizeLabel.setText("Tamanho do joystick: "+Control.joystickSizeDp()+" dp");host.refresh();}
+            }
+            public void onStartTrackingTouch(SeekBar bar){}
+            public void onStopTrackingTouch(SeekBar bar){}
+        });
+        TextView joystickOpacityLabel=new TextView(activity);joystickOpacityLabel.setTextSize(13);
+        joystickOpacityLabel.setText("Opacidade do joystick: "+Control.joystickOpacity()+"%");joystickArt.addView(joystickOpacityLabel);
+        SeekBar joystickOpacity=new SeekBar(activity);joystickOpacity.setMax(90);joystickOpacity.setProgress(Control.joystickOpacity()-10);
+        joystickArt.addView(joystickOpacity);
+        joystickOpacity.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){
+            public void onProgressChanged(SeekBar bar,int progress,boolean user){
+                if(user){Control.setJoystickOpacity(10+progress);joystickOpacityLabel.setText("Opacidade do joystick: "+Control.joystickOpacity()+"%");host.refresh();}
+            }
+            public void onStartTrackingTouch(SeekBar bar){}
+            public void onStopTrackingTouch(SeekBar bar){}
+        });
+        caption(joystickArt,"Tamanho e transparência são alterados sem interromper a caminhada automática.");
         idleWalkSwitch = switchRow(loc, "Idle walking");idleWalkSwitch.setChecked(Control.idleWalking());
         idleWalkSwitch.setOnCheckedChangeListener((v,checked)->{if(checked!=Control.idleWalking())Control.setIdleWalking(checked);});
         caption(loc, "When idle, start walking in a circle. Speed 0 pauses it.");
@@ -349,14 +373,14 @@ final class SettingsPanel {
             public void onStopTrackingTouch(SeekBar bar){}
         });
         TextView opacityLabel=new TextView(activity);opacityLabel.setTextSize(13);
-        opacityLabel.setText("Fundo das legendas: "+Control.hudLabelOpacity()+"%");hud.addView(opacityLabel);
-        SeekBar opacitySlider=new SeekBar(activity);opacitySlider.setMax(80);
+        opacityLabel.setText("Fundo dos indicadores: "+Control.hudLabelOpacity()+"%");hud.addView(opacityLabel);
+        SeekBar opacitySlider=new SeekBar(activity);opacitySlider.setMax(100);
         opacitySlider.setProgress(Control.hudLabelOpacity());hud.addView(opacitySlider);
         opacitySlider.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){
             public void onProgressChanged(SeekBar bar,int progress,boolean fromUser){
                 if(!fromUser)return;
                 Control.setHudLabelOpacity(progress);
-                opacityLabel.setText("Fundo das legendas: "+progress+"%");host.refresh();
+                opacityLabel.setText("Fundo dos indicadores: "+progress+"%");host.refresh();
             }
             public void onStartTrackingTouch(SeekBar bar){}
             public void onStopTrackingTouch(SeekBar bar){}
