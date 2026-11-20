@@ -5,6 +5,7 @@ on:
   push:
     branches:
       - feature/pt-br-traducao
+      - feature/lt-hud-historico-locais-20261120
     paths-ignore:
       - '**/*.md'
   workflow_dispatch:
@@ -21,7 +22,7 @@ concurrency:
   cancel-in-progress: true
 jobs:
   build:
-    if: github.repository == 'LucianoToscano/PGBR' && github.ref_name == 'feature/pt-br-traducao'
+    if: github.repository == 'LucianoToscano/PGBR' && (github.ref_name == 'feature/pt-br-traducao' || github.ref_name == 'feature/lt-hud-historico-locais-20261120')
     # A entrada original pode ser um draft asset, sem publica-la em releases.
     permissions:
       contents: write
