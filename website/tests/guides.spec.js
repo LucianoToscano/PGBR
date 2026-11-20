@@ -9,7 +9,7 @@ test('guide screenshots load and open with keyboard and restore focus', async ({
     const gallery = page.locator('.guide-screenshots');
     await expect(gallery.locator('.shot-btn')).toHaveCount(shots.length);
     for (const shot of shots) {
-      const button = gallery.getByRole('button', { name: `${shot.title} — open a larger view`, exact: true });
+      const button = gallery.getByRole('button', { name: `${shot.title} — ampliar imagem`, exact: true });
       await button.scrollIntoViewIfNeeded();
       const thumbnail = button.locator('img');
       await expect(thumbnail).toHaveJSProperty('naturalWidth', shot.width);
@@ -19,7 +19,7 @@ test('guide screenshots load and open with keyboard and restore focus', async ({
       const dialog = gallery.getByRole('dialog');
       await expect(dialog).toBeVisible();
       await expect(dialog.locator('.lightbox__caption')).toHaveText(shot.caption);
-      await expect(dialog.getByRole('button', { name: 'Close', exact: true })).toBeInViewport();
+      await expect(dialog.getByRole('button', { name: 'Fechar', exact: true })).toBeInViewport();
       await page.keyboard.press('Escape');
       await expect(dialog).not.toBeVisible();
       await expect(button).toBeFocused();
@@ -69,9 +69,9 @@ test('tag guide supports reload, back navigation and returning home', async ({ p
   await page.goBack();
   await expect(page).toHaveURL(/\?guide=all$/);
   await page.goto('./?guide=gym-slotter');
-  const toggle = page.getByRole('button', { name: 'Open menu' });
+  const toggle = page.getByRole('button', { name: 'Abrir menu' });
   if (await toggle.isVisible()) await toggle.click();
-  await page.getByRole('navigation', { name: 'Primary' }).getByRole('link', { name: 'Features', exact: true }).click();
+  await page.getByRole('navigation', { name: 'Navegação principal' }).getByRole('link', { name: 'Recursos', exact: true }).click();
   await expect(page.locator('#features')).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Set up your kind of session.' })).toHaveCount(0);
 });
@@ -85,12 +85,12 @@ test('unknown guide offers a route back to the guide index', async ({ page }) =>
 
 test('guide search narrows results and recovers from no matches', async ({ page }) => {
   await page.goto('./?guide=all');
-  const search = page.getByRole('searchbox', { name: 'Search guides' });
-  await search.fill('Batch evolution');
+  const search = page.getByRole('searchbox', { name: 'Buscar guias' });
+  await search.fill('Evolução em massa');
   await expect(page.locator('.guide-card')).toHaveCount(1);
   await expect(page.locator('.guide-card')).toHaveAttribute('href', /\?guide=batch-evolution$/);
   await search.fill('unmatched-guide-search');
   await expect(page.locator('.guide-card')).toHaveCount(0);
-  await page.getByRole('button', { name: 'Clear search' }).click();
+  await page.getByRole('button', { name: 'Limpar busca' }).click();
   await expect(page.locator('.guide-card')).toHaveCount(featureGuides.length);
 });
