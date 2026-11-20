@@ -105,7 +105,7 @@ public final class Pad {
     private final class PgbrIcon extends View {
         private final Paint paint=new Paint(Paint.ANTI_ALIAS_FLAG|Paint.FILTER_BITMAP_FLAG);
         private final Paint shine=new Paint(Paint.ANTI_ALIAS_FLAG);
-        private final Bitmap classic, eterna, eternaAura, morphBallClean, morphBallStorm;
+        private final Bitmap classic, eterna, eternaAura, morphBallClean, morphBallStorm, stormSmoke;
         private final EternatusVisualEffects stormFx = new EternatusVisualEffects();
         private Bitmap personal;
         private int artworkVersion=-1;
@@ -116,6 +116,7 @@ public final class Pad {
             eternaAura=read("pgrazor/map-icons/eternatus-ball-aura.webp");
             morphBallClean=read("pgrazor/map-icons/eternatus-ball-morph-clean.webp");
             morphBallStorm=read("pgrazor/map-icons/eternatus-ball-morph-storm.webp");
+            stormSmoke=read("pgrazor/map-icons/eternatus-fx-smoke-wispy.png");
             setContentDescription(PtBr.tr("Abrir o menu principal PGBR. Arraste para reposicionar."));
             setFocusable(true);setClickable(true);
         }
@@ -155,7 +156,8 @@ public final class Pad {
                 RectF imageBounds=new RectF(cx-sz*.5f+margin,cy-sz*.5f+margin,cx+sz*.5f-margin,cy+sz*.5f-margin);
                 if (stormOn) {
                     // First the storm approaches behind the stationary Poké Ball.
-                    stormFx.ballBehind(canvas, morphBallStorm != null ? morphBallStorm : eternaAura,
+                    stormFx.ballBehind(canvas, stormSmoke != null ? stormSmoke :
+                        (morphBallStorm != null ? morphBallStorm : eternaAura),
                         cx, cy, sz*.5f, now, Control.eternatusFxIntensity(), Control.eternatusFxSpeed());
                 }
                 canvas.drawBitmap(logo,null,imageBounds,paint);
@@ -896,7 +898,8 @@ public final class Pad {
     }
     private final class Stick extends View {
         final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG|Paint.FILTER_BITMAP_FLAG);
-        private Bitmap customImage, builtinBase, builtinThumb, stormRim, stormVortex, morphStorm;
+        private Bitmap customImage, builtinBase, builtinThumb, stormRim, stormVortex, morphStorm,
+            fxVortex, fxSmoke, fxWispy;
         private final RectF artBounds = new RectF();
         private int imageGeneration=-1,loadedStyle=-1;
         private final Paint effect=new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -932,12 +935,15 @@ public final class Pad {
             int style=Control.joystickStyle();
             if(style==loadedStyle)return;
             loadedStyle=style;
-            builtinBase=builtinThumb=stormRim=stormVortex=morphStorm=null;
+            builtinBase=builtinThumb=stormRim=stormVortex=morphStorm=fxVortex=fxSmoke=fxWispy=null;
             if(style==1){
                 // New reversible visual transition. The center is a separate movable bitmap.
                 builtinBase=art("joystick-eternatus-morph-clean.webp");
                 morphStorm=art("joystick-eternatus-morph-storm.webp");
                 stormVortex=art("joystick-eternatus-vortex.webp");
+                fxVortex=art("eternatus-fx-vortex.png");
+                fxSmoke=art("eternatus-fx-soft-smoke.png");
+                fxWispy=art("eternatus-fx-smoke-wispy.png");
                 builtinThumb=art("joystick-eternatus-morph-thumb.webp");
                 if(builtinBase==null || morphStorm==null || builtinThumb==null){
                     // Safe fallback if an older package lacks the imported art.
@@ -1003,7 +1009,9 @@ public final class Pad {
                         paint.setAlpha(255);
                         // The actual 2-layer storm now rotates visibly in opposing directions,
                         // with diffused flashes. Clip keeps the crystal frame/knob stationary.
-                        stormFx.joystick(canvas,stormVortex,morphStorm,cx,cy,outer,now,
+                        stormFx.joystick(canvas,fxVortex!=null?fxVortex:stormVortex,
+                            fxSmoke!=null?fxSmoke:morphStorm,fxWispy,
+                            cx,cy,outer,now,
                             Control.eternatusFxIntensity(),Control.eternatusFxSpeed());
                     }
                 } else if (stormOn && stormVortex != null && stormRim != null) {
