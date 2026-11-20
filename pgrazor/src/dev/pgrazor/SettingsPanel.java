@@ -931,13 +931,17 @@ final class SettingsPanel {
         previews.setGravity(Gravity.CENTER);previews.setOrientation(LinearLayout.HORIZONTAL);
         content.addView(previews);
         final ImageView[] choices=new ImageView[2];
-        final String[] files={"vgp-ring.png","vgp-device-on.png"};
+        final String[] files={"vgp-ring.png","vgp-hd-states.webp"};
         for(int i=0;i<2;i++){
             final int choice=i;
             ImageView image=new ImageView(activity);choices[i]=image;
             try(java.io.InputStream input=PgAssets.open(activity,"pgrazor/map-icons/"+files[i])){
-                image.setImageBitmap(BitmapFactory.decodeStream(input));
-            }catch(java.io.IOException ignored){}
+                Bitmap bitmap=BitmapFactory.decodeStream(input);
+                if(i==1&&bitmap!=null&&bitmap.getHeight()==bitmap.getWidth()*3){
+                    bitmap=Bitmap.createBitmap(bitmap,0,bitmap.getWidth()*2,bitmap.getWidth(),bitmap.getWidth());
+                }
+                image.setImageBitmap(bitmap);
+            }catch(java.io.IOException|RuntimeException ignored){}
             image.setScaleType(ImageView.ScaleType.FIT_CENTER);
             image.setPadding(dp(10),dp(10),dp(10),dp(10));
             LinearLayout.LayoutParams params=new LinearLayout.LayoutParams(0,dp(96),1f);
