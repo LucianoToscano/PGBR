@@ -1333,6 +1333,25 @@
     "Proteger nome no mapa (visual)": "Proteger nome no mapa (visual)",
     "Novo apelido aleatório": "Novo apelido aleatório",
     "Gerar novo apelido: ": "Gerar novo apelido: ",
-    "Cobre visualmente o nome no canto do mapa com um apelido fictício. Arraste a tarja para alinhar. Funciona apenas como máscara local: perfil, amigos e outras telas podem continuar mostrando o nome verdadeiro. O nome da conta não muda.": "Cobre visualmente o nome no canto do mapa com um apelido fictício. Arraste a tarja para alinhar. Funciona apenas como máscara local: perfil, amigos e outras telas podem continuar mostrando o nome verdadeiro. O nome da conta não muda."
+    "Cobre visualmente o nome no canto do mapa com um apelido fictício. Arraste a tarja para alinhar. Funciona apenas como máscara local: perfil, amigos e outras telas podem continuar mostrando o nome verdadeiro. O nome da conta não muda.": "Cobre visualmente o nome no canto do mapa com um apelido fictício. Arraste a tarja para alinhar. Funciona apenas como máscara local: perfil, amigos e outras telas podem continuar mostrando o nome verdadeiro. O nome da conta não muda.",
+    "IV & level": "IV e nível",
+    "XXS filter": "Filtro XXS",
+    "XXL filter": "Filtro XXL",
+    "Saved presets are too large.": "As predefinições salvas ultrapassam o tamanho permitido.",
+    "Couldn't save that preset.": "Não foi possível salvar essa predefinição.",
+    "No species selected": "Nenhuma espécie selecionada",
+    "Save current filters": "Salvar filtros atuais",
+    "No saved presets yet.": "Ainda não há predefinições salvas.",
+    "Use a preset name of 1 to 40 characters.": "Use um nome com 1 a 40 caracteres.",
+    "A preset with that name already exists.": "Já existe uma predefinição com esse nome.",
+    "Preset renamed.": "Predefinição renomeada.",
+    "Couldn't rename that preset.": "Não foi possível renomear essa predefinição.",
+    "You can save up to 25 presets.": "Você pode salvar até 25 predefinições.",
+    "Preset saved.": "Predefinição salva.",
+    "PvP only (ignore IV, level and size)": "Somente PvP (ignorar IV, nível e tamanho)",
+    "IV & Level": "IV e nível",
+    "Filter by species": "Filtrar por espécie",
+    "No nearby locations loaded yet. Move around in-game, then try again.": "Ainda não foram carregados locais próximos. Movimente-se no jogo e tente novamente.",
+    "Use a saved preset": "Usar uma predefinição salva"
   }
 }

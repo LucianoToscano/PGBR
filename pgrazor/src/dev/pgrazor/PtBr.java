@@ -1342,6 +1342,25 @@ public final class PtBr {
         m.put("Novo apelido aleatório", "Novo apelido aleatório");
         m.put("Gerar novo apelido: ", "Gerar novo apelido: ");
         m.put("Cobre visualmente o nome no canto do mapa com um apelido fictício. Arraste a tarja para alinhar. Funciona apenas como máscara local: perfil, amigos e outras telas podem continuar mostrando o nome verdadeiro. O nome da conta não muda.", "Cobre visualmente o nome no canto do mapa com um apelido fictício. Arraste a tarja para alinhar. Funciona apenas como máscara local: perfil, amigos e outras telas podem continuar mostrando o nome verdadeiro. O nome da conta não muda.");
+        m.put("IV & level", "IV e nível");
+        m.put("XXS filter", "Filtro XXS");
+        m.put("XXL filter", "Filtro XXL");
+        m.put("Saved presets are too large.", "As predefinições salvas ultrapassam o tamanho permitido.");
+        m.put("Couldn't save that preset.", "Não foi possível salvar essa predefinição.");
+        m.put("No species selected", "Nenhuma espécie selecionada");
+        m.put("Save current filters", "Salvar filtros atuais");
+        m.put("No saved presets yet.", "Ainda não há predefinições salvas.");
+        m.put("Use a preset name of 1 to 40 characters.", "Use um nome com 1 a 40 caracteres.");
+        m.put("A preset with that name already exists.", "Já existe uma predefinição com esse nome.");
+        m.put("Preset renamed.", "Predefinição renomeada.");
+        m.put("Couldn't rename that preset.", "Não foi possível renomear essa predefinição.");
+        m.put("You can save up to 25 presets.", "Você pode salvar até 25 predefinições.");
+        m.put("Preset saved.", "Predefinição salva.");
+        m.put("PvP only (ignore IV, level and size)", "Somente PvP (ignorar IV, nível e tamanho)");
+        m.put("IV & Level", "IV e nível");
+        m.put("Filter by species", "Filtrar por espécie");
+        m.put("No nearby locations loaded yet. Move around in-game, then try again.", "Ainda não foram carregados locais próximos. Movimente-se no jogo e tente novamente.");
+        m.put("Use a saved preset", "Usar uma predefinição salva");
         LABELS = Collections.unmodifiableMap(m);
     }
     private PtBr() {}
@@ -1366,6 +1385,14 @@ public final class PtBr {
         return translateLine(text);
     }
     private static String translateLine(String line) {
+        if(line.startsWith("Paused: buddy action declined (")){
+            int end=line.indexOf(')');
+            if(end>32){
+                String count=line.substring(30,end);
+                if(count.matches("[0-9]+"))
+                    return "Pausado: ação do companheiro recusada ("+count+"). Desligue e ligue para retomar.";
+            }
+        }
         String exact = LABELS.get(line);
         if (exact != null) return exact;
         // A maior frase deve vencer: a ordem de HashMap nao e deterministica.
