@@ -595,7 +595,7 @@ final class SettingsPanel {
                     dialog.dismiss();
                     host.refresh();
                 }).setNegativeButton("Cancelar", null).show());
-        caption(cooldown, "Os dois estilos mostram só o tempo. O chamativo usa números em negrito e contorno na cor escolhida.");
+        caption(cooldown, "A contagem usa a cor escolhida. Ao chegar a 0:00:00, números e contorno ficam verdes automaticamente. Sem localização, o contador mostra —, nunca um verde falso.");
         launch(cooldown, "Tamanho, cor e fundo", () -> configureHudIndicator("Cooldown", Control.HUD_COOLDOWN));
         launch(cooldown, "Histórico de cooldown", () -> Cooldown.show(activity));
 
