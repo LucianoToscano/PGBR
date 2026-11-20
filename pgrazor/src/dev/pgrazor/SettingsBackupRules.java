@@ -42,7 +42,7 @@ public final class SettingsBackupRules {
             if(key.equals("autoRaidMaxDistanceKm")){require(AutoRaidPreferences.validDistance(n),"Invalid raid distance limit");continue;}
             if(key.equals("joystickSizeDp")){require(n>=88&&n<=220,"Invalid joystick size");continue;}
             if(key.equals("joystickOpacity")){require(n>=10&&n<=100,"Invalid joystick opacity");continue;}
-            if(key.equals("joystickStyle")){require(n>=0&&n<=3,"Invalid joystick style");continue;}
+            if(key.equals("joystickStyle")){require(n>=0&&n<=4,"Invalid joystick style");continue;}
             if(key.equals("menuLauncherIconStyle")){require(n>=0&&n<=2,"Invalid launcher icon style");continue;}
             if(key.equals("menuLauncherSizeDp")){require(n>=28&&n<=96,"Invalid launcher size");continue;}
             if(key.equals("menuLauncherOpacity")){require(n>=10&&n<=100,"Invalid launcher opacity");continue;}
