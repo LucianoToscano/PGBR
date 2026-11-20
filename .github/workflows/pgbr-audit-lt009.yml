@@ -5,6 +5,8 @@ on:
       - audit/pgbr-lt009-20261120
     paths:
       - .github/workflows/pgbr-audit-lt009.yml
+      - AGENTS.md
+      - AUDITORIA_IA_COMECE_AQUI.md
   workflow_dispatch:
 permissions:
   contents: write
