@@ -301,7 +301,8 @@ final class SettingsPanel {
 
     private static String joystickStyleName(int style){
         switch(style){
-            case 1:return "Eternatus • Energia sombria";
+            case 1:return "Eternatus • Transformação e tempestade";
+            case 4:return "Eternatus • Tempestade anterior";
             case 2:return "HUD translúcido • Setas";
             case 3:return "Imagem personalizada";
             default:return "Joystick original";
@@ -314,7 +315,7 @@ final class SettingsPanel {
         content.setPadding(dp(12),dp(8),dp(12),dp(8));
         ScrollView scroll=new ScrollView(ui);scroll.addView(content);
         final AlertDialog[] chosen={null};
-        for(int style=0;style<4;style++){
+        for(int style=0;style<5;style++){
             final int selection=style;
             LinearLayout option=new LinearLayout(ui);
             option.setOrientation(LinearLayout.HORIZONTAL);
@@ -326,9 +327,9 @@ final class SettingsPanel {
             content.addView(option,optionParams);
             FrameLayout preview=new FrameLayout(ui);
             option.addView(preview,new LinearLayout.LayoutParams(dp(60),dp(60)));
-            if(style==1||style==2){
-                String name=style==1?"eternatus":"hud";
-                String[] layers = style == 1 && Control.joystickEternatusEffects()
+            if(style==1||style==2||style==4){
+                String name=style==2?"hud":"eternatus";
+                String[] layers = (style == 1 || style == 4) && Control.joystickEternatusEffects()
                     ? new String[]{"vortex", "rim", "thumb"} : new String[]{"base", "thumb"};
                 for(String layer : layers){
                     String file="pgrazor/map-icons/joystick-"+name+"-"+layer+".webp";
@@ -338,7 +339,7 @@ final class SettingsPanel {
                         ImageView thumbnail=new ImageView(ui);
                         thumbnail.setImageBitmap(bitmap);
                         thumbnail.setScaleType(ImageView.ScaleType.FIT_CENTER);
-                        int size = dp(layer.equals("thumb") ? (style == 1 ? 22 : 20) : 60);
+                        int size = dp(layer.equals("thumb") ? ((style == 1 || style == 4) ? 22 : 20) : 60);
                         FrameLayout.LayoutParams artParams=new FrameLayout.LayoutParams(size,size,Gravity.CENTER);
                         preview.addView(thumbnail,artParams);
                     }catch(Exception ignored){}
@@ -479,7 +480,7 @@ final class SettingsPanel {
         neonEffects.setOnCheckedChangeListener((v,on)->{
             Control.setJoystickEternatusEffects(on);host.refresh();
         });
-        caption(joystickArt,"O vórtice gira entre o aro e a alavanca. A opção também controla os raios da Poké Bola Eternatus.");
+        caption(joystickArt,"Transformação: alterna suavemente entre o joystick limpo e o vórtice elétrico a cada 8 segundos. O estilo anterior permanece como opção. Os efeitos também controlam os raios da Poké Bola Eternatus.");
         launch(joystickArt,"Escolher imagem do joystick no celular",()->{
             if(Control.engine.routeProgress().active){
                 android.widget.Toast.makeText(activity,"Pause ou encerre a rota antes de abrir o seletor de imagens do Android.",android.widget.Toast.LENGTH_LONG).show();
