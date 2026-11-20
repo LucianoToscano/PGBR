@@ -7,17 +7,19 @@
 // Pure field research policy: the Java wire config and the per-quest decision. No game calls.
 namespace pgr_research {
 constexpr size_t kMaxTemplates=300,kMaxTemplateBytes=96;
-struct Config {bool valid=false,remove=false,keep_selected=false,claim=false,catch_encounters=false;std::set<std::string> templates;};
+struct Config {bool valid=false,remove=false,keep_selected=false,claim=false,claim_selected_only=false,catch_encounters=false;std::set<std::string> templates;};
 // Template ids are the game's quest template keys, e.g. CHALLENGE_CATCH_EASY_POKEMON.
 inline bool template_char(char c){return (c>='A'&&c<='Z')||(c>='0'&&c<='9')||c=='_';}
-// R2 (legacy) or R3|mode|claim|catch|T1,T2,... (0=off, 1=remove chosen, 2=keep chosen).
+// R2 legacy, R3 mode 0-2, R4 mode 3=keep target and claim ONLY chosen template.
+// R4 forbids unscoped claims when tracking a single event quest.
 inline bool flag(char c){return c=='0'||c=='1';}
 inline bool parse(const char *s,size_t n,Config &out){
  out=Config{};if(!s||n<9||n>kMaxTemplates*(kMaxTemplateBytes+1)+10)return false;
- const bool legacy=!std::memcmp(s,"R2|",3),v3=!std::memcmp(s,"R3|",3);
- if(!legacy&&!v3)return false;
- if((!flag(s[3])&&!(v3&&s[3]=='2'))||s[4]!='|'||!flag(s[5])||s[6]!='|'||!flag(s[7])||s[8]!='|')return false;
- Config c;c.remove=s[3]!='0';c.keep_selected=v3&&s[3]=='2';c.claim=s[5]=='1';c.catch_encounters=s[7]=='1';
+ const bool legacy=!std::memcmp(s,"R2|",3),v3=!std::memcmp(s,"R3|",3),v4=!std::memcmp(s,"R4|",3);
+ if(!legacy&&!v3&&!v4)return false;
+ if((!flag(s[3])&&!((v3&&s[3]=='2')||(v4&&s[3]=='3')))||s[4]!='|'||!flag(s[5])||s[6]!='|'||!flag(s[7])||s[8]!='|')return false;
+ Config c;c.remove=s[3]!='0';c.keep_selected=(v3&&s[3]=='2')||(v4&&s[3]=='3');
+ c.claim_selected_only=v4&&s[3]=='3';c.claim=s[5]=='1';c.catch_encounters=s[7]=='1';
  size_t at=9;
  while(at<n){
   size_t end=at;while(end<n&&s[end]!=',')++end;
@@ -27,7 +29,11 @@ inline bool parse(const char *s,size_t n,Config &out){
   if(end==n)break;
   at=end+1;if(at==n)return false;  // trailing comma
  }
- if(c.keep_selected&&c.templates.empty())c.remove=false; // Never delete everything without a chosen target.
+ if(c.keep_selected&&c.templates.empty()){
+   // A missing exact template can neither authorize deletion nor claim in event mode.
+   if(c.claim_selected_only)return false;
+   c.remove=false;
+ } // Never delete everything without a chosen target.
  c.valid=true;out=c;return true;
 }
 struct Quest {int context=0,status=0,progress=0,target=0;bool bonus=false;std::string id,templ;};
@@ -38,7 +44,8 @@ enum Action {NONE,CLAIM,REMOVE};
 // unknown-target, special, and completed research is always protected.
 inline Action decide(const Quest &q,const Config &c,int challenge,int active){
  if(!c.valid||q.context!=challenge||q.status!=active||q.id.empty()||q.templ.empty())return NONE;
- if(q.target>0&&q.progress>=q.target)return c.claim?CLAIM:NONE;
+ if(q.target>0&&q.progress>=q.target)
+  return c.claim&&(!c.claim_selected_only||c.templates.count(q.templ))?CLAIM:NONE;
  if(c.remove&&!q.bonus&&q.target>0&&!c.templates.empty()) {
   const bool picked=c.templates.count(q.templ)!=0;
   if(c.keep_selected?!picked:picked)return REMOVE;
