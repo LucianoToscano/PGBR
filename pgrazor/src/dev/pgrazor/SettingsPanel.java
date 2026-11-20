@@ -827,9 +827,38 @@ final class SettingsPanel {
         skipCutscenesSwitch.setOnCheckedChangeListener((v,checked) -> { if(checked==Control.skipCutscenes())return; Control.setSkipCutscenes(checked); });
         cutsceneStatus = caption(page, "");  // shown only when the native module reports an error
 
-        // Replacing Unity text is still unverified; a movable Android overlay is not privacy.
+        // Only text owned by PGBR is changed. Game-owned Unity text still needs a validated hook.
         LinearLayout privacy=group(page,"Privacidade do treinador");
-        caption(privacy,"Ocultar ou substituir o nome nas telas do jogo: em validação. A antiga tarja foi desativada porque não ocultava o nome com segurança. O nome verdadeiro da conta não é alterado.");
+        caption(privacy,"Hide Trainer altera apenas nomes exibidos pelo PGBR, nunca a identidade da conta ou o nome que o Pokémon GO mostra no mapa/perfil. Não é proteção contra capturas de tela do jogo.");
+        final TextView preview=caption(privacy,"");
+        Runnable updatePrivacy=()->preview.setText(dev.pgrazor.PtBr.tr(
+            "Exibição no PGBR: "+(Control.trainerPrivacyMode()==1?"Treinador (oculto)":
+                Control.trainerPrivacyMode()==2?Control.trainerAlias():"Nome original")));
+        launch(privacy,"Hide Trainer / Exibir apelido",()->{
+            String[] options={"Nome original","Ocultar nome no PGBR","Mostrar apelido no PGBR"};
+            new AlertDialog.Builder(dialogContext()).setTitle("Nome exibido no PGBR")
+                .setSingleChoiceItems(options,Control.trainerPrivacyMode(),(d,choice)->{
+                    Control.setTrainerPrivacyMode(choice);updatePrivacy.run();host.refresh();d.dismiss();
+                }).setNegativeButton("Cancelar",null).show();
+        });
+        launch(privacy,"Definir meu apelido",()->{
+            EditText name=new EditText(dialogContext());
+            name.setSingleLine(true);
+            name.setFilters(new android.text.InputFilter[]{new android.text.InputFilter.LengthFilter(24)});
+            name.setText(Control.trainerAlias());
+            name.setHint("PGBR Treinador");
+            new AlertDialog.Builder(dialogContext()).setTitle("Apelido local")
+                .setMessage("De 2 a 24 caracteres: letras, números, espaços, ponto, traço ou sublinhado.")
+                .setView(name).setNegativeButton("Cancelar",null)
+                .setPositiveButton("Salvar",null).create().show();
+            // The confirmation below is intentionally bound to the button on show,
+            // so invalid input does not close the dialog and discard the typed alias.
+        });
+        launch(privacy,"Gerar apelido PGBR aleatório",()->{
+            Control.regenerateTrainerAlias();Control.setTrainerPrivacyMode(2);
+            updatePrivacy.run();host.refresh();
+        });
+        updatePrivacy.run();
         LinearLayout battery = group(page, "Battery usage");
         caption(battery, "Lower graphics to save battery and keep the phone cooler. Each turns back to the game's own setting when switched off.");
         batteryResSwitch = switchRow(battery, "Lower resolution"); batteryResSwitch.setChecked(Control.batteryLowRes());
