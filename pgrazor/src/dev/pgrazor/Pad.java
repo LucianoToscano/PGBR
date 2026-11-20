@@ -105,7 +105,7 @@ public final class Pad {
     private final class PgbrIcon extends View {
         private final Paint paint=new Paint(Paint.ANTI_ALIAS_FLAG|Paint.FILTER_BITMAP_FLAG);
         private final Paint shine=new Paint(Paint.ANTI_ALIAS_FLAG);
-        private final Bitmap classic, eterna, eternaAura, morphBallClean, morphBallStorm, stormSmoke;
+        private final Bitmap classic, eterna, eternaAura, morphBallClean, morphBallStorm, stormSmoke, stormBallVortex;
         private final EternatusVisualEffects stormFx = new EternatusVisualEffects();
         private Bitmap personal;
         private int artworkVersion=-1;
@@ -117,6 +117,7 @@ public final class Pad {
             morphBallClean=read("pgrazor/map-icons/eternatus-ball-morph-clean.webp");
             morphBallStorm=read("pgrazor/map-icons/eternatus-ball-morph-storm.webp");
             stormSmoke=read("pgrazor/map-icons/eternatus-fx-smoke-wispy.png");
+            stormBallVortex=read("pgrazor/map-icons/eternatus-fx-vortex.png");
             setContentDescription(PtBr.tr("Abrir o menu principal PGBR. Arraste para reposicionar."));
             setFocusable(true);setClickable(true);
         }
@@ -156,7 +157,8 @@ public final class Pad {
                 RectF imageBounds=new RectF(cx-sz*.5f+margin,cy-sz*.5f+margin,cx+sz*.5f-margin,cy+sz*.5f-margin);
                 if (stormOn) {
                     // First the storm approaches behind the stationary Poké Ball.
-                    stormFx.ballBehind(canvas, stormSmoke != null ? stormSmoke :
+                    stormFx.ballBehind(canvas, stormBallVortex,
+                        stormSmoke != null ? stormSmoke :
                         (morphBallStorm != null ? morphBallStorm : eternaAura),
                         cx, cy, sz*.5f, now, Control.eternatusFxIntensity(), Control.eternatusFxSpeed());
                 }
