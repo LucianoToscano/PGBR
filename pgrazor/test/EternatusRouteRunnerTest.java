@@ -20,6 +20,8 @@ public final class EternatusRouteRunnerTest {
         check(EternatusRouteRunner.active(), "Route active");
         check(EternatusRouteRunner.currentStop() == 1 && Control.teleports == 1, "First stop teleported");
         check(!Control.quickspin, "Quick-spin must wait for cooldown");
+        check(Control.throwGrade == 3 && Control.throwVariety == 0,
+            "Eternatus run must request Excellent throws without random variety");
         Cooldown.remainingMs = 60000;
         SystemClock.now += 1000;
         EternatusRouteRunner.tick();
@@ -46,6 +48,8 @@ public final class EternatusRouteRunnerTest {
         check(!EternatusMission.enabled, "Native research mode disarmed");
         check(!Control.quickspin && !Control.vgpEnabled && !Control.vgpOverlay,
             "Existing overlay/tool preferences restored");
+        check(Control.throwGrade == 2 && Control.throwVariety == 2,
+            "Original throw configuration must be restored");
         try {
             new GpxRoute("invalid", new double[][]{{91, 0}});
             throw new AssertionError("Invalid coordinates were accepted");
