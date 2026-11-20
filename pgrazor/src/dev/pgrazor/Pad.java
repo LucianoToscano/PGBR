@@ -182,7 +182,7 @@ public final class Pad {
         buddyEmotionStatus=text("EP: aguardando",11,ink());buddyEmotionStatus.setPadding(dp(4),dp(2),dp(4),dp(2));buddyEmotionStatus.setMaxLines(1);buddyEmotionStatus.setEllipsize(android.text.TextUtils.TruncateAt.END);
         FrameLayout.LayoutParams buddyEpLayout=new FrameLayout.LayoutParams(dp(155),-2,Gravity.TOP|Gravity.LEFT);buddyEpLayout.leftMargin=dp(12);buddyEpLayout.topMargin=dp(265);overlays.addView(buddyEmotionStatus,buddyEpLayout);buddyEmotionStatus.setVisibility(View.GONE);
         buddyEmotionStatus.setOnClickListener(v->BuddyEmotionSettings.show(activity));buddyEmotionDrag=OverlayDrag.attach(overlays,buddyEmotionStatus,"buddy-emotion");
-        gymFeedOverlay=new GymFeedOverlay(activity);FrameLayout.LayoutParams gymFeedLayout=new FrameLayout.LayoutParams(dp(54),dp(54),Gravity.TOP|Gravity.LEFT);gymFeedLayout.leftMargin=dp(12);gymFeedLayout.topMargin=dp(375);overlays.addView(gymFeedOverlay,gymFeedLayout);
+        gymFeedOverlay=new GymFeedOverlay(activity);FrameLayout.LayoutParams gymFeedLayout=new FrameLayout.LayoutParams(dp(Control.gymIconSizeDp()),dp(Control.gymIconSizeDp()),Gravity.TOP|Gravity.LEFT);gymFeedLayout.leftMargin=dp(12);gymFeedLayout.topMargin=dp(375);overlays.addView(gymFeedOverlay,gymFeedLayout);
         gymAutomationStatus=text("Off",11,ink());gymAutomationStatus.setPadding(dp(6),dp(3),dp(6),dp(3));gymAutomationStatus.setMaxLines(1);gymAutomationStatus.setMaxWidth(dp(165));gymAutomationStatus.setEllipsize(android.text.TextUtils.TruncateAt.END);
         overlays.addView(gymAutomationStatus,new FrameLayout.LayoutParams(-2,-2,Gravity.TOP|Gravity.LEFT));
         gymFeedDrag=OverlayDrag.attach(overlays,gymFeedOverlay,gymAutomationStatus,"gym-feed");
@@ -306,9 +306,9 @@ public final class Pad {
                     if(getX()>=(container.getWidth()-getWidth()-dp(3)))
                         centerX=getWidth()-size/2f;
                 }
-                if(style==1&&Control.hudLabelOpacity()>0){
+                if(style==1&&Control.overlayBackgroundOpacity()>0){
                     glow.setStyle(Paint.Style.FILL);
-                    glow.setColor(Color.argb(Math.round(Control.hudLabelOpacity()*2.55f),218,225,231));
+                    glow.setColor(Color.argb(Math.round(Control.overlayBackgroundOpacity()*2.55f),218,225,231));
                     canvas.drawCircle(centerX,centerY,size*.50f,glow);
                 }
                 float ratio=Math.min(size/icon.getWidth(),size/icon.getHeight());
@@ -407,6 +407,7 @@ public final class Pad {
     private void refreshJoystickAppearance(){
         if(stick==null||joystickOverlay==null)return;
         int size=Control.joystickSizeDp(),opacity=Control.joystickOpacity();
+        if(stick.imageGeneration!=JoystickImage.generation())stick.invalidate();
         if(size!=lastJoystickSize){
             lastJoystickSize=size;
             ViewGroup.LayoutParams current=stick.getLayoutParams();
@@ -417,6 +418,16 @@ public final class Pad {
         if(opacity!=lastJoystickOpacity){
             lastJoystickOpacity=opacity;stick.setAlpha(opacity/100f);stick.invalidate();
         }
+    }
+    private int lastGymIconSize=-1;
+    private void refreshGymAppearance(){
+        if(gymFeedOverlay==null)return;
+        int iconSize=Control.gymIconSizeDp();
+        if(lastGymIconSize==iconSize)return;
+        lastGymIconSize=iconSize;
+        ViewGroup.LayoutParams layout=gymFeedOverlay.getLayoutParams();
+        if(layout!=null){layout.width=dp(iconSize);layout.height=dp(iconSize);gymFeedOverlay.setLayoutParams(layout);}
+        if(gymFeedDrag!=null)gymFeedDrag.refreshBounds();
     }
     private void refreshVgpHitbox(){
         if(vgpToggle==null)return;
@@ -431,7 +442,7 @@ public final class Pad {
         }
     }
     private void applyHudAppearance(){
-        int opacity=Control.hudLabelOpacity(),font=Control.hudLabelTextSp();
+        int opacity=Control.hudLabelOpacity()*Control.overlayBackgroundOpacity()/100,font=Control.hudLabelTextSp();
         int key=(opacity*100+font)*2+(Control.darkTheme()?1:0);
         if(key==lastHudAppearanceKey)return;
         lastHudAppearanceKey=key;
@@ -471,6 +482,7 @@ public final class Pad {
         applyHudAppearance();
         refreshVgpHitbox();
         refreshJoystickAppearance();
+        refreshGymAppearance();
         if(encounterBadge!=null){String count=!Control.encounterOverlay()||settings.isVisible()||(quickMenu!=null&&quickMenu.isShowing())?"":EncounterCounter.label();
             encounterBadge.setVisibility(count.isEmpty()||!Control.hudLabelsVisible()?View.GONE:View.VISIBLE);
             if(!count.isEmpty()){setTextIfChanged(encounterBadge,count);encounterBadge.setTextColor(ink());if(encounterDrag!=null)encounterDrag.refreshBounds();}}
@@ -735,7 +747,9 @@ public final class Pad {
         Control.event("panel-closed", "Runtime suspended on activity change; desiredEnabled=" + Control.desiredEnabled() + "; movement stopped");
     }
     private final class Stick extends View {
-        final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG|Paint.FILTER_BITMAP_FLAG);
+        private Bitmap customImage;
+        private int imageGeneration=-1;
         float x, y;
         int pointer = -1;
         long cameraGesture=-1;
@@ -758,7 +772,16 @@ public final class Pad {
         }
         protected void onDraw(Canvas canvas) {
             float cx=getWidth()/2f, cy=getHeight()/2f, radius=Math.min(cx,cy)-dp(12);
-            paint.setColor(Control.darkTheme()?0xff202e3e:0xffe1e9ef); canvas.drawCircle(cx,cy,radius,paint);
+            if(imageGeneration!=JoystickImage.generation()){
+                imageGeneration=JoystickImage.generation();
+                customImage=JoystickImage.load(getContext());
+            }
+            if(customImage!=null){
+                paint.setAlpha(255);paint.setColor(Color.WHITE);paint.setStyle(Paint.Style.FILL);
+                canvas.drawBitmap(customImage,null,new RectF(cx-radius,cy-radius,cx+radius,cy+radius),paint);
+            }else{
+                paint.setColor(Control.darkTheme()?0xff202e3e:0xffe1e9ef);canvas.drawCircle(cx,cy,radius,paint);
+            }
             paint.setColor(Color.rgb(72,102,125)); paint.setStrokeWidth(dp(1));
             canvas.drawLine(cx-radius,cy,cx+radius,cy,paint); canvas.drawLine(cx,cy-radius,cx,cy+radius,paint);
             paint.setColor(Control.engine.enabled?accent():muted());
