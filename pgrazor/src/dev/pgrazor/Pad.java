@@ -516,12 +516,15 @@ public final class Pad {
         if(launcher instanceof PgbrIcon&&((PgbrIcon)launcher).artworkVersion!=OverlayArtwork.version())
             launcher.invalidate();
     }
-    private int lastJoystickSize=-1,lastJoystickOpacity=-1,lastJoystickStyle=-1;
+    private int lastJoystickSize=-1,lastJoystickOpacity=-1,lastJoystickStyle=-1,lastJoystickEffects=-1;
     private void refreshJoystickAppearance(){
         if(stick==null||joystickOverlay==null)return;
         int size=Control.joystickSizeDp(),opacity=Control.joystickOpacity();
         int style=Control.joystickStyle();
-        if(lastJoystickStyle!=style){lastJoystickStyle=style;stick.invalidate();}
+        int effects=Control.joystickEternatusEffects()?1:0;
+        if(lastJoystickStyle!=style||lastJoystickEffects!=effects){
+            lastJoystickStyle=style;lastJoystickEffects=effects;stick.invalidate();
+        }
         if(style==3&&stick.imageGeneration!=JoystickImage.generation())stick.invalidate();
         if(size!=lastJoystickSize){
             lastJoystickSize=size;
