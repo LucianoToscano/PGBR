@@ -30,3 +30,35 @@ jobs:
           java -cp build/pgbr-unit dev.pgrazor.TrainerAliasPolicyTest
       - name: Verificar integridade do diff
         run: git diff --check HEAD~1 HEAD
+
+  android-controls:
+    runs-on: windows-latest
+    timeout-minutes: 35
+    env:
+      PGRAZOR_BUILD_TOOLS: 36.0.0
+      PGRAZOR_ANDROID_PLATFORM: android-36
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools
+          log-accepted-android-sdk-licenses: false
+      - name: Android SDK 36
+        shell: pwsh
+        run: sdkmanager "platforms;android-36" "build-tools;36.0.0" "sources;android-36"
+      - name: Preparar ferramentas DEX
+        run: python -c "import sys; sys.path.insert(0, 'pgrazor'); import dex_bridges; dex_bridges.dependencies(download=True)"
+      - name: Executar verificacoes completas dos fontes
+        run: python -B tools/check.py
+      - name: Compilar controles Java Android
+        run: python -B pgrazor/build.py
