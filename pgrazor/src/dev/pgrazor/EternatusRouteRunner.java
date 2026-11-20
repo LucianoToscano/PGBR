@@ -271,7 +271,8 @@ public final class EternatusRouteRunner {
                 actionsSince=0;
                 awaitingClaim = false;
                 status = "Parada " + (index + 1) + "/" + route.size()
-                    + " · aguardando cooldown estimado: " + ((cooldown + 999) / 1000) + " s.";
+                    + " · aguardando cooldown estimado: " + ((cooldown + 999) / 1000) + " s."
+                    + (lastResearchIssue.isEmpty() ? "" : " " + lastResearchIssue);
             }
             return;
         }
@@ -282,7 +283,8 @@ public final class EternatusRouteRunner {
             if (now-arrived < 3500L || now-cooldownClearedAt < SAFETY_MARGIN_MS) {
                 status = "Parada " + (index+1) + "/" + route.size()
                     + " · cooldown liberado; margem de segurança "
-                    + Math.max(1,(SAFETY_MARGIN_MS-(now-cooldownClearedAt)+999)/1000) + " s.";
+                    + Math.max(1,(SAFETY_MARGIN_MS-(now-cooldownClearedAt)+999)/1000) + " s."
+                    + (lastResearchIssue.isEmpty() ? "" : " " + lastResearchIssue);
                 return;
             }
         }
