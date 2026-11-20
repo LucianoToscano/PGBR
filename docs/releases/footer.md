@@ -1,9 +1,3 @@
-
-
 ---
 
-Enjoying PGBR? You can support development on [Ko-fi](https://ko-fi.com/pgrazor). Donations are optional.
-
-[GitHub](https://github.com/jpitty03/PGRazor)
-
-[Join the Discord community](https://discord.gg/9QqfkDSQX3)
+PGBR — edição brasileira independente. Os links promocionais para comunidades e doações do projeto de origem estão temporariamente ocultos. Créditos e licenças originais permanecem em LICENSE e THIRD_PARTY.md.

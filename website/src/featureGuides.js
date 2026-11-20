@@ -2,10 +2,10 @@
 export const featureGuides = [
   {
     id: 'location-joystick',
-    title: 'Location & joystick',
-    category: 'Movement',
+    title: 'Localização e joystick',
+    category: 'Movimentação',
     summary:
-      'Spoof your location, steer with a camera-relative joystick, and choose what a tap on the game map does.',
+      'Altere a localização, controle a caminhada por joystick e escolha o que acontece ao tocar no mapa do jogo.',
     where: 'Settings > General Settings, plus the on-screen joystick.',
     steps: [
       'Open Settings and expand General Settings.',
@@ -27,10 +27,10 @@ export const featureGuides = [
   },
   {
     id: 'world-map',
-    title: 'World map',
-    category: 'Map',
+    title: 'Mapa-múndi',
+    category: 'Mapa',
     summary:
-      'A full-screen map with place search, loaded nearby layers, a live location dot, and per-pin Walk or Teleport.',
+      'Mapa em tela cheia com busca por locais, pontos próximos, posição atual e opções de caminhar e teletransportar.',
     where: 'Quick Menu > Map (full screen, in your chosen PGBR theme).',
     steps: [
       'Open the Quick Menu and tap Map.',
@@ -50,10 +50,10 @@ export const featureGuides = [
   },
   {
     id: 'hotspots-favorites',
-    title: 'Hotspots & favorites',
-    category: 'Map',
+    title: 'Locais populares e favoritos',
+    category: 'Mapa',
     summary:
-      'Jump to 14 curated hotspots or your own saved places, with a cooldown estimate before any teleport.',
+      'Visite 14 destinos populares ou locais favoritos, com estimativa de tempo de espera antes de teletransportar.',
     where: 'Quick Menu > Hotspots or Favorites, and the World Map. Hotspots offers 14 curated destinations.',
     steps: [
       'Save a place from the World Map so it appears under Favorites (Favorites shares the map’s saved places).',
@@ -69,10 +69,10 @@ export const featureGuides = [
   },
   {
     id: 'autowalk-gpx',
-    title: 'Autowalk & GPX routes',
-    category: 'Movement',
+    title: 'Caminhada automática e rotas GPX',
+    category: 'Movimentação',
     summary:
-      'Build a looping route through nearby stops and gyms, or import and save GPX paths to walk automatically.',
+      'Crie rotas repetidas entre Poképaradas e ginásios ou importe arquivos GPX para caminhar automaticamente.',
     where: 'Quick Menu > Autowalk and the World Map route builder.',
     steps: [
       'Open Autowalk from the Quick Menu to build a route through nearby loaded PokéStops and Gyms.',
@@ -90,10 +90,10 @@ export const featureGuides = [
   },
   {
     id: 'in-game-routes',
-    title: 'In-game Routes',
-    category: 'Movement',
+    title: 'Rotas do jogo',
+    category: 'Movimentação',
     summary:
-      'Discover and walk the game’s own Routes automatically, waiting for each reward before moving on.',
+      'Encontre e percorra as rotas do jogo automaticamente, aguardando as recompensas.',
     where: 'Quick Menu > In-game Routes (experimental).',
     steps: [
       'Open In-game Routes from the Quick Menu and choose a completion limit from 1 to 50.',
@@ -110,10 +110,10 @@ export const featureGuides = [
   },
   {
     id: 'cooldown',
-    title: 'Cooldown estimate',
-    category: 'Reference',
+    title: 'Estimativa de tempo de espera',
+    category: 'Referência',
     summary:
-      'A local, draggable timer that estimates the soft-ban wait between location-sensitive actions.',
+      'Cronômetro flutuante com estimativa de espera entre ações ligadas à localização.',
     where: 'Settings > General Settings (Cooldown overlay); tap the timer for history.',
     steps: [
       'Turn on the Cooldown overlay in General Settings.',
@@ -130,10 +130,10 @@ export const featureGuides = [
   },
   {
     id: 'catching',
-    title: 'Catching & throws',
-    category: 'Catching',
+    title: 'Captura e arremessos',
+    category: 'Capturas',
     summary:
-      'Quick Catch, throw rating, variety and curveball, catch chance and Auto ball, encounter berry priorities, and IV display.',
+      'Captura rápida, qualidade dos arremessos, bola curva, chances de captura, prioridade de frutas e IVs.',
     where: 'Settings > Catch & summary, Settings > Throws, and Settings > General Settings > IV Display.',
     steps: [
       'In Catch & summary, turn on Quick catch to shorten the catch animation and skip the post-catch screens.',
@@ -156,10 +156,10 @@ export const featureGuides = [
   },
   {
     id: 'auto-throw',
-    title: 'Auto throw & catch on map',
-    category: 'Catching',
+    title: 'Arremesso automático e captura pelo mapa',
+    category: 'Capturas',
     summary:
-      'Let PGBR throw for you in encounters, or catch a tapped Pokémon straight from the map without opening the encounter.',
+      'Faça arremessos automáticos ou capture Pokémon diretamente pelo mapa, sem abrir o encontro.',
     where: 'Settings > Throws > Auto throw and Catch on map (tap Pokémon).',
     steps: [
       'In Throws, turn on Auto throw. It is off by default.',
@@ -178,10 +178,10 @@ export const featureGuides = [
   },
   {
     id: 'transfer-rules',
-    title: 'Transfer & keep rules',
-    category: 'Catching',
+    title: 'Transferências e regras de proteção',
+    category: 'Capturas',
     summary:
-      'Auto-transfer low-IV catches while protecting shinies, legendaries, sizes, good PvP IVs, and a custom species list.',
+      'Transfira automaticamente capturas com IVs baixos, protegendo brilhantes, lendários, tamanhos, PvP e espécies selecionadas.',
     where: 'Settings > Catch & summary > Transfer on catch.',
     steps: [
       'Open Transfer on catch and turn on Transfer below 90% IV.',
@@ -203,10 +203,10 @@ export const featureGuides = [
   },
   {
     id: 'virtual-go-plus',
-    title: 'Virtual Go Plus',
-    category: 'Automation',
+    title: 'Go Plus Virtual',
+    category: 'Automação',
     summary:
-      'Catch nearby wild Pokémon with red balls only and spin nearby stops, with a target marker and status overlay.',
+      'Capture Pokémon próximos com Poké Bolas e gire Poképaradas, com indicadores de alvo e estado.',
     where: 'Settings > Virtual Go Plus; start/stop from the VGP overlay icon.',
     steps: [
       'In Virtual Go Plus, turn on VGP overlay to show the overlay (the switch controls visibility, not the run state).',
@@ -224,9 +224,9 @@ export const featureGuides = [
   {
     id: 'vgp-plus',
     title: 'VGP+',
-    category: 'Automation',
+    category: 'Automação',
     summary:
-      'An expanded VGP mode (formerly Smart Background Catcher) with ball, berry, throw, and premium/candy rules.',
+      'Modo VGP+ ampliado, com regras de bolas, frutas, arremessos e bônus de doces.',
     where: 'Settings > Virtual Go Plus > VGP+; start/stop from the same VGP overlay icon.',
     steps: [
       'With the VGP overlay enabled, turn on VGP+ in the Virtual Go Plus section.',
@@ -249,10 +249,10 @@ export const featureGuides = [
   },
   {
     id: 'gym-slotter',
-    title: 'Gym Slotter & Berry Feeder',
-    category: 'Automation',
+    title: 'Ocupar ginásios e alimentar defensores',
+    category: 'Automação',
     summary:
-      'Deploy a tagged defender to an open friendly gym slot and feed your gym defenders from one draggable overlay.',
+      'Coloque defensores marcados em ginásios aliados e alimente-os usando um painel flutuante.',
     where: 'Settings > Team Rocket, Gyms, Raids & Dynamax > Gyms > Gym Slotter & Berry Feeder.',
     steps: [
       'In the game’s Pokémon storage, open the Tags tab and create a tag named Gym (the #Gym shorthand is also recognized), then assign the eligible, healthy defenders you want deployed.',
@@ -272,10 +272,10 @@ export const featureGuides = [
   },
   {
     id: 'buddy-emotion',
-    title: 'Buddy Emotion Engine',
-    category: 'Automation',
+    title: 'Emoção do companheiro',
+    category: 'Automação',
     summary:
-      'Builds buddy mood with snapshot requests, petting, and reserve-aware berry feeding, replacing the old Auto feed buddy. It keeps running while game menus are open.',
+      'Melhora o humor do companheiro com fotos, carinho e frutas, respeitando a reserva de itens.',
     where: 'Settings > Buddy Emotion Engine.',
     steps: [
       'Expand Buddy Emotion Engine and turn on “Run the Buddy Emotion Engine”. This one master control covers snapshots, petting, hunger-based feeding, and optional gift collection.',
@@ -294,10 +294,10 @@ export const featureGuides = [
   },
   {
     id: 'daily-incense-session',
-    title: 'Daily Incense Session',
-    category: 'Automation',
+    title: 'Sessão do Incenso de Aventura Diário',
+    category: 'Automação',
     summary:
-      'Start one timed walk and watch loaded spawns for Galarian birds, with a manual catch handoff.',
+      'Inicie uma caminhada com duração definida e observe as aves de Galar para captura manual.',
     where: 'Settings > Automation > Daily Incense Session, or Quick Menu > Automation.',
     steps: [
       'Activate Daily Adventure Incense yourself in the game before starting this task.',
@@ -315,10 +315,10 @@ export const featureGuides = [
   },
   {
     id: 'remote-gym-feeding',
-    title: 'Remote Gym Feeding',
-    category: 'Automation',
+    title: 'Alimentação remota de ginásios',
+    category: 'Automação',
     summary:
-      'Run one bounded feeding batch for gyms with your own deployed defenders, using surplus normal berries.',
+      'Alimente defensores dos seus ginásios usando frutas excedentes em uma única execução.',
     where: 'Settings > Automation > Remote Gym Feeding, or Quick Menu > Automation.',
     steps: [
       'Stop Gym automation and VGP+ gym spinning, then open Remote Gym Feeding.',
@@ -335,9 +335,9 @@ export const featureGuides = [
   },
   {
     id: 'gift-batch',
-    title: 'Send & Open Gifts',
-    category: 'Automation',
-    summary: 'Send available gifts to eligible friends, then open received gifts in one manually started pass.',
+    title: 'Enviar e abrir presentes',
+    category: 'Automação',
+    summary: 'Envie presentes disponíveis e abra os recebidos em uma execução iniciada manualmente.',
     where: 'Settings > Automation > Send & Open Gifts, or Quick Menu > Automation.',
     steps: [
       'Choose whether to open even when your item bag is full. This option is on by default, uses the game’s full-bag reward preference, and may provide fewer rewards.',
@@ -354,10 +354,10 @@ export const featureGuides = [
   },
   {
     id: 'batch-evolution',
-    title: 'Mass Evolve (batch evolution)',
-    category: 'Automation',
+    title: 'Evolução em massa',
+    category: 'Automação',
     summary:
-      'Preview a tagged batch, then evolve each eligible Pokémon once without opening the evolution cutscene.',
+      'Veja uma prévia de Pokémon marcados e evolua cada elegível uma vez, sem animação.',
     where: 'Settings > Automation > Mass Evolve, or Quick Menu > Automation > Mass Evolve.',
     steps: [
       'In Pokemon storage, open Tags, create a tag such as Evolve, and assign only the Pokemon you want evolved to it.',
@@ -378,10 +378,10 @@ export const featureGuides = [
   },
   {
     id: 'shundo-sniper',
-    title: 'Shundo Sniper (experimental)',
-    category: 'Automation',
+    title: 'Caçador de Shundo (experimental)',
+    category: 'Automação',
     summary:
-      'Teleport to reported 100% IV Pokémon, check each for shiny, and catch a shiny once your cooldown allows.',
+      'Teletransporte até Pokémon com IV 100% divulgados, confira se são brilhantes e capture após a espera.',
     where: 'Settings > Automation > Shundo Sniper (Experimental), or Quick Menu > Automation.',
     steps: [
       'Read the warning first: constant teleporting and remote catching raise the risk of an account warning or ban. Use an alt account, not your main.',
@@ -400,10 +400,10 @@ export const featureGuides = [
   },
   {
     id: 'go-wild-safari',
-    title: 'Go Wild: Safari Balls (November 2026)',
-    category: 'Automation',
+    title: 'GO Wild: Bolas Safári (novembro de 2026)',
+    category: 'Automação',
     summary:
-      'Prefer GO Safari Balls for Mighty Pokémon in VGP+ and Auto ball during the Go Wild event.',
+      'Priorize Bolas Safári GO para Pokémon Poderosos no VGP+ durante o evento GO Wild.',
     where: 'Quick Menu > Events > Go Wild November 2026.',
     steps: [
       'Open the Quick Menu and tap Events, then Go Wild November 2026.',
@@ -418,10 +418,10 @@ export const featureGuides = [
   },
   {
     id: 'event-boxes',
-    title: 'Event boxes (Halloween 2026)',
-    category: 'Automation',
+    title: 'Caixas de evento (Halloween 2026)',
+    category: 'Automação',
     summary:
-      'An Events screen that can open every visible map box and skip its encounter screens.',
+      'Tela de eventos capaz de abrir caixas visíveis no mapa e pular encontros.',
     where: 'Quick Menu > Events > Halloween 2026.',
     steps: [
       'Open the Quick Menu and tap Events, then Halloween 2026.',
@@ -436,10 +436,10 @@ export const featureGuides = [
   },
   {
     id: 'inventory-cleanup',
-    title: 'Inventory limits',
-    category: 'Inventory',
+    title: 'Limites do inventário',
+    category: 'Inventário',
     summary:
-      'Choose which items to discard and how many to keep; the same limits apply to existing stock and new items.',
+      'Escolha quais itens descartar e quantos manter, inclusive para itens recém-obtidos.',
     where: 'Settings > Auto-transfer items.',
     steps: [
       'Open Auto-transfer items from the inventory controls.',
@@ -453,10 +453,10 @@ export const featureGuides = [
   },
   {
     id: 'friend-gifts',
-    title: 'Friend gifts',
-    category: 'Automation',
+    title: 'Presentes de amigos',
+    category: 'Automação',
     summary:
-      'Optionally open and send gifts, with an owned sticker added when available.',
+      'Abra e envie presentes, com uso opcional de adesivos disponíveis.',
     where: 'Settings > Friend gifts.',
     steps: [
       'Open Friend gifts.',
@@ -470,10 +470,10 @@ export const featureGuides = [
   },
   {
     id: 'egg-incubation',
-    title: 'Egg incubation',
-    category: 'Automation',
+    title: 'Incubação de ovos',
+    category: 'Automação',
     summary:
-      'Auto-incubate using only the unlimited incubator, by shortest or longest distance.',
+      'Incube ovos automaticamente usando apenas a incubadora infinita.',
     where: 'Settings > Auto incubate eggs.',
     steps: [
       'Open Auto incubate eggs and turn on Auto incubate.',
@@ -488,10 +488,10 @@ export const featureGuides = [
   },
   {
     id: 'battles',
-    title: 'Battles',
-    category: 'Battles',
+    title: 'Batalhas',
+    category: 'Batalhas',
     summary:
-      'Assist with Team Rocket, raids, gyms, and Dynamax / Max encounters.',
+      'Auxilie batalhas contra a Equipe GO Rocket, Reides, ginásios e Dinamax/Max.',
     where: 'Settings > Team Rocket, Gyms, Raids & Dynamax.',
     steps: [
       'In Team Rocket, enable Auto quick attack, Auto charged attack, and/or Auto shield.',
@@ -512,9 +512,9 @@ export const featureGuides = [
   {
     id: 'auto-raid',
     title: 'Auto-Raid',
-    category: 'Battles',
+    category: 'Batalhas',
     summary:
-      'Find a matching raid nearby, travel to it, wait for enough players, battle, and attempt the bonus catch.',
+      'Localize uma Reide, vá até ela, espere jogadores suficientes, batalhe e tente a captura bônus.',
     where: 'Settings > Automation > Auto-Raid, or Quick Menu > Automation > Auto-Raid.',
     steps: [
       'Open Automation and choose Auto-Raid.',
@@ -535,10 +535,10 @@ export const featureGuides = [
   },
   {
     id: 'smart-battling',
-    title: 'Smart battling',
-    category: 'Battles',
+    title: 'Batalhas inteligentes',
+    category: 'Batalhas',
     summary:
-      'Choose counters for the Pokémon you are fighting, before and during battles.',
+      'Escolha Pokémon com vantagens para enfrentar os adversários antes e durante batalhas.',
     where: 'Settings > Team Rocket, Gyms, Raids & Dynamax (top of the section).',
     steps: [
       'Turn on Smart battling. It is off by default and has no other settings.',
@@ -555,10 +555,10 @@ export const featureGuides = [
   },
   {
     id: 'smart-healing',
-    title: 'Smart healing',
-    category: 'Battles',
+    title: 'Cura inteligente',
+    category: 'Batalhas',
     summary:
-      'Heal damaged Pokémon automatically with the potion and revive mix that wastes the least.',
+      'Cure Pokémon automaticamente, economizando poções e itens de reviver.',
     where: 'Settings > Team Rocket, Gyms, Raids & Dynamax (top of the section).',
     steps: [
       'Turn on Smart healing. It is off by default.',
@@ -576,10 +576,10 @@ export const featureGuides = [
   },
   {
     id: 'skip-cutscenes',
-    title: 'Skip cutscenes',
+    title: 'Pular animações',
     category: 'Interface',
     summary:
-      'Bypass cutscenes and result screens so they are never drawn, instead of tapping through them.',
+      'Ignore animações e telas de resultados desnecessárias.',
     where: 'Settings > General Settings > Skip cutscenes (below Show joystick).',
     steps: [
       'Turn on Skip cutscenes. It is off by default.',
@@ -596,10 +596,10 @@ export const featureGuides = [
   },
   {
     id: 'battery-local-time',
-    title: 'Battery usage & local time',
+    title: 'Economia de bateria e horário local',
     category: 'Interface',
     summary:
-      'Lower the game’s graphics load to save battery, and show a clock for the place you are spoofed to.',
+      'Reduza a carga gráfica para economizar bateria e veja o horário do local selecionado.',
     where: 'Settings > General Settings > Battery usage, and Show local time.',
     steps: [
       'In General Settings, expand Battery usage.',
@@ -615,10 +615,10 @@ export const featureGuides = [
   },
   {
     id: 'research',
-    title: 'Field research',
-    category: 'Automation',
+    title: 'Pesquisas de campo',
+    category: 'Automação',
     summary:
-      'Auto-claim completed field research, delete tasks you don’t want, and catch waiting research encounters.',
+      'Resgate pesquisas de campo concluídas, exclua tarefas indesejadas e capture recompensas.',
     where: 'Quick Menu > Research.',
     steps: [
       'Open Research from the Quick Menu.',
@@ -691,7 +691,7 @@ export const featureGuides = [
   {
     id: 'pgrazor-root',
     title: 'PGBR Root (experimental)',
-    category: 'Reference',
+    category: 'Referência',
     summary:
       'Run PGBR inside the official Pokémon GO app on a rooted device, with no patched game APK.',
     where: 'A separate download: PGBR-Root.apk from the release page.',
