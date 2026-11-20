@@ -704,6 +704,7 @@ final class SettingsPanel {
         caption(page, "Settings for limited-time events.");
         launch(page, "Halloween 2026", () -> dev.pgrazor.events.EventPanel.showHalloween(activity, Control.darkTheme()));
         launch(page, "Go Wild November 2026", () -> dev.pgrazor.events.EventPanel.showGoWild(activity, Control.darkTheme()));
+        launch(page, "Evento Rota Doces Eternatus", () -> dev.pgrazor.events.EventPanel.showEternatus(activity, Control.darkTheme()));
     }
 
     private void buildDisplayPage() {
