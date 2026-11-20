@@ -89,11 +89,11 @@ public final class ResearchSettings {
         body.addView(removeHelp);
 
         CheckBox keep = new CheckBox(ui);
-        keep.setText("Manter missões selecionadas e excluir as outras");
+        keep.setText(dev.pgrazor.PtBr.tr("Manter missões selecionadas e excluir as outras"));
         keep.setChecked(preferences.keepSelected());
         body.addView(keep);
         TextView keepHelp = new TextView(ui);
-        keepHelp.setText("Marque abaixo as missões que quer manter. Quando este modo estiver ativo, outras Pesquisas de Campo inacabadas serão excluídas. Missões concluídas, especiais e bônus de Ginásio são preservadas. É preciso escolher ao menos uma missão.");
+        keepHelp.setText(dev.pgrazor.PtBr.tr("Marque abaixo as missões que quer manter. Quando este modo estiver ativo, outras Pesquisas de Campo inacabadas serão excluídas. Missões concluídas, especiais e bônus de Ginásio são preservadas. É preciso escolher ao menos uma missão."));
         body.addView(keepHelp);
 
         CheckBox catchEncounters = new CheckBox(ui); catchEncounters.setText(dev.pgrazor.PtBr.tr("Auto-catch research encounters"));
@@ -108,7 +108,7 @@ public final class ResearchSettings {
         empty.setText(dev.pgrazor.PtBr.tr("No field research seen yet. Tasks appear here as the game gives them to you while PGBR runs."));
         body.addView(empty);
         TextView selectionHelp = new TextView(ui);
-        selectionHelp.setText("No modo 'Manter missões selecionadas', as caixas abaixo representam as missões a preservar. No modo 'Excluir selecionadas', representam as missões a excluir.");
+        selectionHelp.setText(dev.pgrazor.PtBr.tr("No modo 'Manter missões selecionadas', as caixas abaixo representam as missões a preservar. No modo 'Excluir selecionadas', representam as missões a excluir."));
         body.addView(selectionHelp);
         LinearLayout list = new LinearLayout(ui); list.setOrientation(LinearLayout.VERTICAL); body.addView(list);
         TextView status = new TextView(ui); status.setText(dev.pgrazor.PtBr.tr(status())); body.addView(status);
@@ -158,14 +158,14 @@ public final class ResearchSettings {
                 return;
             }
             new AlertDialog.Builder(ui)
-                .setTitle("Ativar exclusão das outras missões?")
-                .setMessage("Somente as Pesquisas de Campo marcadas serão mantidas. Outras missões não concluídas poderão ser excluídas automaticamente. A exclusão não pode ser desfeita.")
-                .setPositiveButton("Ativar", (d, which) -> {
+                .setTitle(dev.pgrazor.PtBr.tr("Ativar exclusão das outras missões?"))
+                .setMessage(dev.pgrazor.PtBr.tr("Somente as Pesquisas de Campo marcadas serão mantidas. Outras missões não concluídas poderão ser excluídas automaticamente. A exclusão não pode ser desfeita."))
+                .setPositiveButton(dev.pgrazor.PtBr.tr("Ativar"), (d, which) -> {
                     preferences.setKeepSelected(true);
                     remove.setChecked(false);
                     Control.saveSettings();
                 })
-                .setNegativeButton("Cancelar", (d, which) -> keep.setChecked(false))
+                .setNegativeButton(dev.pgrazor.PtBr.tr("Cancelar"), (d, which) -> keep.setChecked(false))
                 .setOnCancelListener(d -> keep.setChecked(false))
                 .show();
         });
