@@ -51,6 +51,7 @@ final class SettingsPanel {
     private final java.util.List<TextView> pageSummaries=new java.util.ArrayList<>(), homeNames=new java.util.ArrayList<>();
     private final java.util.List<MenuIcon> homeIcons=new java.util.ArrayList<>();
     private int current=-1, homeScroll;
+    private EditText settingsSearch;
     private Switch incubatorSwitch;
     private Button incubatorPriority;
     private Button uiScale;
@@ -121,7 +122,7 @@ final class SettingsPanel {
         Switch sw=new Switch(activity);sw.setContentDescription(dev.pgrazor.PtBr.tr(label));sw.setClickable(true);r.addView(sw,new LinearLayout.LayoutParams(-2,-2));
         owner.addView(r);return sw;
     }
-    private TextView caption(LinearLayout owner,String s){TextView t=new TextView(activity);t.setText(dev.pgrazor.PtBr.tr(s));t.setTextSize(11);owner.addView(t);captions.add(t);return t;}
+    private TextView caption(LinearLayout owner,String s){TextView t=new TextView(activity);t.setText(dev.pgrazor.PtBr.tr(s));t.setTextSize(13);owner.addView(t);captions.add(t);return t;}
 
     /** Shows the destination theme: golden sun in dark mode, indigo moon in light mode. */
     private final class ThemeIcon extends View {
@@ -191,6 +192,25 @@ final class SettingsPanel {
         TextView note=caption(owner,"Some settings here are not available yet.");
         (needsBall?ballNotes:summaryNotes).add(note);
     }
+    /** Search existing categories and their nested controls without changing any settings or hiding capabilities. */
+    private void filterSettings(String raw){
+        String query=java.text.Normalizer.normalize(raw==null?"":raw,java.text.Normalizer.Form.NFD)
+            .replaceAll("\\p{M}","").toLowerCase(Locale.ROOT).trim();
+        for(int i=0;i<homeRows.size();i++){
+            StringBuilder content=new StringBuilder(pageTitles.get(i)).append(' ');
+            collectSearchLabels(pages.get(i),content);
+            String normalized=java.text.Normalizer.normalize(content.toString(),java.text.Normalizer.Form.NFD)
+                .replaceAll("\\p{M}","").toLowerCase(Locale.ROOT);
+            homeRows.get(i).setVisibility(query.isEmpty()||normalized.contains(query)?View.VISIBLE:View.GONE);
+        }
+    }
+    private static void collectSearchLabels(View view,StringBuilder result){
+        if(view instanceof TextView)result.append(((TextView)view).getText()).append(' ');
+        if(view instanceof ViewGroup){
+            ViewGroup group=(ViewGroup)view;
+            for(int i=0;i<group.getChildCount();i++)collectSearchLabels(group.getChildAt(i),result);
+        }
+    }
     /** Shows the home screen (index -1) or one category page, keeping the home scroll position for the way back. */
     private void open(int index){
         if(current<0&&index>=0)homeScroll=bodyScroll.getScrollY();
@@ -247,6 +267,19 @@ final class SettingsPanel {
         // Home screen: the always-visible location status, then one icon row per category.
         home = new LinearLayout(activity); home.setOrientation(LinearLayout.VERTICAL); body.addView(home);
         coords = text("", 16, ink()); coords.setPadding(dp(4), dp(6), dp(4), dp(10)); home.addView(coords);
+        settingsSearch = new EditText(activity);
+        settingsSearch.setSingleLine(true);
+        settingsSearch.setTextSize(15);
+        settingsSearch.setHint("Buscar configurações, ferramentas e opções");
+        settingsSearch.setContentDescription("Buscar nas configurações do PGBR");
+        settingsSearch.setInputType(InputType.TYPE_CLASS_TEXT);
+        settingsSearch.setPadding(dp(12),dp(10),dp(12),dp(10));
+        home.addView(settingsSearch,new LinearLayout.LayoutParams(-1,dp(52)));
+        settingsSearch.addTextChangedListener(new android.text.TextWatcher(){
+            public void beforeTextChanged(CharSequence s,int start,int count,int after){}
+            public void onTextChanged(CharSequence s,int start,int before,int count){filterSettings(s.toString());}
+            public void afterTextChanged(android.text.Editable editable){}
+        });
         buildLocationPage();
         buildCatchingPage();
         buildPokemonPage();
@@ -257,6 +290,7 @@ final class SettingsPanel {
         buildEventsPage();
         buildDisplayPage();
         buildAccountsPage();   // last: its Diagnostics group collects status lines created by the pages above
+        filterSettings("");
 
         // Closing the full-screen settings panel simply returns to the game (or the quick menu on the next tap).
         closeIcon.setOnClickListener(v -> panel.setVisibility(View.GONE));
