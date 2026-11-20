@@ -201,8 +201,29 @@ public final class Control {
     public static final int HUD_ALL=HUD_VGP|HUD_BUDDY|HUD_AUTOMATION|HUD_GYM|
         HUD_CATCH|HUD_ENCOUNTERS|HUD_SHINY|HUD_COOLDOWN|HUD_LOCALTIME;
     private static volatile int hudLabelsMask=HUD_ALL;
-    private static volatile int hudLabelOpacity=0;
+    private static volatile int hudLabelOpacity=0; // legacy fallback only
     private static volatile int hudLabelTextSp=11;
+    private static final int[] HUD_BITS={HUD_VGP,HUD_BUDDY,HUD_AUTOMATION,HUD_GYM,HUD_CATCH,
+        HUD_ENCOUNTERS,HUD_SHINY,HUD_COOLDOWN,HUD_LOCALTIME};
+    private static final int[] HUD_OPACITIES={12,12,12,12,12,12,12,15,12};
+    private static final int[] HUD_COLORS={0,0,2,0,1,0,2,1,0};
+    private static volatile int hudAppearanceRevision=0;
+    // Colour values: vivid green, dark orange, hot pink, and red, all with a dark text shadow.
+    public static final int[] HUD_PALETTE={0xff00da69,0xffff8500,0xffff1493,0xffff3535};
+    public static final String[] HUD_PALETTE_NAMES={"Verde","Laranja forte","Rosa choque","Vermelho"};
+    private static int hudIndex(int bit){for(int i=0;i<HUD_BITS.length;i++)if(HUD_BITS[i]==bit)return i;return -1;}
+    public static int hudAppearanceRevision(){return hudAppearanceRevision;}
+    public static int hudBackgroundOpacity(int bit){int index=hudIndex(bit);return index<0?0:HUD_OPACITIES[index];}
+    public static int hudPaletteIndex(int bit){int index=hudIndex(bit);return index<0?0:HUD_COLORS[index];}
+    public static int hudLabelColor(int bit){return HUD_PALETTE[hudPaletteIndex(bit)];}
+    public static void setHudBackgroundOpacity(int bit,int value){
+        int index=hudIndex(bit);if(index<0)return;
+        HUD_OPACITIES[index]=Math.max(0,Math.min(100,value));hudAppearanceRevision++;saveSettings();
+    }
+    public static void setHudPaletteIndex(int bit,int value){
+        int index=hudIndex(bit);if(index<0||value<0||value>=HUD_PALETTE.length)return;
+        HUD_COLORS[index]=value;hudAppearanceRevision++;saveSettings();
+    }
     public static boolean hudLabelsVisible(){return hudLabelsMask!=0;}
     public static boolean hudLabelVisible(int bit){return bit>0&&(bit&(bit-1))==0&&(hudLabelsMask&bit)!=0;}
     public static void setHudLabelVisible(int bit,boolean visible){
@@ -1416,6 +1437,14 @@ public final class Control {
                 hudLabelsVisible=hudLabelsMask!=0;
                 try{hudLabelOpacity=Math.max(0,Math.min(100,Integer.parseInt(p.getProperty("hudLabelOpacity","0"))));}
                 catch(NumberFormatException ignored){hudLabelOpacity=0;}
+                // Migrate the global background to independent, less intrusive defaults.
+                for(int i=0;i<HUD_BITS.length;i++){
+                    HUD_OPACITIES[i]=readBoundedVisual(p,"hudBg."+HUD_BITS[i],
+                        Math.min(20,hudLabelOpacity),0,100);
+                    HUD_COLORS[i]=readBoundedVisual(p,"hudColor."+HUD_BITS[i],
+                        new int[]{0,0,2,0,1,0,2,1,0}[i],0,3);
+                }
+                hudAppearanceRevision++;
                 try{hudLabelTextSp=Math.max(9,Math.min(14,Integer.parseInt(p.getProperty("hudLabelTextSp","11"))));}
                 catch(NumberFormatException ignored){hudLabelTextSp=11;}
                 vgpStopOnCooldown=Boolean.parseBoolean(p.getProperty("vgpStopOnCooldown","false"));
@@ -1597,6 +1626,10 @@ public final class Control {
         p.setProperty("hudLabelsMask",String.valueOf(hudLabelsMask));
         p.setProperty("hudLabelOpacity",String.valueOf(hudLabelOpacity));
         p.setProperty("hudLabelTextSp",String.valueOf(hudLabelTextSp));
+        for(int i=0;i<HUD_BITS.length;i++){
+            p.setProperty("hudBg."+HUD_BITS[i],String.valueOf(HUD_OPACITIES[i]));
+            p.setProperty("hudColor."+HUD_BITS[i],String.valueOf(HUD_COLORS[i]));
+        }
         p.setProperty("vgpStopOnCooldown",String.valueOf(vgpStopOnCooldown));
         p.setProperty("vgpOptions",String.valueOf(vgpOptions));
         p.setProperty("buddyBerry",String.valueOf(buddyBerry));
