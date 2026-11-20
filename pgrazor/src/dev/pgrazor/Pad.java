@@ -98,10 +98,10 @@ public final class Pad {
         });
     }
     /** Botão flutuante com a marca brasileira fornecida para o PGBR. */
-    private final class RazorIcon extends View {
+    private final class PgbrIcon extends View {
         private final Paint paint=new Paint(Paint.ANTI_ALIAS_FLAG|Paint.FILTER_BITMAP_FLAG);
         private final Bitmap logo;
-        RazorIcon(Context c) {
+        PgbrIcon(Context c) {
             super(c);
             Bitmap loaded=null;
             try(java.io.InputStream stream=PgAssets.open(c,"pgrazor/branding/pgbr-logo.webp")){
@@ -213,7 +213,7 @@ public final class Pad {
         FrameLayout.LayoutParams routesLayout=new FrameLayout.LayoutParams(dp(48),dp(48),Gravity.TOP|Gravity.RIGHT);
         routesLayout.rightMargin=dp(14);routesLayout.topMargin=dp(100);overlays.addView(gameRoutesOverlay,routesLayout);
         gameRoutesOverlay.setVisibility(View.GONE);gameRoutesDrag=OverlayDrag.attach(overlays,gameRoutesOverlay,"game-routes");
-        launcher=new RazorIcon(host);FrameLayout.LayoutParams iconLayout=new FrameLayout.LayoutParams(dp(48),dp(48),Gravity.TOP|Gravity.LEFT);iconLayout.leftMargin=dp(12);iconLayout.topMargin=dp(100);overlays.addView(launcher,iconLayout);
+        launcher=new PgbrIcon(host);FrameLayout.LayoutParams iconLayout=new FrameLayout.LayoutParams(dp(48),dp(48),Gravity.TOP|Gravity.LEFT);iconLayout.leftMargin=dp(12);iconLayout.topMargin=dp(100);overlays.addView(launcher,iconLayout);
         launcher.setContentDescription(dev.pgrazor.PtBr.tr("Open PGBR quick menu. Drag to reposition."));
         // O botão da marca PGBR abre o menu rápido; Configurações abre o painel completo.
         quickMenu=new QuickMenu(host,parent,launcher,new QuickMenu.Listener(){

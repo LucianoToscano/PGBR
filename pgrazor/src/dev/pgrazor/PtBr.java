@@ -1181,6 +1181,15 @@ public final class PtBr {
         m.put("Good to know", "Informações importantes");
         m.put("Feature guides", "Guias de recursos");
         m.put("Right by distance", "Imediatamente (conforme a distância)");
+        m.put("New catches only; requires Transfer above. Uses candy for ordinary evolutions, without items or special conditions. Keep rules always apply. If evolution is unavailable, transfer normally. Selected species mode keeps every species outside its list.", "Apenas capturas novas; exige a transferência ativada acima. Usa doces para evoluções comuns, sem itens nem condições especiais. As regras de proteção continuam valendo. Se a evolução não for possível, a transferência segue normalmente. No modo de espécies selecionadas, todas as outras espécies são mantidas.");
+        m.put("Activate Daily Adventure Incense in game, then start a session.", "Ative o Incenso de Aventura Diário no jogo e depois inicie a sessão.");
+        m.put("New catches only; IV below 90%", "Apenas capturas novas; IV abaixo de 90%");
+        m.put("20x catch and break-free animation", "Animações de captura e de fuga 20 vezes mais rápidas");
+        m.put("Java location adapter — game acceptance unverified", "Adaptador de localização Java — aceitação pelo jogo não verificada");
+        m.put("coordinate reads ", "leituras de coordenadas ");
+        m.put("Camera heading ", "Direção da câmera ");
+        m.put("up follows the view", "o topo acompanha a visualização");
+        m.put("tap a friend with a gift", "tocar em um amigo que tenha presente");
         LABELS = Collections.unmodifiableMap(m);
     }
     private PtBr() {}
