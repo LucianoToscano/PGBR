@@ -32,6 +32,13 @@ public final class Cooldown {
     public static synchronized long remainingAt(double lat,double lon){return state.remaining(System.currentTimeMillis(),lat,lon);}
     public static synchronized boolean hasHistory(){return !state.rows.isEmpty();}
     public static synchronized String label(){if(state.rows.isEmpty())return "Sem ações registradas";if(!Control.locationKnown())return "Aguardando localização";long seconds=(remaining()+999)/1000;if(seconds==0)return "Sem espera estimada";return String.format(Locale.US,"Espera est. %d:%02d:%02d",seconds/3600,(seconds/60)%60,seconds%60);}
+    /** Numeric-only display; full explanation remains in the history and accessibility label. */
+    public static synchronized String compactLabel(){
+        if(state.rows.isEmpty())return "—";
+        if(!Control.locationKnown())return "—";
+        long seconds=(remaining()+999)/1000;
+        return String.format(Locale.US,"%d:%02d:%02d",seconds/3600,(seconds/60)%60,seconds%60);
+    }
     private static synchronized ArrayList<CooldownState.Entry> entries(){return new ArrayList<>(state.rows);}
     private static synchronized void remove(long id){state.rows.removeIf(e->e.id==id);save();}
     private static Button button(Context c,String text){Button b=new Button(c);b.setText(dev.pgrazor.PtBr.tr(text));b.setAllCaps(false);b.setTextSize(12);return b;}
