@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <atomic>
 #include <cstdint>
+#include <dlfcn.h>
 #include <cstring>
 #include <mutex>
 #include <string>
@@ -29,8 +30,6 @@ StringChars string_chars = nullptr;
 StringLength string_length = nullptr;
 RootTarget root_target = nullptr;
 uintptr_t mask_root = 0;
-uint64_t last_attempt = 0;
-int attempted = 0;
 thread_local bool inside_setter = false;
 constexpr uint16_t kFiveStars[] = {'*', '*', '*', '*', '*'};
 constexpr uint32_t kMaxTrainerUnits = 128;
@@ -123,10 +122,6 @@ int attach_text(const PgrMetaApi *md, const PgrBootBinding &boot,
     if (*original != nullptr) return 0;
     void *target = find_text_setter(md, boot, ns, klass, method);
     if (!target) return 0;
-    // Avoid duplicate trampolines if metadata resolves two UI methods to one thunk.
-    if (reinterpret_cast<void *>(original_ui) == target ||
-        reinterpret_cast<void *>(original_tmp) == target ||
-        reinterpret_cast<void *>(original_tmp_settext) == target) return 0;
     void *backup = nullptr;
     if (pgrazor_hook(target, callback, &backup) != 0 || !backup) return 0;
     *original = reinterpret_cast<TextSetter>(backup);
