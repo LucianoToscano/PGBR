@@ -49,8 +49,18 @@ final class LocalTimeOverlay extends TextView {
         long elapsed = SystemClock.elapsedRealtime();
         if (showing && elapsed - lastRefresh < 1000) return;
         lastRefresh = elapsed;
-        String label = clock.label(Control.engine.latitude, Control.engine.longitude,
-                System.currentTimeMillis(), DateFormat.is24HourFormat(getContext()), Locale.getDefault());
+        double latitude=Control.engine.latitude, longitude=Control.engine.longitude;
+        String label = clock.compactLabel(latitude, longitude, System.currentTimeMillis());
+        // ICU maps the IANA time zone to a country region; no network or location permission needed.
+        try {
+            String zone=TimeZoneLookup.zoneId(latitude,longitude);
+            String region=android.icu.util.TimeZone.getRegion(zone);
+            if(region!=null&&region.matches("[A-Z]{2}")){
+                String flag=new String(Character.toChars(0x1f1e6+region.charAt(0)-'A'))
+                    +new String(Character.toChars(0x1f1e6+region.charAt(1)-'A'));
+                label=flag+"  "+label;
+            }
+        } catch(RuntimeException ignored){ /* Ocean and unknown region: show time without flag. */ }
         if (!label.contentEquals(getText())) {
             setText(label);
             setContentDescription("Local time at spoofed location: " + label + ". Drag to move.");
