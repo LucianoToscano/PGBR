@@ -153,7 +153,9 @@ public final class Pad {
             }
             if(logo!=null){
                 paint.setColor(Color.WHITE);paint.setAlpha(255);paint.setStyle(Paint.Style.FILL);
-                float margin=(stormOn && !morphReady)?sz*.045f:sz*.015f;
+                // Keep a visible corona around PGEterna: formerly the full-size artwork
+                // covered the entire behind-the-ball aura inside this 48dp View.
+                float margin=style==1 ? sz*.105f : sz*.015f;
                 RectF imageBounds=new RectF(cx-sz*.5f+margin,cy-sz*.5f+margin,cx+sz*.5f-margin,cy+sz*.5f-margin);
                 if (stormOn) {
                     // First the storm approaches behind the stationary Poké Ball.
