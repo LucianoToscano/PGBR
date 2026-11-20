@@ -193,6 +193,18 @@ public final class EventPanel {
         android.widget.CheckBox verifiedReward=new android.widget.CheckBox(ui);
         verifiedReward.setText(dev.pgrazor.PtBr.tr("Conferi que a missão selecionada concede 25 doces Eternatus"));
         layout.addView(verifiedReward);
+        android.widget.CheckBox withoutVgp=new android.widget.CheckBox(ui);
+        withoutVgp.setText("Sem VGP: giro rápido e captura assistida ao tocar no mapa");
+        withoutVgp.setChecked(dev.pgrazor.Control.eternatusWithoutVgp());
+        withoutVgp.setOnCheckedChangeListener((button,enabled)->
+            dev.pgrazor.Control.setEternatusWithoutVgp(enabled));
+        layout.addView(withoutVgp);
+        android.widget.CheckBox continueByTime=new android.widget.CheckBox(ui);
+        continueByTime.setText("Avançar após tempo de ação mesmo sem resgate confirmado (sem contar doces)");
+        continueByTime.setChecked(dev.pgrazor.Control.eternatusTimedAdvance());
+        continueByTime.setOnCheckedChangeListener((button,enabled)->
+            dev.pgrazor.Control.setEternatusTimedAdvance(enabled));
+        layout.addView(continueByTime);
         select.setOnClickListener(v->{
             java.util.List<String[]> catalog=dev.pgrazor.ResearchSettings.observedTemplates();
             if(catalog.isEmpty()){
@@ -228,7 +240,7 @@ public final class EventPanel {
         layout.addView(skipMissing);
         TextView diagnostic=new TextView(ui);
         diagnostic.setTextSize(12);
-        diagnostic.setText("O avanço automático exige resgate real da missão. Se uma parada não tiver pesquisa, pule manualmente; isso não registra doces.");
+        diagnostic.setText("Cada parada espera o cooldown chegar a zero + 3 segundos. No modo sem VGP, Giro rápido exige abrir o disco e Captura no mapa exige tocar no Pokémon: isso NÃO automatiza os toques. A continuação por tempo ocorre após 22 s de ferramentas prontas, mas NUNCA soma doces sem confirmação real.");
         layout.addView(diagnostic);
         TextView tally = new TextView(ui);
         tally.setPadding(0,pad/2,0,0);
@@ -248,11 +260,20 @@ public final class EventPanel {
             dev.pgrazor.GpxRouteDialog.whenResumed(activity,()->showEternatus(activity,dark));
         });});
         startAuto.setOnClickListener(v->{
-            if(!verifiedReward.isChecked()){
-                android.widget.Toast.makeText(activity,"Confirme primeiro a recompensa de 25 doces no jogo.",android.widget.Toast.LENGTH_LONG).show();return;
+            if(!verifiedReward.isChecked() && !continueByTime.isChecked()){
+                android.widget.Toast.makeText(activity,
+                    "Confirme a recompensa de 25 doces ou habilite o avanço por tempo sem contabilizar doces.",
+                    android.widget.Toast.LENGTH_LONG).show();return;
             }
             new AlertDialog.Builder(ui).setTitle("Iniciar rota Eternatus?")
-                .setMessage("Teleportar para a coordenada escolhida e ativar temporariamente VGP+, giro e o filtro da missão? A rota usa cooldown estimado; pesquisas incompletas diferentes podem ser descartadas.")
+                .setMessage("Iniciar pela coordenada escolhida? Todas as ações aguardam cooldown verde + 3 segundos. "
+                    +(withoutVgp.isChecked()
+                        ? "Sem VGP: você precisará tocar na PokéParada e no Pokémon, usando giro/captura assistidos. "
+                        : "Com VGP+: giro e captura automáticos disponíveis. ")
+                    +(continueByTime.isChecked()
+                        ? "Se não houver confirmação, avançará após 22 segundos com ferramentas prontas, SEM registrar doces."
+                        : "Só avançará com resgate confirmado ou salto manual.")
+                    +" Pesquisas incompletas diferentes podem ser descartadas.")
                 .setNegativeButton("Cancelar",null)
                 .setPositiveButton("Iniciar e teleportar",(d,w)->{
                     int startAt;
@@ -291,11 +312,15 @@ public final class EventPanel {
                 savedGpx.setEnabled(!active);
                 select.setEnabled(!active);
                 verifiedReward.setEnabled(!active);
+                withoutVgp.setEnabled(!active);
+                continueByTime.setEnabled(!active);
                 startPosition.setEnabled(!active);
                 if(planned!=null){
                     startPositionLabel.setText("Iniciar / retomar na coordenada (1 a "+planned.size()+")");
                 }
-                startAuto.setEnabled(!active && planned != null && verifiedReward.isChecked() && !selected[0].isEmpty());
+                startAuto.setEnabled(!active && planned != null
+                    && (verifiedReward.isChecked() || continueByTime.isChecked())
+                    && !selected[0].isEmpty());
                 stopAuto.setEnabled(active || dev.pgrazor.EternatusMission.active());
                 skipMissing.setEnabled(active && dev.pgrazor.EternatusRouteRunner.totalStops() >
                     dev.pgrazor.EternatusRouteRunner.currentStop());
