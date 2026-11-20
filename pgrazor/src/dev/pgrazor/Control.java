@@ -382,7 +382,7 @@ public final class Control {
     }
     public static int localTimeFormat() { return localTimeFormat; }
     public static void setLocalTimeFormat(int value) {
-        if (value < 0 || value > 5 || value == localTimeFormat) return;
+        if (value < 0 || value > 6 || value == localTimeFormat) return;
         localTimeFormat = value;
         saveSettings();
     }
@@ -1461,7 +1461,7 @@ public final class Control {
                 cooldownOverlay=Boolean.parseBoolean(p.getProperty("cooldownOverlay","false"));
                 cooldownTextSp=readBoundedVisual(p,"cooldownTextSp",0,0,20);
                 if(cooldownTextSp<9)cooldownTextSp=0;
-                localTimeFormat=readBoundedVisual(p,"localTimeFormat",0,0,5);
+                localTimeFormat=readBoundedVisual(p,"localTimeFormat",0,0,6);
                 cooldownEmphasis=Boolean.parseBoolean(p.getProperty("cooldownEmphasis","false"));
                 localTimeOverlay=Boolean.parseBoolean(p.getProperty("localTimeOverlay","false"));
                 encounterCounter=Boolean.parseBoolean(p.getProperty("encounterCounter","true"));encounterOverlay=Boolean.parseBoolean(p.getProperty("encounterOverlay","false"));

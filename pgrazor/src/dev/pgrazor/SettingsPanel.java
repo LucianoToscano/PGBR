@@ -547,11 +547,12 @@ final class SettingsPanel {
     }
 
     // Keep the original four stored format IDs stable across updates and imported profiles.
-    private static final int[] CLOCK_FORMAT_IDS = {4, 5, 2, 1, 3, 0};
+    private static final int[] CLOCK_FORMAT_IDS = {4, 5, 2, 1, 3, 0, 6};
     private static final String[] CLOCK_EXAMPLES = {
         "Só hora · 14:17", "Hora e data · 14:17 · 20/11/26", "Com fuso · 14:17 GMT-03:00",
         "Com bandeira · 🇧🇷 14:17 - 20/11/26", "Com ícones · 🕒 14:17 🗓 20/11/26",
-        "Bandeira e ícones · 🇧🇷 🕒 14:17 🗓 20/11/26"
+        "Bandeira e ícones · 🇧🇷 🕒 14:17 🗓 20/11/26",
+        "Bandeira + cidade · 🇧🇷 Fortaleza • 14:17 · 20/11/26"
     };
     private static final String[] COOLDOWN_STYLES = {"Discreto", "Chamativo"};
     private Button clockFormatButton, cooldownStyleButton;

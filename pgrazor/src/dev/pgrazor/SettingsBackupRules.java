@@ -61,7 +61,7 @@ public final class SettingsBackupRules {
             if(key.equals("hudLabelOpacity")){require(n>=0&&n<=100,"Invalid HUD transparency");continue;}
             if(key.equals("cooldownTextSp")){require(n==0||(n>=9&&n<=20),"Invalid cooldown text size");continue;}
             if(key.equals("trainerPrivacyMode")){require(n>=0&&n<=2,"Invalid trainer privacy mode");continue;}
-            if(key.equals("localTimeFormat")){require(n>=0&&n<=5,"Invalid local clock format");continue;}
+            if(key.equals("localTimeFormat")){require(n>=0&&n<=6,"Invalid local clock format");continue;}
             if(key.equals("hudLabelTextSp")){require(n>=9&&n<=14,"Invalid HUD text size");continue;}
             if(key.equals("quickMenuHidden")){require(n>=0&&n<=8191,"Invalid quick menu visibility");continue;}
             if(key.equals("uiScalePercent")){require(n==25||n==50||n==75||n==100,"Invalid UI scale");continue;}
