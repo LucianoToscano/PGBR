@@ -1,4 +1,5 @@
 #include "trainer_privacy_ui.h"
+#include "trainer_privacy_policy.h"
 #include "runtime_metadata.h"
 #include "runtime_bootstrap.h"
 #include "hook_engine.h"
@@ -44,10 +45,9 @@ bool is_own_name(void *value) {
     const uint16_t *chars = string_chars(value);
     if (chars == nullptr) return false;
     std::lock_guard<std::mutex> hold(name_lock);
-    if (trainer_name.empty() || static_cast<size_t>(length) != trainer_name.size()) return false;
-    for (int i=0; i<length; ++i)
-        if (chars[i] != static_cast<uint16_t>(trainer_name[static_cast<size_t>(i)])) return false;
-    return true;
+    return pgrazor_trainer_exact_name(
+        chars, static_cast<size_t>(length),
+        reinterpret_cast<const uint16_t *>(trainer_name.data()), trainer_name.size());
 }
 
 void *display_value(void *value) {
@@ -61,23 +61,26 @@ void *display_value(void *value) {
 void ui_text(void *self, void *value, const void *method) {
     if (!original_ui) return;
     void *visual = display_value(value);
+    const bool was_inside = inside_setter;
     inside_setter = true;
     original_ui(self, visual, method);
-    inside_setter = false;
+    inside_setter = was_inside;
 }
 void tmp_text(void *self, void *value, const void *method) {
     if (!original_tmp) return;
     void *visual = display_value(value);
+    const bool was_inside = inside_setter;
     inside_setter = true;
     original_tmp(self, visual, method);
-    inside_setter = false;
+    inside_setter = was_inside;
 }
 void tmp_set_text(void *self, void *value, const void *method) {
     if (!original_tmp_settext) return;
     void *visual = display_value(value);
+    const bool was_inside = inside_setter;
     inside_setter = true;
     original_tmp_settext(self, visual, method);
-    inside_setter = false;
+    inside_setter = was_inside;
 }
 
 // Discover only a validated presentation-only setter. IL2CPP MethodInfo and its
