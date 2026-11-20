@@ -42,6 +42,9 @@ public final class QuickMenu {
     static final String[] CUSTOMIZABLE = {"Map", "Walking speed", "Autowalk", "In-game Routes", "Busca Pokémon", "Favorites", "Hotspots", "Teleport", "Switch account", "Events", "Automation", "Research", "Hide overlay"};
     private final List<View> rows = new ArrayList<>();
     private final List<Integer> visibilityBits = new ArrayList<>();
+    // Visual-only groups; do not affect persistent menu visibility bits.
+    private final List<TextView> groupHeadings = new ArrayList<>();
+    private final List<Integer> groupStarts = new ArrayList<>();
     private int appliedHidden = -1;
     private final Activity activity;
     private final Listener listener;
@@ -65,19 +68,26 @@ public final class QuickMenu {
 
         card = new LinearLayout(activity); card.setOrientation(LinearLayout.VERTICAL);
         card.setPadding(0, dp(6), 0, dp(6)); card.setElevation(dp(12));
+        addGroupHeading("MOVER");
         card.addView(row(MAP, "Map", true, listener::onMap, 1));
         LinearLayout walkRow = (LinearLayout) row(WALK, "Walk", true, this::onWalk, 2); walkLabel = (TextView) walkRow.getChildAt(1); walkAction = walkRow;
         card.addView(walkRow);
         card.addView(row(AUTOWALK, "Autowalk", true, listener::onAutoWalk, 4));
         card.addView(row(ROUTES, "In-game Routes", true, listener::onGameRoutes, 8));
+        card.addView(row(TELEPORT, "Teleport", true, listener::onTeleport, 128));
+
+        addGroupHeading("ENCONTRAR");
         card.addView(row(FEEDS, "Busca Pokémon", true, listener::onFeeds, 16));
         card.addView(row(FAVORITES, "Favorites", true, listener::onFavorites, 32));
         card.addView(row(MAP, "Hotspots", true, listener::onHotspots, 64));
-        card.addView(row(TELEPORT, "Teleport", true, listener::onTeleport, 128));
-        card.addView(row(ACCOUNTS, "Switch account", true, listener::onAccounts, 256));
+
+        addGroupHeading("EXECUTAR");
         card.addView(row(EVENTS, "Events", true, () -> dev.pgrazor.events.EventPanel.showSelector(activity, Control.darkTheme()), 512));
         card.addView(row(AUTOMATION, "Automation", true, () -> AutomationPanel.show(activity), 1024));
         card.addView(row(RESEARCH, "Research", true, () -> ResearchSettings.show(activity), 2048));
+
+        addGroupHeading("SISTEMA");
+        card.addView(row(ACCOUNTS, "Switch account", true, listener::onAccounts, 256));
         card.addView(row(HIDE, "Hide overlay", true, listener::onHideOverlays, 4096));
         card.addView(row(SETTINGS, "Settings", true, listener::onSettings, 0));
         viewport=new ScrollView(activity);viewport.setFillViewport(false);
@@ -89,6 +99,19 @@ public final class QuickMenu {
         parent.addView(root, new FrameLayout.LayoutParams(-1, -1));
         root.setVisibility(View.GONE);
         applyTheme();
+    }
+
+    private void addGroupHeading(String label) {
+        TextView heading = new TextView(activity);
+        heading.setText(label);
+        heading.setTextSize(10.5f);
+        heading.setLetterSpacing(0.08f);
+        heading.setTypeface(android.graphics.Typeface.create("sans-serif-medium", android.graphics.Typeface.NORMAL));
+        heading.setPadding(dp(14), dp(10), dp(14), dp(4));
+        heading.setFocusable(false);
+        groupHeadings.add(heading);
+        groupStarts.add(rows.size());
+        card.addView(heading, new LinearLayout.LayoutParams(-1, -2));
     }
 
     private View row(int kind, String label, boolean enabled, Runnable action, int visibilityBit) {
@@ -125,6 +148,13 @@ public final class QuickMenu {
         int hidden=Control.quickMenuHidden();if(hidden==appliedHidden)return;
         appliedHidden=hidden;
         for(int i=0;i<rows.size();i++)rows.get(i).setVisibility((hidden&visibilityBits.get(i))==0?View.VISIBLE:View.GONE);
+        for(int i=0;i<groupHeadings.size();i++){
+            int start=groupStarts.get(i);
+            int end=i+1<groupStarts.size()?groupStarts.get(i+1):rows.size();
+            boolean anyVisible=false;
+            for(int j=start;j<end;j++)if(rows.get(j).getVisibility()==View.VISIBLE){anyVisible=true;break;}
+            groupHeadings.get(i).setVisibility(anyVisible?View.VISIBLE:View.GONE);
+        }
         if(isShowing())card.post(this::position);
     }
     private void refreshIconSizes(){
@@ -171,6 +201,7 @@ public final class QuickMenu {
     public void applyTheme() {
         int bg=(surface()&0x00ffffff)|(Math.round(Control.overlayBackgroundOpacity()*255f/100f)<<24);
         card.setBackground(rounded(bg, 14));
+        for (TextView heading : groupHeadings) heading.setTextColor(muted());
         for (int i = 0; i < rowLabels.size(); i++) {
             rowLabels.get(i).setTextColor(rowEnabled.get(i) ? ink() : muted());
             rowIcons.get(i).invalidate();
