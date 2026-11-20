@@ -25,6 +25,7 @@ public final class EternatusRouteRunner {
     private static int at;
     private static long arrivedAt, lastTick;
     private static String status = "Nenhuma rota GPX selecionada.";
+    private static String lastResearchIssue = "";
 
     private EternatusRouteRunner() {}
 
@@ -94,9 +95,10 @@ public final class EternatusRouteRunner {
                 && !template.equals(selectedTemplate))) return;
             String safe = explanation == null ? "" : explanation.trim();
             if (safe.length() > 140) safe = safe.substring(0, 140);
-            status = "Pesquisa não concluída na parada " + (at + 1) + "/"
-                + (planned == null ? 0 : planned.size())
-                + (safe.isEmpty() ? ". Confira o jogo; sem avanço automático." : ": " + safe);
+            lastResearchIssue = safe.isEmpty() ? "Falha de pesquisa (sem avanço automático)."
+                : "Erro de pesquisa: " + safe + " (sem avanço automático).";
+            status = "Parada " + (at + 1) + "/" +
+                (planned == null ? 0 : planned.size()) + " · " + lastResearchIssue;
         }
     }
 
@@ -133,6 +135,7 @@ public final class EternatusRouteRunner {
             running = true;
             at = 0;
             lastTick = 0;
+            lastResearchIssue = "";
             awaitingClaim = false;
             advancementQueued = false;
             confirmedQuestIds.clear();
@@ -161,6 +164,7 @@ public final class EternatusRouteRunner {
             awaitingClaim = false;
             advancementQueued = false;
             at = destinationIndex;
+            lastResearchIssue = "";
             arrivedAt = SystemClock.elapsedRealtime();
             status = "Teletransportando para a parada " + (at + 1) + "/" + route.size() + ".";
         }
@@ -228,8 +232,10 @@ public final class EternatusRouteRunner {
             status = available
                 ? "Parada " + (index + 1) + "/" + route.size()
                     + " · VGP+/giro ativos. Aguardando resgate confirmado da pesquisa."
+                    + (lastResearchIssue.isEmpty() ? "" : " " + lastResearchIssue)
                 : "Parada " + (index + 1) + "/" + route.size()
-                    + " · VGP+ ou giro indisponível; verifique o jogo antes de continuar.";
+                    + " · VGP+ ou giro indisponível; verifique o jogo antes de continuar."
+                    + (lastResearchIssue.isEmpty() ? "" : " " + lastResearchIssue);
         }
     }
 
@@ -242,6 +248,7 @@ public final class EternatusRouteRunner {
                 || !confirmedQuestIds.add(questId)) return false;
             advancementQueued = true;
             awaitingClaim = false;
+            lastResearchIssue = "";
             completedStop = at;
         }
         // Return to the UI thread. Never teleport inside the native response callback.
@@ -291,6 +298,7 @@ public final class EternatusRouteRunner {
         synchronized (LOCK) {
             if (!running) return;
             running = false;
+            lastResearchIssue = "";
             awaitingClaim = false;
             advancementQueued = false;
             restoreOverlay = previousVgpOverlay;
