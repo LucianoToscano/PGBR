@@ -73,7 +73,7 @@ public final class Cooldown {
                 canvas.translate(b.left, b.top);
                 canvas.scale(b.width() / 24f, b.height() / 24f);
                 ink.setStyle(Paint.Style.STROKE);
-                ink.setColor(0xff9cffde);
+                ink.setColor(0xff175448);
                 ink.setStrokeWidth(1.8f);
                 canvas.drawRoundRect(8, 3, 21, 17, 2, 2, ink);
                 canvas.drawRoundRect(3, 8, 16, 21, 2, 2, ink);
@@ -84,8 +84,11 @@ public final class Cooldown {
             public int getOpacity() { return PixelFormat.TRANSLUCENT; }
         });
         int inset = MapTheme.dp(ui, 6);
-        Drawable disc = new InsetDrawable(SettingsUi.rounded(ui, 0xff184740, 20), inset);
-        button.setBackground(new RippleDrawable(ColorStateList.valueOf(0x557ceeca), disc, null));
+        // Light action chips in cooldown history: retain the original glyph silhouettes,
+        // recolor their non-transparent pixels for contrast against a white surface.
+        Drawable disc = new InsetDrawable(SettingsUi.rounded(ui, 0xffffffff, 20), inset);
+        button.setBackground(new RippleDrawable(ColorStateList.valueOf(0x33175448), disc, null));
+        button.setColorFilter(0xff175448, android.graphics.PorterDuff.Mode.SRC_IN);
         int padding = MapTheme.dp(ui, 14);
         button.setPadding(padding, padding, padding, padding);
         button.setScaleType(ImageView.ScaleType.FIT_CENTER);
