@@ -57,7 +57,7 @@ final class SettingsPanel {
     private Button uiScale;
     private TextView incubatorStatus;
     // Primary action and cycle/dialog rows.
-    private Button mapTap, throwGrade, throwVariety, storageIv, ivCatchMode, ivOwnedMode, itemSettings, cameraSample, interactionCapture, transferKeepList;
+    private Button mapTap, throwGrade, throwVariety, storageIv, ivCatchMode, ivOwnedMode, itemSettings, cameraSample, interactionCapture, transferKeepList, transferIvLimit;
     // Evolve-before-transfer rows: enable switch, stages cycle, selection-mode cycle, selected-species picker.
     private Switch evolveTransferSwitch;
     private Button evolveTransferStages, evolveTransferMode, evolveTransferList;
@@ -433,9 +433,27 @@ final class SettingsPanel {
         // ----- Transfer on catch (gated by catch-summary support) -----
         LinearLayout transfer = plain(page); summaryGated.add(transfer);
         LinearLayout txC = group(transfer, "Transfer on catch");
-        autoTransferSwitch = switchRow(txC, "Transfer below 90% IV"); autoTransferSwitch.setChecked(Control.autoTransferEnabled());
+        autoTransferSwitch = switchRow(txC, "Transferir automaticamente novas capturas"); autoTransferSwitch.setChecked(Control.autoTransferEnabled());
         autoTransferSwitch.setOnCheckedChangeListener((v,checked) -> { if(checked==Control.autoTransferEnabled())return; Control.setAutoTransferEnabled(autoTransferSwitch.isChecked()); host.refresh(); });
-        caption(txC, "Transfers are permanent. Favorites and unknown data are always kept.");
+        transferIvLimit=button("");txC.addView(transferIvLimit);
+        transferIvLimit.setOnClickListener(v->{
+            int[] values=Control.TRANSFER_IV_CHOICES;
+            String[] labels={"Manter IV 90% ou mais","Manter IV 95% ou mais","Manter IV 97% ou mais",
+                "Manter IV 98% ou mais","Manter IV 99% ou mais","Manter somente IV 100%",
+                "Manter apenas os Pokémon protegidos / marcados"};
+            new AlertDialog.Builder(dialogContext()).setTitle("Transferência por IV")
+                .setSingleChoiceItems(labels,java.util.Arrays.binarySearch(values,Control.transferIvKeepPercent()),(dlg,i)->{
+                    dlg.dismiss();
+                    if(values[i]==101){
+                        new AlertDialog.Builder(dialogContext()).setTitle("Confirmar regra irreversível")
+                            .setMessage("Este modo poderá transferir até Pokémon com IV 100%! Apenas favoritos, espécies marcadas, Pokémon protegidos por categorias e pelas regras PvP serão preservados. Transferências não podem ser desfeitas.")
+                            .setNegativeButton("Cancelar",null)
+                            .setPositiveButton("Confirmar",(d,w)->{Control.setTransferIvKeepPercent(101);host.refresh();})
+                            .show();
+                    }else{Control.setTransferIvKeepPercent(values[i]);host.refresh();}
+                }).setNegativeButton("Cancelar",null).show();
+        });
+        caption(txC,"As transferências são permanentes e só se aplicam a novas capturas. Favoritos e Pokémon com dados desconhecidos são preservados.");
         transferStatus = caption(txC, "");
 
         LinearLayout keepC = group(transfer, "Always keep");
@@ -858,6 +876,7 @@ final class SettingsPanel {
         SettingsUi.enabled(vgpCooldownStop,Control.vgpOverlay());smartRefresh.run();
         for(CheckBox box:transferProtection)SettingsUi.enabled(box,Control.autoTransferEnabled());
         SettingsUi.enabled(transferKeepList,Control.autoTransferEnabled());
+        SettingsUi.enabled(transferIvLimit,Control.autoTransferEnabled());
         SettingsUi.enabled((View)transferOverlaySwitch.getParent(),Control.autoTransferEnabled());
         // Evolve before transferring needs the auto-transfer master; its options need the feature on, and
         // the selected-species list only matters in "Selected species only" mode.
@@ -906,6 +925,9 @@ final class SettingsPanel {
     private void refreshTransfer() {
         quickSummaryStatus.setText(dev.pgrazor.PtBr.tr(Control.quickSummaryStatus()));
         autoTransferSwitch.setChecked(Control.autoTransferEnabled());
+        if(transferIvLimit!=null)transferIvLimit.setText(Control.transferIvKeepPercent()==101?
+            "IV: manter apenas protegidos / marcados":
+            "IV: manter "+Control.transferIvKeepPercent()+"% ou mais");
         for(int i=0;i<transferProtection.length;i++)transferProtection[i].setChecked((Control.transferProtect()&(1<<i))!=0);
         for(int i=0;i<3;i++){pvpKeep[i].setChecked(Control.pvpKeep(i));pvpRank[i].setText(dev.pgrazor.PtBr.tr("Top "+Control.pvpRank(i)));pvpRank[i].setEnabled(Control.pvpKeep(i));}
         if(transferKeepList!=null){String kept=Control.transferKeepSpecies();int n=kept.isEmpty()?0:kept.split(",").length;transferKeepList.setText(dev.pgrazor.PtBr.tr(n>0?"Custom keep list ("+n+")":"Custom keep list"));}
