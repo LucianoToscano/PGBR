@@ -326,6 +326,10 @@ final class SettingsPanel {
         localTimeSwitch = switchRow(overlays, "Show local time"); localTimeSwitch.setChecked(Control.localTimeOverlay());
         localTimeSwitch.setOnCheckedChangeListener((v,checked) -> { if(checked==Control.localTimeOverlay())return; Control.setLocalTimeOverlay(localTimeSwitch.isChecked()); host.refresh(); });
         caption(overlays, "Time at your spoofed location.");
+        LinearLayout pokemonSearch=group(loc,"Busca e rastreamento de Pokémon");
+        launch(pokemonSearch,"Buscar por IV, Shiny, PvP e espécie",()->PogoFeedDialog.show(activity));
+        launch(pokemonSearch,"Radar de Pokémon e locais próximos",()->LiveFeedDialog.show(activity));
+        caption(pokemonSearch,"As fontes usam seus próprios serviços e filtros. Resultados globais e determinados dados podem exigir conta ou acesso específico.");
         LinearLayout hud=group(loc,"Aparência das legendas");
         Switch hudVisible=switchRow(hud,"Exibir legendas no mapa");
         hudVisible.setChecked(Control.hudLabelsVisible());
