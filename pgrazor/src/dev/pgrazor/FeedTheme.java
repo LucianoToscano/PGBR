@@ -135,6 +135,17 @@ final class FeedTheme {
     /** Amber used for "cooldown running" and other warnings. */
     static int warn()       { return dark() ? Color.rgb(255, 190, 100) : Color.rgb(196, 118, 10); }
 
+    /**
+     * Neutral chrome palette for overlays, Quick Menu, map controls and SettingsPanel.
+     * These surfaces need opaque white/light-neutral cards instead of the game's green
+     * page gradient. Keeping tokens here prevents dark/light drift between modules.
+     * Values preserve the previously shipped palette (visual migration is separate).
+     */
+    static int chromeInk()     { return dark() ? Color.rgb(235, 241, 246) : Color.rgb(25, 35, 47); }
+    static int chromeMuted()   { return dark() ? Color.rgb(154, 171, 187) : Color.rgb(88, 105, 121); }
+    static int chromeSurface() { return dark() ? Color.rgb(20, 27, 37) : Color.rgb(249, 251, 253); }
+    static int chromeAccent()  { return dark() ? Color.rgb(69, 225, 186) : Color.rgb(0, 116, 92); }
+
     // Dialog palette sampled from the game's own cards and buttons (Social / Party Play screens).
     /** Dialog card: plain white like the game's cards. */
     static int dlgCard()     { return dark() ? Color.rgb(32, 48, 47)    : Color.WHITE; }
