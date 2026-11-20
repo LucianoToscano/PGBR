@@ -301,9 +301,10 @@ final class SettingsPanel {
 
     private static String joystickStyleName(int style){
         switch(style){
-            case 1:return "Eternatus • Energia sombria";
+            case 1:return "Eternatus • Tempestade viva";
             case 2:return "HUD translúcido • Setas";
             case 3:return "Imagem personalizada";
+            case 4:return "Eternatus • Vórtice anterior";
             default:return "Joystick original";
         }
     }
@@ -314,7 +315,7 @@ final class SettingsPanel {
         content.setPadding(dp(12),dp(8),dp(12),dp(8));
         ScrollView scroll=new ScrollView(ui);scroll.addView(content);
         final AlertDialog[] chosen={null};
-        for(int style=0;style<4;style++){
+        for(int style=0;style<=4;style++){
             final int selection=style;
             LinearLayout option=new LinearLayout(ui);
             option.setOrientation(LinearLayout.HORIZONTAL);
@@ -326,19 +327,23 @@ final class SettingsPanel {
             content.addView(option,optionParams);
             FrameLayout preview=new FrameLayout(ui);
             option.addView(preview,new LinearLayout.LayoutParams(dp(60),dp(60)));
-            if(style==1||style==2){
-                String name=style==1?"eternatus":"hud";
-                String[] layers = style == 1 && Control.joystickEternatusEffects()
-                    ? new String[]{"vortex", "rim", "thumb"} : new String[]{"base", "thumb"};
+            if(style==1||style==2||style==4){
+                String name=style==2?"hud":"eternatus";
+                String[] layers = style == 1 ? new String[]{"clean", "thumb"}
+                    : style == 4 && Control.joystickEternatusEffects()
+                        ? new String[]{"vortex", "rim", "thumb"}
+                        : new String[]{"base", "thumb"};
                 for(String layer : layers){
-                    String file="pgrazor/map-icons/joystick-"+name+"-"+layer+".webp";
+                    String file=style==1
+                        ? "pgrazor/map-icons/joystick-eternatus-morph-"+layer+".webp"
+                        : "pgrazor/map-icons/joystick-"+name+"-"+layer+".webp";
                     try(java.io.InputStream image=PgAssets.open(activity,file)){
                         Bitmap bitmap=BitmapFactory.decodeStream(image);
                         if(bitmap==null)continue;
                         ImageView thumbnail=new ImageView(ui);
                         thumbnail.setImageBitmap(bitmap);
                         thumbnail.setScaleType(ImageView.ScaleType.FIT_CENTER);
-                        int size = dp(layer.equals("thumb") ? (style == 1 ? 22 : 20) : 60);
+                        int size = dp(layer.equals("thumb") ? (style == 2 ? 20 : 22) : 60);
                         FrameLayout.LayoutParams artParams=new FrameLayout.LayoutParams(size,size,Gravity.CENTER);
                         preview.addView(thumbnail,artParams);
                     }catch(Exception ignored){}
@@ -474,12 +479,12 @@ final class SettingsPanel {
         caption(joystickArt,"A transparência controla quanto do mapa aparece sob o joystick.");
         joystickStyleButton=launch(joystickArt,
             "Estilo do joystick: "+joystickStyleName(Control.joystickStyle()),this::showJoystickStyles);
-        Switch neonEffects=switchRow(joystickArt,"Tempestade Eternatus · vórtice e raios");
+        Switch neonEffects=switchRow(joystickArt,"Animação Eternatus · limpo ↔ tempestade");
         neonEffects.setChecked(Control.joystickEternatusEffects());
         neonEffects.setOnCheckedChangeListener((v,on)->{
             Control.setJoystickEternatusEffects(on);host.refresh();
         });
-        caption(joystickArt,"O vórtice gira entre o aro e a alavanca. A opção também controla os raios da Poké Bola Eternatus.");
+        caption(joystickArt,"No estilo Tempestade viva, a energia aparece e desaparece suavemente. A Pokébola Eternatus também alterna entre limpa e energizada. O estilo anterior continua disponível.");
         launch(joystickArt,"Escolher imagem do joystick no celular",()->{
             if(Control.engine.routeProgress().active){
                 android.widget.Toast.makeText(activity,"Pause ou encerre a rota antes de abrir o seletor de imagens do Android.",android.widget.Toast.LENGTH_LONG).show();
