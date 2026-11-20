@@ -52,6 +52,8 @@ A análise combina design centrado no humano, heurísticas de Nielsen, leis de H
        ├─ Aparência e desempenho
        └─ Contas e backup
 
+**Aplicado nesta branch:** o Quick Menu ganhou cabeçalhos visuais MOVER / ENCONTRAR / EXECUTAR / SISTEMA. Os 14 atalhos permanecem com as mesmas ações e bits persistidos. Cabeçalhos sem atalhos visíveis desaparecem automaticamente; cabeçalhos não têm ação e não entram em CUSTOMIZABLE. A organização visual altera a ordem de exibição de alguns atalhos, mas não sua configuração.
+
 Preservar cada linha de ação, controle, filtro e configuração original e apenas reparentear visualmente com testes. Não mudar bits de QuickMenu.CUSTOMIZABLE nem serialização Control. Grupos avançados expansíveis, sem ocultação inacessível. Presets só como conjuntos explicitamente revisáveis, com botão de restaurar configuração anterior.
 
 ### Wireframe — configuração por intenção
@@ -153,7 +155,7 @@ Não renomear chaves técnicas/API nem traduções geradas à mão; aplicar text
 
 ## 7. Três ondas de implementação
 
-1. **Vitórias rápidas (LT015):** paleta de chrome centralizada, descrições acessíveis no Quick Menu, busca de Pokémon tolerante a acentos e tokens com testes. Próximos: revisão de microcopy e contraste em telas reais.
+1. **Vitórias rápidas (LT015):** paleta de chrome centralizada, agrupamento do Quick Menu por intenção, descrições acessíveis, busca de Pokémon tolerante a acentos e tokens com testes. Próximos: revisão de microcopy e contraste em telas reais.
 2. **Estrutura:** seções por intenção, presets revisáveis, resumo dos filtros ativos, navegação 1–2 toques, estados de automação e controle de overlay. Guardar snapshot/migração de preferências e verificar cada função existente.
 3. **Premium:** assets oficiais/verificados, placeholders e cache sob demanda, microinterações opcionais de baixo custo, benchmarks instrumentados e telemetria local não sensível. Sem novos downloads bloqueando a UI.
 
@@ -162,7 +164,7 @@ Não renomear chaves técnicas/API nem traduções geradas à mão; aplicar text
 ## 8. Checklist "nunca empobrecer"
 
 - [x] Nenhum recurso removido por esta branch.
-- [x] Nenhuma entrada do Quick Menu removida ou reordenada.
+- [x] Nenhuma entrada do Quick Menu removida; reorganização visual mantém os mesmos 14 atalhos e seus IDs persistidos.
 - [x] Bits de visibilidade do menu preservados.
 - [x] Chaves de seleção de formas/variantes e configurações não alteradas.
 - [x] Control/JNI, offsets, state machines e regras de transferência não modificados.
