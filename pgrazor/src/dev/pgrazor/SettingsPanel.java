@@ -639,25 +639,9 @@ final class SettingsPanel {
         skipCutscenesSwitch.setOnCheckedChangeListener((v,checked) -> { if(checked==Control.skipCutscenes())return; Control.setSkipCutscenes(checked); });
         cutsceneStatus = caption(page, "");  // shown only when the native module reports an error
 
+        // Replacing Unity text is still unverified; a movable Android overlay is not privacy.
         LinearLayout privacy=group(page,"Privacidade do treinador");
-        Switch aliasSwitch=switchRow(privacy,"Proteger nome no mapa (visual)");
-        aliasSwitch.setChecked(Control.trainerAliasEnabled());
-        Button aliasButton=button("Novo apelido aleatório");
-        aliasButton.setText(dev.pgrazor.PtBr.tr("Gerar novo apelido: ")+Control.trainerAlias());
-        aliasButton.setEnabled(Control.trainerAliasEnabled());
-        privacy.addView(aliasButton);
-        aliasSwitch.setOnCheckedChangeListener((v,checked)->{
-            if(checked!=Control.trainerAliasEnabled())Control.setTrainerAliasEnabled(checked);
-            aliasButton.setEnabled(checked);
-            aliasButton.setText(dev.pgrazor.PtBr.tr("Gerar novo apelido: ")+Control.trainerAlias());
-            host.refresh();
-        });
-        aliasButton.setOnClickListener(v->{
-            Control.regenerateTrainerAlias();
-            aliasButton.setText(dev.pgrazor.PtBr.tr("Gerar novo apelido: ")+Control.trainerAlias());
-            host.refresh();
-        });
-        caption(privacy,"Cobre visualmente o nome no canto do mapa com um apelido fictício. Arraste a tarja para alinhar. Funciona apenas como máscara local: perfil, amigos e outras telas podem continuar mostrando o nome verdadeiro. O nome da conta não muda.");
+        caption(privacy,"Ocultar ou substituir o nome nas telas do jogo: em validação. A antiga tarja foi desativada porque não ocultava o nome com segurança. O nome verdadeiro da conta não é alterado.");
         LinearLayout battery = group(page, "Battery usage");
         caption(battery, "Lower graphics to save battery and keep the phone cooler. Each turns back to the game's own setting when switched off.");
         batteryResSwitch = switchRow(battery, "Lower resolution"); batteryResSwitch.setChecked(Control.batteryLowRes());
