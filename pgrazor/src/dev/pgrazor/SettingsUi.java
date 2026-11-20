@@ -15,7 +15,7 @@ final class SettingsUi {
     private SettingsUi() {}
 
     static void enabled(View view,boolean enabled){
-        view.setAlpha(enabled?1f:0.45f); enableChildren(view,enabled);
+        view.setAlpha(enabled?1f:0.68f); enableChildren(view,enabled);
     }
     private static void enableChildren(View view,boolean enabled){
         view.setEnabled(enabled);
