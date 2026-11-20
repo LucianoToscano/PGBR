@@ -265,6 +265,7 @@ public final class EternatusRouteRunner {
             if (Control.vgpEnabled()) Control.setVgpEnabled(false);
             if (Control.quickSpinEnabled()) Control.setQuickSpinEnabled(false);
             if(withoutVgp && Control.autoThrowOnMap())Control.setAutoThrowOnMap(false);
+            if(withoutVgp && Control.autoThrow())Control.setAutoThrow(false);
             synchronized (LOCK) {
                 cooldownClearedAt=0;
                 actionsSince=0;
@@ -312,9 +313,11 @@ public final class EternatusRouteRunner {
                 next=index+1;
                 advance=true;
             }else{
-                String mode=withoutVgp
-                    ? "VGP desligada; toque PokéParada e Pokémon no mapa (giro/captura assistidos)."
-                    : "VGP+ e giro habilitados.";
+                String mode=!ready
+                    ? "Giro/captura ainda indisponíveis ("+Control.quickSpinStatus()+")."
+                    : withoutVgp
+                        ? "VGP desligada; abra PokéParada e toque Pokémon no mapa (assistido)."
+                        : "VGP+ e giro habilitados.";
                 status="Parada "+(index+1)+"/"+route.size()+" · "+mode
                     +(timedAdvance && ready
                         ? " Continuação por tempo em "
