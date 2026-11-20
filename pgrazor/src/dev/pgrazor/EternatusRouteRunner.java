@@ -59,15 +59,57 @@ public final class EternatusRouteRunner {
     public static int currentStop() { synchronized (LOCK) { return running ? at + 1 : 0; } }
     public static int totalStops() { synchronized (LOCK) { return planned == null ? 0 : planned.size(); } }
 
+    /** Human-readable, specific preflight reason used by the Event panel. */
+    public static String readinessError(Activity activity) {
+        if (activity == null || activity.isFinishing() || activity.isDestroyed())
+            return "Tela do jogo indisponível para iniciar a rota.";
+        if (!Control.active()) return "PGBR está desativado. Ative o PGBR antes de iniciar.";
+        if (!Control.canEnable()) return "Adaptador de localização indisponível.";
+        if (!Control.locationKnown()) return "A localização atual ainda não foi obtida.";
+        if (AutoRaid.running() || ShundoSniper.active() || Control.gameRoutesRunning()
+            || Control.engine.walking) return "Há outra rota, caminhada ou automação ativa. Encerre-a antes.";
+        final GpxRoute route;
+        final String chosen;
+        synchronized (LOCK) {
+            if (running) return "A rota Eternatus já está em execução.";
+            route = planned;
+            chosen = template;
+        }
+        if (route == null) return "Escolha ou importe uma rota GPX primeiro.";
+        if (route.size() <= 0 || route.size() > MAX_STOPS)
+            return "A rota GPX precisa conter de 1 a 400 paradas válidas.";
+        if (!ResearchPreferences.validTemplate(chosen))
+            return "Selecione a missão exata observada no jogo.";
+        boolean present = false;
+        for (String[] row : ResearchSettings.observedTemplates())
+            if (row.length >= 4 && chosen.equals(row[0])) { present = true; break; }
+        if (!present) return "A missão selecionada não aparece no catálogo atual. Abra Pesquisas e aguarde o PGBR detectar a tarefa.";
+        return "";
+    }
+
+    /** Updates the current route status without advancing or pretending a quest was claimed. */
+    public static void onResearchError(String selectedTemplate, String explanation) {
+        synchronized (LOCK) {
+            if (!running || (selectedTemplate != null && !selectedTemplate.isEmpty()
+                && !template.equals(selectedTemplate))) return;
+            String safe = explanation == null ? "" : explanation.trim();
+            if (safe.length() > 140) safe = safe.substring(0, 140);
+            status = "Pesquisa não concluída na parada " + (at + 1) + "/"
+                + (planned == null ? 0 : planned.size())
+                + (safe.isEmpty() ? ". Confira o jogo; sem avanço automático." : ": " + safe);
+        }
+    }
+
     /**
      * Must be invoked following an explicit confirmation in the event UI.
      * A controller for another automated travel mode is never displaced.
      */
     public static boolean start(Activity activity) {
-        if (activity == null || activity.isFinishing() || activity.isDestroyed()
-            || !Control.active() || !Control.canEnable() || !Control.locationKnown()
-            || AutoRaid.running() || ShundoSniper.active() || Control.gameRoutesRunning()
-            || Control.engine.walking) return false;
+        String problem = readinessError(activity);
+        if (!problem.isEmpty()) {
+            synchronized (LOCK) { status = problem; }
+            return false;
+        }
         final GpxRoute route;
         final String exactTemplate;
         synchronized (LOCK) {
@@ -75,7 +117,12 @@ public final class EternatusRouteRunner {
             route = planned;
             exactTemplate = template;
         }
-        if (!EternatusMission.start(activity, exactTemplate)) return false;
+        if (!EternatusMission.start(activity, exactTemplate)) {
+            synchronized (LOCK) {
+                status = "A missão selecionada não pôde ser ativada no jogo. Abra Pesquisas, confirme que foi observada e tente novamente.";
+            }
+            return false;
+        }
         synchronized (LOCK) {
             if (running) { EternatusMission.stop("Início concorrente recusado."); return false; }
             previousVgpOverlay = Control.vgpOverlay();
@@ -186,13 +233,13 @@ public final class EternatusRouteRunner {
         }
     }
 
-    /** Native research owner sends only a successful claim of the exact selected quest. */
-    public static void onClaim(String claimedTemplate,String questId) {
+    /** A verified native success for this exact quest instance is required. */
+    public static boolean onClaim(String claimedTemplate,String questId) {
         final int completedStop;
         synchronized (LOCK) {
             if (!running || !awaitingClaim || advancementQueued || !template.equals(claimedTemplate)
                 || questId == null || questId.isEmpty() || questId.length() > 256
-                || !confirmedQuestIds.add(questId)) return;
+                || !confirmedQuestIds.add(questId)) return false;
             advancementQueued = true;
             awaitingClaim = false;
             completedStop = at;
@@ -209,6 +256,32 @@ public final class EternatusRouteRunner {
                 stop("Não foi possível avançar à próxima coordenada.");
             }
         });
+        return true;
+    }
+
+    /**
+     * Explicit, user-initiated skip for a stop without the selected research.
+     * Does not increment candy/claim counters or bypass cooldown.
+     */
+    public static boolean skipCurrentStop() {
+        final int next;
+        synchronized (LOCK) {
+            if (!running || advancementQueued || planned == null || Cooldown.remaining() > 0)
+                return false;
+            if (at + 1 >= planned.size()) {
+                status = "Última parada sem resgate. Encerre a rota ou confira as pesquisas.";
+                return false;
+            }
+            advancementQueued = true;
+            awaitingClaim = false;
+            next = at + 1;
+        }
+        if (!travel(next)) {
+            stop("Falha ao pular a parada; nenhuma missão foi registrada.");
+            return false;
+        }
+        Control.event("eternatus-route", "manual-skip-without-claim");
+        return true;
     }
 
     /** Always restores feature preferences on explicit cancellation. */
