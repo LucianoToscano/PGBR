@@ -31,7 +31,7 @@ public final class Pad {
     private final Rect appliedWindowBounds=new Rect();
     private LinearLayout joystickOverlay;
     private BerryOverlay encounterBerry;
-    private Button cooldownTimer;
+    private TextView cooldownTimer;
     // Small draggable overlay showing the local wall-clock time at the spoofed coordinates (not device time).
     private LocalTimeOverlay localTime;
     private TextView vgpActivity, buddyEmotionStatus, catchChance;
@@ -104,13 +104,15 @@ public final class Pad {
     private final class PgbrIcon extends View {
         private final Paint paint=new Paint(Paint.ANTI_ALIAS_FLAG|Paint.FILTER_BITMAP_FLAG);
         private final Paint shine=new Paint(Paint.ANTI_ALIAS_FLAG);
-        private final Bitmap classic,eterna;
+        private final Bitmap classic, eterna, eternaAura;
+        private final EternatusStorm storm = new EternatusStorm();
         private Bitmap personal;
         private int artworkVersion=-1;
         PgbrIcon(Context context){
             super(context);
             classic=read("pgrazor/branding/pgbr-logo.webp");
-            eterna=read("pgrazor/map-icons/joystick-eternatus-thumb.webp");
+            eterna=read("pgrazor/map-icons/eternatus-ball.webp");
+            eternaAura=read("pgrazor/map-icons/eternatus-ball-aura.webp");
             setContentDescription(PtBr.tr("Abrir o menu principal PGBR. Arraste para reposicionar."));
             setFocusable(true);setClickable(true);
         }
@@ -123,7 +125,9 @@ public final class Pad {
             int version=OverlayArtwork.version();
             if(artworkVersion!=version){artworkVersion=version;personal=OverlayArtwork.load(getContext(),"launcher");}
             int style=Control.menuLauncherIconStyle();
-            Bitmap logo=style==1?eterna:style==2?personal:classic;
+            boolean stormOn = style == 1 && Control.joystickEternatusEffects();
+            Bitmap logo = style == 1 ? (stormOn && eternaAura != null ? eternaAura : eterna)
+                : style == 2 ? personal : classic;
             if(logo==null)logo=classic;
             float sz=Math.min(getWidth(),getHeight()),cx=getWidth()*.5f,cy=getHeight()*.5f;
             long now=SystemClock.uptimeMillis();
@@ -135,25 +139,20 @@ public final class Pad {
                 canvas.drawCircle(cx,cy,sz*.49f,paint);
             }
             shine.setShader(null);shine.setStyle(Paint.Style.STROKE);shine.setStrokeCap(Paint.Cap.ROUND);
-            if(style==1&&Control.joystickEternatusEffects()){
-                shine.setStrokeWidth(dp(1.8f));
-                shine.setColor(Color.argb(Math.round(50+85*pulse),15,220,255));
-                canvas.drawArc(cx-sz*.48f,cy-sz*.48f,cx+sz*.48f,cy+sz*.48f,(now*.075f)%360,65,false,shine);
-                shine.setColor(Color.argb(Math.round(50+80*pulse),255,39,195));
-                canvas.drawArc(cx-sz*.46f,cy-sz*.46f,cx+sz*.46f,cy+sz*.46f,-(now*.060f)%360,56,false,shine);
-            }else if(style==0){
+            if(style==0){
                 shine.setStrokeWidth(dp(2));
                 shine.setColor(Color.argb(Math.round(28+85*pulse),25,171,255));
                 canvas.drawCircle(cx,cy,sz*.455f,shine);
             }
             if(logo!=null){
                 paint.setColor(Color.WHITE);paint.setAlpha(255);paint.setStyle(Paint.Style.FILL);
-                float margin=style==1?sz*.09f:sz*.015f;
+                float margin=stormOn?sz*.045f:sz*.015f;
                 canvas.drawBitmap(logo,null,new RectF(cx-sz*.5f+margin,cy-sz*.5f+margin,cx+sz*.5f-margin,cy+sz*.5f-margin),paint);
             }else{
                 paint.setColor(SettingsUi.accent());canvas.drawCircle(cx,cy,sz*.4f,paint);
             }
-            if(isShown()&&!closed)postInvalidateDelayed(style==1?90:150);
+            if (stormOn) storm.draw(canvas, cx, cy, sz * .50f, now, false);
+            if (isShown() && !closed && (stormOn || style == 0)) postInvalidateDelayed(stormOn ? 80 : 150);
         }
     }
 
@@ -195,7 +194,21 @@ public final class Pad {
         encounterBerry=new BerryOverlay(activity,this::refresh);
         FrameLayout.LayoutParams berryLayout=new FrameLayout.LayoutParams(dp(90),dp(50),Gravity.RIGHT|Gravity.CENTER_VERTICAL);berryLayout.rightMargin=dp(10);overlays.addView(encounterBerry,berryLayout);encounterBerry.setVisibility(View.GONE);
 
-        cooldownTimer=button("Histórico  --:--");cooldownTimer.setTextSize(11);cooldownTimer.setAllCaps(false);cooldownTimer.setTextColor(accent());FrameLayout.LayoutParams timerLayout=new FrameLayout.LayoutParams(dp(150),dp(38),Gravity.TOP|Gravity.RIGHT);timerLayout.topMargin=dp(44);timerLayout.rightMargin=dp(12);overlays.addView(cooldownTimer,timerLayout);cooldownTimer.setOnClickListener(v->Cooldown.show(activity));cooldownDrag=OverlayDrag.attach(overlays,cooldownTimer,"cooldown");
+        cooldownTimer = new TextView(host);
+        cooldownTimer.setGravity(Gravity.CENTER);
+        cooldownTimer.setSingleLine(true);
+        cooldownTimer.setIncludeFontPadding(false);
+        cooldownTimer.setMinHeight(dp(48));
+        cooldownTimer.setMinWidth(dp(48));
+        cooldownTimer.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
+        cooldownTimer.setFontFeatureSettings("tnum");
+        cooldownTimer.setFocusable(true);
+        FrameLayout.LayoutParams timerLayout = new FrameLayout.LayoutParams(-2, -2, Gravity.TOP | Gravity.RIGHT);
+        timerLayout.topMargin = dp(44);
+        timerLayout.rightMargin = dp(12);
+        overlays.addView(cooldownTimer, timerLayout);
+        cooldownTimer.setOnClickListener(v -> Cooldown.show(activity));
+        cooldownDrag = OverlayDrag.attach(overlays, cooldownTimer, "cooldown");
 
         // Small local-time overlay: the wall-clock time at the spoofed coordinates, formatted offline by the view.
         localTime=new LocalTimeOverlay(host);FrameLayout.LayoutParams localTimeLayout=new FrameLayout.LayoutParams(FrameLayout.LayoutParams.WRAP_CONTENT,dp(32),Gravity.TOP|Gravity.RIGHT);localTimeLayout.rightMargin=dp(12);localTimeLayout.topMargin=dp(94);overlays.addView(localTime,localTimeLayout);localTime.setVisibility(View.GONE);localTimeDrag=OverlayDrag.attach(overlays,localTime,"local-time");
@@ -441,9 +454,16 @@ public final class Pad {
         if(quickMenu!=null)quickMenu.applyScale(scale);
     }
     private int launcherSize=-1,launcherOpacity=-1,launcherStyle=-1;
+    private int lastStormAppearance = -1;
     private void refreshLauncherAppearance(){
         if(launcher==null)return;
         int size=Control.menuLauncherSizeDp(),opacity=Control.menuLauncherOpacity();
+        int stormAppearance = Control.menuLauncherBgOpacity() * 2 + (Control.joystickEternatusEffects() ? 1 : 0);
+        if (lastStormAppearance != stormAppearance) {
+            lastStormAppearance = stormAppearance;
+            launcher.invalidate();
+            stick.invalidate();
+        }
         if(launcherSize!=size){
             launcherSize=size;ViewGroup.LayoutParams lp=launcher.getLayoutParams();
             if(lp!=null){lp.width=dp(size);lp.height=dp(size);launcher.setLayoutParams(lp);}
@@ -507,9 +527,16 @@ public final class Pad {
         for(int i=0;i<labels.length;i++){
             TextView label=labels[i];if(label==null)continue;
             int alpha=Math.round(Control.hudBackgroundOpacity(bits[i])*255f/100f);
-            label.setTextSize(font);
-            label.setPadding(dp(4),dp(2),dp(4),dp(2));
-            label.setBackground(alpha==0?null:rounded((alpha<<24)|0x101924,7));
+            if (label == cooldownTimer) {
+                label.setTextSize(Control.cooldownTextSp() == 0 ? font + 2 : Control.cooldownTextSp());
+                label.setBackground(alpha == 0 ? null : new android.graphics.drawable.InsetDrawable(
+                    rounded((alpha << 24) | 0x101924, 16), 0, dp(9), 0, dp(9)));
+                label.setPadding(dp(9), dp(10), dp(9), dp(10));
+            } else {
+                label.setTextSize(font);
+                label.setBackground(alpha==0?null:rounded((alpha<<24)|0x101924,7));
+                label.setPadding(dp(4),dp(2),dp(4),dp(2));
+            }
             label.setTextColor(Control.hudLabelColor(bits[i]));
             label.setShadowLayer(dp(2.2f),0,dp(.6f),Color.BLACK);
         }
@@ -805,12 +832,12 @@ public final class Pad {
         private Bitmap customImage, builtinBase, builtinThumb;
         private int imageGeneration=-1,loadedStyle=-1;
         private final Paint effect=new Paint(Paint.ANTI_ALIAS_FLAG);
-        private final Path spark=new Path();
+        private final EternatusStorm storm = new EternatusStorm();
         float x, y;
         int pointer = -1;
         long cameraGesture=-1;
         boolean gestureCamera;
-        Stick(Context c) { super(c); setContentDescription("Location joystick: drag to move, release to stop"); }
+        Stick(Context c) { super(c); setContentDescription("Joystick: arraste para mover e solte para parar."); }
         void release() { release(false); }
         void release(boolean preserveWalk) { x=y=0; pointer=-1; cameraGesture=-1; if (!preserveWalk || !Control.engine.walking) Control.engine.stop(); Control.saveState(); invalidate(); }
         void applyMotion(long now) {
@@ -854,29 +881,7 @@ public final class Pad {
             effect.setStyle(Paint.Style.STROKE);
             effect.setStrokeCap(Paint.Cap.ROUND);
             effect.setStrokeJoin(Paint.Join.ROUND);
-            // Slow cyan/fuchsia scans travel around the frame, without full-screen invalidation.
-            for(int i=0;i<4;i++){
-                float angle=(now*.035f+i*91f)%360f;
-                float rr=r*(i%2==0?.90f:.86f);
-                effect.setStrokeWidth(dp(i%2==0?1.7f:1.25f));
-                effect.setColor(i%2==0?Color.argb(105,15,220,255):Color.argb(95,255,22,197));
-                canvas.drawArc(cx-rr,cy-rr,cx+rr,cy+rr,angle,33,false,effect);
-            }
-            // Four small lightning forks rotate around the ring. They are purely decorative.
-            for(int i=0;i<4;i++){
-                double a=(now*.00057+i*Math.PI/2);
-                float ca=(float)Math.cos(a),sa=(float)Math.sin(a);
-                float tx=-sa,ty=ca;
-                float px=cx+ca*r*.78f,py=cy+sa*r*.78f;
-                spark.reset();
-                spark.moveTo(px,py);
-                spark.lineTo(px+ca*r*.065f+tx*r*.031f,py+sa*r*.065f+ty*r*.031f);
-                spark.lineTo(px+ca*r*.10f-tx*r*.023f,py+sa*r*.10f-ty*r*.023f);
-                spark.lineTo(px+ca*r*.14f,py+sa*r*.14f);
-                effect.setStrokeWidth(dp(1.2f));
-                effect.setColor(i%2==0?Color.argb(65,27,218,255):Color.argb(72,255,41,189));
-                canvas.drawPath(spark,effect);
-            }
+            storm.draw(canvas, cx, cy, r, now, true);
             // Knob corona also follows the thumb rather than remaining fixed in the background.
             effect.setStrokeWidth(dp(2.3f));
             effect.setColor(Color.argb(Math.round(55+70*pulse),255,27,217));

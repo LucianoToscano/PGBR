@@ -21,18 +21,29 @@ final class LocalTimeClock {
     private long compactMinute = Long.MIN_VALUE;
     private String compactText = "--:--";
 
-    /** Always 24-hour, with the local date. Uses the destination IANA zone and DST rules. */
-    String compactLabel(double latitude,double longitude,long now) {
+    private int compactFormat = -1;
+    private SimpleDateFormat compactFormatter;
+    private static final String[] PATTERNS = {
+        "'🕒' HH:mm '🗓' dd/MM/yy", "HH:mm - dd/MM/yy", "HH:mm 'GMT'XXX", "'🕒' HH:mm '🗓' dd/MM/yy"
+    };
+
+    String compactLabel(double latitude, double longitude, long now, int format) {
         final String zone;
-        try { zone=TimeZoneLookup.zoneId(latitude,longitude); }
+        try { zone = TimeZoneLookup.zoneId(latitude, longitude); }
         catch (IllegalArgumentException invalid) { return "--:--"; }
-        if(!AVAILABLE.contains(zone))return "--:--";
-        long minuteNow=Math.floorDiv(now,60000L);
-        if(!zone.equals(compactZone)||minuteNow!=compactMinute){
-            compactZone=zone;compactMinute=minuteNow;
-            SimpleDateFormat date=new SimpleDateFormat("HH:mm  •  dd/MM/yy",new Locale("pt","BR"));
-            date.setTimeZone(TimeZone.getTimeZone(zone));
-            compactText=date.format(new Date(now));
+        if (!AVAILABLE.contains(zone)) return "--:--";
+        if (format < 0 || format >= PATTERNS.length) format = 0;
+        long minuteNow = Math.floorDiv(now, 60000L);
+        if (!zone.equals(compactZone) || format != compactFormat) {
+            compactZone = zone;
+            compactFormat = format;
+            compactFormatter = new SimpleDateFormat(PATTERNS[format], Locale.US);
+            compactFormatter.setTimeZone(TimeZone.getTimeZone(zone));
+            compactMinute = Long.MIN_VALUE;
+        }
+        if (minuteNow != compactMinute) {
+            compactMinute = minuteNow;
+            compactText = compactFormatter.format(new Date(now)).replace("GMTZ", "GMT+00:00");
         }
         return compactText;
     }

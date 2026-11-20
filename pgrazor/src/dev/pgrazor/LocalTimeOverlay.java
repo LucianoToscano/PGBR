@@ -3,15 +3,14 @@ package dev.pgrazor;
 import android.app.Activity;
 import android.graphics.Typeface;
 import android.os.SystemClock;
-import android.text.format.DateFormat;
 import android.view.Gravity;
 import android.widget.TextView;
-import java.util.Locale;
 
 /** Small local clock driven by Pad's existing lifecycle/tick, with no background timer. */
 final class LocalTimeOverlay extends TextView {
     private final LocalTimeClock clock = new LocalTimeClock();
     private long lastRefresh;
+    private int lastFormat = -1;
     private boolean closed;
     private int lastAppearanceKey=Integer.MIN_VALUE;
 
@@ -47,12 +46,14 @@ final class LocalTimeOverlay extends TextView {
         if (visible != showing) setVisibility(visible ? VISIBLE : GONE);
         if (!visible || !isShown() || getWindowVisibility() != VISIBLE) return;
         long elapsed = SystemClock.elapsedRealtime();
-        if (showing && elapsed - lastRefresh < 1000) return;
+        int format = Control.localTimeFormat();
+        if (showing && elapsed - lastRefresh < 1000 && format == lastFormat) return;
+        lastFormat = format;
         lastRefresh = elapsed;
         double latitude=Control.engine.latitude, longitude=Control.engine.longitude;
-        String label = clock.compactLabel(latitude, longitude, System.currentTimeMillis());
+        String label = clock.compactLabel(latitude, longitude, System.currentTimeMillis(), format);
         // ICU maps the IANA time zone to a country region; no network or location permission needed.
-        try {
+        if (format < 2 && !"--:--".equals(label)) try {
             String zone=TimeZoneLookup.zoneId(latitude,longitude);
             String region=android.icu.util.TimeZone.getRegion(zone);
             if(region!=null&&region.matches("[A-Z]{2}")){
@@ -63,7 +64,7 @@ final class LocalTimeOverlay extends TextView {
         } catch(RuntimeException ignored){ /* Ocean and unknown region: show time without flag. */ }
         if (!label.contentEquals(getText())) {
             setText(label);
-            setContentDescription("Local time at spoofed location: " + label + ". Drag to move.");
+            setContentDescription("Hora local: " + label + ". Arraste para mover.");
         }
     }
 

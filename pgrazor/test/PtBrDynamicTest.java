@@ -9,6 +9,10 @@ public final class PtBrDynamicTest {
     }
     public static void main(String[] args) {
         eq("VGP  |  App left foreground; tap VGP to start","VGP  |  O aplicativo saiu do primeiro plano; toque no VGP para iniciar");
+        eq("Pokestop spin","Giro de Poképarada");
+        eq("PokéStop spin","Giro de Poképarada");
+        eq("Encounter: Nickit · EVENTO","Encontro: Nickit · EVENTO");
+        eq("Stardust · EVENTO","Poeira Estelar · EVENTO");
         eq("Waiting for game readiness","Aguardando o jogo ficar pronto");
         eq("Ready: Quick Catch","Pronto: Captura rápida");
         eq("Ready: new catches only; IV below 90%","Pronto: apenas capturas novas; IV abaixo de 90%");

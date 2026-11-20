@@ -395,6 +395,20 @@ final class SettingsPanel {
             public void onStartTrackingTouch(SeekBar bar){}
             public void onStopTrackingTouch(SeekBar bar){}
         });
+        if (bit == Control.HUD_COOLDOWN) {
+            int[] sizes = {0, 11, 13, 15, 18, 20};
+            String[] names = {"Automático", "11 sp", "13 sp", "15 sp", "18 sp", "20 sp"};
+            Button size = button("Tamanho do contador · " + (Control.cooldownTextSp() == 0
+                ? names[0] : Control.cooldownTextSp() + " sp"));
+            body.addView(size);
+            size.setOnClickListener(v -> new AlertDialog.Builder(ctx).setTitle("Tamanho do contador")
+                .setSingleChoiceItems(names, java.util.Arrays.binarySearch(sizes, Control.cooldownTextSp()), (dialog, index) -> {
+                    Control.setCooldownTextSp(sizes[index]);
+                    size.setText("Tamanho do contador · " + names[index]);
+                    host.refresh();
+                    dialog.dismiss();
+                }).setNegativeButton("Cancelar", null).show());
+        }
         Button color=button("Cor: "+Control.HUD_PALETTE_NAMES[Control.hudPaletteIndex(bit)]);
         body.addView(color);
         color.setOnClickListener(v->{
@@ -483,10 +497,22 @@ final class SettingsPanel {
         LinearLayout overlays = group(loc, "Cooldown & time");
         cooldownSwitch = switchRow(overlays, "Cooldown overlay"); cooldownSwitch.setChecked(Control.cooldownOverlay());
         cooldownSwitch.setOnCheckedChangeListener((v,checked) -> { if(checked==Control.cooldownOverlay())return; Control.setCooldownOverlay(cooldownSwitch.isChecked()); host.refresh(); });
+        launch(overlays, "Aparência do contador", () -> configureHudIndicator("Contador de espera", Control.HUD_COOLDOWN));
         launch(overlays, "Cooldown history", () -> Cooldown.show(activity));
         localTimeSwitch = switchRow(overlays, "Show local time"); localTimeSwitch.setChecked(Control.localTimeOverlay());
         localTimeSwitch.setOnCheckedChangeListener((v,checked) -> { if(checked==Control.localTimeOverlay())return; Control.setLocalTimeOverlay(localTimeSwitch.isChecked()); host.refresh(); });
-        caption(overlays, "Time at your spoofed location.");
+        String[] timeFormats = {"🇺🇸 🕒 14:17 🗓 20/11/26", "🇺🇸 14:17 - 20/11/26",
+            "14:17 GMT-05:00", "🕒 14:17 🗓 20/11/26"};
+        Button format = button("Formato da hora · " + timeFormats[Control.localTimeFormat()]);
+        overlays.addView(format);
+        format.setAllCaps(false);
+        format.setOnClickListener(v -> new AlertDialog.Builder(dialogContext()).setTitle("Formato da hora local")
+            .setSingleChoiceItems(timeFormats, Control.localTimeFormat(), (dialog, index) -> {
+                Control.setLocalTimeFormat(index);
+                format.setText("Formato da hora · " + timeFormats[index]);
+                host.refresh();
+                dialog.dismiss();
+            }).setNegativeButton("Cancelar", null).show());
         LinearLayout pokemonSearch=group(loc,"Busca e rastreamento de Pokémon");
         launch(pokemonSearch,"Buscar por IV, Shiny, PvP e espécie",()->PogoFeedDialog.show(activity));
         launch(pokemonSearch,"Radar de Pokémon e locais próximos",()->LiveFeedDialog.show(activity));
@@ -887,13 +913,13 @@ final class SettingsPanel {
         cutsceneStatus = caption(page, "");  // shown only when the native module reports an error
 
         // Only text owned by PGBR is changed. Game-owned Unity text still needs a validated hook.
-        LinearLayout privacy=group(page,"Privacidade do treinador");
-        caption(privacy,"Hide Trainer altera apenas nomes exibidos pelo PGBR, nunca a identidade da conta ou o nome que o Pokémon GO mostra no mapa/perfil. Não é proteção contra capturas de tela do jogo.");
+        LinearLayout privacy=group(page,"Nome do treinador nos menus do PGBR");
+        caption(privacy,"O apelido aparece nos menus de contas do PGBR. O mapa e o perfil do Pokémon GO exibem o nome do jogo.");
         final TextView preview=caption(privacy,"");
         Runnable updatePrivacy=()->preview.setText(dev.pgrazor.PtBr.tr(
             "Exibição no PGBR: "+(Control.trainerPrivacyMode()==1?"Treinador (oculto)":
                 Control.trainerPrivacyMode()==2?Control.trainerAlias():"Nome original")));
-        launch(privacy,"Hide Trainer / Exibir apelido",()->{
+        launch(privacy,"Escolher como exibir meu nome",()->{
             String[] options={"Nome original","Ocultar nome no PGBR","Mostrar apelido no PGBR"};
             new AlertDialog.Builder(dialogContext()).setTitle("Nome exibido no PGBR")
                 .setSingleChoiceItems(options,Control.trainerPrivacyMode(),(d,choice)->{

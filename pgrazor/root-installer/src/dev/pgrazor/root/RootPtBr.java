@@ -1364,6 +1364,17 @@ public final class RootPtBr {
         m.put(" encounters / 24 h", " encontros / 24 h");
         m.put("Paused: buddy action declined", "Pausado: ação do companheiro recusada");
         m.put("Close and reopen settings to refresh", "Feche e reabra as configurações para atualizar");
+        m.put("Previous", "Anterior");
+        m.put("Next", "Próxima");
+        m.put("Add action at current location", "Registrar ação neste local");
+        m.put("Record action here", "Registrar ação neste local");
+        m.put("Pokestop spin", "Giro de Poképarada");
+        m.put("PokéStop spin", "Giro de Poképarada");
+        m.put("Catch / ball throw", "Captura ou arremesso de Pokébola");
+        m.put("Gym placement / feeding", "Colocação de Pokémon ou uso de fruta em Ginásio");
+        m.put("Gym battle", "Batalha de Ginásio");
+        m.put("Accessory action", "Ação de acessório");
+        m.put("Select valid coordinates", "Selecione coordenadas válidas");
         LABELS = Collections.unmodifiableMap(m);
     }
     private RootPtBr() {}

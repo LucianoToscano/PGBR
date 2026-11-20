@@ -29,7 +29,28 @@ final class AccountsDialog {
             }catch(Exception ignored){}
             LinearLayout actions=new LinearLayout(ui);actions.setGravity(Gravity.END);row.addView(actions);
             Button rename=new Button(ui);rename.setText(dev.pgrazor.PtBr.tr("Rename"));actions.addView(rename);
-            rename.setOnClickListener(v->{EditText name=new EditText(ui);name.setSingleLine(true);name.setText(dev.pgrazor.PtBr.tr(profile.label));new AlertDialog.Builder(ui).setTitle(dev.pgrazor.PtBr.tr("Account name")).setView(name).setNegativeButton(dev.pgrazor.PtBr.tr("Cancel"),null).setPositiveButton(dev.pgrazor.PtBr.tr("Save"),(d,w)->{String value=name.getText().toString();AccountProfiles.rename(profile.id,value,()->label.setText(dev.pgrazor.PtBr.tr(Control.trainerPrivacyMode()==1?"Conta "+rowNumber:Control.visibleTrainerName(value))));}).show();});
+            rename.setOnClickListener(v -> {
+                EditText name = new EditText(ui);
+                name.setSingleLine(true);
+                boolean privateName = Control.trainerPrivacyMode() != 0;
+                if (privateName) name.setHint("Novo nome desta conta");
+                else name.setText(profile.label);
+                AlertDialog editor = new AlertDialog.Builder(ui).setTitle("Nome da conta no PGBR")
+                    .setView(name).setNegativeButton("Cancelar", null).setPositiveButton("Salvar", null).create();
+                editor.setOnShowListener(d -> editor.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(save -> {
+                    String value = name.getText().toString().trim();
+                    if (value.isEmpty()) {
+                        name.setError("Digite um nome para salvar.");
+                        return;
+                    }
+                    AccountProfiles.rename(profile.id, value, () -> {
+                        String display = Control.trainerPrivacyMode() == 1 ? "Conta " + rowNumber : Control.visibleTrainerName(value);
+                        label.setText(display + (profile.id.equals(AccountProfiles.currentId()) ? " (atual)" : ""));
+                        editor.dismiss();
+                    });
+                }));
+                editor.show();
+            });
             Button change=new Button(ui);change.setText(dev.pgrazor.PtBr.tr("Switch"));change.setEnabled(AccountProfiles.canSwitch()&&!profile.id.equals(AccountProfiles.currentId()));actions.addView(change);
             if(!profile.id.equals(AccountProfiles.currentId()))switches.add(change);
             change.setOnClickListener(v->confirm(activity,profile));rows.addView(row);

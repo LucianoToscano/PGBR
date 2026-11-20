@@ -1,7 +1,18 @@
 package dev.pgrazor;
 import android.app.*;
 import android.content.*;
-import android.graphics.Color;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.Canvas;
+import android.graphics.ColorFilter;
+import android.graphics.Paint;
+import android.graphics.PixelFormat;
+import android.graphics.Rect;
+import android.graphics.Typeface;
+import android.graphics.drawable.Drawable;
+import android.graphics.drawable.InsetDrawable;
+import android.graphics.drawable.RippleDrawable;
+import android.content.res.ColorStateList;
 import android.location.*;
 import android.os.*;
 import android.util.AtomicFile;
@@ -44,41 +55,72 @@ public final class Cooldown {
     private static void renderCurrent(Runnable[] callbacks){
         if(callbacks!=null&&callbacks.length>0&&callbacks[0]!=null)callbacks[0].run();
     }
-    private static android.widget.ImageButton iconButton(Context ui,int icon,String description){
-        android.widget.ImageButton button=new android.widget.ImageButton(ui);
-        if(icon!=0)button.setImageResource(icon);
-        else button.setImageDrawable(new android.graphics.drawable.Drawable(){
-            private final android.graphics.Paint paint=new android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG);
-            public void draw(android.graphics.Canvas canvas){
-                android.graphics.Rect b=getBounds();
-                float x=b.left,y=b.top,w=b.width(),h=b.height();
-                paint.setStyle(android.graphics.Paint.Style.STROKE);
-                paint.setStrokeWidth(Math.max(1f,w*0.085f));
-                paint.setColor(MapTheme.dark()?0xff30dfb5:0xff087767);
-                canvas.drawRoundRect(x+w*.30f,y+h*.12f,x+w*.90f,y+h*.76f,w*.08f,w*.08f,paint);
-                canvas.drawRoundRect(x+w*.12f,y+h*.29f,x+w*.70f,y+h*.92f,w*.08f,w*.08f,paint);
+    private static Bitmap readIcon(Context ui, String name) {
+        try (InputStream in = PgAssets.open(ui, "pgrazor/map-icons/" + name)) {
+            return BitmapFactory.decodeStream(in);
+        } catch (IOException missing) { return null; }
+    }
+
+    private static ImageButton iconButton(Context ui, Bitmap bitmap, int fallback, String description) {
+        ImageButton button = new ImageButton(ui);
+        if (bitmap != null) button.setImageBitmap(bitmap);
+        else if (fallback != 0) button.setImageResource(fallback);
+        else button.setImageDrawable(new Drawable() {
+            private final Paint ink = new Paint(Paint.ANTI_ALIAS_FLAG);
+            public void draw(Canvas canvas) {
+                Rect b = getBounds();
+                int saved = canvas.save();
+                canvas.translate(b.left, b.top);
+                canvas.scale(b.width() / 24f, b.height() / 24f);
+                ink.setStyle(Paint.Style.STROKE);
+                ink.setColor(0xff9cffde);
+                ink.setStrokeWidth(1.8f);
+                canvas.drawRoundRect(8, 3, 21, 17, 2, 2, ink);
+                canvas.drawRoundRect(3, 8, 16, 21, 2, 2, ink);
+                canvas.restoreToCount(saved);
             }
-            public void setAlpha(int alpha){paint.setAlpha(alpha);}
-            public void setColorFilter(android.graphics.ColorFilter filter){paint.setColorFilter(filter);}
-            public int getOpacity(){return android.graphics.PixelFormat.TRANSLUCENT;}
-            public int getIntrinsicWidth(){return 24;}
-            public int getIntrinsicHeight(){return 24;}
+            public void setAlpha(int alpha) { ink.setAlpha(alpha); }
+            public void setColorFilter(ColorFilter filter) { ink.setColorFilter(filter); }
+            public int getOpacity() { return PixelFormat.TRANSLUCENT; }
         });
+        int inset = MapTheme.dp(ui, 6);
+        Drawable disc = new InsetDrawable(SettingsUi.rounded(ui, 0xff184740, 20), inset);
+        button.setBackground(new RippleDrawable(ColorStateList.valueOf(0x557ceeca), disc, null));
+        int padding = MapTheme.dp(ui, 14);
+        button.setPadding(padding, padding, padding, padding);
+        button.setScaleType(ImageView.ScaleType.FIT_CENTER);
         button.setContentDescription(description);
-        button.setScaleType(android.widget.ImageView.ScaleType.CENTER_INSIDE);
-        button.setPadding(8,8,8,8);
-        button.setColorFilter(MapTheme.dark()?0xff30dfb5:0xff087767);
-        button.setBackground(SettingsUi.rounded(ui,MapTheme.dark()?0xff26384b:0xffdce8f0,9));
         return button;
     }
+
     private static Button button(Context c,String text){Button b=new Button(c);b.setText(dev.pgrazor.PtBr.tr(text));b.setAllCaps(false);b.setTextSize(12);return b;}
     private static void country(TextView label,CooldownState.Entry e){String key=String.format(Locale.US,"%.2f,%.2f",e.lat,e.lon);String cached=countries.get(key);if(cached!=null){label.setText(dev.pgrazor.PtBr.tr(cached));return;}label.setText(dev.pgrazor.PtBr.tr("??"));geo.execute(()->{String value="??";try{if(Geocoder.isPresent()){List<Address> found=new Geocoder(context,Locale.US).getFromLocation(e.lat,e.lon,1);if(found!=null&&!found.isEmpty()){String code=found.get(0).getCountryCode();if(code!=null&&code.matches("[A-Z]{2}"))value=new String(Character.toChars(0x1f1e6+code.charAt(0)-'A'))+new String(Character.toChars(0x1f1e6+code.charAt(1)-'A'));}}}catch(Exception ignored){}countries.put(key,value);final String result=value;main.post(()->label.setText(dev.pgrazor.PtBr.tr(result)));});}
     public static void show(Activity a){
         final Context ui=MapTheme.wrap(a); // full-screen, matching the PGBR dark/light theme
-        int unit=(int)(48*a.getResources().getDisplayMetrics().density);
-        LinearLayout root=new LinearLayout(ui);root.setOrientation(1);root.setPadding(16,12,16,12);
-        TextView note=new TextView(ui);note.setText(dev.pgrazor.PtBr.tr("Estimated from recorded actions and current location. Teleporting and walking do not reset it. Automatic: wild encounter throws, encounter berries, spins and gym attacks. Use Add action for gym placement/feeding, accessories or an action performed outside this app. Quest catches are excluded. Deleting history changes only this estimate."));note.setTextSize(12);root.addView(note);
-        TextView summary=new TextView(ui);summary.setTextSize(12);root.addView(summary);
+        int unit = MapTheme.dp(ui, 48);
+        int margin = MapTheme.dp(ui, 8);
+        Bitmap mapIcon = readIcon(ui, "ic_map.png");
+        Bitmap trashIcon = readIcon(ui, "ic_trashcan_green.png");
+        LinearLayout root = new LinearLayout(ui);
+        root.setOrientation(LinearLayout.VERTICAL);
+        root.setPadding(margin * 2, margin, margin * 2, margin);
+        TextView note = new TextView(ui);
+        note.setText("A espera é estimada pelas ações recentes e pela localização atual. Caminhar e se teletransportar mantêm a contagem.");
+        note.setTextSize(13);
+        root.addView(note);
+        Button details = button(ui, "Como é calculada?");
+
+        details.setOnClickListener(v -> new AlertDialog.Builder(ui)
+            .setTitle("Como a estimativa funciona")
+            .setMessage("Arremessos e frutas em encontros selvagens, giros e batalhas de Ginásio entram no histórico automaticamente. Use o registro manual para ações de acessórios, colocação de Pokémon, frutas em Ginásios ou ações feitas fora do PGBR. Capturas de pesquisa ficam de fora. Excluir um registro altera apenas a estimativa local.")
+            .setPositiveButton("Entendi", null).show());
+        TextView summary = new TextView(ui);
+        summary.setTextSize(12);
+        LinearLayout summaryRow = new LinearLayout(ui);
+        summaryRow.setGravity(Gravity.CENTER_VERTICAL);
+        summaryRow.addView(summary, new LinearLayout.LayoutParams(0, -2, 1));
+        summaryRow.addView(details);
+        root.addView(summaryRow);
         Button add=button(ui,"Add action at current location");root.addView(add);
         final int[] page={0}; final Runnable[] repaint={null};
         LinearLayout paging=new LinearLayout(ui); paging.setGravity(Gravity.CENTER_VERTICAL);
@@ -99,28 +141,45 @@ public final class Cooldown {
                 list.addView(empty);
             }
             for(CooldownState.Entry e:rows.subList(page[0]*perPage,Math.min(rows.size(),(page[0]+1)*perPage))){
-                LinearLayout row=new LinearLayout(ui);
-                row.setGravity(Gravity.CENTER_VERTICAL);
-                int margin=(int)(6*a.getResources().getDisplayMetrics().density);
-                row.setPadding(margin,margin,margin,margin);
-                row.setBackground(SettingsUi.rounded(ui,MapTheme.dark()?0xff202b3b:0xffeaf0f5,12));
-                LinearLayout.LayoutParams rowParams=new LinearLayout.LayoutParams(-1,-2);
-                rowParams.bottomMargin=margin;
-                TextView flag=new TextView(ui);flag.setTextSize(19);
-                row.addView(flag,new LinearLayout.LayoutParams(unit/2,-2));country(flag,e);
-                TextView info=new TextView(ui);
-                String timestamp=new SimpleDateFormat("dd/MM/yy HH:mm",new Locale("pt","BR")).format(new Date(e.time));
-                info.setText(timestamp+"  •  "+dev.pgrazor.PtBr.tr(e.action)
-                    +String.format(Locale.US,"\n%.5f, %.5f",e.lat,e.lon));
-                info.setTextColor(MapTheme.ink());info.setTextSize(12);
-                info.setPadding(margin/2,0,margin/2,0);
-                row.addView(info,new LinearLayout.LayoutParams(0,-2,1));
-                android.widget.ImageButton copy=iconButton(ui,0,"Copiar coordenadas");
-                android.widget.ImageButton map=iconButton(ui,android.R.drawable.ic_menu_mapmode,"Abrir no mapa");
-                android.widget.ImageButton del=iconButton(ui,android.R.drawable.ic_menu_delete,"Excluir registro");
-                row.addView(copy,new LinearLayout.LayoutParams(unit*4/5,unit));
-                row.addView(map,new LinearLayout.LayoutParams(unit*4/5,unit));
-                row.addView(del,new LinearLayout.LayoutParams(unit*4/5,unit));
+                LinearLayout row = new LinearLayout(ui);
+                row.setOrientation(LinearLayout.VERTICAL);
+                row.setPadding(margin, margin, margin, 0);
+                row.setBackground(SettingsUi.rounded(ui, MapTheme.dark() ? 0xff202b3b : 0xffedf2f5, 12));
+                LinearLayout.LayoutParams rowParams = new LinearLayout.LayoutParams(-1, -2);
+                rowParams.bottomMargin = margin;
+                LinearLayout header = new LinearLayout(ui);
+                header.setGravity(Gravity.CENTER_VERTICAL);
+                row.addView(header);
+                TextView flag = new TextView(ui);
+                flag.setTextSize(16);
+                header.addView(flag);
+                country(flag, e);
+                String action = PtBr.tr(e.action);
+                TextView title = new TextView(ui);
+                title.setText(action);
+                title.setPadding(margin, 0, margin, 0);
+                title.setTextSize(14);
+                title.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
+                header.addView(title, new LinearLayout.LayoutParams(0, -2, 1));
+                TextView time = new TextView(ui);
+                SimpleDateFormat format = new SimpleDateFormat("dd/MM/yy HH:mm", Locale.US);
+                format.setTimeZone(TimeZone.getTimeZone(TimeZoneLookup.zoneId(e.lat, e.lon)));
+                time.setText(format.format(new Date(e.time)));
+                time.setTextSize(12);
+                header.addView(time);
+                LinearLayout actions = new LinearLayout(ui);
+                actions.setGravity(Gravity.CENTER_VERTICAL);
+                row.addView(actions);
+                TextView coords = new TextView(ui);
+                coords.setText(String.format(Locale.US, "%.5f, %.5f", e.lat, e.lon));
+                coords.setTextSize(13);
+                coords.setFontFeatureSettings("tnum");
+                actions.addView(coords, new LinearLayout.LayoutParams(0, -2, 1));
+                ImageButton copy = iconButton(ui, null, 0, "Copiar coordenadas");
+                ImageButton map = iconButton(ui, mapIcon, android.R.drawable.ic_menu_mapmode, "Abrir no mapa");
+                ImageButton del = iconButton(ui, trashIcon, android.R.drawable.ic_menu_delete, "Excluir registro");
+                for (ImageButton control : new ImageButton[]{copy, map, del})
+                    actions.addView(control, new LinearLayout.LayoutParams(unit, unit));
                 copy.setOnClickListener(v->{
                     ((ClipboardManager)a.getSystemService(Context.CLIPBOARD_SERVICE))
                         .setPrimaryClip(ClipData.newPlainText("Coordenadas",
@@ -136,7 +195,7 @@ public final class Cooldown {
                     .setPositiveButton("Excluir",(d,which)->{remove(e.id);renderCurrent(repaint);})
                     .show());
                 row.setClickable(true);row.setFocusable(true);
-                row.setContentDescription("Teletransportar para "+info.getText());
+                row.setContentDescription("Teletransportar para "+coords.getText()+", "+action+", "+time.getText());
                 row.setOnClickListener(v->TeleportDialog.confirm(a,e.lat,e.lon,(lat,lon)->{
                     boolean ok=mapApply(a,lat,lon,false);
                     if(ok&&historyDialog[0]!=null)historyDialog[0].dismiss();
@@ -161,11 +220,11 @@ public final class Cooldown {
     }
     /** Applies a destination chosen from the history map, validating adapter readiness first (never a dummy no-op). */
     private static boolean mapApply(Activity a,double lat,double lon,boolean walk){
-        if(!Control.canEnable()){Toast.makeText(a,"Location adapter is not ready",Toast.LENGTH_SHORT).show();return false;}
+        if(!Control.canEnable()){Toast.makeText(a,PtBr.tr("Location adapter is not ready"),Toast.LENGTH_SHORT).show();return false;}
         try{
             if(walk)Control.walkTo(lat,lon);else Control.teleport(lat,lon);
             Control.event(walk?"cooldown-map-walk":"cooldown-map-teleport",String.format(Locale.US,"lat=%.7f lon=%.7f",lat,lon));
             return true;
-        }catch(IllegalArgumentException error){Toast.makeText(a,"Select valid coordinates",Toast.LENGTH_SHORT).show();return false;}
+        }catch(IllegalArgumentException error){Toast.makeText(a,PtBr.tr("Select valid coordinates"),Toast.LENGTH_SHORT).show();return false;}
     }
 }
