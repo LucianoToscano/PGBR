@@ -56,6 +56,7 @@ final class EternatusMission {
 }
 final class Control {
     static boolean live=true,can=true,location=true,vgpOverlay,vgpEnabled,quickspin;
+    static boolean withoutVgp,timedAdvance,autoThrow,autoThrowOnMap;
     static int throwGrade=2,throwVariety=2;
     static double lat,lon;
     static int teleports;
@@ -68,6 +69,13 @@ final class Control {
     static boolean vgpOverlay(){return vgpOverlay;}
     static boolean vgpEnabled(){return vgpEnabled&&vgpOverlay;}
     static boolean quickSpinEnabled(){return quickspin;}
+    static boolean eternatusWithoutVgp(){return withoutVgp;}
+    static boolean eternatusTimedAdvance(){return timedAdvance;}
+    static boolean autoThrow(){return autoThrow;}
+    static boolean autoThrowOnMap(){return autoThrowOnMap;}
+    static boolean catchScreenVisible(){return false;}
+    static void setAutoThrow(boolean on){autoThrow=on;}
+    static void setAutoThrowOnMap(boolean on){autoThrowOnMap=on;}
     static void setVgpEnabled(boolean value){vgpEnabled=value;}
     static void setVgpOverlay(boolean value){vgpOverlay=value;if(!value)vgpEnabled=false;}
     static void setQuickSpinEnabled(boolean value){quickspin=value;}

@@ -29,7 +29,10 @@ public final class EternatusRouteRunnerTest {
         Cooldown.remainingMs = 0;
         SystemClock.now += 4000;
         EternatusRouteRunner.tick();
-        check(Control.quickspin && Control.vgpEnabled, "Start existing tools when ready");
+        check(!Control.quickspin && !Control.vgpEnabled, "Safety margin starts when cooldown reaches zero");
+        SystemClock.now += 3100;
+        EternatusRouteRunner.tick();
+        check(Control.quickspin && Control.vgpEnabled, "Start existing tools after green + 3s");
         EternatusRouteRunner.onClaim("UNRELATED","quest0");
         check(EternatusRouteRunner.currentStop() == 1, "Ignore other quest claims");
         EternatusRouteRunner.onClaim("THROW_EXCELLENT","quest1");
@@ -73,6 +76,36 @@ public final class EternatusRouteRunnerTest {
         check(EternatusRouteRunner.readinessError(activity).contains("desativado"),
             "Preflight identifies the exact reason instead of generic failure");
         Control.live=true;
+        double[][] longRoute=new double[550][2];
+        for(int i=0;i<longRoute.length;i++){longRoute[i][0]=0;longRoute[i][1]=i*.00005;}
+        check(EternatusRouteRunner.chooseRoute(new GpxRoute("550 Coordenadas",longRoute)),
+            "550 GPX coordinates supported");
+        check(EternatusRouteRunner.resumePosition()==1,"new route begins at position 1");
+        check(!EternatusRouteRunner.start(activity,551),"Resume index must be bounded");
+        check(EternatusRouteRunner.start(activity,450),"Resume directly at 450/550");
+        check(EternatusRouteRunner.currentStop()==450 && EternatusRouteRunner.resumePosition()==450,
+            "Current stop and UI position are 450/550");
+        EternatusRouteRunner.stop("Reiniciar da mesma posição");
+        check(EternatusRouteRunner.resumePosition()==450,"Stop must retain last visited index");
+        Control.withoutVgp=true;
+        Control.timedAdvance=true;
+        check(EternatusRouteRunner.start(activity,450),"Start no-VGP timed route");
+        check(!Control.vgpEnabled,"No VGP while waiting for cooldown");
+        SystemClock.now+=4000;
+        EternatusRouteRunner.tick();
+        check(Control.quickspin && Control.autoThrowOnMap && !Control.vgpEnabled,
+            "Quick spin and map-tap auto throw available with VGP disabled");
+        SystemClock.now+=23000;
+        EternatusRouteRunner.tick();
+        check(EternatusRouteRunner.currentStop()==451,
+            "Timed fallback advances one stop without a quest claim");
+        check(EternatusRouteRunner.unverifiedStops()==1,
+            "Timed fallback keeps a separate unverified count");
+        check(!Control.autoThrowOnMap,"No map auto catch during next cooldown");
+        EternatusRouteRunner.stop("Revisão concluída");
+        check(!Control.autoThrowOnMap && !Control.autoThrow,"Restore original map catch settings");
+        Control.withoutVgp=false;
+        Control.timedAdvance=false;
         try {
             new GpxRoute("invalid", new double[][]{{91, 0}});
             throw new AssertionError("Invalid coordinates were accepted");

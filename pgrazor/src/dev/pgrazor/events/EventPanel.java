@@ -324,7 +324,10 @@ public final class EventPanel {
                 stopAuto.setEnabled(active || dev.pgrazor.EternatusMission.active());
                 skipMissing.setEnabled(active && dev.pgrazor.EternatusRouteRunner.totalStops() >
                     dev.pgrazor.EternatusRouteRunner.currentStop());
-                tally.setText("Resgates registrados nesta conta: " + dev.pgrazor.EternatusProgress.confirmed(activity));
+                tally.setText("Resgates confirmados nesta conta: "
+                    +dev.pgrazor.EternatusProgress.confirmed(activity)
+                    +"\nParadas sem resgate confirmado nesta rota: "
+                    +dev.pgrazor.EternatusRouteRunner.unverifiedStops());
                 clock.postDelayed(this,1000);
             }
         };
