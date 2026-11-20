@@ -222,7 +222,7 @@ public final class Control {
     public static boolean vgpOverlayVisible(){return vgpOverlay&&hostLive();}
     public static int vgpOptions(){return vgpOptions;}
     public static int vgpIconStyle(){return vgpIconStyle;}
-    public static void setVgpIconStyle(int value){if(value<0||value>2)return;vgpIconStyle=value;saveSettings();}
+    public static void setVgpIconStyle(int value){if(value<0||value>3)return;vgpIconStyle=value;saveSettings();}
     public static int vgpIconOpacity(){return vgpIconOpacity;}
     public static void setVgpIconOpacity(int percent){vgpIconOpacity=Math.max(10,Math.min(100,percent));saveSettings();}
     public static int vgpBackgroundOpacity(){return vgpBackgroundOpacity;}
@@ -1197,6 +1197,8 @@ public final class Control {
     private static volatile boolean joystickEternatusEffects=true;
     private static volatile int menuIconSizeDp=22,gymIconSizeDp=54,gymIconOpacity=100,overlayBackgroundOpacity=45;
     private static volatile int menuLauncherSizeDp=48,menuLauncherOpacity=100,menuLauncherBgOpacity=0,gymBackgroundOpacity=45;
+    // 0=classic PGBR, 1=Eternatus emblem, 2=account-local chosen image.
+    private static volatile int menuLauncherIconStyle=0;
     // Client-only privacy mask. Do not override PlayerService, account data or RPC fields.
     private static volatile boolean trainerAliasEnabled;
     private static volatile String trainerAlias="";
@@ -1251,6 +1253,8 @@ public final class Control {
     public static void setJoystickStyle(int style){if(style<0||style>3)return;joystickStyle=style;saveSettings();}
     public static boolean joystickEternatusEffects(){return joystickEternatusEffects;}
     public static void setJoystickEternatusEffects(boolean value){joystickEternatusEffects=value;saveSettings();}
+    public static int menuLauncherIconStyle(){return menuLauncherIconStyle;}
+    public static void setMenuLauncherIconStyle(int style){if(style<0||style>2)return;menuLauncherIconStyle=style;saveSettings();}
     public static int menuLauncherSizeDp(){return menuLauncherSizeDp;}
     public static void setMenuLauncherSizeDp(int size){menuLauncherSizeDp=Math.max(28,Math.min(96,size));saveSettings();}
     public static int menuLauncherOpacity(){return menuLauncherOpacity;}
@@ -1295,7 +1299,7 @@ public final class Control {
             joystickSizeDp=136;joystickOpacity=60;
             joystickStyle=0;joystickEternatusEffects=true;
             menuIconSizeDp=22;gymIconSizeDp=54;gymIconOpacity=100;overlayBackgroundOpacity=45;
-            menuLauncherSizeDp=48;menuLauncherOpacity=100;menuLauncherBgOpacity=0;gymBackgroundOpacity=45;
+            menuLauncherSizeDp=48;menuLauncherOpacity=100;menuLauncherBgOpacity=0;gymBackgroundOpacity=45;menuLauncherIconStyle=0;
             vgpIconOpacity=100;vgpBackgroundOpacity=75;
             transferIvKeepPercent=90;
             trainerAliasEnabled=false;trainerAlias="";
@@ -1338,6 +1342,7 @@ public final class Control {
                 gymIconOpacity=readBoundedVisual(p,"gymIconOpacity",100,10,100);
                 overlayBackgroundOpacity=readBoundedVisual(p,"overlayBackgroundOpacity",45,0,100);
                 menuLauncherSizeDp=readBoundedVisual(p,"menuLauncherSizeDp",48,28,96);
+                menuLauncherIconStyle=readBoundedVisual(p,"menuLauncherIconStyle",0,0,2);
                 menuLauncherOpacity=readBoundedVisual(p,"menuLauncherOpacity",100,10,100);
                 menuLauncherBgOpacity=readBoundedVisual(p,"menuLauncherBgOpacity",0,0,100);
                 gymBackgroundOpacity=readBoundedVisual(p,"gymBackgroundOpacity",45,0,100);
@@ -1360,7 +1365,7 @@ public final class Control {
                 incubateLongest=Boolean.parseBoolean(p.getProperty("incubateLongest","false"));
                 vgpEnabled=false;vgp.clearTarget();
                 vgpOverlay=Boolean.parseBoolean(p.getProperty("vgpOverlay","false"));
-                try{int legacy=Integer.parseInt(p.getProperty("vgpIconStyle","0"));vgpIconStyle=legacy==1?1:0;}
+                try{int legacy=Integer.parseInt(p.getProperty("vgpIconStyle","0"));vgpIconStyle=legacy>=0&&legacy<=3?legacy:0;}
                 catch(NumberFormatException ignored){vgpIconStyle=0;}
                 try{vgpIconSize=Math.max(28,Math.min(72,Integer.parseInt(p.getProperty("vgpIconSize","48"))));}
                 catch(NumberFormatException ignored){vgpIconSize=48;}
@@ -1530,6 +1535,7 @@ public final class Control {
         p.setProperty("gymIconOpacity",String.valueOf(gymIconOpacity));
         p.setProperty("overlayBackgroundOpacity",String.valueOf(overlayBackgroundOpacity));
         p.setProperty("menuLauncherSizeDp",String.valueOf(menuLauncherSizeDp));
+        p.setProperty("menuLauncherIconStyle",String.valueOf(menuLauncherIconStyle));
         p.setProperty("menuLauncherOpacity",String.valueOf(menuLauncherOpacity));
         p.setProperty("menuLauncherBgOpacity",String.valueOf(menuLauncherBgOpacity));
         p.setProperty("gymBackgroundOpacity",String.valueOf(gymBackgroundOpacity));
