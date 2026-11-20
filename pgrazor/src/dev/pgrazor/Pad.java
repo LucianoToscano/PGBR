@@ -262,13 +262,23 @@ public final class Pad {
         private final Paint paint=new Paint(Paint.ANTI_ALIAS_FLAG);
         private final Paint art=new Paint(Paint.ANTI_ALIAS_FLAG|Paint.FILTER_BITMAP_FLAG);
         private final RectF dst=new RectF();
-        // Exact supplied PokeMiners Plus icons, decoded once with alpha intact; a null falls back to the vector glyph.
+        // Original plus selectable PNG designs provided for PGBR. All stay inside the same 54dp button.
         private final Bitmap connected=decodeMapIcon("vgp-connected.png"),disconnected=decodeMapIcon("vgp-disconnected.png");
+        private final Bitmap simple=decodeMapIcon("vgp-custom-minimal.png");
+        private final Bitmap glossy=decodeMapIcon("vgp-custom-glossy.png");
+        private final Bitmap goPlus=decodeMapIcon("vgp-custom-plus.png");
         VgpToggle(Context context){super(context);setFocusable(true);setClickable(true);}
         protected void onDraw(Canvas canvas){super.onDraw(canvas);boolean on=Control.vgpEnabled();canvas.save();canvas.scale(getWidth()/54f,getHeight()/54f);
             paint.setStyle(Paint.Style.FILL);paint.setColor(surface());canvas.drawRoundRect(1,1,53,53,14,14,paint);
-            Bitmap icon=on?connected:disconnected;
-            if(icon!=null&&icon.getWidth()>0&&icon.getHeight()>0){float box=32f,ratio=Math.min(box/icon.getWidth(),box/icon.getHeight()),w=icon.getWidth()*ratio,h=icon.getHeight()*ratio;dst.set(27-w/2f,21-h/2f,27+w/2f,21+h/2f);canvas.drawBitmap(icon,null,dst,art);}
+            int style=Control.vgpIconStyle();
+            Bitmap icon=style==1?simple:style==2?glossy:style==3?goPlus:(on?connected:disconnected);
+            if(icon!=null&&icon.getWidth()>0&&icon.getHeight()>0){
+                // Keep artwork small relative to the surrounding HUD, never enlarge the touch target.
+                float box=style==2?28f:30f;
+                float ratio=Math.min(box/icon.getWidth(),box/icon.getHeight()),w=icon.getWidth()*ratio,h=icon.getHeight()*ratio;
+                dst.set(27-w/2f,21-h/2f,27+w/2f,21+h/2f);
+                art.setAlpha(on?255:165);canvas.drawBitmap(icon,null,dst,art);art.setAlpha(255);
+            }
             else{paint.setColor(on?Color.rgb(33,188,125):Color.rgb(126,134,148));canvas.drawCircle(27,20,13,paint);paint.setColor(Color.WHITE);paint.setStyle(Paint.Style.STROKE);paint.setStrokeWidth(2.5f);canvas.drawArc(19,12,35,28,-55,290,false,paint);canvas.drawLine(27,8,27,20,paint);}
             paint.setStyle(Paint.Style.FILL);paint.setColor(on?Color.rgb(33,188,125):muted());paint.setTextSize(11);paint.setTypeface(Typeface.DEFAULT_BOLD);paint.setTextAlign(Paint.Align.CENTER);canvas.drawText(on?"ON":"OFF",27,50,paint);
             canvas.restore();}

@@ -186,6 +186,8 @@ public final class Control {
     /** Persistent safety preference; when armed a live cooldown keeps VGP off. */
     private static volatile boolean vgpStopOnCooldown;
     private static volatile int vgpOptions=3;
+    // 0=original, 1=simple, 2=glossy, 3=GO Plus. Visual preference only.
+    private static volatile int vgpIconStyle=2;
     /**
      * Runtime-only VGP state (guard reason, status text, on-screen target), the enable/cooldown
      * guard decision and the result notification live in {@link VgpController}. The persistent
@@ -205,6 +207,8 @@ public final class Control {
     public static void setVgpOverlay(boolean value){vgp.setOverlay(value);}
     public static boolean vgpOverlayVisible(){return vgpOverlay&&hostLive();}
     public static int vgpOptions(){return vgpOptions;}
+    public static int vgpIconStyle(){return vgpIconStyle;}
+    public static void setVgpIconStyle(int value){vgpIconStyle=Math.max(0,Math.min(3,value));saveSettings();}
     public static boolean vgpStopOnCooldown(){return vgpStopOnCooldown;}
     /**
      * VGP active state is runtime only (never persisted). Turning it on while the cooldown
@@ -1212,6 +1216,7 @@ public final class Control {
             catch(IOException pending) { event("settings-load-error","Pending save not flushed: "+pending); return; }
             StrictMode.ThreadPolicy policy=StrictMode.allowThreadDiskReads();
             quickMenuHidden=0;
+            vgpIconStyle=2;
             trainerAliasEnabled=false;trainerAlias="";
             idleWalking=false;engine.setIdleWalking(false);
             SmartCatchSettings.read(new Properties());
@@ -1254,6 +1259,8 @@ public final class Control {
                 incubateLongest=Boolean.parseBoolean(p.getProperty("incubateLongest","false"));
                 vgpEnabled=false;vgp.clearTarget();
                 vgpOverlay=Boolean.parseBoolean(p.getProperty("vgpOverlay","false"));
+                try{vgpIconStyle=Math.max(0,Math.min(3,Integer.parseInt(p.getProperty("vgpIconStyle","2"))));}
+                catch(NumberFormatException ignored){vgpIconStyle=2;}
                 vgpStopOnCooldown=Boolean.parseBoolean(p.getProperty("vgpStopOnCooldown","false"));
                 try{vgpOptions=Integer.parseInt(p.getProperty("vgpOptions","3"))&7;}catch(NumberFormatException ignored){vgpOptions=3;}
                 try{buddyBerry=Integer.parseInt(p.getProperty("buddyBerry","0"));}catch(NumberFormatException ignored){buddyBerry=0;}
@@ -1401,6 +1408,7 @@ public final class Control {
         p.setProperty("spawnBooster",String.valueOf(spawnBooster));
         p.setProperty("giftOptions",String.valueOf(giftOptions));
         p.setProperty("vgpOverlay",String.valueOf(vgpOverlay));
+        p.setProperty("vgpIconStyle",String.valueOf(vgpIconStyle));
         p.setProperty("vgpStopOnCooldown",String.valueOf(vgpStopOnCooldown));
         p.setProperty("vgpOptions",String.valueOf(vgpOptions));
         p.setProperty("buddyBerry",String.valueOf(buddyBerry));

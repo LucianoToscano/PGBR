@@ -65,6 +65,7 @@ final class SettingsPanel {
         quickSpinSwitch, berrySwitch, quickSummarySwitch, curveSwitch, alwaysHitSwitch, arSwitch, transferOverlaySwitch, catchChanceSwitch, autoBallSwitch, autoThrowSwitch, autoThrowMapSwitch, skipCutscenesSwitch,
         batteryResSwitch, batteryFpsSwitch, batteryQualitySwitch;
     private Button autoBallTarget, berryPriority;
+    private Button vgpIconStyleButton;
     private BerryPriorityPicker berryPicker;
     private TextView quickSummaryLabel, vgpStatus, cutsceneStatus, healStatus, smartBattleStatus;
     private Switch healSwitch, healReviveSwitch, smartBattleSwitch, gymRepeatSwitch;
@@ -436,6 +437,18 @@ final class SettingsPanel {
         }
         vgpCooldownStop=new CheckBox(activity);vgpCooldownStop.setText(dev.pgrazor.PtBr.tr("Stop on cooldown (estimated)"));vgpCooldownStop.setContentDescription(dev.pgrazor.PtBr.tr("Stop Virtual Go Plus during the estimated action cooldown"));vgpCooldownStop.setChecked(Control.vgpStopOnCooldown());vgpC.addView(vgpCooldownStop);
         vgpCooldownStop.setOnClickListener(v->{if(vgpCooldownStop.isChecked()!=Control.vgpStopOnCooldown())Control.setVgpStopOnCooldown(vgpCooldownStop.isChecked());host.refresh();});
+        vgpIconStyleButton=launch(vgpC,"Ícone do VGP",()->{
+            String[] choices={"Original","Pokébola simples","Pokébola brilhante","GO Plus"};
+            new AlertDialog.Builder(dialogContext())
+                .setTitle("Escolher ícone flutuante")
+                .setSingleChoiceItems(choices,Control.vgpIconStyle(),(dialog,which)->{
+                    Control.setVgpIconStyle(which);
+                    host.refresh();
+                    vgpIconStyleButton.setText("Ícone do VGP: "+choices[which]);
+                    dialog.dismiss();
+                })
+                .setNegativeButton("Cancelar",null).show();
+        });
         vgpStatus=caption(vgpC,Control.vgpStatus());
         smartRefresh=SmartCatchSettings.populate(activity,vgpC);
 
@@ -864,6 +877,10 @@ final class SettingsPanel {
     }
 
     private void refreshVgpOptions() {
+        if(vgpIconStyleButton!=null){
+            String[] choices={"Original","Pokébola simples","Pokébola brilhante","GO Plus"};
+            vgpIconStyleButton.setText("Ícone do VGP: "+choices[Control.vgpIconStyle()]);
+        }
         for(int i=0;i<3;i++)vgpChoices[i].setChecked((Control.vgpOptions()&(1<<i))!=0);
         vgpCooldownStop.setChecked(Control.vgpStopOnCooldown());
     }
