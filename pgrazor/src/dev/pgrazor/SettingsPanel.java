@@ -66,7 +66,7 @@ final class SettingsPanel {
         quickSpinSwitch, berrySwitch, quickSummarySwitch, curveSwitch, alwaysHitSwitch, arSwitch, transferOverlaySwitch, catchChanceSwitch, autoBallSwitch, autoThrowSwitch, autoThrowMapSwitch, skipCutscenesSwitch,
         batteryResSwitch, batteryFpsSwitch, batteryQualitySwitch;
     private Button autoBallTarget, berryPriority;
-    private Button vgpIconStyleButton, joystickStyleButton;
+    private Button vgpIconStyleButton, joystickStyleButton, eternatusIntensityButton, eternatusSpeedButton;
     private BerryPriorityPicker berryPicker;
     private TextView quickSummaryLabel, vgpStatus, cutsceneStatus, healStatus, smartBattleStatus;
     private Switch healSwitch, healReviveSwitch, smartBattleSwitch, gymRepeatSwitch;
@@ -299,6 +299,36 @@ final class SettingsPanel {
         panel.setClickable(true);
     }
 
+    private static String eternityIntensityLabel(int intensity){
+        return intensity>=2?"Épica":"Suave";
+    }
+    private static String eternitySpeedLabel(int speed){
+        return speed==0?"Lenta":speed==2?"Rápida":"Normal";
+    }
+    private void showEternatusFxChoice(boolean intensityChoice){
+        String[] choices=intensityChoice
+            ? new String[]{"Suave • menos brilho","Épica • vórtice, fumaça e iluminação fortes"}
+            : new String[]{"Lenta","Normal","Rápida"};
+        int selected=intensityChoice?Control.eternatusFxIntensity()-1:Control.eternatusFxSpeed();
+        new AlertDialog.Builder(dialogContext())
+            .setTitle(intensityChoice?"Intensidade da tempestade":"Velocidade do vórtice")
+            .setSingleChoiceItems(choices,selected,(dialog,which)->{
+                dialog.dismiss();
+                if(intensityChoice){
+                    Control.setEternatusFxIntensity(which+1);
+                    if(eternatusIntensityButton!=null)
+                        eternatusIntensityButton.setText("Intensidade da tempestade: "+
+                            eternityIntensityLabel(Control.eternatusFxIntensity()));
+                }else{
+                    Control.setEternatusFxSpeed(which);
+                    if(eternatusSpeedButton!=null)
+                        eternatusSpeedButton.setText("Velocidade do vórtice: "+
+                            eternitySpeedLabel(Control.eternatusFxSpeed()));
+                }
+                host.refresh();
+            }).setNegativeButton("Cancelar",null).show();
+    }
+
     private static String joystickStyleName(int style){
         switch(style){
             case 1:return "Eternatus • Tempestade viva";
@@ -487,7 +517,14 @@ final class SettingsPanel {
         neonEffects.setOnCheckedChangeListener((v,on)->{
             Control.setJoystickEternatusEffects(on);host.refresh();
         });
-        caption(joystickArt,"No estilo Tempestade viva, a energia aparece e desaparece suavemente. A Pokébola Eternatus também alterna entre limpa e energizada. O estilo anterior continua disponível.");
+        caption(joystickArt,"Ciclo automático: forma limpa → tempestade iluminada → vórtice girando → forma limpa. A Pokébola Eternatus acompanha o mesmo ciclo.");
+        eternatusIntensityButton=launch(joystickArt,
+            "Intensidade da tempestade: "+eternityIntensityLabel(Control.eternatusFxIntensity()),
+            ()->showEternatusFxChoice(true));
+        eternatusSpeedButton=launch(joystickArt,
+            "Velocidade do vórtice: "+eternitySpeedLabel(Control.eternatusFxSpeed()),
+            ()->showEternatusFxChoice(false));
+        caption(joystickArt,"A tempestade gira em duas camadas com fumaça e iluminação. Desative a animação para manter o visual limpo; o vórtice anterior continua disponível.");
         launch(joystickArt,"Escolher imagem do joystick no celular",()->{
             if(Control.engine.routeProgress().active){
                 android.widget.Toast.makeText(activity,"Pause ou encerre a rota antes de abrir o seletor de imagens do Android.",android.widget.Toast.LENGTH_LONG).show();

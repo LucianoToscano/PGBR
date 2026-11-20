@@ -1258,6 +1258,8 @@ public final class Control {
     // 0=original, 1=Eternatus morph (clean <-> storm), 2=HUD, 3=user image, 4=prior Eternatus vortex.
     private static volatile int joystickStyle;
     private static volatile boolean joystickEternatusEffects=true;
+    // Independent visual-only animation settings. 0=soft, 1=normal, 2=epic for intensity.
+    private static volatile int eternatusFxIntensity=2, eternatusFxSpeed=1;
     private static volatile int menuIconSizeDp=22,gymIconSizeDp=54,gymIconOpacity=100,overlayBackgroundOpacity=45;
     private static volatile int menuLauncherSizeDp=48,menuLauncherOpacity=100,menuLauncherBgOpacity=0,gymBackgroundOpacity=45;
     // 0=classic PGBR, 1=Eternatus emblem, 2=account-local chosen image.
@@ -1340,6 +1342,16 @@ public final class Control {
     public static void setJoystickStyle(int style){if(style<0||style>4)return;joystickStyle=style;saveSettings();}
     public static boolean joystickEternatusEffects(){return joystickEternatusEffects;}
     public static void setJoystickEternatusEffects(boolean value){joystickEternatusEffects=value;saveSettings();}
+    public static int eternatusFxIntensity(){return eternatusFxIntensity;}
+    public static void setEternatusFxIntensity(int value){
+        if(value<1||value>2)return;
+        eternatusFxIntensity=value;saveSettings();
+    }
+    public static int eternatusFxSpeed(){return eternatusFxSpeed;}
+    public static void setEternatusFxSpeed(int value){
+        if(value<0||value>2)return;
+        eternatusFxSpeed=value;saveSettings();
+    }
     public static int menuLauncherIconStyle(){return menuLauncherIconStyle;}
     public static void setMenuLauncherIconStyle(int style){if(style<0||style>2)return;menuLauncherIconStyle=style;saveSettings();}
     public static int menuLauncherSizeDp(){return menuLauncherSizeDp;}
@@ -1386,7 +1398,7 @@ public final class Control {
             vgpTapProtection=true;
             hudLabelsVisible=true;hudLabelsMask=HUD_ALL;hudLabelOpacity=0;hudLabelTextSp=11;
             joystickSizeDp=136;joystickOpacity=60;
-            joystickStyle=0;joystickEternatusEffects=true;
+            joystickStyle=0;joystickEternatusEffects=true;eternatusFxIntensity=2;eternatusFxSpeed=1;
             menuIconSizeDp=22;gymIconSizeDp=54;gymIconOpacity=100;overlayBackgroundOpacity=45;
             menuLauncherSizeDp=48;menuLauncherOpacity=100;menuLauncherBgOpacity=0;gymBackgroundOpacity=45;menuLauncherIconStyle=0;
             vgpIconOpacity=100;vgpBackgroundOpacity=75;
@@ -1423,6 +1435,8 @@ public final class Control {
                 if(uiScalePercent!=25&&uiScalePercent!=50&&uiScalePercent!=75&&uiScalePercent!=100)uiScalePercent=100;
                 joystickVisible=Boolean.parseBoolean(p.getProperty("joystickVisible","true"));
                 joystickEternatusEffects=Boolean.parseBoolean(p.getProperty("joystickEternatusEffects","true"));
+                eternatusFxIntensity=readBoundedVisual(p,"eternatusFxIntensity",2,1,2);
+                eternatusFxSpeed=readBoundedVisual(p,"eternatusFxSpeed",1,0,2);
                 try{
                     int saved=Integer.parseInt(p.getProperty("joystickStyle","-1"));
                     joystickStyle=saved>=0&&saved<=4?saved:
@@ -1638,6 +1652,8 @@ public final class Control {
         p.setProperty("joystickOpacity",String.valueOf(joystickOpacity));
         p.setProperty("joystickStyle",String.valueOf(joystickStyle));
         p.setProperty("joystickEternatusEffects",String.valueOf(joystickEternatusEffects));
+        p.setProperty("eternatusFxIntensity",String.valueOf(eternatusFxIntensity));
+        p.setProperty("eternatusFxSpeed",String.valueOf(eternatusFxSpeed));
         p.setProperty("menuIconSizeDp",String.valueOf(menuIconSizeDp));
         p.setProperty("gymIconSizeDp",String.valueOf(gymIconSizeDp));
         p.setProperty("gymIconOpacity",String.valueOf(gymIconOpacity));

@@ -20,6 +20,17 @@ public class SettingsBackupRulesTest {
         JSONObject vgpTap=valid();vgpTap.getJSONObject("settings").put("vgpTapProtection","true");SettingsBackupRules.validate(vgpTap);
         vgpTap.getJSONObject("settings").put("vgpTapProtection","false");SettingsBackupRules.validate(vgpTap);
         vgpTap.getJSONObject("settings").put("vgpTapProtection","yes");rejects(vgpTap);
+        JSONObject stormPrefs=valid();
+        stormPrefs.getJSONObject("settings").put("eternatusFxIntensity","2")
+            .put("eternatusFxSpeed","2");
+        SettingsBackupRules.validate(stormPrefs);
+        stormPrefs.getJSONObject("settings").put("eternatusFxIntensity","1")
+            .put("eternatusFxSpeed","0");
+        SettingsBackupRules.validate(stormPrefs);
+        stormPrefs.getJSONObject("settings").put("eternatusFxIntensity","0");rejects(stormPrefs);
+        stormPrefs.getJSONObject("settings").put("eternatusFxIntensity","3");rejects(stormPrefs);
+        stormPrefs.getJSONObject("settings").put("eternatusFxIntensity","2")
+            .put("eternatusFxSpeed","3");rejects(stormPrefs);
         JSONObject morphJoy=valid();morphJoy.getJSONObject("settings").put("joystickStyle","4");SettingsBackupRules.validate(morphJoy);
         morphJoy.getJSONObject("settings").put("joystickStyle","5");rejects(morphJoy);
         display.getJSONObject("settings").put("cooldownEmphasis","yes");rejects(display);

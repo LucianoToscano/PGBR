@@ -1,7 +1,7 @@
 name: PGBR - verificacao incremental Eternatus e privacidade
 on:
   push:
-    branches: [feature/eternatus-rota-automatica-lt, feature/lt-pvp-protecao-icones-hud-velocidades, feature/lt-hud-historico-locais-20261120, feature/eternatus-morph-tempestade-lt010]
+    branches: [feature/eternatus-rota-automatica-lt, feature/lt-pvp-protecao-icones-hud-velocidades, feature/lt-hud-historico-locais-20261120, feature/eternatus-morph-tempestade-lt010, feature/eternatus-vortex-fx-lt011]
   pull_request:
     branches: [feature/pt-br-traducao, feature/lt-hud-historico-locais-20261120]
 permissions:
@@ -25,6 +25,8 @@ jobs:
         run: python -B -m unittest discover -s pgrazor/test -p 'test_eternatus_route_java.py' -v
       - name: Validar morph suave e imagens do usuário (Joystick e Pokébola)
         run: python -B -m unittest discover -s pgrazor/test -p 'test_eternatus_morph_java.py' -v
+      - name: Testar ciclo da tempestade, vórtice real, efeitos da Pokébola
+        run: python -B -m unittest discover -s pgrazor/test -p 'test_eternatus_fx_java.py' -v
       - name: Validar apelidos de treinador
         run: |
           mkdir -p build/pgbr-unit
