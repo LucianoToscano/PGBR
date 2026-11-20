@@ -1186,6 +1186,7 @@ public final class Control {
     }
     private static boolean darkTheme=true, joystickVisible=true;
     private static volatile int joystickSizeDp=136,joystickOpacity=60;
+    private static volatile int menuIconSizeDp=22,gymIconSizeDp=54,gymIconOpacity=100,overlayBackgroundOpacity=45;
     // Client-only privacy mask. Do not override PlayerService, account data or RPC fields.
     private static volatile boolean trainerAliasEnabled;
     private static volatile String trainerAlias="";
@@ -1236,6 +1237,14 @@ public final class Control {
     public static int joystickSizeDp(){return joystickSizeDp;}
     public static void setJoystickSizeDp(int value){joystickSizeDp=Math.max(88,Math.min(220,value));saveSettings();}
     public static int joystickOpacity(){return joystickOpacity;}
+    public static int menuIconSizeDp(){return menuIconSizeDp;}
+    public static void setMenuIconSizeDp(int value){menuIconSizeDp=Math.max(16,Math.min(40,value));saveSettings();}
+    public static int gymIconSizeDp(){return gymIconSizeDp;}
+    public static void setGymIconSizeDp(int value){gymIconSizeDp=Math.max(32,Math.min(110,value));saveSettings();}
+    public static int gymIconOpacity(){return gymIconOpacity;}
+    public static void setGymIconOpacity(int value){gymIconOpacity=Math.max(10,Math.min(100,value));saveSettings();}
+    public static int overlayBackgroundOpacity(){return overlayBackgroundOpacity;}
+    public static void setOverlayBackgroundOpacity(int value){overlayBackgroundOpacity=Math.max(0,Math.min(100,value));saveSettings();}
     public static void setJoystickOpacity(int value){joystickOpacity=Math.max(10,Math.min(100,value));saveSettings();}
     public static void setDarkTheme(boolean value){darkTheme=value;saveSettings();}
     public static void setJoystickVisible(boolean value){joystickVisible=value;saveSettings();}
@@ -1262,6 +1271,7 @@ public final class Control {
             vgpIconSize=48;
             hudLabelsVisible=true;hudLabelOpacity=0;hudLabelTextSp=11;
             joystickSizeDp=136;joystickOpacity=60;
+            menuIconSizeDp=22;gymIconSizeDp=54;gymIconOpacity=100;overlayBackgroundOpacity=45;
             transferIvKeepPercent=90;
             trainerAliasEnabled=false;trainerAlias="";
             idleWalking=false;engine.setIdleWalking(false);
@@ -1292,6 +1302,10 @@ public final class Control {
                 try{uiScalePercent=Integer.parseInt(p.getProperty("uiScalePercent","100"));}catch(NumberFormatException invalid){uiScalePercent=100;}
                 if(uiScalePercent!=25&&uiScalePercent!=50&&uiScalePercent!=75&&uiScalePercent!=100)uiScalePercent=100;
                 joystickVisible=Boolean.parseBoolean(p.getProperty("joystickVisible","true"));
+                menuIconSizeDp=readBoundedVisual(p,"menuIconSizeDp",22,16,40);
+                gymIconSizeDp=readBoundedVisual(p,"gymIconSizeDp",54,32,110);
+                gymIconOpacity=readBoundedVisual(p,"gymIconOpacity",100,10,100);
+                overlayBackgroundOpacity=readBoundedVisual(p,"overlayBackgroundOpacity",45,0,100);
                 try{joystickSizeDp=Math.max(88,Math.min(220,Integer.parseInt(p.getProperty("joystickSizeDp","136"))));}
                 catch(NumberFormatException invalid){joystickSizeDp=136;}
                 try{joystickOpacity=Math.max(10,Math.min(100,Integer.parseInt(p.getProperty("joystickOpacity","60"))));}
@@ -1403,6 +1417,10 @@ public final class Control {
             finally { StrictMode.setThreadPolicy(policy); }
         }
     }
+    private static int readBoundedVisual(Properties p,String key,int fallback,int min,int max){
+        try{int n=Integer.parseInt(p.getProperty(key,String.valueOf(fallback)));return n>=min&&n<=max?n:fallback;}
+        catch(NumberFormatException ignored){return fallback;}
+    }
     private static int boundedSetting(Properties p,String key,int max) {
         try { int n=Integer.parseInt(p.getProperty(key,"0")); return n>=0&&n<=max?n:0; }
         catch(NumberFormatException invalid) { return 0; }
@@ -1468,6 +1486,10 @@ public final class Control {
         p.setProperty("joystickVisible",String.valueOf(joystickVisible));
         p.setProperty("joystickSizeDp",String.valueOf(joystickSizeDp));
         p.setProperty("joystickOpacity",String.valueOf(joystickOpacity));
+        p.setProperty("menuIconSizeDp",String.valueOf(menuIconSizeDp));
+        p.setProperty("gymIconSizeDp",String.valueOf(gymIconSizeDp));
+        p.setProperty("gymIconOpacity",String.valueOf(gymIconOpacity));
+        p.setProperty("overlayBackgroundOpacity",String.valueOf(overlayBackgroundOpacity));
         p.setProperty("quickMenuHidden",String.valueOf(quickMenuHidden));
         p.setProperty("idleWalking",String.valueOf(idleWalking));
         p.setProperty("spawnBooster",String.valueOf(spawnBooster));
