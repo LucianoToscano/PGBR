@@ -98,8 +98,8 @@ Root item(void *list,int index){void *args[]={&index};return Root(call(list,"get
 std::string quote(const std::string &s){std::string out="\"";for(unsigned char c:s){if(c=='"'||c=='\\')out+='\\';if(c>=32)out+=char(c);}return out+'"';}
 const PgrRuntimeTransportApi *transport(){return static_cast<const PgrRuntimeTransportApi*>(pgrazor_runtime_transport_api(1));}
 void event(const std::string &json){auto tr=transport();if(!tr)return;PgrRuntimeTransportString strings[]={{"research",8},{json.c_str(),uint32_t(json.size())}};tr->emit(19,nullptr,0,strings,2);}
-void status(const char *phase,const std::string &message,const std::string &templ=""){
- event("{\"kind\":\"research\",\"phase\":"+quote(phase)+",\"template\":"+quote(templ)+",\"message\":"+quote(message)+"}");}
+void status(const char *phase,const std::string &message,const std::string &templ="",const std::string &quest_id=""){
+ event("{\"kind\":\"research\",\"phase\":"+quote(phase)+",\"template\":"+quote(templ)+",\"questId\":"+quote(quest_id)+",\"message\":"+quote(message)+"}");}
 // The snapshot config, read between two equal fresh samples. Invalid or stale means no actions.
 pgr_research::Config config(){
  pgr_research::Config c;auto tr=transport();if(!tr)return c;PgrRuntimeTransportSample a{},z{};
@@ -244,7 +244,8 @@ void finish(bool ok,const std::string &message){
    msg+="; retrying in "+std::to_string(delay/1000)+" s";
   }
  }
- status(ok?(claim?"claimed":"removed"):"error",msg,st.pending_templ);
+ // Include quest instance ID so delayed callbacks cannot skip GPX coordinates.
+ status(ok?(claim?"claimed":"removed"):"error",msg,st.pending_templ,st.pending_id);
  st.promise.reset();st.pending=pgr_research::NONE;st.pending_templ.clear();st.pending_id.clear();
  st.next_action=clock_ms()+kGapMs;st.next_scan=0;
 }
