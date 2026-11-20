@@ -46,6 +46,14 @@ public final class PtBrDynamicTest {
         eq("No live results in range.","Nenhum resultado disponível no alcance selecionado.");
         eq("Encounter limit: 25","Limite de encontros: 25");
         eq("UI scale: 100%","Escala da interface: 100%");
+        eq("Filter presets","Predefinições de filtros");
+        eq("Saved places could not be read.","Não foi possível ler os locais salvos.");
+        eq("Berry priority","Prioridade de frutas");
+        eq("PGBR · current run","PGBR · execução atual");
+        eq("Refresh log","Atualizar registro");
+        eq("Back to controls","Voltar aos controles");
+        eq("Go to coordinates","Ir para coordenadas");
+        eq("Choose up to 3. The next choice starts a new list.","Escolha até três opções. A próxima escolha inicia uma nova lista.");
         System.out.println("PGBR: testes de textos dinamicos aprovados.");
     }
 }

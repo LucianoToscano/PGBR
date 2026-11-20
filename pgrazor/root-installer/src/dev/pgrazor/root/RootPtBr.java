@@ -591,8 +591,8 @@ public final class RootPtBr {
         m.put("Saved places (", "Locais salvos (");
         m.put("Save selected", "Salvar selecionado");
         m.put("Saved places could not be read. You can save new destinations here.", "Não foi possível ler os locais salvos. Você pode salvar novos destinos aqui.");
-        m.put("No saved places yet. Save the selected map destination to find it again later.", "Ainda não há locais salvos. Salve o destino selecionado no mapa para encontrá-lo depois.");
-        m.put("Some saved places could not be read. Valid entries are shown.", "Alguns locais salvos não puderam ser lidos. Apenas os válidos estão sendo exibidos.");
+        m.put("No saved places yet. Save the selected map destination to find it again later.", "Nenhum local salvo ainda. Salve o destino selecionado no mapa para encontrá-lo novamente.");
+        m.put("Some saved places could not be read. Valid entries are shown.", "Alguns locais salvos não puderam ser lidos. Os locais válidos estão sendo exibidos.");
         m.put("Place name (up to 40 characters)", "Nome do local (até 40 caracteres)");
         m.put("Save selected place", "Salvar local selecionado");
         m.put("Saved ", "Salvo ");
@@ -972,7 +972,7 @@ public final class RootPtBr {
         m.put("Swapped to your best counter", "Trocou para seu melhor contra-atacante");
         m.put("The game refused a swap; staying in", "O jogo recusou a troca; permanecendo em");
         m.put("Used this session: ", "Usados nesta sessão: ");
-        m.put("Settings backup", "Backup de configurações");
+        m.put("Settings backup", "Backup das configurações");
         m.put("Export settings", "Exportar configurações");
         m.put("Import settings", "Importar configurações");
         m.put("Back to game", "Voltar ao jogo");
@@ -1172,7 +1172,7 @@ public final class RootPtBr {
         m.put("Experimental. Constant teleporting and remote catching raise the risk of an account warning or ban. Use an alt account, not your main.", "Experimental. Teletransportes constantes e capturas remotas aumentam o risco de advertência ou banimento da conta. Use uma conta secundária, não a principal.");
         m.put("Teleports to 100% IV Pokémon and checks each for shiny. A shiny is held in its encounter until your cooldown ends, then caught. VGP+ pauses while this runs.", "Teletransporta até Pokémon com IV 100% e verifica se são brilhantes. Um brilhante permanece no encontro até o fim do tempo de espera para então ser capturado. O VGP+ fica pausado durante a execução.");
         m.put("Activate Daily Adventure Incense in the game first. This steers a straight line at 10.5 km/h for up to 15 minutes. Stop any time. Galarian birds open automatically for you to handle. Walking and VGP stop. Move the joystick to resume idle walking.", "Primeiro, ative o Incenso de Aventura Diário no jogo. A sessão percorre uma linha reta a 10,5 km/h por até 15 minutos. Você pode parar a qualquer momento. Encontros com aves de Galar são abertos automaticamente para você lidar com eles. A caminhada e o VGP param. Mova o joystick para retomar a caminhada normal.");
-        m.put("Save a backup outside the app to keep settings through reinstalls. Includes favorites and their coordinates. Login tokens, current location, cooldown history and active routes are excluded.\n\nImport replaces the included settings and favorites. VGP stays off.", "Salve um backup fora do aplicativo para preservar as configurações após reinstalações. Inclui os locais favoritos e suas coordenadas. Tokens de acesso, localização atual, histórico de espera e rotas ativas não são incluídos.\n\nA importação substitui as configurações e os favoritos incluídos. O VGP permanece desligado.");
+        m.put("Save a backup outside the app to keep settings through reinstalls. Includes favorites and their coordinates. Login tokens, current location, cooldown history and active routes are excluded.\n\nImport replaces the included settings and favorites. VGP stays off.", "Salve um backup fora do aplicativo para preservar as configurações após reinstalações. Ele inclui os favoritos e suas coordenadas. Tokens de acesso, localização atual, histórico do tempo de espera e rotas ativas ficam de fora.\n\nA importação substitui as configurações e os favoritos incluídos no backup. O VGP permanece desligado.");
         m.put("Root uses a fixed file in the game's external files folder. Copy it elsewhere before uninstalling the game; to import, place your backup at this path:\n", "A versão Root usa um arquivo fixo na pasta de arquivos externos do jogo. Copie-o para outro local antes de desinstalar. Para importar, coloque o backup neste caminho:\n");
         m.put("No file picker is available.", "Nenhum seletor de arquivos está disponível.");
         m.put("Open PGBR settings. Drag to reposition.", "Abrir configurações do PGBR. Arraste para reposicionar.");
@@ -1320,6 +1320,23 @@ public final class RootPtBr {
         m.put("Waiting for nearby game locations", "Aguardando locais próximos do jogo");
         m.put("Nearby layers unavailable", "Camadas de locais próximos indisponíveis");
         m.put(" (egg)", " (ovo)");
+        m.put("Stopped editing the preset; the filters stay as they are.", "A edição da predefinição foi interrompida. Os filtros permanecem inalterados.");
+        m.put("Filter presets", "Predefinições de filtros");
+        m.put("Rename preset", "Renomear predefinição");
+        m.put("You are at", "Você está em");
+        m.put("Go to coordinates", "Ir para coordenadas");
+        m.put("Saved places could not be read.", "Não foi possível ler os locais salvos.");
+        m.put("Save log + settings (.zip)", "Salvar registro e configurações (.zip)");
+        m.put("PGBR · current run", "PGBR · execução atual");
+        m.put("Refresh log", "Atualizar registro");
+        m.put("ZIP includes the log and a single-line settings.json snapshot of feature preferences. Login tokens, account data and saved locations are excluded.", "O ZIP inclui o registro e um arquivo settings.json com as preferências em uma única linha. Tokens de acesso, dados da conta e locais salvos ficam de fora.");
+        m.put("Save .txt file", "Salvar arquivo .txt");
+        m.put("Back to controls", "Voltar aos controles");
+        m.put("Choose up to 3. The next choice starts a new list.", "Escolha até três opções. A próxima escolha inicia uma nova lista.");
+        m.put("Berry priority", "Prioridade de frutas");
+        m.put("Save a backup outside the app to keep settings through reinstalls. Includes favorites and their coordinates. Login tokens, current location, cooldown history and active routes are excluded.", "Salve um backup fora do aplicativo para preservar as configurações após reinstalações. Ele inclui os favoritos e suas coordenadas. Tokens de acesso, localização atual, histórico do tempo de espera e rotas ativas ficam de fora.");
+        m.put("Import replaces the included settings and favorites. VGP stays off.", "A importação substitui as configurações e os favoritos incluídos no backup. O VGP permanece desligado.");
+        m.put("Set favourite", "Definir como favorito");
         LABELS = Collections.unmodifiableMap(m);
     }
     private RootPtBr() {}
