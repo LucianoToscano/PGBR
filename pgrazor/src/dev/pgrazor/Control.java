@@ -187,6 +187,8 @@ public final class Control {
     private static volatile boolean vgpEnabled,vgpReady,vgpOverlay;
     /** Persistent safety preference; when armed a live cooldown keeps VGP off. */
     private static volatile boolean vgpStopOnCooldown;
+    // Protect the floating VGP icon from accidental activation (runtime automation is unaffected).
+    private static volatile boolean vgpTapProtection=true;
     private static volatile int vgpOptions=3;
     // 0=original, 1=simple, 2=glossy, 3=GO Plus. Visual preference only.
     private static volatile int vgpIconStyle=0;
@@ -266,6 +268,8 @@ public final class Control {
     public static int vgpIconSize(){return vgpIconSize;}
     public static void setVgpIconSize(int value){vgpIconSize=Math.max(28,Math.min(72,value));saveSettings();}
     public static boolean vgpStopOnCooldown(){return vgpStopOnCooldown;}
+    public static boolean vgpTapProtection(){return vgpTapProtection;}
+    public static void setVgpTapProtection(boolean value){if(vgpTapProtection!=value){vgpTapProtection=value;saveSettings();}}
     /**
      * VGP active state is runtime only (never persisted). Turning it on while the cooldown
      * guard is armed and a cooldown is live is refused with a visible reason; turning it off
@@ -1379,6 +1383,7 @@ public final class Control {
             quickMenuHidden=0;
             vgpIconStyle=0;
             vgpIconSize=48;
+            vgpTapProtection=true;
             hudLabelsVisible=true;hudLabelsMask=HUD_ALL;hudLabelOpacity=0;hudLabelTextSp=11;
             joystickSizeDp=136;joystickOpacity=60;
             joystickStyle=0;joystickEternatusEffects=true;
@@ -1475,6 +1480,8 @@ public final class Control {
                 try{hudLabelTextSp=Math.max(9,Math.min(14,Integer.parseInt(p.getProperty("hudLabelTextSp","11"))));}
                 catch(NumberFormatException ignored){hudLabelTextSp=11;}
                 vgpStopOnCooldown=Boolean.parseBoolean(p.getProperty("vgpStopOnCooldown","false"));
+                // Missing/invalid preference defaults to the safer confirmation mode.
+                vgpTapProtection=!"false".equals(p.getProperty("vgpTapProtection","true"));
                 try{vgpOptions=Integer.parseInt(p.getProperty("vgpOptions","3"))&7;}catch(NumberFormatException ignored){vgpOptions=3;}
                 try{buddyBerry=Integer.parseInt(p.getProperty("buddyBerry","0"));}catch(NumberFormatException ignored){buddyBerry=0;}
                 if(buddyBerry!=701&&buddyBerry!=703&&buddyBerry!=705&&buddyBerry!=706&&buddyBerry!=707)buddyBerry=0;
@@ -1661,6 +1668,7 @@ public final class Control {
             p.setProperty("hudColor."+HUD_BITS[i],String.valueOf(HUD_COLORS[i]));
         }
         p.setProperty("vgpStopOnCooldown",String.valueOf(vgpStopOnCooldown));
+        p.setProperty("vgpTapProtection",String.valueOf(vgpTapProtection));
         p.setProperty("vgpOptions",String.valueOf(vgpOptions));
         p.setProperty("buddyBerry",String.valueOf(buddyBerry));
         p.setProperty("autoIncubate",String.valueOf(autoIncubate));

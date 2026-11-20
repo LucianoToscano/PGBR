@@ -13,6 +13,7 @@ public final class ControlSettingsReloadTest {
         Method load=Control.class.getDeclaredMethod("loadSettings",android.app.Application.class);
         if(Control.gymRepeatEnabled())throw new AssertionError("Gym repeat should default off");
         if(Control.localTimeOverlay())throw new AssertionError("Local clock should default off");
+        if(!Control.vgpTapProtection())throw new AssertionError("VGP anti-tap should default ON");
         load.setAccessible(true); load.invoke(null,app);
         Control.setGymRepeatEnabled(true);
         Control.setLocalTimeOverlay(true);
@@ -30,7 +31,7 @@ public final class ControlSettingsReloadTest {
         incoming.setProperty("localTimeFormat","5");
         incoming.setProperty("cooldownEmphasis","true");
         incoming.setProperty("cooldownTextSp","18");
-        incoming.setProperty("localTimeOverlay","false");
+        incoming.setProperty("localTimeOverlay","false"); incoming.setProperty("vgpTapProtection","false");
         incoming.setProperty("idleWalking","false"); incoming.setProperty("battleOptions","5"); incoming.setProperty("autoBerry","701"); incoming.setProperty("gymRepeatEnabled","false");
         Control.importSettings(app,incoming,9.3); Control.flushSettings(5000);
         if(Control.localTimeFormat()!=5 || Control.cooldownTextSp()!=18 || !Control.cooldownEmphasis())
@@ -38,6 +39,8 @@ public final class ControlSettingsReloadTest {
         if(Control.idleWalking())throw new AssertionError("Idle walking import did not apply false");
         if(Control.gymRepeatEnabled())throw new AssertionError("Gym repeat import did not apply false");
         if(Control.localTimeOverlay())throw new AssertionError("Local clock import did not apply false");
+        if(Control.vgpTapProtection() || !"false".equals(Control.exportSettings().getProperty("vgpTapProtection")))
+            throw new AssertionError("VGP protection import/export not applied");
         if(Control.battleOptions()!=5 || Control.autoBerry()!=701 || Control.vgpEnabled())
             throw new AssertionError("Import ordering, legacy berry migration or VGP OFF changed");
         if(!"5".equals(Control.exportSettings().getProperty("battleOptions")))

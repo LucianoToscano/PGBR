@@ -26,6 +26,7 @@ public final class Pad {
     private final SettingsPanel settings;
     private View launcher;
     private VgpToggle vgpToggle;
+    private AlertDialog vgpStartDialog;
     private int appliedUiScale;
     private int appliedWindowWidth,appliedWindowHeight;
     private final Rect appliedWindowBounds=new Rect();
@@ -218,7 +219,7 @@ public final class Pad {
         panelView.setOnApplyWindowInsetsListener((view,insets) -> {settings.applyInsets(insets);return insets;});
         panelView.requestApplyInsets();
 
-        vgpToggle=new VgpToggle(host);FrameLayout.LayoutParams vgpButtonLayout=new FrameLayout.LayoutParams(dp(Math.max(48,Control.vgpIconSize())),dp(Math.max(48,Control.vgpIconSize())),Gravity.TOP|Gravity.LEFT);vgpButtonLayout.leftMargin=dp(12);vgpButtonLayout.topMargin=dp(156);overlays.addView(vgpToggle,vgpButtonLayout);vgpToggle.setOnClickListener(v->{if(EternatusRouteRunner.active())EternatusRouteRunner.stop("Controle manual do VGP+ assumido.");Control.setVgpEnabled(!Control.vgpEnabled());refresh();});
+        vgpToggle=new VgpToggle(host);FrameLayout.LayoutParams vgpButtonLayout=new FrameLayout.LayoutParams(dp(Math.max(48,Control.vgpIconSize())),dp(Math.max(48,Control.vgpIconSize())),Gravity.TOP|Gravity.LEFT);vgpButtonLayout.leftMargin=dp(12);vgpButtonLayout.topMargin=dp(156);overlays.addView(vgpToggle,vgpButtonLayout);vgpToggle.setOnClickListener(v->handleVgpIconTap());
         vgpActivity=text("VGP",11,ink());vgpActivity.setPadding(dp(4),dp(2),dp(4),dp(2));vgpActivity.setMaxLines(1);vgpActivity.setEllipsize(android.text.TextUtils.TruncateAt.END);
         FrameLayout.LayoutParams vgpLayout=new FrameLayout.LayoutParams(dp(140),-2,Gravity.TOP|Gravity.LEFT);vgpLayout.leftMargin=dp(12);vgpLayout.topMargin=dp(216);overlays.addView(vgpActivity,vgpLayout);vgpActivity.setVisibility(View.GONE);
         buddyEmotionStatus=text("EP: aguardando",11,ink());buddyEmotionStatus.setPadding(dp(4),dp(2),dp(4),dp(2));buddyEmotionStatus.setMaxLines(1);buddyEmotionStatus.setEllipsize(android.text.TextUtils.TruncateAt.END);
@@ -293,6 +294,36 @@ public final class Pad {
         Bitmap bitmap=decodeMapIcon(preferred);
         return bitmap!=null?bitmap:decodeMapIcon(legacy);
     }
+    /** Protect only manual activation by the floating icon; do not block event automation. */
+    private void handleVgpIconTap() {
+        if (Control.vgpEnabled()) {
+            if (EternatusRouteRunner.active()) EternatusRouteRunner.stop("Controle manual do VGP+ assumido.");
+            Control.setVgpEnabled(false);
+            refresh();
+            return;
+        }
+        if (!Control.vgpTapProtection()) { enableVgpFromIcon(); return; }
+        if (vgpStartDialog != null && vgpStartDialog.isShowing()) return;
+        AlertDialog dialog = new AlertDialog.Builder(MapTheme.wrap(activity))
+            .setTitle("Ativar VGP+?")
+            .setMessage("O VGP+ poderá capturar Pokémon e girar PokéParadas automaticamente. Deseja realmente ativar?")
+            .setNegativeButton("Cancelar", null)
+            .setPositiveButton("Ativar VGP+", (d, which) -> {
+                if (!closed && Control.vgpOverlayVisible() && !Control.vgpEnabled())
+                    enableVgpFromIcon();
+            }).create();
+        vgpStartDialog = dialog;
+        dialog.setOnDismissListener(d -> { if (vgpStartDialog == dialog) vgpStartDialog = null; });
+        dialog.show();
+        MapTheme.styleButtons(dialog);
+    }
+    private void enableVgpFromIcon() {
+        if (closed || !Control.vgpOverlayVisible() || Control.vgpEnabled()) return;
+        if (EternatusRouteRunner.active()) EternatusRouteRunner.stop("Controle manual do VGP+ assumido.");
+        Control.setVgpEnabled(true);
+        refresh();
+    }
+
     private final class VgpToggle extends View {
         private final Paint art=new Paint(Paint.ANTI_ALIAS_FLAG|Paint.FILTER_BITMAP_FLAG);
         private final Paint glow=new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -325,9 +356,9 @@ public final class Pad {
             }
             return trimAlpha(decodeMapIcon(fallback));
         }
-        private final Bitmap deviceOff=hdState(0,"vgp-device-error.png");
-        private final Bitmap deviceError=hdState(1,"vgp-device-on.png");
-        private final Bitmap deviceOn=hdState(2,"vgp-device-off.png");
+        private final Bitmap deviceOff=hdState(0,"vgp-device-off.png");
+        private final Bitmap deviceError=hdState(1,"vgp-device-error.png");
+        private final Bitmap deviceOn=hdState(2,"vgp-device-on.png");
         private Bitmap personal;
         private int artworkVersion=-1;
         VgpToggle(Context context){super(context);setFocusable(true);setClickable(true);}
@@ -590,7 +621,7 @@ public final class Pad {
             if(!found.isEmpty()){setTextIfChanged(shinyBadge,found);shinyBadge.setContentDescription(dev.pgrazor.PtBr.tr(found+". Tap for options."));if(shinyDrag!=null)shinyDrag.refreshBounds();}}
         if(shundoOverlay!=null){shundoOverlay.refresh(!settings.isVisible()&&!(quickMenu!=null&&quickMenu.isShowing()));if(shundoDrag!=null)shundoDrag.refreshBounds();}
         if(gymAutomationStatus!=null){gymAutomationStatus.setVisibility(Control.hudLabelVisible(Control.HUD_GYM)?gymFeedOverlay.getVisibility():View.GONE);setTextIfChanged(gymAutomationStatus,GymAutomationSettings.overlayStatus());gymFeedDrag.refreshBounds();}
-        if(vgpToggle!=null){vgpToggle.setVisibility(Control.vgpOverlayVisible()&&!settings.isVisible()&&!(quickMenu!=null&&quickMenu.isShowing())?View.VISIBLE:View.GONE);vgpToggle.setContentDescription(dev.pgrazor.PtBr.tr("Virtual Go Plus "+(Control.vgpEnabled()?"on; tap to turn off":"off; tap to turn on")+". "+Control.vgpStatus()));vgpToggle.invalidate();}
+        if(vgpToggle!=null){vgpToggle.setVisibility(Control.vgpOverlayVisible()&&!settings.isVisible()&&!(quickMenu!=null&&quickMenu.isShowing())?View.VISIBLE:View.GONE);vgpToggle.setContentDescription(dev.pgrazor.PtBr.tr("Virtual Go Plus "+(Control.vgpEnabled()?"on; tap to turn off":Control.vgpTapProtection()?"off; tap to confirm activation":"off; tap to turn on")+". "+Control.vgpStatus()));vgpToggle.invalidate();}
 
         // Pair the status line with the toggle so the cooldown shutoff reason is visible even when VGP is off.
         if(buddyEmotionStatus!=null){buddyEmotionStatus.setVisibility(Control.hudLabelVisible(Control.HUD_BUDDY)&&BuddyEmotionSettings.overlayEnabled()&&!settings.isVisible()&&!(quickMenu!=null&&quickMenu.isShowing())?View.VISIBLE:View.GONE);setTextIfChanged(buddyEmotionStatus,compactBuddyStatus(BuddyEmotionSettings.status()));}
@@ -811,7 +842,7 @@ public final class Pad {
     }
     public void close() {
         if (closed) return;
-        closed = true;if(stopRouteDialog!=null)stopRouteDialog.dismiss(); stick.release(true); Control.suspendForBackground(); handler.removeCallbacks(tick);
+        closed = true;if(vgpStartDialog!=null){vgpStartDialog.dismiss();vgpStartDialog=null;}if(stopRouteDialog!=null)stopRouteDialog.dismiss(); stick.release(true); Control.suspendForBackground(); handler.removeCallbacks(tick);
         if(quickMenu!=null){quickMenu.destroy();quickMenu=null;}
         if(cooldownDrag!=null){cooldownDrag.detach();cooldownDrag=null;}if(vgpDrag!=null){vgpDrag.detach();vgpDrag=null;}if(transferDrag!=null){transferDrag.detach();transferDrag=null;}if(gameRoutesDrag!=null){gameRoutesDrag.detach();gameRoutesDrag=null;}
         if(localTimeDrag!=null){localTimeDrag.detach();localTimeDrag=null;}if(localTime!=null){localTime.close();overlays.removeView(localTime);localTime=null;}

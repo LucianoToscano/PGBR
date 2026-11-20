@@ -17,6 +17,9 @@ public class SettingsBackupRulesTest {
         JSONObject display=valid();
         display.getJSONObject("settings").put("localTimeFormat","5").put("cooldownEmphasis","true");
         SettingsBackupRules.validate(display);
+        JSONObject vgpTap=valid();vgpTap.getJSONObject("settings").put("vgpTapProtection","true");SettingsBackupRules.validate(vgpTap);
+        vgpTap.getJSONObject("settings").put("vgpTapProtection","false");SettingsBackupRules.validate(vgpTap);
+        vgpTap.getJSONObject("settings").put("vgpTapProtection","yes");rejects(vgpTap);
         display.getJSONObject("settings").put("cooldownEmphasis","yes");rejects(display);
         display.getJSONObject("settings").put("cooldownEmphasis","false").put("localTimeFormat","6");rejects(display);
         JSONObject legacy=valid();legacy.put("format","PGRazor settings");SettingsBackupRules.validate(legacy);
