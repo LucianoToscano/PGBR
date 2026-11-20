@@ -234,6 +234,8 @@ final class SettingsPanel {
         discord.setContentDescription(dev.pgrazor.PtBr.tr("Join the PGBR Discord community"));
         discord.setClickable(true); discord.setFocusable(true); sectionHeads.add(discord);
         panel.addView(discord, new LinearLayout.LayoutParams(-1,dp(48)));
+        // Links externos da comunidade ficam ocultos até decisão editorial do PGBR.
+        discord.setVisibility(View.GONE);
         discord.setOnClickListener(v -> {
             try { activity.startActivity(new Intent(Intent.ACTION_VIEW, android.net.Uri.parse("https://discord.gg/9QqfkDSQX3"))); }
             catch (android.content.ActivityNotFoundException unavailable) {

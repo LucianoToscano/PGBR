@@ -1153,6 +1153,34 @@ public final class RootPtBr {
         m.put("Selected: ", "Selecionado: ");
         m.put("Waiting for data", "Aguardando dados");
         m.put("Tap to retry", "Toque para tentar novamente");
+        m.put("Shundo Sniper on", "Ativar caçador de Shundo");
+        m.put("Shundo Sniper species", "Espécies para o caçador de Shundo");
+        m.put("Sources", "Fontes de dados");
+        m.put("PGBR feed", "Fonte do PGBR");
+        m.put("LivePokeMap (sign-in)", "LivePokeMap (requer login)");
+        m.put("PoGoCoordinates (slow)", "PoGoCoordinates (lento)");
+        m.put("Species: ", "Espécies: ");
+        m.put("Time between teleports", "Intervalo entre teletransportes");
+        m.put("Time between teleports: ", "Intervalo entre teletransportes: ");
+        m.put("Right away", "Imediatamente");
+        m.put("60 seconds", "60 segundos");
+        m.put("90 seconds", "90 segundos");
+        m.put(" selected", " selecionados");
+        m.put("This session: checked ", "Nesta sessão: verificados ");
+        m.put(" · shiny ", " · brilhantes ");
+        m.put(" · caught ", " · capturados ");
+        m.put("Experimental. Constant teleporting and remote catching raise the risk of an account warning or ban. Use an alt account, not your main.", "Experimental. Teletransportes constantes e capturas remotas aumentam o risco de advertência ou banimento da conta. Use uma conta secundária, não a principal.");
+        m.put("Teleports to 100% IV Pokémon and checks each for shiny. A shiny is held in its encounter until your cooldown ends, then caught. VGP+ pauses while this runs.", "Teletransporta até Pokémon com IV 100% e verifica se são brilhantes. Um brilhante permanece no encontro até o fim do tempo de espera para então ser capturado. O VGP+ fica pausado durante a execução.");
+        m.put("Activate Daily Adventure Incense in the game first. This steers a straight line at 10.5 km/h for up to 15 minutes. Stop any time. Galarian birds open automatically for you to handle. Walking and VGP stop. Move the joystick to resume idle walking.", "Primeiro, ative o Incenso de Aventura Diário no jogo. A sessão percorre uma linha reta a 10,5 km/h por até 15 minutos. Você pode parar a qualquer momento. Encontros com aves de Galar são abertos automaticamente para você lidar com eles. A caminhada e o VGP param. Mova o joystick para retomar a caminhada normal.");
+        m.put("Save a backup outside the app to keep settings through reinstalls. Includes favorites and their coordinates. Login tokens, current location, cooldown history and active routes are excluded.\n\nImport replaces the included settings and favorites. VGP stays off.", "Salve um backup fora do aplicativo para preservar as configurações após reinstalações. Inclui os locais favoritos e suas coordenadas. Tokens de acesso, localização atual, histórico de espera e rotas ativas não são incluídos.\n\nA importação substitui as configurações e os favoritos incluídos. O VGP permanece desligado.");
+        m.put("Root uses a fixed file in the game's external files folder. Copy it elsewhere before uninstalling the game; to import, place your backup at this path:\n", "A versão Root usa um arquivo fixo na pasta de arquivos externos do jogo. Copie-o para outro local antes de desinstalar. Para importar, coloque o backup neste caminho:\n");
+        m.put("No file picker is available.", "Nenhum seletor de arquivos está disponível.");
+        m.put("Open PGBR settings. Drag to reposition.", "Abrir configurações do PGBR. Arraste para reposicionar.");
+        m.put("Open PGBR quick menu. Drag to reposition.", "Abrir menu rápido do PGBR. Arraste para reposicionar.");
+        m.put("Checking ", "Verificando ");
+        m.put("Good to know", "Informações importantes");
+        m.put("Feature guides", "Guias de recursos");
+        m.put("Right by distance", "Imediatamente (conforme a distância)");
         LABELS = Collections.unmodifiableMap(m);
     }
     private RootPtBr() {}

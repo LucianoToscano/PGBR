@@ -36,7 +36,7 @@ final class SettingsBackup {
         export.setOnClickListener(v->pick(EXPORT));restore.setOnClickListener(v->pick(IMPORT));
         ScrollView scroll=new ScrollView(activity);scroll.addView(root);MapTheme.style(scroll);
         if(PgAssets.rooted()){
-            detail.append("\n\nRoot uses a fixed file in the game's external files folder. Copy it elsewhere before uninstalling the game; to import, place your backup at this path:\n"+rootedFile());
+            detail.append("\n\nA versão Root usa um arquivo fixo na pasta de arquivos externos do jogo. Copie-o para outro local antes de desinstalar. Para importar, coloque o backup neste caminho:\n"+rootedFile());
             dialog=new android.app.AlertDialog.Builder(MapTheme.wrap(activity)).setView(scroll).create();
             dialog.setCancelable(false);dialog.show();
         }else activity.setContentView(scroll);
