@@ -23,10 +23,10 @@ final class SettingsUi {
     }
 
     static int dp(Context context, float x) { return Math.round(x * context.getResources().getDisplayMetrics().density); }
-    static int ink() { return Control.darkTheme()?Color.rgb(235,241,246):Color.rgb(25,35,47); }
-    static int muted() { return Control.darkTheme()?Color.rgb(154,171,187):Color.rgb(88,105,121); }
-    static int surface() { return Control.darkTheme()?Color.rgb(20,27,37):Color.rgb(249,251,253); }
-    static int accent() { return Control.darkTheme()?Color.rgb(69,225,186):Color.rgb(0,116,92); }
+    static int ink() { return FeedTheme.chromeInk(); }
+    static int muted() { return FeedTheme.chromeMuted(); }
+    static int surface() { return FeedTheme.chromeSurface(); }
+    static int accent() { return FeedTheme.chromeAccent(); }
     static GradientDrawable rounded(Context context,int color,int radius){GradientDrawable d=new GradientDrawable();d.setColor(color);d.setCornerRadius(dp(context,radius));return d;}
 
     static Context dialogContext(Context context){return new ContextThemeWrapper(context,Control.darkTheme()?android.R.style.Theme_Material_Dialog_Alert:android.R.style.Theme_Material_Light_Dialog_Alert);}
