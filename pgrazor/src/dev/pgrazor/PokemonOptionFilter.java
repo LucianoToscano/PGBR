@@ -1,5 +1,6 @@
 package dev.pgrazor;
 
+import java.text.Normalizer;
 import java.util.Locale;
 
 /**
@@ -58,16 +59,38 @@ final class PokemonOptionFilter {
      * matches the name or the Dex number; a {@code #}-prefixed query matches the Dex number only.
      * Only the extracted Dex id is compared, so a form or variant id in a composite key never matches.
      */
+    /** Fold accents, case and repeated whitespace without altering selection keys. */
+    private static String fold(String text) {
+        String normalized = Normalizer.normalize(text == null ? "" : text, Normalizer.Form.NFD);
+        return normalized.replaceAll("\\p{M}+", "")
+            .toLowerCase(Locale.ROOT).trim().replaceAll("\\s+", " ");
+    }
+
     static boolean matchesSearch(String query, String label, String key) {
-        String q = query == null ? "" : query.trim().toLowerCase(Locale.US);
+        String q = fold(query);
         boolean dexOnly = q.startsWith("#");
         if (dexOnly) q = q.substring(1).trim();
         if (q.isEmpty()) return true;
+
         int dex = dexOf(key);
-        boolean dexHit = dex > 0 && String.valueOf(dex).contains(q);
+        String dexText = dex > 0 ? String.valueOf(dex) : "";
+        // Preserve partial #Dex lookups while accepting #006 for species #6.
+        boolean dexHit = !dexText.isEmpty() && dexText.contains(q);
+        if (!dexHit && dex > 0 && q.matches("0+[0-9]+")) {
+            try { dexHit = Integer.parseInt(q) == dex; }
+            catch (NumberFormatException ignored) { /* oversized query: no match */ }
+        }
         if (dexOnly) return dexHit;
-        boolean nameHit = label != null && label.toLowerCase(Locale.US).contains(q);
-        return nameHit || dexHit;
+
+        String name = fold(label);
+        if (name.contains(q) || dexHit) return true;
+        // "alola raichu" and "150 shiny" can match in any order.
+        String[] tokens = q.split(" ");
+        if (tokens.length < 2) return false;
+        for (String token : tokens) {
+            if (!name.contains(token) && !dexText.contains(token)) return false;
+        }
+        return true;
     }
 
     /** The category group and the search box intersected: an option is shown only when both keep it. */
