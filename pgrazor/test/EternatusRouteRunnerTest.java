@@ -28,20 +28,20 @@ public final class EternatusRouteRunnerTest {
         SystemClock.now += 4000;
         EternatusRouteRunner.tick();
         check(Control.quickspin && Control.vgpEnabled, "Start existing tools when ready");
-        EternatusRouteRunner.onClaim("UNRELATED");
+        EternatusRouteRunner.onClaim("UNRELATED","quest0");
         check(EternatusRouteRunner.currentStop() == 1, "Ignore other quest claims");
-        EternatusRouteRunner.onClaim("THROW_EXCELLENT");
+        EternatusRouteRunner.onClaim("THROW_EXCELLENT","quest1");
         check(EternatusRouteRunner.currentStop() == 2 && Control.teleports == 2, "Advance after exact claim");
         check(!Control.quickspin && !Control.vgpEnabled, "Disable tools immediately after travel");
-        EternatusRouteRunner.onClaim("THROW_EXCELLENT");
+        EternatusRouteRunner.onClaim("THROW_EXCELLENT","quest1");
         check(EternatusRouteRunner.currentStop() == 2, "Duplicate reply must not skip stop");
         SystemClock.now += 4000;
         EternatusRouteRunner.tick();
-        EternatusRouteRunner.onClaim("THROW_EXCELLENT");
+        EternatusRouteRunner.onClaim("THROW_EXCELLENT","quest2");
         check(EternatusRouteRunner.currentStop() == 3 && Control.teleports == 3, "Second claim advances");
         SystemClock.now += 4000;
         EternatusRouteRunner.tick();
-        EternatusRouteRunner.onClaim("THROW_EXCELLENT");
+        EternatusRouteRunner.onClaim("THROW_EXCELLENT","quest3");
         check(!EternatusRouteRunner.active(), "Last stop should finish");
         check(!EternatusMission.enabled, "Native research mode disarmed");
         check(!Control.quickspin && !Control.vgpEnabled && !Control.vgpOverlay,
