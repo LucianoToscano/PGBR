@@ -34,6 +34,10 @@ jobs:
           mkdir -p build/pgbr-cooldown-visual
           javac -encoding UTF-8 -d build/pgbr-cooldown-visual pgrazor/src/dev/pgrazor/CooldownVisual.java pgrazor/test/CooldownVisualTest.java
           java -cp build/pgbr-cooldown-visual dev.pgrazor.CooldownVisualTest
+      - name: Testar mascara visual somente do treinador autenticado
+        run: |
+          g++ -std=c++17 -Wall -Wextra -Werror -Ipgrazor/native pgrazor/native/trainer_privacy_policy_test.cpp -o /tmp/pgbr-trainer-privacy-test
+          /tmp/pgbr-trainer-privacy-test
       - name: Validar apelidos de treinador
         run: |
           mkdir -p build/pgbr-unit
