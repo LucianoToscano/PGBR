@@ -84,7 +84,7 @@ public final class BuddyEmotionSettings {
         if(value.isEmpty())return "No feeding";
         StringBuilder result=new StringBuilder();
         for(String id:value.split(","))for(int i=0;i<BERRIES.length;i++)if(id.equals(String.valueOf(BERRIES[i]))){
-            if(result.length()>0)result.append(" > ");result.append(BERRY_LABELS[i]);
+            if(result.length()>0)result.append(" > ");result.append(dev.pgrazor.PtBr.tr(BERRY_LABELS[i]));
         }
         return result.toString();
     }

@@ -65,7 +65,7 @@ public final class ResearchSettings {
 
     static String status() {
         synchronized (LOCK) {
-            String counts = "This session: claimed " + claimed + ", removed " + removed + ", caught " + caught;
+            String counts = dev.pgrazor.PtBr.tr("This session: claimed ") + claimed + dev.pgrazor.PtBr.tr(", removed ") + removed + dev.pgrazor.PtBr.tr(", caught ") + caught;
             return message.isEmpty() ? counts : counts + "\nLast: " + message;
         }
     }

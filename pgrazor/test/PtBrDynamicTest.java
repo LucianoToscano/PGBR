@@ -20,6 +20,22 @@ public final class PtBrDynamicTest {
         eq("Catch speed: Normal (about 1.5 s)","Velocidade de captura: Normal (aprox. 1,5 s)");
         eq("High CP threshold (0–10000): 1500","Limite de PC alto (0–10000): 1500");
         eq("Catch only: All species","Capturar somente: Todas as espécies");
+        eq("Razz Berry","Fruta Frambo");
+        eq("Nanab Berry","Fruta Caxí");
+        eq("Troy Disk Glacial","Módulo Atrair Glacial");
+        eq("Gen5 Evolution Stone","Pedra de Unova");
+        eq("Move Reroll Elite Fast Attack","MT de Ataque Ágil de Elite");
+        eq("Priority: longest distance","Prioridade: maior distância");
+        eq("Priority: shortest distance","Prioridade: menor distância");
+        eq("Starting 7 km egg","Iniciando ovo de 7 km");
+        eq("Ready: 35 recyclable item types","Pronto: 35 tipos de itens recicláveis");
+        eq("No field research seen yet. Tasks appear here as the game gives them to you while PGBR runs.","Nenhuma Pesquisa de Campo detectada ainda. As tarefas aparecerão aqui conforme o jogo as disponibilizar enquanto o PGBR estiver ativo.");
+        eq("This session: claimed ","Nesta sessão: resgatadas ");
+        eq(", removed ",", removidas ");
+        eq(", caught ",", capturadas ");
+        eq("Feeding priority: ","Prioridade de frutas: ");
+        eq("Search places or coordinates","Buscar lugares ou coordenadas");
+        eq("Power Spots","Pontos de Poder");
         System.out.println("PGBR: testes de textos dinamicos aprovados.");
     }
 }
