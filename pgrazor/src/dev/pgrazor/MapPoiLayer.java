@@ -235,7 +235,7 @@ final class MapPoiLayer {
         if (closed || hits.isEmpty()) return;
         if (hits.size() == 1) { showPoiDetails(hits.get(0)); return; }
         String[] labels = new String[hits.size()]; for (int i = 0; i < labels.length; i++) labels[i] = poiShortLabel(hits.get(i));
-        AlertDialog chooser = ChoiceList.attach(new AlertDialog.Builder(dialogContext).setTitle(dev.pgrazor.PtBr.tr("Nearby here (" + hits.size() + ")"))
+        AlertDialog chooser = ChoiceList.attach(new AlertDialog.Builder(dialogContext).setTitle(dev.pgrazor.PtBr.tr("Nearby here") + " (" + hits.size() + ")")
             .setNegativeButton(dev.pgrazor.PtBr.tr("Close"), null).create(), labels, which -> showPoiDetails(hits.get(which)));
         registerPoiDialog(chooser); chooser.show();
     }

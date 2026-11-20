@@ -36,6 +36,16 @@ public final class PtBrDynamicTest {
         eq("Feeding priority: ","Prioridade de frutas: ");
         eq("Search places or coordinates","Buscar lugares ou coordenadas");
         eq("Power Spots","Pontos de Poder");
+        eq("Search name or #dex","Buscar nome ou número da Pokédex");
+        eq("Shiny Scanner","Scanner de Brilhantes");
+        eq("Scan for shinies","Procurar Pokémon Brilhantes");
+        eq("Stop route?","Interromper a rota?");
+        eq("Stop route","Interromper rota");
+        eq("Nearby here","Próximos daqui");
+        eq("Nearby layers unavailable","Camadas de locais próximos indisponíveis");
+        eq("No live results in range.","Nenhum resultado disponível no alcance selecionado.");
+        eq("Encounter limit: 25","Limite de encontros: 25");
+        eq("UI scale: 100%","Escala da interface: 100%");
         System.out.println("PGBR: testes de textos dinamicos aprovados.");
     }
 }

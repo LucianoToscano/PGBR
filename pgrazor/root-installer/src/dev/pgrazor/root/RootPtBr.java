@@ -1295,6 +1295,31 @@ public final class RootPtBr {
         m.put("List", "Lista");
         m.put("Select shows this destination on the map. Choose Teleport or Walk here there to apply it.", "Selecionar mostra este destino no mapa. Depois, escolha Teletransportar ou Caminhar até lá.");
         m.put("recyclable item types", "tipos de itens recicláveis");
+        m.put("Choose a tag to preview eligible Pokemon. Each is evolved once, without the animation. Favorites, your buddy, deployed Pokemon, eggs, Shadow and purified Pokemon, and evolutions needing a branch choice or special condition are skipped. Candy and items are checked before each evolution. Start your Lucky Egg yourself if wanted.", "Escolha uma etiqueta para visualizar os Pokémon que podem evoluir. Cada um será evoluído uma vez, sem animação. Favoritos, companheiro, Pokémon em Ginásios, ovos, Sombrios, Purificados e evoluções que exijam escolha de forma ou condições especiais são ignorados. Doces e itens são verificados antes de cada evolução. Ative o Ovo da Sorte manualmente, se desejar.");
+        m.put("Acts only within 80 m of a Gym while the game is on the map screen. It slots eligible #Gym-tagged Pokémon first; the lowest-CP fallback is used only when enabled and no eligible #Gym defender is available, and it never picks favorite, buddy, or protected Pokémon. Feeding uses Nanab before Razz and only above the reserves you set. It obeys the game's own server limits, so some actions may be declined. No dust or coin payout is promised.", "Funciona somente a até 80 m de um Ginásio enquanto o jogo está na tela do mapa. Dá prioridade aos Pokémon elegíveis com a etiqueta #Gym; usa o Pokémon de menor PC apenas quando essa alternativa estiver ativada e não houver defensor elegível com a etiqueta. Nunca escolhe favoritos, companheiro ou Pokémon protegidos. A alimentação prioriza Caxí antes de Frambo e respeita as reservas configuradas. Os limites do servidor continuam valendo, portanto algumas ações podem ser recusadas. Não há garantia de Poeira Estelar nem Pokémoedas.");
+        m.put("Checks wild Pokémon within 80 m for shinies. Each check uses one encounter.", "Verifica se há Pokémon Brilhantes entre os selvagens num raio de 80 m. Cada verificação conta como um encontro.");
+        m.put("Scan for shinies", "Procurar Pokémon Brilhantes");
+        m.put("Phone notification", "Notificação no celular");
+        m.put("Stop walking when found", "Parar a caminhada ao encontrar");
+        m.put("Hold it (pause checks until caught or dismissed)", "Manter o encontro aberto (pausar até capturar ou dispensar)");
+        m.put("Pauses while VGP+, Shundo Sniper or Auto-Raid runs.", "Pausa enquanto o VGP+, o Caçador de Shundo ou as Reides automáticas estiverem ativos.");
+        m.put("Encounter limit: ", "Limite de encontros: ");
+        m.put("Shiny Scanner", "Scanner de Brilhantes");
+        m.put("No live results in range.", "Nenhum resultado disponível no alcance selecionado.");
+        m.put("Shiny Pokémon here", "Pokémon Brilhantes aqui");
+        m.put("Virtual Go Plus ", "GO Plus virtual ");
+        m.put("Hide overlay?", "Ocultar a sobreposição?");
+        m.put("Stop route?", "Interromper a rota?");
+        m.put("Keep walking", "Continuar caminhando");
+        m.put("Stop route", "Interromper rota");
+        m.put("Search name or #dex", "Buscar nome ou número da Pokédex");
+        m.put("UI scale: ", "Escala da interface: ");
+        m.put("Nearby here", "Próximos daqui");
+        m.put("Nearby locations loaded by the game (", "Locais próximos carregados pelo jogo (");
+        m.put("Nearby layers off", "Camadas de locais próximos desativadas");
+        m.put("Waiting for nearby game locations", "Aguardando locais próximos do jogo");
+        m.put("Nearby layers unavailable", "Camadas de locais próximos indisponíveis");
+        m.put(" (egg)", " (ovo)");
         LABELS = Collections.unmodifiableMap(m);
     }
     private RootPtBr() {}
