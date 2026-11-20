@@ -15,6 +15,21 @@ final class CoordinateClipboard {
         return String.format(Locale.US, "%.6f, %.6f", latitude, longitude);
     }
 
+    /** Prefills only a valid coordinate pair. Never sends clipboard data to logs or a server. */
+    static String coordinatesOnClipboard(Activity activity) {
+        ClipboardManager clipboard = (ClipboardManager) activity.getSystemService(Context.CLIPBOARD_SERVICE);
+        if (clipboard == null || !clipboard.hasPrimaryClip()) return "";
+        try {
+            ClipData data = clipboard.getPrimaryClip();
+            if (data == null || data.getItemCount() == 0) return "";
+            CharSequence value = data.getItemAt(0).coerceToText(activity);
+            if (value == null || value.length() > 240) return "";
+            String text = value.toString().trim();
+            CoordinateInput.parse(text); // Only valid lat/lon coordinates.
+            return text;
+        } catch (RuntimeException invalid) { return ""; }
+    }
+
     /** Copies and confirms with a short toast naming what was copied ({@code done}). */
     static void copy(Activity activity, double latitude, double longitude, String done) {
         if (!Double.isFinite(latitude) || !Double.isFinite(longitude)) return;
