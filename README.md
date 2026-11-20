@@ -1,19 +1,21 @@
 <p align="center"><img src="pgrazor/branding/pgbr-logo.webp" width="92" alt="Logotipo PGBR"></p>
 
 <h1 align="center">PGBR</h1>
-<p align="center"><strong>PGBR-v0.00.03-LT · Edição brasileira para Android</strong></p>
+<p align="center"><strong>PGBR-v0.00.08-LT · Edição brasileira para Android</strong></p>
 <p align="center">Controles de localização, joystick, captura, rotas e recursos opcionais de automação para Pokémon GO.</p>
 
 > **Status:** versão experimental PT-BR. A compilação automatizada passou nos testes; o funcionamento em aparelhos Android e a cobertura integral da tradução ainda precisam ser validados.
 
 ## Baixar o PGBR
 
-Acesse **[Compilações do PGBR no GitHub Actions](https://github.com/LucianoToscano/PGBR/actions/workflows/pgbr-build-full-ptbr-candidate.yml)**, abra a execução mais recente com ✓ e, em **Artifacts**, baixe o pacote `PGBR-v0.00.03-LT-APKs`.
+Os instaladores ficam na [página do pré-lançamento LT008](https://github.com/LucianoToscano/PGBR/releases/tag/v0.00.08-LT).
+
+Para obter o pacote de compilação, acesse **[Compilações do PGBR no GitHub Actions](https://github.com/LucianoToscano/PGBR/actions/workflows/pgbr-build-full-ptbr-candidate.yml)**, abra a execução mais recente com ✓ e, em **Artifacts**, baixe o pacote `PGBR-v0.00.08-LT-APKs`.
 
 O pacote ZIP contém:
-- **`PGBR-v0.00.03-LT.apk`** — instalador principal para Android ARM64, sem Root.
-- **`PGBR-v0.00.03-LT-Root.apk`** — instalador para aparelhos com Root.
-- **`PGBR-v0.00.03-LT-Root-module.zip`** — módulo Root para Magisk, KernelSU ou APatch.
+- **`PGBR-v0.00.08-LT.apk`** — instalador principal para Android ARM64, sem Root.
+- **`PGBR-v0.00.08-LT-Root.apk`** — instalador para aparelhos com Root.
+- **`PGBR-v0.00.08-LT-Root-module.zip`** — módulo Root para Magisk, KernelSU ou APatch.
 - Comprovantes de compilação e arquivo `SHA256SUMS.txt`.
 
 É necessário entrar no GitHub para baixar artefatos, que expiram conforme o prazo do workflow. O APK é assinado com a chave própria do PGBR e **não atualiza diretamente** instalações assinadas por outras chaves. Não desinstale sua versão anterior sem salvar os dados necessários.

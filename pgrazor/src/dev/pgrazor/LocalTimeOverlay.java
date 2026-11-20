@@ -21,6 +21,7 @@ final class LocalTimeOverlay extends TextView {
         int padding = SettingsUi.dp(activity, 4);
         setPadding(padding, 0, padding, 0);
         setIncludeFontPadding(false);
+        setMinWidth(SettingsUi.dp(activity, 48));
         setVisibility(GONE);
         applyTheme();
     }
