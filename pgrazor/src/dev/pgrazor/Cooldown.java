@@ -46,7 +46,25 @@ public final class Cooldown {
     }
     private static android.widget.ImageButton iconButton(Context ui,int icon,String description){
         android.widget.ImageButton button=new android.widget.ImageButton(ui);
-        button.setImageResource(icon);button.setContentDescription(description);
+        if(icon!=0)button.setImageResource(icon);
+        else button.setImageDrawable(new android.graphics.drawable.Drawable(){
+            private final android.graphics.Paint paint=new android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG);
+            public void draw(android.graphics.Canvas canvas){
+                android.graphics.Rect b=getBounds();
+                float x=b.left,y=b.top,w=b.width(),h=b.height();
+                paint.setStyle(android.graphics.Paint.Style.STROKE);
+                paint.setStrokeWidth(Math.max(1f,w*0.085f));
+                paint.setColor(MapTheme.dark()?0xff30dfb5:0xff087767);
+                canvas.drawRoundRect(x+w*.30f,y+h*.12f,x+w*.90f,y+h*.76f,w*.08f,w*.08f,paint);
+                canvas.drawRoundRect(x+w*.12f,y+h*.29f,x+w*.70f,y+h*.92f,w*.08f,w*.08f,paint);
+            }
+            public void setAlpha(int alpha){paint.setAlpha(alpha);}
+            public void setColorFilter(android.graphics.ColorFilter filter){paint.setColorFilter(filter);}
+            public int getOpacity(){return android.graphics.PixelFormat.TRANSLUCENT;}
+            public int getIntrinsicWidth(){return 24;}
+            public int getIntrinsicHeight(){return 24;}
+        });
+        button.setContentDescription(description);
         button.setScaleType(android.widget.ImageView.ScaleType.CENTER_INSIDE);
         button.setPadding(8,8,8,8);
         button.setColorFilter(MapTheme.dark()?0xff30dfb5:0xff087767);
@@ -97,7 +115,7 @@ public final class Cooldown {
                 info.setTextColor(MapTheme.ink());info.setTextSize(12);
                 info.setPadding(margin/2,0,margin/2,0);
                 row.addView(info,new LinearLayout.LayoutParams(0,-2,1));
-                android.widget.ImageButton copy=iconButton(ui,android.R.drawable.ic_menu_copy,"Copiar coordenadas");
+                android.widget.ImageButton copy=iconButton(ui,0,"Copiar coordenadas");
                 android.widget.ImageButton map=iconButton(ui,android.R.drawable.ic_menu_mapmode,"Abrir no mapa");
                 android.widget.ImageButton del=iconButton(ui,android.R.drawable.ic_menu_delete,"Excluir registro");
                 row.addView(copy,new LinearLayout.LayoutParams(unit*4/5,unit));
