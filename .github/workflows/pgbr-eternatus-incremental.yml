@@ -1,9 +1,9 @@
 name: PGBR - verificacao incremental Eternatus e privacidade
 on:
   push:
-    branches: [feature/eternatus-rota-automatica-lt, feature/lt-pvp-protecao-icones-hud-velocidades, feature/lt-hud-historico-locais-20261120, feature/eternatus-morph-tempestade-lt010]
+    branches: [feature/eternatus-rota-automatica-lt, feature/lt-pvp-protecao-icones-hud-velocidades, feature/lt-hud-historico-locais-20261120, feature/eternatus-morph-tempestade-lt010, feature/eternatus-vortex-fx-lt011]
   pull_request:
-    branches: [feature/pt-br-traducao, feature/lt-hud-historico-locais-20261120, feature/eternatus-vortex-fx-lt011]
+    branches: [feature/pt-br-traducao, feature/lt-hud-historico-locais-20261120]
 permissions:
   contents: read
 jobs:
