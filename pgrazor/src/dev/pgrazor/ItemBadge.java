@@ -64,7 +64,11 @@ final class ItemBadge extends View {
                 }
             }
         }
-        if(!found&&!failed)MISSED.put(id,true);
+        if(!found&&!failed){
+            MISSED.put(id,true);
+            // Capture exact missing catalog IDs so an asset can be added without guessing.
+            Control.event("item-icon-missing","id="+id);
+        }
         return null;
     }
     private void fill(int color){paint.setColor(color);paint.setStyle(Paint.Style.FILL);paint.setStrokeWidth(1);}
