@@ -1388,7 +1388,7 @@ public final class PtBr {
         if(line.startsWith("Paused: buddy action declined (")){
             int end=line.indexOf(')');
             if(end>32){
-                String count=line.substring(30,end);
+                String count=line.substring(line.indexOf('(')+1,end);
                 if(count.matches("[0-9]+"))
                     return "Pausado: ação do companheiro recusada ("+count+"). Desligue e ligue para retomar.";
             }
