@@ -447,11 +447,33 @@ final class SettingsPanel {
         launch(pokemonSearch,"Buscar por IV, Shiny, PvP e espécie",()->PogoFeedDialog.show(activity));
         launch(pokemonSearch,"Radar de Pokémon e locais próximos",()->LiveFeedDialog.show(activity));
         caption(pokemonSearch,"As fontes usam seus próprios serviços e filtros. Resultados globais e determinados dados podem exigir conta ou acesso específico.");
-        LinearLayout hud=group(loc,"Aparência das legendas");
-        Switch hudVisible=switchRow(hud,"Exibir legendas no mapa");
-        hudVisible.setChecked(Control.hudLabelsVisible());
-        hudVisible.setOnCheckedChangeListener((v,on)->{Control.setHudLabelsVisible(on);host.refresh();});
-        caption(hud,"Oculta os textos de estado, relógio e contadores sem desativar suas funções. Alertas importantes de Pokémon Shiny continuam visíveis.");
+        LinearLayout hud=group(loc,"Legendas individuais do mapa");
+        caption(hud,"Cada legenda tem seu próprio controle. Desativar uma legenda não desliga o recurso nem oculta seus ícones de ação. Alertas de Shiny continuam funcionando.");
+        final int[] captionBits={Control.HUD_VGP,Control.HUD_BUDDY,Control.HUD_AUTOMATION,
+            Control.HUD_GYM,Control.HUD_CATCH,Control.HUD_ENCOUNTERS,Control.HUD_SHINY,
+            Control.HUD_COOLDOWN,Control.HUD_LOCALTIME};
+        final String[] captionNames={"Status VGP+","Energia do companheiro","Status das automações",
+            "Status de Gym Slotter e frutas","Chance de captura","Contador de encontros",
+            "Aviso de Shiny encontrado","Texto do cooldown","Relógio local no mapa"};
+        final Switch[] captionSwitches=new Switch[captionBits.length];
+        for(int i=0;i<captionBits.length;i++){
+            final int bit=captionBits[i];
+            Switch item=switchRow(hud,"Exibir: "+captionNames[i]);captionSwitches[i]=item;
+            item.setChecked(Control.hudLabelVisible(bit));
+            item.setOnCheckedChangeListener((v,on)->{
+                if(Control.hudLabelVisible(bit)!=on){Control.setHudLabelVisible(bit,on);host.refresh();}
+            });
+        }
+        launch(hud,"Mostrar todas as legendas",()->{
+            Control.setHudLabelsVisible(true);
+            for(Switch item:captionSwitches)item.setChecked(true);
+            host.refresh();
+        });
+        launch(hud,"Ocultar todas as legendas",()->{
+            Control.setHudLabelsVisible(false);
+            for(Switch item:captionSwitches)item.setChecked(false);
+            host.refresh();
+        });
         TextView fontLabel=new TextView(activity);fontLabel.setTextSize(13);
         fontLabel.setText(dev.pgrazor.PtBr.tr("Tamanho das legendas: "+Control.hudLabelTextSp()+" sp"));hud.addView(fontLabel);
         SeekBar fontSlider=new SeekBar(activity);fontSlider.setMax(5);
