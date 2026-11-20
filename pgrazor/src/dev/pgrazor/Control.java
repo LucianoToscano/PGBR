@@ -1306,7 +1306,7 @@ public final class Control {
     public static int menuIconSizeDp(){return menuIconSizeDp;}
     public static void setMenuIconSizeDp(int value){menuIconSizeDp=Math.max(16,Math.min(40,value));saveSettings();}
     public static int gymIconSizeDp(){return gymIconSizeDp;}
-    public static void setGymIconSizeDp(int value){gymIconSizeDp=Math.max(32,Math.min(110,value));saveSettings();}
+    public static void setGymIconSizeDp(int value){gymIconSizeDp=Math.max(24,Math.min(110,value));saveSettings();}
     public static int gymIconOpacity(){return gymIconOpacity;}
     public static void setGymIconOpacity(int value){gymIconOpacity=Math.max(10,Math.min(100,value));saveSettings();}
     public static int overlayBackgroundOpacity(){return overlayBackgroundOpacity;}
@@ -1380,7 +1380,7 @@ public final class Control {
                         AccountProfiles.file(app,"joystick-custom.png").isFile()?3:0;
                 }catch(RuntimeException invalid){joystickStyle=0;}
                 menuIconSizeDp=readBoundedVisual(p,"menuIconSizeDp",22,16,40);
-                gymIconSizeDp=readBoundedVisual(p,"gymIconSizeDp",54,32,110);
+                gymIconSizeDp=readBoundedVisual(p,"gymIconSizeDp",54,24,110);
                 gymIconOpacity=readBoundedVisual(p,"gymIconOpacity",100,10,100);
                 overlayBackgroundOpacity=readBoundedVisual(p,"overlayBackgroundOpacity",45,0,100);
                 menuLauncherSizeDp=readBoundedVisual(p,"menuLauncherSizeDp",48,28,96);
