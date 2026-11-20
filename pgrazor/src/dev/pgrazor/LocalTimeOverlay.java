@@ -13,25 +13,36 @@ final class LocalTimeOverlay extends TextView {
     private final LocalTimeClock clock = new LocalTimeClock();
     private long lastRefresh;
     private boolean closed;
+    private int lastAppearanceKey=Integer.MIN_VALUE;
 
     LocalTimeOverlay(Activity activity) {
         super(activity);
-        setTextSize(13); setTypeface(Typeface.DEFAULT, Typeface.BOLD);
+        setTextSize(11); setTypeface(Typeface.DEFAULT, Typeface.BOLD);
         setGravity(Gravity.CENTER); setSingleLine(true);
-        int padding = SettingsUi.dp(activity, 10);
+        int padding = SettingsUi.dp(activity, 4);
         setPadding(padding, 0, padding, 0);
-        setMinWidth(SettingsUi.dp(activity, 100));
+        setMinWidth(SettingsUi.dp(activity, 78));
         setVisibility(GONE);
         applyTheme();
     }
 
     void applyTheme() {
-        setBackground(SettingsUi.rounded(getContext(), Control.darkTheme() ? 0xcc141b25 : 0xccf1f5f8, 10));
+        int opacity=Control.hudLabelOpacity(), font=Control.hudLabelTextSp();
+        int key=(opacity*100+font)*2+(Control.darkTheme()?1:0);
+        if(key==lastAppearanceKey)return;
+        lastAppearanceKey=key;
+        int alpha=Math.round(opacity*255f/100f);
+        int rgb=Control.darkTheme()?0x141b25:0xf1f5f8;
+        setBackground(alpha==0?null:SettingsUi.rounded(getContext(),(alpha<<24)|rgb,7));
+        setTextSize(font);
         setTextColor(SettingsUi.ink());
+        setShadowLayer(SettingsUi.dp(getContext(),1),0,0,Control.darkTheme()?0xff000000:0xffffffff);
     }
 
     void refresh(boolean allowed) {
-        boolean visible = !closed && allowed && Control.localTimeOverlay() && Control.desiredEnabled();
+        applyTheme();
+        boolean visible = !closed && allowed && Control.hudLabelsVisible()
+            && Control.localTimeOverlay() && Control.desiredEnabled();
         boolean showing = getVisibility() == VISIBLE;
         if (visible != showing) setVisibility(visible ? VISIBLE : GONE);
         if (!visible || !isShown() || getWindowVisibility() != VISIBLE) return;
