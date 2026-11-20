@@ -68,7 +68,7 @@ public final class EncounterCounter {
     }
     /** "1,240 encounters / 24 h", or empty while the counter is off. */
     static String label() {
-        return Control.encounterCounter() ? String.format(Locale.US, "%,d encounters / 24 h", total()) : "";
+        return Control.encounterCounter() ? String.format(new Locale("pt","BR"), "%,d encontros / 24 h", total()) : "";
     }
     /** The settings title: "PGBR · 1,240 / 24 h". */
     static String title() {
