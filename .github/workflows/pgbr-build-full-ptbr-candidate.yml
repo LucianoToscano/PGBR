@@ -156,6 +156,38 @@ jobs:
             dist/release/build-info.json
           if-no-files-found: error
           retention-days: 14
+      - name: Publicar pre-lancamento validado no GitHub Releases
+        if: github.event_name == 'push' && github.ref_name == 'feature/lt-hud-historico-locais-20261120'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ env.PGBR_TAG }}
+        shell: pwsh
+        run: |
+          # Only publish the six validated outputs, never the original game package or signing secrets.
+          python -B tools/verify_release.py dist/release --tag $env:RELEASE_TAG
+          if ($LASTEXITCODE -ne 0) { throw 'Release bundle did not pass verification' }
+          $names = @(
+            "PGBR-$env:RELEASE_TAG.apk",
+            "PGBR-$env:RELEASE_TAG-Root.apk",
+            "PGBR-$env:RELEASE_TAG-Root-module.zip",
+            'build-info.json',
+            'root-build-info.json',
+            'SHA256SUMS.txt'
+          )
+          $assets = @()
+          foreach ($name in $names) {
+            $file = Join-Path 'dist/release' $name
+            if (!(Test-Path -LiteralPath $file -PathType Leaf)) { throw "Missing validated release asset: $name" }
+            $assets += $file
+          }
+          $notes = "docs/releases/$env:RELEASE_TAG.md"
+          if (!(Test-Path -LiteralPath $notes -PathType Leaf)) { throw "Missing release notes: $notes" }
+          gh release view $env:RELEASE_TAG --repo $env:GITHUB_REPOSITORY --json tagName *> $null
+          if ($LASTEXITCODE -eq 0) { throw "Release tag already exists: $env:RELEASE_TAG (refusing to overwrite)" }
+          gh release create $env:RELEASE_TAG @assets --repo $env:GITHUB_REPOSITORY --target $env:GITHUB_SHA --title "PGBR $env:RELEASE_TAG (pre-lancamento)" --notes-file $notes --prerelease
+          if ($LASTEXITCODE -ne 0) { throw 'GitHub Release publication failed' }
+          gh release view $env:RELEASE_TAG --repo $env:GITHUB_REPOSITORY --json tagName,url,assets
+          if ($LASTEXITCODE -ne 0) { throw 'Published release could not be verified' }
       - name: Remove signing key
         if: always()
         shell: pwsh
