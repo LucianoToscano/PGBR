@@ -59,7 +59,7 @@ public final class EternatusRouteRunnerTest {
             "Original throw configuration must be restored");
         // A stop without the chosen research may only be skipped by the player,
         // never recorded as a candy claim or advanced by a duplicate native reply.
-        check(EternatusRouteRunner.start(activity),"Second route starts after clean shutdown");
+        check(EternatusRouteRunner.start(activity,1),"Explicit restart from first stop remains available");
         Cooldown.remainingMs=9000;
         check(!EternatusRouteRunner.skipCurrentStop(),"Manual skip obeys cooldown");
         Cooldown.remainingMs=0;
