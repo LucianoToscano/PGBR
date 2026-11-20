@@ -1,7 +1,7 @@
 name: PGBR - verificacao incremental Eternatus e privacidade
 on:
   push:
-    branches: [feature/eternatus-rota-automatica-lt]
+    branches: [feature/eternatus-rota-automatica-lt, feature/lt-pvp-protecao-icones-hud-velocidades]
   pull_request:
     branches: [feature/pt-br-traducao]
 permissions:
