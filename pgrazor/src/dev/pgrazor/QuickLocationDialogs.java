@@ -48,6 +48,12 @@ public final class QuickLocationDialogs {
         LinearLayout.LayoutParams hereLp = new LinearLayout.LayoutParams(-1, -2); hereLp.bottomMargin = dp(ctx, 8);
         form.addView(here, hereLp);
         EditText coordinates = input(ctx, "Latitude, longitude");
+        String pasted = CoordinateClipboard.coordinatesOnClipboard(activity);
+        if (!pasted.isEmpty()) {
+            coordinates.setText(pasted);
+            coordinates.setSelection(pasted.length());
+            coordinates.setContentDescription("Coordenadas válidas preenchidas da área de transferência");
+        }
         form.addView(coordinates);
         AlertDialog dialog = new AlertDialog.Builder(ctx).setTitle(dev.pgrazor.PtBr.tr("Go to coordinates")).setView(form)
             .setNegativeButton(dev.pgrazor.PtBr.tr("Cancel"), null).setNeutralButton(dev.pgrazor.PtBr.tr("Walk"), null).setPositiveButton(dev.pgrazor.PtBr.tr("Teleport"), null).create();
