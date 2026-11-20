@@ -1361,6 +1361,9 @@ public final class RootPtBr {
         m.put("Filter by species", "Filtrar por espécie");
         m.put("No nearby locations loaded yet. Move around in-game, then try again.", "Ainda não foram carregados locais próximos. Movimente-se no jogo e tente novamente.");
         m.put("Use a saved preset", "Usar uma predefinição salva");
+        m.put(" encounters / 24 h", " encontros / 24 h");
+        m.put("Paused: buddy action declined", "Pausado: ação do companheiro recusada");
+        m.put("Close and reopen settings to refresh", "Feche e reabra as configurações para atualizar");
         LABELS = Collections.unmodifiableMap(m);
     }
     private RootPtBr() {}
