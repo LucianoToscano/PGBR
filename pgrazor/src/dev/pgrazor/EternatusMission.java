@@ -46,17 +46,39 @@ public final class EternatusMission {
         return "R4|3|1|0|"+chosen;
     }
     /** Compatibility for callers without quest-instance metadata; such claims cannot advance a GPX. */
-    public static void onResult(String phase,String observedTemplate) { onResult(phase,observedTemplate,""); }
+    public static void onResult(String phase,String observedTemplate) { onResult(phase,observedTemplate,"",""); }
     public static void onResult(String phase,String observedTemplate,String questId) {
-        if(!enabled||!template.equals(observedTemplate))return;
-        if("claimed".equals(phase)){
-            Context app=context;
-            if(app!=null&&EternatusProgress.confirm(app)){
-                state="Pesquisa selecionada resgatada. Progresso salvo: "+EternatusProgress.confirmed(app)+
-                    " resgates (a quantidade real de doces precisa ser conferida no jogo).";
-                Control.event("eternatus-research-claim",observedTemplate);
-                EternatusRouteRunner.onClaim(observedTemplate,questId);
-            }else state="A pesquisa foi resgatada, mas o registro local não foi salvo.";
-        }else if("error".equals(phase))state="Erro ao processar pesquisa selecionada. Confira as pesquisas no jogo.";
+        onResult(phase,observedTemplate,questId,"");
+    }
+    public static void onResult(String phase,String observedTemplate,String questId,String reason) {
+        if(!enabled)return;
+        if("error".equals(phase)) {
+            if(observedTemplate!=null&&!observedTemplate.isEmpty()&&!template.equals(observedTemplate))return;
+            String safe=reason==null?"":reason.trim();
+            if(safe.length()>140)safe=safe.substring(0,140);
+            state=safe.isEmpty()
+                ? "Falha na pesquisa. Nenhuma parada avançou; verifique a tarefa no jogo."
+                : "Falha na pesquisa: "+safe+" (sem avanço automático).";
+            EternatusRouteRunner.onResearchError(observedTemplate,safe);
+            Control.event("eternatus-research-error",state);
+            return;
+        }
+        if(!template.equals(observedTemplate)||!"claimed".equals(phase))return;
+        // Never count a duplicate native reply or one without a verified quest instance ID.
+        // Native callbacks refer to the exact game quest, never to a guessed candy reward.
+        if(questId==null||questId.isEmpty()){
+            state="O jogo confirmou uma pesquisa sem identificador. Confira manualmente: a rota não avançou.";
+            return;
+        }
+        if(!EternatusRouteRunner.onClaim(observedTemplate,questId)) {
+            state="Confirmação ignorada (duplicada, atrasada ou de outra parada). Nenhum doce foi contado.";
+            return;
+        }
+        Context app=context;
+        if(app!=null&&EternatusProgress.confirm(app)){
+            state="Pesquisa selecionada resgatada. Progresso salvo: "+EternatusProgress.confirmed(app)+
+                " resgates (a quantidade real de doces precisa ser conferida no jogo).";
+            Control.event("eternatus-research-claim",observedTemplate);
+        }else state="Resgate confirmado pelo jogo, mas o registro local não foi salvo.";
     }
 }
