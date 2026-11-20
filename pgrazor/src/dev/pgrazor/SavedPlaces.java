@@ -18,11 +18,13 @@ import org.json.JSONObject;
 public final class SavedPlaces {
     public static final int LIMIT = 50;
     public static final int NAME_LIMIT = 40;
-    public static final String[] CATEGORIES={"Geral","Top","Farm","Missões","Rotas","Eventos","Outros"};
+    public static final String[] CATEGORIES=Entry.CATEGORIES;
     private static final int JSON_LIMIT = 64 * 1024;
     private final SharedPreferences preferences;
 
     public static final class Entry {
+        // Isolated from the JSON-backed outer class so desktop Java validation remains independent of Android.
+        public static final String[] CATEGORIES={"Geral","Top","Farm","Missões","Rotas","Eventos","Outros"};
         public final String id, name, category;
         public final double latitude, longitude;
         public final long createdAtMs;
