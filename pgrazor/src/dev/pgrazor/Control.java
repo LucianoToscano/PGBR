@@ -1282,6 +1282,22 @@ public final class Control {
     public static boolean trainerAliasEnabled(){return trainerAliasEnabled;}
     public static int trainerPrivacyMode(){return trainerPrivacyMode;}
     public static String trainerAlias(){return trainerAlias;}
+    /**
+     * Push only an authenticated local name and presentation mode to the UI hook.
+     * Never override a getter from PlayerService or modify IDs, login or RPCs.
+     * A missing native bridge is reported as unavailable, not protected.
+     */
+    static int syncTrainerPrivacyDisplay(){
+        try{
+            return NativeCore.trainerPrivacyConfigure(
+                trainerPrivacyMode != 0, AccountProfiles.authenticatedTrainerName());
+        }catch(UnsatisfiedLinkError | NoClassDefFoundError unavailable){return -2;}
+    }
+    static int trainerPrivacyDisplayStatus(){
+        try{return NativeCore.trainerPrivacyStatus();}
+        catch(UnsatisfiedLinkError | NoClassDefFoundError unavailable){return -1;}
+    }
+
     /** PGBR-only presentation, never the identity sent to the game. */
     public static String visibleTrainerName(String original){
         if(trainerPrivacyMode==1)return "*****";
@@ -1294,6 +1310,7 @@ public final class Control {
         trainerPrivacyMode=mode;
         trainerAliasEnabled=mode==2;
         saveSettings();
+        syncTrainerPrivacyDisplay();
     }
     public static boolean setCustomTrainerAlias(String value){
         if(!TrainerAliasPolicy.validCustom(value))return false;
@@ -1301,12 +1318,13 @@ public final class Control {
         trainerPrivacyMode=2;
         trainerAliasEnabled=true;
         saveSettings();
+        syncTrainerPrivacyDisplay();
         return true;
     }
     public static void setTrainerAliasEnabled(boolean value){
         if(value&&!TrainerAliasPolicy.validCustom(trainerAlias))
             trainerAlias=TrainerAliasPolicy.generate(trainerAliasRandom);
-        trainerAliasEnabled=value;trainerPrivacyMode=value?2:0;saveSettings();
+        trainerAliasEnabled=value;trainerPrivacyMode=value?2:0;saveSettings();syncTrainerPrivacyDisplay();
     }
     public static void regenerateTrainerAlias(){
         String old=trainerAlias;
@@ -1315,6 +1333,7 @@ public final class Control {
             if(!trainerAlias.equals(old))break;
         }
         saveSettings();
+        syncTrainerPrivacyDisplay();
     }
     // Visibility only. Bits are stable menu-entry IDs, independent of feature settings.
     private static volatile int quickMenuHidden;
