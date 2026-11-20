@@ -44,6 +44,12 @@ public final class GpxRoute {
     /** Number of points in the route. */
     public int size() { return points.length; }
 
+    /** Read one coordinate without copying thousands of unrelated GPX points on every tick. */
+    public double[] point(int index) {
+        if(index<0||index>=points.length)throw new IndexOutOfBoundsException("Route position "+(index+1));
+        return new double[]{points[index][0],points[index][1]};
+    }
+
     /** A deep copy of the ordered [lat, lon] points; mutating the result never affects this route. */
     public double[][] points() {
         double[][] copy = new double[points.length][];
