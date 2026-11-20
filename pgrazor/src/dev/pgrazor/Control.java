@@ -1203,14 +1203,37 @@ public final class Control {
     private static volatile int menuLauncherIconStyle=0;
     // Client-only privacy mask. Do not override PlayerService, account data or RPC fields.
     private static volatile boolean trainerAliasEnabled;
+    private static volatile int trainerPrivacyMode; // 0=original, 1=hidden in PGBR, 2=local alias
     private static volatile String trainerAlias="";
     private static final java.security.SecureRandom trainerAliasRandom=new java.security.SecureRandom();
     public static boolean trainerAliasEnabled(){return trainerAliasEnabled;}
+    public static int trainerPrivacyMode(){return trainerPrivacyMode;}
     public static String trainerAlias(){return trainerAlias;}
+    /** PGBR-only presentation, never the identity sent to the game. */
+    public static String visibleTrainerName(String original){
+        if(trainerPrivacyMode==1)return "Treinador";
+        if(trainerPrivacyMode==2&&TrainerAliasPolicy.validCustom(trainerAlias))return trainerAlias;
+        return original==null?"":original;
+    }
+    public static void setTrainerPrivacyMode(int mode){
+        if(mode<0||mode>2)return;
+        if(mode==2&&!TrainerAliasPolicy.validCustom(trainerAlias))trainerAlias=TrainerAliasPolicy.generate(trainerAliasRandom);
+        trainerPrivacyMode=mode;
+        trainerAliasEnabled=mode==2;
+        saveSettings();
+    }
+    public static boolean setCustomTrainerAlias(String value){
+        if(!TrainerAliasPolicy.validCustom(value))return false;
+        trainerAlias=value;
+        trainerPrivacyMode=2;
+        trainerAliasEnabled=true;
+        saveSettings();
+        return true;
+    }
     public static void setTrainerAliasEnabled(boolean value){
-        if(value&&!TrainerAliasPolicy.valid(trainerAlias))
+        if(value&&!TrainerAliasPolicy.validCustom(trainerAlias))
             trainerAlias=TrainerAliasPolicy.generate(trainerAliasRandom);
-        trainerAliasEnabled=value;saveSettings();
+        trainerAliasEnabled=value;trainerPrivacyMode=value?2:0;saveSettings();
     }
     public static void regenerateTrainerAlias(){
         String old=trainerAlias;
@@ -1305,7 +1328,7 @@ public final class Control {
             menuLauncherSizeDp=48;menuLauncherOpacity=100;menuLauncherBgOpacity=0;gymBackgroundOpacity=45;menuLauncherIconStyle=0;
             vgpIconOpacity=100;vgpBackgroundOpacity=75;
             transferIvKeepPercent=90;
-            trainerAliasEnabled=false;trainerAlias="";
+            trainerAliasEnabled=false;trainerPrivacyMode=0;trainerAlias="";
             idleWalking=false;engine.setIdleWalking(false);
             SmartCatchSettings.read(new Properties());
             GymAutomationSettings.read(new Properties());
@@ -1327,7 +1350,9 @@ public final class Control {
                 darkTheme=Boolean.parseBoolean(p.getProperty("darkTheme","true"));
                 trainerAliasEnabled=Boolean.parseBoolean(p.getProperty("trainerAliasEnabled","false"));
                 trainerAlias=p.getProperty("trainerAlias","");
-                if(!TrainerAliasPolicy.valid(trainerAlias))trainerAlias="";
+                if(!TrainerAliasPolicy.validCustom(trainerAlias))trainerAlias="";
+                trainerPrivacyMode=readBoundedVisual(p,"trainerPrivacyMode",trainerAliasEnabled?2:0,0,2);
+                trainerAliasEnabled=trainerPrivacyMode==2;
                 if(trainerAliasEnabled&&trainerAlias.isEmpty())
                     trainerAlias=TrainerAliasPolicy.generate(trainerAliasRandom);
                 quickMenuHidden=boundedSetting(p,"quickMenuHidden",8191);
@@ -1527,6 +1552,7 @@ public final class Control {
         p.setProperty("locationSpoofing",String.valueOf(desiredEnabled));
         p.setProperty("darkTheme",String.valueOf(darkTheme));p.setProperty("uiScalePercent",String.valueOf(uiScalePercent));
         p.setProperty("trainerAliasEnabled",String.valueOf(trainerAliasEnabled));
+        p.setProperty("trainerPrivacyMode",String.valueOf(trainerPrivacyMode));
         p.setProperty("trainerAlias",trainerAlias);
         p.setProperty("joystickVisible",String.valueOf(joystickVisible));
         p.setProperty("joystickSizeDp",String.valueOf(joystickSizeDp));
