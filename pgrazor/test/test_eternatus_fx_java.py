@@ -34,7 +34,14 @@ class EternatusStormFxTests(unittest.TestCase):
         self.assertIn("canvas.drawBitmap(smoke",fx)
         self.assertIn("RadialGradient",fx)
         self.assertIn("SweepGradient",fx)
-        self.assertIn("stormFx.joystick(canvas,stormVortex,morphStorm",pad)
+        self.assertIn("stormFx.joystick(canvas,fxVortex!=null?fxVortex:stormVortex",pad)
+        self.assertIn('fxVortex=art("eternatus-fx-vortex.png")',pad)
+        self.assertIn('fxSmoke=art("eternatus-fx-soft-smoke.png")',pad)
+        self.assertIn('fxWispy=art("eternatus-fx-smoke-wispy.png")',pad)
+        for texture in ("vortex", "soft-smoke", "smoke-wispy"):
+            sprite=ROOT/"assets"/"map-icons"/f"eternatus-fx-{texture}.png"
+            self.assertTrue(sprite.is_file(),str(sprite))
+            self.assertGreater(sprite.stat().st_size,5000)
         self.assertIn("knobX=cx+x*travel,knobY=cy+y*travel",pad)
         self.assertIn("Control.engine.input(x,-y)",pad)
         self.assertIn("canvas.drawBitmap(builtinThumb",pad)
@@ -46,6 +53,7 @@ class EternatusStormFxTests(unittest.TestCase):
         self.assertIn("void ballBehind(",fx)
         self.assertIn("void ballFront(",fx)
         self.assertIn("stormFx.ballBehind(canvas",pad)
+        self.assertIn('stormSmoke=read("pgrazor/map-icons/eternatus-fx-smoke-wispy.png")',pad)
         self.assertIn("stormFx.ballFront(canvas",pad)
         self.assertIn("canvas.drawBitmap(morphBallStorm",pad)
         self.assertIn("EternatusMorph.overlayAlpha(now)",pad)
