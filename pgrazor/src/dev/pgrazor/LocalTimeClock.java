@@ -17,6 +17,25 @@ final class LocalTimeClock {
     private long minute = Long.MIN_VALUE;
     private SimpleDateFormat formatter;
     private String text = "--:--";
+    private String compactZone;
+    private long compactMinute = Long.MIN_VALUE;
+    private String compactText = "--:--";
+
+    /** Always 24-hour, with the local date. Uses the destination IANA zone and DST rules. */
+    String compactLabel(double latitude,double longitude,long now) {
+        final String zone;
+        try { zone=TimeZoneLookup.zoneId(latitude,longitude); }
+        catch (IllegalArgumentException invalid) { return "--:--"; }
+        if(!AVAILABLE.contains(zone))return "--:--";
+        long minuteNow=Math.floorDiv(now,60000L);
+        if(!zone.equals(compactZone)||minuteNow!=compactMinute){
+            compactZone=zone;compactMinute=minuteNow;
+            SimpleDateFormat date=new SimpleDateFormat("HH:mm  •  dd/MM/yy",new Locale("pt","BR"));
+            date.setTimeZone(TimeZone.getTimeZone(zone));
+            compactText=date.format(new Date(now));
+        }
+        return compactText;
+    }
 
     String label(double latitude, double longitude, long now, boolean twentyFourHour, Locale language) {
         final String zone;
