@@ -106,6 +106,7 @@ public final class Pad {
         private final Paint paint=new Paint(Paint.ANTI_ALIAS_FLAG|Paint.FILTER_BITMAP_FLAG);
         private final Paint shine=new Paint(Paint.ANTI_ALIAS_FLAG);
         private final Bitmap classic, eterna, eternaAura, morphBallClean, morphBallStorm;
+        private final EternatusVisualEffects stormFx = new EternatusVisualEffects();
         private Bitmap personal;
         private int artworkVersion=-1;
         PgbrIcon(Context context){
@@ -152,6 +153,11 @@ public final class Pad {
                 paint.setColor(Color.WHITE);paint.setAlpha(255);paint.setStyle(Paint.Style.FILL);
                 float margin=(stormOn && !morphReady)?sz*.045f:sz*.015f;
                 RectF imageBounds=new RectF(cx-sz*.5f+margin,cy-sz*.5f+margin,cx+sz*.5f-margin,cy+sz*.5f-margin);
+                if (stormOn) {
+                    // First the storm approaches behind the stationary Poké Ball.
+                    stormFx.ballBehind(canvas, morphBallStorm != null ? morphBallStorm : eternaAura,
+                        cx, cy, sz*.5f, now, Control.eternatusFxIntensity(), Control.eternatusFxSpeed());
+                }
                 canvas.drawBitmap(logo,null,imageBounds,paint);
                 if (morphReady && stormOn) {
                     // Image-based storm dissolves into the clean ball and back.
@@ -160,10 +166,17 @@ public final class Pad {
                     canvas.drawBitmap(morphBallStorm,null,imageBounds,paint);
                     paint.setAlpha(255);
                 }
+                if (stormOn) {
+                    // Rotating corona and diffused storm illumination; the ball never spins.
+                    stormFx.ballFront(canvas,cx,cy,sz*.5f,now,
+                        Control.eternatusFxIntensity(),Control.eternatusFxSpeed());
+                }
             }else{
                 paint.setColor(SettingsUi.accent());canvas.drawCircle(cx,cy,sz*.4f,paint);
             }
-            if (isShown() && !closed && (stormOn || style == 0)) postInvalidateDelayed(stormOn ? 50 : 150);
+            if (isShown() && !closed && (stormOn || style == 0))
+                postInvalidateDelayed(stormOn
+                    ? EternatusFxTiming.frameDelayMs(Control.eternatusFxIntensity()) : 150);
         }
     }
 
@@ -499,7 +512,9 @@ public final class Pad {
     private void refreshLauncherAppearance(){
         if(launcher==null)return;
         int size=Control.menuLauncherSizeDp(),opacity=Control.menuLauncherOpacity();
-        int stormAppearance = Control.menuLauncherBgOpacity() * 2 + (Control.joystickEternatusEffects() ? 1 : 0);
+        int stormAppearance = Control.menuLauncherBgOpacity() * 64
+            + (Control.joystickEternatusEffects() ? 1 : 0)
+            + Control.eternatusFxIntensity() * 4 + Control.eternatusFxSpeed() * 16;
         if (lastStormAppearance != stormAppearance) {
             lastStormAppearance = stormAppearance;
             launcher.invalidate();
@@ -521,7 +536,8 @@ public final class Pad {
         if(stick==null||joystickOverlay==null)return;
         int size=Control.joystickSizeDp(),opacity=Control.joystickOpacity();
         int style=Control.joystickStyle();
-        int effects=Control.joystickEternatusEffects()?1:0;
+        int effects=(Control.joystickEternatusEffects()?1:0)
+            + 4*Control.eternatusFxIntensity() + 16*Control.eternatusFxSpeed();
         if(lastJoystickStyle!=style||lastJoystickEffects!=effects){
             lastJoystickStyle=style;lastJoystickEffects=effects;stick.invalidate();
         }
@@ -884,8 +900,8 @@ public final class Pad {
         private final RectF artBounds = new RectF();
         private int imageGeneration=-1,loadedStyle=-1;
         private final Paint effect=new Paint(Paint.ANTI_ALIAS_FLAG);
-        private final Path smokeClip=new Path();
-          float x, y;
+        private final EternatusVisualEffects stormFx = new EternatusVisualEffects();
+        float x, y;
         int pointer = -1;
         long cameraGesture=-1;
         boolean gestureCamera;
@@ -921,6 +937,7 @@ public final class Pad {
                 // New reversible visual transition. The center is a separate movable bitmap.
                 builtinBase=art("joystick-eternatus-morph-clean.webp");
                 morphStorm=art("joystick-eternatus-morph-storm.webp");
+                stormVortex=art("joystick-eternatus-vortex.webp");
                 builtinThumb=art("joystick-eternatus-morph-thumb.webp");
                 if(builtinBase==null || morphStorm==null || builtinThumb==null){
                     // Safe fallback if an older package lacks the imported art.
@@ -983,22 +1000,11 @@ public final class Pad {
                         float blend=EternatusMorph.blend(now);
                         paint.setAlpha(Math.round(255f*blend));
                         canvas.drawBitmap(morphStorm,null,artBounds,paint);
-                        // Drift only the translucent storm annulus; leave the crystalline rim
-                        // and movable center fixed. Uses the actual smoke/bolts in the source art.
-                        // No procedural zigzag lightning or extra animation worker.
-                        if(blend>.01f){
-                            smokeClip.rewind();
-                            smokeClip.setFillType(Path.FillType.EVEN_ODD);
-                            smokeClip.addCircle(cx,cy,outer*.76f,Path.Direction.CW);
-                            smokeClip.addCircle(cx,cy,outer*.41f,Path.Direction.CW);
-                            int saved=canvas.save();
-                            canvas.clipPath(smokeClip);
-                            canvas.rotate((now%52000L)*(360f/52000f),cx,cy);
-                            paint.setAlpha(Math.round(42f*blend));
-                            canvas.drawBitmap(morphStorm,null,artBounds,paint);
-                            canvas.restoreToCount(saved);
-                        }
                         paint.setAlpha(255);
+                        // The actual 2-layer storm now rotates visibly in opposing directions,
+                        // with diffused flashes. Clip keeps the crystal frame/knob stationary.
+                        stormFx.joystick(canvas,stormVortex,morphStorm,cx,cy,outer,now,
+                            Control.eternatusFxIntensity(),Control.eternatusFxSpeed());
                     }
                 } else if (stormOn && stormVortex != null && stormRim != null) {
                     int saved = canvas.save();
@@ -1019,7 +1025,8 @@ public final class Pad {
                 canvas.drawBitmap(builtinThumb,null,
                     new RectF(knobX-thumbR,knobY-thumbR,knobX+thumbR,knobY+thumbR),paint);
                 if(stormOn&&isShown()&&!closed){
-                    if(morphReady)postInvalidateDelayed(50); // ~20 fps, no animation thread
+                    if(morphReady)postInvalidateDelayed(
+                        EternatusFxTiming.frameDelayMs(Control.eternatusFxIntensity())); // 20-30 FPS
                     else postInvalidateDelayed(80); // legacy vortex option, bounded redraw
                 }
                 return;
