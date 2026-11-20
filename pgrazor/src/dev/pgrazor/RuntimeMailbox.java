@@ -84,7 +84,7 @@ public final class RuntimeMailbox {
         "throwGrade::int",
         "transferKeepAll::boolean",
         "transferKeepSpecies::String",
-        "transferProtect::int",
+        "nativeTransferProtect::int",
         "vgpAllowed::boolean",
         "vgpEnabled::boolean",
         "vgpMapVisible::boolean",

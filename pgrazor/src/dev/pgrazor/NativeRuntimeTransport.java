@@ -51,7 +51,7 @@ public final class NativeRuntimeTransport {
     };
     private static final String[] INT_READERS = {
         "battleOptions", "buddyBerry", "giftOptions", "itemCatalogMode", "mapTapEpoch", "mapTapMode",
-        "rocketOptions", "throwGrade", "transferProtect", "vgpOptions"
+        "rocketOptions", "throwGrade", "nativeTransferProtect", "vgpOptions"
     };
     private static final String[] DOUBLE_READERS = {"latitude", "longitude"};
     private static final String[] STRING_READERS = {
