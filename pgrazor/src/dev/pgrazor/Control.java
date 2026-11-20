@@ -1029,14 +1029,22 @@ public final class Control {
             public void onActivityResumed(Activity activity) { GoogleBrowserAuth.onHostResumed(activity); attach(activity); }
             public void onActivityPaused(Activity activity) {
                 GoogleBrowserAuth.onHostPaused(activity);
-                if (pad != null && pad.activity == activity) { pad.close(); pad = null; }
+                // Paused is not necessarily hidden: pop-up / multi-window resize can
+                // leave the game visible and its GPX walk in progress.
+                // Tear down only if the Activity is explicitly finishing.
+                if (activity.isFinishing() && pad != null && pad.activity == activity) {
+                    pad.close();pad=null;
+                }
             }
             public void onActivityDestroyed(Activity activity) {
                 if (pad != null && pad.activity == activity) { pad.close(); pad = null; }
             }
             public void onActivityCreated(Activity a, Bundle b) {}
             public void onActivityStarted(Activity a) {}
-            public void onActivityStopped(Activity a) {}
+            public void onActivityStopped(Activity a) {
+                // Actual loss of visibility: stop automation, VGP and route as before.
+                if(pad!=null&&pad.activity==a){pad.close();pad=null;}
+            }
             public void onActivitySaveInstanceState(Activity a, Bundle b) {}
         });
     }
