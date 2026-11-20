@@ -847,12 +847,18 @@ final class SettingsPanel {
             name.setFilters(new android.text.InputFilter[]{new android.text.InputFilter.LengthFilter(24)});
             name.setText(Control.trainerAlias());
             name.setHint("PGBR Treinador");
-            new AlertDialog.Builder(dialogContext()).setTitle("Apelido local")
+            AlertDialog aliasDialog=new AlertDialog.Builder(dialogContext()).setTitle("Apelido local")
                 .setMessage("De 2 a 24 caracteres: letras, números, espaços, ponto, traço ou sublinhado.")
                 .setView(name).setNegativeButton("Cancelar",null)
-                .setPositiveButton("Salvar",null).create().show();
-            // The confirmation below is intentionally bound to the button on show,
-            // so invalid input does not close the dialog and discard the typed alias.
+                .setPositiveButton("Salvar",null).create();
+            aliasDialog.setOnShowListener(d->aliasDialog.getButton(AlertDialog.BUTTON_POSITIVE)
+                .setOnClickListener(v->{
+                    if(!Control.setCustomTrainerAlias(name.getText().toString())){
+                        name.setError("Use de 2 a 24 caracteres válidos.");return;
+                    }
+                    updatePrivacy.run();host.refresh();aliasDialog.dismiss();
+                }));
+            aliasDialog.show();
         });
         launch(privacy,"Gerar apelido PGBR aleatório",()->{
             Control.regenerateTrainerAlias();Control.setTrainerPrivacyMode(2);
