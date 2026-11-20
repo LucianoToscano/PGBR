@@ -377,6 +377,40 @@ final class SettingsPanel {
         chosen[0].show();
     }
 
+    private void configureHudIndicator(String name,int bit){
+        final Context ctx=dialogContext();
+        LinearLayout body=new LinearLayout(ctx);body.setOrientation(LinearLayout.VERTICAL);
+        int padding=dp(16);body.setPadding(padding,dp(6),padding,dp(6));
+        TextView desc=new TextView(ctx);
+        desc.setText("Fundo desta legenda: "+Control.hudBackgroundOpacity(bit)+"%");
+        desc.setTextSize(14);body.addView(desc);
+        SeekBar opacity=new SeekBar(ctx);opacity.setMax(100);
+        opacity.setProgress(Control.hudBackgroundOpacity(bit));body.addView(opacity);
+        opacity.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){
+            public void onProgressChanged(SeekBar bar,int percent,boolean user){
+                if(!user)return;
+                Control.setHudBackgroundOpacity(bit,percent);
+                desc.setText("Fundo desta legenda: "+percent+"%");host.refresh();
+            }
+            public void onStartTrackingTouch(SeekBar bar){}
+            public void onStopTrackingTouch(SeekBar bar){}
+        });
+        Button color=button("Cor: "+Control.HUD_PALETTE_NAMES[Control.hudPaletteIndex(bit)]);
+        body.addView(color);
+        color.setOnClickListener(v->{
+            new AlertDialog.Builder(ctx).setTitle("Cor: "+name)
+                .setSingleChoiceItems(Control.HUD_PALETTE_NAMES,Control.hudPaletteIndex(bit),(dialog,choice)->{
+                    Control.setHudPaletteIndex(bit,choice);
+                    color.setText("Cor: "+Control.HUD_PALETTE_NAMES[choice]);
+                    host.refresh();dialog.dismiss();
+                }).setNegativeButton("Cancelar",null).show();
+        });
+        AlertDialog dialog=new AlertDialog.Builder(ctx).setTitle(name)
+            .setView(body).setPositiveButton("Concluído",null).create();
+        dialog.setOnShowListener(d->MapTheme.styleButtons(dialog));
+        dialog.show();
+    }
+
     private void buildLocationPage() {
         LinearLayout loc = page(MenuIcon.TELEPORT, "Location & Map");
         locationSwitch=switchRow(loc,"Location spoofing");locationSwitch.setChecked(Control.desiredEnabled());
@@ -497,19 +531,12 @@ final class SettingsPanel {
             public void onStartTrackingTouch(SeekBar bar){}
             public void onStopTrackingTouch(SeekBar bar){}
         });
-        TextView opacityLabel=new TextView(activity);opacityLabel.setTextSize(13);
-        opacityLabel.setText(dev.pgrazor.PtBr.tr("Fundo dos indicadores: "+Control.hudLabelOpacity()+"%"));hud.addView(opacityLabel);
-        SeekBar opacitySlider=new SeekBar(activity);opacitySlider.setMax(100);
-        opacitySlider.setProgress(Control.hudLabelOpacity());hud.addView(opacitySlider);
-        opacitySlider.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){
-            public void onProgressChanged(SeekBar bar,int progress,boolean fromUser){
-                if(!fromUser)return;
-                Control.setHudLabelOpacity(progress);
-                opacityLabel.setText(dev.pgrazor.PtBr.tr("Fundo dos indicadores: "+progress+"%"));host.refresh();
-            }
-            public void onStartTrackingTouch(SeekBar bar){}
-            public void onStopTrackingTouch(SeekBar bar){}
+        launch(hud,"Personalizar cor e fundo de cada legenda",()->{
+            new AlertDialog.Builder(dialogContext()).setTitle("Selecionar indicador")
+                .setItems(captionNames,(d,index)->configureHudIndicator(captionNames[index],captionBits[index]))
+                .setNegativeButton("Cancelar",null).show();
         });
+        caption(hud,"As cores e a transparência de cada legenda são salvas separadamente. Com fundo 0%, apenas o símbolo ou número permanece visível.");
 
         LinearLayout encounters = group(loc, "Encounter counter");
         encounterCounterSwitch = switchRow(encounters, "Count encounters"); encounterCounterSwitch.setChecked(Control.encounterCounter());
