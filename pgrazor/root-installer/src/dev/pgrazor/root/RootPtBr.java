@@ -1283,6 +1283,12 @@ public final class RootPtBr {
         m.put("Metal Coat", "Revestimento Metálico");
         m.put("Dragon Scale", "Escama de Dragão");
         m.put("Up-Grade", "Melhora");
+        m.put("Golden Pinap Berry", "Fruta Caxí Dourada");
+        m.put("Kings Rock", "Pedra do Rei");
+        m.put("Up Grade", "Melhora");
+        m.put("Gen4 Evolution Stone", "Pedra de Sinnoh");
+        m.put("Purified Gem", "Gema Purificada");
+        m.put("Rare Candy XL", "Doce Raro GG");
         m.put("Sinnoh Stone", "Pedra de Sinnoh");
         m.put("Unova Stone", "Pedra de Unova");
         m.put("No feeding", "Sem alimentação");
