@@ -1255,7 +1255,7 @@ public final class Control {
     private static boolean darkTheme=true, joystickVisible=true;
     private static volatile int joystickSizeDp=136,joystickOpacity=60;
     // Visual style is independent from movement, camera-relative steering and saved route state.
-    // 0=original, 1=Eternatus (animated), 2=translucent directional HUD, 3=user image.
+    // 0=original, 1=Eternatus morph (clean <-> storm), 2=HUD, 3=user image, 4=prior Eternatus vortex.
     private static volatile int joystickStyle;
     private static volatile boolean joystickEternatusEffects=true;
     private static volatile int menuIconSizeDp=22,gymIconSizeDp=54,gymIconOpacity=100,overlayBackgroundOpacity=45;
@@ -1337,7 +1337,7 @@ public final class Control {
     public static void setJoystickSizeDp(int value){joystickSizeDp=Math.max(88,Math.min(220,value));saveSettings();}
     public static int joystickOpacity(){return joystickOpacity;}
     public static int joystickStyle(){return joystickStyle;}
-    public static void setJoystickStyle(int style){if(style<0||style>3)return;joystickStyle=style;saveSettings();}
+    public static void setJoystickStyle(int style){if(style<0||style>4)return;joystickStyle=style;saveSettings();}
     public static boolean joystickEternatusEffects(){return joystickEternatusEffects;}
     public static void setJoystickEternatusEffects(boolean value){joystickEternatusEffects=value;saveSettings();}
     public static int menuLauncherIconStyle(){return menuLauncherIconStyle;}
@@ -1425,7 +1425,7 @@ public final class Control {
                 joystickEternatusEffects=Boolean.parseBoolean(p.getProperty("joystickEternatusEffects","true"));
                 try{
                     int saved=Integer.parseInt(p.getProperty("joystickStyle","-1"));
-                    joystickStyle=saved>=0&&saved<=3?saved:
+                    joystickStyle=saved>=0&&saved<=4?saved:
                         AccountProfiles.file(app,"joystick-custom.png").isFile()?3:0;
                 }catch(RuntimeException invalid){joystickStyle=0;}
                 menuIconSizeDp=readBoundedVisual(p,"menuIconSizeDp",22,16,40);
