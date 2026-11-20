@@ -1286,7 +1286,7 @@ public final class Control {
                 hudLabelsVisible=Boolean.parseBoolean(p.getProperty("hudLabelsVisible","true"));
                 try{hudLabelOpacity=Math.max(0,Math.min(80,Integer.parseInt(p.getProperty("hudLabelOpacity","0"))));}
                 catch(NumberFormatException ignored){hudLabelOpacity=0;}
-                try{hudLabelTextSp=Math.max(9,Math.min(14,Integer.parseInt(p.getProperty("hudLabelTextSp","11")));}
+                try{hudLabelTextSp=Math.max(9,Math.min(14,Integer.parseInt(p.getProperty("hudLabelTextSp","11"))));}
                 catch(NumberFormatException ignored){hudLabelTextSp=11;}
                 vgpStopOnCooldown=Boolean.parseBoolean(p.getProperty("vgpStopOnCooldown","false"));
                 try{vgpOptions=Integer.parseInt(p.getProperty("vgpOptions","3"))&7;}catch(NumberFormatException ignored){vgpOptions=3;}
