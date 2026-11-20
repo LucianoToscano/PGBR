@@ -88,6 +88,14 @@ public final class ResearchSettings {
         removeHelp.setText(dev.pgrazor.PtBr.tr("Deletes unfinished field research whose task is ticked below. Gym bonus tasks are never deleted."));
         body.addView(removeHelp);
 
+        CheckBox keep = new CheckBox(ui);
+        keep.setText("Manter missões selecionadas e excluir as outras");
+        keep.setChecked(preferences.keepSelected());
+        body.addView(keep);
+        TextView keepHelp = new TextView(ui);
+        keepHelp.setText("Marque abaixo as missões que quer manter. Quando este modo estiver ativo, outras Pesquisas de Campo inacabadas serão excluídas. Missões concluídas, especiais e bônus de Ginásio são preservadas. É preciso escolher ao menos uma missão.");
+        body.addView(keepHelp);
+
         CheckBox catchEncounters = new CheckBox(ui); catchEncounters.setText(dev.pgrazor.PtBr.tr("Auto-catch research encounters"));
         catchEncounters.setChecked(preferences.catchEncounters()); body.addView(catchEncounters);
         TextView catchHelp = new TextView(ui);
@@ -99,6 +107,9 @@ public final class ResearchSettings {
         TextView empty = new TextView(ui);
         empty.setText(dev.pgrazor.PtBr.tr("No field research seen yet. Tasks appear here as the game gives them to you while PGBR runs."));
         body.addView(empty);
+        TextView selectionHelp = new TextView(ui);
+        selectionHelp.setText("No modo 'Manter missões selecionadas', as caixas abaixo representam as missões a preservar. No modo 'Excluir selecionadas', representam as missões a excluir.");
+        body.addView(selectionHelp);
         LinearLayout list = new LinearLayout(ui); list.setOrientation(LinearLayout.VERTICAL); body.addView(list);
         TextView status = new TextView(ui); status.setText(dev.pgrazor.PtBr.tr(status())); body.addView(status);
 
@@ -129,7 +140,33 @@ public final class ResearchSettings {
             MapTheme.style(list);
         };
         claim.setOnCheckedChangeListener((v, on) -> { preferences.setClaim(on); Control.saveSettings(); });
-        remove.setOnCheckedChangeListener((v, on) -> { preferences.setRemove(on); Control.saveSettings(); });
+        remove.setOnCheckedChangeListener((v, on) -> {
+            preferences.setRemove(on);
+            if (on) keep.setChecked(false); // Only one removal mode may be active.
+            Control.saveSettings();
+        });
+        keep.setOnCheckedChangeListener((v, on) -> {
+            if (!on) {
+                if (preferences.keepSelected()) { preferences.setKeepSelected(false); Control.saveSettings(); }
+                return;
+            }
+            if (preferences.selectedCount() == 0) {
+                toast(activity, "Primeiro marque ao menos uma missão para manter.");
+                keep.setChecked(false);
+                return;
+            }
+            new AlertDialog.Builder(ui)
+                .setTitle("Ativar exclusão das outras missões?")
+                .setMessage("Somente as Pesquisas de Campo marcadas serão mantidas. Outras missões não concluídas poderão ser excluídas automaticamente. A exclusão não pode ser desfeita.")
+                .setPositiveButton("Ativar", (d, which) -> {
+                    preferences.setKeepSelected(true);
+                    remove.setChecked(false);
+                    Control.saveSettings();
+                })
+                .setNegativeButton("Cancelar", (d, which) -> keep.setChecked(false))
+                .setOnCancelListener(d -> keep.setChecked(false))
+                .show();
+        });
         catchEncounters.setOnCheckedChangeListener((v, on) -> { preferences.setCatchEncounters(on); Control.saveSettings(); });
         search.addTextChangedListener(new TextWatcher() {
             public void beforeTextChanged(CharSequence s, int a, int b, int c) {}

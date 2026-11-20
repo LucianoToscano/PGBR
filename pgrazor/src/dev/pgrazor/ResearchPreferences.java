@@ -15,7 +15,7 @@ import java.util.TreeSet;
  */
 public final class ResearchPreferences {
     static final int MAX_TEMPLATES = 300, MAX_TEMPLATE = 96, MAX_TEXT = 160;
-    private boolean claim, remove, catchEncounters;
+    private boolean claim, remove, keepSelected, catchEncounters;
     private final TreeSet<String> selected = new TreeSet<>();
     /** Catalog categories, in display order: item reward, Pokemon encounter reward, game-tagged task. */
     public static final String ITEM = "i", ENCOUNTER = "e", EVENT = "v";
@@ -50,6 +50,7 @@ public final class ResearchPreferences {
     public synchronized void read(Properties p) {
         claim = "true".equals(p.getProperty("researchClaim"));
         remove = "true".equals(p.getProperty("researchRemove"));
+        keepSelected = "true".equals(p.getProperty("researchKeepSelected")) && !remove;
         catchEncounters = "true".equals(p.getProperty("researchCatch"));
         selected.clear(); catalog.clear();
         for (String t : p.getProperty("researchSelected", "").split(",", -1))
@@ -66,6 +67,7 @@ public final class ResearchPreferences {
     public synchronized void write(Properties p) {
         p.setProperty("researchClaim", String.valueOf(claim));
         p.setProperty("researchRemove", String.valueOf(remove));
+        p.setProperty("researchKeepSelected", String.valueOf(keepSelected));
         p.setProperty("researchCatch", String.valueOf(catchEncounters));
         p.setProperty("researchSelected", String.join(",", selected));
         StringBuilder out = new StringBuilder();
@@ -77,16 +79,23 @@ public final class ResearchPreferences {
         p.setProperty("researchCatalog", out.toString());
         p.setProperty("researchCatalogFormat", "2");
     }
-    /** {@code R2|remove|claim|catch|T1,T2,...}: selected templates are sent only while removal is on. */
+    /**
+     * R3|mode|claim|catch|T1,T2,... where:
+     * 0 = no removal, 1 = remove ticked tasks, 2 = keep ticked tasks and remove other unfinished
+     * field research. Mode 2 is forced off when no target task has been selected.
+     */
     public synchronized String config() {
-        return "R2|" + (remove ? 1 : 0) + "|" + (claim ? 1 : 0) + "|" + (catchEncounters ? 1 : 0) + "|"
-            + (remove ? String.join(",", selected) : "");
+        int mode = keepSelected && !selected.isEmpty() ? 2 : remove && !selected.isEmpty() ? 1 : 0;
+        return "R3|" + mode + "|" + (claim ? 1 : 0) + "|" + (catchEncounters ? 1 : 0) + "|"
+            + (mode != 0 ? String.join(",", selected) : "");
     }
 
     public synchronized boolean claim() { return claim; }
     public synchronized boolean remove() { return remove; }
+    public synchronized boolean keepSelected() { return keepSelected; }
     public synchronized void setClaim(boolean on) { claim = on; }
-    public synchronized void setRemove(boolean on) { remove = on; }
+    public synchronized void setRemove(boolean on) { remove = on; if (on) keepSelected = false; }
+    public synchronized void setKeepSelected(boolean on) { keepSelected = on && !selected.isEmpty(); if (keepSelected) remove = false; }
     public synchronized boolean catchEncounters() { return catchEncounters; }
     public synchronized void setCatchEncounters(boolean on) { catchEncounters = on; }
     public synchronized boolean selected(String template) { return selected.contains(template); }

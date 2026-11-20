@@ -578,6 +578,11 @@ final class SettingsPanel {
         launch(page, "Mass Evolve", () -> BatchEvolutionSettings.show(activity));
         LinearLayout research = group(page, "Field research");
         launch(research, "Research", () -> ResearchSettings.show(activity));
+        LinearLayout gpxResearch = group(page, "GPX e missões");
+        caption(gpxResearch, "Importe uma rota GPX, escolha as pesquisas que deseja manter e configure o arremesso Excelente no VGP+. A caminhada por GPX, o giro de Poképaradas e as pesquisas ainda são funções independentes.");
+        launch(gpxResearch, "Importar GPX / caminhada automática", () -> AutoWalkDialog.show(activity));
+        launch(gpxResearch, "Selecionar missões desejadas", () -> ResearchSettings.show(activity));
+        launch(gpxResearch, "Configurar arremesso Excelente", () -> SmartCatchSettings.show(activity));
     }
 
     private void buildEventsPage() {

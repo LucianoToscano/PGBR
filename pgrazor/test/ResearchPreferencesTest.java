@@ -12,7 +12,7 @@ public final class ResearchPreferencesTest {
     public static void main(String[] args) {
         ResearchPreferences p = new ResearchPreferences();
         p.read(new Properties());
-        require(!p.claim() && !p.remove() && p.config().equals("R2|0|0|0|"), "defaults are off");
+        require(!p.claim() && !p.remove() && p.config().equals("R3|0|0|0|"), "defaults are off");
 
         require(p.observe("CHALLENGE_CATCH_EASY", "Catch 5 Pokémon", "Item", "i"), "new task stored");
         require(!p.observe("CHALLENGE_CATCH_EASY", "Catch 5 Pokémon", "Item", "i"), "unchanged task ignored");
@@ -28,11 +28,17 @@ public final class ResearchPreferencesTest {
 
         p.select("HALLOWEEN_26_NICE_THROWS_P2", true);
         p.setClaim(true);
-        require(p.config().equals("R2|0|1|0|"), "selection is sent only while removal is on");
+        require(p.config().equals("R3|0|1|0|"), "selection is sent only while removal is on");
         p.setRemove(true);
-        require(p.config().equals("R2|1|1|0|HALLOWEEN_26_NICE_THROWS_P2"), "removal sends sorted selection");
+        require(p.config().equals("R3|1|1|0|HALLOWEEN_26_NICE_THROWS_P2"), "removal sends sorted selection");
         p.setCatchEncounters(true);
-        require(p.config().equals("R2|1|1|1|HALLOWEEN_26_NICE_THROWS_P2"), "encounter catching flag");
+        require(p.config().equals("R3|1|1|1|HALLOWEEN_26_NICE_THROWS_P2"), "encounter catching flag");
+        p.setKeepSelected(true);
+        require(p.keepSelected() && !p.remove(), "keep-selected mode replaces delete-selected mode");
+        require(p.config().equals("R3|2|1|1|HALLOWEEN_26_NICE_THROWS_P2"), "keep target, reject others");
+        p.setRemove(true);
+        require(!p.keepSelected() && p.remove(), "legacy remove mode stays available");
+        p.setKeepSelected(true);
         refused(() -> p.select("bad template", true), "invalid selection refused");
         p.selectAll(java.util.Arrays.asList("CHALLENGE_CATCH_EASY", "HALLOWEEN_26_NICE_THROWS_P2"), true);
         require(p.selected("CHALLENGE_CATCH_EASY") && p.selectedCount() == 2, "select a whole category");
@@ -69,6 +75,14 @@ public final class ResearchPreferencesTest {
         ResearchPreferences repaired = new ResearchPreferences();
         repaired.read(corrupt);
         require(repaired.selectedCount() == 2 && repaired.tasks("").size() == 1, "corrupt entries dropped");
+        ResearchPreferences safe = new ResearchPreferences();
+        safe.setKeepSelected(true);
+        require(!safe.keepSelected() && safe.config().equals("R3|0|0|0|"), "no target cannot enable inverse deletion");
+        safe.select("PREFERRED_QUEST", true);
+        safe.setKeepSelected(true);
+        require(safe.config().equals("R3|2|0|0|PREFERRED_QUEST"), "chosen task enables inverse mode");
+        safe.select("PREFERRED_QUEST", false);
+        require(safe.config().equals("R3|0|0|0|"), "clearing last target automatically stops deletion");
 
         ResearchPreferences full = new ResearchPreferences();
         full.read(new Properties());
