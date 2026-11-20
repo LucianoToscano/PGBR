@@ -168,6 +168,17 @@ public final class EventPanel {
         savedGpx.setAllCaps(false);
         savedGpx.setText("Carregar GPX salvo");
         layout.addView(savedGpx);
+        TextView startPositionLabel=new TextView(ui);
+        startPositionLabel.setText("Iniciar / retomar na coordenada (1 até o total da rota):");
+        startPositionLabel.setTextSize(13);
+        layout.addView(startPositionLabel);
+        android.widget.EditText startPosition=new android.widget.EditText(ui);
+        startPosition.setSingleLine(true);
+        startPosition.setInputType(android.text.InputType.TYPE_CLASS_NUMBER);
+        startPosition.setSelectAllOnFocus(true);
+        startPosition.setText(String.valueOf(dev.pgrazor.EternatusRouteRunner.resumePosition()));
+        startPosition.setContentDescription("Número da coordenada inicial da rota Eternatus");
+        layout.addView(startPosition);
         final String[] selected={dev.pgrazor.EternatusRouteRunner.selectedTemplate()};
         android.widget.Button select=new android.widget.Button(ui);
         select.setAllCaps(false);
@@ -228,12 +239,12 @@ public final class EventPanel {
             .setView(scroll).setNegativeButton(dev.pgrazor.PtBr.tr("Fechar"),null).create();
         importGpx.setOnClickListener(v->{dialog.dismiss();dev.pgrazor.GpxRouteDialog.importGpx(activity,"Eternatus",selectedRoute->{
             if(!dev.pgrazor.EternatusRouteRunner.chooseRoute(selectedRoute))
-                android.widget.Toast.makeText(activity,"Rota indisponível ou com mais de 400 paradas.",android.widget.Toast.LENGTH_LONG).show();
+                android.widget.Toast.makeText(activity,"Rota indisponível ou com mais de "+dev.pgrazor.GpxCodec.MAX_POINTS+" paradas.",android.widget.Toast.LENGTH_LONG).show();
             dev.pgrazor.GpxRouteDialog.whenResumed(activity,()->showEternatus(activity,dark));
         });});
         savedGpx.setOnClickListener(v->{dialog.dismiss();dev.pgrazor.GpxRouteDialog.chooseSaved(activity,selectedRoute->{
             if(!dev.pgrazor.EternatusRouteRunner.chooseRoute(selectedRoute))
-                android.widget.Toast.makeText(activity,"Rota indisponível ou com mais de 400 paradas.",android.widget.Toast.LENGTH_LONG).show();
+                android.widget.Toast.makeText(activity,"Rota indisponível ou com mais de "+dev.pgrazor.GpxCodec.MAX_POINTS+" paradas.",android.widget.Toast.LENGTH_LONG).show();
             dev.pgrazor.GpxRouteDialog.whenResumed(activity,()->showEternatus(activity,dark));
         });});
         startAuto.setOnClickListener(v->{
@@ -241,10 +252,13 @@ public final class EventPanel {
                 android.widget.Toast.makeText(activity,"Confirme primeiro a recompensa de 25 doces no jogo.",android.widget.Toast.LENGTH_LONG).show();return;
             }
             new AlertDialog.Builder(ui).setTitle("Iniciar rota Eternatus?")
-                .setMessage("Teleportar para a primeira coordenada e ativar temporariamente VGP+, giro e o filtro da missão escolhida? Pesquisas de campo inacabadas diferentes podem ser excluídas. Cada nova coordenada aguardará cooldown estimado.")
+                .setMessage("Teleportar para a coordenada escolhida e ativar temporariamente VGP+, giro e o filtro da missão? A rota usa cooldown estimado; pesquisas incompletas diferentes podem ser descartadas.")
                 .setNegativeButton("Cancelar",null)
                 .setPositiveButton("Iniciar e teleportar",(d,w)->{
-                    if(!dev.pgrazor.EternatusRouteRunner.start(activity))
+                    int startAt;
+                    try { startAt=Integer.parseInt(startPosition.getText().toString().trim()); }
+                    catch(NumberFormatException bad){ startAt=-1; }
+                    if(!dev.pgrazor.EternatusRouteRunner.start(activity,startAt))
                         android.widget.Toast.makeText(activity,dev.pgrazor.EternatusRouteRunner.status(),android.widget.Toast.LENGTH_LONG).show();
                     else dialog.dismiss();
                 }).show();
@@ -277,6 +291,10 @@ public final class EventPanel {
                 savedGpx.setEnabled(!active);
                 select.setEnabled(!active);
                 verifiedReward.setEnabled(!active);
+                startPosition.setEnabled(!active);
+                if(planned!=null){
+                    startPositionLabel.setText("Iniciar / retomar na coordenada (1 a "+planned.size()+")");
+                }
                 startAuto.setEnabled(!active && planned != null && verifiedReward.isChecked() && !selected[0].isEmpty());
                 stopAuto.setEnabled(active || dev.pgrazor.EternatusMission.active());
                 skipMissing.setEnabled(active && dev.pgrazor.EternatusRouteRunner.totalStops() >
