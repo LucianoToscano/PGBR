@@ -162,6 +162,54 @@ public final class EventPanel {
         TextView limitation=new TextView(ui);
         limitation.setText(dev.pgrazor.PtBr.tr("A identificação exata da recompensa ainda não foi validada no jogo. Este painel é um acompanhamento manual: não gira paradas, captura, resgata ou avança coordenadas automaticamente."));
         limitation.setTextSize(12);layout.addView(limitation);
+        TextView autoHeader=new TextView(ui);
+        autoHeader.setText("PESQUISA AUTOMÁTICA POR MODELO EXATO");
+        autoHeader.setTextSize(14);autoHeader.setPadding(0,pad,0,0);layout.addView(autoHeader);
+        TextView autoStatus=new TextView(ui);autoStatus.setTextSize(12);layout.addView(autoStatus);
+        final String[] selected={dev.pgrazor.EternatusMission.selected()};
+        android.widget.Button select=new android.widget.Button(ui);
+        select.setText("Selecionar missão do catálogo do jogo");layout.addView(select);
+        select.setOnClickListener(v->{
+            java.util.List<String[]> catalog=dev.pgrazor.ResearchSettings.observedTemplates();
+            if(catalog.isEmpty()){
+                android.widget.Toast.makeText(activity,"Nenhuma pesquisa foi detectada. Abra Pesquisas após receber uma missão no jogo.",android.widget.Toast.LENGTH_LONG).show();
+                return;
+            }
+            int limit=Math.min(80,catalog.size());
+            String[] labels=new String[limit];
+            for(int i=0;i<limit;i++){
+                String[] q=catalog.get(i);
+                labels[i]=q[1]+" | "+q[2]+"\nModelo: "+q[0];
+            }
+            new AlertDialog.Builder(ui).setTitle("Escolher pesquisa observada")
+                .setItems(labels,(d,choice)->{
+                    selected[0]=catalog.get(choice)[0];
+                    autoStatus.setText("Modelo selecionado: "+selected[0]);
+                }).setNegativeButton("Cancelar",null).show();
+        });
+        android.widget.Button enableResearch=new android.widget.Button(ui);
+        enableResearch.setText("Ativar resgate e filtro de missão exata");layout.addView(enableResearch);
+        enableResearch.setOnClickListener(v->{
+            if(selected[0]==null||selected[0].isEmpty()){
+                android.widget.Toast.makeText(activity,"Primeiro selecione a missão exata no catálogo.",android.widget.Toast.LENGTH_LONG).show();return;
+            }
+            new AlertDialog.Builder(ui)
+                .setTitle("Confirmar pesquisa: 25 doces Eternatus")
+                .setMessage("Você confirmou NO JOGO que o modelo "+selected[0]+" concede 25 doces Eternatus? O PGBR ainda não lê o tipo e a quantidade de doces. Ativar exclui automaticamente outras pesquisas de campo NÃO concluídas e resgata somente o modelo escolhido quando estiver concluído. Outras pesquisas concluídas são preservadas. Essas exclusões são irreversíveis. O GPX, a captura e os giros continuam independentes.")
+                .setNegativeButton("Cancelar",null)
+                .setPositiveButton("Ativar",(d,w)->{
+                    if(!dev.pgrazor.EternatusMission.start(activity,selected[0]))
+                        android.widget.Toast.makeText(activity,"Ativação recusada: jogo desconectado ou pesquisa desconhecida.",android.widget.Toast.LENGTH_LONG).show();
+                    autoStatus.setText(dev.pgrazor.EternatusMission.status());
+                }).show();
+        });
+        android.widget.Button disableResearch=new android.widget.Button(ui);
+        disableResearch.setText("Desativar filtro automático do Eternatus");layout.addView(disableResearch);
+        disableResearch.setOnClickListener(v->{
+            dev.pgrazor.EternatusMission.stop("Desativado pelo treinador.");
+            autoStatus.setText(dev.pgrazor.EternatusMission.status());
+        });
+        autoStatus.setText(dev.pgrazor.EternatusMission.status());
         android.widget.Button route=new android.widget.Button(ui);
         route.setText(dev.pgrazor.PtBr.tr("Abrir caminhada GPX"));layout.addView(route);
         android.widget.Button research=new android.widget.Button(ui);
@@ -221,8 +269,19 @@ public final class EventPanel {
             .setView(scroll).setNegativeButton(dev.pgrazor.PtBr.tr("Fechar"),null).create();
         route.setOnClickListener(v->{dialog.dismiss();dev.pgrazor.AutoWalkDialog.show(activity);});
         research.setOnClickListener(v->{dialog.dismiss();dev.pgrazor.ResearchSettings.show(activity);});
-        bind(activity,dialog,()->{});
+        android.os.Handler clock=new android.os.Handler(android.os.Looper.getMainLooper());
+        bind(activity,dialog,()->clock.removeCallbacksAndMessages(null));
         dialog.show();
+        Runnable poll=new Runnable(){
+            public void run(){
+                if(!dialog.isShowing())return;
+                autoStatus.setText(dev.pgrazor.EternatusMission.status());
+                int confirmed=dev.pgrazor.EternatusProgress.confirmed(activity);
+                if(completed[0]!=confirmed){completed[0]=confirmed;refresh.run();}
+                clock.postDelayed(this,1000);
+            }
+        };
+        clock.post(poll);
     }
 
     private static void bind(Activity owner, AlertDialog dialog, Runnable cleanup) {
