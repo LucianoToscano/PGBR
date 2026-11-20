@@ -61,6 +61,38 @@ final class EternatusVisualEffects {
     }
 
     /**
+     * Staggered clouds are born invisible, drift outward and dissipate before reset.
+     * Each lane has a different lifetime and direction; there is no shared loop.
+     * The destination stays in normalized view-space and in the existing clip.
+     */
+    private void driftingPlumes(Canvas canvas, Bitmap texture, ColorMatrixColorFilter tint,
+                                long now, int speed, float energy,
+                                float base, float reach, float opacity) {
+        if (texture == null || energy <= 0f) return;
+        art.setStyle(Paint.Style.FILL);
+        art.setColor(Color.WHITE);
+        art.setColorFilter(tint);
+        for (int lane = 0; lane < 4; lane++) {
+            float progress = EternatusFxTiming.flow(now, speed, lane);
+            float alpha = EternatusFxTiming.flowOpacity(progress);
+            if (alpha < .005f) continue;
+            int saved = canvas.save();
+            float heading = lane * 137.50776f
+                + .31f * EternatusFxTiming.rotation(now, speed, (lane & 1) != 0);
+            canvas.rotate(heading);
+            canvas.translate(base + reach * progress, 0f);
+            canvas.rotate((lane & 1) == 0 ? -32f - progress * 20f : 41f + progress * 24f);
+            float size = (.36f + .21f * progress) * ((lane & 1) == 0 ? 1f : .83f);
+            canvas.scale(size, size * (.73f + .25f * progress));
+            art.setAlpha(Math.min(255, Math.round(opacity * energy * alpha)));
+            canvas.drawBitmap(texture, null, sourceBounds, art);
+            canvas.restoreToCount(saved);
+        }
+        art.setAlpha(255);
+        art.setColorFilter(null);
+    }
+
+    /**
      * Concentric counter-rotating art between the crystal ring and movable center.
      * Alpha goes to exactly zero at both clean ends of each morph cycle.
      */
@@ -72,7 +104,7 @@ final class EternatusVisualEffects {
         int saved = canvas.save();
         canvas.translate(cx, cy);
         canvas.scale(radius, radius);
-        setRing(.41f, .82f);
+        setRing(.41f, .98f);
         canvas.clipPath(clip);
 
         plasma.setStyle(Paint.Style.FILL);
@@ -114,6 +146,12 @@ final class EternatusVisualEffects {
             canvas.restoreToCount(wisps);
         }
         art.setAlpha(255);
+        // The diffuse cloud expands toward the outer rim rather than returning
+        // through the same frames. The vortex and solid thumb remain independent.
+        driftingPlumes(canvas, smoke != null ? smoke : wispy, smokeTint,
+            now, speed, energy, .49f, .30f, 170f);
+        driftingPlumes(canvas, wispy != null ? wispy : smoke, glowTint,
+            now + 2819L, speed, energy, .54f, .24f, 112f);
 
         // Curved plasma / illumination, no fake forked lightning paths.
         int glowRotation = canvas.save();
@@ -180,6 +218,9 @@ final class EternatusVisualEffects {
             art.setAlpha(255);
             canvas.restoreToCount(rotation);
         }
+        // Independent smoke tongues travel along the transparent outer halo.
+        driftingPlumes(canvas, aura != null ? aura : vortex, smokeTint,
+            now + 1171L, speed, energy, .74f, .15f, 148f);
         canvas.restoreToCount(saved);
     }
 
