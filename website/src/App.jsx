@@ -10,7 +10,7 @@ import GuideDetail from './components/GuideDetail.jsx';
 import { featureGuides } from './components/guideData.js';
 import { useTheme } from './hooks/useTheme.js';
 
-const HOME_TITLE = 'PGBR-v0.00.02-LT — edição brasileira';
+const HOME_TITLE = 'PGBR-v0.00.03-LT — edição brasileira';
 const HOME_DESCRIPTION =
   'PGBR: controles de localização, joystick, rotas e opções de automação em português brasileiro para Android ARM64.';
 

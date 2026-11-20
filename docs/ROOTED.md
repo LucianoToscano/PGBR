@@ -1,63 +1,63 @@
-# PGBR Root
+# PGBR Root — instalação e funcionamento
 
-PGBR Root is a separate installer (`dev.pgrazor.root`) for the official, Niantic-signed Pokémon GO app. It carries a Zygisk module and installs it through Magisk 27+, KernelSU, or APatch. KernelSU and APatch also need a Zygisk provider. The patched `PGBR-v0.00.01-LT.apk` remains the non-root build.
+PGBR Root é um instalador separado (`dev.pgrazor.root`) para o Pokémon GO oficial, assinado pela Niantic. Ele inclui um módulo Zygisk e o instala por Magisk 27+, KernelSU ou APatch. KernelSU e APatch também exigem um provedor Zygisk. O APK modificado `PGBR-v0.00.03-LT.apk` continua sendo a versão sem Root.
 
-Rooted and non-rooted builds are maintained together on main and produced by the same release workflow. Rooted support remains experimental: native hook installation can still fail on some Samsung devices. Installing the module does not modify the game's APK or its signing certificate.
+As versões com e sem Root são mantidas juntas na `main` e produzidas pelo mesmo fluxo de lançamento. O suporte Root ainda é experimental: a instalação de interceptações nativas pode falhar em alguns aparelhos Samsung. Instalar o módulo não altera o APK do jogo nem seu certificado de assinatura.
 
-If the overlay works but native features stay unavailable, check `native-bootstrap-pending` and `native-runtime-health` in Run log. The loader tries already-loaded system libraries when the default Android loader symbol is unavailable; it never loads a second game runtime. A symbol-unavailable or namespace-open-null reason needs a device-specific log. If bootstrap succeeds but `native-runtime-start` reports `scheduler-install` / `invoke-hook` with `invokeRc=-1`, native gameplay did not start; Re-check in the installer only reads status and does not retry those hooks. If Shundo Sniper reports an account wait, open Switch account for details; an unfinished account restoration keeps automation paused until the game restarts and verifies the account.
+Se a sobreposição funcionar, mas os recursos nativos continuarem indisponíveis, examine `native-bootstrap-pending` e `native-runtime-health` no Registro de execução. Quando o símbolo padrão de carregamento do Android não está disponível, o carregador procura bibliotecas de sistema já carregadas; ele não inicia outra cópia do jogo. Os motivos `symbol-unavailable` ou `namespace-open-null` exigem um registro específico do aparelho. Se a inicialização chegar a funcionar, mas `native-runtime-start` registrar `scheduler-install` / `invoke-hook` com `invokeRc=-1`, os recursos nativos não iniciaram; **Verificar novamente** no instalador apenas consulta o estado, sem tentar instalar novamente as interceptações. Se o Caçador de Shundo indicar espera por conta, abra **Trocar conta**; a restauração de conta pendente mantém a automação pausada até o jogo reiniciar e confirmar a conta.
 
-## Installation
+## Instalação
 
-1. Install `PGBR-v0.00.01-LT-Root.apk` and open it.
-2. Check status and grant the installer root access in your root manager.
-3. Confirm that the official game version matches the version displayed by the installer.
-4. Tap Install, review the result, and reboot when prompted.
-5. Open Pokémon GO. The PGBR panel appears when the module starts successfully.
+1. Instale e abra `PGBR-v0.00.03-LT-Root.apk`.
+2. Confira o estado e conceda acesso Root ao instalador no gerenciador Root.
+3. Confirme que a versão do jogo oficial corresponde à versão compatível indicada pelo instalador.
+4. Toque em **Instalar**, confira o resultado e reinicie quando solicitado.
+5. Abra Pokémon GO. O painel PGBR aparece quando o módulo inicia corretamente.
 
-To turn it off, disable the `pgrazor` module in your root manager and reboot. Uninstalling the installer APK alone does not uninstall the module.
+Para desligar, desative o módulo `pgrazor` no gerenciador Root e reinicie. Desinstalar apenas o APK do instalador não remove o módulo.
 
-For manual installation, install `PGBR-v0.00.01-LT-Root-module.zip` through your root manager's module installer and reboot. Use the official game version supported by that release. You can also install `PGBR-v0.00.01-LT-Root.apk` for status checks and automatic account-switch restarts; you do not need to install the module again through the APK. Without the installer APK, account switches require manually closing and reopening the game. `PGBR-v0.00.01-LT.apk` is the separate non-root patched game, not the Root companion APK.
+Para instalar manualmente, instale `PGBR-v0.00.03-LT-Root-module.zip` pelo gerenciador de módulos Root e reinicie. Use a versão oficial do jogo compatível com o lançamento. Você pode também instalar `PGBR-v0.00.03-LT-Root.apk` para consultar o estado e reiniciar automaticamente nas trocas de conta; não é necessário reinstalar o módulo pelo APK. Sem o instalador, as trocas de conta exigem fechar e reabrir manualmente o jogo. `PGBR-v0.00.03-LT.apk` é o jogo modificado sem Root, não o aplicativo auxiliar Root.
 
-The runtime requires the exact packaged game version and official signing certificate. A newer game is not automatically accepted just because Java bridge names still match: native gameplay also depends on the supported game build. Root status and Zygisk configuration do not by themselves prove injection succeeded; the in-game Run log records startup.
+O ambiente exige a versão exata do jogo e o certificado oficial de assinatura. Uma versão mais nova não é aceita automaticamente só porque as classes Java ainda coincidem: os recursos nativos também dependem da compilação compatível. Estado Root e configuração Zygisk não comprovam, isoladamente, que a injeção funcionou; o Registro de execução dentro do jogo detalha a inicialização.
 
-## Build
+## Compilação
 
-Use the SDK, JDK, pinned NDKs, and signing environment described in [BUILDING.md](BUILDING.md). From the repository root:
+Use SDK, JDK, NDKs fixados e configuração de assinatura descritos em [BUILDING.md](BUILDING.md). Na raiz do repositório:
 
 ```powershell
 py -3.12 -B pgrazor/rooted.py pgrazor/input/game.apkm --download --output dist/release
 ```
 
-`--skip-build` reuses the existing DEX only after validating its source fingerprints. `--module-only` produces the module ZIP for development without the installer. The source APK/APKM must have the trusted game certificate; bridge validation runs before packaging.
+`--skip-build` reutiliza o DEX somente após validar as assinaturas das fontes. `--module-only` produz apenas o ZIP do módulo para desenvolvimento, sem instalador. O APK/APKM original precisa ter o certificado confiável do jogo; as integrações são verificadas antes do empacotamento.
 
-Each run lives in `pgrazor/build/rooted/<run>/` and records module, payload, DEX, installer hashes, supported game version, and architectures in `report.json`. Release output contains `PGBR-v0.00.01-LT-Root.apk`, `PGBR-v0.00.01-LT-Root-module.zip`, `root-build-info.json`, and checksum entries for both Root downloads in `SHA256SUMS.txt`. The release workflow uploads both APKs and the manual module ZIP as build artifacts and, when publication is requested, as release assets. Publication remains a separate workflow input.
+Cada execução fica em `pgrazor/build/rooted/<run>/` e registra em `report.json` os hashes do módulo, conteúdo, DEX e instalador, a versão do jogo e as arquiteturas. O lançamento inclui `PGBR-v0.00.03-LT-Root.apk`, `PGBR-v0.00.03-LT-Root-module.zip`, `root-build-info.json` e as verificações correspondentes em `SHA256SUMS.txt`. O fluxo envia os dois APKs e o módulo ZIP como artefatos e, quando solicitado, como arquivos de lançamento. A publicação é uma opção separada.
 
-`cleanup.ps1 -RootedOnly` previews rooted cleanup; add `-Apply` to execute it. Packaging invokes this cleanup after completing its report. Copied `input-*.apk` files are expendable once a complete module has been verified. The latest three run folders and `pinnedRootedRuns` entries in local `build-retention.json` protect module/installer outputs. Keep the deployed candidate and a tested rollback pinned. Cleanup preserves reports, original inputs, source, and keys, and writes a receipt under `build/cleanup/`.
+`cleanup.ps1 -RootedOnly` mostra uma prévia da limpeza Root; acrescente `-Apply` para executar. O empacotamento chama essa limpeza após gerar o relatório. Arquivos temporários `input-*.apk` podem ser descartados depois de validar um módulo completo. As três pastas de execução mais recentes e as entradas `pinnedRootedRuns` em `build-retention.json` protegem as saídas do módulo e instalador. Mantenha fixados o candidato instalado e uma opção de retorno já testada. A limpeza preserva relatórios, entradas originais, código e chaves, criando um comprovante em `build/cleanup/`.
 
-## Startup and native binding
+## Inicialização e ligação nativa
 
-The Zygisk loader selects only the game's main process, reads the DEX and payload before specialization, then starts the Java runtime as the game UID. The runtime verifies the game target, installs the Java bridges, and calls the shared PGBR startup. A partial bridge installation remains inactive and forwards original calls.
+O carregador Zygisk seleciona apenas o processo principal do jogo, lê o DEX e os recursos antes da especialização e inicia o ambiente Java com o UID do jogo. O ambiente valida o destino, instala as integrações Java e chama a inicialização compartilhada do PGBR. Uma instalação parcial das integrações permanece inativa e encaminha as chamadas originais.
 
-On MuMu, ART hooks use the process's real x86_64 ABI, determined from `/proc/self/exe`. Gameplay uses the translated ARM64 core. Rooted native loading waits for Unity's render message so the game can establish its translated library namespace first.
+No MuMu, as interceptações ART usam a ABI real x86_64 do processo, obtida em `/proc/self/exe`. A execução do jogo usa o núcleo ARM64 traduzido. A carga nativa Root aguarda a mensagem de renderização Unity para que o jogo estabeleça primeiro o espaço de nomes da biblioteca traduzida.
 
-The native bootstrap first retains its existing `dlopen(..., RTLD_NOLOAD)` lookup. If Android namespace separation prevents that lookup, it discovers an exact, unique loaded image and uses Android's loader with that image's namespace. It retains `RTLD_NOLOAD`, never force-loads another IL2CPP runtime, and leaves unsupported loaders unavailable. The mechanism follows the caller-address namespace selection in [Android's dynamic linker](https://android.googlesource.com/platform/bionic/+/master/linker/linker.cpp) and [libdl](https://android.googlesource.com/platform/bionic/+/master/libdl/libdl.cpp).
+A inicialização nativa tenta primeiro localizar bibliotecas já carregadas com `dlopen(..., RTLD_NOLOAD)`. Se a separação de espaços de nomes Android impedir essa busca, identifica uma única imagem carregada correspondente e usa o carregador Android com o espaço de nomes dela. O processo preserva `RTLD_NOLOAD`, nunca força o carregamento de outro ambiente IL2CPP e deixa carregadores incompatíveis indisponíveis. O mecanismo segue a seleção de espaço de nomes pelo endereço do chamador descrita no [linker dinâmico do Android](https://android.googlesource.com/platform/bionic/+/master/linker/linker.cpp) e em [libdl](https://android.googlesource.com/platform/bionic/+/master/libdl/libdl.cpp).
 
-Native startup is confirmed by `native-bootstrap-ready` followed by `native-scheduler-ready`. These markers establish binding and scheduler startup; feature behavior still requires gameplay checks. Shared changes also require a patched APK device regression check before a public release.
+A inicialização nativa é confirmada por `native-bootstrap-ready` e depois `native-scheduler-ready`. Esses marcadores comprovam a integração e o início do agendador; cada recurso ainda exige testes de funcionamento. Mudanças compartilhadas também precisam de teste regressivo em um aparelho com APK modificado antes de um lançamento público.
 
-The standalone native checks can be reproduced against a reviewed core:
+Os testes nativos independentes podem ser reproduzidos sobre um núcleo revisado:
 
 ```powershell
 py -3.12 -B pgrazor/native_harness.py runtime_bootstrap runtime_bootstrap_namespace --serial DEVICE_SERIAL --adb PATH_TO_ADB
 ```
 
-These harnesses do not operate the game. Their receipts record the actual library hash and test output.
+Esses testes não controlam o jogo. Seus comprovantes registram o hash da biblioteca realmente usada e o resultado.
 
-## Rooted UI
+## Interface Root
 
-Run log opens inside the game and saves the current log segment to the game's external files folder. **Save log + settings (.zip)** includes that log and a single-line `settings.json` snapshot of feature preferences; plain-text export is also available. The settings snapshot excludes login tokens, account data and saved locations. Logs include hook failure reasons, account and VGP+ readiness, native execution health, phone details and passive root indicators. Hidden root may not be detected; the session also identifies the rooted runtime explicitly.
+O Registro de execução abre dentro do jogo e salva o trecho atual na pasta de arquivos externos do jogo. **Salvar registro + configurações (.zip)** inclui esse registro e uma cópia `settings.json`, em linha única, das preferências; também existe exportação de texto simples. A cópia das configurações exclui tokens de acesso, dados de conta e locais salvos. Os registros incluem motivos de falhas das interceptações, estado da conta e VGP+, saúde da execução nativa, detalhes do aparelho e sinais passivos de Root. Root oculto pode não ser detectado; a sessão também identifica explicitamente o ambiente Root.
 
-Settings backup also uses the external files folder, at `PGBR-settings.json`; copy the file elsewhere before uninstalling the game. Import reads the same path and asks before replacing settings.
+O backup das configurações também usa a pasta de arquivos externos, no arquivo `PGBR-settings.json`; copie-o para outro local antes de desinstalar o jogo. A importação lê o mesmo caminho e solicita confirmação antes de substituir as configurações.
 
-Account switches are queued durably and applied before Unity starts in the next process. The installer provides a foreground restart helper so it can reopen the game after the old process exits. Module-only installs without the installer require manually closing and reopening the game. The helper accepts only requests whose calling package is the official game and performs no root or account-data operations. The game's official APK does not need PGBR activities added to its manifest.
+As trocas de conta ficam enfileiradas de modo persistente e são aplicadas antes de o Unity iniciar no próximo processo. O instalador oferece um auxiliar de reinício em primeiro plano que reabre o jogo depois de encerrar o processo antigo. Instalações somente do módulo exigem fechar e reabrir o jogo manualmente. O auxiliar aceita apenas solicitações originadas do pacote oficial do jogo e não executa operações Root nem manipula dados da conta. O APK oficial não precisa incluir atividades do PGBR no manifesto.
 
-The pinned Zygisk API is v5, whose [upstream compatibility table](https://github.com/topjohnwu/zygisk-module-sample#api) requires Magisk 27 or newer. Older Magisk versions are rejected by the installer. KernelSU/APatch require a provider supporting API v5.
+A API Zygisk utilizada é a v5, cuja [tabela oficial de compatibilidade](https://github.com/topjohnwu/zygisk-module-sample#api) exige Magisk 27 ou mais recente. Versões anteriores do Magisk são rejeitadas pelo instalador. KernelSU/APatch exigem um provedor compatível com a API v5.

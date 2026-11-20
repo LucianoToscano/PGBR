@@ -1,13 +1,13 @@
-# Release-note format
+# Formato das notas de lançamento
 
-Use this format for every release, including experimental releases. Copy [TEMPLATE.md](TEMPLATE.md) to `docs/releases/vVERSION.md` and replace all placeholders.
+Use este formato em todos os lançamentos, inclusive experimentais. Copie [TEMPLATE.md](TEMPLATE.md) para `docs/releases/vVERSION.md` e substitua os marcadores.
 
-- **New features:** explain each feature in one or two short sentences.
-- **Improvements & fixes:** use short bullets describing the result. Group minor fixes or UI improvements when useful; omit empty sections.
-- No verification section, test counts, build details, or website-only changes. Keep verification and diagnostic evidence in internal receipts/handoffs. Keep CHANGELOG.md concise too, and omit website-only entries there.
-- Avoid unsupported success claims. Include a brief limitation with the relevant feature only when users need it to understand the feature.
-- Always include release-specific links for the non-root APK, Root installer APK, Root module ZIP, and GitHub release. Keep the optional Ko-fi support link and GitHub repository link in [footer.md](footer.md).
+- **Novos recursos:** explique cada funcionalidade em uma ou duas frases curtas.
+- **Melhorias e correções:** use itens curtos descrevendo o resultado. Agrupe pequenas correções e ajustes de interface quando fizer sentido; omita seções vazias.
+- Não inclua seções de verificação, contagens de testes, detalhes de compilação ou alterações restritas ao site. Guarde verificações e diagnósticos nos comprovantes internos. Mantenha `CHANGELOG.md` conciso e sem alterações exclusivas do site.
+- Evite alegações de sucesso sem comprovação. Acrescente uma limitação breve somente quando for necessária para compreender um recurso.
+- Inclua os links específicos para APK sem Root, instalador Root, ZIP do módulo e lançamento no GitHub. Mantenha os links de apoio opcional e repositório em [footer.md](footer.md), sujeitos à decisão de exibição pública.
 
-The release workflow publishes the versioned notes followed by `footer.md`. Discord reads that same GitHub release body, so write it once; do not maintain a separate verbose Discord version. Discord also adds download fields for all three artifacts and links its title to the GitHub release.
+O fluxo de lançamento publica as notas versionadas seguidas de `footer.md`. O Discord usa o mesmo conteúdo da versão no GitHub; escreva apenas uma vez, sem uma versão paralela e extensa para Discord. O Discord também adiciona campos de download para os três artefatos e vincula o título ao lançamento GitHub.
 
-For manual publication, append the footer exactly once, just as the workflow does. Review the rendered notes and links before publishing. Do not repost an existing Discord announcement just to change formatting.
+Na publicação manual, acrescente o rodapé somente uma vez, como no fluxo automático. Revise as notas e os links após renderizados antes de publicar. Não envie novamente um anúncio antigo do Discord apenas para alterar sua formatação.

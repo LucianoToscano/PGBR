@@ -34,7 +34,7 @@ export default function GetStarted() {
 
       <p className="cta__release">
         <span className="cta__badge">Teste</span>
-        A compilação <a href={links.releasesCurrent}>PGBR-v0.00.02-LT</a> é experimental e inclui o instalador Root opcional.
+        A compilação <a href={links.releasesCurrent}>PGBR-v0.00.03-LT</a> é experimental e inclui o instalador Root opcional.
       </p>
 
       <div className="faq">
