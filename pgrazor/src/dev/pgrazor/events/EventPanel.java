@@ -21,8 +21,8 @@ public final class EventPanel {
         if (activity.isFinishing() || activity.isDestroyed()) return;
         AlertDialog dialog = dev.pgrazor.ChoiceList.attach(new AlertDialog.Builder(theme(activity, dark))
             .setTitle(dev.pgrazor.PtBr.tr("Events"))
-            .setNegativeButton(dev.pgrazor.PtBr.tr("Close"), null).create(), new String[]{"Halloween 2026", "Go Wild November 2026"},
-            index -> { if (index == 0) showHalloween(activity, dark); else showGoWild(activity, dark); });
+            .setNegativeButton(dev.pgrazor.PtBr.tr("Close"), null).create(), new String[]{"Halloween 2026", "Go Wild November 2026", "Evento Rota Doces Eternatus"},
+            index -> { if (index == 0) showHalloween(activity, dark); else if(index==1) showGoWild(activity,dark); else showEternatus(activity,dark); });
         bind(activity, dialog, () -> {});
         dialog.show();
     }
@@ -145,6 +145,47 @@ public final class EventPanel {
             dev.pgrazor.Control.event("event-wild-safari", "auto_ball=" + (checked ? "ON" : "OFF"));
         });
         bind(activity, dialog, () -> {});
+        dialog.show();
+    }
+
+
+    /** Guided GPX + research workspace. Exact candy-reward classification is not verified. */
+    public static void showEternatus(Activity activity,boolean dark){
+        if(activity.isFinishing()||activity.isDestroyed())return;
+        Context ui=theme(activity,dark);
+        LinearLayout layout=new LinearLayout(ui);layout.setOrientation(LinearLayout.VERTICAL);
+        int pad=Math.round(16*ui.getResources().getDisplayMetrics().density);
+        layout.setPadding(pad,pad,pad,pad);
+        TextView information=new TextView(ui);
+        information.setText("Use uma GPX com as Poképaradas do evento. Confira no jogo se cada parada realmente oferece a pesquisa de uma jogada excelente com recompensa de 25 doces.");
+        information.setTextSize(14);layout.addView(information);
+        TextView limitation=new TextView(ui);
+        limitation.setText("A identificação automática dessa recompensa ainda não foi validada. O acompanhamento abaixo é manual; ele não gira paradas, captura ou teletransporta sozinho.");
+        limitation.setTextSize(12);layout.addView(limitation);
+        android.widget.Button route=new android.widget.Button(ui);
+        route.setText("Abrir caminhada GPX");layout.addView(route);
+        android.widget.Button research=new android.widget.Button(ui);
+        research.setText("Configurar pesquisas e resgates");layout.addView(research);
+        TextView tally=new TextView(ui);tally.setTextSize(14);layout.addView(tally);
+        android.widget.CheckBox[] slots=new android.widget.CheckBox[3];
+        Runnable updateCount=()->{int count=0;for(android.widget.CheckBox cb:slots)if(cb!=null&&cb.isChecked())count++;
+            tally.setText("Pesquisas verificadas nesta sessão: "+count+"/3");};
+        for(int i=0;i<3;i++){
+            slots[i]=new android.widget.CheckBox(ui);
+            slots[i].setText("Pesquisa "+(i+1)+": jogada excelente / 25 doces (confirmada)");
+            layout.addView(slots[i]);
+            slots[i].setOnCheckedChangeListener((button,checked)->updateCount.run());
+        }
+        updateCount.run();
+        TextView note=new TextView(ui);
+        note.setText("Após conferir as três pesquisas, execute a jogada excelente e resgate os prêmios. Confira o tempo de espera antes de continuar para as outras coordenadas.");
+        note.setTextSize(13);layout.addView(note);
+        ScrollView scroll=new ScrollView(ui);scroll.addView(layout);
+        AlertDialog dialog=new AlertDialog.Builder(ui).setTitle("Evento Rota Doces Eternatus")
+            .setView(scroll).setNegativeButton("Fechar",null).create();
+        route.setOnClickListener(v->{dialog.dismiss();dev.pgrazor.AutoWalkDialog.show(activity);});
+        research.setOnClickListener(v->{dialog.dismiss();dev.pgrazor.ResearchSettings.show(activity);});
+        bind(activity,dialog,()->{});
         dialog.show();
     }
 
