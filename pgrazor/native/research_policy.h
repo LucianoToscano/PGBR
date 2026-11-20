@@ -17,6 +17,7 @@ inline bool parse(const char *s,size_t n,Config &out){
  out=Config{};if(!s||n<9||n>kMaxTemplates*(kMaxTemplateBytes+1)+10)return false;
  const bool legacy=!std::memcmp(s,"R2|",3),v3=!std::memcmp(s,"R3|",3),v4=!std::memcmp(s,"R4|",3);
  if(!legacy&&!v3&&!v4)return false;
+ if(v4&&s[3]!='3')return false;
  if((!flag(s[3])&&!((v3&&s[3]=='2')||(v4&&s[3]=='3')))||s[4]!='|'||!flag(s[5])||s[6]!='|'||!flag(s[7])||s[8]!='|')return false;
  Config c;c.remove=s[3]!='0';c.keep_selected=(v3&&s[3]=='2')||(v4&&s[3]=='3');
  c.claim_selected_only=v4&&s[3]=='3';c.claim=s[5]=='1';c.catch_encounters=s[7]=='1';

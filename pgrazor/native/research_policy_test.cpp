@@ -53,6 +53,8 @@ int main(){
  assert(decide(quest(0,1,"UNWANTED",true),c,challenge,active)==NONE);
  assert(!parses("R4|3|1|0|",c));  // empty target must not auto-remove any task
  assert(!parses("R4|2|1|0|CHALLENGE_EXCELLENT",c)); // no silent downgrade
+ assert(!parses("R4|0|1|0|CHALLENGE_EXCELLENT",c)); // event mode must be exact-template only
+ assert(!parses("R4|1|1|0|CHALLENGE_EXCELLENT",c)); // event mode must not fall back to unscoped claims
  assert(!parses("R4|3|1|0|bad",c)); // exact template key, no arbitrary string
  assert(parses("R2|1|0|0|OLD_QUEST",c)&&c.remove&&!c.keep_selected); // backwards compatible
  assert(remove_retry_ms(1)==30000&&remove_retry_ms(2)==120000&&remove_retry_ms(3)==0&&remove_retry_ms(0)==0);
