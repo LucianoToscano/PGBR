@@ -471,18 +471,7 @@ final class SettingsPanel {
         }
         vgpCooldownStop=new CheckBox(activity);vgpCooldownStop.setText(dev.pgrazor.PtBr.tr("Stop on cooldown (estimated)"));vgpCooldownStop.setContentDescription(dev.pgrazor.PtBr.tr("Stop Virtual Go Plus during the estimated action cooldown"));vgpCooldownStop.setChecked(Control.vgpStopOnCooldown());vgpC.addView(vgpCooldownStop);
         vgpCooldownStop.setOnClickListener(v->{if(vgpCooldownStop.isChecked()!=Control.vgpStopOnCooldown())Control.setVgpStopOnCooldown(vgpCooldownStop.isChecked());host.refresh();});
-        vgpIconStyleButton=launch(vgpC,"Ícone do VGP",()->{
-            String[] choices={"Original","Pokébola simples","Pokébola brilhante","GO Plus"};
-            new AlertDialog.Builder(dialogContext())
-                .setTitle("Escolher ícone flutuante")
-                .setSingleChoiceItems(choices,Control.vgpIconStyle(),(dialog,which)->{
-                    Control.setVgpIconStyle(which);
-                    host.refresh();
-                    vgpIconStyleButton.setText("Ícone do VGP: "+choices[which]);
-                    dialog.dismiss();
-                })
-                .setNegativeButton("Cancelar",null).show();
-        });
+        vgpIconStyleButton=launch(vgpC,"Ícone do VGP",this::showVgpAppearance);
         vgpStatus=caption(vgpC,Control.vgpStatus());
         smartRefresh=SmartCatchSettings.populate(activity,vgpC);
 
@@ -911,9 +900,56 @@ final class SettingsPanel {
         incubatorStatus.setText(dev.pgrazor.PtBr.tr(Control.autoIncubate() ? Control.incubatorStatus() : "Off"));
     }
 
+    private void showVgpAppearance(){
+        LinearLayout content=new LinearLayout(activity);
+        content.setOrientation(LinearLayout.VERTICAL);
+        content.setPadding(dp(16),dp(14),dp(16),dp(8));
+        TextView hint=new TextView(activity);
+        hint.setText("Escolha uma imagem. A aparência muda conforme o VGP está desligado, ativo ou com falha.");
+        hint.setTextSize(14);content.addView(hint);
+        LinearLayout previews=new LinearLayout(activity);
+        previews.setGravity(Gravity.CENTER);previews.setOrientation(LinearLayout.HORIZONTAL);
+        content.addView(previews);
+        final ImageView[] choices=new ImageView[2];
+        final String[] files={"vgp-ring.png","vgp-device-on.png"};
+        for(int i=0;i<2;i++){
+            final int choice=i;
+            ImageView image=new ImageView(activity);choices[i]=image;
+            try(java.io.InputStream input=PgAssets.open(activity,"pgrazor/map-icons/"+files[i])){
+                image.setImageBitmap(BitmapFactory.decodeStream(input));
+            }catch(java.io.IOException ignored){}
+            image.setScaleType(ImageView.ScaleType.FIT_CENTER);
+            image.setPadding(dp(10),dp(10),dp(10),dp(10));
+            LinearLayout.LayoutParams params=new LinearLayout.LayoutParams(0,dp(96),1f);
+            previews.addView(image,params);
+            image.setContentDescription(i==0?"Ícone LED verde":"Ícone GO Plus com três estados");
+            image.setOnClickListener(v->{
+                Control.setVgpIconStyle(choice);
+                for(int j=0;j<2;j++)choices[j].setBackgroundColor(j==choice?0x3340BDAA:android.graphics.Color.TRANSPARENT);
+                host.refresh();
+                vgpIconStyleButton.setText("Ícone do VGP: "+(choice==0?"LED":"GO Plus"));
+            });
+        }
+        choices[Control.vgpIconStyle()].setBackgroundColor(0x3340BDAA);
+        TextView sizeLabel=new TextView(activity);
+        sizeLabel.setText("Tamanho: "+Control.vgpIconSize()+" dp");
+        sizeLabel.setTextSize(14);content.addView(sizeLabel);
+        SeekBar slider=new SeekBar(activity);
+        slider.setMax(44);slider.setProgress(Control.vgpIconSize()-28);
+        content.addView(slider);
+        slider.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){
+            public void onProgressChanged(SeekBar bar,int progress,boolean user){
+                if(user){Control.setVgpIconSize(progress+28);sizeLabel.setText("Tamanho: "+Control.vgpIconSize()+" dp");host.refresh();}
+            }
+            public void onStartTrackingTouch(SeekBar bar){}
+            public void onStopTrackingTouch(SeekBar bar){}
+        });
+        new AlertDialog.Builder(dialogContext()).setTitle("Aparência do VGP")
+            .setView(content).setPositiveButton("Concluir",null).show();
+    }
     private void refreshVgpOptions() {
         if(vgpIconStyleButton!=null){
-            String[] choices={"Original","Pokébola simples","Pokébola brilhante","GO Plus"};
+            String[] choices={"LED","GO Plus"};
             vgpIconStyleButton.setText("Ícone do VGP: "+choices[Control.vgpIconStyle()]);
         }
         for(int i=0;i<3;i++)vgpChoices[i].setChecked((Control.vgpOptions()&(1<<i))!=0);

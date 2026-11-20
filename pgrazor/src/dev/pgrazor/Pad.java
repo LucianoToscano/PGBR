@@ -191,7 +191,7 @@ public final class Pad {
         panelView.setOnApplyWindowInsetsListener((view,insets) -> {settings.applyInsets(insets);return insets;});
         panelView.requestApplyInsets();
 
-        vgpToggle=new VgpToggle(host);FrameLayout.LayoutParams vgpButtonLayout=new FrameLayout.LayoutParams(dp(54),dp(54),Gravity.TOP|Gravity.LEFT);vgpButtonLayout.leftMargin=dp(12);vgpButtonLayout.topMargin=dp(156);overlays.addView(vgpToggle,vgpButtonLayout);vgpToggle.setOnClickListener(v->{Control.setVgpEnabled(!Control.vgpEnabled());refresh();});
+        vgpToggle=new VgpToggle(host);FrameLayout.LayoutParams vgpButtonLayout=new FrameLayout.LayoutParams(dp(76),dp(76),Gravity.TOP|Gravity.LEFT);vgpButtonLayout.leftMargin=dp(12);vgpButtonLayout.topMargin=dp(156);overlays.addView(vgpToggle,vgpButtonLayout);vgpToggle.setOnClickListener(v->{Control.setVgpEnabled(!Control.vgpEnabled());refresh();});
         vgpActivity=text("VGP",12,ink());vgpActivity.setPadding(dp(10),dp(6),dp(10),dp(6));vgpActivity.setMaxLines(2);vgpActivity.setEllipsize(android.text.TextUtils.TruncateAt.END);
         FrameLayout.LayoutParams vgpLayout=new FrameLayout.LayoutParams(dp(220),-2,Gravity.TOP|Gravity.LEFT);vgpLayout.leftMargin=dp(12);vgpLayout.topMargin=dp(216);overlays.addView(vgpActivity,vgpLayout);vgpActivity.setVisibility(View.GONE);
         buddyEmotionStatus=text("EP: waiting",12,ink());buddyEmotionStatus.setPadding(dp(10),dp(6),dp(10),dp(6));buddyEmotionStatus.setMaxLines(3);
@@ -259,29 +259,54 @@ public final class Pad {
         catch(java.io.IOException|RuntimeException ignored){return null;}
     }
     private final class VgpToggle extends View {
-        private final Paint paint=new Paint(Paint.ANTI_ALIAS_FLAG);
         private final Paint art=new Paint(Paint.ANTI_ALIAS_FLAG|Paint.FILTER_BITMAP_FLAG);
+        private final Paint glow=new Paint(Paint.ANTI_ALIAS_FLAG);
         private final RectF dst=new RectF();
-        // Original plus selectable PNG designs provided for PGBR. All stay inside the same 54dp button.
-        private final Bitmap connected=decodeMapIcon("vgp-connected.png"),disconnected=decodeMapIcon("vgp-disconnected.png");
-        private final Bitmap simple=decodeMapIcon("vgp-custom-minimal.png");
-        private final Bitmap glossy=decodeMapIcon("vgp-custom-glossy.png");
-        private final Bitmap goPlus=decodeMapIcon("vgp-custom-plus.png");
+        private final Bitmap ledOff=decodeMapIcon("vgp-led-off.png");
+        private final Bitmap ring=decodeMapIcon("vgp-ring.png");
+        private final Bitmap deviceOn=decodeMapIcon("vgp-device-on.png");
+        private final Bitmap deviceError=decodeMapIcon("vgp-device-error.png");
+        private final Bitmap deviceOff=decodeMapIcon("vgp-device-off.png");
         VgpToggle(Context context){super(context);setFocusable(true);setClickable(true);}
-        protected void onDraw(Canvas canvas){super.onDraw(canvas);boolean on=Control.vgpEnabled();canvas.save();canvas.scale(getWidth()/54f,getHeight()/54f);
-            paint.setStyle(Paint.Style.FILL);paint.setColor(surface());canvas.drawRoundRect(1,1,53,53,14,14,paint);
+        private boolean failed(){
+            String status=Control.vgpStatus().toLowerCase(java.util.Locale.ROOT);
+            return status.contains("error")||status.contains("erro")||status.contains("falha")||
+                status.contains("failed")||status.contains("declined")||status.contains("refused");
+        }
+        protected void onDraw(Canvas canvas){
+            super.onDraw(canvas);
+            boolean on=Control.vgpEnabled(),error=!on&&failed();
             int style=Control.vgpIconStyle();
-            Bitmap icon=style==1?simple:style==2?glossy:style==3?goPlus:(on?connected:disconnected);
-            if(icon!=null&&icon.getWidth()>0&&icon.getHeight()>0){
-                // Keep artwork small relative to the surrounding HUD, never enlarge the touch target.
-                float box=style==2?28f:30f;
-                float ratio=Math.min(box/icon.getWidth(),box/icon.getHeight()),w=icon.getWidth()*ratio,h=icon.getHeight()*ratio;
-                dst.set(27-w/2f,21-h/2f,27+w/2f,21+h/2f);
-                art.setAlpha(on?255:165);canvas.drawBitmap(icon,null,dst,art);art.setAlpha(255);
+            Bitmap icon=style==0?(on?ring:ledOff):(on?deviceOn:error?deviceError:deviceOff);
+            float centerX=getWidth()/2f,centerY=getHeight()/2f;
+            float density=getResources().getDisplayMetrics().density;
+            float size=Math.min(Math.min(getWidth(),getHeight()),Control.vgpIconSize()*density);
+            if(icon!=null){
+                float ratio=Math.min(size/icon.getWidth(),size/icon.getHeight());
+                float w=icon.getWidth()*ratio,h=icon.getHeight()*ratio;
+                dst.set(centerX-w/2,centerY-h/2,centerX+w/2,centerY+h/2);
+                canvas.drawBitmap(icon,null,dst,art);
             }
-            else{paint.setColor(on?Color.rgb(33,188,125):Color.rgb(126,134,148));canvas.drawCircle(27,20,13,paint);paint.setColor(Color.WHITE);paint.setStyle(Paint.Style.STROKE);paint.setStrokeWidth(2.5f);canvas.drawArc(19,12,35,28,-55,290,false,paint);canvas.drawLine(27,8,27,20,paint);}
-            paint.setStyle(Paint.Style.FILL);paint.setColor(on?Color.rgb(33,188,125):muted());paint.setTextSize(11);paint.setTypeface(Typeface.DEFAULT_BOLD);paint.setTextAlign(Paint.Align.CENTER);canvas.drawText(on?"ON":"OFF",27,50,paint);
-            canvas.restore();}
+            if(on&&getVisibility()==View.VISIBLE){
+                float phase=(android.os.SystemClock.uptimeMillis()%1200)/1200f;
+                float pulse=(float)(0.5+0.5*Math.sin(phase*2*Math.PI));
+                if(style==0){
+                    // Green LED and two short signal arcs. Do not cover the supplied transparent sprite.
+                    glow.setStyle(Paint.Style.FILL);
+                    glow.setColor(android.graphics.Color.argb((int)(90+150*pulse),0,245,90));
+                    canvas.drawCircle(centerX,centerY,size*0.105f,glow);
+                    glow.setStyle(Paint.Style.STROKE);glow.setStrokeWidth(Math.max(1.5f,density*1.5f));
+                    glow.setColor(android.graphics.Color.argb((int)(70+170*pulse),230,255,230));
+                    canvas.drawArc(centerX+size*.24f,centerY-size*.47f,centerX+size*.50f,centerY-size*.21f,275,75,false,glow);
+                    canvas.drawArc(centerX+size*.33f,centerY-size*.54f,centerX+size*.61f,centerY-size*.15f,275,75,false,glow);
+                }else{
+                    glow.setStyle(Paint.Style.FILL);
+                    glow.setColor(android.graphics.Color.argb((int)(45+150*pulse),15,168,255));
+                    canvas.drawCircle(centerX,centerY,size*.07f,glow);
+                }
+                postInvalidateDelayed(80);
+            }
+        }
     }
     private final class VgpMarker extends View {
         private final Paint paint=new Paint(Paint.ANTI_ALIAS_FLAG);
