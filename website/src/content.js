@@ -136,7 +136,7 @@ export const steps = [
   {
     n: '01',
     title: 'Baixar',
-    body: 'Abra a última compilação aprovada no GitHub Actions, baixe o artefato PGBR-v0.00.01-LT-APKs e extraia PGBR-v0.00.01-LT.apk.',
+    body: 'Abra a última compilação aprovada no GitHub Actions, baixe o artefato PGBR-v0.00.02-LT-APKs e extraia PGBR-v0.00.02-LT.apk.',
   },
   {
     n: '02',
