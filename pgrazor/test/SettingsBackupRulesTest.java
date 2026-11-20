@@ -5,7 +5,7 @@ import org.json.*;
 
 public class SettingsBackupRulesTest {
     private static JSONObject valid()throws Exception{
-        return new JSONObject().put("format","PGRazor settings").put("version",1).put("speedKmh",9.3)
+        return new JSONObject().put("format","PGBR settings").put("version",1).put("speedKmh",9.3)
             .put("settings",new JSONObject().put("autoDismiss","true").put("transferProtect","63"))
             .put("preferences",new JSONObject().put("pgrazor-overlays",new JSONObject().put("vgp.fx",0.8)));
     }
@@ -14,6 +14,7 @@ public class SettingsBackupRulesTest {
     }
     public static void main(String[] args)throws Exception{
         SettingsBackupRules.validate(valid());
+        JSONObject legacy=valid();legacy.put("format","PGRazor settings");SettingsBackupRules.validate(legacy);
         JSONObject protect=valid();protect.getJSONObject("settings").put("transferProtect","255").put("transferProtectSplit","1");
         SettingsBackupRules.validate(protect);
         protect.getJSONObject("settings").put("transferProtect","256");rejects(protect);

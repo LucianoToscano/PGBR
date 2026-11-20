@@ -14,7 +14,8 @@ public final class SettingsBackupRules {
     private static void integer(Object o,int max,String label)throws JSONException{double n=number(o,0,max,label);require(n==Math.rint(n),"Invalid "+label);}
     private static void bool(Object o,String label)throws JSONException{require(o instanceof Boolean,"Invalid "+label);}
     public static void validate(JSONObject root)throws JSONException{
-        require("PGBR settings".equals(root.optString("format")),"Unsupported settings backup");
+        String marker=root.optString("format");
+        require("PGBR settings".equals(marker)||"PGRazor settings".equals(marker),"Unsupported settings backup");
         require(number(root.get("version"),1,1,"backup version")==1,"Unsupported settings backup");
         double speed=number(root.get("speedKmh"),0,30,"speed");require(speed==0||speed>=0.5,"Invalid speed");
         JSONObject settings=root.getJSONObject("settings");Set<String> allowed=new HashSet<>(Arrays.asList(SETTINGS));
