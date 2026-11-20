@@ -47,6 +47,7 @@ public final class AutoWalkDialog {
      * dialog is shown. Cleared when a route is started or the user returns to Nearby mode.
      */
     private static volatile GpxRoute pendingGpx;
+    private static volatile double lastRouteSpeedKmh = 5.0;
 
     /** Bound to one dialog lifetime; all timers and the snapshot request stop on dismiss/destroy. */
     public static AlertDialog show(Activity activity) {
@@ -340,14 +341,39 @@ public final class AutoWalkDialog {
             dialog.dismiss();
         }
 
+        /** Pause preserves the route; stopping is destructive and needs explicit confirmation. */
         private void stop() {
             if (closed) return;
             if (!Control.engine.routeProgress().active) { updateRunning(); return; }
-            Control.engine.stop();
-            Control.saveState();
-            Control.event("autowalk-stopped", "User stopped the active route from Auto-walk");
-            updateRunning();
-            toast("Auto-walk stopped.");
+            final boolean paused = Control.engine.speedKmh == 0;
+            String[] choices = paused
+                ? new String[]{"Retomar rota", "Parar rota definitivamente", "Cancelar"}
+                : new String[]{"Pausar rota", "Parar rota definitivamente", "Cancelar"};
+            AlertDialog confirm = new AlertDialog.Builder(MapTheme.wrap(activity))
+                .setTitle("O que deseja fazer com a rota?")
+                .setItems(choices, (d, which) -> {
+                    if (which == 2) return;
+                    if (which == 0) {
+                        if (paused) {
+                            Control.engine.speed(lastRouteSpeedKmh > 0 ? lastRouteSpeedKmh : 5.0);
+                            Control.event("autowalk-resumed", "User resumed route");
+                            toast("Rota retomada.");
+                        } else {
+                            lastRouteSpeedKmh = Control.engine.speedKmh;
+                            Control.engine.speed(0);
+                            Control.event("autowalk-paused", "User paused route");
+                            toast("Rota pausada. Seu progresso foi mantido.");
+                        }
+                    } else {
+                        Control.engine.stop();
+                        Control.event("autowalk-stopped", "User confirmed stopping the active route");
+                        toast("Rota encerrada.");
+                    }
+                    Control.saveState();
+                    updateRunning();
+                }).create();
+            DialogLifecycle.bind(activity,confirm,()->{});
+            confirm.show();
         }
 
         private void toast(String message) {
