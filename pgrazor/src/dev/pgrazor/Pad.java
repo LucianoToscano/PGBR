@@ -78,7 +78,7 @@ public final class Pad {
     private void applyTheme(){
         settings.applyTheme();
         if(launcher!=null)launcher.invalidate();
-        if(joystickOverlay!=null){joystickOverlay.setBackground(null);stick.setAlpha(0.6f);styleTree(joystickOverlay);stick.invalidate();}
+        if(joystickOverlay!=null){joystickOverlay.setBackground(null);stick.setAlpha(Control.joystickOpacity()/100f);styleTree(joystickOverlay);stick.invalidate();}
         if(encounterBerry!=null)encounterBerry.invalidate();
         lastHudAppearanceKey=Integer.MIN_VALUE;
         applyHudAppearance();
@@ -149,7 +149,7 @@ public final class Pad {
         stick = new Stick(host);
         joystickOverlay = new LinearLayout(host); joystickOverlay.setOrientation(LinearLayout.VERTICAL);
         TextView grip = text("• • •", 12, muted()); grip.setGravity(Gravity.CENTER); joystickOverlay.addView(grip, new LinearLayout.LayoutParams(-1, dp(28)));
-        joystickOverlay.addView(stick, new LinearLayout.LayoutParams(dp(136), dp(136))); draggable(grip, joystickOverlay, false);
+        joystickOverlay.addView(stick, new LinearLayout.LayoutParams(dp(Control.joystickSizeDp()), dp(Control.joystickSizeDp()))); draggable(grip, joystickOverlay, false);
 
         // The settings panel is a full-screen modal; it consumes taps so the game behind it stays inert.
         parent.addView(settings.view(), new FrameLayout.LayoutParams(-1, -1));
@@ -160,7 +160,7 @@ public final class Pad {
         blackScreen.setOnClickListener(v->{ShundoSniper.setDark(false);refresh();});
         parent.addView(blackScreen,parent.indexOfChild(overlays),new FrameLayout.LayoutParams(-1,-1));
 
-        FrameLayout.LayoutParams joyLayout=new FrameLayout.LayoutParams(dp(136),-2,Gravity.LEFT|Gravity.BOTTOM);joyLayout.leftMargin=dp(16);joyLayout.bottomMargin=dp(96);overlays.addView(joystickOverlay,joyLayout);
+        FrameLayout.LayoutParams joyLayout=new FrameLayout.LayoutParams(dp(Control.joystickSizeDp()),-2,Gravity.LEFT|Gravity.BOTTOM);joyLayout.leftMargin=dp(16);joyLayout.bottomMargin=dp(96);overlays.addView(joystickOverlay,joyLayout);
 
         // Compact catching-berry overlay; the popup chooses owned berries and Off.
         encounterBerry=new BerryOverlay(activity,this::refresh);
@@ -176,7 +176,7 @@ public final class Pad {
         panelView.setOnApplyWindowInsetsListener((view,insets) -> {settings.applyInsets(insets);return insets;});
         panelView.requestApplyInsets();
 
-        vgpToggle=new VgpToggle(host);FrameLayout.LayoutParams vgpButtonLayout=new FrameLayout.LayoutParams(dp(Math.max(48,Control.vgpIconSize()+4)),dp(Math.max(48,Control.vgpIconSize()+4)),Gravity.TOP|Gravity.LEFT);vgpButtonLayout.leftMargin=dp(12);vgpButtonLayout.topMargin=dp(156);overlays.addView(vgpToggle,vgpButtonLayout);vgpToggle.setOnClickListener(v->{Control.setVgpEnabled(!Control.vgpEnabled());refresh();});
+        vgpToggle=new VgpToggle(host);FrameLayout.LayoutParams vgpButtonLayout=new FrameLayout.LayoutParams(dp(Math.max(48,Control.vgpIconSize())),dp(Math.max(48,Control.vgpIconSize())),Gravity.TOP|Gravity.LEFT);vgpButtonLayout.leftMargin=dp(12);vgpButtonLayout.topMargin=dp(156);overlays.addView(vgpToggle,vgpButtonLayout);vgpToggle.setOnClickListener(v->{Control.setVgpEnabled(!Control.vgpEnabled());refresh();});
         vgpActivity=text("VGP",11,ink());vgpActivity.setPadding(dp(4),dp(2),dp(4),dp(2));vgpActivity.setMaxLines(1);vgpActivity.setEllipsize(android.text.TextUtils.TruncateAt.END);
         FrameLayout.LayoutParams vgpLayout=new FrameLayout.LayoutParams(dp(140),-2,Gravity.TOP|Gravity.LEFT);vgpLayout.leftMargin=dp(12);vgpLayout.topMargin=dp(216);overlays.addView(vgpActivity,vgpLayout);vgpActivity.setVisibility(View.GONE);
         buddyEmotionStatus=text("EP: aguardando",11,ink());buddyEmotionStatus.setPadding(dp(4),dp(2),dp(4),dp(2));buddyEmotionStatus.setMaxLines(1);buddyEmotionStatus.setEllipsize(android.text.TextUtils.TruncateAt.END);
@@ -255,17 +255,33 @@ public final class Pad {
         private final Paint art=new Paint(Paint.ANTI_ALIAS_FLAG|Paint.FILTER_BITMAP_FLAG);
         private final Paint glow=new Paint(Paint.ANTI_ALIAS_FLAG);
         private final RectF dst=new RectF();
-        private final Bitmap ledOff=decodeMapIcon("vgp-led-off.png");
-        private final Bitmap ring=decodeMapIcon("vgp-ring.png");
+        private final Bitmap ledOff=trimAlpha(decodeMapIcon("vgp-led-off.png"));
+        private final Bitmap ring=trimAlpha(decodeMapIcon("vgp-ring.png"));
         // HD atlas: rows 0=OFF gray, 1=ERROR orange, 2=ON blue.
         // Load the user's full-quality transparent art once, not 48px thumbnail assets.
         private final Bitmap atlas=decodeMapIcon("vgp-hd-states.webp");
+        private Bitmap trimAlpha(Bitmap bitmap){
+            if(bitmap==null)return null;
+            final int w=bitmap.getWidth(),h=bitmap.getHeight();
+            if(w<2||h<2)return bitmap;
+            final int[] pixels=new int[w*h];
+            bitmap.getPixels(pixels,0,w,0,0,w,h);
+            int left=w,top=h,right=-1,bottom=-1;
+            for(int y=0;y<h;y++)for(int x=0;x<w;x++){
+                if((pixels[y*w+x]>>>24)<16)continue;
+                if(x<left)left=x;if(x>right)right=x;
+                if(y<top)top=y;if(y>bottom)bottom=y;
+            }
+            if(right<left||bottom<top)return bitmap;
+            if(left==0&&top==0&&right==w-1&&bottom==h-1)return bitmap;
+            return Bitmap.createBitmap(bitmap,left,top,right-left+1,bottom-top+1);
+        }
         private Bitmap hdState(int row,String fallback){
             if(atlas!=null&&atlas.getHeight()==atlas.getWidth()*3){
-                try{return Bitmap.createBitmap(atlas,0,atlas.getWidth()*row,atlas.getWidth(),atlas.getWidth());}
+                try{return trimAlpha(Bitmap.createBitmap(atlas,0,atlas.getWidth()*row,atlas.getWidth(),atlas.getWidth()));}
                 catch(RuntimeException ignored){}
             }
-            return decodeMapIcon(fallback);
+            return trimAlpha(decodeMapIcon(fallback));
         }
         private final Bitmap deviceOff=hdState(0,"vgp-device-error.png");
         private final Bitmap deviceError=hdState(1,"vgp-device-on.png");
@@ -285,6 +301,16 @@ public final class Pad {
             float density=getResources().getDisplayMetrics().density;
             float size=Math.min(Math.min(getWidth(),getHeight()),Control.vgpIconSize()*density);
             if(icon!=null){
+                if(getParent() instanceof View){
+                    View container=(View)getParent();
+                    if(getX()>=(container.getWidth()-getWidth()-dp(3)))
+                        centerX=getWidth()-size/2f;
+                }
+                if(style==1&&Control.hudLabelOpacity()>0){
+                    glow.setStyle(Paint.Style.FILL);
+                    glow.setColor(Color.argb(Math.round(Control.hudLabelOpacity()*2.55f),218,225,231));
+                    canvas.drawCircle(centerX,centerY,size*.50f,glow);
+                }
                 float ratio=Math.min(size/icon.getWidth(),size/icon.getHeight());
                 float w=icon.getWidth()*ratio,h=icon.getHeight()*ratio;
                 dst.set(centerX-w/2,centerY-h/2,centerX+w/2,centerY+h/2);
@@ -377,9 +403,24 @@ public final class Pad {
         if(encounterBerry!=null)encounterBerry.applyUiScale(scale);
         if(quickMenu!=null)quickMenu.applyScale(scale);
     }
+    private int lastJoystickSize=-1,lastJoystickOpacity=-1;
+    private void refreshJoystickAppearance(){
+        if(stick==null||joystickOverlay==null)return;
+        int size=Control.joystickSizeDp(),opacity=Control.joystickOpacity();
+        if(size!=lastJoystickSize){
+            lastJoystickSize=size;
+            ViewGroup.LayoutParams current=stick.getLayoutParams();
+            if(current!=null){current.width=dp(size);current.height=dp(size);stick.setLayoutParams(current);}
+            ViewGroup.LayoutParams outer=joystickOverlay.getLayoutParams();
+            if(outer!=null){outer.width=dp(size);joystickOverlay.setLayoutParams(outer);}
+        }
+        if(opacity!=lastJoystickOpacity){
+            lastJoystickOpacity=opacity;stick.setAlpha(opacity/100f);stick.invalidate();
+        }
+    }
     private void refreshVgpHitbox(){
         if(vgpToggle==null)return;
-        int size=dp(Math.max(48,Control.vgpIconSize()+4));
+        int size=dp(Math.max(48,Control.vgpIconSize()));
         if(size==lastVgpHitboxPx)return;
         lastVgpHitboxPx=size;
         ViewGroup.LayoutParams layout=vgpToggle.getLayoutParams();
@@ -429,6 +470,7 @@ public final class Pad {
         }
         applyHudAppearance();
         refreshVgpHitbox();
+        refreshJoystickAppearance();
         if(encounterBadge!=null){String count=!Control.encounterOverlay()||settings.isVisible()||(quickMenu!=null&&quickMenu.isShowing())?"":EncounterCounter.label();
             encounterBadge.setVisibility(count.isEmpty()||!Control.hudLabelsVisible()?View.GONE:View.VISIBLE);
             if(!count.isEmpty()){setTextIfChanged(encounterBadge,count);encounterBadge.setTextColor(ink());if(encounterDrag!=null)encounterDrag.refreshBounds();}}
