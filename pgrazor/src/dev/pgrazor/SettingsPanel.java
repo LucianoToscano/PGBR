@@ -768,6 +768,10 @@ final class SettingsPanel {
         }
         vgpCooldownStop=new CheckBox(activity);vgpCooldownStop.setText(dev.pgrazor.PtBr.tr("Stop on cooldown (estimated)"));vgpCooldownStop.setContentDescription(dev.pgrazor.PtBr.tr("Stop Virtual Go Plus during the estimated action cooldown"));vgpCooldownStop.setChecked(Control.vgpStopOnCooldown());vgpC.addView(vgpCooldownStop);
         vgpCooldownStop.setOnClickListener(v->{if(vgpCooldownStop.isChecked()!=Control.vgpStopOnCooldown())Control.setVgpStopOnCooldown(vgpCooldownStop.isChecked());host.refresh();});
+        Switch accidentalTap=switchRow(vgpC,"Evitar toque acidental no VGP+");
+        accidentalTap.setChecked(Control.vgpTapProtection());
+        accidentalTap.setOnCheckedChangeListener((button,checked)->Control.setVgpTapProtection(checked));
+        caption(vgpC,"Ativado: pede confirmação antes de ligar pelo ícone flutuante. Desligar continua com um toque. Não interfere na rota Eternatus.");
         vgpIconStyleButton=launch(vgpC,"Ícone do VGP",this::showVgpAppearance);
         vgpStatus=caption(vgpC,Control.vgpStatus());
         smartRefresh=SmartCatchSettings.populate(activity,vgpC);

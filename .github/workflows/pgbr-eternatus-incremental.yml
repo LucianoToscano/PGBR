@@ -3,7 +3,7 @@ on:
   push:
     branches: [feature/eternatus-rota-automatica-lt, feature/lt-pvp-protecao-icones-hud-velocidades, feature/lt-hud-historico-locais-20261120]
   pull_request:
-    branches: [feature/pt-br-traducao]
+    branches: [feature/pt-br-traducao, feature/lt-hud-historico-locais-20261120]
 permissions:
   contents: read
 jobs:
