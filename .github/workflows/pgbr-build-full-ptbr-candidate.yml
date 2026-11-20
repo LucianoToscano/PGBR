@@ -33,7 +33,7 @@ jobs:
     env:
       PGRAZOR_BUILD_TOOLS: 36.0.0
       PGRAZOR_ANDROID_PLATFORM: android-36
-      PGBR_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || 'v0.00.03-LT' }}
+      PGBR_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || 'v0.00.04-LT' }}
       PGRAZOR_KEY_ALIAS: ${{ secrets.PGRAZOR_KEY_ALIAS }}
       PGRAZOR_STORE_PASSWORD: ${{ secrets.PGRAZOR_STORE_PASSWORD }}
       PGRAZOR_KEY_PASSWORD: ${{ secrets.PGRAZOR_KEY_PASSWORD }}
