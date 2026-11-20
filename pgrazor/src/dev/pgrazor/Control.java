@@ -1119,6 +1119,7 @@ public final class Control {
         gameRoutesPlanning=false;gameRoutes.setPlanning(false);
         requestInteractionStop();
         OneShotAutomation.reset();
+        EternatusMission.stop("O jogo saiu do primeiro plano. Reative o evento conscientemente para continuar.");
         AutoRaid.reset();
         GiftBatchSettings.reset();
         foreground = false; autoWalkPlanning=false;mapPoiOpen=false;mapPoiSnapshot="";mapPoiAt=0; mapTapEpoch++; invalidateQuickBallOutcome(); cameraSampleRequest.set(false); invalidateCameraHeading("App backgrounded");
