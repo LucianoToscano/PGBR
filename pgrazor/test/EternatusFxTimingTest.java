@@ -1,41 +1,45 @@
 package dev.pgrazor;
 
-/** UI-only storm cycle regression tests. Safe to execute on plain JVM. */
+/** Pure-JVM tests for continuous visual animation without touching game state. */
 public final class EternatusFxTimingTest {
-    private static void ok(boolean value,String message){
-        if(!value)throw new AssertionError(message);
+    private static void ok(boolean value,String message) {
+        if(!value) throw new AssertionError(message);
     }
-    private static void near(float actual,float expected,String message){
+    private static void near(float actual,float expected,String message) {
         ok(Math.abs(actual-expected)<.005f,message+": "+actual+" expected "+expected);
     }
-    public static void main(String[] args){
-        // The last storm frame always returns to the original design.
-        near(EternatusFxTiming.strength(0,2),0f,"original clean");
-        near(EternatusFxTiming.strength(1300,2),0f,"clean hold");
-        ok(EternatusFxTiming.strength(2900,2)>.15f,"storm approaches");
-        ok(EternatusFxTiming.strength(5500,2)>.7f,"fully lit rotating vortex");
-        near(EternatusFxTiming.strength(9600,2),0f,"return to original");
-        near(EternatusFxTiming.strength(10800,2),0f,"clean loop seamless");
-        near(EternatusFxTiming.strength(10800+1300,2),0f,"next clean hold");
-
+    public static void main(String[] args) {
+        for(long time=0;time<120000;time+=97) {
+            ok(EternatusFxTiming.strength(time,2)>.20f,"living vortex has no blackouts");
+            near(EternatusFxTiming.strength(time,0),0f,"storm off means zero");
+        }
         ok(EternatusFxTiming.strength(5500,1)<EternatusFxTiming.strength(5500,2),
             "soft is less intense");
-        near(EternatusFxTiming.strength(5500,0),0f,"off");
-        ok(EternatusFxTiming.flash(3300,2)>0f,"diffuse storm illumination");
-        near(EternatusFxTiming.flash(1000,2),0f,"no flashes when clean");
-        near(EternatusFxTiming.flash(5000,0),0f,"no flashes when disabled");
-
-        near(EternatusFxTiming.rotation(0,1,false),0f,"vortex starts aligned");
+        near(EternatusFxTiming.rotation(0,1,false),0f,"starts aligned");
         ok(EternatusFxTiming.rotation(2000,1,false)>70f,
-            "CW vortex makes visible progress");
-        ok(EternatusFxTiming.rotation(2000,1,true)<0f,
-            "counter-rotating smoke in opposite direction");
+            "CW vortex visible progress");
+        ok(EternatusFxTiming.rotation(2000,1,true)<0f,"CCW layer");
         ok(EternatusFxTiming.rotation(2000,2,false)>
-            EternatusFxTiming.rotation(2000,0,false),"faster setting faster");
-        near(EternatusFxTiming.rotation(8000,1,false),0f,"rotation wraps smoothly");
+            EternatusFxTiming.rotation(2000,0,false),"fast setting works");
 
-        ok(EternatusFxTiming.frameDelayMs(2)==33,"epic redraw budget 30fps");
-        ok(EternatusFxTiming.frameDelayMs(1)==50,"soft redraw budget 20fps");
-        System.out.println("PASS: EternatusFxTiming clean -> storm -> rotating vortex -> clean");
+        for(int lane=0;lane<4;lane++) {
+            float before=EternatusFxTiming.flow(1234,1,lane);
+            float after=EternatusFxTiming.flow(1334,1,lane);
+            ok(before>=0f&&before<1f&&after>=0f&&after<1f,"plume progress bounded");
+        }
+        near(EternatusFxTiming.flowOpacity(0f),0f,"spawn invisible");
+        near(EternatusFxTiming.flowOpacity(1f),0f,"reset invisible");
+        ok(EternatusFxTiming.flowOpacity(.5f)>.99f,"plume visible during travel");
+        ok(Math.abs(EternatusFxTiming.flow(1234,1,0)
+            -EternatusFxTiming.flow(1234,1,1))>.01f,"staggered smoke lanes");
+        ok(Math.abs(EternatusFxTiming.strength(4800,2) -
+            EternatusFxTiming.strength(15600,2))>.01f,"no fixed common cycle");
+        int flashes=0; for(long t=0;t<120000;t+=31)
+            if(EternatusFxTiming.flash(t,2)>.03f) flashes++;
+        ok(flashes>5,"irregular glints present");
+        near(EternatusFxTiming.flash(5000,0),0f,"off disables flashes");
+        ok(EternatusFxTiming.frameDelayMs(2)==33,"epic 30fps");
+        ok(EternatusFxTiming.frameDelayMs(1)==50,"soft 20fps");
+        System.out.println("PASS: EternatusFxTiming asynchronous smoke and vortex");
     }
 }

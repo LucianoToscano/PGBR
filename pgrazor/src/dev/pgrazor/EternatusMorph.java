@@ -1,26 +1,20 @@
 package dev.pgrazor;
 
 /**
- * Deterministic, allocation-free bidirectional crossfade between user-provided clean and storm art.
- * No timers, threads, randomness or new animation state: callers draw only while their View is visible.
+ * Non-repeating, allocation-free atmospheric crossfade for the Eternatus art.
+ * The storm stays alive while enabled: no synchronized clean -> storm -> clean reset.
+ * Several incommensurate slow waves prevent a short, obvious animation loop.
  */
 final class EternatusMorph {
-    static final long PERIOD_MS = 10800L;
-
     private EternatusMorph() {}
 
     static float blend(long uptimeMs) {
-        long phase = Math.floorMod(uptimeMs, PERIOD_MS);
-        if (phase < 1400L) return 0f; // hold clean
-        if (phase < 4400L) return ease((phase - 1400f) / 3000f); // clean -> storm
-        if (phase < 6500L) return 1f; // hold storm
-        if (phase < 9500L) return 1f - ease((phase - 6500f) / 3000f); // storm -> clean
-        return 0f; // hold clean before looping
-    }
-
-    private static float ease(float progress) {
-        float p = Math.max(0f, Math.min(1f, progress));
-        return p * p * (3f - 2f * p);
+        double time = Math.max(0L, uptimeMs);
+        double slow = Math.sin(time * .00019);
+        double swirl = Math.sin(time * .00047 + 1.1);
+        double turbulence = Math.sin(time * .00137 + .8 * Math.sin(time * .00023));
+        float blend = (float)(.67 + .105 * slow + .085 * swirl + .055 * turbulence);
+        return Math.max(.40f, Math.min(.92f, blend));
     }
 
     static int overlayAlpha(long uptimeMs) {

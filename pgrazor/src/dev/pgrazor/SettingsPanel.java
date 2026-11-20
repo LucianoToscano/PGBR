@@ -1003,14 +1003,18 @@ final class SettingsPanel {
         skipCutscenesSwitch.setOnCheckedChangeListener((v,checked) -> { if(checked==Control.skipCutscenes())return; Control.setSkipCutscenes(checked); });
         cutsceneStatus = caption(page, "");  // shown only when the native module reports an error
 
-        // Only text owned by PGBR is changed. Game-owned Unity text still needs a validated hook.
-        LinearLayout privacy=group(page,"Nome do treinador nos menus do PGBR");
-        caption(privacy,"O apelido aparece nos menus de contas do PGBR. O mapa e o perfil do Pokémon GO exibem o nome do jogo.");
+        // Display-only masking currently covers PGBR-owned Android labels, not Unity.
+        // This warning must remain until map and trainer-profile hooks are verified.
+        LinearLayout privacy=group(page,"Privacidade do treinador");
+        caption(privacy,"ATENÇÃO: proteção para lives ainda não está completa. "
+            +"Ocultar nome substitui por ***** apenas nos menus do PGBR. "
+            +"Seu nome real continua visível no mapa e no perfil Eu do Pokémon GO. "
+            +"Não use esta opção como proteção para gravações ou transmissões.");
         final TextView preview=caption(privacy,"");
         Runnable updatePrivacy=()->preview.setText(dev.pgrazor.PtBr.tr(
             "Exibição no PGBR: "+(Control.trainerPrivacyMode()==1?"*****":
                 Control.trainerPrivacyMode()==2?Control.trainerAlias():"Nome original")));
-        launch(privacy,"Escolher como exibir meu nome",()->{
+        launch(privacy,"Nome exibido nos menus do PGBR",()->{
             String[] options={"Nome original","Ocultar nome no PGBR","Mostrar apelido no PGBR"};
             new AlertDialog.Builder(dialogContext()).setTitle("Nome exibido no PGBR")
                 .setSingleChoiceItems(options,Control.trainerPrivacyMode(),(d,choice)->{
