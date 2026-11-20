@@ -1,7 +1,12 @@
 # Compila o MESMO aplicativo completo PGRazor em PGBR, sem dividir seus recursos.
-# NUNCA publica uma GitHub Release e so roda manualmente com input original e chaves.
-name: PGBR - compilar APK completo PT-BR (candidato privado)
+# NUNCA publica GitHub Release. Builds automaticos da branch PT-BR usam a entrada e chave nos Secrets.
+name: PGBR - compilar APK completo PT-BR (nuvem)
 on:
+  push:
+    branches:
+      - feature/pt-br-traducao
+    paths-ignore:
+      - '**/*.md'
   workflow_dispatch:
     inputs:
       tag:
@@ -11,6 +16,9 @@ on:
         type: string
 permissions:
   contents: read
+concurrency:
+  group: pgbr-ptbr-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   build:
     if: github.repository == 'LucianoToscano/PGBR' && github.ref_name == 'feature/pt-br-traducao'
@@ -25,6 +33,7 @@ jobs:
     env:
       PGRAZOR_BUILD_TOOLS: 36.0.0
       PGRAZOR_ANDROID_PLATFORM: android-36
+      PGBR_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || format('v0.3.4-ptbr.auto.{0}', github.run_number) }}
       PGRAZOR_KEY_ALIAS: ${{ secrets.PGRAZOR_KEY_ALIAS }}
       PGRAZOR_STORE_PASSWORD: ${{ secrets.PGRAZOR_STORE_PASSWORD }}
       PGRAZOR_KEY_PASSWORD: ${{ secrets.PGRAZOR_KEY_PASSWORD }}
@@ -87,10 +96,10 @@ jobs:
       - name: Validate release tag
         shell: pwsh
         env:
-          RELEASE_TAG: ${{ inputs.tag }}
+          RELEASE_TAG: ${{ env.PGBR_TAG }}
         run: |
           if ($env:RELEASE_TAG -notmatch '^v[0-9]+\.[0-9]+\.[0-9]+(?:-[A-Za-z0-9.-]+)?$') { throw 'Use a version tag such as v0.1.0' }
-          if (!(Test-Path -LiteralPath "docs/releases/$env:RELEASE_TAG.md")) { throw "Add release notes in docs/releases/$env:RELEASE_TAG.md" }
+          if ($env:GITHUB_EVENT_NAME -eq 'workflow_dispatch' -and !(Test-Path -LiteralPath "docs/releases/$env:RELEASE_TAG.md")) { throw "Add release notes in docs/releases/$env:RELEASE_TAG.md" }
       - name: Prepare pinned DEX test dependencies
         run: python -c "import sys; sys.path.insert(0, 'pgrazor'); import dex_bridges; dex_bridges.dependencies(download=True)"
       - run: python -B tools/check.py
@@ -105,13 +114,13 @@ jobs:
         run: python -B tools/private_input.py
       - name: Build playable package
         env:
-          PGRAZOR_VERSION: ${{ inputs.tag }}
+          PGRAZOR_VERSION: ${{ env.PGBR_TAG }}
           GITHUB_TOKEN: ${{ github.token }}
         run: python -B pgrazor/nonroot.py --apk pgrazor/input/game.apkm --google-browser-login
       - name: Produce single installable APK
         shell: pwsh
         env:
-          PGRAZOR_VERSION: ${{ inputs.tag }}
+          PGRAZOR_VERSION: ${{ env.PGBR_TAG }}
         run: |
           $candidate = Get-ChildItem -LiteralPath pgrazor/build/nonroot -Directory | Sort-Object Name -Descending | Select-Object -First 1
           if (!$candidate) { throw 'Non-root package run is missing' }
@@ -120,11 +129,11 @@ jobs:
       - name: Build rooted installer and manual module
         # Keep this after release_apk.py: rooted.py appends both Root checksums.
         env:
-          PGRAZOR_VERSION: ${{ inputs.tag }}
+          PGRAZOR_VERSION: ${{ env.PGBR_TAG }}
         run: python -B pgrazor/rooted.py pgrazor/input/game.apkm --skip-build --download --output dist/release
       - name: Verify all three release downloads
         env:
-          RELEASE_TAG: ${{ inputs.tag }}
+          RELEASE_TAG: ${{ env.PGBR_TAG }}
         run: python -B tools/verify_release.py dist/release --tag $env:RELEASE_TAG
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
@@ -137,7 +146,7 @@ jobs:
             dist/release/SHA256SUMS.txt
             dist/release/build-info.json
           if-no-files-found: error
-          retention-days: 3
+          retention-days: 14
       - name: Remove signing key
         if: always()
         shell: pwsh
