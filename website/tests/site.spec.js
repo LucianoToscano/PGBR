@@ -64,7 +64,7 @@ test('cooldown nav link reveals the section and its estimate table', async ({ pa
   await expect(section.getByRole('heading', { level: 2 })).toBeVisible();
 
   const table = section.locator('table.cooldown__table');
-  await expect(table.first().getByRole('columnheader', { name: 'Distance (km)' })).toBeVisible();
+  await expect(table.first().getByRole('columnheader', { name: 'Distância (km)' })).toBeVisible();
   await expect(table.first().getByRole('columnheader', { name: /Espera/ })).toBeVisible();
   // Endpoints of the chart confirm the data rendered in order.
   await expect(table.getByRole('rowheader', { name: '1', exact: true })).toBeVisible();
