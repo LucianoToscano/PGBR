@@ -180,7 +180,6 @@ void pgrazor_trainer_privacy_tick() {
     // Created only once on the attached Unity owner, then pinned through a
     // process-lifetime strong GC handle (no per-frame managed allocation).
     if (!mask_root) {
-        using Dlsym = void *(*)(void *, const char *);
         // The bootstrap handle is the validated IL2CPP loader handle.
         // dlsym remains read-only discovery; it never loads a second game.
         void *sym = dlsym(boot.handle, "il2cpp_string_new_utf16");
