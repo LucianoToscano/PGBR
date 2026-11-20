@@ -45,6 +45,8 @@ public final class EternatusMission {
         // R4 = selective claim, selective discard. All unselected completed rewards are preserved.
         return "R4|3|1|0|"+chosen;
     }
+    /** Compatibility for callers without quest-instance metadata; such claims cannot advance a GPX. */
+    public static void onResult(String phase,String observedTemplate) { onResult(phase,observedTemplate,""); }
     public static void onResult(String phase,String observedTemplate,String questId) {
         if(!enabled||!template.equals(observedTemplate))return;
         if("claimed".equals(phase)){
