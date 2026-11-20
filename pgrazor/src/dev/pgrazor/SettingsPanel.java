@@ -326,6 +326,38 @@ final class SettingsPanel {
         localTimeSwitch = switchRow(overlays, "Show local time"); localTimeSwitch.setChecked(Control.localTimeOverlay());
         localTimeSwitch.setOnCheckedChangeListener((v,checked) -> { if(checked==Control.localTimeOverlay())return; Control.setLocalTimeOverlay(localTimeSwitch.isChecked()); host.refresh(); });
         caption(overlays, "Time at your spoofed location.");
+        LinearLayout hud=group(loc,"Aparência das legendas");
+        Switch hudVisible=switchRow(hud,"Exibir legendas no mapa");
+        hudVisible.setChecked(Control.hudLabelsVisible());
+        hudVisible.setOnCheckedChangeListener((v,on)->{Control.setHudLabelsVisible(on);host.refresh();});
+        caption(hud,"Oculta os textos de estado, relógio e contadores sem desativar suas funções. Alertas importantes de Pokémon Shiny continuam visíveis.");
+        TextView fontLabel=new TextView(activity);fontLabel.setTextSize(13);
+        fontLabel.setText("Tamanho das legendas: "+Control.hudLabelTextSp()+" sp");hud.addView(fontLabel);
+        SeekBar fontSlider=new SeekBar(activity);fontSlider.setMax(5);
+        fontSlider.setProgress(Control.hudLabelTextSp()-9);hud.addView(fontSlider);
+        fontSlider.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){
+            public void onProgressChanged(SeekBar bar,int progress,boolean fromUser){
+                if(!fromUser)return;
+                Control.setHudLabelTextSp(progress+9);
+                fontLabel.setText("Tamanho das legendas: "+Control.hudLabelTextSp()+" sp");host.refresh();
+            }
+            public void onStartTrackingTouch(SeekBar bar){}
+            public void onStopTrackingTouch(SeekBar bar){}
+        });
+        TextView opacityLabel=new TextView(activity);opacityLabel.setTextSize(13);
+        opacityLabel.setText("Fundo das legendas: "+Control.hudLabelOpacity()+"%");hud.addView(opacityLabel);
+        SeekBar opacitySlider=new SeekBar(activity);opacitySlider.setMax(80);
+        opacitySlider.setProgress(Control.hudLabelOpacity());hud.addView(opacitySlider);
+        opacitySlider.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){
+            public void onProgressChanged(SeekBar bar,int progress,boolean fromUser){
+                if(!fromUser)return;
+                Control.setHudLabelOpacity(progress);
+                opacityLabel.setText("Fundo das legendas: "+progress+"%");host.refresh();
+            }
+            public void onStartTrackingTouch(SeekBar bar){}
+            public void onStopTrackingTouch(SeekBar bar){}
+        });
+
         LinearLayout encounters = group(loc, "Encounter counter");
         encounterCounterSwitch = switchRow(encounters, "Count encounters"); encounterCounterSwitch.setChecked(Control.encounterCounter());
         encounterCounterSwitch.setOnCheckedChangeListener((v,checked) -> { if(checked==Control.encounterCounter())return; Control.setEncounterCounter(encounterCounterSwitch.isChecked()); host.refresh(); });
