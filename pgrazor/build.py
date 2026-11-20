@@ -23,9 +23,9 @@ def release_version(root):
     return 'v' + version.removeprefix('v')
 
 def map_icon_assets():
-    """Bundled POI marker PNGs plus the Pokemon name table for assets/pgrazor/map-icons.
+    """Bundled POI marker PNGs, HD VGP WebP sprites and the Pokemon name table for assets/pgrazor/map-icons.
 
-    Only direct *.png children of assets/map-icons are taken (no recursion/traversal), and the
+    Only direct *.png and *.webp children of assets/map-icons are taken (no recursion/traversal), and the
     archive name is always the bare file name so a crafted source path cannot escape the folder.
     pokemon-names.json (the raid-boss name lookup read by the Java map) is included under the same
     bare-name, no-symlink, stays-inside-the-folder checks. Both preview and nonroot packaging reuse
@@ -34,7 +34,7 @@ def map_icon_assets():
     source = ROOT / 'assets/map-icons'
     icons = {}
     if source.is_dir():
-        for path in sorted(source.glob('*.png')):
+        for path in sorted(list(source.glob('*.png')) + list(source.glob('*.webp'))):
             if path.is_symlink() or not path.resolve().is_relative_to(source.resolve()):
                 raise ValueError("Map icon escapes asset directory")
             if path.is_file():
