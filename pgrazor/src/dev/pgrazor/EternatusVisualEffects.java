@@ -4,6 +4,8 @@ import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.PorterDuff;
+import android.graphics.PorterDuffColorFilter;
 import android.graphics.Path;
 import android.graphics.RadialGradient;
 import android.graphics.RectF;
@@ -21,6 +23,12 @@ final class EternatusVisualEffects {
     private final Paint art = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.FILTER_BITMAP_FLAG);
     private final Paint plasma = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Path clip = new Path();
+    private final PorterDuffColorFilter vortexTint =
+        new PorterDuffColorFilter(0xFFF82DE6, PorterDuff.Mode.SRC_IN);
+    private final PorterDuffColorFilter smokeTint =
+        new PorterDuffColorFilter(0xFF8F5AFF, PorterDuff.Mode.SRC_IN);
+    private final PorterDuffColorFilter glowTint =
+        new PorterDuffColorFilter(0xFF4CE3FF, PorterDuff.Mode.SRC_IN);
     private final RectF sourceBounds = new RectF(-1f, -1f, 1f, 1f);
     private final RectF outerArc = new RectF(-.79f, -.79f, .79f, .79f);
     private final RectF innerArc = new RectF(-.52f, -.52f, .52f, .52f);
@@ -48,7 +56,7 @@ final class EternatusVisualEffects {
      * Concentric counter-rotating art between the crystal ring and movable center.
      * Alpha goes to exactly zero at both clean ends of each morph cycle.
      */
-    void joystick(Canvas canvas, Bitmap vortex, Bitmap smoke, float cx, float cy,
+    void joystick(Canvas canvas, Bitmap vortex, Bitmap smoke, Bitmap wispy, float cx, float cy,
                   float radius, long now, int intensity, int speed) {
         float energy = EternatusFxTiming.strength(now, intensity);
         if (energy < .001f || radius <= 0f) return;
@@ -73,16 +81,29 @@ final class EternatusVisualEffects {
         if (vortex != null) {
             int clockwise = canvas.save();
             canvas.rotate(EternatusFxTiming.rotation(now, speed, false));
+            art.setColorFilter(vortexTint);
             art.setAlpha(Math.min(255, Math.round(240f * energy)));
             canvas.drawBitmap(vortex, null, sourceBounds, art);
+            art.setColorFilter(null);
             canvas.restoreToCount(clockwise);
         }
         if (smoke != null) {
             int counter = canvas.save();
             canvas.rotate(EternatusFxTiming.rotation(now, speed, true));
-            art.setAlpha(Math.min(255, Math.round(184f * energy)));
+            art.setColorFilter(smokeTint);
+            art.setAlpha(Math.min(255, Math.round(195f * energy)));
             canvas.drawBitmap(smoke, null, sourceBounds, art);
+            art.setColorFilter(null);
             canvas.restoreToCount(counter);
+        }
+        if (wispy != null) {
+            int wisps = canvas.save();
+            canvas.rotate(EternatusFxTiming.rotation(now, speed, false) * .64f);
+            art.setColorFilter(glowTint);
+            art.setAlpha(Math.min(180, Math.round(115f * energy)));
+            canvas.drawBitmap(wispy, null, sourceBounds, art);
+            art.setColorFilter(null);
+            canvas.restoreToCount(wisps);
         }
         art.setAlpha(255);
 
@@ -133,8 +154,10 @@ final class EternatusVisualEffects {
             int rotation = canvas.save();
             canvas.rotate(EternatusFxTiming.rotation(now, speed, true));
             art.setColor(Color.WHITE);
-            art.setAlpha(Math.min(255, Math.round(205f * energy)));
+            art.setColorFilter(smokeTint);
+            art.setAlpha(Math.min(255, Math.round(245f * energy)));
             canvas.drawBitmap(aura, null, sourceBounds, art);
+            art.setColorFilter(null);
             art.setAlpha(255);
             canvas.restoreToCount(rotation);
         }
