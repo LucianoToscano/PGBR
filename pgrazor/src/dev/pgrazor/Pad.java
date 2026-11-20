@@ -100,31 +100,60 @@ public final class Pad {
                 if(a==MotionEvent.ACTION_UP){if(!moved&&clickable)v.performClick();return true;}return true;}
         });
     }
-    /** Botão flutuante com a marca brasileira fornecida para o PGBR. */
+    /** Floating launcher: classic PGBR blue pulse or PGEterna matching the themed joystick. */
     private final class PgbrIcon extends View {
         private final Paint paint=new Paint(Paint.ANTI_ALIAS_FLAG|Paint.FILTER_BITMAP_FLAG);
-        private final Bitmap logo;
-        PgbrIcon(Context c) {
-            super(c);
-            Bitmap loaded=null;
-            try(java.io.InputStream stream=PgAssets.open(c,"pgrazor/branding/pgbr-logo.webp")){
-                loaded=BitmapFactory.decodeStream(stream);
-            }catch(Exception ignored){/* Marcador neutro somente se o asset estiver ausente. */}
-            logo=loaded;
-            setContentDescription(PtBr.tr("Open PGBR quick menu. Drag to reposition."));
+        private final Paint shine=new Paint(Paint.ANTI_ALIAS_FLAG);
+        private final Bitmap classic,eterna;
+        private Bitmap personal;
+        private int artworkVersion=-1;
+        PgbrIcon(Context context){
+            super(context);
+            classic=read("pgrazor/branding/pgbr-logo.webp");
+            eterna=read("pgrazor/map-icons/joystick-eternatus-thumb.webp");
+            setContentDescription(PtBr.tr("Abrir o menu principal PGBR. Arraste para reposicionar."));
             setFocusable(true);setClickable(true);
         }
-        protected void onDraw(Canvas canvas) {
+        private Bitmap read(String path){
+            try(java.io.InputStream in=PgAssets.open(getContext(),path)){return BitmapFactory.decodeStream(in);}
+            catch(Exception ignored){return null;}
+        }
+        @Override protected void onDraw(Canvas canvas){
             super.onDraw(canvas);
-            float size=Math.min(getWidth(),getHeight());
-            float left=(getWidth()-size)/2f,top=(getHeight()-size)/2f;
-            if(logo!=null){
-                paint.setAlpha(255);
-                canvas.drawBitmap(logo,null,new RectF(left,top,left+size,top+size),paint);
-            }else{
-                paint.setColor(accent());
-                canvas.drawCircle(getWidth()/2f,getHeight()/2f,size*.42f,paint);
+            int version=OverlayArtwork.version();
+            if(artworkVersion!=version){artworkVersion=version;personal=OverlayArtwork.load(getContext(),"launcher");}
+            int style=Control.menuLauncherIconStyle();
+            Bitmap logo=style==1?eterna:style==2?personal:classic;
+            if(logo==null)logo=classic;
+            float sz=Math.min(getWidth(),getHeight()),cx=getWidth()*.5f,cy=getHeight()*.5f;
+            long now=SystemClock.uptimeMillis();
+            float pulse=(float)(.5+.5*Math.sin(now*(style==1?.0035:.002)));
+            int background=Control.menuLauncherBgOpacity();
+            if(background>0){
+                paint.setStyle(Paint.Style.FILL);
+                paint.setColor(Color.argb(Math.round(background*2.55f),219,224,231));
+                canvas.drawCircle(cx,cy,sz*.49f,paint);
             }
+            shine.setShader(null);shine.setStyle(Paint.Style.STROKE);shine.setStrokeCap(Paint.Cap.ROUND);
+            if(style==1&&Control.joystickEternatusEffects()){
+                shine.setStrokeWidth(dp(1.8f));
+                shine.setColor(Color.argb(Math.round(50+85*pulse),15,220,255));
+                canvas.drawArc(cx-sz*.48f,cy-sz*.48f,cx+sz*.48f,cy+sz*.48f,(now*.075f)%360,65,false,shine);
+                shine.setColor(Color.argb(Math.round(50+80*pulse),255,39,195));
+                canvas.drawArc(cx-sz*.46f,cy-sz*.46f,cx+sz*.46f,cy+sz*.46f,-(now*.060f)%360,56,false,shine);
+            }else if(style==0){
+                shine.setStrokeWidth(dp(2));
+                shine.setColor(Color.argb(Math.round(28+85*pulse),25,171,255));
+                canvas.drawCircle(cx,cy,sz*.455f,shine);
+            }
+            if(logo!=null){
+                paint.setColor(Color.WHITE);paint.setAlpha(255);paint.setStyle(Paint.Style.FILL);
+                float margin=style==1?sz*.09f:sz*.015f;
+                canvas.drawBitmap(logo,null,new RectF(cx-sz*.5f+margin,cy-sz*.5f+margin,cx+sz*.5f-margin,cy+sz*.5f-margin),paint);
+            }else{
+                paint.setColor(SettingsUi.accent());canvas.drawCircle(cx,cy,sz*.4f,paint);
+            }
+            if(isShown()&&!closed)postInvalidateDelayed(style==1?90:150);
         }
     }
 
@@ -220,7 +249,7 @@ public final class Pad {
         FrameLayout.LayoutParams routesLayout=new FrameLayout.LayoutParams(dp(48),dp(48),Gravity.TOP|Gravity.RIGHT);
         routesLayout.rightMargin=dp(14);routesLayout.topMargin=dp(100);overlays.addView(gameRoutesOverlay,routesLayout);
         gameRoutesOverlay.setVisibility(View.GONE);gameRoutesDrag=OverlayDrag.attach(overlays,gameRoutesOverlay,"game-routes");
-        launcher=new PgbrIcon(host);FrameLayout.LayoutParams iconLayout=new FrameLayout.LayoutParams(dp(48),dp(48),Gravity.TOP|Gravity.LEFT);iconLayout.leftMargin=dp(12);iconLayout.topMargin=dp(100);overlays.addView(launcher,iconLayout);
+        launcher=new PgbrIcon(host);FrameLayout.LayoutParams iconLayout=new FrameLayout.LayoutParams(dp(Control.menuLauncherSizeDp()),dp(Control.menuLauncherSizeDp()),Gravity.TOP|Gravity.LEFT);iconLayout.leftMargin=dp(12);iconLayout.topMargin=dp(100);overlays.addView(launcher,iconLayout);
         launcher.setContentDescription(dev.pgrazor.PtBr.tr("Open PGBR quick menu. Drag to reposition."));
         // O botão da marca PGBR abre o menu rápido; Configurações abre o painel completo.
         quickMenu=new QuickMenu(host,parent,launcher,new QuickMenu.Listener(){
@@ -286,6 +315,8 @@ public final class Pad {
         private final Bitmap deviceOff=hdState(0,"vgp-device-error.png");
         private final Bitmap deviceError=hdState(1,"vgp-device-on.png");
         private final Bitmap deviceOn=hdState(2,"vgp-device-off.png");
+        private Bitmap personal;
+        private int artworkVersion=-1;
         VgpToggle(Context context){super(context);setFocusable(true);setClickable(true);}
         private boolean failed(){
             String status=Control.vgpStatus().toLowerCase(java.util.Locale.ROOT);
@@ -296,7 +327,12 @@ public final class Pad {
             super.onDraw(canvas);
             boolean on=Control.vgpEnabled(),error=!on&&failed();
             int style=Control.vgpIconStyle();
-            Bitmap icon=style==0?(on?ring:ledOff):(on?deviceOn:error?deviceError:deviceOff);
+            if(artworkVersion!=OverlayArtwork.version()){
+                artworkVersion=OverlayArtwork.version();
+                personal=trimAlpha(OverlayArtwork.load(getContext(),"vgp"));
+            }
+            Bitmap icon=style==0?(on?ring:ledOff):style==3&&personal!=null?personal:
+                (on?deviceOn:error?deviceError:deviceOff);
             float centerX=getWidth()/2f,centerY=getHeight()/2f;
             float density=getResources().getDisplayMetrics().density;
             float size=Math.min(Math.min(getWidth(),getHeight()),Control.vgpIconSize()*density);
@@ -306,14 +342,15 @@ public final class Pad {
                     if(getX()>=(container.getWidth()-getWidth()-dp(3)))
                         centerX=getWidth()-size/2f;
                 }
-                if(style==1&&Control.overlayBackgroundOpacity()>0){
-                    glow.setStyle(Paint.Style.FILL);
-                    glow.setColor(Color.argb(Math.round(Control.overlayBackgroundOpacity()*2.55f),218,225,231));
+                if((style==1||style==3)&&Control.vgpBackgroundOpacity()>0){
+                    glow.setStyle(Paint.Style.FILL);glow.setShader(null);
+                    glow.setColor(Color.argb(Math.round(Control.vgpBackgroundOpacity()*2.55f),218,225,231));
                     canvas.drawCircle(centerX,centerY,size*.50f,glow);
                 }
                 float ratio=Math.min(size/icon.getWidth(),size/icon.getHeight());
                 float w=icon.getWidth()*ratio,h=icon.getHeight()*ratio;
                 dst.set(centerX-w/2,centerY-h/2,centerX+w/2,centerY+h/2);
+                art.setAlpha(Math.round(Control.vgpIconOpacity()*2.55f));
                 canvas.drawBitmap(icon,null,dst,art);
             }
             if(on&&getVisibility()==View.VISIBLE){
@@ -322,15 +359,15 @@ public final class Pad {
                 if(style==0){
                     // Green LED and two short signal arcs. Do not cover the supplied transparent sprite.
                     glow.setStyle(Paint.Style.FILL);
-                    glow.setColor(android.graphics.Color.argb((int)(90+150*pulse),0,245,90));
+                    glow.setColor(android.graphics.Color.argb(Math.round((90+150*pulse)*Control.vgpIconOpacity()/100f),0,245,90));
                     canvas.drawCircle(centerX,centerY,size*0.105f,glow);
                     glow.setStyle(Paint.Style.STROKE);glow.setStrokeWidth(Math.max(1.5f,density*1.5f));
-                    glow.setColor(android.graphics.Color.argb((int)(70+170*pulse),230,255,230));
+                    glow.setColor(android.graphics.Color.argb(Math.round((70+170*pulse)*Control.vgpIconOpacity()/100f),230,255,230));
                     canvas.drawArc(centerX+size*.24f,centerY-size*.47f,centerX+size*.50f,centerY-size*.21f,275,75,false,glow);
                     canvas.drawArc(centerX+size*.33f,centerY-size*.54f,centerX+size*.61f,centerY-size*.15f,275,75,false,glow);
                 }else{
                     glow.setStyle(Paint.Style.FILL);
-                    glow.setColor(android.graphics.Color.argb((int)(45+150*pulse),15,168,255));
+                    glow.setColor(android.graphics.Color.argb(Math.round((45+150*pulse)*Control.vgpIconOpacity()/100f),15,168,255));
                     canvas.drawCircle(centerX,centerY,size*.07f,glow);
                 }
                 postInvalidateDelayed(80);
@@ -402,6 +439,21 @@ public final class Pad {
         if(gymFeedDrag!=null)gymFeedDrag.refreshBounds();
         if(encounterBerry!=null)encounterBerry.applyUiScale(scale);
         if(quickMenu!=null)quickMenu.applyScale(scale);
+    }
+    private int launcherSize=-1,launcherOpacity=-1,launcherStyle=-1;
+    private void refreshLauncherAppearance(){
+        if(launcher==null)return;
+        int size=Control.menuLauncherSizeDp(),opacity=Control.menuLauncherOpacity();
+        if(launcherSize!=size){
+            launcherSize=size;ViewGroup.LayoutParams lp=launcher.getLayoutParams();
+            if(lp!=null){lp.width=dp(size);lp.height=dp(size);launcher.setLayoutParams(lp);}
+        }
+        if(launcherOpacity!=opacity){launcherOpacity=opacity;launcher.setAlpha(opacity/100f);}
+        if(launcherStyle!=Control.menuLauncherIconStyle()){
+            launcherStyle=Control.menuLauncherIconStyle();launcher.invalidate();
+        }
+        if(launcher instanceof PgbrIcon&&((PgbrIcon)launcher).artworkVersion!=OverlayArtwork.version())
+            launcher.invalidate();
     }
     private int lastJoystickSize=-1,lastJoystickOpacity=-1,lastJoystickStyle=-1;
     private void refreshJoystickAppearance(){
@@ -483,6 +535,7 @@ public final class Pad {
         }
         applyHudAppearance();
         refreshVgpHitbox();
+        refreshLauncherAppearance();
         refreshJoystickAppearance();
         refreshGymAppearance();
         if(encounterBadge!=null){String count=!Control.encounterOverlay()||settings.isVisible()||(quickMenu!=null&&quickMenu.isShowing())?"":EncounterCounter.label();
