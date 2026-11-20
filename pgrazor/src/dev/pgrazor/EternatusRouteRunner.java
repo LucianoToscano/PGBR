@@ -89,7 +89,7 @@ public final class EternatusRouteRunner {
         // Preserve old preferences so Cancel restores the user's previous mode.
         Control.setVgpEnabled(false);
         Control.setVgpOverlay(true);
-        Control.setQuickSpinEnabled(true);
+        Control.setQuickSpinEnabled(false); // Never spin until the destination cooldown is clear.
         if (!travel(0)) {
             stop("Falha ao posicionar a primeira parada.");
             return false;
@@ -113,6 +113,7 @@ public final class EternatusRouteRunner {
         try {
             if (!Control.active() || !Control.canEnable()) return false;
             Control.setVgpEnabled(false);
+            Control.setQuickSpinEnabled(false);
             Control.teleport(point[0], point[1]);
             tick();
             return true;
@@ -151,6 +152,7 @@ public final class EternatusRouteRunner {
         long cooldown = Cooldown.remaining();
         if (cooldown > 0) {
             if (Control.vgpEnabled()) Control.setVgpEnabled(false);
+            if (Control.quickSpinEnabled()) Control.setQuickSpinEnabled(false);
             synchronized (LOCK) {
                 awaitingClaim = false;
                 status = "Parada " + (index + 1) + "/" + route.size()
@@ -163,6 +165,7 @@ public final class EternatusRouteRunner {
             synchronized (LOCK) { status = "Aguardando mapa na parada " + (index + 1) + "/" + route.size() + "."; }
             return;
         }
+        if (!Control.quickSpinEnabled()) Control.setQuickSpinEnabled(true);
         if (!Control.vgpEnabled()) Control.setVgpEnabled(true);
         boolean available = Control.vgpEnabled() && Control.quickSpinAllowed();
         synchronized (LOCK) {
