@@ -164,7 +164,7 @@ final class SettingsPanel {
         final int index=pages.size();
         LinearLayout row=new LinearLayout(activity);row.setOrientation(LinearLayout.HORIZONTAL);row.setGravity(Gravity.CENTER_VERTICAL);row.setMinimumHeight(dp(60));
         row.setPadding(dp(12),dp(8),dp(6),dp(8));row.setClickable(true);row.setFocusable(true);
-        MenuIcon glyph=new MenuIcon(activity,icon);glyph.accent=true;row.addView(glyph,new LinearLayout.LayoutParams(dp(26),dp(26)));
+        MenuIcon glyph=new MenuIcon(activity,icon);glyph.accent=true;row.addView(glyph,new LinearLayout.LayoutParams(dp(Control.menuIconSizeDp()+4),dp(Control.menuIconSizeDp()+4)));
         LinearLayout texts=new LinearLayout(activity);texts.setOrientation(LinearLayout.VERTICAL);texts.setPadding(dp(10),0,0,0);
         TextView name=text(label,15,ink());texts.addView(name);
         TextView summary=text("",12,muted());summary.setMaxLines(2);summary.setEllipsize(android.text.TextUtils.TruncateAt.END);texts.addView(summary);
@@ -331,6 +331,12 @@ final class SettingsPanel {
             public void onStopTrackingTouch(SeekBar bar){}
         });
         caption(joystickArt,"Tamanho e transparência são alterados sem interromper a caminhada automática.");
+        launch(joystickArt,"Escolher imagem do joystick no celular",()->{
+            if(Control.engine.routeProgress().active){
+                android.widget.Toast.makeText(activity,"Pause ou encerre a rota antes de abrir o seletor de imagens do Android.",android.widget.Toast.LENGTH_LONG).show();
+            }else JoystickImage.select(activity);
+        });
+        launch(joystickArt,"Restaurar imagem original do joystick",()->{JoystickImage.reset(activity);host.refresh();});
         idleWalkSwitch = switchRow(loc, "Idle walking");idleWalkSwitch.setChecked(Control.idleWalking());
         idleWalkSwitch.setOnCheckedChangeListener((v,checked)->{if(checked!=Control.idleWalking())Control.setIdleWalking(checked);});
         caption(loc, "When idle, start walking in a circle. Speed 0 pauses it.");
@@ -707,6 +713,22 @@ final class SettingsPanel {
         launch(page, "Evento Rota Doces Eternatus", () -> dev.pgrazor.events.EventPanel.showEternatus(activity, Control.darkTheme()));
     }
 
+    private interface VisualChange{void set(int value);}
+    private void visualSlider(LinearLayout owner,String title,int min,int max,int initial,VisualChange change){
+        TextView label=new TextView(activity);label.setTextSize(13);
+        label.setText(title+": "+initial+(title.contains("Opacidade")?"%":" dp"));
+        owner.addView(label);
+        SeekBar slider=new SeekBar(activity);slider.setMax(max-min);slider.setProgress(initial-min);
+        owner.addView(slider);
+        slider.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){
+            public void onProgressChanged(SeekBar bar,int progress,boolean fromUser){
+                if(!fromUser)return;int value=min+progress;change.set(value);
+                label.setText(title+": "+value+(title.contains("Opacidade")?"%":" dp"));
+            }
+            public void onStartTrackingTouch(SeekBar bar){}
+            public void onStopTrackingTouch(SeekBar bar){}
+        });
+    }
     private void buildDisplayPage() {
         LinearLayout page = page(MenuIcon.SETTINGS, "Display & Performance");
         darkSwitch = switchRow(page, "Dark theme"); darkSwitch.setChecked(Control.darkTheme());
@@ -732,6 +754,16 @@ final class SettingsPanel {
         batteryQualitySwitch.setOnCheckedChangeListener((v,checked) -> { if(checked!=Control.batteryLowQuality())Control.setBatteryLowQuality(checked); });
         caption(battery, "Turns off shadows, fog, water reflections, grass in encounters, HDR and anti-aliasing, and shows less far detail.");
 
+        LinearLayout appearance=group(page,"Personalização dos ícones e fundos");
+        visualSlider(appearance,"Tamanho dos ícones dos menus",16,40,Control.menuIconSizeDp(),value->{
+            Control.setMenuIconSizeDp(value);host.refresh();});
+        visualSlider(appearance,"Tamanho do ícone de ginásios",32,110,Control.gymIconSizeDp(),value->{
+            Control.setGymIconSizeDp(value);host.refresh();});
+        visualSlider(appearance,"Opacidade do ícone de ginásios",10,100,Control.gymIconOpacity(),value->{
+            Control.setGymIconOpacity(value);host.refresh();});
+        visualSlider(appearance,"Opacidade dos fundos flutuantes",0,100,Control.overlayBackgroundOpacity(),value->{
+            Control.setOverlayBackgroundOpacity(value);host.applyTheme();host.refresh();});
+        caption(appearance,"0% deixa os fundos flutuantes transparentes. Janelas de confirmação permanecem legíveis para evitar ações acidentais.");
         LinearLayout menu = group(page,"Quick menu entries");
         caption(menu,"Choose which entries appear. This does not turn features on or off. Settings stays visible.");
         for(int i=0;i<QuickMenu.CUSTOMIZABLE.length;i++){
@@ -834,7 +866,12 @@ final class SettingsPanel {
         if(coords!=null)coords.setTextColor(ink());
         for(LinearLayout row:homeRows)MapTheme.setButtonBackground(row);
         for(TextView name:homeNames)name.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
-        for(MenuIcon icon:homeIcons)icon.invalidate();
+        for(MenuIcon icon:homeIcons){
+            ViewGroup.LayoutParams lp=icon.getLayoutParams();
+            int size=dp(Control.menuIconSizeDp()+4);
+            if(lp!=null&&(lp.width!=size||lp.height!=size)){lp.width=size;lp.height=size;icon.setLayoutParams(lp);}
+            icon.invalidate();
+        }
         if(backIcon!=null)backIcon.invalidate();
         if(closeIcon!=null)closeIcon.invalidate();
         if(themeIcon!=null){themeIcon.setContentDescription(dev.pgrazor.PtBr.tr(Control.darkTheme()?"Switch to light theme":"Switch to dark theme"));themeIcon.invalidate();}
@@ -872,6 +909,10 @@ final class SettingsPanel {
 
     void refresh() {
         refreshHome();
+        for(MenuIcon icon:homeIcons){
+            ViewGroup.LayoutParams lp=icon.getLayoutParams();int size=dp(Control.menuIconSizeDp()+4);
+            if(lp!=null&&(lp.width!=size||lp.height!=size)){lp.width=size;lp.height=size;icon.setLayoutParams(lp);}
+        }
         darkSwitch.setChecked(Control.darkTheme());
         refreshLocationStatus();
         refreshDiagnostics();
