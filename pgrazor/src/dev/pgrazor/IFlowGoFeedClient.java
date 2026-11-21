@@ -41,11 +41,16 @@ final class IFlowGoFeedClient {
         return doFetch(ENDPOINT + query, raids, false);
     }
 
-    /** One page of the observed world search endpoint; no automated page sweeps. */
-    LiveFeedData.Snapshot fetchGlobal() throws Exception {
+    /**
+     * One page of the global search. Server-side pokemon_id is an observed
+     * filter: a limited #25 query returned exclusively Pikachu spawns.
+     * No pagination sweep or unknown query flags.
+     */
+    LiveFeedData.Snapshot fetchGlobal(int dexId) throws Exception {
         cancelled = false;
-        return doFetch("https://pokecoords.iflowgo.com/iflowgopokecoords/api/v1/pokemon-search?page=1",
-                false, true);
+        String endpoint = "https://pokecoords.iflowgo.com/iflowgopokecoords/api/v1/pokemon-search?page=1";
+        if (dexId >= 1 && dexId <= 1025) endpoint += "&pokemon_id=" + dexId;
+        return doFetch(endpoint, false, true);
     }
 
     private LiveFeedData.Snapshot doFetch(String target, boolean raids, boolean global) throws Exception {
