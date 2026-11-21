@@ -1,4 +1,5 @@
 #include "runtime_host.h"
+#include "trainer_privacy_ui.h"
 #include "events/event_collector.h"
 #include "runtime_bootstrap.h"
 #include "runtime_transport.h"
@@ -184,6 +185,12 @@ void pulse(void*,const PgrUnityPulse *p){
  if(pulse_busy.test_and_set(std::memory_order_acquire))return;
  struct Clear{~Clear(){pulse_busy.clear(std::memory_order_release);}} clear;
  ++pulses;const uint64_t time=clock_ms();if(!time){fault=-8;stopping=true;}
+ // Only the already-attached Unity owner may discover or hook display setters.
+ static uint64_t trainer_privacy_at=0;
+ if(time && !stopping.load() && time>=trainer_privacy_at){
+  trainer_privacy_at=time+2000;
+  pgrazor_trainer_privacy_tick();
+ }
  {
   const auto tr=as<PgrRuntimeTransportApi>(pgrazor_runtime_transport_api(1));
   PgrRuntimeTransportSample before{},after{};int enabled=0,has_lat=0,has_lng=0;

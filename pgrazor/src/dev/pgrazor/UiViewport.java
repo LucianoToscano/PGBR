@@ -8,6 +8,15 @@ import android.view.WindowInsets;
 /** Window-local bounds; works when the host game already fits its content inside the bars. */
 final class UiViewport {
     private UiViewport() {}
+    /** VGP corner policy: flush horizontally in portrait, system-safe elsewhere. */
+    static Rect vgpBounds(View parent){
+        Rect safe=bounds(parent);
+        if(parent.getHeight()>=parent.getWidth()){
+            safe.left=0;
+            safe.right=parent.getWidth();
+        }
+        return safe;
+    }
     static Rect bounds(View view){
         int left=0,top=0,right=0,bottom=0;
         WindowInsets insets=view.getRootWindowInsets();

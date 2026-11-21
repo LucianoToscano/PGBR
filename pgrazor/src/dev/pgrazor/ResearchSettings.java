@@ -55,7 +55,7 @@ public final class ResearchSettings {
                 if (changed) Control.saveSettings();
                 return;
             }
-            EternatusMission.onResult(phase,o.optString("template",""),o.optString("questId",""));
+            EternatusMission.onResult(phase,o.optString("template",""),o.optString("questId",""),o.optString("message",""));
             synchronized (LOCK) {
                 if ("claimed".equals(phase)) claimed++;
                 if ("removed".equals(phase)) removed++;
@@ -67,8 +67,9 @@ public final class ResearchSettings {
 
     static String status() {
         synchronized (LOCK) {
-            String counts = dev.pgrazor.PtBr.tr("This session: claimed ") + claimed + dev.pgrazor.PtBr.tr(", removed ") + removed + dev.pgrazor.PtBr.tr(", caught ") + caught;
-            return message.isEmpty() ? counts : counts + "\nLast: " + message;
+            String counts = "Nesta sessão: " + claimed + " resgates, " + removed
+                + " pesquisas removidas, " + caught + " capturas";
+            return message.isEmpty() ? counts : counts + "\nÚltima resposta: " + dev.pgrazor.PtBr.tr(message);
         }
     }
 

@@ -44,12 +44,14 @@ public final class PogoFeedFilters {
     private final boolean showPvpGreat, showPvpUltra, showPvpLittle;
     private final int pvpMaxRank;
     private final boolean showMyShinies, shinyOnly, showMyBackgrounds, backgroundOnly;
+    /** PGBR-only exact individual IVs; -1 means any. Never sent to a feed provider. */
+    private final int exactAttack, exactDefense, exactStamina;
 
     /** Broad/off defaults: nothing filtered out, every "always show" and feature toggle disabled. */
     public PogoFeedFilters() {
         this(false, IV_MIN, IV_MAX, LEVEL_MIN, LEVEL_MAX, false, false, false, false, false, false,
                 MODE_OFF, Collections.<Integer>emptyList(), false, false, false, DEFAULT_PVP_MAX_RANK,
-                false, false, false, false);
+                false, false, false, false, -1, -1, -1);
     }
 
     private PogoFeedFilters(boolean showAll, int minIv, int maxIv, int minLevel, int maxLevel,
@@ -57,7 +59,8 @@ public final class PogoFeedFilters {
                             boolean alwaysShowSize, boolean filterXxs, boolean filterXxl, String speciesMode,
                             List<Integer> speciesList, boolean showPvpGreat, boolean showPvpUltra,
                             boolean showPvpLittle, int pvpMaxRank, boolean showMyShinies, boolean shinyOnly,
-                            boolean showMyBackgrounds, boolean backgroundOnly) {
+                            boolean showMyBackgrounds, boolean backgroundOnly,
+                            int exactAttack, int exactDefense, int exactStamina) {
         this.showAll = showAll;
         this.minIv = minIv;
         this.maxIv = maxIv;
@@ -79,6 +82,9 @@ public final class PogoFeedFilters {
         this.shinyOnly = shinyOnly;
         this.showMyBackgrounds = showMyBackgrounds;
         this.backgroundOnly = backgroundOnly;
+        this.exactAttack = exactAttack;
+        this.exactDefense = exactDefense;
+        this.exactStamina = exactStamina;
     }
 
     /**
@@ -114,12 +120,41 @@ public final class PogoFeedFilters {
         boolean shinyOnly = boolField(o, "shiny_only", false);
         boolean showMyBackgrounds = boolField(o, "show_my_backgrounds", false);
         boolean backgroundOnly = boolField(o, "background_only", false);
+        int exactAttack = intField(o, "pgbr_iv_attack", -1, -1, 15);
+        int exactDefense = intField(o, "pgbr_iv_defense", -1, -1, 15);
+        int exactStamina = intField(o, "pgbr_iv_stamina", -1, -1, 15);
 
         return new PogoFeedFilters(showAll, minIv, maxIv, minLevel, maxLevel, alwaysShowPerfect,
                 alwaysShowZero, alwaysShowRare, alwaysShowSize, filterXxs, filterXxl, speciesMode,
                 speciesList, showPvpGreat, showPvpUltra, showPvpLittle, pvpMaxRank, showMyShinies,
-                shinyOnly, showMyBackgrounds, backgroundOnly);
+                shinyOnly, showMyBackgrounds, backgroundOnly, exactAttack, exactDefense, exactStamina);
     }
+
+    /** Local-only settings must stay outside the strictly versioned provider request shape. */
+    public JSONObject toStoredJson() throws JSONException {
+        return toViewportJson()
+                .put("pgbr_iv_attack", exactAttack)
+                .put("pgbr_iv_defense", exactDefense)
+                .put("pgbr_iv_stamina", exactStamina);
+    }
+
+    /** An exact condition rejects rows without individual IV data; unknown never means zero. */
+    public boolean hasExactIvFilter() {
+        return exactAttack >= 0 || exactDefense >= 0 || exactStamina >= 0;
+    }
+
+    public boolean matchesExactIvs(int attack, int defense, int stamina) {
+        if (!hasExactIvFilter()) return true;
+        if (attack < 0 || attack > 15 || defense < 0 || defense > 15
+                || stamina < 0 || stamina > 15) return false;
+        return (exactAttack < 0 || exactAttack == attack)
+                && (exactDefense < 0 || exactDefense == defense)
+                && (exactStamina < 0 || exactStamina == stamina);
+    }
+
+    public int getExactAttack() { return exactAttack; }
+    public int getExactDefense() { return exactDefense; }
+    public int getExactStamina() { return exactStamina; }
 
     /** Full 21-key display-filter object for {@code POST /api/map/viewport}. */
     public JSONObject toViewportJson() throws JSONException {

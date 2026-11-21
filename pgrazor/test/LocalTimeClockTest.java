@@ -33,6 +33,17 @@ public final class LocalTimeClockTest {
         starts("08:30 ", clock.label(37.7749,-122.4194,now,true,Locale.US));
         // Teleport within the same minute must invalidate the old zone and formatted label.
         starts("01:30 ", clock.label(35.6762,139.6503,now,true,Locale.US));
+        equal("🕒 01:30 🗓 11/11/26", clock.compactLabel(35.6762,139.6503,now,0));
+        equal("11:30 - 10/11/26", clock.compactLabel(40.7128,-74.0060,now,1));
+        equal("11:30 GMT-05:00", clock.compactLabel(40.7128,-74.0060,now,2));
+        equal("🕒 11:30 🗓 10/11/26", clock.compactLabel(40.7128,-74.0060,now,3));
+        equal("11:30", clock.compactLabel(40.7128,-74.0060,now,4));
+        equal("11:30 · 10/11/26", clock.compactLabel(40.7128,-74.0060,now,5));
+        equal("01:30 · 11/11/26", clock.compactLabel(35.6762,139.6503,now,5));
+        equal("01:30 · 11/11/26", clock.compactLabel(35.6762,139.6503,now,6));
+        equal("22:15 GMT+05:45", clock.compactLabel(27.7172,85.3240,now,2));
+        equal("16:30 GMT+00:00", clock.compactLabel(51.5,-0.12,now,2));
+        equal("--:--",clock.compactLabel(Double.NaN,0,now,0));
         starts("1:30 AM ", clock.label(35.6762,139.6503,now,false,Locale.US));
         starts("22:00 ", clock.label(28.6139,77.2090,now,true,Locale.US));
         starts("22:15 ", clock.label(27.7172,85.3240,now,true,Locale.US));

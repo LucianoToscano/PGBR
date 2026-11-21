@@ -81,6 +81,7 @@ public final class NativeRuntimeBootstrap {
                 gameplay.set(1);return;
             }
             gameplay.set(2);
+            if(status==0)Control.syncTrainerPrivacyDisplay();
             Control.event(status==0?"native-scheduler-ready":"native-scheduler-unavailable",
                 status==0?"Compiled scheduler installed; individual gameplay hosts initialize separately":"status="+status+" detailEvent=native-runtime-start");
         }catch(Throwable failure){

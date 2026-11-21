@@ -186,7 +186,8 @@ public final class Control {
     public static boolean giftsAllowed(){return giftsReady&&quickSummaryReady()&&hostLive();}
     private static volatile boolean vgpEnabled,vgpReady,vgpOverlay;
     /** Persistent safety preference; when armed a live cooldown keeps VGP off. */
-    private static volatile boolean vgpStopOnCooldown;
+    // Protect the floating VGP icon from accidental activation (runtime automation is unaffected).
+    private static volatile boolean vgpTapProtection=true;
     private static volatile int vgpOptions=3;
     // 0=original, 1=simple, 2=glossy, 3=GO Plus. Visual preference only.
     private static volatile int vgpIconStyle=0;
@@ -201,8 +202,29 @@ public final class Control {
     public static final int HUD_ALL=HUD_VGP|HUD_BUDDY|HUD_AUTOMATION|HUD_GYM|
         HUD_CATCH|HUD_ENCOUNTERS|HUD_SHINY|HUD_COOLDOWN|HUD_LOCALTIME;
     private static volatile int hudLabelsMask=HUD_ALL;
-    private static volatile int hudLabelOpacity=0;
+    private static volatile int hudLabelOpacity=0; // legacy fallback only
     private static volatile int hudLabelTextSp=11;
+    private static final int[] HUD_BITS={HUD_VGP,HUD_BUDDY,HUD_AUTOMATION,HUD_GYM,HUD_CATCH,
+        HUD_ENCOUNTERS,HUD_SHINY,HUD_COOLDOWN,HUD_LOCALTIME};
+    private static final int[] HUD_OPACITIES={12,12,12,12,12,12,12,15,12};
+    private static final int[] HUD_COLORS={0,0,2,0,1,0,2,1,0};
+    private static volatile int hudAppearanceRevision=0;
+    // Colour values: vivid green, dark orange, hot pink, and red, all with a dark text shadow.
+    public static final int[] HUD_PALETTE={0xff00da69,0xffff8500,0xffff1493,0xffff3535};
+    public static final String[] HUD_PALETTE_NAMES={"Verde","Laranja forte","Rosa choque","Vermelho"};
+    private static int hudIndex(int bit){for(int i=0;i<HUD_BITS.length;i++)if(HUD_BITS[i]==bit)return i;return -1;}
+    public static int hudAppearanceRevision(){return hudAppearanceRevision;}
+    public static int hudBackgroundOpacity(int bit){int index=hudIndex(bit);return index<0?0:HUD_OPACITIES[index];}
+    public static int hudPaletteIndex(int bit){int index=hudIndex(bit);return index<0?0:HUD_COLORS[index];}
+    public static int hudLabelColor(int bit){return HUD_PALETTE[hudPaletteIndex(bit)];}
+    public static void setHudBackgroundOpacity(int bit,int value){
+        int index=hudIndex(bit);if(index<0)return;
+        HUD_OPACITIES[index]=Math.max(0,Math.min(100,value));hudAppearanceRevision++;saveSettings();
+    }
+    public static void setHudPaletteIndex(int bit,int value){
+        int index=hudIndex(bit);if(index<0||value<0||value>=HUD_PALETTE.length)return;
+        HUD_COLORS[index]=value;hudAppearanceRevision++;saveSettings();
+    }
     public static boolean hudLabelsVisible(){return hudLabelsMask!=0;}
     public static boolean hudLabelVisible(int bit){return bit>0&&(bit&(bit-1))==0&&(hudLabelsMask&bit)!=0;}
     public static void setHudLabelVisible(int bit,boolean visible){
@@ -217,21 +239,13 @@ public final class Control {
     public static void setHudLabelOpacity(int value){hudLabelOpacity=Math.max(0,Math.min(100,value));saveSettings();}
     public static int hudLabelTextSp(){return hudLabelTextSp;}
     public static void setHudLabelTextSp(int value){hudLabelTextSp=Math.max(9,Math.min(14,value));saveSettings();}
-    /**
-     * Runtime-only VGP state (guard reason, status text, on-screen target), the enable/cooldown
-     * guard decision and the result notification live in {@link VgpController}. The persistent
-     * overlay/stop-on-cooldown/option preferences and the {@code vgpEnabled}/{@code vgpReady} flags
-     * stay here and feed the controller through the accessors below, so the runtime state is owned
-     * in one place only. These flags remain at the bridge boundary with the other readiness gates.
-     */
+    /** Manual VGP control: visual preferences persist; active flag never persists. */
     private static final VgpController vgp = new VgpController(
         () -> vgpEnabled, value -> vgpEnabled=value,
         () -> vgpOverlay, value -> vgpOverlay=value,
-        () -> vgpStopOnCooldown, value -> vgpStopOnCooldown=value,
         () -> foreground, () -> vgpOptions,
-        () -> Cooldown.remaining(), Control::cooldownAction,
         Control::event, Control::saveSettings);
-    public static boolean vgpEnabled(){guardVgpCooldown();return vgpOverlay&&vgpEnabled;}
+    public static boolean vgpEnabled(){return vgpOverlay&&vgpEnabled;}
     public static boolean vgpOverlay(){return vgpOverlay;}
     public static void setVgpOverlay(boolean value){vgp.setOverlay(value);}
     public static boolean vgpOverlayVisible(){return vgpOverlay&&hostLive();}
@@ -244,29 +258,71 @@ public final class Control {
     public static void setVgpBackgroundOpacity(int percent){vgpBackgroundOpacity=Math.max(0,Math.min(100,percent));saveSettings();}
     public static int vgpIconSize(){return vgpIconSize;}
     public static void setVgpIconSize(int value){vgpIconSize=Math.max(28,Math.min(72,value));saveSettings();}
-    public static boolean vgpStopOnCooldown(){return vgpStopOnCooldown;}
-    /**
-     * VGP active state is runtime only (never persisted). Turning it on while the cooldown
-     * guard is armed and a cooldown is live is refused with a visible reason; turning it off
-     * clears any guard reason.
-     */
+    /** Legacy API retained for older modules. VGP no longer stops on estimated cooldown. */
+    public static boolean vgpStopOnCooldown(){return false;}
+    public static boolean vgpTapProtection(){return vgpTapProtection;}
+    public static void setVgpTapProtection(boolean value){if(vgpTapProtection!=value){vgpTapProtection=value;saveSettings();}}
+    /** User-controlled start/stop; no dependency on estimated cooldown. */
     public static void setVgpEnabled(boolean value){vgp.setEnabled(value);}
-    /**
-     * Arms or disarms the optional cooldown safety. Arming it while VGP is already active and a
-     * cooldown is live switches VGP off immediately; disarming clears any lingering guard reason.
-     */
-    public static void setVgpStopOnCooldown(boolean value){vgp.setStopOnCooldown(value);}
+    /** Legacy compatibility setter: always disabled, intentionally not persisted. */
+    public static void setVgpStopOnCooldown(boolean value){}
     public static void setVgpOptions(int value){vgpOptions=value&7;saveSettings();}
     public static void setVgpReady(boolean ready,String status){vgpReady=ready;vgp.setStatus(status);}
     public static void setVgpStatus(String status){vgp.setStatus(status);}
-    /** A guard reason (cooldown pause/refusal) is shown in place of a generic native status. */
+    /** The overlay/foreground refusal reason is shown ahead of generic native status. */
     public static String vgpStatus(){return vgp.status();}
     /**
-     * When the guard is armed, a live cooldown trips VGP off before the next request and it stays
-     * off (no auto-resume). Driven by the vgpEnabled()/vgpAllowed() heartbeat; the Cooldown read
-     * happens with no lock held and logs only on the single off transition.
+     * Human-readable permission diagnosis. Showing the floating icon does NOT turn VGP on.
+     * No native calls or automatic retries here: this reads the same gates as vgpAllowed().
+     * Keep vgpStatus() unchanged for the runtime protocol and existing tests.
      */
-    private static void guardVgpCooldown(){vgp.guardCooldown();}
+    public static String vgpDiagnosticStatus(){
+        if(!vgpOverlay)return "VGP oculta: ative Exibir botão VGP. Isso não inicia a automação.";
+        if(!vgpEnabled()){
+            String status=vgp.status();
+            if(status.contains("foreground")||status.contains("primeiro plano"))
+                return "VGP pausada: "+status+"; reative manualmente quando estiver liberada.";
+            return "VGP desligada: toque em Iniciar VGP+ ou no ícone flutuante para começar.";
+        }
+        if((vgpOptions&3)==0)return "VGP ligada, mas sem ações: marque Pokémon e/ou Poképaradas.";
+        if(!foreground)return "VGP aguardando: abra o jogo em primeiro plano.";
+        if(!backendReady||!connected())return "VGP aguardando: conexão com o jogo ou lease expirado.";
+        if(!AccountProfiles.allowed())return "VGP aguardando: conta em validação ou troca.";
+        if(!locationKnown())return "VGP aguardando: localização ainda não disponível.";
+        // VGP has its own native discovery, inventory/balls admission and action
+        // readiness checks. Quick Catch summary and auto-transfer are optional,
+        // independent features: they must not veto Pokémon/Stop scanning.
+        if(!vgpReady)return "VGP aguardando: mecanismo nativo indisponível. "+vgp.status();
+        if(ShundoSniper.active())return "VGP aguardando: Shundo Sniper tem prioridade.";
+        if(AutoRaid.running())return "VGP aguardando: Auto Raid tem prioridade.";
+        String nativeState=vgp.status();
+        if(nativeState==null)nativeState="";
+        String nativeLower=nativeState.toLowerCase(java.util.Locale.ROOT);
+        if(nativeLower.contains("response timed out") ||
+           nativeLower.contains("native vgp error") ||
+           nativeLower.contains("paused: invalid vgp status"))
+            return "VGP bloqueada por resposta incerta/erro nativo. Pare a VGP+, "
+                +"aguarde a ação pendente terminar e inicie-a novamente manualmente. "
+                +"Os alvos recentes permanecem protegidos. Estado: "+nativeState;
+        if(nativeLower.startsWith("waiting for") ||
+           nativeLower.startsWith("initializing") ||
+           nativeLower.contains("unavailable") ||
+           nativeLower.contains("out of red") ||
+           nativeLower.contains("no regular balls") ||
+           nativeLower.contains("storage full") ||
+           nativeLower.contains("item bag full") ||
+           nativeLower.contains("catching disabled"))
+            return "VGP ligada, mas aguardando pré-requisito nativo: "+nativeState
+                +". Confira conexão, inventário ou suporte indicado.";
+        if(nativeLower.startsWith("watching") ||
+           nativeLower.startsWith("spinning") ||
+           nativeLower.startsWith("catching") ||
+           nativeLower.startsWith("checking") ||
+           nativeLower.startsWith("cleaning"))
+            return "VGP ligada e monitorando. Estado: "+nativeState
+                +". Ações só são confirmadas pelos resultados retornados.";
+        return "VGP habilitada para ações. Estado: "+nativeState;
+    }
     public static void setVgpTarget(boolean visible,double x,double y,boolean spin){vgp.setTarget(visible,x,y,spin);}
     public static boolean vgpMapVisible(){long age=SystemClock.elapsedRealtime()-buddyMapSample;return buddyMapSample>0&&age>=0&&age<1500;}
     // The same icon marks a Pokemon being caught by a map tap, which works with VGP+ off as well.
@@ -276,7 +332,14 @@ public final class Control {
     public static float vgpTargetY(){return vgp.targetY();}
     public static boolean vgpTargetSpin(){return vgp.targetSpin();}
 
-    public static boolean vgpAllowed(){if(!locationKnown())return false;guardVgpCooldown();return vgpEnabled&&vgpReady&&itemAccessAllowed()&&!ShundoSniper.active()&&!AutoRaid.running();}  // Shundo Sniper pauses VGP+
+    public static boolean vgpAllowed(){
+        if(!locationKnown())return false;
+        // VGP owns native inventory checks and action-gate checks independently.
+        // itemAccessAllowed() also requires Quick Catch summary and auto-transfer
+        // readiness, neither of which is a prerequisite for VGP capture/spin.
+        return vgpEnabled&&vgpReady&&hostLive()
+                &&!ShundoSniper.active()&&!AutoRaid.running();
+    }  // Shundo Sniper and Auto Raid still pause VGP+
     public static void vgpResult(String action,boolean success){vgp.result(action,success);}
     private static volatile boolean autoIncubate, incubateLongest, incubatorReady;
     private static volatile String incubatorStatus="Waiting for incubation support";
@@ -339,6 +402,28 @@ public final class Control {
     // Small draggable overlay showing the local wall-clock time at the spoofed coordinates (never the
     // device time). Off by default; the overlay view reads engine coordinates and formats time offline.
     private static volatile boolean localTimeOverlay;
+    private static volatile int localTimeFormat, cooldownTextSp;
+    private static volatile boolean cooldownEmphasis;
+    public static boolean cooldownEmphasis() { return cooldownEmphasis; }
+    public static void setCooldownEmphasis(boolean enabled) {
+        if (cooldownEmphasis == enabled) return;
+        cooldownEmphasis = enabled;
+        hudAppearanceRevision++;
+        saveSettings();
+    }
+    public static int cooldownTextSp() { return cooldownTextSp; }
+    public static void setCooldownTextSp(int value) {
+        if ((value != 0 && (value < 9 || value > 20)) || value == cooldownTextSp) return;
+        cooldownTextSp = value;
+        hudAppearanceRevision++;
+        saveSettings();
+    }
+    public static int localTimeFormat() { return localTimeFormat; }
+    public static void setLocalTimeFormat(int value) {
+        if (value < 0 || value > 6 || value == localTimeFormat) return;
+        localTimeFormat = value;
+        saveSettings();
+    }
     public static boolean localTimeOverlay(){return localTimeOverlay;}
     public static void setLocalTimeOverlay(boolean value){localTimeOverlay=value;saveSettings();}
     // Encounter counter (rolling 24 hours, per account) and its optional map badge.
@@ -447,8 +532,18 @@ public final class Control {
         itemRules=rules;itemLimits=limits;itemTransferEnabled=enabled;saveSettings();event("item-rules",enabled?"Enabled":"Disabled");
     }
     private static volatile boolean quickSpinEnabled, quickSpinReady;
+    // Optional event route behavior. Both are opt-in, persisted, and never imply a candy reward.
+    private static volatile boolean eternatusWithoutVgp, eternatusTimedAdvance;
     private static volatile String quickSpinStatus="Waiting for game";
     public static boolean quickSpinEnabled() { return quickSpinEnabled; }
+    public static boolean eternatusWithoutVgp(){return eternatusWithoutVgp;}
+    public static void setEternatusWithoutVgp(boolean value){
+        if(eternatusWithoutVgp!=value){eternatusWithoutVgp=value;saveSettings();}
+    }
+    public static boolean eternatusTimedAdvance(){return eternatusTimedAdvance;}
+    public static void setEternatusTimedAdvance(boolean value){
+        if(eternatusTimedAdvance!=value){eternatusTimedAdvance=value;saveSettings();}
+    }
     public static String quickSpinStatus() { return quickSpinStatus; }
     public static void setQuickSpinEnabled(boolean value) { quickSpinEnabled=value; saveSettings(); event("quick-spin-setting",value?"ON":"OFF"); }
     public static void setQuickSpinReady(boolean value,String status) { quickSpinReady=value; quickSpinStatus=status; }
@@ -1208,13 +1303,15 @@ public final class Control {
     private static boolean darkTheme=true, joystickVisible=true;
     private static volatile int joystickSizeDp=136,joystickOpacity=60;
     // Visual style is independent from movement, camera-relative steering and saved route state.
-    // 0=original, 1=Eternatus (animated), 2=translucent directional HUD, 3=user image.
-    private static volatile int joystickStyle;
+    // 0=original, 1=Eternatus morph (clean <-> storm), 2=HUD, 3=user image, 4=prior Eternatus vortex.
+    private static volatile int joystickStyle=1; // Default Eternatus morph; respect saved user selection.
     private static volatile boolean joystickEternatusEffects=true;
+    // Independent visual-only animation settings. 0=soft, 1=normal, 2=epic for intensity.
+    private static volatile int eternatusFxIntensity=2, eternatusFxSpeed=1;
     private static volatile int menuIconSizeDp=22,gymIconSizeDp=54,gymIconOpacity=100,overlayBackgroundOpacity=45;
     private static volatile int menuLauncherSizeDp=48,menuLauncherOpacity=100,menuLauncherBgOpacity=0,gymBackgroundOpacity=45;
     // 0=classic PGBR, 1=Eternatus emblem, 2=account-local chosen image.
-    private static volatile int menuLauncherIconStyle=0;
+    private static volatile int menuLauncherIconStyle=1; // Default Eternatus Pokébola.
     // Client-only privacy mask. Do not override PlayerService, account data or RPC fields.
     private static volatile boolean trainerAliasEnabled;
     private static volatile int trainerPrivacyMode; // 0=original, 1=hidden in PGBR, 2=local alias
@@ -1223,10 +1320,26 @@ public final class Control {
     public static boolean trainerAliasEnabled(){return trainerAliasEnabled;}
     public static int trainerPrivacyMode(){return trainerPrivacyMode;}
     public static String trainerAlias(){return trainerAlias;}
+    /**
+     * Push only an authenticated local name and presentation mode to the UI hook.
+     * Never override a getter from PlayerService or modify IDs, login or RPCs.
+     * A missing native bridge is reported as unavailable, not protected.
+     */
+    static int syncTrainerPrivacyDisplay(){
+        try{
+            return NativeCore.trainerPrivacyConfigure(
+                trainerPrivacyMode != 0, AccountProfiles.authenticatedTrainerName());
+        }catch(UnsatisfiedLinkError | NoClassDefFoundError unavailable){return -2;}
+    }
+    static int trainerPrivacyDisplayStatus(){
+        try{return NativeCore.trainerPrivacyStatus();}
+        catch(UnsatisfiedLinkError | NoClassDefFoundError unavailable){return -1;}
+    }
+
     /** PGBR-only presentation, never the identity sent to the game. */
     public static String visibleTrainerName(String original){
-        if(trainerPrivacyMode==1)return "Treinador";
-        if(trainerPrivacyMode==2&&TrainerAliasPolicy.validCustom(trainerAlias))return trainerAlias;
+        if(trainerPrivacyMode==1)return "*****";
+        if(trainerPrivacyMode==2)return TrainerAliasPolicy.validCustom(trainerAlias)?trainerAlias:"*****";
         return original==null?"":original;
     }
     public static void setTrainerPrivacyMode(int mode){
@@ -1235,6 +1348,7 @@ public final class Control {
         trainerPrivacyMode=mode;
         trainerAliasEnabled=mode==2;
         saveSettings();
+        syncTrainerPrivacyDisplay();
     }
     public static boolean setCustomTrainerAlias(String value){
         if(!TrainerAliasPolicy.validCustom(value))return false;
@@ -1242,12 +1356,13 @@ public final class Control {
         trainerPrivacyMode=2;
         trainerAliasEnabled=true;
         saveSettings();
+        syncTrainerPrivacyDisplay();
         return true;
     }
     public static void setTrainerAliasEnabled(boolean value){
         if(value&&!TrainerAliasPolicy.validCustom(trainerAlias))
             trainerAlias=TrainerAliasPolicy.generate(trainerAliasRandom);
-        trainerAliasEnabled=value;trainerPrivacyMode=value?2:0;saveSettings();
+        trainerAliasEnabled=value;trainerPrivacyMode=value?2:0;saveSettings();syncTrainerPrivacyDisplay();
     }
     public static void regenerateTrainerAlias(){
         String old=trainerAlias;
@@ -1256,6 +1371,7 @@ public final class Control {
             if(!trainerAlias.equals(old))break;
         }
         saveSettings();
+        syncTrainerPrivacyDisplay();
     }
     // Visibility only. Bits are stable menu-entry IDs, independent of feature settings.
     private static volatile int quickMenuHidden;
@@ -1290,9 +1406,19 @@ public final class Control {
     public static void setJoystickSizeDp(int value){joystickSizeDp=Math.max(88,Math.min(220,value));saveSettings();}
     public static int joystickOpacity(){return joystickOpacity;}
     public static int joystickStyle(){return joystickStyle;}
-    public static void setJoystickStyle(int style){if(style<0||style>3)return;joystickStyle=style;saveSettings();}
+    public static void setJoystickStyle(int style){if(style<0||style>4)return;joystickStyle=style;saveSettings();}
     public static boolean joystickEternatusEffects(){return joystickEternatusEffects;}
     public static void setJoystickEternatusEffects(boolean value){joystickEternatusEffects=value;saveSettings();}
+    public static int eternatusFxIntensity(){return eternatusFxIntensity;}
+    public static void setEternatusFxIntensity(int value){
+        if(value<1||value>2)return;
+        eternatusFxIntensity=value;saveSettings();
+    }
+    public static int eternatusFxSpeed(){return eternatusFxSpeed;}
+    public static void setEternatusFxSpeed(int value){
+        if(value<0||value>2)return;
+        eternatusFxSpeed=value;saveSettings();
+    }
     public static int menuLauncherIconStyle(){return menuLauncherIconStyle;}
     public static void setMenuLauncherIconStyle(int style){if(style<0||style>2)return;menuLauncherIconStyle=style;saveSettings();}
     public static int menuLauncherSizeDp(){return menuLauncherSizeDp;}
@@ -1332,14 +1458,16 @@ public final class Control {
             try { settingsWriter.flush(SETTINGS_FLUSH_MS); }
             catch(IOException pending) { event("settings-load-error","Pending save not flushed: "+pending); return; }
             StrictMode.ThreadPolicy policy=StrictMode.allowThreadDiskReads();
+            localTimeFormat=0;cooldownTextSp=0;cooldownEmphasis=false;
             quickMenuHidden=0;
             vgpIconStyle=0;
             vgpIconSize=48;
+            vgpTapProtection=true;
             hudLabelsVisible=true;hudLabelsMask=HUD_ALL;hudLabelOpacity=0;hudLabelTextSp=11;
             joystickSizeDp=136;joystickOpacity=60;
-            joystickStyle=0;joystickEternatusEffects=true;
+            joystickStyle=1;joystickEternatusEffects=true;eternatusFxIntensity=2;eternatusFxSpeed=1;
             menuIconSizeDp=22;gymIconSizeDp=54;gymIconOpacity=100;overlayBackgroundOpacity=45;
-            menuLauncherSizeDp=48;menuLauncherOpacity=100;menuLauncherBgOpacity=0;gymBackgroundOpacity=45;menuLauncherIconStyle=0;
+            menuLauncherSizeDp=48;menuLauncherOpacity=100;menuLauncherBgOpacity=0;gymBackgroundOpacity=45;menuLauncherIconStyle=1;
             vgpIconOpacity=100;vgpBackgroundOpacity=75;
             transferIvKeepPercent=90;
             trainerAliasEnabled=false;trainerPrivacyMode=0;trainerAlias="";
@@ -1374,17 +1502,21 @@ public final class Control {
                 if(uiScalePercent!=25&&uiScalePercent!=50&&uiScalePercent!=75&&uiScalePercent!=100)uiScalePercent=100;
                 joystickVisible=Boolean.parseBoolean(p.getProperty("joystickVisible","true"));
                 joystickEternatusEffects=Boolean.parseBoolean(p.getProperty("joystickEternatusEffects","true"));
+                eternatusFxIntensity=readBoundedVisual(p,"eternatusFxIntensity",2,1,2);
+                eternatusFxSpeed=readBoundedVisual(p,"eternatusFxSpeed",1,0,2);
                 try{
                     int saved=Integer.parseInt(p.getProperty("joystickStyle","-1"));
-                    joystickStyle=saved>=0&&saved<=3?saved:
-                        AccountProfiles.file(app,"joystick-custom.png").isFile()?3:0;
-                }catch(RuntimeException invalid){joystickStyle=0;}
+                    joystickStyle=saved>=0&&saved<=4?saved:
+                        AccountProfiles.file(app,"joystick-custom.png").isFile()?3:1;
+                }catch(RuntimeException invalid){
+                    joystickStyle=AccountProfiles.file(app,"joystick-custom.png").isFile()?3:1;
+                }
                 menuIconSizeDp=readBoundedVisual(p,"menuIconSizeDp",22,16,40);
                 gymIconSizeDp=readBoundedVisual(p,"gymIconSizeDp",54,24,110);
                 gymIconOpacity=readBoundedVisual(p,"gymIconOpacity",100,10,100);
                 overlayBackgroundOpacity=readBoundedVisual(p,"overlayBackgroundOpacity",45,0,100);
                 menuLauncherSizeDp=readBoundedVisual(p,"menuLauncherSizeDp",48,28,96);
-                menuLauncherIconStyle=readBoundedVisual(p,"menuLauncherIconStyle",0,0,2);
+                menuLauncherIconStyle=readBoundedVisual(p,"menuLauncherIconStyle",1,0,2);
                 menuLauncherOpacity=readBoundedVisual(p,"menuLauncherOpacity",100,10,100);
                 menuLauncherBgOpacity=readBoundedVisual(p,"menuLauncherBgOpacity",0,0,100);
                 gymBackgroundOpacity=readBoundedVisual(p,"gymBackgroundOpacity",45,0,100);
@@ -1396,6 +1528,10 @@ public final class Control {
                 catch(NumberFormatException invalid){joystickOpacity=60;}
                 idleWalking=Boolean.parseBoolean(p.getProperty("idleWalking","false"));engine.setIdleWalking(idleWalking);
                 cooldownOverlay=Boolean.parseBoolean(p.getProperty("cooldownOverlay","false"));
+                cooldownTextSp=readBoundedVisual(p,"cooldownTextSp",0,0,20);
+                if(cooldownTextSp<9)cooldownTextSp=0;
+                localTimeFormat=readBoundedVisual(p,"localTimeFormat",0,0,6);
+                cooldownEmphasis=Boolean.parseBoolean(p.getProperty("cooldownEmphasis","false"));
                 localTimeOverlay=Boolean.parseBoolean(p.getProperty("localTimeOverlay","false"));
                 encounterCounter=Boolean.parseBoolean(p.getProperty("encounterCounter","true"));encounterOverlay=Boolean.parseBoolean(p.getProperty("encounterOverlay","false"));
                 quickSummaryEnabled=Boolean.parseBoolean(p.getProperty("autoDismiss","false"));
@@ -1416,9 +1552,18 @@ public final class Control {
                 hudLabelsVisible=hudLabelsMask!=0;
                 try{hudLabelOpacity=Math.max(0,Math.min(100,Integer.parseInt(p.getProperty("hudLabelOpacity","0"))));}
                 catch(NumberFormatException ignored){hudLabelOpacity=0;}
+                // Migrate the global background to independent, less intrusive defaults.
+                for(int i=0;i<HUD_BITS.length;i++){
+                    HUD_OPACITIES[i]=readBoundedVisual(p,"hudBg."+HUD_BITS[i],
+                        Math.min(20,hudLabelOpacity),0,100);
+                    HUD_COLORS[i]=readBoundedVisual(p,"hudColor."+HUD_BITS[i],
+                        new int[]{0,0,2,0,1,0,2,1,0}[i],0,3);
+                }
+                hudAppearanceRevision++;
                 try{hudLabelTextSp=Math.max(9,Math.min(14,Integer.parseInt(p.getProperty("hudLabelTextSp","11"))));}
                 catch(NumberFormatException ignored){hudLabelTextSp=11;}
-                vgpStopOnCooldown=Boolean.parseBoolean(p.getProperty("vgpStopOnCooldown","false"));
+                // Missing/invalid preference defaults to the safer confirmation mode.
+                vgpTapProtection=!"false".equals(p.getProperty("vgpTapProtection","true"));
                 try{vgpOptions=Integer.parseInt(p.getProperty("vgpOptions","3"))&7;}catch(NumberFormatException ignored){vgpOptions=3;}
                 try{buddyBerry=Integer.parseInt(p.getProperty("buddyBerry","0"));}catch(NumberFormatException ignored){buddyBerry=0;}
                 if(buddyBerry!=701&&buddyBerry!=703&&buddyBerry!=705&&buddyBerry!=706&&buddyBerry!=707)buddyBerry=0;
@@ -1437,6 +1582,8 @@ public final class Control {
                 itemRules=p.getProperty("itemRules","");itemLimits=p.getProperty("itemLimits","");itemCatalog=p.getProperty("itemCatalog","");
                 if(!validItemRules(itemRules)||!validItemRules(itemLimits)){itemTransferEnabled=false;itemRules="";itemLimits="";}
                 quickSpinEnabled=Boolean.parseBoolean(p.getProperty("quickSpin","false"));
+                eternatusWithoutVgp=Boolean.parseBoolean(p.getProperty("eternatusWithoutVgp","false"));
+                eternatusTimedAdvance=Boolean.parseBoolean(p.getProperty("eternatusTimedAdvance","false"));
                 autoTransferEnabled=Boolean.parseBoolean(p.getProperty("autoTransfer","false"));
                 try{
                     int value=Integer.parseInt(p.getProperty("transferIvKeepPercent","90"));
@@ -1575,6 +1722,8 @@ public final class Control {
         p.setProperty("joystickOpacity",String.valueOf(joystickOpacity));
         p.setProperty("joystickStyle",String.valueOf(joystickStyle));
         p.setProperty("joystickEternatusEffects",String.valueOf(joystickEternatusEffects));
+        p.setProperty("eternatusFxIntensity",String.valueOf(eternatusFxIntensity));
+        p.setProperty("eternatusFxSpeed",String.valueOf(eternatusFxSpeed));
         p.setProperty("menuIconSizeDp",String.valueOf(menuIconSizeDp));
         p.setProperty("gymIconSizeDp",String.valueOf(gymIconSizeDp));
         p.setProperty("gymIconOpacity",String.valueOf(gymIconOpacity));
@@ -1596,8 +1745,15 @@ public final class Control {
         p.setProperty("hudLabelsVisible",String.valueOf(hudLabelsMask!=0));
         p.setProperty("hudLabelsMask",String.valueOf(hudLabelsMask));
         p.setProperty("hudLabelOpacity",String.valueOf(hudLabelOpacity));
+        p.setProperty("cooldownTextSp",String.valueOf(cooldownTextSp));
+        p.setProperty("cooldownEmphasis",String.valueOf(cooldownEmphasis));
+        p.setProperty("localTimeFormat",String.valueOf(localTimeFormat));
         p.setProperty("hudLabelTextSp",String.valueOf(hudLabelTextSp));
-        p.setProperty("vgpStopOnCooldown",String.valueOf(vgpStopOnCooldown));
+        for(int i=0;i<HUD_BITS.length;i++){
+            p.setProperty("hudBg."+HUD_BITS[i],String.valueOf(HUD_OPACITIES[i]));
+            p.setProperty("hudColor."+HUD_BITS[i],String.valueOf(HUD_COLORS[i]));
+        }
+        p.setProperty("vgpTapProtection",String.valueOf(vgpTapProtection));
         p.setProperty("vgpOptions",String.valueOf(vgpOptions));
         p.setProperty("buddyBerry",String.valueOf(buddyBerry));
         p.setProperty("autoIncubate",String.valueOf(autoIncubate));
@@ -1609,6 +1765,8 @@ public final class Control {
         p.setProperty("rocketOptions",String.valueOf(rocketOptions));
         p.setProperty("itemTransfer",String.valueOf(itemTransferEnabled));p.setProperty("itemRules",itemRules);p.setProperty("itemLimits",itemLimits);p.setProperty("itemCatalog",itemCatalog);
         p.setProperty("quickSpin",String.valueOf(quickSpinEnabled));
+        p.setProperty("eternatusWithoutVgp",String.valueOf(eternatusWithoutVgp));
+        p.setProperty("eternatusTimedAdvance",String.valueOf(eternatusTimedAdvance));
         p.setProperty("autoTransfer",String.valueOf(autoTransferEnabled)); p.setProperty("transferProtect",String.valueOf(transferProtect));p.setProperty("transferIvKeepPercent",String.valueOf(transferIvKeepPercent));p.setProperty("transferProtectSplit","1");
         p.setProperty("transferKeepAll",String.valueOf(transferKeepAll)); p.setProperty("transferOverlay",String.valueOf(transferOverlayEnabled)); p.setProperty("transferKeepSpecies",transferKeepSpecies);
         p.setProperty("evolveTransferEnabled",String.valueOf(evolveTransferEnabled)); p.setProperty("evolveTransferMode",String.valueOf(evolveTransferMode)); p.setProperty("evolveTransferStages",String.valueOf(evolveTransferStages)); p.setProperty("evolveTransferSpecies",evolveTransferSpecies);

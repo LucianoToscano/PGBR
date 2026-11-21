@@ -1,22 +1,22 @@
 <p align="center"><img src="pgrazor/branding/pgbr-logo.webp" width="92" alt="Logotipo PGBR"></p>
 
 <h1 align="center">PGBR</h1>
-<p align="center"><strong>PGBR-v0.00.03-LT · Edição brasileira para Android</strong></p>
+<p align="center"><strong>PGBR-v0.00.23-LT · Edição brasileira para Android</strong></p>
 <p align="center">Controles de localização, joystick, captura, rotas e recursos opcionais de automação para Pokémon GO.</p>
 
-> **Status:** versão experimental PT-BR. A compilação automatizada passou nos testes; o funcionamento em aparelhos Android e a cobertura integral da tradução ainda precisam ser validados.
+> **Status:** LT023 em validação. Acrescenta dois filtros de busca inspirados nas funções documentadas do PGSharp: **Pokémon** (espécie, IV, nível e PvP) e **Reides** (chefe, tipo informado pela fonte, equipe, tempo restante e chefe confirmado), cada qual com resultados, sprites e confirmação para teleporte. São implementações PGBR sobre o LivePokeMap; **não** recuperamos o código privado ou acesso aos resultados do servidor PGSharp do APK decompilado.
 
 ## Baixar o PGBR
 
-Acesse **[Compilações do PGBR no GitHub Actions](https://github.com/LucianoToscano/PGBR/actions/workflows/pgbr-build-full-ptbr-candidate.yml)**, abra a execução mais recente com ✓ e, em **Artifacts**, baixe o pacote `PGBR-v0.00.03-LT-APKs`.
+A **[LT021 está publicada](https://github.com/LucianoToscano/PGBR/releases/tag/v0.00.21-LT)** como versão estável mais recente confirmada. A LT022 já foi integrada e está em processo de publicação; não confunda seus arquivos com os da LT023.
 
-O pacote ZIP contém:
-- **`PGBR-v0.00.03-LT.apk`** — instalador principal para Android ARM64, sem Root.
-- **`PGBR-v0.00.03-LT-Root.apk`** — instalador para aparelhos com Root.
-- **`PGBR-v0.00.03-LT-Root-module.zip`** — módulo Root para Magisk, KernelSU ou APatch.
-- Comprovantes de compilação e arquivo `SHA256SUMS.txt`.
+Acompanhe as **[compilações completas no GitHub Actions](https://github.com/LucianoToscano/PGBR/actions/workflows/pgbr-build-full-ptbr-candidate.yml)**. Somente após uma execução LT023 bem-sucedida, baixe o artefato `PGBR-v0.00.23-LT-APKs` ou a nova release, que devem conter:
+- `PGBR-v0.00.23-LT.apk` — instalador sem Root.
+- `PGBR-v0.00.23-LT-Root.apk` — instalador com Root.
+- `PGBR-v0.00.23-LT-Root-module.zip` — módulo para Magisk/KernelSU/APatch.
+- Comprovantes de compilação e `SHA256SUMS.txt`.
 
-É necessário entrar no GitHub para baixar artefatos, que expiram conforme o prazo do workflow. O APK é assinado com a chave própria do PGBR e **não atualiza diretamente** instalações assinadas por outras chaves. Não desinstale sua versão anterior sem salvar os dados necessários.
+A assinatura do PGBR pode ser diferente da de outras instalações. Não desinstale sua versão anterior sem preservar os dados necessários.
 
 ## Recursos
 

@@ -17,6 +17,37 @@ final class LocalTimeClock {
     private long minute = Long.MIN_VALUE;
     private SimpleDateFormat formatter;
     private String text = "--:--";
+    private String compactZone;
+    private long compactMinute = Long.MIN_VALUE;
+    private String compactText = "--:--";
+
+    private int compactFormat = -1;
+    private SimpleDateFormat compactFormatter;
+    private static final String[] PATTERNS = {
+        "'🕒' HH:mm '🗓' dd/MM/yy", "HH:mm - dd/MM/yy", "HH:mm 'GMT'XXX", "'🕒' HH:mm '🗓' dd/MM/yy",
+        "HH:mm", "HH:mm · dd/MM/yy", "HH:mm · dd/MM/yy"
+    };
+
+    String compactLabel(double latitude, double longitude, long now, int format) {
+        final String zone;
+        try { zone = TimeZoneLookup.zoneId(latitude, longitude); }
+        catch (IllegalArgumentException invalid) { return "--:--"; }
+        if (!AVAILABLE.contains(zone)) return "--:--";
+        if (format < 0 || format >= PATTERNS.length) format = 0;
+        long minuteNow = Math.floorDiv(now, 60000L);
+        if (!zone.equals(compactZone) || format != compactFormat) {
+            compactZone = zone;
+            compactFormat = format;
+            compactFormatter = new SimpleDateFormat(PATTERNS[format], Locale.US);
+            compactFormatter.setTimeZone(TimeZone.getTimeZone(zone));
+            compactMinute = Long.MIN_VALUE;
+        }
+        if (minuteNow != compactMinute) {
+            compactMinute = minuteNow;
+            compactText = compactFormatter.format(new Date(now)).replace("GMTZ", "GMT+00:00");
+        }
+        return compactText;
+    }
 
     String label(double latitude, double longitude, long now, boolean twentyFourHour, Locale language) {
         final String zone;

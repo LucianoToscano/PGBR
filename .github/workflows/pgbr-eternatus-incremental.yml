@@ -1,9 +1,9 @@
 name: PGBR - verificacao incremental Eternatus e privacidade
 on:
   push:
-    branches: [feature/eternatus-rota-automatica-lt, feature/lt-pvp-protecao-icones-hud-velocidades]
+    branches: [feature/eternatus-rota-automatica-lt, feature/lt-pvp-protecao-icones-hud-velocidades, feature/lt-hud-historico-locais-20261120, feature/eternatus-morph-tempestade-lt010, feature/eternatus-vortex-fx-lt011, fix/lt012-integracao-pr9-eternatus-20261120, fix/lt013-cooldown-verde-eternatus-20261120]
   pull_request:
-    branches: [feature/pt-br-traducao]
+    branches: [feature/pt-br-traducao, feature/lt-hud-historico-locais-20261120]
 permissions:
   contents: read
 jobs:
@@ -23,6 +23,22 @@ jobs:
           python-version: '3.12'
       - name: Testar coordenador GPX e cooldown
         run: python -B -m unittest discover -s pgrazor/test -p 'test_eternatus_route_java.py' -v
+      - name: Validar morph suave e imagens do usuário (Joystick e Pokébola)
+        run: python -B -m unittest discover -s pgrazor/test -p 'test_eternatus_morph_java.py' -v
+      - name: Testar ciclo da tempestade, vórtice real, efeitos da Pokébola
+        run: python -B -m unittest discover -s pgrazor/test -p 'test_eternatus_fx_java.py' -v
+      - name: Testar proporcao dos sprites e botoes claros do historico
+        run: python -B -m unittest discover -s pgrazor/test -p 'test_item_sprite_fit_java.py' -v
+      - name: Testar verde quando cooldown chegar a zero
+        run: |
+          mkdir -p build/pgbr-cooldown-visual
+          javac -encoding UTF-8 -d build/pgbr-cooldown-visual pgrazor/src/dev/pgrazor/CooldownVisual.java pgrazor/test/CooldownVisualTest.java
+          java -cp build/pgbr-cooldown-visual dev.pgrazor.CooldownVisualTest
+      - name: Testar mascara visual somente do treinador autenticado
+        run: |
+          g++ -std=c++17 -Wall -Wextra -Werror -Ipgrazor/native pgrazor/native/trainer_privacy_policy_test.cpp -o /tmp/pgbr-trainer-privacy-test
+          /tmp/pgbr-trainer-privacy-test
+          g++ -std=c++17 -Wall -Wextra -Werror -fsyntax-only -Ipgrazor/test/stubs -Ipgrazor/native pgrazor/native/trainer_privacy_ui.cpp
       - name: Validar apelidos de treinador
         run: |
           mkdir -p build/pgbr-unit

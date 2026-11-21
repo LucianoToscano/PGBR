@@ -32,6 +32,15 @@ class JoystickArtTests(unittest.TestCase):
                 self.assertGreater(len(raw), 4000)
         self.assertLess(total, 500000, "Keep the images light for the game overlay")
 
+    def test_rotating_storm_layers(self):
+        for layer in ("rim", "vortex"):
+            data = (ASSETS / f"joystick-eternatus-{layer}.webp").read_bytes()
+            self.assertEqual(webp_size(data), (512, 512))
+            self.assertTrue(data[20] & 0x10, f"{layer} needs transparency")
+        pad = (SRC / "Pad.java").read_text("utf-8")
+        self.assertLess(pad.index("canvas.drawBitmap(stormVortex"), pad.index("canvas.drawBitmap(stormRim"))
+        self.assertLess(pad.index("canvas.drawBitmap(stormRim"), pad.index("canvas.drawBitmap(builtinThumb"))
+
     def test_rendering_layers_drive_real_engine(self):
         pad = (SRC / "Pad.java").read_text("utf-8")
         self.assertIn("canvas.drawBitmap(builtinBase", pad)

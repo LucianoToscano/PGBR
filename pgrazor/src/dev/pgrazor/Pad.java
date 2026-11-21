@@ -26,12 +26,14 @@ public final class Pad {
     private final SettingsPanel settings;
     private View launcher;
     private VgpToggle vgpToggle;
+    private AlertDialog vgpStartDialog;
     private int appliedUiScale;
     private int appliedWindowWidth,appliedWindowHeight;
     private final Rect appliedWindowBounds=new Rect();
+    private final Rect appliedVgpWindowBounds=new Rect();
     private LinearLayout joystickOverlay;
     private BerryOverlay encounterBerry;
-    private Button cooldownTimer;
+    private TextView cooldownTimer;
     // Small draggable overlay showing the local wall-clock time at the spoofed coordinates (not device time).
     private LocalTimeOverlay localTime;
     private TextView vgpActivity, buddyEmotionStatus, catchChance;
@@ -104,13 +106,19 @@ public final class Pad {
     private final class PgbrIcon extends View {
         private final Paint paint=new Paint(Paint.ANTI_ALIAS_FLAG|Paint.FILTER_BITMAP_FLAG);
         private final Paint shine=new Paint(Paint.ANTI_ALIAS_FLAG);
-        private final Bitmap classic,eterna;
+        private final Bitmap classic, eterna, eternaAura, morphBallClean, morphBallStorm, stormSmoke, stormBallVortex;
+        private final EternatusVisualEffects stormFx = new EternatusVisualEffects();
         private Bitmap personal;
         private int artworkVersion=-1;
         PgbrIcon(Context context){
             super(context);
             classic=read("pgrazor/branding/pgbr-logo.webp");
-            eterna=read("pgrazor/map-icons/joystick-eternatus-thumb.webp");
+            eterna=read("pgrazor/map-icons/eternatus-ball.webp");
+            eternaAura=read("pgrazor/map-icons/eternatus-ball-aura.webp");
+            morphBallClean=read("pgrazor/map-icons/eternatus-ball-morph-clean.webp");
+            morphBallStorm=read("pgrazor/map-icons/eternatus-ball-morph-storm.webp");
+            stormSmoke=read("pgrazor/map-icons/eternatus-fx-smoke-wispy.png");
+            stormBallVortex=read("pgrazor/map-icons/eternatus-fx-vortex.png");
             setContentDescription(PtBr.tr("Abrir o menu principal PGBR. Arraste para reposicionar."));
             setFocusable(true);setClickable(true);
         }
@@ -123,7 +131,11 @@ public final class Pad {
             int version=OverlayArtwork.version();
             if(artworkVersion!=version){artworkVersion=version;personal=OverlayArtwork.load(getContext(),"launcher");}
             int style=Control.menuLauncherIconStyle();
-            Bitmap logo=style==1?eterna:style==2?personal:classic;
+            boolean stormOn = style == 1 && Control.joystickEternatusEffects();
+            boolean morphReady = style == 1 && morphBallClean != null && morphBallStorm != null;
+            Bitmap logo = style == 1 ? (morphReady ? morphBallClean
+                : stormOn && eternaAura != null ? eternaAura : eterna)
+                : style == 2 ? personal : classic;
             if(logo==null)logo=classic;
             float sz=Math.min(getWidth(),getHeight()),cx=getWidth()*.5f,cy=getHeight()*.5f;
             long now=SystemClock.uptimeMillis();
@@ -135,25 +147,43 @@ public final class Pad {
                 canvas.drawCircle(cx,cy,sz*.49f,paint);
             }
             shine.setShader(null);shine.setStyle(Paint.Style.STROKE);shine.setStrokeCap(Paint.Cap.ROUND);
-            if(style==1&&Control.joystickEternatusEffects()){
-                shine.setStrokeWidth(dp(1.8f));
-                shine.setColor(Color.argb(Math.round(50+85*pulse),15,220,255));
-                canvas.drawArc(cx-sz*.48f,cy-sz*.48f,cx+sz*.48f,cy+sz*.48f,(now*.075f)%360,65,false,shine);
-                shine.setColor(Color.argb(Math.round(50+80*pulse),255,39,195));
-                canvas.drawArc(cx-sz*.46f,cy-sz*.46f,cx+sz*.46f,cy+sz*.46f,-(now*.060f)%360,56,false,shine);
-            }else if(style==0){
+            if(style==0){
                 shine.setStrokeWidth(dp(2));
                 shine.setColor(Color.argb(Math.round(28+85*pulse),25,171,255));
                 canvas.drawCircle(cx,cy,sz*.455f,shine);
             }
             if(logo!=null){
                 paint.setColor(Color.WHITE);paint.setAlpha(255);paint.setStyle(Paint.Style.FILL);
-                float margin=style==1?sz*.09f:sz*.015f;
-                canvas.drawBitmap(logo,null,new RectF(cx-sz*.5f+margin,cy-sz*.5f+margin,cx+sz*.5f-margin,cy+sz*.5f-margin),paint);
+                // Keep a visible corona around PGEterna: formerly the full-size artwork
+                // covered the entire behind-the-ball aura inside this 48dp View.
+                float margin=style==1 ? sz*.105f : sz*.015f;
+                RectF imageBounds=new RectF(cx-sz*.5f+margin,cy-sz*.5f+margin,cx+sz*.5f-margin,cy+sz*.5f-margin);
+                if (stormOn) {
+                    // First the storm approaches behind the stationary Poké Ball.
+                    stormFx.ballBehind(canvas, stormBallVortex,
+                        stormSmoke != null ? stormSmoke :
+                        (morphBallStorm != null ? morphBallStorm : eternaAura),
+                        cx, cy, sz*.5f, now, Control.eternatusFxIntensity(), Control.eternatusFxSpeed());
+                }
+                canvas.drawBitmap(logo,null,imageBounds,paint);
+                if (morphReady && stormOn) {
+                    // The stationary Poké Ball texture breathes independently of moving clouds.
+                    // No synthetic zigzag lightning overlays or unbounded redraw loop.
+                    paint.setAlpha(EternatusMorph.overlayAlpha(now));
+                    canvas.drawBitmap(morphBallStorm,null,imageBounds,paint);
+                    paint.setAlpha(255);
+                }
+                if (stormOn) {
+                    // Rotating corona and diffused storm illumination; the ball never spins.
+                    stormFx.ballFront(canvas,cx,cy,sz*.5f,now,
+                        Control.eternatusFxIntensity(),Control.eternatusFxSpeed());
+                }
             }else{
                 paint.setColor(SettingsUi.accent());canvas.drawCircle(cx,cy,sz*.4f,paint);
             }
-            if(isShown()&&!closed)postInvalidateDelayed(style==1?90:150);
+            if (isShown() && !closed && (stormOn || style == 0))
+                postInvalidateDelayed(stormOn
+                    ? EternatusFxTiming.frameDelayMs(Control.eternatusFxIntensity()) : 150);
         }
     }
 
@@ -195,7 +225,21 @@ public final class Pad {
         encounterBerry=new BerryOverlay(activity,this::refresh);
         FrameLayout.LayoutParams berryLayout=new FrameLayout.LayoutParams(dp(90),dp(50),Gravity.RIGHT|Gravity.CENTER_VERTICAL);berryLayout.rightMargin=dp(10);overlays.addView(encounterBerry,berryLayout);encounterBerry.setVisibility(View.GONE);
 
-        cooldownTimer=button("Histórico  --:--");cooldownTimer.setTextSize(11);cooldownTimer.setAllCaps(false);cooldownTimer.setTextColor(accent());FrameLayout.LayoutParams timerLayout=new FrameLayout.LayoutParams(dp(150),dp(38),Gravity.TOP|Gravity.RIGHT);timerLayout.topMargin=dp(44);timerLayout.rightMargin=dp(12);overlays.addView(cooldownTimer,timerLayout);cooldownTimer.setOnClickListener(v->Cooldown.show(activity));cooldownDrag=OverlayDrag.attach(overlays,cooldownTimer,"cooldown");
+        cooldownTimer = new TextView(host);
+        cooldownTimer.setGravity(Gravity.CENTER);
+        cooldownTimer.setSingleLine(true);
+        cooldownTimer.setIncludeFontPadding(false);
+        cooldownTimer.setMinHeight(dp(48));
+        cooldownTimer.setMinWidth(dp(48));
+        cooldownTimer.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
+        cooldownTimer.setFontFeatureSettings("tnum");
+        cooldownTimer.setFocusable(true);
+        FrameLayout.LayoutParams timerLayout = new FrameLayout.LayoutParams(-2, -2, Gravity.TOP | Gravity.RIGHT);
+        timerLayout.topMargin = dp(44);
+        timerLayout.rightMargin = dp(12);
+        overlays.addView(cooldownTimer, timerLayout);
+        cooldownTimer.setOnClickListener(v -> Cooldown.show(activity));
+        cooldownDrag = OverlayDrag.attach(overlays, cooldownTimer, "cooldown");
 
         // Small local-time overlay: the wall-clock time at the spoofed coordinates, formatted offline by the view.
         localTime=new LocalTimeOverlay(host);FrameLayout.LayoutParams localTimeLayout=new FrameLayout.LayoutParams(FrameLayout.LayoutParams.WRAP_CONTENT,dp(32),Gravity.TOP|Gravity.RIGHT);localTimeLayout.rightMargin=dp(12);localTimeLayout.topMargin=dp(94);overlays.addView(localTime,localTimeLayout);localTime.setVisibility(View.GONE);localTimeDrag=OverlayDrag.attach(overlays,localTime,"local-time");
@@ -205,7 +249,7 @@ public final class Pad {
         panelView.setOnApplyWindowInsetsListener((view,insets) -> {settings.applyInsets(insets);return insets;});
         panelView.requestApplyInsets();
 
-        vgpToggle=new VgpToggle(host);FrameLayout.LayoutParams vgpButtonLayout=new FrameLayout.LayoutParams(dp(Math.max(48,Control.vgpIconSize())),dp(Math.max(48,Control.vgpIconSize())),Gravity.TOP|Gravity.LEFT);vgpButtonLayout.leftMargin=dp(12);vgpButtonLayout.topMargin=dp(156);overlays.addView(vgpToggle,vgpButtonLayout);vgpToggle.setOnClickListener(v->{if(EternatusRouteRunner.active())EternatusRouteRunner.stop("Controle manual do VGP+ assumido.");Control.setVgpEnabled(!Control.vgpEnabled());refresh();});
+        vgpToggle=new VgpToggle(host);FrameLayout.LayoutParams vgpButtonLayout=new FrameLayout.LayoutParams(dp(Math.max(48,Control.vgpIconSize())),dp(Math.max(48,Control.vgpIconSize())),Gravity.TOP|Gravity.LEFT);vgpButtonLayout.leftMargin=dp(12);vgpButtonLayout.topMargin=dp(156);overlays.addView(vgpToggle,vgpButtonLayout);vgpToggle.setOnClickListener(v->handleVgpIconTap());
         vgpActivity=text("VGP",11,ink());vgpActivity.setPadding(dp(4),dp(2),dp(4),dp(2));vgpActivity.setMaxLines(1);vgpActivity.setEllipsize(android.text.TextUtils.TruncateAt.END);
         FrameLayout.LayoutParams vgpLayout=new FrameLayout.LayoutParams(dp(140),-2,Gravity.TOP|Gravity.LEFT);vgpLayout.leftMargin=dp(12);vgpLayout.topMargin=dp(216);overlays.addView(vgpActivity,vgpLayout);vgpActivity.setVisibility(View.GONE);
         buddyEmotionStatus=text("EP: aguardando",11,ink());buddyEmotionStatus.setPadding(dp(4),dp(2),dp(4),dp(2));buddyEmotionStatus.setMaxLines(1);buddyEmotionStatus.setEllipsize(android.text.TextUtils.TruncateAt.END);
@@ -227,7 +271,7 @@ public final class Pad {
         vgpDrag=OverlayDrag.attach(overlays,vgpToggle,vgpActivity,"vgp");
         vgpActivity.setOnClickListener(v->new AlertDialog.Builder(MapTheme.wrap(activity))
             .setTitle(dev.pgrazor.PtBr.tr("Status do VGP"))
-            .setMessage(dev.pgrazor.PtBr.tr(Control.vgpStatus()))
+            .setMessage(dev.pgrazor.PtBr.tr(Control.vgpDiagnosticStatus()))
             .setPositiveButton(dev.pgrazor.PtBr.tr("Fechar"),null).show());
         mapCatchBadge=new MapCatchBadge(host);FrameLayout.LayoutParams mapCatchLayout=new FrameLayout.LayoutParams(dp(54),dp(54),Gravity.TOP|Gravity.LEFT);mapCatchLayout.leftMargin=dp(72);mapCatchLayout.topMargin=dp(100);overlays.addView(mapCatchBadge,mapCatchLayout);mapCatchBadge.setVisibility(View.GONE);
         vgpMarker=new VgpMarker(host);overlays.addView(vgpMarker,new FrameLayout.LayoutParams(dp(38),dp(46)));vgpMarker.setVisibility(View.GONE);
@@ -280,6 +324,40 @@ public final class Pad {
         Bitmap bitmap=decodeMapIcon(preferred);
         return bitmap!=null?bitmap:decodeMapIcon(legacy);
     }
+    /** Protect only manual activation by the floating icon; do not block event automation. */
+    private void handleVgpIconTap() {
+        if (Control.vgpEnabled()) {
+            if (EternatusRouteRunner.active()) EternatusRouteRunner.stop("Controle manual do VGP+ assumido.");
+            Control.setVgpEnabled(false);
+            refresh();
+            return;
+        }
+        if (!Control.vgpTapProtection()) { enableVgpFromIcon(); return; }
+        if (vgpStartDialog != null && vgpStartDialog.isShowing()) return;
+        AlertDialog dialog = new AlertDialog.Builder(MapTheme.wrap(activity))
+            .setTitle("Ativar VGP+?")
+            .setMessage("O VGP+ poderá capturar Pokémon e girar PokéParadas automaticamente. Deseja realmente ativar?")
+            .setNegativeButton("Cancelar", null)
+            .setPositiveButton("Ativar VGP+", (d, which) -> {
+                if (!closed && Control.vgpOverlayVisible() && !Control.vgpEnabled())
+                    enableVgpFromIcon();
+            }).create();
+        vgpStartDialog = dialog;
+        dialog.setOnDismissListener(d -> { if (vgpStartDialog == dialog) vgpStartDialog = null; });
+        dialog.show();
+        MapTheme.styleButtons(dialog);
+    }
+    private void enableVgpFromIcon() {
+        if (closed || !Control.vgpOverlayVisible() || Control.vgpEnabled()) return;
+        if (EternatusRouteRunner.active()) EternatusRouteRunner.stop("Controle manual do VGP+ assumido.");
+        Control.setVgpEnabled(true);
+        refresh();
+        // An explicit tap must never fail silently; do not infer gameplay success
+        // from the enabled flag alone. Display the first failed readiness gate.
+        if(!Control.vgpAllowed())
+            Toast.makeText(activity,Control.vgpDiagnosticStatus(),Toast.LENGTH_LONG).show();
+    }
+
     private final class VgpToggle extends View {
         private final Paint art=new Paint(Paint.ANTI_ALIAS_FLAG|Paint.FILTER_BITMAP_FLAG);
         private final Paint glow=new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -312,9 +390,9 @@ public final class Pad {
             }
             return trimAlpha(decodeMapIcon(fallback));
         }
-        private final Bitmap deviceOff=hdState(0,"vgp-device-error.png");
-        private final Bitmap deviceError=hdState(1,"vgp-device-on.png");
-        private final Bitmap deviceOn=hdState(2,"vgp-device-off.png");
+        private final Bitmap deviceOff=hdState(0,"vgp-device-off.png");
+        private final Bitmap deviceError=hdState(1,"vgp-device-error.png");
+        private final Bitmap deviceOn=hdState(2,"vgp-device-on.png");
         private Bitmap personal;
         private int artworkVersion=-1;
         VgpToggle(Context context){super(context);setFocusable(true);setClickable(true);}
@@ -325,35 +403,42 @@ public final class Pad {
         }
         protected void onDraw(Canvas canvas){
             super.onDraw(canvas);
-            boolean on=Control.vgpEnabled(),error=!on&&failed();
+            boolean on=Control.vgpEnabled(),ready=on&&Control.vgpAllowed()&&(Control.vgpOptions()&3)!=0;
+            boolean error=on&&!ready||!on&&failed();
             int style=Control.vgpIconStyle();
             if(artworkVersion!=OverlayArtwork.version()){
                 artworkVersion=OverlayArtwork.version();
                 personal=trimAlpha(OverlayArtwork.load(getContext(),"vgp"));
             }
-            Bitmap icon=style==0?(on?ring:ledOff):style==3&&personal!=null?personal:
-                (on?deviceOn:error?deviceError:deviceOff);
+            Bitmap icon=style==0?(ready?ring:ledOff):style==3&&personal!=null?personal:
+                (ready?deviceOn:error?deviceError:deviceOff);
             float centerX=getWidth()/2f,centerY=getHeight()/2f;
             float density=getResources().getDisplayMetrics().density;
             float size=Math.min(Math.min(getWidth(),getHeight()),Control.vgpIconSize()*density);
             if(icon!=null){
+                float ratio=Math.min(size/icon.getWidth(),size/icon.getHeight());
+                float w=icon.getWidth()*ratio,h=icon.getHeight()*ratio;
                 if(getParent() instanceof View){
                     View container=(View)getParent();
-                    if(getX()>=(container.getWidth()-getWidth()-dp(3)))
-                        centerX=getWidth()-size/2f;
+                    // The tappable hitbox stays >=48dp for accessibility, while
+                    // the image itself (even a 28-32dp custom sprite) may visibly
+                    // touch all four corners of the usable game viewport.
+                    android.graphics.Rect safe=UiViewport.vgpBounds(container);
+                    centerX=UiViewportPolicy.edgeAlignedCenter(
+                            getX(),safe.left,safe.right,getWidth(),w);
+                    centerY=UiViewportPolicy.edgeAlignedCenter(
+                            getY(),safe.top,safe.bottom,getHeight(),h);
                 }
                 if((style==1||style==3)&&Control.vgpBackgroundOpacity()>0){
                     glow.setStyle(Paint.Style.FILL);glow.setShader(null);
                     glow.setColor(Color.argb(Math.round(Control.vgpBackgroundOpacity()*2.55f),218,225,231));
                     canvas.drawCircle(centerX,centerY,size*.50f,glow);
                 }
-                float ratio=Math.min(size/icon.getWidth(),size/icon.getHeight());
-                float w=icon.getWidth()*ratio,h=icon.getHeight()*ratio;
                 dst.set(centerX-w/2,centerY-h/2,centerX+w/2,centerY+h/2);
                 art.setAlpha(Math.round(Control.vgpIconOpacity()*2.55f));
                 canvas.drawBitmap(icon,null,dst,art);
             }
-            if(on&&getVisibility()==View.VISIBLE){
+            if(ready&&getVisibility()==View.VISIBLE){
                 float phase=(android.os.SystemClock.uptimeMillis()%1200)/1200f;
                 float pulse=(float)(0.5+0.5*Math.sin(phase*2*Math.PI));
                 if(style==0){
@@ -419,19 +504,31 @@ public final class Pad {
     private void applyMapScale(){
         if(launcher==null||launcher.getWidth()==0||parent.getWidth()==0)return;
         Rect safe=UiViewport.bounds(parent);
+        Rect vgpSafe=UiViewport.vgpBounds(parent);
         int percent=Control.uiScalePercent();
-        if(appliedUiScale==percent&&appliedWindowWidth==parent.getWidth()&&appliedWindowHeight==parent.getHeight()&&appliedWindowBounds.equals(safe))return;
+        if(appliedUiScale==percent&&appliedWindowWidth==parent.getWidth()
+                &&appliedWindowHeight==parent.getHeight()
+                &&appliedWindowBounds.equals(safe)
+                &&appliedVgpWindowBounds.equals(vgpSafe))return;
         Rect previousSafe=appliedWindowBounds.isEmpty()?safe:new Rect(appliedWindowBounds);
-        appliedWindowBounds.set(safe);appliedWindowWidth=parent.getWidth();appliedWindowHeight=parent.getHeight();
+        Rect previousVgpSafe=appliedVgpWindowBounds.isEmpty()?vgpSafe:new Rect(appliedVgpWindowBounds);
+        appliedWindowBounds.set(safe);
+        appliedVgpWindowBounds.set(vgpSafe);
+        appliedWindowWidth=parent.getWidth();appliedWindowHeight=parent.getHeight();
         appliedUiScale=percent;float scale=percent/100f;
         for(View view:new View[]{launcher,joystickOverlay,cooldownTimer,localTime,vgpToggle,vgpActivity,vgpMarker,mapCatchBadge,transferToggle,gameRoutesOverlay,gymFeedOverlay,gymAutomationStatus,shundoOverlay,shinyBadge,shinyMark,encounterBadge}){
             if(view==null)continue;
             float x=view.getX(),y=view.getY();
             int oldWidth=OverlayDrag.visualWidth(view),oldHeight=OverlayDrag.visualHeight(view);
-            float fitted=UiViewportPolicy.fit(scale,view.getWidth(),view.getHeight(),safe.width(),safe.height());
+            // VGP uses a full horizontal track in portrait. Using the generic
+            // system-inset rectangle here used to pull it away from the right edge
+            // on UI scale, rotation and relayout, despite OverlayDrag allowing it.
+            Rect to=view==vgpToggle?vgpSafe:safe;
+            Rect from=view==vgpToggle?previousVgpSafe:previousSafe;
+            float fitted=UiViewportPolicy.fit(scale,view.getWidth(),view.getHeight(),to.width(),to.height());
             view.setPivotX(0);view.setPivotY(0);view.setScaleX(fitted);view.setScaleY(fitted);
-            view.setX(UiViewportPolicy.resizePosition(x,previousSafe.left,previousSafe.right,oldWidth,safe.left,safe.right,OverlayDrag.visualWidth(view)));
-            view.setY(UiViewportPolicy.resizePosition(y,previousSafe.top,previousSafe.bottom,oldHeight,safe.top,safe.bottom,OverlayDrag.visualHeight(view)));
+            view.setX(UiViewportPolicy.resizePosition(x,from.left,from.right,oldWidth,to.left,to.right,OverlayDrag.visualWidth(view)));
+            view.setY(UiViewportPolicy.resizePosition(y,from.top,from.bottom,oldHeight,to.top,to.bottom,OverlayDrag.visualHeight(view)));
         }
         if(cooldownDrag!=null)cooldownDrag.refreshBounds();if(localTimeDrag!=null)localTimeDrag.refreshBounds();if(vgpDrag!=null)vgpDrag.refreshBounds();
         if(transferDrag!=null)transferDrag.refreshBounds();
@@ -441,9 +538,18 @@ public final class Pad {
         if(quickMenu!=null)quickMenu.applyScale(scale);
     }
     private int launcherSize=-1,launcherOpacity=-1,launcherStyle=-1;
+    private int lastStormAppearance = -1;
     private void refreshLauncherAppearance(){
         if(launcher==null)return;
         int size=Control.menuLauncherSizeDp(),opacity=Control.menuLauncherOpacity();
+        int stormAppearance = Control.menuLauncherBgOpacity() * 64
+            + (Control.joystickEternatusEffects() ? 1 : 0)
+            + Control.eternatusFxIntensity() * 4 + Control.eternatusFxSpeed() * 16;
+        if (lastStormAppearance != stormAppearance) {
+            lastStormAppearance = stormAppearance;
+            launcher.invalidate();
+            stick.invalidate();
+        }
         if(launcherSize!=size){
             launcherSize=size;ViewGroup.LayoutParams lp=launcher.getLayoutParams();
             if(lp!=null){lp.width=dp(size);lp.height=dp(size);launcher.setLayoutParams(lp);}
@@ -455,12 +561,16 @@ public final class Pad {
         if(launcher instanceof PgbrIcon&&((PgbrIcon)launcher).artworkVersion!=OverlayArtwork.version())
             launcher.invalidate();
     }
-    private int lastJoystickSize=-1,lastJoystickOpacity=-1,lastJoystickStyle=-1;
+    private int lastJoystickSize=-1,lastJoystickOpacity=-1,lastJoystickStyle=-1,lastJoystickEffects=-1;
     private void refreshJoystickAppearance(){
         if(stick==null||joystickOverlay==null)return;
         int size=Control.joystickSizeDp(),opacity=Control.joystickOpacity();
         int style=Control.joystickStyle();
-        if(lastJoystickStyle!=style){lastJoystickStyle=style;stick.invalidate();}
+        int effects=(Control.joystickEternatusEffects()?1:0)
+            + 4*Control.eternatusFxIntensity() + 16*Control.eternatusFxSpeed();
+        if(lastJoystickStyle!=style||lastJoystickEffects!=effects){
+            lastJoystickStyle=style;lastJoystickEffects=effects;stick.invalidate();
+        }
         if(style==3&&stick.imageGeneration!=JoystickImage.generation())stick.invalidate();
         if(size!=lastJoystickSize){
             lastJoystickSize=size;
@@ -496,23 +606,43 @@ public final class Pad {
         }
     }
     private void applyHudAppearance(){
-        int opacity=Control.hudLabelOpacity()*Control.overlayBackgroundOpacity()/100,font=Control.hudLabelTextSp();
-        int key=(opacity*100+font)*2+(Control.darkTheme()?1:0);
+        int font=Control.hudLabelTextSp();
+        int key=(Control.hudAppearanceRevision()*101+font)*2+(Control.darkTheme()?1:0);
+        // Reapply text/border styling on the exact tick the cooldown becomes 00:00.
+        // "-" (missing history/location) never counts as ready.
+        String cooldownNumber=Cooldown.compactLabel();
+        key=key*2+(CooldownVisual.ready(cooldownNumber)?1:0);
         if(key==lastHudAppearanceKey)return;
         lastHudAppearanceKey=key;
-        int alpha=Math.round(opacity*255f/100f);
-        int bg=(surface()&0x00ffffff)|(alpha<<24);
-        for(TextView label:new TextView[]{vgpActivity,buddyEmotionStatus,automationStatus,gymAutomationStatus,catchChance,encounterBadge,shinyBadge}){
-            if(label==null)continue;
-            label.setTextSize(font);
-            label.setPadding(dp(4),dp(2),dp(4),dp(2));
-            label.setBackground(alpha==0?null:rounded(bg,7));
-            label.setShadowLayer(dp(1.5f),0,dp(.5f),Control.darkTheme()?Color.BLACK:Color.WHITE);
-        }
-        if(cooldownTimer!=null){
-            cooldownTimer.setTextSize(font);
-            cooldownTimer.setBackground(alpha==0?null:rounded(bg,7));
-            cooldownTimer.setShadowLayer(dp(1.5f),0,dp(.5f),Control.darkTheme()?Color.BLACK:Color.WHITE);
+        TextView[] labels={vgpActivity,buddyEmotionStatus,automationStatus,gymAutomationStatus,
+            catchChance,encounterBadge,shinyBadge,cooldownTimer};
+        int[] bits={Control.HUD_VGP,Control.HUD_BUDDY,Control.HUD_AUTOMATION,Control.HUD_GYM,
+            Control.HUD_CATCH,Control.HUD_ENCOUNTERS,Control.HUD_SHINY,Control.HUD_COOLDOWN};
+        for(int i=0;i<labels.length;i++){
+            TextView label=labels[i];if(label==null)continue;
+            int alpha=Math.round(Control.hudBackgroundOpacity(bits[i])*255f/100f);
+            int tint=label==cooldownTimer
+                ? CooldownVisual.color(cooldownNumber,Control.hudLabelColor(Control.HUD_COOLDOWN))
+                : Control.hudLabelColor(bits[i]);
+            if (label == cooldownTimer) {
+                boolean emphasis = Control.cooldownEmphasis();
+                int size = Control.cooldownTextSp();
+                label.setTextSize(size != 0 ? size : emphasis ? Math.max(18, font + 5) : font + 2);
+                label.setTypeface(Typeface.create(emphasis ? "sans-serif-condensed" : "sans-serif-medium",
+                    emphasis ? Typeface.BOLD : Typeface.NORMAL));
+                GradientDrawable badge = rounded((alpha << 24) | 0x101924, emphasis ? 10 : 16);
+                if (emphasis) badge.setStroke(dp(2), tint);
+                int inset = dp(emphasis ? 5 : 9);
+                label.setBackground(alpha == 0 && !emphasis ? null :
+                    new android.graphics.drawable.InsetDrawable(badge, 0, inset, 0, inset));
+                label.setPadding(dp(emphasis ? 12 : 8), inset + dp(3), dp(emphasis ? 12 : 8), inset + dp(3));
+            } else {
+                label.setTextSize(font);
+                label.setBackground(alpha==0?null:rounded((alpha<<24)|0x101924,7));
+                label.setPadding(dp(4),dp(2),dp(4),dp(2));
+            }
+            label.setTextColor(tint);
+            label.setShadowLayer(dp(2.2f),0,dp(.6f),Color.BLACK);
         }
     }
     private static String compactBuddyStatus(String full){
@@ -540,7 +670,7 @@ public final class Pad {
         refreshGymAppearance();
         if(encounterBadge!=null){String count=!Control.encounterOverlay()||settings.isVisible()||(quickMenu!=null&&quickMenu.isShowing())?"":EncounterCounter.label();
             encounterBadge.setVisibility(count.isEmpty()||!Control.hudLabelVisible(Control.HUD_ENCOUNTERS)?View.GONE:View.VISIBLE);
-            if(!count.isEmpty()){setTextIfChanged(encounterBadge,count);encounterBadge.setTextColor(ink());if(encounterDrag!=null)encounterDrag.refreshBounds();}}
+            if(!count.isEmpty()){setTextIfChanged(encounterBadge,count);if(encounterDrag!=null)encounterDrag.refreshBounds();}}
         if(shinyMark!=null){boolean mark=ShinyScanner.targetVisible()&&!settings.isVisible();shinyMark.setVisibility(mark?View.VISIBLE:View.GONE);
             if(mark){// The point is the top of the Pokémon; the symbol sits just above it.
             shinyMark.setX(ShinyScanner.targetX()*parent.getWidth()-dp(16));shinyMark.setY(ShinyScanner.targetY()*parent.getHeight()-dp(34));}}
@@ -554,16 +684,16 @@ public final class Pad {
             final AlertDialog shown=shinyPopup;shown.setCanceledOnTouchOutside(false);DialogLifecycle.bind(activity,shown,null);shown.setOnShowListener(d->MapTheme.styleButtons(shown));shown.show();}}
         if(shinyBadge!=null){String found=settings.isVisible()||(quickMenu!=null&&quickMenu.isShowing())?"":ShinyScanner.foundLabel();
             shinyBadge.setVisibility(found.isEmpty()||!Control.hudLabelVisible(Control.HUD_SHINY)?View.GONE:View.VISIBLE);
-            if(!found.isEmpty()){setTextIfChanged(shinyBadge,found);shinyBadge.setContentDescription(dev.pgrazor.PtBr.tr(found+". Tap for options."));shinyBadge.setTextColor(ink());if(shinyDrag!=null)shinyDrag.refreshBounds();}}
+            if(!found.isEmpty()){setTextIfChanged(shinyBadge,found);shinyBadge.setContentDescription(dev.pgrazor.PtBr.tr(found+". Tap for options."));if(shinyDrag!=null)shinyDrag.refreshBounds();}}
         if(shundoOverlay!=null){shundoOverlay.refresh(!settings.isVisible()&&!(quickMenu!=null&&quickMenu.isShowing()));if(shundoDrag!=null)shundoDrag.refreshBounds();}
-        if(gymAutomationStatus!=null){gymAutomationStatus.setVisibility(Control.hudLabelVisible(Control.HUD_GYM)?gymFeedOverlay.getVisibility():View.GONE);setTextIfChanged(gymAutomationStatus,GymAutomationSettings.overlayStatus());gymAutomationStatus.setTextColor(ink());gymFeedDrag.refreshBounds();}
-        if(vgpToggle!=null){vgpToggle.setVisibility(Control.vgpOverlayVisible()&&!settings.isVisible()&&!(quickMenu!=null&&quickMenu.isShowing())?View.VISIBLE:View.GONE);vgpToggle.setContentDescription(dev.pgrazor.PtBr.tr("Virtual Go Plus "+(Control.vgpEnabled()?"on; tap to turn off":"off; tap to turn on")+". "+Control.vgpStatus()));vgpToggle.invalidate();}
+        if(gymAutomationStatus!=null){gymAutomationStatus.setVisibility(Control.hudLabelVisible(Control.HUD_GYM)?gymFeedOverlay.getVisibility():View.GONE);setTextIfChanged(gymAutomationStatus,GymAutomationSettings.overlayStatus());gymFeedDrag.refreshBounds();}
+        if(vgpToggle!=null){vgpToggle.setVisibility(Control.vgpOverlayVisible()&&!settings.isVisible()&&!(quickMenu!=null&&quickMenu.isShowing())?View.VISIBLE:View.GONE);vgpToggle.setContentDescription(dev.pgrazor.PtBr.tr("Virtual Go Plus "+(Control.vgpEnabled()?"on; tap to turn off":Control.vgpTapProtection()?"off; tap to confirm activation":"off; tap to turn on")+". "+Control.vgpDiagnosticStatus()));vgpToggle.invalidate();}
 
         // Pair the status line with the toggle so the cooldown shutoff reason is visible even when VGP is off.
-        if(buddyEmotionStatus!=null){buddyEmotionStatus.setVisibility(Control.hudLabelVisible(Control.HUD_BUDDY)&&BuddyEmotionSettings.overlayEnabled()&&!settings.isVisible()&&!(quickMenu!=null&&quickMenu.isShowing())?View.VISIBLE:View.GONE);setTextIfChanged(buddyEmotionStatus,compactBuddyStatus(BuddyEmotionSettings.status()));buddyEmotionStatus.setTextColor(ink());}
-        if(catchChance!=null){catchChance.setVisibility(Control.hudLabelVisible(Control.HUD_CATCH)&&CatchChance.visible()&&!settings.isVisible()&&!(quickMenu!=null&&quickMenu.isShowing())?View.VISIBLE:View.GONE);setTextIfChanged(catchChance,CatchChance.text());catchChance.setTextColor(ink());}
-        if(automationStatus!=null){automationStatus.setVisibility(Control.hudLabelVisible(Control.HUD_AUTOMATION)&&(EternatusRouteRunner.active()||OneShotAutomation.overlayVisible()||AutoRaid.running())&&!settings.isVisible()&&!(quickMenu!=null&&quickMenu.isShowing())?View.VISIBLE:View.GONE);setTextIfChanged(automationStatus,EternatusRouteRunner.active()?"Eternatus "+EternatusRouteRunner.currentStop()+"/"+EternatusRouteRunner.totalStops()+" · "+EternatusRouteRunner.status():AutoRaid.running()?"Auto-Raid | "+AutoRaid.status():OneShotAutomation.overlayStatus());automationStatus.setTextColor(ink());automationDrag.refreshBounds();}
-        if(vgpActivity!=null){vgpActivity.setVisibility(Control.hudLabelVisible(Control.HUD_VGP)&&Control.vgpOverlayVisible()&&!settings.isVisible()&&!(quickMenu!=null&&quickMenu.isShowing())?View.VISIBLE:View.GONE);setTextIfChanged(vgpActivity,Control.vgpEnabled()?"VGP · Ligado":"VGP · Desligado");vgpActivity.setContentDescription(dev.pgrazor.PtBr.tr("Status completo do VGP: "+Control.vgpStatus()));vgpActivity.setTextColor(ink());}
+        if(buddyEmotionStatus!=null){buddyEmotionStatus.setVisibility(Control.hudLabelVisible(Control.HUD_BUDDY)&&BuddyEmotionSettings.overlayEnabled()&&!settings.isVisible()&&!(quickMenu!=null&&quickMenu.isShowing())?View.VISIBLE:View.GONE);setTextIfChanged(buddyEmotionStatus,compactBuddyStatus(BuddyEmotionSettings.status()));}
+        if(catchChance!=null){catchChance.setVisibility(Control.hudLabelVisible(Control.HUD_CATCH)&&CatchChance.visible()&&!settings.isVisible()&&!(quickMenu!=null&&quickMenu.isShowing())?View.VISIBLE:View.GONE);setTextIfChanged(catchChance,CatchChance.text());}
+        if(automationStatus!=null){automationStatus.setVisibility(Control.hudLabelVisible(Control.HUD_AUTOMATION)&&(EternatusRouteRunner.active()||OneShotAutomation.overlayVisible()||AutoRaid.running())&&!settings.isVisible()&&!(quickMenu!=null&&quickMenu.isShowing())?View.VISIBLE:View.GONE);setTextIfChanged(automationStatus,EternatusRouteRunner.active()?"Eternatus "+EternatusRouteRunner.currentStop()+"/"+EternatusRouteRunner.totalStops()+" · "+EternatusRouteRunner.compactStatus():AutoRaid.running()?"Auto-Raid | "+AutoRaid.status():OneShotAutomation.overlayStatus());automationDrag.refreshBounds();}
+        if(vgpActivity!=null){vgpActivity.setVisibility(Control.hudLabelVisible(Control.HUD_VGP)&&Control.vgpOverlayVisible()&&!settings.isVisible()&&!(quickMenu!=null&&quickMenu.isShowing())?View.VISIBLE:View.GONE);boolean on=Control.vgpEnabled();setTextIfChanged(vgpActivity,on?(Control.vgpAllowed()&&(Control.vgpOptions()&3)!=0?"●":"!"):"○");vgpActivity.setContentDescription(dev.pgrazor.PtBr.tr("Status completo do VGP: "+Control.vgpDiagnosticStatus()));}
         if(mapCatchBadge!=null)mapCatchBadge.refresh(!settings.isVisible()&&!(quickMenu!=null&&quickMenu.isShowing())&&!Control.catchScreenVisible());
         if(vgpMarker!=null){boolean show=Control.vgpTargetVisible()&&!settings.isVisible();vgpMarker.setVisibility(show?View.VISIBLE:View.GONE);if(show){vgpMarker.setX(Control.vgpTargetX()*parent.getWidth()-dp(19)*vgpMarker.getScaleX());vgpMarker.setY(Control.vgpTargetY()*parent.getHeight()-dp(36)-dp(46)*vgpMarker.getScaleY());vgpMarker.invalidate();}}
         if(transferToggle!=null){transferToggle.setVisibility(Control.transferOverlayVisible()&&!settings.isVisible()&&!(quickMenu!=null&&quickMenu.isShowing())?View.VISIBLE:View.GONE);transferToggle.setContentDescription(dev.pgrazor.PtBr.tr(transferToggleDescription()));transferToggle.invalidate();}
@@ -571,7 +701,7 @@ public final class Pad {
         String routeReward=Control.takeGameRoutesRewardNotice();
         if(!routeReward.isEmpty()&&!overlaysHidden)Toast.makeText(activity,routeReward,Toast.LENGTH_LONG).show();
         if(gameRoutesOverlay!=null)gameRoutesOverlay.refresh(!settings.isVisible()&&!(quickMenu!=null&&quickMenu.isShowing()));
-        if(cooldownTimer!=null){cooldownTimer.setVisibility(Control.hudLabelVisible(Control.HUD_COOLDOWN)&&Control.cooldownOverlay()?View.VISIBLE:View.GONE);setTextIfChanged(cooldownTimer,"☰  "+Cooldown.label());cooldownTimer.setTextColor(Cooldown.remaining()>0?Color.rgb(255,186,95):accent());}
+        if(cooldownTimer!=null){cooldownTimer.setVisibility(Control.hudLabelVisible(Control.HUD_COOLDOWN)&&Control.cooldownOverlay()?View.VISIBLE:View.GONE);setTextIfChanged(cooldownTimer,Cooldown.compactLabel());cooldownTimer.setContentDescription(Cooldown.label());}
         // The view combines this Pad-side gate with Control.localTimeOverlay()/desiredEnabled() and its own throttle;
         // a false gate (settings open, quick menu up, or overlays hidden) stops its clock work entirely.
         if(localTime!=null){localTime.refresh(Control.hudLabelVisible(Control.HUD_LOCALTIME)&&!overlaysHidden&&!settings.isVisible()&&!(quickMenu!=null&&quickMenu.isShowing()));if(localTimeDrag!=null&&localTime.getVisibility()==View.VISIBLE)localTimeDrag.refreshBounds();}
@@ -778,7 +908,7 @@ public final class Pad {
     }
     public void close() {
         if (closed) return;
-        closed = true;if(stopRouteDialog!=null)stopRouteDialog.dismiss(); stick.release(true); Control.suspendForBackground(); handler.removeCallbacks(tick);
+        closed = true;if(vgpStartDialog!=null){vgpStartDialog.dismiss();vgpStartDialog=null;}if(stopRouteDialog!=null)stopRouteDialog.dismiss(); stick.release(true); Control.suspendForBackground(); handler.removeCallbacks(tick);
         if(quickMenu!=null){quickMenu.destroy();quickMenu=null;}
         if(cooldownDrag!=null){cooldownDrag.detach();cooldownDrag=null;}if(vgpDrag!=null){vgpDrag.detach();vgpDrag=null;}if(transferDrag!=null){transferDrag.detach();transferDrag=null;}if(gameRoutesDrag!=null){gameRoutesDrag.detach();gameRoutesDrag=null;}
         if(localTimeDrag!=null){localTimeDrag.detach();localTimeDrag=null;}if(localTime!=null){localTime.close();overlays.removeView(localTime);localTime=null;}
@@ -803,15 +933,17 @@ public final class Pad {
     }
     private final class Stick extends View {
         final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG|Paint.FILTER_BITMAP_FLAG);
-        private Bitmap customImage, builtinBase, builtinThumb;
+        private Bitmap customImage, builtinBase, builtinThumb, stormRim, stormVortex, morphStorm,
+            fxVortex, fxSmoke, fxWispy;
+        private final RectF artBounds = new RectF();
         private int imageGeneration=-1,loadedStyle=-1;
         private final Paint effect=new Paint(Paint.ANTI_ALIAS_FLAG);
-        private final Path spark=new Path();
+        private final EternatusVisualEffects stormFx = new EternatusVisualEffects();
         float x, y;
         int pointer = -1;
         long cameraGesture=-1;
         boolean gestureCamera;
-        Stick(Context c) { super(c); setContentDescription("Location joystick: drag to move, release to stop"); }
+        Stick(Context c) { super(c); setContentDescription("Joystick: arraste para mover e solte para parar."); }
         void release() { release(false); }
         void release(boolean preserveWalk) { x=y=0; pointer=-1; cameraGesture=-1; if (!preserveWalk || !Control.engine.walking) Control.engine.stop(); Control.saveState(); invalidate(); }
         void applyMotion(long now) {
@@ -838,54 +970,54 @@ public final class Pad {
             int style=Control.joystickStyle();
             if(style==loadedStyle)return;
             loadedStyle=style;
-            builtinBase=builtinThumb=null;
-            if(style==1||style==2){
-                String variant=style==1?"eternatus":"hud";
+            builtinBase=builtinThumb=stormRim=stormVortex=morphStorm=fxVortex=fxSmoke=fxWispy=null;
+            if(style==1){
+                // New reversible visual transition. The center is a separate movable bitmap.
+                builtinBase=art("joystick-eternatus-morph-clean.webp");
+                morphStorm=art("joystick-eternatus-morph-storm.webp");
+                stormVortex=art("joystick-eternatus-vortex.webp");
+                fxVortex=art("eternatus-fx-vortex.png");
+                fxSmoke=art("eternatus-fx-soft-smoke.png");
+                fxWispy=art("eternatus-fx-smoke-wispy.png");
+                builtinThumb=art("joystick-eternatus-morph-thumb.webp");
+                if(builtinBase==null || morphStorm==null || builtinThumb==null){
+                    // Safe fallback if an older package lacks the imported art.
+                    builtinBase=art("joystick-eternatus-base.webp");
+                    builtinThumb=art("joystick-eternatus-thumb.webp");
+                    stormRim=art("joystick-eternatus-rim.webp");
+                    stormVortex=art("joystick-eternatus-vortex.webp");
+                    morphStorm=null;
+                    Control.event("joystick-art","Morph art unavailable; retaining prior Eternatus joystick");
+                }
+            }else if(style==2||style==4){
+                String variant=style==4?"eternatus":"hud";
                 builtinBase=art("joystick-"+variant+"-base.webp");
                 builtinThumb=art("joystick-"+variant+"-thumb.webp");
-                if(builtinBase==null||builtinThumb==null)
-                    Control.event("joystick-art","Could not load bundled "+variant+" layers; original control remains active");
+                if(style==4){
+                    stormRim=art("joystick-eternatus-rim.webp");
+                    stormVortex=art("joystick-eternatus-vortex.webp");
+                }
             }
+            if(style!=0 && style!=3 && (builtinBase==null||builtinThumb==null))
+                Control.event("joystick-art","Could not load bundled joystick layers; original control remains active");
         }
         private void drawEternatusEffects(Canvas canvas,float cx,float cy,float r,float knobX,float knobY,float knobR){
             long now=SystemClock.uptimeMillis();
-            float phase=(now%2000L)/2000f;
-            float pulse=(float)(.55+.45*Math.sin(2*Math.PI*phase));
+            float pulse=EternatusMorph.blend(now);
+            // The thumb's arc and halo drift independently of the outer storm.
             effect.setShader(null);
             effect.setStyle(Paint.Style.STROKE);
             effect.setStrokeCap(Paint.Cap.ROUND);
             effect.setStrokeJoin(Paint.Join.ROUND);
-            // Slow cyan/fuchsia scans travel around the frame, without full-screen invalidation.
-            for(int i=0;i<4;i++){
-                float angle=(now*.035f+i*91f)%360f;
-                float rr=r*(i%2==0?.90f:.86f);
-                effect.setStrokeWidth(dp(i%2==0?1.7f:1.25f));
-                effect.setColor(i%2==0?Color.argb(105,15,220,255):Color.argb(95,255,22,197));
-                canvas.drawArc(cx-rr,cy-rr,cx+rr,cy+rr,angle,33,false,effect);
-            }
-            // Four small lightning forks rotate around the ring. They are purely decorative.
-            for(int i=0;i<4;i++){
-                double a=(now*.00057+i*Math.PI/2);
-                float ca=(float)Math.cos(a),sa=(float)Math.sin(a);
-                float tx=-sa,ty=ca;
-                float px=cx+ca*r*.78f,py=cy+sa*r*.78f;
-                spark.reset();
-                spark.moveTo(px,py);
-                spark.lineTo(px+ca*r*.065f+tx*r*.031f,py+sa*r*.065f+ty*r*.031f);
-                spark.lineTo(px+ca*r*.10f-tx*r*.023f,py+sa*r*.10f-ty*r*.023f);
-                spark.lineTo(px+ca*r*.14f,py+sa*r*.14f);
-                effect.setStrokeWidth(dp(1.2f));
-                effect.setColor(i%2==0?Color.argb(65,27,218,255):Color.argb(72,255,41,189));
-                canvas.drawPath(spark,effect);
-            }
-            // Knob corona also follows the thumb rather than remaining fixed in the background.
+            // Keep a soft moving glow, not the previous repetitive hand-drawn zigzag rays.
+            // Knob corona follows the thumb rather than remaining fixed in the background.
             effect.setStrokeWidth(dp(2.3f));
             effect.setColor(Color.argb(Math.round(55+70*pulse),255,27,217));
             canvas.drawCircle(knobX,knobY,knobR*.98f,effect);
             effect.setStrokeWidth(dp(1.2f));
             effect.setColor(Color.argb(Math.round(80+85*pulse),26,230,255));
             canvas.drawArc(knobX-knobR*1.04f,knobY-knobR*1.04f,
-                knobX+knobR*1.04f,knobY+knobR*1.04f,(now*.09f)%360f,68,false,effect);
+                knobX+knobR*1.04f,knobY+knobR*1.04f,EternatusFxTiming.rotation(now,Control.eternatusFxSpeed(),false),68,false,effect);
             effect.setStyle(Paint.Style.FILL);
         }
         protected void onDraw(Canvas canvas) {
@@ -894,22 +1026,53 @@ public final class Pad {
             float radius=Math.max(dp(8),Math.min(cx,cy)-dp(12));
             loadArtIfNeeded();
             int style=Control.joystickStyle();
-            if((style==1||style==2)&&builtinBase!=null&&builtinThumb!=null){
+            if((style==1||style==2||style==4)&&builtinBase!=null&&builtinThumb!=null){
                 float outer=Math.max(dp(16),Math.min(cx,cy)-dp(2));
                 paint.setStyle(Paint.Style.FILL);
                 paint.setAlpha(255);
                 paint.setColor(Color.WHITE);
-                canvas.drawBitmap(builtinBase,null,new RectF(cx-outer,cy-outer,cx+outer,cy+outer),paint);
-                float thumbR=outer*(style==1?.355f:.319f);
+                artBounds.set(cx-outer,cy-outer,cx+outer,cy+outer);
+                boolean stormOn = (style==1 || style==4) && Control.joystickEternatusEffects();
+                boolean morphReady = style==1 && morphStorm!=null;
+                if (morphReady) {
+                    canvas.drawBitmap(builtinBase,null,artBounds,paint);
+                    if (stormOn) {
+                        long now=SystemClock.uptimeMillis();
+                        float blend=EternatusMorph.blend(now);
+                        paint.setAlpha(Math.round(255f*blend));
+                        canvas.drawBitmap(morphStorm,null,artBounds,paint);
+                        paint.setAlpha(255);
+                        // Independent rotating vortex and outward drifting clouds stay clipped.
+                        // The crystal frame and movable knob remain upright.
+                        stormFx.joystick(canvas,fxVortex!=null?fxVortex:stormVortex,
+                            fxSmoke!=null?fxSmoke:morphStorm,fxWispy,
+                            cx,cy,outer,now,
+                            Control.eternatusFxIntensity(),Control.eternatusFxSpeed());
+                    }
+                } else if (stormOn && stormVortex != null && stormRim != null) {
+                    int saved = canvas.save();
+                    float angle = EternatusFxTiming.rotation(SystemClock.uptimeMillis(),
+                        Control.eternatusFxSpeed(),false);
+                    canvas.rotate(angle, cx, cy);
+                    canvas.drawBitmap(stormVortex, null, artBounds, paint);
+                    canvas.restoreToCount(saved);
+                    canvas.drawBitmap(stormRim, null, artBounds, paint);
+                } else {
+                    canvas.drawBitmap(builtinBase,null,artBounds,paint);
+                }
+                float thumbR=outer*(style==2?.319f:.355f);
                 float travel=Math.max(0,outer-thumbR-dp(4));
                 float knobX=cx+x*travel,knobY=cy+y*travel;
-                if(style==1&&Control.joystickEternatusEffects())
+                if(stormOn && !morphReady)
                     drawEternatusEffects(canvas,cx,cy,outer,knobX,knobY,thumbR);
                 // Only the circular hub moves; the arrows, shield and outer artwork remain fixed.
                 canvas.drawBitmap(builtinThumb,null,
                     new RectF(knobX-thumbR,knobY-thumbR,knobX+thumbR,knobY+thumbR),paint);
-                if(style==1&&Control.joystickEternatusEffects()&&isShown()&&!closed)
-                    postInvalidateDelayed(80); // bounded ~12.5 FPS, no extra worker or timer
+                if(stormOn&&isShown()&&!closed){
+                    if(morphReady)postInvalidateDelayed(
+                        EternatusFxTiming.frameDelayMs(Control.eternatusFxIntensity())); // 20-30 FPS
+                    else postInvalidateDelayed(80); // legacy vortex option, bounded redraw
+                }
                 return;
             }
             if(style==3&&imageGeneration!=JoystickImage.generation()){

@@ -18,24 +18,38 @@ import org.json.JSONObject;
 public final class SavedPlaces {
     public static final int LIMIT = 50;
     public static final int NAME_LIMIT = 40;
+    public static final String[] CATEGORIES=Entry.CATEGORIES;
     private static final int JSON_LIMIT = 64 * 1024;
     private final SharedPreferences preferences;
 
     public static final class Entry {
-        public final String id, name;
+        // Isolated from the JSON-backed outer class so desktop Java validation remains independent of Android.
+        public static final String[] CATEGORIES={"Geral","Top","Farm","Missões","Rotas","Eventos","Outros"};
+        public final String id, name, category;
         public final double latitude, longitude;
-        public Entry(String name, double latitude, double longitude) {
-            this(UUID.randomUUID().toString(), name, latitude, longitude);
+        public final long createdAtMs;
+        public Entry(String name,double latitude,double longitude){
+            this(name,latitude,longitude,"Geral");
         }
-        private Entry(String id, String name, double latitude, double longitude) {
-            if (id == null || id.length() == 0 || id.length() > 64) throw new IllegalArgumentException("Invalid saved place ID");
-            if (name == null || name.trim().length() == 0) throw new IllegalArgumentException("Enter a name for this place.");
-            name = name.trim();
-            if (name.length() > NAME_LIMIT) throw new IllegalArgumentException("Names can contain at most 40 characters.");
-            for (int i = 0; i < name.length(); i++) if (Character.isISOControl(name.charAt(i))) throw new IllegalArgumentException("Use a name without line breaks or control characters.");
-            if (!Double.isFinite(latitude) || !Double.isFinite(longitude) || latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180)
-                throw new IllegalArgumentException("Coordinates are outside the valid range.");
-            this.id = id; this.name = name; this.latitude = latitude; this.longitude = longitude;
+        public Entry(String name,double latitude,double longitude,String category){
+            this(UUID.randomUUID().toString(),name,latitude,longitude,category,System.currentTimeMillis());
+        }
+        private Entry(String id,String name,double latitude,double longitude,
+                      String category,long createdAtMs){
+            if(id==null||id.isEmpty()||id.length()>64)throw new IllegalArgumentException("ID inválido");
+            if(name==null||name.trim().isEmpty())throw new IllegalArgumentException("Informe o nome do local");
+            name=name.trim();
+            if(name.length()>NAME_LIMIT)throw new IllegalArgumentException("Nome com até 40 caracteres");
+            for(int i=0;i<name.length();i++)if(Character.isISOControl(name.charAt(i)))
+                throw new IllegalArgumentException("Nome com caractere inválido");
+            if(!Double.isFinite(latitude)||!Double.isFinite(longitude)||latitude < -90
+                ||latitude>90||longitude < -180||longitude>180)
+                throw new IllegalArgumentException("Coordenadas inválidas");
+            boolean accepted=false;
+            for(String permitted:CATEGORIES)if(permitted.equals(category)){accepted=true;break;}
+            if(!accepted)category="Geral"; // keep older/foreign records, never silently drop locations
+            this.id=id;this.name=name;this.latitude=latitude;this.longitude=longitude;
+            this.category=category;this.createdAtMs=Math.max(0,createdAtMs);
         }
     }
     public static final class Snapshot {
@@ -59,7 +73,8 @@ public final class SavedPlaces {
             for (int i = 0; i < Math.min(array.length(), LIMIT); i++) {
                 try {
                     JSONObject object = array.getJSONObject(i);
-                    Entry entry = new Entry(object.getString("id"), object.getString("name"), object.getDouble("latitude"), object.getDouble("longitude"));
+                    Entry entry = new Entry(object.getString("id"), object.getString("name"), object.getDouble("latitude"), object.getDouble("longitude"),
+                        object.optString("category","Geral"),object.optLong("createdAtMs",0));
                     String normalized = entry.name.toLowerCase(Locale.ROOT);
                     if (ids.contains(entry.id) || names.contains(normalized)) { damaged = true; continue; }
                     ids.add(entry.id); names.add(normalized); entries.add(entry);
@@ -91,6 +106,7 @@ public final class SavedPlaces {
             for (Entry entry : entries) {
                 JSONObject object = new JSONObject();
                 object.put("id", entry.id); object.put("name", entry.name); object.put("latitude", entry.latitude); object.put("longitude", entry.longitude);
+                object.put("category",entry.category);object.put("createdAtMs",entry.createdAtMs);
                 array.put(object);
             }
         } catch (JSONException e) { throw new IOException("Could not encode saved places.", e); }

@@ -1,0 +1,87 @@
+name: PGBR - ZIP fonte completo de auditoria LT012
+on:
+  push:
+    branches:
+      - feature/lt-hud-historico-locais-20261120
+    paths:
+      - .github/workflows/pgbr-audit-lt012.yml
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  source-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout exact source revision
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Build full tracked source archive under 199 MB
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          git archive --format=zip --prefix=PGBR_LT012_AUDITORIA/ HEAD \
+            -o dist/PGBR_LT012_AUDITORIA_COMPLETA.zip
+          python3 - <<'PY'
+          import hashlib
+          from pathlib import Path
+          import zipfile
+          dest=Path("dist/PGBR_LT012_AUDITORIA_COMPLETA.zip")
+          size=dest.stat().st_size
+          assert 0 < size < 199_000_000, f"Archive must be <199 MB: {size}"
+          with zipfile.ZipFile(dest) as z:
+              assert z.testzip() is None, "CRC mismatch"
+              paths=set(z.namelist())
+              prefix="PGBR_LT012_AUDITORIA/"
+              required=[
+                  "AGENTS.md","README.md","AUDITORIA_IA_COMECE_AQUI_LT012.md",
+                  "docs/releases/v0.00.12-LT.md","pgrazor/VERSION",
+                  "pgrazor/src/dev/pgrazor/Pad.java",
+                  "pgrazor/src/dev/pgrazor/EternatusRouteRunner.java",
+                  "pgrazor/src/dev/pgrazor/ItemBadge.java",
+                  "pgrazor/src/dev/pgrazor/ItemSpriteFit.java",
+                  "pgrazor/test/test_item_sprite_fit_java.py",
+                  "pgrazor/assets/map-icons/eternatus-fx-vortex.png",
+                  "pgrazor/assets/map-icons/eternatus-fx-soft-smoke.png",
+                  "pgrazor/assets/map-icons/eternatus-fx-smoke-wispy.png",
+                  "upstream-history/PGRazor-upstream-full.bundle",
+              ]
+              for filename in required:
+                  assert prefix+filename in paths, f"Missing tracked file: {filename}"
+              assert not any(x.lower().endswith((".jks",".keystore",".apkm",".apk",".p12")) for x in paths), "No private inputs in archive"
+              count=len(paths)
+          digest=hashlib.sha256(dest.read_bytes()).hexdigest()
+          Path("dist/SHA256_AUDITORIA.txt").write_text(f"{digest}  {dest.name}\n")
+          print(f"AUDIT_BYTES={size}\nAUDIT_ENTRIES={count}\nAUDIT_SHA256={digest}")
+          PY
+      - name: Upload recovery artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: PGBR-LT012-AUDITORIA-FONTE-COMPLETA
+          path: |
+            dist/PGBR_LT012_AUDITORIA_COMPLETA.zip
+            dist/SHA256_AUDITORIA.txt
+          if-no-files-found: error
+          retention-days: 14
+      - name: Publish auditable public direct download
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          tag="audit-pgbr-lt012-20261120"
+          if gh release view "$tag" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "Audit tag already exists. Not overwriting."
+            exit 1
+          fi
+          gh release create "$tag" \
+            dist/PGBR_LT012_AUDITORIA_COMPLETA.zip \
+            dist/SHA256_AUDITORIA.txt \
+            --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \
+            --title "PGBR LT012 - codigo-fonte integral para auditoria IA" \
+            --notes "Pacote versionado integral, testes, fontes Java/C++, grafismos, guia de auditoria e histórico upstream. Não inclui dados privados, APKM nem chave de assinatura." \
+            --prerelease
+          gh release view "$tag" --repo "$GITHUB_REPOSITORY" --json url,assets

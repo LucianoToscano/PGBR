@@ -1108,8 +1108,17 @@ static void tick_vgp_controller(uint64_t tid, uint64_t now_ms, uint64_t lease_ms
   in.generation = g_vgc->generation();
   in.lat = g_opts.lat;
   in.lon = g_opts.lon;
-  in.mask = (g_opts.vgp_catch_allowed ? 1u : 0u) |
-            (g_opts.vgp_spin_allowed ? 2u : 0u);
+  // IMPORTANT: the user's explicit OFF must reach feature 33 as mask=0.
+  // Previously the saved catch/spin choices were still sent as mask=3
+  // with lease_ms=0, so tickScan() never reached POL->clear_block().
+  // One timed-out/uncertain action could therefore leave VGP permanently
+  // blocked across OFF -> ON. Do NOT clear for a transient allowed=false
+  // or expired lease while the user still has VGP enabled: an uncertain
+  // request must remain quarantined until an explicit restart.
+  in.mask = g_opts.vgp_enabled
+      ? ((g_opts.vgp_catch_allowed ? 1u : 0u) |
+         (g_opts.vgp_spin_allowed ? 2u : 0u))
+      : 0u;
 
   uint32_t flags = 0;
   if (g_opts.vgp_map_visible) flags |= PGR_VGC_TF_MAP_VISIBLE;
@@ -1496,6 +1505,11 @@ static void sync_from_transport(uint64_t tid) {
   bool vgp_en = (g_opts.vgp_allowed && g_opts.vgp_enabled);
   uint32_t mask = (g_opts.vgp_catch_allowed ? 1u : 0u) | (g_opts.vgp_spin_allowed ? 2u : 0u);
   if (vgp_en != g_last_vgp_enabled || mask != g_last_vgp_mask) {
+    // User explicitly stopped VGP: release an old uncertain-result latch
+    // on the proven Unity owner thread, but retain all seen-key quarantine.
+    // Merely losing a readiness/foreground lease must NOT auto-unblock.
+    if (g_last_vgp_enabled && !g_opts.vgp_enabled && g_vp && tid)
+      g_vp->clear_block(tid);
     if (((!vgp_en && g_last_vgp_enabled) || (g_last_vgp_mask & ~mask)) && g_vgc) {
       g_vgc->revoke();
       clear_active_vgp_transfer();
@@ -2474,6 +2488,10 @@ static int api_update_options(const PgrEncounterHostOptions *options, uint64_t p
   bool vgp_en = (options->vgp_allowed && options->vgp_enabled);
   uint32_t mask = (options->vgp_catch_allowed ? 1u : 0u) | (options->vgp_spin_allowed ? 2u : 0u);
   if (vgp_en != g_last_vgp_enabled || mask != g_last_vgp_mask) {
+    // Mirror the typed-snapshot path: a real OFF clears only the blocked
+    // policy latch. Quarantine keys survive, preventing immediate repeats.
+    if (g_last_vgp_enabled && !options->vgp_enabled && g_vp && tid)
+      g_vp->clear_block(tid);
     if (((!vgp_en && g_last_vgp_enabled) || (g_last_vgp_mask & ~mask)) && g_vgc && tid != 0) {
       g_vgc->revoke();
       clear_active_vgp_transfer();

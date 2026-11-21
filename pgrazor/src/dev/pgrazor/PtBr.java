@@ -1283,6 +1283,13 @@ public final class PtBr {
         m.put("Metal Coat", "Revestimento Metálico");
         m.put("Dragon Scale", "Escama de Dragão");
         m.put("Up-Grade", "Melhora");
+        // Inventory aliases exposed by game catalog builds, not sprite IDs.
+        m.put("Golden Pinap Berry", "Fruta Caxí Dourada");
+        m.put("Kings Rock", "Pedra do Rei");
+        m.put("Up Grade", "Melhora");
+        m.put("Gen4 Evolution Stone", "Pedra de Sinnoh");
+        m.put("Purified Gem", "Gema Purificada");
+        m.put("Rare Candy XL", "Doce Raro GG");
         m.put("Sinnoh Stone", "Pedra de Sinnoh");
         m.put("Unova Stone", "Pedra de Unova");
         m.put("No feeding", "Sem alimentação");
@@ -1364,6 +1371,17 @@ public final class PtBr {
         m.put(" encounters / 24 h", " encontros / 24 h");
         m.put("Paused: buddy action declined", "Pausado: ação do companheiro recusada");
         m.put("Close and reopen settings to refresh", "Feche e reabra as configurações para atualizar");
+        m.put("Previous", "Anterior");
+        m.put("Next", "Próxima");
+        m.put("Add action at current location", "Registrar ação neste local");
+        m.put("Record action here", "Registrar ação neste local");
+        m.put("Pokestop spin", "Giro de Poképarada");
+        m.put("PokéStop spin", "Giro de Poképarada");
+        m.put("Catch / ball throw", "Captura ou arremesso de Pokébola");
+        m.put("Gym placement / feeding", "Colocação de Pokémon ou uso de fruta em Ginásio");
+        m.put("Gym battle", "Batalha de Ginásio");
+        m.put("Accessory action", "Ação de acessório");
+        m.put("Select valid coordinates", "Selecione coordenadas válidas");
         LABELS = Collections.unmodifiableMap(m);
     }
     private PtBr() {}

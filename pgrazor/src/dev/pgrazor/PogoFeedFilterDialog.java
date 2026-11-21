@@ -130,6 +130,7 @@ public final class PogoFeedFilterDialog {
                 presetsSection();
                 generalSection();
                 ivLevelSection();
+                exactIvSection();
                 alwaysShowSection();
                 sizeSection();
                 speciesSection();
@@ -151,6 +152,33 @@ public final class PogoFeedFilterDialog {
             content.addView(numberRow("Max IV", "max_iv", 0, 100));
             content.addView(numberRow("Min level", "min_level", 0, 50));
             content.addView(numberRow("Max level", "max_level", 0, 50));
+        }
+
+        /** Local-only IV fields: do not send these keys to the remote feed provider. */
+        private void exactIvSection() {
+            header("IV individual · PGBR");
+            content.addView(caption("Filtra os resultados já recebidos. -1 = qualquer IV; "
+                    +"0 a 15 = valor exato. Pokémon sem IV individual informado não aparecem "
+                    +"quando este filtro está ativo. Não altera o inventário."));
+            content.addView(numberRow("Ataque (0–15)", "pgbr_iv_attack", -1, 15));
+            content.addView(numberRow("Defesa (0–15)", "pgbr_iv_defense", -1, 15));
+            content.addView(numberRow("PS (0–15)", "pgbr_iv_stamina", -1, 15));
+            LinearLayout presets = new LinearLayout(ui);
+            presets.setOrientation(LinearLayout.HORIZONTAL);
+            for (String[] preset : new String[][]{
+                    {"0/15/15", "0", "15", "15"},
+                    {"15/15/15", "15", "15", "15"},
+                    {"Limpar IV", "-1", "-1", "-1"}}) {
+                Button action = button(preset[0]);
+                action.setOnClickListener(v -> {
+                    put("pgbr_iv_attack", Integer.parseInt(preset[1]));
+                    put("pgbr_iv_defense", Integer.parseInt(preset[2]));
+                    put("pgbr_iv_stamina", Integer.parseInt(preset[3]));
+                    populate();
+                });
+                presets.addView(action, new LinearLayout.LayoutParams(0, dp(46), 1));
+            }
+            content.addView(presets);
         }
 
         private void alwaysShowSection() {
@@ -230,7 +258,7 @@ public final class PogoFeedFilterDialog {
         private boolean savePreset(JSONObject presets, String n) {
             collectNumbers();
             try {
-                JSONObject validated = PogoFeedFilters.fromJson(working).toViewportJson();
+                JSONObject validated = PogoFeedFilters.fromJson(working).toStoredJson();
                 JSONObject next = new JSONObject(presets.toString()); next.put(n, validated);
                 if (next.toString().length() > 150000) { toast("Saved presets are too large."); return false; }
                 presets.put(n, validated);
@@ -271,7 +299,7 @@ public final class PogoFeedFilterDialog {
         private void onResetClicked() {
             JSONObject defaults;
             try {
-                defaults = new PogoFeedFilters().toViewportJson();
+                defaults = new PogoFeedFilters().toStoredJson();
             } catch (JSONException e) { toast("Couldn't reset the filters."); return; }
             if (myShinies) {
                 // Only reset the keys the shinies endpoint honours; leave Nearby-only keys in place.
@@ -478,7 +506,8 @@ public final class PogoFeedFilterDialog {
             row.setGravity(Gravity.CENTER_VERTICAL);
             row.addView(label(labelText, 14), new LinearLayout.LayoutParams(0, -2, 1));
             EditText field = new EditText(ui);
-            field.setInputType(InputType.TYPE_CLASS_NUMBER);
+            field.setInputType(min < 0 ? InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_SIGNED
+                    : InputType.TYPE_CLASS_NUMBER);
             field.setSingleLine(true);
             field.setGravity(Gravity.CENTER);
             field.setText(dev.pgrazor.PtBr.tr(Integer.toString(clamp(working.optInt(key, min), min, max))));

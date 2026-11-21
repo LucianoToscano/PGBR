@@ -88,7 +88,7 @@ final class JoystickImage {
                 notifyUser(activity,"Não foi possível remover a imagem personalizada.");return;
             }
             GENERATION.incrementAndGet();
-            if(Control.joystickStyle()==3)Control.setJoystickStyle(0);
+            if(Control.joystickStyle()==3)Control.setJoystickStyle(1); // Return to Eternatus default after deleting custom art.
             notifyUser(activity,"Joystick original restaurado.");
         }catch(RuntimeException error){notifyUser(activity,"Não foi possível restaurar a imagem.");}
     }

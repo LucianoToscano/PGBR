@@ -66,13 +66,12 @@ final class SettingsPanel {
         quickSpinSwitch, berrySwitch, quickSummarySwitch, curveSwitch, alwaysHitSwitch, arSwitch, transferOverlaySwitch, catchChanceSwitch, autoBallSwitch, autoThrowSwitch, autoThrowMapSwitch, skipCutscenesSwitch,
         batteryResSwitch, batteryFpsSwitch, batteryQualitySwitch;
     private Button autoBallTarget, berryPriority;
-    private Button vgpIconStyleButton, joystickStyleButton;
+    private Button vgpIconStyleButton, joystickStyleButton, eternatusIntensityButton, eternatusSpeedButton;
     private BerryPriorityPicker berryPicker;
     private TextView quickSummaryLabel, vgpStatus, cutsceneStatus, healStatus, smartBattleStatus;
     private Switch healSwitch, healReviveSwitch, smartBattleSwitch, gymRepeatSwitch;
     private Button healWhen, healThreshold, healItems;
     private final CheckBox[] vgpChoices=new CheckBox[3];
-    private CheckBox vgpCooldownStop;
     // Status / caption lines (muted, readiness driven).
     private TextView state, steeringStatus, spawnStatus, quickSummaryStatus, transferStatus, quickSpinStatus,
         buddyStatus, giftStatus, itemStatus, rocketStatus, battleStatus, quickBallStatus, ivStatus, cameraStatus, interactionStatus;
@@ -197,7 +196,7 @@ final class SettingsPanel {
         String query=java.text.Normalizer.normalize(raw==null?"":raw,java.text.Normalizer.Form.NFD)
             .replaceAll("\\p{M}","").toLowerCase(Locale.ROOT).trim();
         for(int i=0;i<homeRows.size();i++){
-            StringBuilder content=new StringBuilder(pageTitles.get(i)).append(' ');
+            StringBuilder content=new StringBuilder(homeNames.get(i).getText()).append(' ');
             collectSearchLabels(pages.get(i),content);
             String normalized=java.text.Normalizer.normalize(content.toString(),java.text.Normalizer.Form.NFD)
                 .replaceAll("\\p{M}","").toLowerCase(Locale.ROOT);
@@ -281,6 +280,7 @@ final class SettingsPanel {
             public void afterTextChanged(android.text.Editable editable){}
         });
         buildLocationPage();
+        buildMapIndicatorsPage();
         buildCatchingPage();
         buildPokemonPage();
         buildGoPlusPage();
@@ -298,11 +298,42 @@ final class SettingsPanel {
         panel.setClickable(true);
     }
 
+    private static String eternityIntensityLabel(int intensity){
+        return intensity>=2?"Épica":"Suave";
+    }
+    private static String eternitySpeedLabel(int speed){
+        return speed==0?"Lenta":speed==2?"Rápida":"Normal";
+    }
+    private void showEternatusFxChoice(boolean intensityChoice){
+        String[] choices=intensityChoice
+            ? new String[]{"Suave • menos brilho","Épica • vórtice, fumaça e iluminação fortes"}
+            : new String[]{"Lenta","Normal","Rápida"};
+        int selected=intensityChoice?Control.eternatusFxIntensity()-1:Control.eternatusFxSpeed();
+        new AlertDialog.Builder(dialogContext())
+            .setTitle(intensityChoice?"Intensidade da tempestade":"Velocidade do vórtice")
+            .setSingleChoiceItems(choices,selected,(dialog,which)->{
+                dialog.dismiss();
+                if(intensityChoice){
+                    Control.setEternatusFxIntensity(which+1);
+                    if(eternatusIntensityButton!=null)
+                        eternatusIntensityButton.setText("Intensidade da tempestade: "+
+                            eternityIntensityLabel(Control.eternatusFxIntensity()));
+                }else{
+                    Control.setEternatusFxSpeed(which);
+                    if(eternatusSpeedButton!=null)
+                        eternatusSpeedButton.setText("Velocidade do vórtice: "+
+                            eternitySpeedLabel(Control.eternatusFxSpeed()));
+                }
+                host.refresh();
+            }).setNegativeButton("Cancelar",null).show();
+    }
+
     private static String joystickStyleName(int style){
         switch(style){
-            case 1:return "Eternatus • Energia sombria";
+            case 1:return "Eternatus • Tempestade viva";
             case 2:return "HUD translúcido • Setas";
             case 3:return "Imagem personalizada";
+            case 4:return "Eternatus • Vórtice anterior";
             default:return "Joystick original";
         }
     }
@@ -313,7 +344,7 @@ final class SettingsPanel {
         content.setPadding(dp(12),dp(8),dp(12),dp(8));
         ScrollView scroll=new ScrollView(ui);scroll.addView(content);
         final AlertDialog[] chosen={null};
-        for(int style=0;style<4;style++){
+        for(int style=0;style<=4;style++){
             final int selection=style;
             LinearLayout option=new LinearLayout(ui);
             option.setOrientation(LinearLayout.HORIZONTAL);
@@ -325,17 +356,27 @@ final class SettingsPanel {
             content.addView(option,optionParams);
             FrameLayout preview=new FrameLayout(ui);
             option.addView(preview,new LinearLayout.LayoutParams(dp(60),dp(60)));
-            if(style==1||style==2){
-                String name=style==1?"eternatus":"hud";
-                for(int layer=0;layer<2;layer++){
-                    String file="pgrazor/map-icons/joystick-"+name+(layer==0?"-base.webp":"-thumb.webp");
+            if(style==1||style==2||style==4){
+                String name=style==2?"hud":"eternatus";
+                String[] layers = style == 1 ? (Control.joystickEternatusEffects()
+                    ? new String[]{"clean", "storm", "thumb"}
+                    : new String[]{"clean", "thumb"})
+                    : style == 4 && Control.joystickEternatusEffects()
+                        ? new String[]{"vortex", "rim", "thumb"}
+                        : new String[]{"base", "thumb"};
+                for(String layer : layers){
+                    String file=style==1
+                        ? "pgrazor/map-icons/joystick-eternatus-morph-"+layer+".webp"
+                        : "pgrazor/map-icons/joystick-"+name+"-"+layer+".webp";
                     try(java.io.InputStream image=PgAssets.open(activity,file)){
                         Bitmap bitmap=BitmapFactory.decodeStream(image);
                         if(bitmap==null)continue;
                         ImageView thumbnail=new ImageView(ui);
                         thumbnail.setImageBitmap(bitmap);
+                        if(style==1 && layer.equals("storm"))thumbnail.setAlpha(.65f);
                         thumbnail.setScaleType(ImageView.ScaleType.FIT_CENTER);
-                        FrameLayout.LayoutParams artParams=new FrameLayout.LayoutParams(dp(layer==0?60:style==1?22:20),dp(layer==0?60:style==1?22:20),Gravity.CENTER);
+                        int size = dp(layer.equals("thumb") ? (style == 2 ? 20 : 22) : 60);
+                        FrameLayout.LayoutParams artParams=new FrameLayout.LayoutParams(size,size,Gravity.CENTER);
                         preview.addView(thumbnail,artParams);
                     }catch(Exception ignored){}
                 }
@@ -377,6 +418,54 @@ final class SettingsPanel {
         chosen[0].show();
     }
 
+    private void configureHudIndicator(String name,int bit){
+        final Context ctx=dialogContext();
+        LinearLayout body=new LinearLayout(ctx);body.setOrientation(LinearLayout.VERTICAL);
+        int padding=dp(16);body.setPadding(padding,dp(6),padding,dp(6));
+        TextView desc=new TextView(ctx);
+        desc.setText("Fundo desta legenda: "+Control.hudBackgroundOpacity(bit)+"%");
+        desc.setTextSize(14);body.addView(desc);
+        SeekBar opacity=new SeekBar(ctx);opacity.setMax(100);
+        opacity.setProgress(Control.hudBackgroundOpacity(bit));body.addView(opacity);
+        opacity.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){
+            public void onProgressChanged(SeekBar bar,int percent,boolean user){
+                if(!user)return;
+                Control.setHudBackgroundOpacity(bit,percent);
+                desc.setText("Fundo desta legenda: "+percent+"%");host.refresh();
+            }
+            public void onStartTrackingTouch(SeekBar bar){}
+            public void onStopTrackingTouch(SeekBar bar){}
+        });
+        if (bit == Control.HUD_COOLDOWN) {
+            int[] sizes = {0, 11, 13, 15, 18, 20};
+            String[] names = {"Automático", "11 sp", "13 sp", "15 sp", "18 sp", "20 sp"};
+            Button size = button("Tamanho do contador · " + (Control.cooldownTextSp() == 0
+                ? names[0] : Control.cooldownTextSp() + " sp"));
+            body.addView(size);
+            size.setOnClickListener(v -> new AlertDialog.Builder(ctx).setTitle("Tamanho do contador")
+                .setSingleChoiceItems(names, java.util.Arrays.binarySearch(sizes, Control.cooldownTextSp()), (dialog, index) -> {
+                    Control.setCooldownTextSp(sizes[index]);
+                    size.setText("Tamanho do contador · " + names[index]);
+                    host.refresh();
+                    dialog.dismiss();
+                }).setNegativeButton("Cancelar", null).show());
+        }
+        Button color=button("Cor: "+Control.HUD_PALETTE_NAMES[Control.hudPaletteIndex(bit)]);
+        body.addView(color);
+        color.setOnClickListener(v->{
+            new AlertDialog.Builder(ctx).setTitle("Cor: "+name)
+                .setSingleChoiceItems(Control.HUD_PALETTE_NAMES,Control.hudPaletteIndex(bit),(dialog,choice)->{
+                    Control.setHudPaletteIndex(bit,choice);
+                    color.setText("Cor: "+Control.HUD_PALETTE_NAMES[choice]);
+                    host.refresh();dialog.dismiss();
+                }).setNegativeButton("Cancelar",null).show();
+        });
+        AlertDialog dialog=new AlertDialog.Builder(ctx).setTitle(name)
+            .setView(body).setPositiveButton("Concluído",null).create();
+        dialog.setOnShowListener(d->MapTheme.styleButtons(dialog));
+        dialog.show();
+    }
+
     private void buildLocationPage() {
         LinearLayout loc = page(MenuIcon.TELEPORT, "Location & Map");
         locationSwitch=switchRow(loc,"Location spoofing");locationSwitch.setChecked(Control.desiredEnabled());
@@ -396,7 +485,7 @@ final class SettingsPanel {
         launch(loc, "World map", host::openMap);
         joystickSwitch = switchRow(loc, "Show joystick"); joystickSwitch.setChecked(Control.joystickVisible());
         joystickSwitch.setOnCheckedChangeListener((v,checked) -> { if(checked==Control.joystickVisible())return; host.setJoystickVisible(checked); });
-        LinearLayout joystickArt=group(loc,"Aparência do joystick");
+        LinearLayout joystickArt=section(loc,"Aparência do joystick",false);
         TextView joystickSizeLabel=new TextView(activity);joystickSizeLabel.setTextSize(13);
         joystickSizeLabel.setText(dev.pgrazor.PtBr.tr("Tamanho do joystick: "+Control.joystickSizeDp()+" dp"));joystickArt.addView(joystickSizeLabel);
         SeekBar joystickSize=new SeekBar(activity);joystickSize.setMax(132);joystickSize.setProgress(Control.joystickSizeDp()-88);
@@ -419,15 +508,22 @@ final class SettingsPanel {
             public void onStartTrackingTouch(SeekBar bar){}
             public void onStopTrackingTouch(SeekBar bar){}
         });
-        caption(joystickArt,"Tamanho e transparência são alterados sem interromper a caminhada automática.");
+        caption(joystickArt,"A transparência controla quanto do mapa aparece sob o joystick.");
         joystickStyleButton=launch(joystickArt,
             "Estilo do joystick: "+joystickStyleName(Control.joystickStyle()),this::showJoystickStyles);
-        Switch neonEffects=switchRow(joystickArt,"Eternatus: brilho e raios animados");
+        Switch neonEffects=switchRow(joystickArt,"Animação Eternatus · limpo ↔ tempestade");
         neonEffects.setChecked(Control.joystickEternatusEffects());
         neonEffects.setOnCheckedChangeListener((v,on)->{
             Control.setJoystickEternatusEffects(on);host.refresh();
         });
-        caption(joystickArt,"O núcleo acompanha o toque. Efeitos temáticos podem ser desligados para economizar bateria; o movimento permanece o mesmo.");
+        caption(joystickArt,"Ciclo automático: forma limpa → tempestade iluminada → vórtice girando → forma limpa. A Pokébola Eternatus acompanha o mesmo ciclo.");
+        eternatusIntensityButton=launch(joystickArt,
+            "Intensidade da tempestade: "+eternityIntensityLabel(Control.eternatusFxIntensity()),
+            ()->showEternatusFxChoice(true));
+        eternatusSpeedButton=launch(joystickArt,
+            "Velocidade do vórtice: "+eternitySpeedLabel(Control.eternatusFxSpeed()),
+            ()->showEternatusFxChoice(false));
+        caption(joystickArt,"A tempestade gira em duas camadas com fumaça e iluminação. Desative a animação para manter o visual limpo; o vórtice anterior continua disponível.");
         launch(joystickArt,"Escolher imagem do joystick no celular",()->{
             if(Control.engine.routeProgress().active){
                 android.widget.Toast.makeText(activity,"Pause ou encerre a rota antes de abrir o seletor de imagens do Android.",android.widget.Toast.LENGTH_LONG).show();
@@ -446,25 +542,70 @@ final class SettingsPanel {
         spawnStatus = caption(map, "");
         caption(map, "Can cause lag in busy areas with many nearby Pokémon. Turn it off if the game stutters.");
 
-        LinearLayout overlays = group(loc, "Cooldown & time");
-        cooldownSwitch = switchRow(overlays, "Cooldown overlay"); cooldownSwitch.setChecked(Control.cooldownOverlay());
-        cooldownSwitch.setOnCheckedChangeListener((v,checked) -> { if(checked==Control.cooldownOverlay())return; Control.setCooldownOverlay(cooldownSwitch.isChecked()); host.refresh(); });
-        launch(overlays, "Cooldown history", () -> Cooldown.show(activity));
-        localTimeSwitch = switchRow(overlays, "Show local time"); localTimeSwitch.setChecked(Control.localTimeOverlay());
-        localTimeSwitch.setOnCheckedChangeListener((v,checked) -> { if(checked==Control.localTimeOverlay())return; Control.setLocalTimeOverlay(localTimeSwitch.isChecked()); host.refresh(); });
-        caption(overlays, "Time at your spoofed location.");
-        LinearLayout pokemonSearch=group(loc,"Busca e rastreamento de Pokémon");
-        launch(pokemonSearch,"Buscar por IV, Shiny, PvP e espécie",()->PogoFeedDialog.show(activity));
-        launch(pokemonSearch,"Radar de Pokémon e locais próximos",()->LiveFeedDialog.show(activity));
-        caption(pokemonSearch,"As fontes usam seus próprios serviços e filtros. Resultados globais e determinados dados podem exigir conta ou acesso específico.");
-        LinearLayout hud=group(loc,"Legendas individuais do mapa");
+
+    }
+
+    // Keep the original four stored format IDs stable across updates and imported profiles.
+    private static final int[] CLOCK_FORMAT_IDS = {4, 5, 2, 1, 3, 0, 6};
+    private static final String[] CLOCK_EXAMPLES = {
+        "Só hora · 14:17", "Hora e data · 14:17 · 20/11/26", "Com fuso · 14:17 GMT-03:00",
+        "Com bandeira · 🇧🇷 14:17 - 20/11/26", "Com ícones · 🕒 14:17 🗓 20/11/26",
+        "Bandeira e ícones · 🇧🇷 🕒 14:17 🗓 20/11/26",
+        "Bandeira + cidade · 🇧🇷 Fortaleza • 14:17 · 20/11/26"
+    };
+    private static final String[] COOLDOWN_STYLES = {"Discreto", "Chamativo"};
+    private Button clockFormatButton, cooldownStyleButton;
+
+    private int selectedClockChoice() {
+        for (int i = 0; i < CLOCK_FORMAT_IDS.length; i++)
+            if (CLOCK_FORMAT_IDS[i] == Control.localTimeFormat()) return i;
+        return 0;
+    }
+
+    private void buildMapIndicatorsPage() {
+        LinearLayout page = page(MenuIcon.MAP, "Hora, cooldown e legendas");
+        LinearLayout clock = group(page, "Hora local");
+        localTimeSwitch = switchRow(clock, "Mostrar hora no mapa");
+        localTimeSwitch.setOnCheckedChangeListener((v, on) -> {
+            if (on == (Control.localTimeOverlay() && Control.hudLabelVisible(Control.HUD_LOCALTIME))) return;
+            if (on) Control.setHudLabelVisible(Control.HUD_LOCALTIME, true);
+            Control.setLocalTimeOverlay(on);
+            host.refresh();
+        });
+        clockFormatButton = launch(clock, "Formato da hora", () -> new AlertDialog.Builder(dialogContext())
+            .setTitle("Formato da hora local").setSingleChoiceItems(CLOCK_EXAMPLES, selectedClockChoice(), (dialog, index) -> {
+                Control.setLocalTimeFormat(CLOCK_FORMAT_IDS[index]);
+                dialog.dismiss();
+                host.refresh();
+            }).setNegativeButton("Cancelar", null).show());
+        launch(clock, "Cor e fundo da hora", () -> configureHudIndicator("Hora local", Control.HUD_LOCALTIME));
+
+        LinearLayout cooldown = group(page, "Cooldown");
+        cooldownSwitch = switchRow(cooldown, "Mostrar tempo de espera no mapa");
+        cooldownSwitch.setOnCheckedChangeListener((v, on) -> {
+            if (on == (Control.cooldownOverlay() && Control.hudLabelVisible(Control.HUD_COOLDOWN))) return;
+            if (on) Control.setHudLabelVisible(Control.HUD_COOLDOWN, true);
+            Control.setCooldownOverlay(on);
+            host.refresh();
+        });
+        cooldownStyleButton = launch(cooldown, "Estilo do contador", () -> new AlertDialog.Builder(dialogContext())
+            .setTitle("Estilo do cooldown").setSingleChoiceItems(COOLDOWN_STYLES, Control.cooldownEmphasis() ? 1 : 0,
+                (dialog, index) -> {
+                    Control.setCooldownEmphasis(index == 1);
+                    dialog.dismiss();
+                    host.refresh();
+                }).setNegativeButton("Cancelar", null).show());
+        caption(cooldown, "A contagem usa a cor escolhida. Ao chegar a 0:00:00, números e contorno ficam verdes automaticamente. Sem localização, o contador mostra —, nunca um verde falso.");
+        launch(cooldown, "Tamanho, cor e fundo", () -> configureHudIndicator("Cooldown", Control.HUD_COOLDOWN));
+        launch(cooldown, "Histórico de cooldown", () -> Cooldown.show(activity));
+
+        LinearLayout hud=section(page,"Outras legendas do mapa",false);
         caption(hud,"Cada legenda tem seu próprio controle. Desativar uma legenda não desliga o recurso nem oculta seus ícones de ação. Alertas de Shiny continuam funcionando.");
         final int[] captionBits={Control.HUD_VGP,Control.HUD_BUDDY,Control.HUD_AUTOMATION,
-            Control.HUD_GYM,Control.HUD_CATCH,Control.HUD_ENCOUNTERS,Control.HUD_SHINY,
-            Control.HUD_COOLDOWN,Control.HUD_LOCALTIME};
+            Control.HUD_GYM,Control.HUD_CATCH,Control.HUD_ENCOUNTERS,Control.HUD_SHINY};
         final String[] captionNames={"Status VGP+","Energia do companheiro","Status das automações",
             "Status de Gym Slotter e frutas","Chance de captura","Contador de encontros",
-            "Aviso de Shiny encontrado","Texto do cooldown","Relógio local no mapa"};
+            "Aviso de Shiny encontrado"};
         final Switch[] captionSwitches=new Switch[captionBits.length];
         for(int i=0;i<captionBits.length;i++){
             final int bit=captionBits[i];
@@ -474,12 +615,12 @@ final class SettingsPanel {
                 if(Control.hudLabelVisible(bit)!=on){Control.setHudLabelVisible(bit,on);host.refresh();}
             });
         }
-        launch(hud,"Mostrar todas as legendas",()->{
+        launch(hud,"Mostrar todas as legendas do mapa",()->{
             Control.setHudLabelsVisible(true);
             for(Switch item:captionSwitches)item.setChecked(true);
             host.refresh();
         });
-        launch(hud,"Ocultar todas as legendas",()->{
+        launch(hud,"Ocultar todas as legendas do mapa",()->{
             Control.setHudLabelsVisible(false);
             for(Switch item:captionSwitches)item.setChecked(false);
             host.refresh();
@@ -497,26 +638,13 @@ final class SettingsPanel {
             public void onStartTrackingTouch(SeekBar bar){}
             public void onStopTrackingTouch(SeekBar bar){}
         });
-        TextView opacityLabel=new TextView(activity);opacityLabel.setTextSize(13);
-        opacityLabel.setText(dev.pgrazor.PtBr.tr("Fundo dos indicadores: "+Control.hudLabelOpacity()+"%"));hud.addView(opacityLabel);
-        SeekBar opacitySlider=new SeekBar(activity);opacitySlider.setMax(100);
-        opacitySlider.setProgress(Control.hudLabelOpacity());hud.addView(opacitySlider);
-        opacitySlider.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){
-            public void onProgressChanged(SeekBar bar,int progress,boolean fromUser){
-                if(!fromUser)return;
-                Control.setHudLabelOpacity(progress);
-                opacityLabel.setText(dev.pgrazor.PtBr.tr("Fundo dos indicadores: "+progress+"%"));host.refresh();
-            }
-            public void onStartTrackingTouch(SeekBar bar){}
-            public void onStopTrackingTouch(SeekBar bar){}
+        launch(hud,"Personalizar cor e fundo de cada legenda",()->{
+            new AlertDialog.Builder(dialogContext()).setTitle("Selecionar indicador")
+                .setItems(captionNames,(d,index)->configureHudIndicator(captionNames[index],captionBits[index]))
+                .setNegativeButton("Cancelar",null).show();
         });
+        caption(hud,"As cores e a transparência de cada legenda são salvas separadamente. Com fundo 0%, apenas o símbolo ou número permanece visível.");
 
-        LinearLayout encounters = group(loc, "Encounter counter");
-        encounterCounterSwitch = switchRow(encounters, "Count encounters"); encounterCounterSwitch.setChecked(Control.encounterCounter());
-        encounterCounterSwitch.setOnCheckedChangeListener((v,checked) -> { if(checked==Control.encounterCounter())return; Control.setEncounterCounter(encounterCounterSwitch.isChecked()); host.refresh(); });
-        encounterOverlaySwitch = switchRow(encounters, "Show the count on the map"); encounterOverlaySwitch.setChecked(Control.encounterOverlay());
-        encounterOverlaySwitch.setOnCheckedChangeListener((v,checked) -> { if(checked==Control.encounterOverlay())return; Control.setEncounterOverlay(encounterOverlaySwitch.isChecked()); host.refresh(); });
-        caption(encounters, "Wild Pokémon this account has encountered in the last 24 hours on this device while PGBR was running, shown next to the PGBR title. Encounters made elsewhere, and lure, incense, raid and research encounters, are not counted.");
     }
 
     private void buildCatchingPage() {
@@ -578,6 +706,11 @@ final class SettingsPanel {
     private void buildPokemonPage() {
         LinearLayout page = page(MenuIcon.BOX, "Pokémon & Transfer");
         unavailableNote(page, false);
+
+        LinearLayout searchTools = group(page, "Busca inteligente");
+        caption(searchTools, "Monte buscas para a coleção do Pokémon GO sem modificar sua conta. "
+                +"Termos dependentes de idioma podem precisar de tradução.");
+        launch(searchTools, "Gerador de buscas da coleção", () -> PokemonInventorySearchDialog.show(activity));
 
         // ----- Transfer on catch (gated by catch-summary support) -----
         LinearLayout transfer = plain(page); summaryGated.add(transfer);
@@ -645,6 +778,19 @@ final class SettingsPanel {
         caption(evolveC, "New catches only; requires Transfer above. Uses candy for ordinary evolutions, without items or special conditions. Keep rules always apply. If evolution is unavailable, transfer normally. Selected species mode keeps every species outside its list.");
 
         // ----- IV display: the encounter, Pokemon details and storage list IV overlays -----
+        LinearLayout pokemonSearch=group(page,"Busca e rastreamento de Pokémon");
+        launch(pokemonSearch,"Filtro de Pokémon e resultados · estilo PGSharp",()->LiveFeedDialog.showPokemonSearch(activity));
+        launch(pokemonSearch,"Filtro de Reides e resultados · estilo PGSharp",()->LiveFeedDialog.showRaidSearch(activity));
+        launch(pokemonSearch,"Buscar por IV, Shiny, PvP e espécie",()->PogoFeedDialog.show(activity));
+        launch(pokemonSearch,"Radar de Pokémon e locais próximos",()->LiveFeedDialog.show(activity));
+        caption(pokemonSearch,"As fontes usam seus próprios serviços e filtros. Resultados globais e determinados dados podem exigir conta ou acesso específico.");
+        LinearLayout encounters = section(page, "Encounter counter", false);
+        encounterCounterSwitch = switchRow(encounters, "Count encounters"); encounterCounterSwitch.setChecked(Control.encounterCounter());
+        encounterCounterSwitch.setOnCheckedChangeListener((v,checked) -> { if(checked==Control.encounterCounter())return; Control.setEncounterCounter(encounterCounterSwitch.isChecked()); host.refresh(); });
+        encounterOverlaySwitch = switchRow(encounters, "Show the count on the map"); encounterOverlaySwitch.setChecked(Control.encounterOverlay());
+        encounterOverlaySwitch.setOnCheckedChangeListener((v,checked) -> { if(checked==Control.encounterOverlay())return; Control.setEncounterOverlay(encounterOverlaySwitch.isChecked()); host.refresh(); });
+        caption(encounters, "Wild Pokémon this account has encountered in the last 24 hours on this device while PGBR was running, shown next to the PGBR title. Encounters made elsewhere, and lure, incense, raid and research encounters, are not counted.");
+
         LinearLayout iv = group(page, "IV display");
         // One button per screen; each tap moves to the next format, with Off between the last and first.
         ivCatchMode = button(""); iv.addView(ivCatchMode);
@@ -666,14 +812,19 @@ final class SettingsPanel {
         LinearLayout vgpC=group(page,"Virtual Go Plus");
         vgpSwitch=switchRow(vgpC,"VGP overlay");vgpSwitch.setChecked(Control.vgpOverlay());
         vgpSwitch.setOnCheckedChangeListener((b,checked)->{if(checked!=Control.vgpOverlay())Control.setVgpOverlay(checked);host.refresh();});
+        caption(vgpC,"A VGP funciona pelo botão flutuante no mapa: toque para ligar ou desligar. "
+                + "A proteção contra toque acidental pede confirmação ao ligar. "
+                + "Sem temporizador e sem pausa por cooldown estimado.");
         String[] vgpLabels={"Nearby Pokémon","Nearby PokéStops","Push notifications"};
         for(int i=0;i<3;i++){final int bit=1<<i;CheckBox box=new CheckBox(activity);box.setText(dev.pgrazor.PtBr.tr(vgpLabels[i]));box.setChecked((Control.vgpOptions()&bit)!=0);vgpChoices[i]=box;vgpC.addView(box);
             box.setOnClickListener(v->{Control.setVgpOptions(box.isChecked()?Control.vgpOptions()|bit:Control.vgpOptions()&~bit);
                 if(bit==4&&box.isChecked()&&Build.VERSION.SDK_INT>=33&&activity.checkSelfPermission("android.permission.POST_NOTIFICATIONS")!=android.content.pm.PackageManager.PERMISSION_GRANTED)activity.requestPermissions(new String[]{"android.permission.POST_NOTIFICATIONS"},7301);
             });
         }
-        vgpCooldownStop=new CheckBox(activity);vgpCooldownStop.setText(dev.pgrazor.PtBr.tr("Stop on cooldown (estimated)"));vgpCooldownStop.setContentDescription(dev.pgrazor.PtBr.tr("Stop Virtual Go Plus during the estimated action cooldown"));vgpCooldownStop.setChecked(Control.vgpStopOnCooldown());vgpC.addView(vgpCooldownStop);
-        vgpCooldownStop.setOnClickListener(v->{if(vgpCooldownStop.isChecked()!=Control.vgpStopOnCooldown())Control.setVgpStopOnCooldown(vgpCooldownStop.isChecked());host.refresh();});
+        Switch accidentalTap=switchRow(vgpC,"Evitar toque acidental no VGP+");
+        accidentalTap.setChecked(Control.vgpTapProtection());
+        accidentalTap.setOnCheckedChangeListener((button,checked)->Control.setVgpTapProtection(checked));
+        caption(vgpC,"A confirmação evita ativação acidental. Desligar continua com um toque.");
         vgpIconStyleButton=launch(vgpC,"Ícone do VGP",this::showVgpAppearance);
         vgpStatus=caption(vgpC,Control.vgpStatus());
         smartRefresh=SmartCatchSettings.populate(activity,vgpC);
@@ -859,14 +1010,45 @@ final class SettingsPanel {
         skipCutscenesSwitch.setOnCheckedChangeListener((v,checked) -> { if(checked==Control.skipCutscenes())return; Control.setSkipCutscenes(checked); });
         cutsceneStatus = caption(page, "");  // shown only when the native module reports an error
 
-        // Only text owned by PGBR is changed. Game-owned Unity text still needs a validated hook.
+        // The game UI hook is a best-effort compatibility probe, not an attested privacy shield.
         LinearLayout privacy=group(page,"Privacidade do treinador");
-        caption(privacy,"Hide Trainer altera apenas nomes exibidos pelo PGBR, nunca a identidade da conta ou o nome que o Pokémon GO mostra no mapa/perfil. Não é proteção contra capturas de tela do jogo.");
+        caption(privacy,"Oculta o nome nos menus do PGBR e tenta substituir somente o texto "
+            +"do próprio treinador por ***** em componentes de exibição do Unity. "
+            +"A cobertura do mapa e do perfil Eu ainda precisa ser confirmada no aparelho. "
+            +"Não considere esta opção uma proteção garantida para lives e gravações.");
+        final Switch hideTrainer=switchRow(privacy,"Ocultar nome visualmente");
         final TextView preview=caption(privacy,"");
-        Runnable updatePrivacy=()->preview.setText(dev.pgrazor.PtBr.tr(
-            "Exibição no PGBR: "+(Control.trainerPrivacyMode()==1?"Treinador (oculto)":
-                Control.trainerPrivacyMode()==2?Control.trainerAlias():"Nome original")));
-        launch(privacy,"Hide Trainer / Exibir apelido",()->{
+        final TextView gamePrivacy=caption(privacy,"");
+        Runnable updatePrivacy=()->{
+            hideTrainer.setChecked(Control.trainerPrivacyMode()!=0);
+            preview.setText(dev.pgrazor.PtBr.tr(
+                "Exibição no PGBR: "+(Control.trainerPrivacyMode()==1?"*****":
+                    Control.trainerPrivacyMode()==2?Control.trainerAlias():"Nome original")));
+            int status=Control.trainerPrivacyDisplayStatus();
+            int sinks=status & 0x0F;
+            String detail=status<0?"Módulo visual indisponível":
+                (status & 0x10)==0?"Aguardando confirmação da identidade do treinador":
+                sinks==0?"Nenhum componente de texto Unity validado":
+                sinks+" componente(s) de texto Unity interceptado(s)";
+            int nativeStreamer=status<0?0:(status>>>8)&3;
+            String streamer=nativeStreamer==3
+                ?"metadados do serviço e seus dois indicadores reconhecidos, sem ativação"
+                :nativeStreamer==2
+                ?"classe localizada, porém assinatura dos indicadores ainda incompatível"
+                :nativeStreamer==1
+                ?"classe não encontrada nesta versão do jogo"
+                :"aguardando leitura de compatibilidade";
+            gamePrivacy.setText(dev.pgrazor.PtBr.tr(
+                "Jogo: "+detail+". Proteção em tela não verificada. "
+                +"Modo Streamer nativo: "+streamer+". "
+                +"A detecção do serviço não comprova ocultação do nome do treinador."));
+        };
+        hideTrainer.setOnCheckedChangeListener((button,checked)->{
+            if(checked==(Control.trainerPrivacyMode()!=0))return;
+            Control.setTrainerPrivacyMode(checked?1:0);
+            updatePrivacy.run();host.refresh();
+        });
+        launch(privacy,"Nome exibido nos menus do PGBR",()->{
             String[] options={"Nome original","Ocultar nome no PGBR","Mostrar apelido no PGBR"};
             new AlertDialog.Builder(dialogContext()).setTitle("Nome exibido no PGBR")
                 .setSingleChoiceItems(options,Control.trainerPrivacyMode(),(d,choice)->{
@@ -996,15 +1178,16 @@ final class SettingsPanel {
     private void refreshHome(){
         if(current>=0)return;
         summary(0,(Control.desiredEnabled()?"Spoofing on":"Spoofing off")+String.format(Locale.US," · %.1f km/h",Control.engine.speedKmh));
-        summary(1,active("Quick catch",Control.quickSummaryEnabled(),"Auto throw",Control.autoThrow(),"Auto ball",Control.autoBall(),"Curveball",Control.throwCurve(),"Always hit",Control.throwAlwaysHit(),"Berries",Control.encounterBerryEnabled()));
-        summary(2,active("Auto-transfer",Control.autoTransferEnabled(),"Evolve first",Control.autoTransferEnabled()&&Control.evolveTransferEnabled(),"IVs shown",Control.ivCatchMode()!=0||Control.ivOwnedMode()!=0||Control.storageIvMode()!=0));
-        summary(3,active("Go Plus overlay",Control.vgpOverlay(),"Quick spin",Control.quickSpinEnabled(),"Item cleanup",Control.itemTransferEnabled()));
-        summary(4,active("Smart battling",Control.smartBattle(),"Smart healing",Control.healEnabled(),"Auto attacks",Control.battleOptions()!=0||Control.rocketOptions()!=0,"Gym repeat",Control.gymRepeatEnabled()));
-        summary(5,active("Buddy engine",BuddyEmotionSettings.enabled(),"Auto incubate",Control.autoIncubate(),"Open gifts",(Control.giftOptions()&1)!=0,"Send gifts",(Control.giftOptions()&2)!=0));
-        summary(6,AutoRaid.running()?"Auto-Raid running":ShundoSniper.active()?"Shundo Sniper running":ShinyScanner.enabled()?"Shiny Scanner on":"Shundo, shiny scan, raids, incense, gym feeding, gifts, evolve, research");
-        summary(7,"Halloween · Go Wild");
-        summary(8,"UI "+Control.uiScalePercent()+"% · "+(Control.darkTheme()?"Dark":"Light")+" theme"+(Control.skipCutscenes()?" · Skip cutscenes":""));
-        summary(9,"Accounts, export / import, run log, diagnostics");
+        summary(1,"Relógio local, tempo de espera e legendas do mapa");
+        summary(2,active("Quick catch",Control.quickSummaryEnabled(),"Auto throw",Control.autoThrow(),"Auto ball",Control.autoBall(),"Curveball",Control.throwCurve(),"Always hit",Control.throwAlwaysHit(),"Berries",Control.encounterBerryEnabled()));
+        summary(3,active("Auto-transfer",Control.autoTransferEnabled(),"Evolve first",Control.autoTransferEnabled()&&Control.evolveTransferEnabled(),"IVs shown",Control.ivCatchMode()!=0||Control.ivOwnedMode()!=0||Control.storageIvMode()!=0));
+        summary(4,active("Go Plus overlay",Control.vgpOverlay(),"Quick spin",Control.quickSpinEnabled(),"Item cleanup",Control.itemTransferEnabled()));
+        summary(5,active("Smart battling",Control.smartBattle(),"Smart healing",Control.healEnabled(),"Auto attacks",Control.battleOptions()!=0||Control.rocketOptions()!=0,"Gym repeat",Control.gymRepeatEnabled()));
+        summary(6,active("Buddy engine",BuddyEmotionSettings.enabled(),"Auto incubate",Control.autoIncubate(),"Open gifts",(Control.giftOptions()&1)!=0,"Send gifts",(Control.giftOptions()&2)!=0));
+        summary(7,AutoRaid.running()?"Auto-Raid running":ShundoSniper.active()?"Shundo Sniper running":ShinyScanner.enabled()?"Shiny Scanner on":"Shundo, shiny scan, raids, incense, gym feeding, gifts, evolve, research");
+        summary(8,"Halloween · Go Wild");
+        summary(9,"UI "+Control.uiScalePercent()+"% · "+(Control.darkTheme()?"Dark":"Light")+" theme"+(Control.skipCutscenes()?" · Skip cutscenes":""));
+        summary(10,"Accounts, export / import, run log, diagnostics");
     }
 
     /** The root panel view; Pad owns attachment to the window and insets wiring. */
@@ -1122,7 +1305,7 @@ final class SettingsPanel {
 
     private void refreshDependencies(){
         for(CheckBox box:vgpChoices)SettingsUi.enabled(box,Control.vgpOverlay());
-        SettingsUi.enabled(vgpCooldownStop,Control.vgpOverlay());smartRefresh.run();
+        smartRefresh.run();
         for(CheckBox box:transferProtection)SettingsUi.enabled(box,Control.autoTransferEnabled());
         SettingsUi.enabled(transferKeepList,Control.autoTransferEnabled());
         SettingsUi.enabled(transferIvLimit,Control.autoTransferEnabled());
@@ -1189,7 +1372,8 @@ final class SettingsPanel {
     }
 
     private void refreshVgpStatus() {
-        vgpSwitch.setChecked(Control.vgpOverlay());vgpStatus.setText(dev.pgrazor.PtBr.tr(Control.vgpStatus()));
+        vgpSwitch.setChecked(Control.vgpOverlay());
+        vgpStatus.setText(dev.pgrazor.PtBr.tr(Control.vgpDiagnosticStatus()));
     }
 
     private void refreshIncubation() {
@@ -1203,59 +1387,77 @@ final class SettingsPanel {
         LinearLayout content=new LinearLayout(activity);content.setOrientation(LinearLayout.VERTICAL);
         content.setPadding(dp(16),dp(10),dp(16),dp(8));
         TextView hint=new TextView(activity);
-        hint.setText(dev.pgrazor.PtBr.tr("Ícone e fundo são independentes. O fundo redondo cinza mantém o tamanho do GO Plus e pode ficar totalmente transparente."));
+        hint.setText("Escolha o ícone. A transparência do fundo é ajustada separadamente; "
+                + "0% deixa apenas o desenho, sem o círculo cinza.");
         hint.setTextSize(13);content.addView(hint);
         LinearLayout previews=new LinearLayout(activity);
         previews.setGravity(Gravity.CENTER);previews.setOrientation(LinearLayout.HORIZONTAL);
         content.addView(previews);
-        final ImageView[] choices=new ImageView[3];
-        final String[] files={"vgp-ring.png","vgp-hd-states.webp","vgp-hd-states.webp"};
+        // There are exactly TWO icon designs. The old third option reused the
+        // identical vgp-hd-states.webp asset and differed only by background opacity.
+        final ImageView[] choices=new ImageView[2];
+        final LinearLayout[] tiles=new LinearLayout[2];
+        final String[] files={"vgp-ring.png","vgp-hd-states.webp"};
+        final String[] labels={"LED","GO Plus HD"};
         for(int i=0;i<choices.length;i++){
-            final int style=i;ImageView image=new ImageView(activity);choices[i]=image;
+            final int style=i;
+            LinearLayout tile=new LinearLayout(activity);tiles[i]=tile;
+            tile.setOrientation(LinearLayout.VERTICAL);
+            tile.setGravity(Gravity.CENTER);
+            ImageView image=new ImageView(activity);choices[i]=image;
             try(java.io.InputStream in=PgAssets.open(activity,"pgrazor/map-icons/"+files[i])){
                 Bitmap bitmap=BitmapFactory.decodeStream(in);
-                if(i>0&&bitmap!=null&&bitmap.getHeight()==bitmap.getWidth()*3)
+                if(i==1&&bitmap!=null&&bitmap.getHeight()==bitmap.getWidth()*3)
                     bitmap=Bitmap.createBitmap(bitmap,0,2*bitmap.getWidth(),bitmap.getWidth(),bitmap.getWidth());
                 image.setImageBitmap(bitmap);
             }catch(java.io.IOException|RuntimeException ignored){}
             image.setScaleType(ImageView.ScaleType.FIT_CENTER);
-            image.setPadding(dp(5),dp(5),dp(5),dp(5));
-            LinearLayout.LayoutParams params=new LinearLayout.LayoutParams(0,dp(85),1f);
-            previews.addView(image,params);
-            image.setContentDescription(style==0?"LED":style==1?"GO Plus com fundo cinza":"GO Plus sem fundo");
-            image.setOnClickListener(v->{
+            image.setPadding(dp(8),dp(8),dp(8),dp(8));
+            tile.addView(image,new LinearLayout.LayoutParams(-1,dp(80)));
+            TextView label=new TextView(activity);
+            label.setText(labels[i]);label.setTextSize(13);label.setGravity(Gravity.CENTER);
+            tile.addView(label,new LinearLayout.LayoutParams(-1,dp(26)));
+            previews.addView(tile,new LinearLayout.LayoutParams(0,dp(112),1f));
+            tile.setContentDescription(labels[i]);
+            tile.setClickable(true);tile.setFocusable(true);
+            tile.setOnClickListener(v->{
                 Control.setVgpIconStyle(style);
-                for(int j=0;j<choices.length;j++)
-                    choices[j].setBackgroundColor(j==style?0x3340BDAA:Color.TRANSPARENT);
+                for(int j=0;j<tiles.length;j++)
+                    tiles[j].setBackgroundColor(j==style?0x3340BDAA:Color.TRANSPARENT);
                 host.refresh();
-                if(vgpIconStyleButton!=null)
-                    vgpIconStyleButton.setText("Ícone do VGP: "+new String[]{"LED","GO Plus cinza","GO Plus transparente"}[style]);
+                refreshVgpOptions();
             });
         }
-        if(Control.vgpIconStyle()<choices.length)
-            choices[Control.vgpIconStyle()].setBackgroundColor(0x3340BDAA);
+        // Legacy style=2 was the same HD asset with background forcibly hidden.
+        // Preserve its transparent appearance until the user selects a new style.
+        int current=Control.vgpIconStyle()==0?0:1;
+        tiles[current].setBackgroundColor(0x3340BDAA);
         visualSlider(content,"Tamanho do VGP",28,72,Control.vgpIconSize(),value->{
             Control.setVgpIconSize(value);host.refresh();});
         visualSlider(content,"Opacidade do ícone VGP",10,100,Control.vgpIconOpacity(),value->{
             Control.setVgpIconOpacity(value);host.refresh();});
-        visualSlider(content,"Opacidade do fundo cinza VGP",0,100,Control.vgpBackgroundOpacity(),value->{
-            Control.setVgpBackgroundOpacity(value);host.refresh();});
+        visualSlider(content,"Fundo cinza (0% = transparente)",0,100,
+            Control.vgpIconStyle()==2?0:Control.vgpBackgroundOpacity(),value->{
+                // Convert legacy backgroundless style into the same HD icon
+                // with an independent alpha control, instead of duplicating an icon.
+                if(Control.vgpIconStyle()==2)Control.setVgpIconStyle(1);
+                Control.setVgpBackgroundOpacity(value);host.refresh();refreshVgpOptions();
+            });
         launch(content,"Escolher imagem VGP no celular",()->OverlayArtwork.select(activity,"vgp",()->{
-            Control.setVgpIconStyle(3);host.refresh();
+            Control.setVgpIconStyle(3);host.refresh();refreshVgpOptions();
         }));
         launch(content,"Restaurar imagem original VGP",()->OverlayArtwork.reset(activity,"vgp",()->{
-            Control.setVgpIconStyle(1);host.refresh();
+            Control.setVgpIconStyle(1);host.refresh();refreshVgpOptions();
         }));
         new AlertDialog.Builder(dialogContext()).setTitle("Aparência do VGP")
             .setView(content).setPositiveButton("Concluir",null).show();
     }
     private void refreshVgpOptions() {
         if(vgpIconStyleButton!=null){
-            String[] choices={"LED","GO Plus cinza","GO Plus transparente","Personalizado"};
+            String[] choices={"LED","GO Plus HD","GO Plus HD","Imagem personalizada"};
             vgpIconStyleButton.setText(dev.pgrazor.PtBr.tr("Ícone do VGP: "+choices[Control.vgpIconStyle()]));
         }
         for(int i=0;i<3;i++)vgpChoices[i].setChecked((Control.vgpOptions()&(1<<i))!=0);
-        vgpCooldownStop.setChecked(Control.vgpStopOnCooldown());
     }
 
     private void refreshBuddy() {buddyRefresh.run();buddyStatus.setText(dev.pgrazor.PtBr.tr(BuddyEmotionSettings.status()));}
@@ -1294,7 +1496,12 @@ final class SettingsPanel {
         mapTap.setText(dev.pgrazor.PtBr.tr("Game map tap: "+new String[]{"Do nothing","Walk","Teleport","Walk / double tap teleport"}[Control.mapTapMode()]));
         mapTap.setEnabled(Control.quickBallConfigured());
         spawnSwitch.setChecked(Control.spawnBooster());spawnSwitch.setEnabled(Control.spawnAllowed());spawnStatus.setText(dev.pgrazor.PtBr.tr(Control.spawnStatus()));
-        localTimeSwitch.setChecked(Control.localTimeOverlay());
+        localTimeSwitch.setChecked(Control.localTimeOverlay() && Control.hudLabelVisible(Control.HUD_LOCALTIME));
+        cooldownSwitch.setChecked(Control.cooldownOverlay() && Control.hudLabelVisible(Control.HUD_COOLDOWN));
+        String clockLabel = "Formato da hora · " + CLOCK_EXAMPLES[selectedClockChoice()];
+        if (!clockLabel.contentEquals(clockFormatButton.getText())) clockFormatButton.setText(clockLabel);
+        String cooldownLabel = "Estilo do contador · " + COOLDOWN_STYLES[Control.cooldownEmphasis() ? 1 : 0];
+        if (!cooldownLabel.contentEquals(cooldownStyleButton.getText())) cooldownStyleButton.setText(cooldownLabel);
         encounterCounterSwitch.setChecked(Control.encounterCounter());encounterOverlaySwitch.setChecked(Control.encounterOverlay());
         SettingsUi.enabled(encounterOverlaySwitch,Control.encounterCounter());
         if(current<0){String home=EncounterCounter.title();if(!home.contentEquals(title.getText()))title.setText(dev.pgrazor.PtBr.tr(home));}
