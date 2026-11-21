@@ -306,8 +306,9 @@ public final class Control {
         if(!backendReady||!connected())return "VGP aguardando: conexão com o jogo ou lease expirado.";
         if(!AccountProfiles.allowed())return "VGP aguardando: conta em validação ou troca.";
         if(!locationKnown())return "VGP aguardando: localização ainda não disponível.";
-        if(!quickSummaryReady())return "VGP aguardando: suporte nativo de captura não está pronto.";
-        if(!itemTransferReady)return "VGP aguardando: inventário de itens não está pronto.";
+        // VGP has its own native discovery, inventory/balls admission and action
+        // readiness checks. Quick Catch summary and auto-transfer are optional,
+        // independent features: they must not veto Pokémon/Stop scanning.
         if(!vgpReady)return "VGP aguardando: mecanismo nativo indisponível. "+vgp.status();
         if(ShundoSniper.active())return "VGP aguardando: Shundo Sniper tem prioridade.";
         if(AutoRaid.running())return "VGP aguardando: Auto Raid tem prioridade.";
@@ -320,6 +321,23 @@ public final class Control {
             return "VGP bloqueada por resposta incerta/erro nativo. Pare a VGP+, "
                 +"aguarde a ação pendente terminar e inicie-a novamente manualmente. "
                 +"Os alvos recentes permanecem protegidos. Estado: "+nativeState;
+        if(nativeLower.startsWith("waiting for") ||
+           nativeLower.startsWith("initializing") ||
+           nativeLower.contains("unavailable") ||
+           nativeLower.contains("out of red") ||
+           nativeLower.contains("no regular balls") ||
+           nativeLower.contains("storage full") ||
+           nativeLower.contains("item bag full") ||
+           nativeLower.contains("catching disabled"))
+            return "VGP ligada, mas aguardando pré-requisito nativo: "+nativeState
+                +". Confira conexão, inventário ou suporte indicado.";
+        if(nativeLower.startsWith("watching") ||
+           nativeLower.startsWith("spinning") ||
+           nativeLower.startsWith("catching") ||
+           nativeLower.startsWith("checking") ||
+           nativeLower.startsWith("cleaning"))
+            return "VGP ligada e monitorando. Estado: "+nativeState
+                +". Ações só são confirmadas pelos resultados retornados.";
         return "VGP habilitada para ações. Estado: "+nativeState;
     }
     /**
@@ -337,7 +355,15 @@ public final class Control {
     public static float vgpTargetY(){return vgp.targetY();}
     public static boolean vgpTargetSpin(){return vgp.targetSpin();}
 
-    public static boolean vgpAllowed(){if(!locationKnown())return false;guardVgpCooldown();return vgpEnabled&&vgpReady&&itemAccessAllowed()&&!ShundoSniper.active()&&!AutoRaid.running();}  // Shundo Sniper pauses VGP+
+    public static boolean vgpAllowed(){
+        if(!locationKnown())return false;
+        guardVgpCooldown();
+        // VGP owns native inventory checks and action-gate checks independently.
+        // itemAccessAllowed() also requires Quick Catch summary and auto-transfer
+        // readiness, neither of which is a prerequisite for VGP capture/spin.
+        return vgpEnabled&&vgpReady&&hostLive()
+                &&!ShundoSniper.active()&&!AutoRaid.running();
+    }  // Shundo Sniper and Auto Raid still pause VGP+
     public static void vgpResult(String action,boolean success){vgp.result(action,success);}
     private static volatile boolean autoIncubate, incubateLongest, incubatorReady;
     private static volatile String incubatorStatus="Waiting for incubation support";

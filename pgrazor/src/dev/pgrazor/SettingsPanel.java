@@ -1436,55 +1436,74 @@ final class SettingsPanel {
         LinearLayout content=new LinearLayout(activity);content.setOrientation(LinearLayout.VERTICAL);
         content.setPadding(dp(16),dp(10),dp(16),dp(8));
         TextView hint=new TextView(activity);
-        hint.setText(dev.pgrazor.PtBr.tr("Ícone e fundo são independentes. O fundo redondo cinza mantém o tamanho do GO Plus e pode ficar totalmente transparente."));
+        hint.setText("Escolha o ícone. A transparência do fundo é ajustada separadamente; "
+                + "0% deixa apenas o desenho, sem o círculo cinza.");
         hint.setTextSize(13);content.addView(hint);
         LinearLayout previews=new LinearLayout(activity);
         previews.setGravity(Gravity.CENTER);previews.setOrientation(LinearLayout.HORIZONTAL);
         content.addView(previews);
-        final ImageView[] choices=new ImageView[3];
-        final String[] files={"vgp-ring.png","vgp-hd-states.webp","vgp-hd-states.webp"};
+        // There are exactly TWO icon designs. The old third option reused the
+        // identical vgp-hd-states.webp asset and differed only by background opacity.
+        final ImageView[] choices=new ImageView[2];
+        final LinearLayout[] tiles=new LinearLayout[2];
+        final String[] files={"vgp-ring.png","vgp-hd-states.webp"};
+        final String[] labels={"LED","GO Plus HD"};
         for(int i=0;i<choices.length;i++){
-            final int style=i;ImageView image=new ImageView(activity);choices[i]=image;
+            final int style=i;
+            LinearLayout tile=new LinearLayout(activity);tiles[i]=tile;
+            tile.setOrientation(LinearLayout.VERTICAL);
+            tile.setGravity(Gravity.CENTER);
+            ImageView image=new ImageView(activity);choices[i]=image;
             try(java.io.InputStream in=PgAssets.open(activity,"pgrazor/map-icons/"+files[i])){
                 Bitmap bitmap=BitmapFactory.decodeStream(in);
-                if(i>0&&bitmap!=null&&bitmap.getHeight()==bitmap.getWidth()*3)
+                if(i==1&&bitmap!=null&&bitmap.getHeight()==bitmap.getWidth()*3)
                     bitmap=Bitmap.createBitmap(bitmap,0,2*bitmap.getWidth(),bitmap.getWidth(),bitmap.getWidth());
                 image.setImageBitmap(bitmap);
             }catch(java.io.IOException|RuntimeException ignored){}
             image.setScaleType(ImageView.ScaleType.FIT_CENTER);
-            image.setPadding(dp(5),dp(5),dp(5),dp(5));
-            LinearLayout.LayoutParams params=new LinearLayout.LayoutParams(0,dp(85),1f);
-            previews.addView(image,params);
-            image.setContentDescription(style==0?"LED":style==1?"GO Plus com fundo cinza":"GO Plus sem fundo");
-            image.setOnClickListener(v->{
+            image.setPadding(dp(8),dp(8),dp(8),dp(8));
+            tile.addView(image,new LinearLayout.LayoutParams(-1,dp(80)));
+            TextView label=new TextView(activity);
+            label.setText(labels[i]);label.setTextSize(13);label.setGravity(Gravity.CENTER);
+            tile.addView(label,new LinearLayout.LayoutParams(-1,dp(26)));
+            previews.addView(tile,new LinearLayout.LayoutParams(0,dp(112),1f));
+            tile.setContentDescription(labels[i]);
+            tile.setClickable(true);tile.setFocusable(true);
+            tile.setOnClickListener(v->{
                 Control.setVgpIconStyle(style);
-                for(int j=0;j<choices.length;j++)
-                    choices[j].setBackgroundColor(j==style?0x3340BDAA:Color.TRANSPARENT);
+                for(int j=0;j<tiles.length;j++)
+                    tiles[j].setBackgroundColor(j==style?0x3340BDAA:Color.TRANSPARENT);
                 host.refresh();
-                if(vgpIconStyleButton!=null)
-                    vgpIconStyleButton.setText("Ícone do VGP: "+new String[]{"LED","GO Plus cinza","GO Plus transparente"}[style]);
+                refreshVgpOptions();
             });
         }
-        if(Control.vgpIconStyle()<choices.length)
-            choices[Control.vgpIconStyle()].setBackgroundColor(0x3340BDAA);
+        // Legacy style=2 was the same HD asset with background forcibly hidden.
+        // Preserve its transparent appearance until the user selects a new style.
+        int current=Control.vgpIconStyle()==0?0:1;
+        tiles[current].setBackgroundColor(0x3340BDAA);
         visualSlider(content,"Tamanho do VGP",28,72,Control.vgpIconSize(),value->{
             Control.setVgpIconSize(value);host.refresh();});
         visualSlider(content,"Opacidade do ícone VGP",10,100,Control.vgpIconOpacity(),value->{
             Control.setVgpIconOpacity(value);host.refresh();});
-        visualSlider(content,"Opacidade do fundo cinza VGP",0,100,Control.vgpBackgroundOpacity(),value->{
-            Control.setVgpBackgroundOpacity(value);host.refresh();});
+        visualSlider(content,"Fundo cinza (0% = transparente)",0,100,
+            Control.vgpIconStyle()==2?0:Control.vgpBackgroundOpacity(),value->{
+                // Convert legacy backgroundless style into the same HD icon
+                // with an independent alpha control, instead of duplicating an icon.
+                if(Control.vgpIconStyle()==2)Control.setVgpIconStyle(1);
+                Control.setVgpBackgroundOpacity(value);host.refresh();refreshVgpOptions();
+            });
         launch(content,"Escolher imagem VGP no celular",()->OverlayArtwork.select(activity,"vgp",()->{
-            Control.setVgpIconStyle(3);host.refresh();
+            Control.setVgpIconStyle(3);host.refresh();refreshVgpOptions();
         }));
         launch(content,"Restaurar imagem original VGP",()->OverlayArtwork.reset(activity,"vgp",()->{
-            Control.setVgpIconStyle(1);host.refresh();
+            Control.setVgpIconStyle(1);host.refresh();refreshVgpOptions();
         }));
         new AlertDialog.Builder(dialogContext()).setTitle("Aparência do VGP")
             .setView(content).setPositiveButton("Concluir",null).show();
     }
     private void refreshVgpOptions() {
         if(vgpIconStyleButton!=null){
-            String[] choices={"LED","GO Plus cinza","GO Plus transparente","Personalizado"};
+            String[] choices={"LED","GO Plus HD","GO Plus HD · fundo transparente (legado)","Personalizado"};
             vgpIconStyleButton.setText(dev.pgrazor.PtBr.tr("Ícone do VGP: "+choices[Control.vgpIconStyle()]));
         }
         for(int i=0;i<3;i++)vgpChoices[i].setChecked((Control.vgpOptions()&(1<<i))!=0);

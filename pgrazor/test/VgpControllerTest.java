@@ -104,7 +104,30 @@ public final class VgpControllerTest {
         Control.setItemReady(true,"Ready"); Control.setVgpReady(true,"Ready");
         Control.connect(); foreground(true); Control.setVgpOverlay(true); Control.setVgpEnabled(true);
         check(Control.vgpAllowed(),"Off-map foreground may run VGP");
+        // The former permission gate incorrectly depended on Quick Catch
+        // summary + the independent auto-transfer inventory adapter.
+        Control.setItemReady(false,"Inventory auto-transfer unavailable");
+        Control.configureQuickSummary(false);
+        Control.setQuickSummaryReady(false,"Quick Catch unavailable");
+        check(Control.vgpAllowed(),
+                "VGP must use its own native readiness rather than unrelated transfer/summary readiness");
+        check(Control.vgpDiagnosticStatus().contains("habilitada para ações"),
+                "Diagnostic must not falsely block VGP on optional modules");
+        // An actually unavailable native VGP must still be blocked.
+        Control.setVgpReady(false,"Native VGP unavailable");
+        check(!Control.vgpAllowed(),"VGP native engine unavailable still blocks actions");
+        Control.setVgpReady(true,"Ready");
         check(Control.vgpDiagnosticStatus().contains("habilitada para ações"),"Ready state distinguishes activation from permission");
+        Control.setVgpStatus("Initializing encounter support");
+        check(Control.vgpDiagnosticStatus().contains("aguardando pré-requisito nativo"),
+                "Native prerequisites must not be reported as a working VGP");
+        Control.setVgpStatus("Watching nearby Pokemon and PokeStops");
+        check(Control.vgpDiagnosticStatus().contains("monitorando"),
+                "Scanning alone must not be reported as confirmed catches/spins");
+        Control.setVgpStatus("Response timed out; toggle VGP to resume");
+        check(Control.vgpDiagnosticStatus().contains("bloqueada"),
+                "Uncertain native response must remain a stop-and-restart warning");
+        Control.setVgpStatus("Ready");
         Control.setVgpOptions(0);
         check(!Control.vgpDiagnosticStatus().contains("habilitada"),"No actions cannot be reported as ready");
         check(Control.vgpDiagnosticStatus().contains("sem ações"),"Missing catch/spin selections explained");
