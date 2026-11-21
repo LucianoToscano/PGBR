@@ -15,6 +15,8 @@ class StreamerMetadataPrivacyTests(unittest.TestCase):
         self.assertIn("md->resolve_class(", source)
         self.assertIn("md->validate_method(", source)
         self.assertIn("probe_game_streamer_mode(md);", source)
+        # Read-only game metadata must not be rescanned on every Unity frame.
+        self.assertIn("streamer_probe.load(std::memory_order_acquire) != 0", source)
         # Never use a service getter's return as proof of visual name concealment.
         self.assertNotIn('"OnToggleStreamerMode"', source)
         self.assertNotIn("field_set_value(", source)
@@ -25,6 +27,9 @@ class StreamerMetadataPrivacyTests(unittest.TestCase):
         settings = (ROOT / "src/dev/pgrazor/SettingsPanel.java").read_text(encoding="utf-8")
         self.assertIn("A detecção do serviço não comprova ocultação do nome", settings)
         self.assertIn("Proteção em tela não verificada", settings)
+        self.assertIn("Verificar privacidade antes da live", settings)
+        self.assertIn("o recurso NÃO protege sua live", settings)
+        self.assertIn("o nome original voltou", settings)
         self.assertEqual((ROOT / "VERSION").read_text(encoding="utf-8").strip(), "0.00.14-LT")
 
 
