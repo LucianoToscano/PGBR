@@ -351,6 +351,10 @@ public final class Pad {
         if (EternatusRouteRunner.active()) EternatusRouteRunner.stop("Controle manual do VGP+ assumido.");
         Control.setVgpEnabled(true);
         refresh();
+        // An explicit tap must never fail silently; do not infer gameplay success
+        // from the enabled flag alone. Display the first failed readiness gate.
+        if(!Control.vgpAllowed())
+            Toast.makeText(activity,Control.vgpDiagnosticStatus(),Toast.LENGTH_LONG).show();
     }
 
     private final class VgpToggle extends View {
