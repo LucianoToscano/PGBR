@@ -1,19 +1,19 @@
 <p align="center"><img src="pgrazor/branding/pgbr-logo.webp" width="92" alt="Logotipo PGBR"></p>
 
 <h1 align="center">PGBR</h1>
-<p align="center"><strong>PGBR-v0.00.15-LT · Edição brasileira para Android</strong></p>
+<p align="center"><strong>PGBR-v0.00.16-LT · Edição brasileira para Android</strong></p>
 <p align="center">Controles de localização, joystick, captura, rotas e recursos opcionais de automação para Pokémon GO.</p>
 
-> **Status:** LT015 em validação. Filtros individuais de IV no feed e gerador de buscas da coleção implementados no código; funcionamento no aparelho ainda precisa de testes. **A ocultação do nome do treinador no mapa/perfil Eu permanece experimental e não é proteção garantida para lives.**
+> **Status:** LT016 em validação. Inclui controle explícito Iniciar/Parar VGP+ e diagnóstico de bloqueios (permissão de execução, inventário, localização e suporte nativo). **Isso não comprova captura/giro em aparelho: requer teste prático.** A ocultação do nome do treinador no mapa/perfil Eu também permanece experimental.
 
 ## Baixar o PGBR
 
-A **[LT014 está publicada](https://github.com/LucianoToscano/PGBR/releases/tag/v0.00.14-LT)** como versão anterior. Não confunda seus arquivos com os da LT015.
+A **[LT015 está publicada](https://github.com/LucianoToscano/PGBR/releases/tag/v0.00.15-LT)** como versão anterior. Não confunda seus arquivos com os da LT016.
 
-Acompanhe as **[compilações completas no GitHub Actions](https://github.com/LucianoToscano/PGBR/actions/workflows/pgbr-build-full-ptbr-candidate.yml)**. Somente após uma execução LT015 bem-sucedida, baixe o artefato `PGBR-v0.00.15-LT-APKs` ou a nova release, que devem conter:
+Acompanhe as **[compilações completas no GitHub Actions](https://github.com/LucianoToscano/PGBR/actions/workflows/pgbr-build-full-ptbr-candidate.yml)**. Somente após uma execução LT016 bem-sucedida, baixe o artefato `PGBR-v0.00.16-LT-APKs` ou a nova release, que devem conter:
 - `PGBR-v0.00.15-LT.apk` — instalador sem Root.
-- `PGBR-v0.00.15-LT-Root.apk` — instalador com Root.
-- `PGBR-v0.00.15-LT-Root-module.zip` — módulo para Magisk/KernelSU/APatch.
+- `PGBR-v0.00.16-LT-Root.apk` — instalador com Root.
+- `PGBR-v0.00.16-LT-Root-module.zip` — módulo para Magisk/KernelSU/APatch.
 - Comprovantes de compilação e `SHA256SUMS.txt`.
 
 A assinatura do PGBR pode ser diferente da de outras instalações. Não desinstale sua versão anterior sem preservar os dados necessários.

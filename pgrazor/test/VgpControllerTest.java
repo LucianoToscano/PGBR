@@ -18,14 +18,18 @@ public final class VgpControllerTest {
     public static void main(String[] args) throws Exception {
         // Overlay off: the feature cannot be active regardless of an enable request.
         check(!Control.vgpOverlay() && !Control.vgpEnabled(),"Default overlay/active off");
+        check(Control.vgpDiagnosticStatus().contains("não inicia"),"Overlay-off message distinguishes display and execution");
         foreground(true);
         Control.setVgpEnabled(true);
         check(!Control.vgpEnabled(),"Enable refused while overlay off");
+        check(Control.vgpStatus().contains("overlay hidden"),"Explicit reason when overlay hidden");
 
         // Overlay on, no cooldown armed: an enable request turns the runtime flag on.
         Control.setVgpOverlay(true);
+        check(Control.vgpDiagnosticStatus().contains("desligada"),"Showing overlay alone must not start VGP");
         Control.setVgpEnabled(true);
         check(Control.vgpEnabled() && Control.vgpOverlay(),"Enabled with overlay on in foreground");
+        check(Control.vgpDiagnosticStatus().contains("aguardando"),"Enabled is not the same as runtime-ready");
         check(logged("vgp-enabled","ON; runtime only"),"Enable logged");
         java.util.Properties spin=new java.util.Properties();
         spin.setProperty("smartCatchEnabled","true");spin.setProperty("smartCatchSpinGyms","true");
@@ -100,8 +104,14 @@ public final class VgpControllerTest {
         Control.setItemReady(true,"Ready"); Control.setVgpReady(true,"Ready");
         Control.connect(); foreground(true); Control.setVgpOverlay(true); Control.setVgpEnabled(true);
         check(Control.vgpAllowed(),"Off-map foreground may run VGP");
+        check(Control.vgpDiagnosticStatus().contains("habilitada para ações"),"Ready state distinguishes activation from permission");
+        Control.setVgpOptions(0);
+        check(!Control.vgpDiagnosticStatus().contains("habilitada"),"No actions cannot be reported as ready");
+        check(Control.vgpDiagnosticStatus().contains("sem ações"),"Missing catch/spin selections explained");
+        Control.setVgpOptions(3);
         foreground(false); check(!Control.vgpAllowed(),"Background blocks permission"); foreground(true);
         Control.setVgpReady(false,"Unavailable"); check(!Control.vgpAllowed(),"Native readiness blocks permission");
+        check(Control.vgpDiagnosticStatus().contains("mecanismo nativo indisponível"),"Native readiness failure surfaced");
         Control.setVgpReady(true,"Ready");
         java.lang.reflect.Field desired=Control.class.getDeclaredField("desiredEnabled"); desired.setAccessible(true);
         desired.setBoolean(null,false); check(!Control.vgpAllowed(),"Unknown location blocks permission"); desired.setBoolean(null,true);
