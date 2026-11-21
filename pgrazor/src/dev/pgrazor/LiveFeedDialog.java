@@ -113,6 +113,8 @@ public final class LiveFeedDialog {
         private long lastFetchStartedElapsed; // SystemClock.elapsedRealtime
         private long lastUpdated;             // System.currentTimeMillis of last applied snapshot
         private long backoffUntilElapsed;
+        /** Access-denied is permanent until a deliberate retry, never polled. */
+        private boolean pokeListAccessDenied;
         private int refreshSeconds = DEFAULT_REFRESH_SECONDS;
         private String note = "", lastError;
         private int categoryIndex, radiusIndex = 1;
@@ -336,7 +338,16 @@ public final class LiveFeedDialog {
             toolbar.addView(filterBtn, new LinearLayout.LayoutParams(0, dp(44), 1));
             root.addView(toolbar);
             logout.setOnClickListener(v -> logout());
-            refresh.setOnClickListener(v -> requestFetch());
+            refresh.setOnClickListener(v -> {
+                // A manual retry is explicit. HTTP 401/403 must never cause
+                // automatic retries against an endpoint that refused access.
+                if (provider == 1) {
+                    pokeListAccessDenied = false;
+                    backoffUntilElapsed = 0;
+                    lastFetchStartedElapsed = 0;
+                }
+                requestFetch();
+            });
             filterBtn.setOnClickListener(v -> openFilters());
 
             {
@@ -455,6 +466,7 @@ public final class LiveFeedDialog {
             showingLogin = selected == 0 && !client.signedIn();
             fetchInFlight = false;
             backoffUntilElapsed = 0;
+            pokeListAccessDenied = false;
             lastFetchStartedElapsed = 0;
             lastUpdated = 0;
             lastError = null; note = "";
@@ -578,6 +590,9 @@ public final class LiveFeedDialog {
 
         private void requestFetch() {
             if (closed || showingLogin || fetchInFlight) return;
+            if (provider == 1 && pokeListAccessDenied) {
+                updateStatus(); return;
+            }
             final int selectedDex = sourceDexFilter();
             if (pokemonSearchMode && provider == 1 && radiusIndex == 3 && selectedDex < 1) {
                 lastError = "Informe uma espécie específica ou #Dex antes de consultar Global na PokeList.";
@@ -638,8 +653,12 @@ public final class LiveFeedDialog {
             if (closed) return;
             if (status == 429) backoffUntilElapsed = SystemClock.elapsedRealtime()
                     + Math.max(retryAfterMs, MIN_BACKOFF_MS);
-            if (provider == 1 && status == 403)
-                backoffUntilElapsed = SystemClock.elapsedRealtime() + 300000L;
+            if (provider == 1 && (status == 401 || status == 403)) {
+                // A 403 on a CI runner was observed on 2026-11-21. This is
+                // an access refusal, NOT a rate limit: never poll repeatedly.
+                pokeListAccessDenied = true;
+                backoffUntilElapsed = 0;
+            }
             if (g != generation) { requestFetch(); return; }
             if (provider == 0 && (status == 401 || !client.signedIn())) {
                 // The client clears the session on a 401; drop back to the login form.
@@ -672,7 +691,8 @@ public final class LiveFeedDialog {
                 rebuildVisible(); adapter.notifyDataSetChanged(); updateStatus();
                 long nowE = SystemClock.elapsedRealtime();
                 long intervalMs = (provider == 1 ? Math.max(60, refreshSeconds) : refreshSeconds) * 1000L;
-                if (!fetchInFlight && nowE >= backoffUntilElapsed
+                if (!fetchInFlight && !(provider == 1 && pokeListAccessDenied)
+                    && nowE >= backoffUntilElapsed
                     && nowE - lastFetchStartedElapsed >= intervalMs) requestFetch();
             }
             main.postDelayed(tick, 1000);
@@ -680,6 +700,13 @@ public final class LiveFeedDialog {
 
         private void updateStatus() {
             if (feedStatus == null) return;
+            if (provider == 1 && pokeListAccessDenied) {
+                feedStatus.setText("PokeList / Moonani recusou a consulta (HTTP 401/403). "
+                    + "Não há resultados confirmados. O PGBR não tentará "
+                    + "novamente de forma automática. Use Atualizar apenas "
+                    + "após verificar a autorização com a fonte.");
+                return;
+            }
             long nowE = SystemClock.elapsedRealtime();
             if (nowE < backoffUntilElapsed) {
                 long s = (backoffUntilElapsed - nowE + 999) / 1000;
