@@ -820,7 +820,13 @@ final class SettingsPanel {
                     .setPositiveButton("Entendi",null).show();
                 return;
             }
-            Runnable start=()->{Control.setVgpEnabled(true);host.refresh();};
+            Runnable start=()->{
+                // Match the floating icon's manual takeover policy: never run a
+                // second manual VGP owner alongside the Eternatus route.
+                if(EternatusRouteRunner.active())
+                    EternatusRouteRunner.stop("Controle manual do VGP+ assumido.");
+                Control.setVgpEnabled(true);host.refresh();
+            };
             if(Control.vgpTapProtection()){
                 new AlertDialog.Builder(dialogContext())
                     .setTitle("Iniciar VGP+?")
