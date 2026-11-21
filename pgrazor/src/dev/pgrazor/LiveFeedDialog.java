@@ -729,9 +729,11 @@ public final class LiveFeedDialog {
 
         // ------------------------------------------------------------------ fetching
 
-        private int sourceDexFilter() {
+        private int sourceDexFilter() { return sourceDexFilter(pokemonQuery); }
+
+        private int sourceDexFilter(String requestedQuery) {
             if (!pokemonSearchMode) return -1;
-            String q = pokemonQuery == null ? "" : pokemonQuery.trim();
+            String q = requestedQuery == null ? "" : requestedQuery.trim();
             String number = q.startsWith("#") ? q.substring(1) : q;
             if (number.matches("[0-9]{1,4}")) {
                 try {
@@ -785,6 +787,7 @@ public final class LiveFeedDialog {
                 }
             }
             final int selectedDex = sourceDexFilter();
+            final String queryAtRequest = pokemonQuery;
             if (pokemonSearchMode && provider == 1 && radiusIndex == 3 && selectedDex < 1) {
                 lastError = "Informe uma espécie específica ou #Dex antes de consultar Global na PokeList.";
                 updateStatus(); return;
@@ -807,11 +810,17 @@ public final class LiveFeedDialog {
             updateStatus();
             net.execute(() -> {
                 try {
+                    // The species-name catalog is loaded on this same serialized
+                    // worker before the first request. Resolve human names now,
+                    // so an early Global search does not fall back to page 1
+                    // merely because the catalog was still loading on the UI.
+                    int remoteDex = selectedProvider == 2 && selectedDex < 1
+                            ? sourceDexFilter(queryAtRequest) : selectedDex;
                     LiveFeedData.Snapshot snap = selectedProvider == 1
                             ? pokeList.fetch(lat, lon, radiusKm, selectedDex)
                             : selectedProvider == 2
                             ? pokemonSearchMode && Double.isInfinite(radiusKm)
-                              ? iFlowGo.fetchGlobal(selectedDex)
+                              ? iFlowGo.fetchGlobal(remoteDex)
                               : iFlowGo.fetch(lat, lon, radiusKm, raidSearchMode)
                             : client.fetch(lat, lon, radiusKm, f);
                     if (selectedProvider == 0 && Double.isInfinite(radiusKm))
