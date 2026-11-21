@@ -5,6 +5,8 @@
 #include "runtime_bootstrap.h"
 #include "runtime_metadata.h"
 #include "runtime_transport.h"
+// The PvP observer is owned by combat_host.cpp and shares no game-state pointers.
+extern "C" void pgrazor_pvp_gui_open(const char *ns,const char *name);
 #include <atomic>
 #include <algorithm>
 #include <cmath>
@@ -523,11 +525,12 @@ std::atomic<void*> gui_open_original{nullptr};
 void *class_name_fn=nullptr,*class_namespace_fn=nullptr;
 using GuiOpen=void(*)(void*,const void*);
 void hook_gui_open(void *self,const void *m){
- if(active()&&self&&class_name_fn&&class_namespace_fn){
+ if(self&&class_name_fn&&class_namespace_fn){
   try{
    void *k=klass(self);
    const char *ns=fn<const char*(*)(void*)>(class_namespace_fn)(k),*name=fn<const char*(*)(void*)>(class_name_fn)(k);
-   event(std::string("{\"phase\":\"gui-open\",\"class\":\"")+(ns&&*ns?std::string(ns)+".":std::string())+(name?name:"?")+"\"}");
+   if(ns&&name)pgrazor_pvp_gui_open(ns,name); // exact-class GUI sequence, no input here
+   if(active())event(std::string("{\"phase\":\"gui-open\",\"class\":\"")+(ns&&*ns?std::string(ns)+".":std::string())+(name?name:"?")+"\"}");
   }catch(...){}
  }
  reinterpret_cast<GuiOpen>(gui_open_original.load(std::memory_order_acquire))(self,m);
@@ -1227,7 +1230,16 @@ void pgr_cutscene_skip_tick(uint64_t tid,const PgrSharedMetadataOutput *){
  if(pending_raid)advance_raid(on&&!faulted.load(std::memory_order_acquire));
  if(pending_popup_count)advance_popups();
  if(pending_inventory)advance_inventory();
- if((!on&&!policy.inventory)||tried||faulted.load(std::memory_order_acquire))return;
+ // The PvP VNext session detector needs GuiController.Open even if Skip cutscenes is off.
+ // Install once when any shared combat action is configured; all cutscene replacements
+ // remain inert unless the user has enabled their corresponding setting.
+ bool pvp_requested=false;
+ if(const auto *tr=transport()){
+  PgrRuntimeTransportSample snap{};int32_t mask=0;
+  if(tr->sample(&snap)==0&&snap.snapshot_fresh&&
+     tr->get_int&&tr->get_int(6,&mask)==0)pvp_requested=(mask&7)!=0;
+ }
+ if((!on&&!policy.inventory&&!pvp_requested)||tried||faulted.load(std::memory_order_acquire))return;
  tried=true;
  try{
   if(!ready){auto api=static_cast<const PgrBootApi*>(pgrazor_runtime_bootstrap_api(1));boot.version=1;boot.size=sizeof(boot);require(api&&api->snapshot(&boot)==0,"Runtime unavailable");ready=true;}
