@@ -69,7 +69,9 @@ enum PgrRocketCombatObserve {
   PGR_RC_OBS_CHARGE        = 6,  // obj=ChargeAttackDisplayVNext; prune/dedupe/append (<=4)
   PGR_RC_OBS_SHIELD_PROMPT = 7,  // obj=ShieldModalGuiController, aux=prompt bool; open shield
   PGR_RC_OBS_SHIELD_MANUAL = 8,  // obj=shield modal (ShieldUiClicked); mark used + notify 20
-  PGR_RC_OBS_SHIELD_CLOSE  = 9   // obj=shield modal (HandleDismiss); drop shield by identity
+  PGR_RC_OBS_SHIELD_CLOSE  = 9,  // obj=shield modal (HandleDismiss); drop shield by identity
+  PGR_RC_OBS_PVP_SCOPE_ENTER = 10, // obj=CombatVNextGuiController; distinct PvP scope, never Rocket
+  PGR_RC_OBS_PVP_SCOPE_EXIT  = 11  // obj=the same rooted VNext controller; close PvP-only scope
 };
 
 // Table status codes. 0 == success.
