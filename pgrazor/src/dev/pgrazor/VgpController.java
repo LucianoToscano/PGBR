@@ -85,8 +85,11 @@ final class VgpController {
             else if(cooldownActive){enabledWriter.accept(false);targetAt=0;guardReason="Cooldown active; tap VGP after it clears";refused=true;}
             else{enabledWriter.accept(true);guardReason="";on=true;}
         }
-        if(refused)event.accept("vgp-enable-refused",status());
-        else if(on)event.accept("vgp-enabled","ON; runtime only");
+        if(refused){
+            if(cooldownActive&&overlay.getAsBoolean()&&foreground.getAsBoolean())
+                event.accept("vgp-cooldown-guard","Enable refused; cooldown active");
+            else event.accept("vgp-enable-refused",status());
+        }else if(on)event.accept("vgp-enabled","ON; runtime only");
     }
     /**
      * Arms or disarms the optional cooldown safety. Arming it while VGP is already active and a
