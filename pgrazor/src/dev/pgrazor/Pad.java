@@ -30,6 +30,7 @@ public final class Pad {
     private int appliedUiScale;
     private int appliedWindowWidth,appliedWindowHeight;
     private final Rect appliedWindowBounds=new Rect();
+    private final Rect appliedVgpWindowBounds=new Rect();
     private LinearLayout joystickOverlay;
     private BerryOverlay encounterBerry;
     private TextView cooldownTimer;
@@ -503,19 +504,31 @@ public final class Pad {
     private void applyMapScale(){
         if(launcher==null||launcher.getWidth()==0||parent.getWidth()==0)return;
         Rect safe=UiViewport.bounds(parent);
+        Rect vgpSafe=UiViewport.vgpBounds(parent);
         int percent=Control.uiScalePercent();
-        if(appliedUiScale==percent&&appliedWindowWidth==parent.getWidth()&&appliedWindowHeight==parent.getHeight()&&appliedWindowBounds.equals(safe))return;
+        if(appliedUiScale==percent&&appliedWindowWidth==parent.getWidth()
+                &&appliedWindowHeight==parent.getHeight()
+                &&appliedWindowBounds.equals(safe)
+                &&appliedVgpWindowBounds.equals(vgpSafe))return;
         Rect previousSafe=appliedWindowBounds.isEmpty()?safe:new Rect(appliedWindowBounds);
-        appliedWindowBounds.set(safe);appliedWindowWidth=parent.getWidth();appliedWindowHeight=parent.getHeight();
+        Rect previousVgpSafe=appliedVgpWindowBounds.isEmpty()?vgpSafe:new Rect(appliedVgpWindowBounds);
+        appliedWindowBounds.set(safe);
+        appliedVgpWindowBounds.set(vgpSafe);
+        appliedWindowWidth=parent.getWidth();appliedWindowHeight=parent.getHeight();
         appliedUiScale=percent;float scale=percent/100f;
         for(View view:new View[]{launcher,joystickOverlay,cooldownTimer,localTime,vgpToggle,vgpActivity,vgpMarker,mapCatchBadge,transferToggle,gameRoutesOverlay,gymFeedOverlay,gymAutomationStatus,shundoOverlay,shinyBadge,shinyMark,encounterBadge}){
             if(view==null)continue;
             float x=view.getX(),y=view.getY();
             int oldWidth=OverlayDrag.visualWidth(view),oldHeight=OverlayDrag.visualHeight(view);
-            float fitted=UiViewportPolicy.fit(scale,view.getWidth(),view.getHeight(),safe.width(),safe.height());
+            // VGP uses a full horizontal track in portrait. Using the generic
+            // system-inset rectangle here used to pull it away from the right edge
+            // on UI scale, rotation and relayout, despite OverlayDrag allowing it.
+            Rect to=view==vgpToggle?vgpSafe:safe;
+            Rect from=view==vgpToggle?previousVgpSafe:previousSafe;
+            float fitted=UiViewportPolicy.fit(scale,view.getWidth(),view.getHeight(),to.width(),to.height());
             view.setPivotX(0);view.setPivotY(0);view.setScaleX(fitted);view.setScaleY(fitted);
-            view.setX(UiViewportPolicy.resizePosition(x,previousSafe.left,previousSafe.right,oldWidth,safe.left,safe.right,OverlayDrag.visualWidth(view)));
-            view.setY(UiViewportPolicy.resizePosition(y,previousSafe.top,previousSafe.bottom,oldHeight,safe.top,safe.bottom,OverlayDrag.visualHeight(view)));
+            view.setX(UiViewportPolicy.resizePosition(x,from.left,from.right,oldWidth,to.left,to.right,OverlayDrag.visualWidth(view)));
+            view.setY(UiViewportPolicy.resizePosition(y,from.top,from.bottom,oldHeight,to.top,to.bottom,OverlayDrag.visualHeight(view)));
         }
         if(cooldownDrag!=null)cooldownDrag.refreshBounds();if(localTimeDrag!=null)localTimeDrag.refreshBounds();if(vgpDrag!=null)vgpDrag.refreshBounds();
         if(transferDrag!=null)transferDrag.refreshBounds();
