@@ -61,6 +61,14 @@ public final class IFlowGoFeedDataTest {
         LiveFeedData.Entry e = IFlowGoFeedData.parse(
             new JSONObject().put("raids", new JSONArray().put(egg)), now, true).entries.get(0);
         check(!e.raidBossLive && e.dexId == -1, "egg does not reveal a speculative boss");
+        JSONObject unknownHatch = new JSONObject().put("id", "raid-hatch-unknown")
+            .put("lat", 35.65).put("lon", 139.72).put("raid_pokemon_id", 150)
+            .put("raid_end_at", "2027-01-16T08:00:00Z");
+        LiveFeedData.Entry unknown = IFlowGoFeedData.parse(
+            new JSONObject().put("raids", new JSONArray().put(unknownHatch)), now, true)
+            .entries.get(0);
+        check(!unknown.raidBossLive && unknown.dexId == -1,
+            "unknown hatch time must not confirm raid boss");
         check(e.details.contains("Ovo"), "egg text");
         check(IFlowGoFeedData.isoMs("2026-11-21T06:00:00.123456Z")
             == IFlowGoFeedData.isoMs("2026-11-21T06:00:00.123Z"), "microseconds converted");
