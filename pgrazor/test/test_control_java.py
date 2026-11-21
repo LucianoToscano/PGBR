@@ -116,6 +116,7 @@ public class NotificationManager {
 public class AccountProfiles {
  public static void init(android.app.Application app){}
  public static boolean allowed(){return true;}
+ public static String authenticatedTrainerName(){return "";}
  public static java.io.File file(android.app.Application app,String name){return new java.io.File(app.getFilesDir(),name);}
  public static String command(){return "";}
  public static String[] commandSnapshot(){return new String[]{"", "0"};}
@@ -125,6 +126,11 @@ public class AccountProfiles {
  public static void logoutComplete(){}
  public static void logoutFailed(){} static void signInResetComplete(){} static void sessionSaved(){}
 }""",
+    'dev/pgrazor/NativeCore.java': '''package dev.pgrazor;
+public final class NativeCore {
+ public static int trainerPrivacyConfigure(boolean enabled,String name){return 0;}
+ public static int trainerPrivacyStatus(){return 0;}
+}''',
     'dev/pgrazor/Pad.java': '''package dev.pgrazor;
 public class Pad {public final android.app.Activity activity; public Pad(android.app.Activity a){activity=a;} public void close(){} public void confirmStopRoute(){} public void confirmMapTeleport(double lat,double lon,int mode,int epoch){}}''',
     'dev/pgrazor/LogActivity.java': 'package dev.pgrazor; public class LogActivity extends android.app.Activity {}',
