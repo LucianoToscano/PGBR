@@ -1874,6 +1874,19 @@ public final class Control {
     private static final MapCatchStatus mapCatchStatus = new MapCatchStatus();
     public static String mapCatchLabel(){return autoThrow && autoThrowOnMap && hostLive() ? mapCatchStatus.label(android.os.SystemClock.elapsedRealtime()) : "";}
     public static void event(String kind, String detail) {
+        if("battle-action".equals(kind)&&detail.startsWith("{")){
+            try{
+                org.json.JSONObject b=new org.json.JSONObject(detail);
+                if(b.has("pvpExecutorReady")){
+                    pvpBattleReady=b.optBoolean("pvpExecutorReady",false);
+                    pvpBattleStatus=pvpBattleReady
+                        ?"PvP VNext em teste: executor conectado. Ataques e escudos dependem dos controles do jogo."
+                        :"PvP VNext aguardando partida reconhecida: "+b.optString("reason","pronto para observar");
+                }else if(b.has("pvpAction")){
+                    pvpBattleStatus="PvP VNext: comando "+b.optString("pvpAction")+" enviado ao jogo (sem confirmação de acerto).";
+                }
+            }catch(Exception ignored){}
+        }
         if("auto-raid".equals(kind))AutoRaid.publish(detail);
         if("map-auto-throw".equals(kind)){
             try{org.json.JSONObject result=new org.json.JSONObject(detail);
