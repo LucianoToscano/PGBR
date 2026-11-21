@@ -18,6 +18,12 @@
 4. A troca de fornecedor, raio ou filtro cancela requisições obsoletas. Respostas atrasadas **não podem** misturar Pokémon de fontes distintas nem sobrescrever uma busca mais recente.
 5. O resultado exibido sempre mantém o **crédito explícito de origem**; um dado do LivePokeMap nunca é rotulado como PGSharp, iPogo ou Pokémod.
 
+## Conferência do arquivo mestre do projeto
+
+O documento `POKEGOBR_MASTER_TOTAL_FONTES_APIS_BANCOS_IMAGENS_SONS_APKS_2026-11-09.md`, localizado no Drive do projeto, foi consultado. As entradas **L-078 PGSharp, L-079 iPogo, L-080 PGTools e L-081 Pokémod** estão expressamente classificadas como **“APENAS REFERÊNCIA FUNCIONAL”**. O texto NÃO registra uma URL de API de aparições autenticada, documentação de SDK de feed ou contrato de backend concedido para essas quatro fontes; não autoriza tratar os feeds privados como conectados. Também lista um possível endpoint de distribuição de Shungo com status **não confirmado**, sem equivalência a coordenadas individuais de Pokémon.
+
+Essas fontes continuam candidatas a integração mediante confirmação específica de acesso, mesmo que exista permissão para estudar os aplicativos. O relatório preserva essa distinção e não reproduz tokens ou dados privados do Drive.
+
 ## Integração de parceiros — contrato técnico mínimo
 
 Para habilitar qualquer um dos conectores **PGSharp / iPogo / Pokémod / PGTools / PokeList**, precisamos de dados fornecidos legitimamente pelo serviço ou por exportação autorizada que inclua, por item:
