@@ -14,7 +14,9 @@ final class FeedChooser {
                            "PoGoCoordinates\nBusca por IV, Shiny, PvP e espécie (limites próprios da fonte)"};
         AlertDialog choose = ChoiceList.attach(new AlertDialog.Builder(MapTheme.wrap(activity)).setTitle(dev.pgrazor.PtBr.tr("Busca de Pokémon e rastreadores"))
             .setNegativeButton(dev.pgrazor.PtBr.tr("Cancel"), null).create(), labels, which -> {
-                if (which == 0) LiveFeedDialog.show(activity); else PogoFeedDialog.show(activity);
+                if (which == 0) LiveFeedDialog.showPokemonSearch(activity);
+                else if (which == 1) LiveFeedDialog.show(activity);
+                else PogoFeedDialog.show(activity);
             });
         DialogLifecycle.bind(activity, choose, null);
         choose.setOnShowListener(d -> MapTheme.styleButtons(choose));
