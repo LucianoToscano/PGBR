@@ -49,7 +49,7 @@ def probe(name, url, body=None):
                 if k in result]
         sizes = {k: len(result[k]) for k in keys if isinstance(result[k], list)}
         print(f"{name}: HTTP_{status} JSON_object fields={','.join(keys)} list_lengths={sizes}")
-        for group in ("spawns", "raids"):
+        for group in ("spawns", "raids", "items"):
             arr = result.get(group)
             if isinstance(arr, list) and arr and isinstance(arr[0], dict):
                 # Only field names/types; no coordinates, IV, encounter IDs or private values.
