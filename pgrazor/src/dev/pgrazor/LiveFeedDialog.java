@@ -313,6 +313,19 @@ public final class LiveFeedDialog {
                 sources.addView(live, new LinearLayout.LayoutParams(0, dp(44), 1));
                 sources.addView(list, new LinearLayout.LayoutParams(0, dp(44), 1));
                 root.addView(sources);
+                Button more = button("Mais fontes: PGSharp, iPogo, Pokémod e PGTools");
+                more.setOnClickListener(v -> new AlertDialog.Builder(ui)
+                    .setTitle("Fontes e créditos")
+                    .setMessage("Conectadas nesta barra:\n"
+                        + "• PokeList / Moonani: endpoint identificado por análise estática, experimental; "
+                        + "dados só são exibidos quando retornados pela fonte.\n"
+                        + "• LivePokeMap: exige sessão própria e respeita permissões.\n\n"
+                        + "Outras fontes: PGSharp, iPogo, Pokémod e PGTools possuem recursos próprios, "
+                        + "mas seus endpoints de integração ainda não foram verificados. "
+                        + "Não exibimos dados de outra fonte usando esses nomes.\n\n"
+                        + "PoGoCoordinates permanece no menu de feeds com seu próprio login e limites.")
+                    .setPositiveButton("Entendi", null).show());
+                root.addView(more, new LinearLayout.LayoutParams(-1, dp(44)));
             }
 
             LinearLayout toolbar = new LinearLayout(ui);
