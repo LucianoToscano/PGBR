@@ -415,18 +415,24 @@ public final class Pad {
             float density=getResources().getDisplayMetrics().density;
             float size=Math.min(Math.min(getWidth(),getHeight()),Control.vgpIconSize()*density);
             if(icon!=null){
+                float ratio=Math.min(size/icon.getWidth(),size/icon.getHeight());
+                float w=icon.getWidth()*ratio,h=icon.getHeight()*ratio;
                 if(getParent() instanceof View){
                     View container=(View)getParent();
-                    if(getX()>=(container.getWidth()-getWidth()-dp(3)))
-                        centerX=getWidth()-size/2f;
+                    // The tappable hitbox stays >=48dp for accessibility, while
+                    // the image itself (even a 28-32dp custom sprite) may visibly
+                    // touch all four corners of the usable game viewport.
+                    android.graphics.Rect safe=UiViewport.vgpBounds(container);
+                    centerX=UiViewportPolicy.edgeAlignedCenter(
+                            getX(),safe.left,safe.right,getWidth(),w);
+                    centerY=UiViewportPolicy.edgeAlignedCenter(
+                            getY(),safe.top,safe.bottom,getHeight(),h);
                 }
                 if((style==1||style==3)&&Control.vgpBackgroundOpacity()>0){
                     glow.setStyle(Paint.Style.FILL);glow.setShader(null);
                     glow.setColor(Color.argb(Math.round(Control.vgpBackgroundOpacity()*2.55f),218,225,231));
                     canvas.drawCircle(centerX,centerY,size*.50f,glow);
                 }
-                float ratio=Math.min(size/icon.getWidth(),size/icon.getHeight());
-                float w=icon.getWidth()*ratio,h=icon.getHeight()*ratio;
                 dst.set(centerX-w/2,centerY-h/2,centerX+w/2,centerY+h/2);
                 art.setAlpha(Math.round(Control.vgpIconOpacity()*2.55f));
                 canvas.drawBitmap(icon,null,dst,art);
