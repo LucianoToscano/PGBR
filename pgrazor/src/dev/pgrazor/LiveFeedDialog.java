@@ -101,7 +101,8 @@ public final class LiveFeedDialog {
         private final LiveFeedClient client;
         private final PokeListFeedClient pokeList = new PokeListFeedClient();
         private final IFlowGoFeedClient iFlowGo = new IFlowGoFeedClient();
-        /** 0=LivePokeMap, 1=PokeList/Moonani (Pokémon only), 2=iFlowGo. */
+        private final RocketMapFeedClient rocketMap = new RocketMapFeedClient();
+        /** 0=LivePokeMap, 1=PokeList/Moonani (Pokémon only), 2=iFlowGo, 3=RocketMap. */
         private int provider;
         private final LiveFeedIcons icons;
         private volatile org.json.JSONObject speciesNames;
@@ -125,6 +126,7 @@ public final class LiveFeedDialog {
         /** Access-denied is permanent until a deliberate retry, never polled. */
         private boolean pokeListAccessDenied;
         private boolean iFlowGoAccessDenied;
+        private boolean rocketMapAccessDenied;
         private int refreshSeconds = DEFAULT_REFRESH_SECONDS;
         private String note = "", lastError;
         private int categoryIndex, radiusIndex = 1;
@@ -149,8 +151,8 @@ public final class LiveFeedDialog {
             } catch (RuntimeException ignored) { raidFilters = RaidFeedFilters.defaults(); }
             pokemonQuery = prefs.getString("pokemon_query_v1", "");
             if (pokemonQuery == null || pokemonQuery.length() > 80) pokemonQuery = "";
-            provider = pokemonSearchMode ? clamp(prefs.getInt("pokemon_provider_v1", 2), 0, 2)
-                    : raidSearchMode ? clamp(prefs.getInt("raid_provider_v1", 2), 0, 2) : 0;
+            provider = pokemonSearchMode ? clamp(prefs.getInt("pokemon_provider_v1", 2), 0, 3)
+                    : raidSearchMode ? clamp(prefs.getInt("raid_provider_v1", 2), 0, 3) : 0;
             // iFlowGo offers a verified-in-network area feed without requiring a LivePokeMap login.
             // Existing explicit provider selections remain saved independently per search.
             categoryIndex = pokemonSearchMode ? 1 : raidSearchMode ? 4
@@ -219,6 +221,11 @@ public final class LiveFeedDialog {
                 Button liveAlternative = button("Consultar iFlowGo sem login LivePokeMap");
                 form.addView(liveAlternative, new LinearLayout.LayoutParams(-1, dp(52)));
                 liveAlternative.setOnClickListener(v -> selectProvider(2));
+            }
+            if (pokemonSearchMode || raidSearchMode) {
+                Button rocket = button("Usar servidor RocketMap HTTPS");
+                form.addView(rocket, new LinearLayout.LayoutParams(-1, dp(52)));
+                rocket.setOnClickListener(v -> selectProvider(3));
             }
             if (pokemonSearchMode) {
                 Button back = button("Consultar PokeList / Moonani (experimental)");
@@ -349,7 +356,22 @@ public final class LiveFeedDialog {
                     sources.addView(list, new LinearLayout.LayoutParams(0, dp(44), 1));
                 }
                 sources.addView(iflow, new LinearLayout.LayoutParams(0, dp(44), 1));
-                root.addView(sources);
+                Button rocket = segButton("RocketMap");
+                rocket.setOnClickListener(v -> selectProvider(3));
+                rocket.setTypeface(null, provider == 3
+                        ? android.graphics.Typeface.BOLD : android.graphics.Typeface.NORMAL);
+                sources.addView(rocket, new LinearLayout.LayoutParams(0, dp(44), 1));
+                // Horizontal scrolling prevents four source labels from being
+                // clipped on narrow Android screens.
+                HorizontalScrollView scroll = new HorizontalScrollView(ui);
+                scroll.setHorizontalScrollBarEnabled(false);
+                scroll.addView(sources);
+                root.addView(scroll);
+                if (provider == 3) {
+                    Button config = button("Configurar servidor RocketMap HTTPS");
+                    config.setOnClickListener(v -> configureRocketMap());
+                    root.addView(config, new LinearLayout.LayoutParams(-1, dp(44)));
+                }
                 Button more = button("Fontes, autorização e créditos");
                 more.setOnClickListener(v -> new AlertDialog.Builder(ui)
                     .setTitle("Fontes e créditos")
@@ -357,6 +379,7 @@ public final class LiveFeedDialog {
                         + "• iFlowGo: busca mundial Pokémon por página e radar de Reides por área (até 25 km), "
                         + "consultado via HTTPS. O acesso pode mudar e exige confirmação "
                         + "das condições de integração do fornecedor.\n"
+                        + "• RocketMap: servidor próprio ou autorizado, com scanner conectado; nenhum servidor público é incluído.\n"
                         + "• LivePokeMap: exige conta própria e respeita suas permissões.\n"
                         + "• PokeList / Moonani: experimental, apenas Pokémon; "
                         + "a fonte pode negar acesso (HTTP 403).\n\n"
@@ -434,7 +457,7 @@ public final class LiveFeedDialog {
                 radiusButtons = new Button[RADII.length];
                 for (int i = 0; i < RADII.length; i++) {
                     final int index = i;
-                    Button b = segButton(provider == 2 && i == 3 && raidSearchMode ? "25 km" : RADIUS_LABELS[i]);
+                    Button b = segButton((provider == 3 || provider == 2 && raidSearchMode) && i == 3 ? "25 km" : RADIUS_LABELS[i]);
                     b.setOnClickListener(v -> selectRadius(index));
                     radiusRow.addView(b, new LinearLayout.LayoutParams(0, dp(40), 1));
                     radiusButtons[i] = b;
@@ -540,7 +563,7 @@ public final class LiveFeedDialog {
             if ((!pokemonSearchMode && !raidSearchMode) || selected == provider || closed) return;
             if (raidSearchMode && selected == 1) return;
             ++generation;
-            client.cancel(); pokeList.cancel(); iFlowGo.cancel();
+            client.cancel(); pokeList.cancel(); iFlowGo.cancel(); rocketMap.cancel();
             provider = selected;
             main.removeCallbacks(deferredFetch);
             radiusIndex = clamp(prefs.getInt(radiusPreferenceKey(), selected == 2 ? 3 : 1),
