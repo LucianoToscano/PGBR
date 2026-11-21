@@ -112,7 +112,7 @@ final class PvpBattleController {
         if ((selectedOptions & PvpBattleMode.CHARGED) != 0) {
             int choice=PvpChargedPreference.UNKNOWN;
             if ((selectedOptions & PvpBattleMode.PREFER_SUPER)!=0) {
-                boolean mayFarm=(selectedOptions&PvpBattleMode.QUICK)!=0;
+                boolean mayFarm=(selectedOptions&PvpBattleMode.QUICK)!=0&&s.quickAvailable;
                 choice=PvpChargedPreference.select(s.firstMove,s.secondMove,
                     s.attacker1,s.attacker2,s.opponent1,s.opponent2,
                     s.energy,s.fastEnergyGain,s.hpPercent,mayFarm);
