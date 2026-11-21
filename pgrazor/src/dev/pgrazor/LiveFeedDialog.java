@@ -617,6 +617,13 @@ public final class LiveFeedDialog {
                 toast("Your LivePokeMap session ended. Please sign in again.");
                 return;
             }
+            if (pokemonSearchMode && provider == 1) {
+                // Old Moonani entries often have no verified endTime. A failed
+                // refresh must never leave indefinite stale coordinates clickable.
+                entries.clear(); visible.clear(); distCache.clear();
+                lastUpdated = 0;
+                adapter.notifyDataSetChanged();
+            }
             lastError = message;
             updateStatus();
         }
