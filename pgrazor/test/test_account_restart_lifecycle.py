@@ -33,7 +33,8 @@ static android.app.Activity activity; static java.util.List<String> events=new j
 static android.app.Activity accountActivity(){return activity;}
 static void event(String k,String d){events.add(k+":"+d);}
 static void flushAccountWrites() throws java.io.IOException{}
-static void quiesceAccounts() throws java.io.IOException{}}''',
+static void quiesceAccounts() throws java.io.IOException{}
+static int syncTrainerPrivacyDisplay(){return 0;}}''',
     'dev/pgrazor/AccountProfileStore.java': '''package dev.pgrazor; class AccountProfileStore {
 static class Profile {String id="default",label="Default";}
 AccountProfileStore(java.io.File f){} Profile selected(){return new Profile();}
