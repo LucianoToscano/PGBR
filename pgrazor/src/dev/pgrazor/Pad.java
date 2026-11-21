@@ -405,7 +405,7 @@ public final class Pad {
                 artworkVersion=OverlayArtwork.version();
                 personal=trimAlpha(OverlayArtwork.load(getContext(),"vgp"));
             }
-            Bitmap icon=style==0?(on?ring:ledOff):style==3&&personal!=null?personal:
+            Bitmap icon=style==0?(ready?ring:ledOff):style==3&&personal!=null?personal:
                 (ready?deviceOn:error?deviceError:deviceOff);
             float centerX=getWidth()/2f,centerY=getHeight()/2f;
             float density=getResources().getDisplayMetrics().density;
