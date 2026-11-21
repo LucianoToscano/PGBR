@@ -6,8 +6,10 @@ on:
     branches:
       - feature/pt-br-traducao
       - feature/lt-hud-historico-locais-20261120
+    # Release metadata in README controls expected APK names; do not suppress
+    # builds on README-only corrections. Docs-only changes may be ignored.
     paths-ignore:
-      - '**/*.md'
+      - 'docs/**'
   workflow_dispatch:
     inputs:
       tag:
