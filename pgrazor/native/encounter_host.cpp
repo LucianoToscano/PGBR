@@ -1505,6 +1505,11 @@ static void sync_from_transport(uint64_t tid) {
   bool vgp_en = (g_opts.vgp_allowed && g_opts.vgp_enabled);
   uint32_t mask = (g_opts.vgp_catch_allowed ? 1u : 0u) | (g_opts.vgp_spin_allowed ? 2u : 0u);
   if (vgp_en != g_last_vgp_enabled || mask != g_last_vgp_mask) {
+    // User explicitly stopped VGP: release an old uncertain-result latch
+    // on the proven Unity owner thread, but retain all seen-key quarantine.
+    // Merely losing a readiness/foreground lease must NOT auto-unblock.
+    if (g_last_vgp_enabled && !g_opts.vgp_enabled && g_vp && tid)
+      g_vp->clear_block(tid);
     if (((!vgp_en && g_last_vgp_enabled) || (g_last_vgp_mask & ~mask)) && g_vgc) {
       g_vgc->revoke();
       clear_active_vgp_transfer();
@@ -2483,6 +2488,10 @@ static int api_update_options(const PgrEncounterHostOptions *options, uint64_t p
   bool vgp_en = (options->vgp_allowed && options->vgp_enabled);
   uint32_t mask = (options->vgp_catch_allowed ? 1u : 0u) | (options->vgp_spin_allowed ? 2u : 0u);
   if (vgp_en != g_last_vgp_enabled || mask != g_last_vgp_mask) {
+    // Mirror the typed-snapshot path: a real OFF clears only the blocked
+    // policy latch. Quarantine keys survive, preventing immediate repeats.
+    if (g_last_vgp_enabled && !options->vgp_enabled && g_vp && tid)
+      g_vp->clear_block(tid);
     if (((!vgp_en && g_last_vgp_enabled) || (g_last_vgp_mask & ~mask)) && g_vgc && tid != 0) {
       g_vgc->revoke();
       clear_active_vgp_transfer();
