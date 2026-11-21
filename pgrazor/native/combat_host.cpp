@@ -572,6 +572,7 @@ struct PinnedArgs {
     ~PinnedArgs(){for(size_t i=count;i>0;--i)if(handles[i-1])reinterpret_cast<void(*)(uintptr_t)>(g_cfg.gchandle_free)(handles[i-1]);}
     void *get(size_t i)const{return handles[i]?reinterpret_cast<void*(*)(uintptr_t)>(g_cfg.gchandle_get_target)(handles[i]):borrowed[i];}
 };
+#include "pvp_probe.inc"
 bool rocket_gate(uint64_t *tid){return (g_capabilities.load()&PGR_CBH_CAP_ROCKET_COMBAT)&&g_rocket_combat&&observation_allowed(tid);}
 bool battle_gate(uint64_t *tid){return (g_capabilities.load()&PGR_CBH_CAP_BATTLES)&&g_battles&&observation_allowed(tid);}
 void hook_rk_enter(void *self,void *a1, void *a2, void *method){
@@ -591,7 +592,9 @@ void hook_rk_exit(void *self,void *method){
 void hook_rk_ui_update(void *self,uint8_t a1, void *method){
  auto orig=reinterpret_cast<FnPtrBoolPtr>(load_original(HK_RK_UI_UPDATE));FrameGuard frame;uint64_t tid=0;
  if(!rocket_gate(&tid)){orig(self,a1,method);return;}PinnedArgs pins{self};
- if(pins.valid&&rocket_gate(&tid)){g_rocket_combat->observe(PGR_RC_OBS_UI_UPDATE,pins.get(0),0,tid);
+ if(pins.valid&&rocket_gate(&tid)){
+  observe_pvp_legacy_ui(pins.get(0),tid);
+  g_rocket_combat->observe(PGR_RC_OBS_UI_UPDATE,pins.get(0),0,tid);
   drain_leaf_events(tid);}orig(pins.get(0),a1,method);
 }
 void hook_rk_ui_close(void *self,void *method){
@@ -1318,6 +1321,9 @@ int finish_setup_locked(uint64_t tid) {
     } else {
         transport_ready_action(25, false, "Unavailable: battle-metadata");
     }
+
+    // PvP observation is separate from gameplay; failing the probe never blocks Rocket/PvE.
+    if(want_rocket)configure_pvp_observation();
 
     const uint32_t caps = g_capabilities.load(std::memory_order_acquire);
     if ((want_rocket || want_battles) &&
