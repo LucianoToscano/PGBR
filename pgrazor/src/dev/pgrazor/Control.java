@@ -312,6 +312,7 @@ public final class Control {
         if(ShundoSniper.active())return "VGP aguardando: Shundo Sniper tem prioridade.";
         if(AutoRaid.running())return "VGP aguardando: Auto Raid tem prioridade.";
         String nativeState=vgp.status();
+        if(nativeState==null)nativeState="";
         String nativeLower=nativeState.toLowerCase(java.util.Locale.ROOT);
         if(nativeLower.contains("response timed out") ||
            nativeLower.contains("native vgp error") ||
