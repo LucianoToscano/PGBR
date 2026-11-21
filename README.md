@@ -1,19 +1,19 @@
 <p align="center"><img src="pgrazor/branding/pgbr-logo.webp" width="92" alt="Logotipo PGBR"></p>
 
 <h1 align="center">PGBR</h1>
-<p align="center"><strong>PGBR-v0.00.21-LT · Edição brasileira para Android</strong></p>
+<p align="center"><strong>PGBR-v0.00.22-LT · Edição brasileira para Android</strong></p>
 <p align="center">Controles de localização, joystick, captura, rotas e recursos opcionais de automação para Pokémon GO.</p>
 
-> **Status:** LT021 em validação. Corrige o posicionamento da VGP nos cantos após redimensionar a interface; adiciona busca unificada de Pokémon com LivePokeMap e PokeList/Moonani (conector experimental ainda sem validação online), créditos de origem, sprites e teleporte confirmado; evita mostrar ícones de itens com categoria incorreta. PGSharp, iPogo, Pokémod e PGTools permanecem pendentes de conexão autorizada e testada.
+> **Status:** LT022 em validação. Teste real da PokeList/Moonani no GitHub Actions resultou em **HTTP 403**, sem retorno de Pokémon nem coordenadas. A busca unificada não repete requisições automaticamente após recusa, começa pelo LivePokeMap por padrão e isola respostas antigas de filtros/fornecedores. Os feeds de PGSharp, iPogo, Pokémod e PGTools aguardam endpoint e acesso autorizado verificáveis; nenhum dado foi inventado ou atribuído a terceiros.
 
 ## Baixar o PGBR
 
-A **[LT020 está publicada](https://github.com/LucianoToscano/PGBR/releases/tag/v0.00.20-LT)** como versão anterior. Não confunda seus arquivos com os da LT021.
+A **[LT021 está publicada](https://github.com/LucianoToscano/PGBR/releases/tag/v0.00.21-LT)** como versão anterior. Não confunda seus arquivos com os da LT022.
 
-Acompanhe as **[compilações completas no GitHub Actions](https://github.com/LucianoToscano/PGBR/actions/workflows/pgbr-build-full-ptbr-candidate.yml)**. Somente após uma execução LT021 bem-sucedida, baixe o artefato `PGBR-v0.00.21-LT-APKs` ou a nova release, que devem conter:
-- `PGBR-v0.00.21-LT.apk` — instalador sem Root.
-- `PGBR-v0.00.21-LT-Root.apk` — instalador com Root.
-- `PGBR-v0.00.21-LT-Root-module.zip` — módulo para Magisk/KernelSU/APatch.
+Acompanhe as **[compilações completas no GitHub Actions](https://github.com/LucianoToscano/PGBR/actions/workflows/pgbr-build-full-ptbr-candidate.yml)**. Somente após uma execução LT022 bem-sucedida, baixe o artefato `PGBR-v0.00.22-LT-APKs` ou a nova release, que devem conter:
+- `PGBR-v0.00.22-LT.apk` — instalador sem Root.
+- `PGBR-v0.00.22-LT-Root.apk` — instalador com Root.
+- `PGBR-v0.00.22-LT-Root-module.zip` — módulo para Magisk/KernelSU/APatch.
 - Comprovantes de compilação e `SHA256SUMS.txt`.
 
 A assinatura do PGBR pode ser diferente da de outras instalações. Não desinstale sua versão anterior sem preservar os dados necessários.
