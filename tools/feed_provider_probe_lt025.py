@@ -49,6 +49,10 @@ def probe(name, url, body=None):
                 if k in result]
         sizes = {k: len(result[k]) for k in keys if isinstance(result[k], list)}
         print(f"{name}: HTTP_{status} JSON_object fields={','.join(keys)} list_lengths={sizes}")
+        if name == "IFLOWGO_SPECIES_25" and isinstance(result.get("items"), list):
+            rows = [row for row in result["items"] if isinstance(row, dict)]
+            match = sum(row.get("pokemon_id") == 25 for row in rows)
+            print(f"{name}: species_match_count={match} rows_count={len(rows)}")
         for group in ("spawns", "raids", "items"):
             arr = result.get(group)
             if isinstance(arr, list) and arr and isinstance(arr[0], dict):
@@ -61,9 +65,8 @@ def probe(name, url, body=None):
         print(f"{name}: HTTP_{status} JSON_{type(result).__name__}")
 
 def main():
-    # One short, non-paginated request to test the documented global-search route.
-    query = urllib.parse.urlencode({"page": "1", "limit": "5"})
-    probe("IFLOWGO_GLOBAL_SEARCH",
+    query = urllib.parse.urlencode({"page": "1", "pokemon_id": "25"})
+    probe("IFLOWGO_SPECIES_25",
           "https://pokecoords.iflowgo.com/iflowgopokecoords/api/v1/pokemon-search?" + query)
 
 if __name__ == "__main__":
