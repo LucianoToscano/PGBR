@@ -108,7 +108,7 @@ A disponibilidade de serviço externo é variável. Falhas `401/403`, `429 Retry
 ## 9. Backups, retenção e recuperação
 - Bibliotecas pessoais e conversas têm APKs ZIP LT027/LT031 recuperados, na Biblioteca ChatGPT: `/PGBR/Backups-2026-11-21/`. A existência na Biblioteca **não prova cópia no Google Drive**.
 - Registro do backup: Google Drive `Projetos/PokeGoBR/03_Relatorios/PGBR_BACKUP_VERIFICADO_2026-11-21.md`; é manifesto, **não backup de 180 MB**.
-- Artefatos LT032 disponíveis em GitHub Actions (IDs/expiração ``3`); baixar e preservar integralmente antes do vencimento. Retenção pode ser alterada; reconfirmar.
+- Artefatos LT032 disponíveis em GitHub Actions (IDs e expiração informados na seção 3); baixar e preservar integralmente antes do vencimento. Retenção pode ser alterada; reconfirmar.
 - Releases anteriores não devem ser deletadas, nem ZIP original de entrada ou backup sobrescrito. Manter opção de retorno previamente instalada e chave de assinatura correspondente.
 - O arquivo antigo `POKEGOBR_ARQUIVO_MESTRE_COMPLETO_v1.0_2026-11-01.zip` em `Projetos/PokeGoBR/00_Arquivo_Mestre` pertence ao contexto histórico **PokeGoBR**, não substitui este mestre do PGBR nem deve ser misturado automaticamente.
 
