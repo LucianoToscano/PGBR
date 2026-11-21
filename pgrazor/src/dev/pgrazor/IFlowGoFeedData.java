@@ -42,6 +42,17 @@ final class IFlowGoFeedData {
         return new LiveFeedData.Snapshot(entries, now, 60, note);
     }
 
+    /** The world endpoint returns {items:[...], total:n}; item fields match nearby spawns. */
+    static LiveFeedData.Snapshot parseGlobal(JSONObject body, long now) throws JSONException {
+        if (body == null || body.optJSONArray("items") == null)
+            throw new JSONException("iFlowGo global: campo items ausente");
+        LiveFeedData.Snapshot parsed = parse(
+                new JSONObject().put("spawns", body.getJSONArray("items")), now, false);
+        String note = "Fonte: iFlowGo · busca global (primeira página; cobertura e limites "
+                + "da fonte). Resultados filtrados no aparelho.";
+        return new LiveFeedData.Snapshot(parsed.entries, now, 60, note);
+    }
+
     private static LiveFeedData.Entry spawn(JSONObject o, double lat, double lon, long now) {
         int dex = number(o, "pokemon_id", 1, 1025);
         if (dex < 1) return null;
