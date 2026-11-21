@@ -347,20 +347,20 @@ public final class LiveFeedDialog {
                         ? android.graphics.Typeface.BOLD : android.graphics.Typeface.NORMAL);
                 iflow.setTypeface(null, provider == 2
                         ? android.graphics.Typeface.BOLD : android.graphics.Typeface.NORMAL);
-                sources.addView(live, new LinearLayout.LayoutParams(0, dp(44), 1));
+                sources.addView(live, new LinearLayout.LayoutParams(-2, dp(44)));
                 if (pokemonSearchMode) {
                     Button list = segButton("PokeList");
                     list.setOnClickListener(v -> selectProvider(1));
                     list.setTypeface(null, provider == 1
                             ? android.graphics.Typeface.BOLD : android.graphics.Typeface.NORMAL);
-                    sources.addView(list, new LinearLayout.LayoutParams(0, dp(44), 1));
+                    sources.addView(list, new LinearLayout.LayoutParams(-2, dp(44)));
                 }
-                sources.addView(iflow, new LinearLayout.LayoutParams(0, dp(44), 1));
+                sources.addView(iflow, new LinearLayout.LayoutParams(-2, dp(44)));
                 Button rocket = segButton("RocketMap");
                 rocket.setOnClickListener(v -> selectProvider(3));
                 rocket.setTypeface(null, provider == 3
                         ? android.graphics.Typeface.BOLD : android.graphics.Typeface.NORMAL);
-                sources.addView(rocket, new LinearLayout.LayoutParams(0, dp(44), 1));
+                sources.addView(rocket, new LinearLayout.LayoutParams(-2, dp(44)));
                 // Horizontal scrolling prevents four source labels from being
                 // clipped on narrow Android screens.
                 HorizontalScrollView scroll = new HorizontalScrollView(ui);
@@ -404,6 +404,10 @@ public final class LiveFeedDialog {
                 // automatic retries against an endpoint that refused access.
                 if (provider == 2 && iFlowGoAccessDenied) {
                     iFlowGoAccessDenied = false;
+                    lastFetchStartedElapsed = 0;
+                }
+                if (provider == 3 && rocketMapAccessDenied) {
+                    rocketMapAccessDenied = false;
                     lastFetchStartedElapsed = 0;
                 }
                 if (provider == 1 && pokeListAccessDenied) {
@@ -574,6 +578,7 @@ public final class LiveFeedDialog {
             backoffUntilElapsed = 0;
             pokeListAccessDenied = false;
             iFlowGoAccessDenied = false;
+            rocketMapAccessDenied = false;
             lastFetchStartedElapsed = 0;
             lastUpdated = 0;
             lastError = null; note = "";
@@ -596,7 +601,7 @@ public final class LiveFeedDialog {
             main.removeCallbacks(deferredFetch);
             radiusIndex = index; prefs.edit().putInt(radiusPreferenceKey(), index).apply();
             generation++;
-            client.cancel(); pokeList.cancel(); iFlowGo.cancel();
+            client.cancel(); pokeList.cancel(); iFlowGo.cancel(); rocketMap.cancel();
             fetchInFlight = false; // old generation cannot keep the new request blocked
             highlightAll();
             rebuildVisible(); adapter.notifyDataSetChanged();
@@ -719,7 +724,7 @@ public final class LiveFeedDialog {
             entries.clear(); visible.clear(); distCache = new HashMap<>();
             saveFilters();
             generation++;
-            client.cancel(); pokeList.cancel(); iFlowGo.cancel();
+            client.cancel(); pokeList.cancel(); iFlowGo.cancel(); rocketMap.cancel();
             fetchInFlight = false; // previous filter request is obsolete
             rebuildVisible(); adapter.notifyDataSetChanged();
             requestFetch();
@@ -801,13 +806,14 @@ public final class LiveFeedDialog {
         private void requestFetch() {
             if (closed || showingLogin || fetchInFlight) return;
             if ((provider == 1 && pokeListAccessDenied)
-                    || (provider == 2 && iFlowGoAccessDenied)) {
+                    || (provider == 2 && iFlowGoAccessDenied)
+                    || (provider == 3 && rocketMapAccessDenied)) {
                 updateStatus(); return;
             }
             // iFlowGo reports IV, CP, level, species and coordinates, but not
             // trainer-specific Shiny, size, backgrounds or PvP ranks. Never
             // silently show unfiltered results under one of those filter labels.
-            if (provider == 2 && pokemonSearchMode) {
+            if ((provider == 2 || provider == 3) && pokemonSearchMode) {
                 try {
                     org.json.JSONObject selected = filters.toStoredJson();
                     boolean unsupported = selected.optBoolean("shiny_only", false)
@@ -818,7 +824,8 @@ public final class LiveFeedDialog {
                     if (unsupported) {
                         entries.clear(); visible.clear(); distCache.clear();
                         lastUpdated = 0;
-                        lastError = "iFlowGo não informa Shiny, fundos, tamanhos XXS/XXL "
+                        lastError = sourceName()
+                                + " não confirma Shiny individual, fundos, tamanhos XXS/XXL "
                                 + "nem rankings PvP. Desative esses filtros ou escolha outra fonte.";
                         adapter.notifyDataSetChanged();
                         updateStatus();
@@ -830,6 +837,13 @@ public final class LiveFeedDialog {
                     return;
                 }
             }
+            final String configuredRocket = prefs.getString("rocketmap_https_url_v1", "");
+            if (provider == 3 && (configuredRocket == null || configuredRocket.trim().isEmpty())) {
+                lastError = "Configure a URL HTTPS de um servidor RocketMap "
+                        + "próprio ou autorizado. Não há servidor padrão.";
+                updateStatus();
+                return;
+            }
             final int selectedDex = sourceDexFilter();
             final String queryAtRequest = pokemonQuery;
             if (pokemonSearchMode && provider == 1 && radiusIndex == 3 && selectedDex < 1) {
@@ -840,7 +854,7 @@ public final class LiveFeedDialog {
             if (nowE < backoffUntilElapsed) { updateStatus(); return; }
             // PokeList lacks published rate-limit semantics. Avoid rapid manual
             // refreshes even when the server did not return Retry-After.
-            if (provider == 1 && lastFetchStartedElapsed > 0
+            if ((provider == 1 || provider == 3) && lastFetchStartedElapsed > 0
                     && nowE - lastFetchStartedElapsed < 60000) {
                 updateStatus(); return;
             }
@@ -880,6 +894,8 @@ public final class LiveFeedDialog {
                             ? pokemonSearchMode && Double.isInfinite(radiusKm)
                               ? iFlowGo.fetchGlobal(remoteDex)
                               : iFlowGo.fetch(lat, lon, radiusKm, raidSearchMode)
+                            : selectedProvider == 3
+                            ? rocketMap.fetch(configuredRocket, lat, lon, radiusKm, raidSearchMode)
                             : client.fetch(lat, lon, radiusKm, f);
                     if (selectedProvider == 0 && Double.isInfinite(radiusKm))
                         Control.event("feed-global", snap.entries.size() + " results");
@@ -894,6 +910,8 @@ public final class LiveFeedDialog {
                             ? "Não foi possível consultar PokeList / Moonani. Fonte indisponível."
                             : selectedProvider == 2
                             ? "Não foi possível consultar iFlowGo. Verifique a rede."
+                            : selectedProvider == 3
+                            ? "Não foi possível consultar RocketMap. Confira URL, HTTPS e permissões."
                             : "Couldn't reach LivePokeMap. Check your connection."));
                 }
             });
