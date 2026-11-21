@@ -54,28 +54,8 @@ public final class PokemonSelectorDialog {
         final String normalized;
         Species(int dex, String name) {
             this.dex = dex; this.name = name;
-            this.normalized = normalize(name);
+            this.normalized = PokemonSelectorPolicy.normalize(name);
         }
-    }
-
-    /** Pure functions also validated in offline JVM tests. */
-    static String normalize(String query) {
-        if (query == null) return "";
-        return Normalizer.normalize(query.trim().toLowerCase(Locale.ROOT), Normalizer.Form.NFD)
-                .replaceAll("\\p{M}+", "").replaceAll("\\s+", " ");
-    }
-    static boolean matchesSpecies(int dex, String name, String query) {
-        String q = normalize(query).replace("#", "");
-        return q.isEmpty() || normalize(name).contains(q) || Integer.toString(dex).startsWith(q);
-    }
-    static boolean validResult(LiveFeedData.Entry entry, int selectedDex, long now) {
-        return entry != null && entry.kind == LiveFeedData.Kind.POKEMON
-                && selectedDex >= 1 && entry.dexId == selectedDex
-                && entry.expiresAt > now && CooldownState.valid(entry.lat, entry.lon);
-    }
-    static String timeRemaining(long expiresAt, long now) {
-        long seconds = Math.max(0L, (expiresAt-now+999L)/1000L);
-        return String.format(Locale.US, "%d:%02d", seconds/60L, seconds%60L);
     }
 
     private static final class Screen {
@@ -241,7 +221,7 @@ public final class PokemonSelectorDialog {
         private void updateSuggestions(String query) {
             suggestions.clear();
             for (Species species:catalog) {
-                if (matchesSpecies(species.dex,species.name,query)) {
+                if (PokemonSelectorPolicy.matchesSpecies(species.dex,species.name,query)) {
                     suggestions.add(species);
                     if (suggestions.size() >= 80) break;
                 }
@@ -249,7 +229,7 @@ public final class PokemonSelectorDialog {
         }
 
         private int findUniqueExactDex(String input) {
-            String q = normalize(input);
+            String q = PokemonSelectorPolicy.normalize(input);
             String numeric = q.startsWith("#") ? q.substring(1) : q;
             try {
                 int number = Integer.parseInt(numeric);
@@ -344,7 +324,7 @@ public final class PokemonSelectorDialog {
             fetching=false;
             long now=System.currentTimeMillis();
             if(snapshot!=null && snapshot.entries!=null) for(LiveFeedData.Entry entry:snapshot.entries)
-                if(validResult(entry,dex,now)) results.add(entry);
+                if(PokemonSelectorPolicy.validResult(entry,dex,now)) results.add(entry);
             Collections.sort(results,Comparator.comparingLong(e->e.expiresAt));
             adapter.notifyDataSetChanged();
             status.setText(results.isEmpty()
@@ -368,16 +348,16 @@ public final class PokemonSelectorDialog {
         private void pruneExpired() {
             long now=System.currentTimeMillis();
             for (int i=results.size()-1;i>=0;i--)
-                if (!validResult(results.get(i),selectedDex,now)) results.remove(i);
+                if (!PokemonSelectorPolicy.validResult(results.get(i),selectedDex,now)) results.remove(i);
         }
 
         private void confirmTeleport(LiveFeedData.Entry entry) {
-            if (closed || !validResult(entry,selectedDex,System.currentTimeMillis())) {
+            if (closed || !PokemonSelectorPolicy.validResult(entry,selectedDex,System.currentTimeMillis())) {
                 Toast.makeText(activity,"A aparição expirou. Escolha outra.",Toast.LENGTH_SHORT).show();
                 pruneExpired();adapter.notifyDataSetChanged();return;
             }
             TeleportDialog.confirm(activity,entry.lat,entry.lon,(lat,lon)-> {
-                if (closed || !validResult(entry,selectedDex,System.currentTimeMillis())
+                if (closed || !PokemonSelectorPolicy.validResult(entry,selectedDex,System.currentTimeMillis())
                         || activity.isFinishing() || activity.isDestroyed()) return false;
                 if (!Control.canEnable()) {
                     Toast.makeText(activity,
@@ -435,7 +415,7 @@ public final class PokemonSelectorDialog {
                 row.addView(words,new LinearLayout.LayoutParams(0,-2,1));
                 if (showResults) {
                     LiveFeedData.Entry entry=results.get(position);
-                    title.setText(selectedName+" · "+timeRemaining(entry.expiresAt,System.currentTimeMillis()));
+                    title.setText(selectedName+" · "+PokemonSelectorPolicy.timeRemaining(entry.expiresAt,System.currentTimeMillis()));
                     StringBuilder line=new StringBuilder();
                     if (entry.cp>=0) line.append("PC ").append(entry.cp).append(" · ");
                     if (entry.iv>=0) line.append(String.format(Locale.US,"IV %.1f%% · ",entry.iv));
