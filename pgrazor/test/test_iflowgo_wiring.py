@@ -24,6 +24,8 @@ class IFlowGoWiringTests(unittest.TestCase):
         self.assertIn('raid_end_at', parser)
         self.assertIn('expires_at', parser)
         self.assertIn('IFlowGoFeedData.parse', client)
+        self.assertIn('IFlowGoFeedData.parseGlobal', client)
+        self.assertIn('iFlowGo.fetchGlobal()', source)
         self.assertIn('LiveFeedDialog.showPokemonSearch(activity)', chooser)
         self.assertIn('LiveFeedDialog.showRaidSearch(activity)', chooser)
         self.assertIn('TeleportDialog.confirm(activity, e.lat, e.lon,', source)
