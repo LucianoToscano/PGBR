@@ -296,7 +296,7 @@ class ControlJavaTests(unittest.TestCase):
             tested = subprocess.run([str(runtime), '-cp', str(classes), 'dev.pgrazor.VgpControllerTest'],
                                     capture_output=True, text=True, timeout=15)
             self.assertEqual(tested.returncode, 0, tested.stdout + tested.stderr)
-            self.assertIn('PASS: real Control VGP', tested.stdout)
+            self.assertIn('PASS: VGP simple manual toggle', tested.stdout)
             tested = subprocess.run([str(runtime), '-cp', str(classes), 'dev.pgrazor.CooldownTest'],
                                     capture_output=True, text=True, timeout=15)
             self.assertEqual(tested.returncode, 0, tested.stdout + tested.stderr)
