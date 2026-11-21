@@ -382,16 +382,36 @@ void drain_leaf_events(uint64_t tid) {
                     queue_event(PGR_CBH_EV_ROCKET_COMBAT_READY, 1, 0, tid, "{\"available\":true}");
                     break;
                 case PGR_RC_EVT_SCOPE:
-                    std::snprintf(buf, sizeof(buf), "{\"active\":%s}", rev.aux ? "true" : "false");
-                    queue_event(PGR_CBH_EV_ROCKET_SCOPE, rev.aux ? 1 : 0, 0, tid, buf);
-                    transport_text_action(47, rev.aux ? "Rocket battle active" : "Ready");
+                    if(rev.aux==2||rev.aux==3){
+                        const bool opened=rev.aux==2;
+                        queue_event(PGR_CBH_EV_BATTLE_SCOPE, 0x505650, opened?1:0, tid,
+                            opened?R"({"mode":"pvp","active":true,"ui":"vnext"})":
+                                   R"({"mode":"pvp","active":false,"ui":"vnext"})");
+                    }else{
+                        std::snprintf(buf, sizeof(buf), "{\"active\":%s}", rev.aux ? "true" : "false");
+                        queue_event(PGR_CBH_EV_ROCKET_SCOPE, rev.aux ? 1 : 0, 0, tid, buf);
+                        transport_text_action(47, rev.aux ? "Rocket battle active" : "Ready");
+                    }
                     break;
                 case PGR_RC_EVT_UI:
+                    if(g_pvp_ui_root){
+                        queue_event(PGR_CBH_EV_BATTLE_ACTION,1,0,tid,
+                          R"({"pvpUI":"vnext","received":true})");
+                        break;
+                    }
                     std::snprintf(buf, sizeof(buf), "{\"source\":\"%s\"}",
                                   rev.aux == 1 ? "vnext-update" : "live-update");
                     queue_event(PGR_CBH_EV_ROCKET_UI, rev.aux, 0, tid, buf);
                     break;
                 case PGR_RC_EVT_ACTION:
+                    if(g_pvp_ui_root){
+                        const char *act=rev.id==PGR_RC_ACT_SHIELD?"shield":
+                                        rev.id==PGR_RC_ACT_CHARGED?"charged":"quick";
+                        std::snprintf(buf,sizeof(buf),
+                          "{\"pvpAction\":\"%s\",\"path\":\"vnext\",\"invoked\":true}",act);
+                        queue_event(PGR_CBH_EV_BATTLE_ACTION,rev.id,rev.aux,tid,buf);
+                        break;
+                    }
                     if (rev.id == PGR_RC_ACT_SHIELD) {
                         queue_event(PGR_CBH_EV_ROCKET_ACTION, rev.id, rev.aux, tid,
                                     "{\"action\":\"shield\"}");
