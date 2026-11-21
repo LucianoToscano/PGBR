@@ -2,8 +2,10 @@ name: PGBR LT027 - APK completo de teste privado
 on:
   push:
     branches: [feat/lt027-pokemon-selector-20261121]
+# The pinned original is a GitHub draft-release asset; accessing drafts requires
+# a token with maintainer-level visibility. Restrict this workflow to our branch.
 permissions:
-  contents: read
+  contents: write
 concurrency:
   group: pgbr-lt027-apk
   cancel-in-progress: true
