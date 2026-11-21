@@ -102,6 +102,8 @@ def main():
     run('java','-cp',BUILD/'tests','dev.pgrazor.ShundoPacingTest')
     run('javac','-encoding','UTF-8','-d',BUILD/'tests',ROOT/'src/dev/pgrazor/PvpBattleMode.java',ROOT/'test/PvpBattleModeTest.java')
     run('java','-cp',BUILD/'tests','dev.pgrazor.PvpBattleModeTest')
+    run('javac','-encoding','UTF-8','-d',BUILD/'tests',ROOT/'src/dev/pgrazor/PvpBattleMode.java',ROOT/'src/dev/pgrazor/PvpBattleController.java',ROOT/'test/PvpBattleControllerTest.java')
+    run('java','-cp',BUILD/'tests','dev.pgrazor.PvpBattleControllerTest')
     if args.test_only: return
     version = release_version(ROOT)
     # Fresh outputs prevent a failed compiler from silently reusing old classes.

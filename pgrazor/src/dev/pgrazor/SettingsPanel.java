@@ -1226,7 +1226,11 @@ final class SettingsPanel {
     }
 
     private void refreshPvpBattles() {
-        for(int i=0;i<3;i++)pvpBattleChoices[i].setChecked((Control.pvpBattleOptions()&(1<<i))!=0);
+        for(int i=0;i<3;i++){
+            pvpBattleChoices[i].setChecked((Control.pvpBattleOptions()&(1<<i))!=0);
+            // A saved preference is not proof that the game adapter is installed.
+            pvpBattleChoices[i].setEnabled(Control.pvpBattleReady());
+        }
         pvpBattleStatus.setText(Control.pvpBattleStatus());
         pvpBattleStatus.setVisibility(View.VISIBLE);
     }
