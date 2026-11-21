@@ -127,6 +127,7 @@ public final class LiveFeedDialog {
         private int categoryIndex, radiusIndex = 1;
         private LiveFeedFilters filters;      // immutable; replaced wholesale on Apply
         private Button[] catButtons, radiusButtons;
+        private Button raidFilterButton;
         private TextView feedStatus;
 
         Controller(Activity activity, Context ui, AlertDialog dialog, LinearLayout root,
@@ -418,9 +419,9 @@ public final class LiveFeedDialog {
                         + "fornecer esses dados comprovadamente.", 12);
                 attribution.setPadding(0, dp(8), 0, dp(8));
                 root.addView(attribution);
-                Button refine = button(raidFilters.summary() + " · Editar filtro");
-                refine.setOnClickListener(v -> openRaidFilters());
-                root.addView(refine, new LinearLayout.LayoutParams(-1, dp(48)));
+                raidFilterButton = button(raidFilters.summary() + " · Editar filtro");
+                raidFilterButton.setOnClickListener(v -> openRaidFilters());
+                root.addView(raidFilterButton, new LinearLayout.LayoutParams(-1, dp(48)));
             }
 
             if (pokemonSearchMode) {
@@ -527,6 +528,100 @@ public final class LiveFeedDialog {
             highlightAll();
             rebuildVisible(); adapter.notifyDataSetChanged();
             requestFetch();
+        }
+
+        /**
+         * Separate, locally applied Raid feed filters. Only fields present in
+         * LivePokeMap's raid records are offered. No PGSharp private service is used.
+         */
+        private void openRaidFilters() {
+            if (closed || showingLogin || !raidSearchMode) return;
+            LinearLayout body = new LinearLayout(ui);
+            body.setOrientation(LinearLayout.VERTICAL);
+            body.setPadding(dp(16), dp(8), dp(16), dp(8));
+            body.addView(label("Selecione filtros de reides. Campos não informados pela fonte "
+                    + "não são considerados correspondências. Tipo = código bruto retornado "
+                    + "pelo servidor (não necessariamente estrelas).", 12));
+            EditText boss = raidNumber(body, "Chefe por #Pokédex (0 = todos)", raidFilters.bossDex);
+            EditText type = raidNumber(body, "Tipo de reide da fonte (0 = todos)", raidFilters.raidType);
+            EditText remaining = raidNumber(body, "Minutos restantes (0 = todos)", raidFilters.minMinutes);
+            EditText team = raidNumber(body,
+                    "Equipe do ginásio (0 = todas; 1 = Místico, 2 = Valor, 3 = Instinto)",
+                    raidFilters.team);
+            CheckBox hatch = new CheckBox(ui);
+            hatch.setText("Somente reides com chefe confirmado");
+            hatch.setChecked(raidFilters.hatchedOnly);
+            body.addView(hatch);
+            body.addView(label("Popularidade de sala, clima favorável e elegibilidade EX "
+                    + "não são filtrados sem campos verificados do provedor.", 12));
+            android.widget.ScrollView scroll = new android.widget.ScrollView(ui);
+            scroll.addView(body);
+            AlertDialog modal = new AlertDialog.Builder(ui)
+                .setTitle("Filtros de Reides · PGBR")
+                .setView(scroll)
+                .setNegativeButton("Cancelar",null)
+                .setNeutralButton("Limpar",null)
+                .setPositiveButton("Aplicar",null)
+                .create();
+            trackOwn(modal);
+            modal.setOnShowListener(d -> {
+                MapTheme.style(body);
+                MapTheme.styleButtons(modal);
+                modal.getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener(v -> {
+                    raidFilters = RaidFeedFilters.defaults();
+                    persistRaidFilters();
+                    rebuildVisible(); adapter.notifyDataSetChanged(); updateStatus();
+                    if (raidFilterButton != null)
+                        raidFilterButton.setText(raidFilters.summary() + " · Editar filtro");
+                    modal.dismiss();
+                });
+                modal.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
+                    try {
+                        raidFilters = new RaidFeedFilters(
+                                readRaidNumber(boss, 1025), readRaidNumber(remaining, 180),
+                                readRaidNumber(type, 20), readRaidNumber(team, 3),
+                                hatch.isChecked());
+                    } catch (IllegalArgumentException invalid) {
+                        toast("Confira os valores permitidos de cada filtro.");
+                        return;
+                    }
+                    persistRaidFilters();
+                    rebuildVisible(); adapter.notifyDataSetChanged(); updateStatus();
+                    if (raidFilterButton != null)
+                        raidFilterButton.setText(raidFilters.summary() + " · Editar filtro");
+                    modal.dismiss();
+                });
+            });
+            modal.show();
+        }
+
+        private EditText raidNumber(LinearLayout body, String caption, int current) {
+            body.addView(label(caption, 13));
+            EditText field = new EditText(ui);
+            field.setSingleLine(true);
+            field.setInputType(InputType.TYPE_CLASS_NUMBER);
+            field.setText(Integer.toString(current));
+            body.addView(field, new LinearLayout.LayoutParams(-1, dp(48)));
+            return field;
+        }
+
+        private int readRaidNumber(EditText field, int maximum) {
+            String input = field.getText().toString().trim();
+            try {
+                int n = input.isEmpty() ? 0 : Integer.parseInt(input);
+                if (n < 0 || n > maximum) throw new IllegalArgumentException();
+                return n;
+            } catch (NumberFormatException invalid) { throw new IllegalArgumentException(invalid); }
+        }
+
+        private void persistRaidFilters() {
+            prefs.edit()
+                .putInt("raid_search_boss_v1",raidFilters.bossDex)
+                .putInt("raid_search_time_v1",raidFilters.minMinutes)
+                .putInt("raid_search_type_v1",raidFilters.raidType)
+                .putInt("raid_search_team_v1",raidFilters.team)
+                .putBoolean("raid_search_hatched_v1",raidFilters.hatchedOnly)
+                .apply();
         }
 
         private void openFilters() {
@@ -924,6 +1019,30 @@ public final class LiveFeedDialog {
                 }
                 Control.teleport(lat, lon);
                 toast("Teleporte solicitado: " + displayName(e));
+                dialog.dismiss();
+                return true;
+            });
+            if (confirmation != null && !children.contains(confirmation)) children.add(confirmation);
+        }
+
+        /** Same user-confirmed location action as Pokémon results, but for raids. */
+        private void confirmRaidTeleport(LiveFeedData.Entry e) {
+            if (closed || e == null || e.kind != LiveFeedData.Kind.RAID) return;
+            if (e.expiresAt <= System.currentTimeMillis()) {
+                toast("Esta reide expirou.");
+                rebuildVisible(); adapter.notifyDataSetChanged(); return;
+            }
+            if (!CooldownState.valid(e.lat, e.lon)) {
+                toast("A fonte não informou coordenadas válidas."); return;
+            }
+            AlertDialog confirmation = TeleportDialog.confirm(activity, e.lat, e.lon, (lat, lon) -> {
+                if (closed || e.expiresAt <= System.currentTimeMillis()
+                        || activity.isFinishing() || activity.isDestroyed()) return false;
+                if (!Control.canEnable()) {
+                    toast("O mecanismo de localização não está pronto."); return false;
+                }
+                Control.teleport(lat, lon);
+                toast("Teleporte solicitado para a reide: " + displayName(e));
                 dialog.dismiss();
                 return true;
             });
