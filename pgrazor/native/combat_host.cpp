@@ -665,7 +665,9 @@ void pvp_vnext_close(void *ui,uint64_t tid) {
 void hook_rk_enter(void *self,void *a1, void *a2, void *method){
  auto orig=reinterpret_cast<Fn4Ptr>(load_original(HK_RK_ENTER));FrameGuard frame;uint64_t tid=0;
  if(!rocket_gate(&tid)){orig(self,a1,a2,method);return;}PinnedArgs pins{self,a1,a2};
- if(pins.valid&&rocket_gate(&tid)){g_rocket_combat->observe(PGR_RC_OBS_SCOPE_ENTER,pins.get(0),0,tid);
+ if(pins.valid&&rocket_gate(&tid)){
+  if(g_pvp_ui_root){g_pvp_scene.reset();pvp_leave(tid,"rocket-scope-override");}
+  g_rocket_combat->observe(PGR_RC_OBS_SCOPE_ENTER,pins.get(0),0,tid);
   if(g_rocket_mini)g_rocket_mini->restore();sync_minigame_policy(now_ms());
   drain_leaf_events(tid);}orig(pins.get(0),pins.get(1),pins.get(2),method);
 }
@@ -1672,6 +1674,12 @@ int api_tick(uint64_t proven_tid) {
 
     const uint32_t caps=g_capabilities.load();
     auto terminal=[](){return g_stopping.load()||g_failed.load();};
+    bool pvp_disarm=terminal()||!g_pvp_scene.live(now_ms());
+    {std::lock_guard<std::mutex> lock(g_options_mutex);
+     pvp_disarm=pvp_disarm||(g_opts.flags&PGR_CBH_OPT_ACTIVE)==0||
+                (g_opts.flags&PGR_CBH_OPT_ROCKET_ALLOWED)==0||
+                (g_opts.rocket_mask&7u)==0;}
+    if(pvp_disarm&&g_pvp_ui_root)pvp_leave(proven_tid,terminal()?"host-stopped":"scope-ended");
     // Re-read and serialize gate publication after each managed leaf pass. A revoke
     // during Rocket work cannot be overwritten by a stale pre-tick Battle snapshot.
     if((caps&PGR_CBH_CAP_ROCKET_COMBAT)&&g_rocket_combat){refresh_leaf_gates();g_rocket_combat->tick(proven_tid,terminal()?1:0);}
@@ -1705,6 +1713,14 @@ int api_stop(uint64_t proven_tid) {
     if ((caps & PGR_CBH_CAP_ROCKET_COMBAT) && g_rocket_combat) {
         g_rocket_combat->update(0, 0, tid);
         g_rocket_combat->tick(tid, 1);
+    }
+    // The PvP host owns one extra GUI GC root outside the leaf. Never free it on a
+    // foreign thread: the next valid Unity callback will perform the final cleanup.
+    if(g_pvp_ui_root&&tid&&self_tid()==tid&&thread_attached()&&g_cfg.gchandle_free) {
+        uintptr_t old=g_pvp_ui_root;g_pvp_ui_root=0;g_pvp_was_ready=false;
+        reinterpret_cast<void(*)(uintptr_t)>(g_cfg.gchandle_free)(old);
+        queue_event(PGR_CBH_EV_BATTLE_ACTION,0,0,tid,
+            R"({"pvpExecutorReady":false,"reason":"host-stopped"})");
     }
     if ((caps & PGR_CBH_CAP_BATTLES) && g_battles) {
         g_battles->update(0, 0, 1u, tid);
