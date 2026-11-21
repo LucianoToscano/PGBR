@@ -54,6 +54,11 @@ public final class PokemonInventorySearchBuilder {
                 throw new IllegalArgumentException("Número da Pokédex fora da biblioteca atual (1–1025)");
             terms.add(Integer.toString(id));
         }
-        return String.join("&", terms);
+        StringBuilder expression = new StringBuilder();
+        for (String term : terms) {
+            if (expression.length() != 0) expression.append('&');
+            expression.append(term);
+        }
+        return expression.toString();
     }
 }
