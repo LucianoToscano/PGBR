@@ -1,0 +1,54 @@
+name: PGBR LT027 - Selector Pokémon
+on:
+  push:
+    branches:
+      - feat/lt027-pokemon-selector-20261121
+  pull_request:
+    branches:
+      - feat/lt026-rocketmap-multiservidor-20261121
+permissions:
+  contents: read
+
+jobs:
+  test-selector-and-feeds:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: android-actions/setup-android@v3
+      - name: Install Android JSON sources
+        run: sdkmanager "sources;android-36"
+      - name: Selector contract and interface
+        run: |
+          python -B -m unittest discover -s pgrazor/test -p 'test_selector_wiring.py' -v
+          python -B -m unittest discover -s pgrazor/test -p 'test_live_feed_java.py' -v
+          python -B -m unittest discover -s pgrazor/test -p 'test_iflowgo_wiring.py' -v
+          python -B -m unittest discover -s pgrazor/test -p 'test_rocketmap_wiring.py' -v
+
+  compile-android-controls:
+    runs-on: windows-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+      - name: Install Android build dependencies
+        shell: pwsh
+        run: sdkmanager "platforms;android-36" "build-tools;36.0.0" "sources;android-36"
+      - name: Prepare DEX dependencies
+        run: python -c "import sys; sys.path.insert(0, 'pgrazor'); import dex_bridges; dex_bridges.dependencies(download=True)"
+      - name: Compile PGBR control classes
+        run: python -B pgrazor/build.py
