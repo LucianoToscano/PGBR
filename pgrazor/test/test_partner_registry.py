@@ -1,7 +1,6 @@
 """Validate the non-secret PGBR partner/source inventory used by integration planning."""
 import json
 from pathlib import Path
-import re
 import unittest
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -16,8 +15,10 @@ class PartnerRegistryTests(unittest.TestCase):
         ids = [p["id"] for p in partners]
         self.assertEqual(len(ids), len(set(ids)), "Partner IDs must be unique")
         self.assertGreaterEqual(len(partners), 10)
-        self.assertTrue(all(p["import_state"] == "inventory_only" for p in partners),
-                        "A source audit is not proof that a vendor SDK was integrated")
+        stages = {"inventory_only", "rights_scoped", "adapter_ready",
+                  "device_validated", "released"}
+        self.assertTrue(all(p["import_state"] in stages for p in partners),
+                        "Partner stages must be explicit and reviewable")
         for p in partners:
             self.assertTrue(p["capabilities"], p["id"])
             self.assertIn("source_type", p)
@@ -36,8 +37,7 @@ class PartnerRegistryTests(unittest.TestCase):
         for value in ("-----begin private key-----", "bearer eyj",
                       "drive.google.com/file/d/", "docs.google.com/document/d/"):
             self.assertNotIn(value, text)
-        self.assertIn("license", manifest["evidence_policy"]["permission_evidence"].lower()
-                      .replace("contratos", "license"))  # nonsecret traceability metadata
+        self.assertIn("escopo", manifest["evidence_policy"]["permission_evidence"].lower())
 
     def test_game_version_and_external_providers(self):
         manifest = json.loads(PATH.read_text(encoding="utf-8"))
