@@ -92,7 +92,9 @@ final class IFlowGoFeedData {
         int boss = number(o, "raid_pokemon_id", 1, 1025);
         int tier = number(o, "raid_level", 1, 20);
         boolean egg = hatch > now;
-        boolean bossLive = !egg && boss > 0;
+        // Without a confirmed hatch time, a boss identifier alone is not
+        // evidence that the raid has already hatched.
+        boolean bossLive = hatch > 0 && !egg && boss > 0;
         String name = clean(o.optString("gym_name", ""), 90);
         if (name.isEmpty()) name = "Ginásio";
         StringBuilder detail = new StringBuilder(egg ? "Ovo de Reide" : "Reide");
