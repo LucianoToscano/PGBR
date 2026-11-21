@@ -84,6 +84,7 @@ final class SettingsPanel {
     private final CheckBox[] rocketChoices=new CheckBox[3];
     private final CheckBox[] pvpBattleChoices=new CheckBox[3];
     private TextView pvpBattleStatus;
+    private CheckBox pvpPreferSuper;
     private final CheckBox[] battleChoices=new CheckBox[10];
     private Runnable buddyRefresh=()->{},smartRefresh=()->{};
     // Groups gated by backend readiness (catch-summary support, ball-animation support), refreshed without
@@ -870,7 +871,14 @@ final class SettingsPanel {
             box.setOnClickListener(v->Control.setPvpBattleOptions(
                 PvpBattleMode.update(Control.pvpBattleOptions(),option,box.isChecked())));
         }
-        caption(pvpBattleC,"Controles PvP independentes. Disponíveis apenas após validação de um controlador compatível.");
+        pvpPreferSuper=new CheckBox(activity);
+        pvpPreferSuper.setText("Priorizar ataque carregado supereficaz");
+        pvpPreferSuper.setChecked((Control.pvpBattleOptions()&PvpBattleMode.PREFER_SUPER)!=0);
+        pvpPreferSuper.setOnClickListener(v->Control.setPvpBattleOptions(
+            PvpBattleMode.update(Control.pvpBattleOptions(),
+                PvpBattleMode.PREFER_SUPER,pvpPreferSuper.isChecked())));
+        pvpBattleC.addView(pvpPreferSuper);
+        caption(pvpBattleC,"Se o segundo golpe for supereficaz, pode guardar energia em vez de lançar o primeiro. Limita a espera e usa o golpe pronto se o HP estiver baixo. Aguarda controlador PvP compatível.");
         pvpBattleStatus=caption(pvpBattleC,"");
 
         LinearLayout gymC = group(battleC, "Gyms");
@@ -1498,6 +1506,8 @@ final class SettingsPanel {
             pvpBattleChoices[i].setChecked((Control.pvpBattleOptions()&(1<<i))!=0);
             pvpBattleChoices[i].setEnabled(Control.pvpBattleReady());
         }
+        pvpPreferSuper.setChecked((Control.pvpBattleOptions()&PvpBattleMode.PREFER_SUPER)!=0);
+        pvpPreferSuper.setEnabled(Control.pvpBattleReady());
         pvpBattleStatus.setText(Control.pvpBattleStatus());
         pvpBattleStatus.setVisibility(View.VISIBLE);
     }
