@@ -61,15 +61,13 @@ def probe(name, url, body=None):
         print(f"{name}: HTTP_{status} JSON_{type(result).__name__}")
 
 def main():
-    # One bounded spawn request and one bounded raid request, separate layers.
-    # No unauthorized access attempts or retries.
-    for layer in ("spawns", "raids"):
-        query = urllib.parse.urlencode({
-            "lat": "40.7590", "lon": "-73.9855",
-            "radius_km": "3", "layers": layer, "limit": "5"
-        })
-        probe("IFLOWGO_" + layer.upper(),
-              "https://pokecoords.iflowgo.com/iflowgopokecoords/api/v1/nearby?" + query)
+    # Tokyo daytime: one bounded raid request, no retries.
+    query = urllib.parse.urlencode({
+        "lat": "35.6595", "lon": "139.7005",
+        "radius_km": "5", "layers": "raids", "limit": "5"
+    })
+    probe("IFLOWGO_RAIDS_TOKYO",
+          "https://pokecoords.iflowgo.com/iflowgopokecoords/api/v1/nearby?" + query)
 
 if __name__ == "__main__":
     main()
