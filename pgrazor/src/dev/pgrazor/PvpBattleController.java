@@ -8,7 +8,7 @@ package dev.pgrazor;
  * The policy is strictly PvP-only. A Rocket/raid/gym scope can NEVER be reused.
  */
 final class PvpBattleController {
-    static final int MODE_PVP = 1;
+    static final int MODE_PVP = 0x505650; // Separate domain tag; never 0/1/2 (raid/gym/max)
     static final int NO_ACTION = 0, QUICK = 1, CHARGED = 2, SHIELD = 3, NEXT_POKEMON = 4;
     private static final long MAX_SAMPLE_AGE_MS = 350;
     private static final long QUICK_INTERVAL_MS = 175;
