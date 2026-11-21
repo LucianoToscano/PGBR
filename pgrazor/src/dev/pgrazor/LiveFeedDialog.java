@@ -600,6 +600,13 @@ public final class LiveFeedDialog {
             if (index == radiusIndex) return;
             main.removeCallbacks(deferredFetch);
             radiusIndex = index; prefs.edit().putInt(radiusPreferenceKey(), index).apply();
+            if (provider == 3) {
+                // Coordinates from the previous viewport must not remain
+                // clickable while waiting for an authorised server refresh.
+                entries.clear(); visible.clear(); distCache.clear();
+                lastUpdated = 0;
+                adapter.notifyDataSetChanged();
+            }
             generation++;
             client.cancel(); pokeList.cancel(); iFlowGo.cancel(); rocketMap.cancel();
             fetchInFlight = false; // old generation cannot keep the new request blocked
@@ -859,8 +866,17 @@ public final class LiveFeedDialog {
             if (nowE < backoffUntilElapsed) { updateStatus(); return; }
             // PokeList lacks published rate-limit semantics. Avoid rapid manual
             // refreshes even when the server did not return Retry-After.
-            if ((provider == 1 || provider == 3) && lastFetchStartedElapsed > 0
+            if (provider == 1 && lastFetchStartedElapsed > 0
                     && nowE - lastFetchStartedElapsed < 60000) {
+                updateStatus(); return;
+            }
+            if (provider == 3 && lastFetchStartedElapsed > 0
+                    && nowE - lastFetchStartedElapsed < 60000) {
+                long remaining = 60000L - (nowE - lastFetchStartedElapsed);
+                lastError = "RocketMap: respeitando intervalo de consultas. "
+                        + "Nova busca em " + ((remaining + 999) / 1000) + "s.";
+                main.removeCallbacks(deferredFetch);
+                main.postDelayed(deferredFetch, remaining + 40);
                 updateStatus(); return;
             }
             // Auto-refresh stays at 60s, but explicit iFlowGo species/radius
