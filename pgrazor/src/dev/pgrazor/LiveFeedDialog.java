@@ -755,6 +755,32 @@ public final class LiveFeedDialog {
                     || (provider == 2 && iFlowGoAccessDenied)) {
                 updateStatus(); return;
             }
+            // iFlowGo reports IV, CP, level, species and coordinates, but not
+            // trainer-specific Shiny, size, backgrounds or PvP ranks. Never
+            // silently show unfiltered results under one of those filter labels.
+            if (provider == 2 && pokemonSearchMode) {
+                try {
+                    org.json.JSONObject selected = filters.toStoredJson();
+                    boolean unsupported = selected.optBoolean("shiny_only", false)
+                            || selected.optBoolean("background_only", false)
+                            || selected.optBoolean("filter_xxs", false)
+                            || selected.optBoolean("filter_xxl", false)
+                            || filters.pvpOnlyActive();
+                    if (unsupported) {
+                        entries.clear(); visible.clear(); distCache.clear();
+                        lastUpdated = 0;
+                        lastError = "iFlowGo não informa Shiny, fundos, tamanhos XXS/XXL "
+                                + "nem rankings PvP. Desative esses filtros ou escolha outra fonte.";
+                        adapter.notifyDataSetChanged();
+                        updateStatus();
+                        return;
+                    }
+                } catch (org.json.JSONException badFilters) {
+                    lastError = "Os filtros estão inválidos. Redefina os filtros para continuar.";
+                    updateStatus();
+                    return;
+                }
+            }
             final int selectedDex = sourceDexFilter();
             if (pokemonSearchMode && provider == 1 && radiusIndex == 3 && selectedDex < 1) {
                 lastError = "Informe uma espécie específica ou #Dex antes de consultar Global na PokeList.";
