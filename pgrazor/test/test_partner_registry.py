@@ -39,6 +39,16 @@ class PartnerRegistryTests(unittest.TestCase):
             self.assertNotIn(value, text)
         self.assertIn("escopo", manifest["evidence_policy"]["permission_evidence"].lower())
 
+    def test_regibot_audit_traceability(self):
+        manifest = json.loads(PATH.read_text(encoding="utf-8"))
+        regibot = next(x for x in manifest["partners"] if x["id"] == "regibot")
+        self.assertEqual(regibot["version"], "2.5.12")
+        self.assertEqual(regibot["zip_sha256"],
+                         "d5cb0675190693e2c40db5eacea277c741234314fecb40a9e6d552338e5259de")
+        self.assertEqual(regibot["import_state"], "inventory_only")
+        self.assertIn("trainer_display_private_mode", regibot["capabilities"])
+        self.assertTrue((ROOT / "docs" / "PGBR_AUDITORIA_REGIBOT_2_5_12_20261120.md").is_file())
+
     def test_game_version_and_external_providers(self):
         manifest = json.loads(PATH.read_text(encoding="utf-8"))
         self.assertRegex(manifest["compatibility_target"]["pokemon_go"],
