@@ -161,14 +161,28 @@ static int vgp_case(){
  auto policy=static_cast<const PgrVgpPolicyApi*>(core->query_feature(25,1));assert(policy&&policy->install(&pc)==0);
  u::api=static_cast<const PgrVgpControllerApi*>(pgrazor_vgp_controller_api(1));u::tid=gettid();auto vc=u::makeConfig();vc.policy_table=const_cast<PgrVgpPolicyApi*>(policy);assert(u::api->install(&vc)==0);u::resetScenario();
  auto c=config();c.extra_exports=&extra;extra.gchandle_new=vc.gc_new;extra.gchandle_get_target=vc.gc_get;extra.gchandle_free=vc.gc_free;c.runtime_invoke=vc.runtime_invoke;c.object_get_class=vc.object_class;c.object_unbox=vc.object_unbox;
- assert(host->configure(&c)==0);g_vgc=u::api;g_active_caps=PGR_EH_CAP_VGP;g_installed=true;install_wire();
+ assert(host->configure(&c)==0);g_vp=policy;g_vgc=u::api;g_active_caps=PGR_EH_CAP_VGP;g_installed=true;install_wire();
  PgrEncounterHostOptions o{1,sizeof(o)};o.vgp_allowed=1;o.vgp_enabled=1;o.vgp_catch_allowed=1;o.vgp_spin_allowed=1;o.lease_remaining_ms=2500;o.lat=10;o.lon=20;
  assert(host->update_options(&o,gettid())==0);assert(host->tick(gettid())==0);assert(g_last_vgp_status==PGR_VGC_ST_CATCHING);
  u::g_pollRc=PGR_VR_DONE;assert(host->tick(gettid())==0);assert(g_last_vgp_status==PGR_VGC_ST_CATCHING);
  u::g_success=true;u::g_statusKnown=true;u::g_catchStatus=100;assert(host->tick(gettid())==0);assert(g_last_vgp_status==PGR_VGC_ST_CAUGHT);assert(u::roots.empty());
- // OFF must revoke, not permanently stop33. ON remains capable of a fresh scan.
- o.vgp_enabled=0;assert(host->update_options(&o,gettid())==0);assert(host->tick(gettid())==0);
- o.vgp_enabled=1;assert(host->update_options(&o,gettid())==0);assert(host->tick(gettid())==0);assert(g_last_vgp_status!=PGR_VGC_ST_OFF);
+ // A timed-out/uncertain RPC latches the policy. Explicit OFF must release
+ // the latch without dropping the still-valid seen quarantine; otherwise VGP
+ // stays blocked after restart even though capture/spin options are selected.
+ PgrVgpPolicySample before_off{};assert(policy->sample(&before_off)==0);
+ assert(policy->block(gettid())==0);
+ PgrVgpPolicySample latched{};assert(policy->sample(&latched)==0&&latched.blocked==1);
+ o.vgp_enabled=0;assert(host->update_options(&o,gettid())==0);
+ // Immediate owner-thread recovery on OFF (even before the next tick).
+ PgrVgpPolicySample after_toggle{};assert(policy->sample(&after_toggle)==0);
+ assert(after_toggle.blocked==0 && after_toggle.seen_size==before_off.seen_size);
+ assert(host->tick(gettid())==0);
+ assert(g_last_vgp_status==PGR_VGC_ST_OFF);
+ PgrVgpPolicySample after_off{};assert(policy->sample(&after_off)==0);
+ assert(after_off.blocked==0 && after_off.seen_size==before_off.seen_size);
+ // OFF revokes but never permanently stops33; ON can scan again.
+ o.vgp_enabled=1;assert(host->update_options(&o,gettid())==0);assert(host->tick(gettid())==0);
+ assert(g_last_vgp_status!=PGR_VGC_ST_OFF);
  // Restrict catch while encounter is pending: generation must revoke immediately.
  auto generation=u::api->generation();o.vgp_catch_allowed=0;
  assert(host->update_options(&o,gettid())==0);assert(u::api->generation()>generation);

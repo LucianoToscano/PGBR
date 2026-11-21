@@ -311,7 +311,16 @@ public final class Control {
         if(!vgpReady)return "VGP aguardando: mecanismo nativo indisponível. "+vgp.status();
         if(ShundoSniper.active())return "VGP aguardando: Shundo Sniper tem prioridade.";
         if(AutoRaid.running())return "VGP aguardando: Auto Raid tem prioridade.";
-        return "VGP habilitada para ações. Estado: "+vgp.status();
+        String nativeState=vgp.status();
+        if(nativeState==null)nativeState="";
+        String nativeLower=nativeState.toLowerCase(java.util.Locale.ROOT);
+        if(nativeLower.contains("response timed out") ||
+           nativeLower.contains("native vgp error") ||
+           nativeLower.contains("paused: invalid vgp status"))
+            return "VGP bloqueada por resposta incerta/erro nativo. Pare a VGP+, "
+                +"aguarde a ação pendente terminar e inicie-a novamente manualmente. "
+                +"Os alvos recentes permanecem protegidos. Estado: "+nativeState;
+        return "VGP habilitada para ações. Estado: "+nativeState;
     }
     /**
      * When the guard is armed, a live cooldown trips VGP off before the next request and it stays
@@ -1293,14 +1302,14 @@ public final class Control {
     private static volatile int joystickSizeDp=136,joystickOpacity=60;
     // Visual style is independent from movement, camera-relative steering and saved route state.
     // 0=original, 1=Eternatus morph (clean <-> storm), 2=HUD, 3=user image, 4=prior Eternatus vortex.
-    private static volatile int joystickStyle;
+    private static volatile int joystickStyle=1; // Default Eternatus morph; respect saved user selection.
     private static volatile boolean joystickEternatusEffects=true;
     // Independent visual-only animation settings. 0=soft, 1=normal, 2=epic for intensity.
     private static volatile int eternatusFxIntensity=2, eternatusFxSpeed=1;
     private static volatile int menuIconSizeDp=22,gymIconSizeDp=54,gymIconOpacity=100,overlayBackgroundOpacity=45;
     private static volatile int menuLauncherSizeDp=48,menuLauncherOpacity=100,menuLauncherBgOpacity=0,gymBackgroundOpacity=45;
     // 0=classic PGBR, 1=Eternatus emblem, 2=account-local chosen image.
-    private static volatile int menuLauncherIconStyle=0;
+    private static volatile int menuLauncherIconStyle=1; // Default Eternatus Pokébola.
     // Client-only privacy mask. Do not override PlayerService, account data or RPC fields.
     private static volatile boolean trainerAliasEnabled;
     private static volatile int trainerPrivacyMode; // 0=original, 1=hidden in PGBR, 2=local alias
@@ -1454,9 +1463,9 @@ public final class Control {
             vgpTapProtection=true;
             hudLabelsVisible=true;hudLabelsMask=HUD_ALL;hudLabelOpacity=0;hudLabelTextSp=11;
             joystickSizeDp=136;joystickOpacity=60;
-            joystickStyle=0;joystickEternatusEffects=true;eternatusFxIntensity=2;eternatusFxSpeed=1;
+            joystickStyle=1;joystickEternatusEffects=true;eternatusFxIntensity=2;eternatusFxSpeed=1;
             menuIconSizeDp=22;gymIconSizeDp=54;gymIconOpacity=100;overlayBackgroundOpacity=45;
-            menuLauncherSizeDp=48;menuLauncherOpacity=100;menuLauncherBgOpacity=0;gymBackgroundOpacity=45;menuLauncherIconStyle=0;
+            menuLauncherSizeDp=48;menuLauncherOpacity=100;menuLauncherBgOpacity=0;gymBackgroundOpacity=45;menuLauncherIconStyle=1;
             vgpIconOpacity=100;vgpBackgroundOpacity=75;
             transferIvKeepPercent=90;
             trainerAliasEnabled=false;trainerPrivacyMode=0;trainerAlias="";
@@ -1496,14 +1505,16 @@ public final class Control {
                 try{
                     int saved=Integer.parseInt(p.getProperty("joystickStyle","-1"));
                     joystickStyle=saved>=0&&saved<=4?saved:
-                        AccountProfiles.file(app,"joystick-custom.png").isFile()?3:0;
-                }catch(RuntimeException invalid){joystickStyle=0;}
+                        AccountProfiles.file(app,"joystick-custom.png").isFile()?3:1;
+                }catch(RuntimeException invalid){
+                    joystickStyle=AccountProfiles.file(app,"joystick-custom.png").isFile()?3:1;
+                }
                 menuIconSizeDp=readBoundedVisual(p,"menuIconSizeDp",22,16,40);
                 gymIconSizeDp=readBoundedVisual(p,"gymIconSizeDp",54,24,110);
                 gymIconOpacity=readBoundedVisual(p,"gymIconOpacity",100,10,100);
                 overlayBackgroundOpacity=readBoundedVisual(p,"overlayBackgroundOpacity",45,0,100);
                 menuLauncherSizeDp=readBoundedVisual(p,"menuLauncherSizeDp",48,28,96);
-                menuLauncherIconStyle=readBoundedVisual(p,"menuLauncherIconStyle",0,0,2);
+                menuLauncherIconStyle=readBoundedVisual(p,"menuLauncherIconStyle",1,0,2);
                 menuLauncherOpacity=readBoundedVisual(p,"menuLauncherOpacity",100,10,100);
                 menuLauncherBgOpacity=readBoundedVisual(p,"menuLauncherBgOpacity",0,0,100);
                 gymBackgroundOpacity=readBoundedVisual(p,"gymBackgroundOpacity",45,0,100);
