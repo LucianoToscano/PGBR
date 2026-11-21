@@ -131,6 +131,7 @@ public final class LiveFeedDialog {
             categoryIndex = pokemonSearchMode ? 1
                     : clamp(prefs.getInt("category", 0), 0, CATEGORIES.length - 1);
             radiusIndex = clamp(prefs.getInt("radius", 1), 0, RADII.length - 1);
+            if (pokemonSearchMode && provider == 1 && radiusIndex == 3) radiusIndex = 2;
             filters = loadFilters();
             // The session constructor must not touch the keystore on the main thread; token use is
             // confined to login()/fetch() which run on the network worker.
@@ -540,6 +541,12 @@ public final class LiveFeedDialog {
             if (closed || showingLogin || fetchInFlight) return;
             long nowE = SystemClock.elapsedRealtime();
             if (nowE < backoffUntilElapsed) { updateStatus(); return; }
+            // PokeList lacks published rate-limit semantics. Avoid rapid manual
+            // refreshes even when the server did not return Retry-After.
+            if (pokemonSearchMode && provider == 1 && lastFetchStartedElapsed > 0
+                    && nowE - lastFetchStartedElapsed < 60000) {
+                updateStatus(); return;
+            }
             fetchInFlight = true;
             lastFetchStartedElapsed = nowE;
             final int g = generation;
@@ -585,7 +592,10 @@ public final class LiveFeedDialog {
         private void onFetchError(int g, int status, long retryAfterMs, String message) {
             fetchInFlight = false;
             if (closed) return;
-            if (status == 429) backoffUntilElapsed = SystemClock.elapsedRealtime() + Math.max(retryAfterMs, MIN_BACKOFF_MS);
+            if (status == 429) backoffUntilElapsed = SystemClock.elapsedRealtime()
+                    + Math.max(retryAfterMs, MIN_BACKOFF_MS);
+            if (provider == 1 && status == 403)
+                backoffUntilElapsed = SystemClock.elapsedRealtime() + 300000L;
             if (g != generation) { requestFetch(); return; }
             if (provider == 0 && (status == 401 || !client.signedIn())) {
                 // The client clears the session on a 401; drop back to the login form.
@@ -610,8 +620,9 @@ public final class LiveFeedDialog {
             if (!showingLogin) {
                 rebuildVisible(); adapter.notifyDataSetChanged(); updateStatus();
                 long nowE = SystemClock.elapsedRealtime();
+                long intervalMs = (provider == 1 ? Math.max(60, refreshSeconds) : refreshSeconds) * 1000L;
                 if (!fetchInFlight && nowE >= backoffUntilElapsed
-                    && nowE - lastFetchStartedElapsed >= refreshSeconds * 1000L) requestFetch();
+                    && nowE - lastFetchStartedElapsed >= intervalMs) requestFetch();
             }
             main.postDelayed(tick, 1000);
         }
