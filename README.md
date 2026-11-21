@@ -1,24 +1,22 @@
 <p align="center"><img src="pgrazor/branding/pgbr-logo.webp" width="92" alt="Logotipo PGBR"></p>
 
 <h1 align="center">PGBR</h1>
-<p align="center"><strong>PGBR-v0.00.13-LT · Edição brasileira para Android</strong></p>
+<p align="center"><strong>PGBR-v0.00.14-LT · Edição brasileira para Android</strong></p>
 <p align="center">Controles de localização, joystick, captura, rotas e recursos opcionais de automação para Pokémon GO.</p>
 
-> **Status:** versão experimental PT-BR. A compilação automatizada passou nos testes; o funcionamento em aparelhos Android e a cobertura integral da tradução ainda precisam ser validados.
+> **Status:** LT014 em validação. A tempestade Eternatus foi corrigida no código; a máscara do nome no Unity é experimental e **não foi comprovada no mapa/perfil Eu**. Não usar essa opção como proteção de privacidade durante lives.
 
 ## Baixar o PGBR
 
-Os instaladores ficam na [página do pré-lançamento LT013](https://github.com/LucianoToscano/PGBR/releases/tag/v0.00.13-LT).
+A [LT013 permanece disponível no pré-lançamento anterior](https://github.com/LucianoToscano/PGBR/releases/tag/v0.00.13-LT) enquanto a LT014 é validada. Não confundir os pacotes.
 
-Para obter o pacote de compilação, acesse **[Compilações do PGBR no GitHub Actions](https://github.com/LucianoToscano/PGBR/actions/workflows/pgbr-build-full-ptbr-candidate.yml)**, abra a execução mais recente com ✓ e, em **Artifacts**, baixe o pacote `PGBR-v0.00.13-LT-APKs`.
+Acompanhe as **[compilações completas no GitHub Actions](https://github.com/LucianoToscano/PGBR/actions/workflows/pgbr-build-full-ptbr-candidate.yml)**. Somente após uma execução LT014 bem-sucedida, baixe o artefato `PGBR-v0.00.14-LT-APKs`, que deve conter:
+- `PGBR-v0.00.14-LT.apk` — instalador sem Root.
+- `PGBR-v0.00.14-LT-Root.apk` — instalador com Root.
+- `PGBR-v0.00.14-LT-Root-module.zip` — módulo para Magisk/KernelSU/APatch.
+- Comprovantes de compilação e `SHA256SUMS.txt`.
 
-O pacote ZIP contém:
-- **`PGBR-v0.00.13-LT.apk`** — instalador principal para Android ARM64, sem Root.
-- **`PGBR-v0.00.13-LT-Root.apk`** — instalador para aparelhos com Root.
-- **`PGBR-v0.00.13-LT-Root-module.zip`** — módulo Root para Magisk, KernelSU ou APatch.
-- Comprovantes de compilação e arquivo `SHA256SUMS.txt`.
-
-É necessário entrar no GitHub para baixar artefatos, que expiram conforme o prazo do workflow. O APK é assinado com a chave própria do PGBR e **não atualiza diretamente** instalações assinadas por outras chaves. Não desinstale sua versão anterior sem salvar os dados necessários.
+Os artefatos exigem login no GitHub e expiram conforme prazo do workflow. A assinatura do PGBR não necessariamente corresponde à de instalações anteriores. Não desinstale o aplicativo sem preservar seus dados.
 
 ## Recursos
 
