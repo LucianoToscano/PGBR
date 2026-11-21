@@ -1,0 +1,61 @@
+name: PGBR LT025 - iFlowGo contract / UI / Android build
+on:
+  push:
+    branches:
+      - feat/lt025-iflowgo-live-feeds-20261121
+  pull_request:
+    branches:
+      - feat/lt023-pgsharp-style-two-feeds-20261121
+permissions:
+  contents: read
+jobs:
+  feed-unit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools
+      - name: Android JSON source
+        run: sdkmanager "sources;android-36"
+      - name: "Feed model: iFlowGo, LivePokeMap, PokeList"
+        run: python -B -m unittest discover -s pgrazor/test -p 'test_live_feed_java.py' -v
+      - name: Feed filtering / UI / access refusal
+        run: |
+          python -B -m unittest discover -s pgrazor/test -p 'test_pokemon_feed_search_java.py' -v
+          python -B -m unittest discover -s pgrazor/test -p 'test_raid_feed_filters_java.py' -v
+          python -B -m unittest discover -s pgrazor/test -p 'test_pokelist_access_behavior.py' -v
+          python -B -m unittest discover -s pgrazor/test -p 'test_iflowgo_wiring.py' -v
+  android-compile:
+    runs-on: windows-latest
+    timeout-minutes: 35
+    env:
+      PGRAZOR_BUILD_TOOLS: 36.0.0
+      PGRAZOR_ANDROID_PLATFORM: android-36
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools
+      - name: Android platform e compiladores
+        shell: pwsh
+        run: sdkmanager "platforms;android-36" "build-tools;36.0.0" "sources;android-36"
+      - name: Preparar ferramentas DEX
+        run: python -c "import sys; sys.path.insert(0, 'pgrazor'); import dex_bridges; dex_bridges.dependencies(download=True)"
+      - name: Compilar controles Android do PGBR
+        run: python -B pgrazor/build.py
