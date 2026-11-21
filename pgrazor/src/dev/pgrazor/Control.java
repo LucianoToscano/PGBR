@@ -392,6 +392,32 @@ public final class Control {
     public static void setRocketReady(boolean ready,String status){rocketReady=ready;rocketStatus=status;}
     public static void setRocketStatus(String status){rocketStatus=status;}
     public static boolean rocketAllowed(){return rocketReady&&quickSummaryReady()&&hostLive();}
+    // Independent PvP battle controls. Never alias Rocket, raid or gym masks.
+    // The current runtime does not advertise a PvP combat executor: fail closed.
+    private static volatile int pvpBattleOptions;
+    private static volatile boolean pvpBattleReady;
+    private static volatile String pvpBattleStatus="Assistente PvP ainda não conectado; nenhuma ação automática será executada";
+    public static int pvpBattleOptions(){return pvpBattleOptions;}
+    public static String pvpBattleStatus(){return pvpBattleStatus;}
+    public static boolean pvpBattleReady(){return pvpBattleReady;}
+    public static void setPvpBattleOptions(int value){
+        if(value!=PvpBattleMode.sanitize(value)||pvpBattleOptions==value)return;
+        pvpBattleOptions=value;saveSettings();event("pvp-battle-options",String.valueOf(value));
+    }
+    /** Called only after the PvP-specific runtime has verified its own battle hooks. */
+    public static void setPvpBattleReady(boolean ready,String status){
+        pvpBattleReady=ready;
+        setPvpBattleStatus(status==null||status.isEmpty()?
+            (ready?"Assistente PvP conectado":"Assistente PvP não disponível; sem ações automáticas"):status);
+    }
+    public static void setPvpBattleStatus(String status){
+        pvpBattleStatus=status==null||status.isEmpty()?
+            "Assistente PvP ainda não conectado; nenhuma ação automática será executada":
+            status.substring(0,Math.min(status.length(),320));
+    }
+    public static boolean pvpBattleAllowed(){
+        return PvpBattleMode.allowed(pvpBattleOptions,pvpBattleReady,quickSummaryReady(),hostLive());
+    }
     private static volatile boolean itemTransferEnabled,itemTransferReady;
     private static volatile String itemRules="",itemLimits="",itemCatalog="",itemStatus="Waiting for item bag";
     public static boolean itemTransferEnabled(){return itemTransferEnabled;}
@@ -1390,6 +1416,11 @@ public final class Control {
                 gymRepeatEnabled=Boolean.parseBoolean(p.getProperty("gymRepeatEnabled","false"));
                 try{rocketOptions=Integer.parseInt(p.getProperty("rocketOptions","0"));}catch(NumberFormatException ignored){rocketOptions=0;}
                 if(rocketOptions<0||rocketOptions>7)rocketOptions=0;
+                // Absent or invalid persisted options default to OFF; never import Rocket settings.
+                try{pvpBattleOptions=PvpBattleMode.sanitize(Integer.parseInt(p.getProperty("pvpBattleOptions","0")));}
+                catch(NumberFormatException ignored){pvpBattleOptions=0;}
+                pvpBattleReady=false;
+                pvpBattleStatus="Assistente PvP ainda não conectado; nenhuma ação automática será executada";
                 itemTransferEnabled=Boolean.parseBoolean(p.getProperty("itemTransfer","false"));
                 itemRules=p.getProperty("itemRules","");itemLimits=p.getProperty("itemLimits","");itemCatalog=p.getProperty("itemCatalog","");
                 if(!validItemRules(itemRules)||!validItemRules(itemLimits)){itemTransferEnabled=false;itemRules="";itemLimits="";}
@@ -1562,6 +1593,7 @@ public final class Control {
         p.setProperty("battleOptions",String.valueOf(battleOptions));
         p.setProperty("gymRepeatEnabled",String.valueOf(gymRepeatEnabled));
         p.setProperty("rocketOptions",String.valueOf(rocketOptions));
+        p.setProperty("pvpBattleOptions",String.valueOf(pvpBattleOptions));
         p.setProperty("itemTransfer",String.valueOf(itemTransferEnabled));p.setProperty("itemRules",itemRules);p.setProperty("itemLimits",itemLimits);p.setProperty("itemCatalog",itemCatalog);
         p.setProperty("quickSpin",String.valueOf(quickSpinEnabled));
         p.setProperty("autoTransfer",String.valueOf(autoTransferEnabled)); p.setProperty("transferProtect",String.valueOf(transferProtect));p.setProperty("transferIvKeepPercent",String.valueOf(transferIvKeepPercent));p.setProperty("transferProtectSplit","1");
