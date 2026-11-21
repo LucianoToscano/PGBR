@@ -55,7 +55,10 @@ final class PokeListFeedClient {
             int status = http.getResponseCode();
             if (status == 401 || status == 403)
                 throw new LiveFeedClient.FeedException(
-                        "PokeList não autorizou o acesso a esta fonte.", status, 0);
+                        "PokeList / Moonani recusou a consulta (HTTP " + status
+                        + "). Verifique com o fornecedor as condições de acesso."
+                        + " O PGBR não tentará contornar essa restrição.",
+                        status, 0);
             if (status == 429)
                 throw new LiveFeedClient.FeedException(
                         "Limite de consultas da PokeList atingido.",status,

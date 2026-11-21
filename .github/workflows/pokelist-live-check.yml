@@ -1,0 +1,21 @@
+name: PGBR — conferir feed PokeList em rede (uma consulta)
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - feat/lt022-feed-live-validation-20261121
+    paths:
+      - docs/validation/pokelist-probe.once
+permissions:
+  contents: read
+jobs:
+  single-probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Testar contrato sem rede
+        run: python3 -m unittest tools/test_pokelist_live_probe.py -v
+      - name: Única consulta pública do endpoint PokeList
+        run: python3 tools/pokelist_live_probe.py
