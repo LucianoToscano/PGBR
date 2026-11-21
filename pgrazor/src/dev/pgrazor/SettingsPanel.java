@@ -708,6 +708,11 @@ final class SettingsPanel {
         LinearLayout page = page(MenuIcon.BOX, "Pokémon & Transfer");
         unavailableNote(page, false);
 
+        LinearLayout searchTools = group(page, "Busca inteligente");
+        caption(searchTools, "Monte buscas para a coleção do Pokémon GO sem modificar sua conta. "
+                +"Termos dependentes de idioma podem precisar de tradução.");
+        launch(searchTools, "Gerador de buscas da coleção", () -> PokemonInventorySearchDialog.show(activity));
+
         // ----- Transfer on catch (gated by catch-summary support) -----
         LinearLayout transfer = plain(page); summaryGated.add(transfer);
         LinearLayout txC = group(transfer, "Transfer on catch");
