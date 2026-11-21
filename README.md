@@ -11,7 +11,7 @@
 A **[LT015 está publicada](https://github.com/LucianoToscano/PGBR/releases/tag/v0.00.15-LT)** como versão anterior. Não confunda seus arquivos com os da LT016.
 
 Acompanhe as **[compilações completas no GitHub Actions](https://github.com/LucianoToscano/PGBR/actions/workflows/pgbr-build-full-ptbr-candidate.yml)**. Somente após uma execução LT016 bem-sucedida, baixe o artefato `PGBR-v0.00.16-LT-APKs` ou a nova release, que devem conter:
-- `PGBR-v0.00.15-LT.apk` — instalador sem Root.
+- `PGBR-v0.00.16-LT.apk` — instalador sem Root.
 - `PGBR-v0.00.16-LT-Root.apk` — instalador com Root.
 - `PGBR-v0.00.16-LT-Root-module.zip` — módulo para Magisk/KernelSU/APatch.
 - Comprovantes de compilação e `SHA256SUMS.txt`.
