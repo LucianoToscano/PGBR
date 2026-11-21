@@ -23,6 +23,8 @@ jobs:
         with:
           python-version: '3.12'
       - uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools
       - name: Install Android JSON sources
         run: sdkmanager "sources;android-36"
       - name: Selector contract and interface
@@ -45,6 +47,8 @@ jobs:
           distribution: temurin
           java-version: '17'
       - uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools
       - name: Install Android build dependencies
         shell: pwsh
         run: sdkmanager "platforms;android-36" "build-tools;36.0.0" "sources;android-36"
