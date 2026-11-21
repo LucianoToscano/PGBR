@@ -820,13 +820,18 @@ public final class LiveFeedDialog {
                             || selected.optBoolean("background_only", false)
                             || selected.optBoolean("filter_xxs", false)
                             || selected.optBoolean("filter_xxl", false)
-                            || filters.pvpOnlyActive();
+                            || filters.pvpOnlyActive()
+                            // RocketMap's public /raw_data pokemon object has
+                            // CP and individual IVs, but no confirmed level.
+                            || provider == 3 && (selected.optInt("min_level", 0) > 0
+                                    || selected.optInt("max_level", 50) < 50);
                     if (unsupported) {
                         entries.clear(); visible.clear(); distCache.clear();
                         lastUpdated = 0;
                         lastError = sourceName()
                                 + " não confirma Shiny individual, fundos, tamanhos XXS/XXL "
-                                + "nem rankings PvP. Desative esses filtros ou escolha outra fonte.";
+                                + "nem rankings PvP; RocketMap também não informa nível. "
+                                + "Desative esses filtros ou escolha outra fonte.";
                         adapter.notifyDataSetChanged();
                         updateStatus();
                         return;
