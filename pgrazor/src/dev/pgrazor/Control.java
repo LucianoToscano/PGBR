@@ -492,6 +492,20 @@ public final class Control {
     public static void setRocketReady(boolean ready,String status){rocketReady=ready;rocketStatus=status;}
     public static void setRocketStatus(String status){rocketStatus=status;}
     public static boolean rocketAllowed(){return rocketReady&&quickSummaryReady()&&hostLive();}
+    // Independent PvP preferences; no PvP gameplay hook is attached yet.
+    private static volatile int pvpBattleOptions;
+    private static volatile boolean pvpBattleReady;
+    private static volatile String pvpBattleStatus="Assistente PvP indisponível: aguardando controlador compatível";
+    public static int pvpBattleOptions(){return pvpBattleOptions;}
+    public static boolean pvpBattleReady(){return pvpBattleReady;}
+    public static String pvpBattleStatus(){return pvpBattleStatus;}
+    public static void setPvpBattleOptions(int options){
+        if(options!=PvpBattleMode.sanitize(options)||pvpBattleOptions==options)return;
+        pvpBattleOptions=options;saveSettings();event("pvp-battle-options",String.valueOf(options));
+    }
+    public static boolean pvpBattleAllowed(){
+        return PvpBattleMode.allowed(pvpBattleOptions,pvpBattleReady,quickSummaryReady(),hostLive());
+    }
     private static volatile boolean itemTransferEnabled,itemTransferReady;
     private static volatile String itemRules="",itemLimits="",itemCatalog="",itemStatus="Waiting for item bag";
     public static boolean itemTransferEnabled(){return itemTransferEnabled;}
@@ -1578,6 +1592,10 @@ public final class Control {
                 gymRepeatEnabled=Boolean.parseBoolean(p.getProperty("gymRepeatEnabled","false"));
                 try{rocketOptions=Integer.parseInt(p.getProperty("rocketOptions","0"));}catch(NumberFormatException ignored){rocketOptions=0;}
                 if(rocketOptions<0||rocketOptions>7)rocketOptions=0;
+                try{pvpBattleOptions=PvpBattleMode.sanitize(Integer.parseInt(p.getProperty("pvpBattleOptions","0")));}
+                catch(NumberFormatException ignored){pvpBattleOptions=0;}
+                pvpBattleReady=false;
+                pvpBattleStatus="Assistente PvP indisponível: aguardando controlador compatível";
                 itemTransferEnabled=Boolean.parseBoolean(p.getProperty("itemTransfer","false"));
                 itemRules=p.getProperty("itemRules","");itemLimits=p.getProperty("itemLimits","");itemCatalog=p.getProperty("itemCatalog","");
                 if(!validItemRules(itemRules)||!validItemRules(itemLimits)){itemTransferEnabled=false;itemRules="";itemLimits="";}
@@ -1763,6 +1781,7 @@ public final class Control {
         p.setProperty("battleOptions",String.valueOf(battleOptions));
         p.setProperty("gymRepeatEnabled",String.valueOf(gymRepeatEnabled));
         p.setProperty("rocketOptions",String.valueOf(rocketOptions));
+        p.setProperty("pvpBattleOptions",String.valueOf(pvpBattleOptions));
         p.setProperty("itemTransfer",String.valueOf(itemTransferEnabled));p.setProperty("itemRules",itemRules);p.setProperty("itemLimits",itemLimits);p.setProperty("itemCatalog",itemCatalog);
         p.setProperty("quickSpin",String.valueOf(quickSpinEnabled));
         p.setProperty("eternatusWithoutVgp",String.valueOf(eternatusWithoutVgp));
