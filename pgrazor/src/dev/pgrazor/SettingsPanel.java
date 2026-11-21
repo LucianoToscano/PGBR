@@ -855,11 +855,15 @@ final class SettingsPanel {
         LinearLayout rocketC = group(battleC, "Team Rocket");
         String[] rocketLabels={"Auto quick attack","Auto charged attack","Auto shield"};
         for(int i=0;i<3;i++){final int bit=1<<i;CheckBox box=new CheckBox(activity);box.setText(dev.pgrazor.PtBr.tr(rocketLabels[i]));box.setChecked((Control.rocketOptions()&bit)!=0);rocketChoices[i]=box;rocketC.addView(box);
-            box.setOnClickListener(v->Control.setRocketOptions(box.isChecked()?Control.rocketOptions()|bit:Control.rocketOptions()&~bit));}
-        caption(rocketC, "While any of these is on, the next Pokémon is picked automatically when one faints.");
+            box.setOnClickListener(v->{
+                Control.setRocketOptions(box.isChecked()?Control.rocketOptions()|bit:Control.rocketOptions()&~bit);
+                refreshRocket();
+                refreshPvpBattles();
+            });}
+        caption(rocketC, "Ataques e escudos são compartilhados com PvP. A execução automática Rocket só funciona quando o controlador Rocket está pronto.");
         rocketStatus = caption(rocketC, "");
 
-        // PvP Battle Assistant — isolated from Rocket and PvE.
+        // PvP has the same three action flags as Rocket, with its own runtime gate.
         LinearLayout pvpBattleC=group(battleC,"PvP · Liga de Batalha GO");
         String[] pvpBattleLabels={"Ataque ágil automático","Ataque carregado automático","Escudo automático"};
         for(int i=0;i<3;i++){
@@ -872,6 +876,7 @@ final class SettingsPanel {
                 Control.setPvpBattleOptions(
                     PvpBattleMode.update(Control.pvpBattleOptions(),option,box.isChecked()));
                 refreshPvpBattles();
+                refreshRocket();
             });
         }
         pvpPreferSuper=new CheckBox(activity);
@@ -884,7 +889,7 @@ final class SettingsPanel {
             refreshPvpBattles();
         });
         pvpBattleC.addView(pvpPreferSuper);
-        caption(pvpBattleC,"Preferências PvP: selecione e salve os modos desejados. A prioridade supereficaz requer ataque carregado.");
+        caption(pvpBattleC,"Ataque ágil, carregado e escudo são as mesmas opções de Rocket. A prioridade supereficaz é exclusiva do PvP e requer ataque carregado.");
         pvpBattleStatus=caption(pvpBattleC,"");
 
         LinearLayout gymC = group(battleC, "Gyms");
@@ -1519,7 +1524,7 @@ final class SettingsPanel {
         if(Control.pvpBattleReady()){
             pvpBattleStatus.setText(Control.pvpBattleStatus());
         }else if((Control.pvpBattleOptions()&PvpBattleMode.ACTIONS)!=0){
-            pvpBattleStatus.setText("Preferências PvP salvas. A automação de batalha ainda não está conectada nesta versão; nenhum toque automático será executado.");
+            pvpBattleStatus.setText("Opções Rocket/PvP sincronizadas. O executor PvP ainda não está conectado; nenhum toque automático será executado.");
         }else{
             pvpBattleStatus.setText("Você pode configurar as opções, mas a automação PvP ainda não está disponível nesta versão.");
         }

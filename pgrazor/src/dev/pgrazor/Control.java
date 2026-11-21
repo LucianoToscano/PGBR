@@ -488,11 +488,22 @@ public final class Control {
     private static volatile String rocketStatus="Waiting for battle support";
     public static int rocketOptions(){return rocketOptions;}
     public static String rocketStatus(){return rocketStatus;}
-    public static void setRocketOptions(int value){if(value<0||value>7)return;rocketOptions=value;saveSettings();event("rocket-options",String.valueOf(value));}
+    /** PGSharp-compatible shared fast/charged/shield preferences across Rocket and PvP.
+     *  Runtime scope guards remain independent; this never opens a PvP game hook. */
+    public static void setRocketOptions(int value){
+        if(!SharedBattleOptions.validActions(value))return;
+        if(rocketOptions==value && (pvpBattleOptions&PvpBattleMode.ACTIONS)==value)return;
+        rocketOptions=value;
+        pvpBattleOptions=SharedBattleOptions.pvpMask(value,pvpBattleOptions);
+        saveSettings();
+        event("rocket-options",String.valueOf(value));
+        event("pvp-battle-options",String.valueOf(pvpBattleOptions));
+    }
     public static void setRocketReady(boolean ready,String status){rocketReady=ready;rocketStatus=status;}
     public static void setRocketStatus(String status){rocketStatus=status;}
     public static boolean rocketAllowed(){return rocketReady&&quickSummaryReady()&&hostLive();}
-    // Independent PvP preferences; no PvP gameplay hook is attached yet.
+    // Shared action preferences; PvP-only super-effective preference stays independent.
+    // A PvP gameplay hook has not been attached or validated yet.
     private static volatile int pvpBattleOptions;
     private static volatile boolean pvpBattleReady;
     private static volatile String pvpBattleStatus="Assistente PvP indisponível: aguardando controlador compatível";
@@ -500,8 +511,14 @@ public final class Control {
     public static boolean pvpBattleReady(){return pvpBattleReady;}
     public static String pvpBattleStatus(){return pvpBattleStatus;}
     public static void setPvpBattleOptions(int options){
-        if(options!=PvpBattleMode.sanitize(options)||pvpBattleOptions==options)return;
-        pvpBattleOptions=options;saveSettings();event("pvp-battle-options",String.valueOf(options));
+        if(options!=PvpBattleMode.sanitize(options))return;
+        int shared=SharedBattleOptions.actionMask(options);
+        if(pvpBattleOptions==options && rocketOptions==shared)return;
+        rocketOptions=shared;
+        pvpBattleOptions=options;
+        saveSettings();
+        event("rocket-options",String.valueOf(shared));
+        event("pvp-battle-options",String.valueOf(options));
     }
     public static boolean pvpBattleAllowed(){
         return PvpBattleMode.allowed(pvpBattleOptions,pvpBattleReady,quickSummaryReady(),hostLive());
@@ -1590,10 +1607,13 @@ public final class Control {
                 try{battleOptions=Integer.parseInt(p.getProperty("battleOptions","0"));}catch(NumberFormatException ignored){battleOptions=0;}
                 if(battleOptions<0||battleOptions>1023)battleOptions=0;
                 gymRepeatEnabled=Boolean.parseBoolean(p.getProperty("gymRepeatEnabled","false"));
-                try{rocketOptions=Integer.parseInt(p.getProperty("rocketOptions","0"));}catch(NumberFormatException ignored){rocketOptions=0;}
-                if(rocketOptions<0||rocketOptions>7)rocketOptions=0;
-                try{pvpBattleOptions=PvpBattleMode.sanitize(Integer.parseInt(p.getProperty("pvpBattleOptions","0")));}
-                catch(NumberFormatException ignored){pvpBattleOptions=0;}
+                int legacyRocket;try{legacyRocket=Integer.parseInt(p.getProperty("rocketOptions","0"));}catch(NumberFormatException ignored){legacyRocket=0;}
+                int legacyPvP;try{legacyPvP=Integer.parseInt(p.getProperty("pvpBattleOptions","0"));}catch(NumberFormatException ignored){legacyPvP=0;}
+                // Existing Rocket preference is canonical when it exists. Older installs with
+                // only a PvP setting preserve its action bits; the super preference stays PvP-only.
+                rocketOptions=SharedBattleOptions.restoreActions(
+                    p.containsKey("rocketOptions"),legacyRocket,legacyPvP);
+                pvpBattleOptions=SharedBattleOptions.pvpMask(rocketOptions,legacyPvP);
                 pvpBattleReady=false;
                 pvpBattleStatus="Assistente PvP indisponível: aguardando controlador compatível";
                 itemTransferEnabled=Boolean.parseBoolean(p.getProperty("itemTransfer","false"));
