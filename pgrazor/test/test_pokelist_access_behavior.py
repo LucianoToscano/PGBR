@@ -12,7 +12,7 @@ class PokeListAccessGuardTests(unittest.TestCase):
         self.assertIn("verifique", client.lower())
         self.assertIn("pokeListAccessDenied = true;", ui)
         self.assertIn("provider == 1 && pokeListAccessDenied", ui)
-        self.assertIn("if (provider == 1) {\n                    pokeListAccessDenied = false;", ui)
+        self.assertIn("if (provider == 1 && pokeListAccessDenied) {\n                    pokeListAccessDenied = false;", ui)
         self.assertIn("if (!fetchInFlight && !(provider == 1 && pokeListAccessDenied)", ui)
         self.assertIn("Não há resultados confirmados", ui)
         self.assertIn("entries.clear(); visible.clear(); distCache.clear();", ui)
