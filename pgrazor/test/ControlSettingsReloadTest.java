@@ -15,6 +15,8 @@ public final class ControlSettingsReloadTest {
         if(Control.localTimeOverlay())throw new AssertionError("Local clock should default off");
         if(!Control.vgpTapProtection())throw new AssertionError("VGP anti-tap should default ON");
         load.setAccessible(true); load.invoke(null,app);
+        if(Control.joystickStyle()!=1 || Control.menuLauncherIconStyle()!=1)
+            throw new AssertionError("New profiles must default to Eternatus joystick and Pokeball");
         Control.setGymRepeatEnabled(true);
         Control.setLocalTimeOverlay(true);
         if(!"true".equals(Control.exportSettings().getProperty("localTimeOverlay")))
@@ -32,7 +34,9 @@ public final class ControlSettingsReloadTest {
         incoming.setProperty("cooldownEmphasis","true");
         incoming.setProperty("cooldownTextSp","18");
         incoming.setProperty("localTimeOverlay","false"); incoming.setProperty("vgpTapProtection","false");
-        incoming.setProperty("idleWalking","false"); incoming.setProperty("battleOptions","5"); incoming.setProperty("autoBerry","701"); incoming.setProperty("gymRepeatEnabled","false");
+        incoming.setProperty("idleWalking","false"); incoming.setProperty("battleOptions","5"); incoming.setProperty("autoBerry","701");
+        // Explicitly selected classic visuals must survive the new Eternatus defaults.
+        incoming.setProperty("joystickStyle","0"); incoming.setProperty("menuLauncherIconStyle","0"); incoming.setProperty("gymRepeatEnabled","false");
         Control.importSettings(app,incoming,9.3); Control.flushSettings(5000);
         if(Control.localTimeFormat()!=5 || Control.cooldownTextSp()!=18 || !Control.cooldownEmphasis())
             throw new AssertionError("Imported clock and cooldown appearance did not load");
@@ -41,6 +45,8 @@ public final class ControlSettingsReloadTest {
         if(Control.localTimeOverlay())throw new AssertionError("Local clock import did not apply false");
         if(Control.vgpTapProtection() || !"false".equals(Control.exportSettings().getProperty("vgpTapProtection")))
             throw new AssertionError("VGP protection import/export not applied");
+        if(Control.joystickStyle()!=0 || Control.menuLauncherIconStyle()!=0)
+            throw new AssertionError("Explicit classic joystick/Pokeball styles must remain user-controlled");
         if(Control.battleOptions()!=5 || Control.autoBerry()!=701 || Control.vgpEnabled())
             throw new AssertionError("Import ordering, legacy berry migration or VGP OFF changed");
         if(!"5".equals(Control.exportSettings().getProperty("battleOptions")))
