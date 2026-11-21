@@ -129,7 +129,7 @@ public final class LiveFeedDialog {
             prefs = AccountProfiles.preferences(activity,"pgrazor-livefeed");
             pokemonQuery = prefs.getString("pokemon_query_v1", "");
             if (pokemonQuery == null || pokemonQuery.length() > 80) pokemonQuery = "";
-            provider = pokemonSearchMode ? clamp(prefs.getInt("pokemon_provider_v1", 1), 0, 1) : 0;
+            provider = pokemonSearchMode ? clamp(prefs.getInt("pokemon_provider_v1", 0), 0, 1) : 0; // Verified login-based feed first; user choice persists.
             categoryIndex = pokemonSearchMode ? 1
                     : clamp(prefs.getInt("category", 0), 0, CATEGORIES.length - 1);
             radiusIndex = clamp(prefs.getInt("radius", 1), 0, RADII.length - 1);
