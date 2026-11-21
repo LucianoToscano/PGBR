@@ -287,6 +287,33 @@ public final class Control {
     /** A guard reason (cooldown pause/refusal) is shown in place of a generic native status. */
     public static String vgpStatus(){return vgp.status();}
     /**
+     * Human-readable permission diagnosis. Showing the floating icon does NOT turn VGP on.
+     * No native calls or automatic retries here: this reads the same gates as vgpAllowed().
+     * Keep vgpStatus() unchanged for the runtime protocol and existing tests.
+     */
+    public static String vgpDiagnosticStatus(){
+        if(!vgpOverlay)return "VGP oculta: ative Exibir botão VGP. Isso não inicia a automação.";
+        // Calling vgpEnabled also enforces the optional cooldown guard before reporting state.
+        if(!vgpEnabled()){
+            String status=vgp.status();
+            if(status.contains("Cooldown")||status.contains("cooldown")||
+                    status.contains("foreground")||status.contains("primeiro plano"))
+                return "VGP pausada: "+status+"; reative manualmente quando estiver liberada.";
+            return "VGP desligada: toque em Iniciar VGP+ ou no ícone flutuante para começar.";
+        }
+        if((vgpOptions&3)==0)return "VGP ligada, mas sem ações: marque Pokémon e/ou Poképaradas.";
+        if(!foreground)return "VGP aguardando: abra o jogo em primeiro plano.";
+        if(!backendReady||!connected())return "VGP aguardando: conexão com o jogo ou lease expirado.";
+        if(!AccountProfiles.allowed())return "VGP aguardando: conta em validação ou troca.";
+        if(!locationKnown())return "VGP aguardando: localização ainda não disponível.";
+        if(!quickSummaryReady())return "VGP aguardando: suporte nativo de captura não está pronto.";
+        if(!itemTransferReady)return "VGP aguardando: inventário de itens não está pronto.";
+        if(!vgpReady)return "VGP aguardando: mecanismo nativo indisponível. "+vgp.status();
+        if(ShundoSniper.active())return "VGP aguardando: Shundo Sniper tem prioridade.";
+        if(AutoRaid.running())return "VGP aguardando: Auto Raid tem prioridade.";
+        return "VGP habilitada para ações. Estado: "+vgp.status();
+    }
+    /**
      * When the guard is armed, a live cooldown trips VGP off before the next request and it stays
      * off (no auto-resume). Driven by the vgpEnabled()/vgpAllowed() heartbeat; the Cooldown read
      * happens with no lock held and logs only on the single off transition.
