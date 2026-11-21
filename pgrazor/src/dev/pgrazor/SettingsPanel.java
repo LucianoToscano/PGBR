@@ -849,6 +849,15 @@ final class SettingsPanel {
         accidentalTap.setOnCheckedChangeListener((button,checked)->Control.setVgpTapProtection(checked));
         caption(vgpC,"A confirmação evita ativação acidental. Desligar continua com um toque.");
         vgpIconStyleButton=launch(vgpC,"Ícone do VGP",this::showVgpAppearance);
+        launch(vgpC,"Diagnóstico VGP+ (somente leitura)",()->{
+            String report=VgpHealthReport.build(Control.vgpOverlay(),
+                Control.vgpEnabled(),Control.vgpOptions(),Control.vgpDiagnosticStatus());
+            new AlertDialog.Builder(dialogContext())
+                .setTitle(dev.pgrazor.PtBr.tr("Diagnóstico Virtual GO Plus"))
+                .setMessage(report)
+                .setPositiveButton(dev.pgrazor.PtBr.tr("Fechar"),null)
+                .show();
+        });
         vgpStatus=caption(vgpC,Control.vgpStatus());
         smartRefresh=SmartCatchSettings.populate(activity,vgpC);
 
