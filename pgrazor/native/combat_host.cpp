@@ -612,7 +612,11 @@ void pvp_gui_open(const char *ns,const char *name,uint64_t tid) {
     pvp_leave(tid,"battle-ended");
 }
 void pvp_vnext_open(void *ui,uint64_t tid) {
-  if(!ui||!pvp_gate(&tid)||!g_pvp_scene.vnext(now_ms()))return;
+  if(!ui||!pvp_gate(&tid))return;
+  if(!g_pvp_scene.vnext(now_ms())){
+    if(g_pvp_ui_root)pvp_leave(tid,"scope-expired");
+    return;
+  }
   if(g_pvp_ui_root)return; // same anchored scope, never replay scope-enter each frame
   uint32_t mask=0;
   {std::lock_guard<std::mutex> lock(g_options_mutex);
@@ -1818,6 +1822,11 @@ const PgrCombatHostApi kApiTable = {
 };
 
 } // namespace
+
+extern "C" void pgrazor_pvp_gui_open(const char *ns,const char *name) {
+    uint64_t tid=0;
+    if(observation_allowed(&tid))pvp_gui_open(ns,name,tid);
+}
 
 extern "C" const void *pgrazor_combat_host_api(uint32_t version) {
     return version == PGR_COMBAT_HOST_API_VERSION ? &kApiTable : nullptr;
