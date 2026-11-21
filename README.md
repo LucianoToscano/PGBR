@@ -8,7 +8,7 @@
 
 ## Baixar o PGBR
 
-A **[LT022 está publicada](https://github.com/LucianoToscano/PGBR/releases/tag/v0.00.22-LT)** como versão anterior. Não confunda seus arquivos com os da LT023.
+A **[LT021 está publicada](https://github.com/LucianoToscano/PGBR/releases/tag/v0.00.21-LT)** como versão estável mais recente confirmada. A LT022 já foi integrada e está em processo de publicação; não confunda seus arquivos com os da LT023.
 
 Acompanhe as **[compilações completas no GitHub Actions](https://github.com/LucianoToscano/PGBR/actions/workflows/pgbr-build-full-ptbr-candidate.yml)**. Somente após uma execução LT023 bem-sucedida, baixe o artefato `PGBR-v0.00.23-LT-APKs` ou a nova release, que devem conter:
 - `PGBR-v0.00.23-LT.apk` — instalador sem Root.
