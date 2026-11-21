@@ -154,7 +154,8 @@ public final class LiveFeedDialog {
             // Existing explicit provider selections remain saved independently per search.
             categoryIndex = pokemonSearchMode ? 1 : raidSearchMode ? 4
                     : clamp(prefs.getInt("category", 0), 0, CATEGORIES.length - 1);
-            radiusIndex = clamp(prefs.getInt("radius", 1), 0, RADII.length - 1);
+            radiusIndex = clamp(prefs.getInt(radiusPreferenceKey(), provider == 2 ? 3 : 1),
+                     0, RADII.length - 1);
             filters = loadFilters();
             // The session constructor must not touch the keystore on the main thread; token use is
             // confined to login()/fetch() which run on the network worker.
@@ -523,6 +524,8 @@ public final class LiveFeedDialog {
             ++generation;
             client.cancel(); pokeList.cancel(); iFlowGo.cancel();
             provider = selected;
+            radiusIndex = clamp(prefs.getInt(radiusPreferenceKey(), selected == 2 ? 3 : 1),
+                    0, RADII.length - 1);
             prefs.edit().putInt(pokemonSearchMode ? "pokemon_provider_v1" : "raid_provider_v1", selected).apply();
             showingLogin = selected == 0 && !client.signedIn();
             fetchInFlight = false;
@@ -548,7 +551,7 @@ public final class LiveFeedDialog {
 
         private void selectRadius(int index) {
             if (index == radiusIndex) return;
-            radiusIndex = index; prefs.edit().putInt("radius", index).apply();
+            radiusIndex = index; prefs.edit().putInt(radiusPreferenceKey(), index).apply();
             generation++;
             client.cancel(); pokeList.cancel(); iFlowGo.cancel();
             fetchInFlight = false; // old generation cannot keep the new request blocked
@@ -1206,6 +1209,14 @@ public final class LiveFeedDialog {
                 return;
             }
             detail.dismiss();
+        }
+
+        private String radiusPreferenceKey() {
+            // Provider-specific radius prevents an old 1/3 km LivePokeMap
+            // preference from hiding iFlowGo's worldwide Pokémon page.
+            if (provider == 2) return raidSearchMode
+                    ? "iflowgo_raid_radius_v1" : "iflowgo_pokemon_radius_v1";
+            return "radius";
         }
 
         private String sourceName() {
