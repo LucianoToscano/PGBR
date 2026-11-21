@@ -889,7 +889,7 @@ final class SettingsPanel {
             refreshPvpBattles();
         });
         pvpBattleC.addView(pvpPreferSuper);
-        caption(pvpBattleC,"Ataque ágil, carregado e escudo são as mesmas opções de Rocket. A prioridade supereficaz é exclusiva do PvP e requer ataque carregado.");
+        caption(pvpBattleC,"Ataque ágil, carregado e escudo são compartilhados com Rocket. O executor VNext PvP é experimental; a escolha supereficaz do segundo golpe ainda não está integrada.");
         pvpBattleStatus=caption(pvpBattleC,"");
 
         LinearLayout gymC = group(battleC, "Gyms");
@@ -1524,7 +1524,7 @@ final class SettingsPanel {
         if(Control.pvpBattleReady()){
             pvpBattleStatus.setText(Control.pvpBattleStatus());
         }else if((Control.pvpBattleOptions()&PvpBattleMode.ACTIONS)!=0){
-            pvpBattleStatus.setText("Opções Rocket/PvP sincronizadas. O executor PvP ainda não está conectado; nenhum toque automático será executado.");
+            pvpBattleStatus.setText("Opções Rocket/PvP sincronizadas. O executor VNext experimental é ativado apenas após reconhecer uma partida PvP; não use em disputas ranqueadas sem validar.");
         }else{
             pvpBattleStatus.setText("Você pode configurar as opções, mas a automação PvP ainda não está disponível nesta versão.");
         }
