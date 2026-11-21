@@ -15,7 +15,7 @@ on:
       tag:
         description: Versao de teste (exemplo v0.3.4-ptbr.1)
         required: true
-        default: v0.00.20-LT
+        default: v0.00.21-LT
         type: string
 permissions:
   contents: read
@@ -36,7 +36,7 @@ jobs:
     env:
       PGRAZOR_BUILD_TOOLS: 36.0.0
       PGRAZOR_ANDROID_PLATFORM: android-36
-      PGBR_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || 'v0.00.20-LT' }}
+      PGBR_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || 'v0.00.21-LT' }}
       PGRAZOR_KEY_ALIAS: ${{ secrets.PGRAZOR_KEY_ALIAS }}
       PGRAZOR_STORE_PASSWORD: ${{ secrets.PGRAZOR_STORE_PASSWORD }}
       PGRAZOR_KEY_PASSWORD: ${{ secrets.PGRAZOR_KEY_PASSWORD }}
