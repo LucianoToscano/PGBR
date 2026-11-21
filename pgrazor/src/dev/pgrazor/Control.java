@@ -311,7 +311,15 @@ public final class Control {
         if(!vgpReady)return "VGP aguardando: mecanismo nativo indisponível. "+vgp.status();
         if(ShundoSniper.active())return "VGP aguardando: Shundo Sniper tem prioridade.";
         if(AutoRaid.running())return "VGP aguardando: Auto Raid tem prioridade.";
-        return "VGP habilitada para ações. Estado: "+vgp.status();
+        String nativeState=vgp.status();
+        String nativeLower=nativeState.toLowerCase(java.util.Locale.ROOT);
+        if(nativeLower.contains("response timed out") ||
+           nativeLower.contains("native vgp error") ||
+           nativeLower.contains("paused: invalid vgp status"))
+            return "VGP bloqueada por resposta incerta/erro nativo. Pare a VGP+, "
+                +"aguarde a ação pendente terminar e inicie-a novamente manualmente. "
+                +"Os alvos recentes permanecem protegidos. Estado: "+nativeState;
+        return "VGP habilitada para ações. Estado: "+nativeState;
     }
     /**
      * When the guard is armed, a live cooldown trips VGP off before the next request and it stays
