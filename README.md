@@ -8,7 +8,7 @@
 
 ## Baixar e validar
 
-- **APK de teste LT032:** procurar o artefato de 30 dias do [workflow LT032](https://github.com/LucianoToscano/PGBR/actions/workflows/pgbr-lt032-consolidado-apk.yml) depois de uma execução bem-sucedida.
+- **APK de teste LT032:** `PGBR-v0.00.32-LT.apk`; procurar o artefato de 30 dias do [workflow LT032](https://github.com/LucianoToscano/PGBR/actions/workflows/pgbr-lt032-consolidado-apk.yml) depois de uma execução bem-sucedida.
 - **Última release pública com instaladores Root e sem Root:** [LT023](https://github.com/LucianoToscano/PGBR/releases/tag/v0.00.23-LT).
 - **Pontos de teste para homologação:** [checklist LT032](docs/validation/PGBR_LT032_CHECKLIST_DISPOSITIVO.md).
 - **Registro da integração:** [notas LT032](docs/releases/v0.00.32-LT.md).
