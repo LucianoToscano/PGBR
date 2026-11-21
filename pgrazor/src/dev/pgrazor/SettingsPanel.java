@@ -66,13 +66,12 @@ final class SettingsPanel {
         quickSpinSwitch, berrySwitch, quickSummarySwitch, curveSwitch, alwaysHitSwitch, arSwitch, transferOverlaySwitch, catchChanceSwitch, autoBallSwitch, autoThrowSwitch, autoThrowMapSwitch, skipCutscenesSwitch,
         batteryResSwitch, batteryFpsSwitch, batteryQualitySwitch;
     private Button autoBallTarget, berryPriority;
-    private Button vgpIconStyleButton, vgpRunButton, joystickStyleButton, eternatusIntensityButton, eternatusSpeedButton;
+    private Button vgpIconStyleButton, joystickStyleButton, eternatusIntensityButton, eternatusSpeedButton;
     private BerryPriorityPicker berryPicker;
     private TextView quickSummaryLabel, vgpStatus, cutsceneStatus, healStatus, smartBattleStatus;
     private Switch healSwitch, healReviveSwitch, smartBattleSwitch, gymRepeatSwitch;
     private Button healWhen, healThreshold, healItems;
     private final CheckBox[] vgpChoices=new CheckBox[3];
-    private CheckBox vgpCooldownStop;
     // Status / caption lines (muted, readiness driven).
     private TextView state, steeringStatus, spawnStatus, quickSummaryStatus, transferStatus, quickSpinStatus,
         buddyStatus, giftStatus, itemStatus, rocketStatus, battleStatus, quickBallStatus, ivStatus, cameraStatus, interactionStatus;
@@ -811,45 +810,19 @@ final class SettingsPanel {
         LinearLayout vgpC=group(page,"Virtual Go Plus");
         vgpSwitch=switchRow(vgpC,"VGP overlay");vgpSwitch.setChecked(Control.vgpOverlay());
         vgpSwitch.setOnCheckedChangeListener((b,checked)->{if(checked!=Control.vgpOverlay())Control.setVgpOverlay(checked);host.refresh();});
-        caption(vgpC,"Exibir o botão VGP no mapa não inicia capturas nem giros. Inicie a automação separadamente.");
-        vgpRunButton=launch(vgpC,"Iniciar VGP+",()->{
-            if(Control.vgpEnabled()){Control.setVgpEnabled(false);host.refresh();return;}
-            if(!Control.vgpOverlay()){
-                new AlertDialog.Builder(dialogContext()).setTitle("VGP desligada")
-                    .setMessage("Ative VGP overlay para exibir o controle antes de iniciar a automação.")
-                    .setPositiveButton("Entendi",null).show();
-                return;
-            }
-            Runnable start=()->{
-                // Match the floating icon's manual takeover policy: never run a
-                // second manual VGP owner alongside the Eternatus route.
-                if(EternatusRouteRunner.active())
-                    EternatusRouteRunner.stop("Controle manual do VGP+ assumido.");
-                Control.setVgpEnabled(true);host.refresh();
-            };
-            if(Control.vgpTapProtection()){
-                new AlertDialog.Builder(dialogContext())
-                    .setTitle("Iniciar VGP+?")
-                    .setMessage("O VGP+ poderá capturar Pokémon e girar Poképaradas automaticamente. Deseja iniciar?")
-                    .setNegativeButton("Cancelar",null)
-                    .setPositiveButton("Iniciar VGP+",(dialog,which)->start.run()).show();
-            }else start.run();
-        });
-        launch(vgpC, "Diagnóstico rápido · captura e giro", this::showVgpHealthReport);
-        caption(vgpC, "Verifique opções de captura, giro, cooldown e motivo de bloqueio. "
-                + "Somente leitura: não inicia nem reinicia a VGP.");
+        caption(vgpC,"A VGP funciona pelo botão flutuante no mapa: toque para ligar ou desligar. "
+                + "A proteção contra toque acidental pede confirmação ao ligar. "
+                + "Sem temporizador e sem pausa por cooldown estimado.");
         String[] vgpLabels={"Nearby Pokémon","Nearby PokéStops","Push notifications"};
         for(int i=0;i<3;i++){final int bit=1<<i;CheckBox box=new CheckBox(activity);box.setText(dev.pgrazor.PtBr.tr(vgpLabels[i]));box.setChecked((Control.vgpOptions()&bit)!=0);vgpChoices[i]=box;vgpC.addView(box);
             box.setOnClickListener(v->{Control.setVgpOptions(box.isChecked()?Control.vgpOptions()|bit:Control.vgpOptions()&~bit);
                 if(bit==4&&box.isChecked()&&Build.VERSION.SDK_INT>=33&&activity.checkSelfPermission("android.permission.POST_NOTIFICATIONS")!=android.content.pm.PackageManager.PERMISSION_GRANTED)activity.requestPermissions(new String[]{"android.permission.POST_NOTIFICATIONS"},7301);
             });
         }
-        vgpCooldownStop=new CheckBox(activity);vgpCooldownStop.setText(dev.pgrazor.PtBr.tr("Stop on cooldown (estimated)"));vgpCooldownStop.setContentDescription(dev.pgrazor.PtBr.tr("Stop Virtual Go Plus during the estimated action cooldown"));vgpCooldownStop.setChecked(Control.vgpStopOnCooldown());vgpC.addView(vgpCooldownStop);
-        vgpCooldownStop.setOnClickListener(v->{if(vgpCooldownStop.isChecked()!=Control.vgpStopOnCooldown())Control.setVgpStopOnCooldown(vgpCooldownStop.isChecked());host.refresh();});
         Switch accidentalTap=switchRow(vgpC,"Evitar toque acidental no VGP+");
         accidentalTap.setChecked(Control.vgpTapProtection());
         accidentalTap.setOnCheckedChangeListener((button,checked)->Control.setVgpTapProtection(checked));
-        caption(vgpC,"Ativado: pede confirmação antes de ligar pelo ícone flutuante. Desligar continua com um toque. Não interfere na rota Eternatus.");
+        caption(vgpC,"A confirmação evita ativação acidental. Desligar continua com um toque.");
         vgpIconStyleButton=launch(vgpC,"Ícone do VGP",this::showVgpAppearance);
         vgpStatus=caption(vgpC,Control.vgpStatus());
         smartRefresh=SmartCatchSettings.populate(activity,vgpC);
@@ -1330,7 +1303,7 @@ final class SettingsPanel {
 
     private void refreshDependencies(){
         for(CheckBox box:vgpChoices)SettingsUi.enabled(box,Control.vgpOverlay());
-        SettingsUi.enabled(vgpCooldownStop,Control.vgpOverlay());smartRefresh.run();
+        smartRefresh.run();
         for(CheckBox box:transferProtection)SettingsUi.enabled(box,Control.autoTransferEnabled());
         SettingsUi.enabled(transferKeepList,Control.autoTransferEnabled());
         SettingsUi.enabled(transferIvLimit,Control.autoTransferEnabled());
@@ -1396,32 +1369,8 @@ final class SettingsPanel {
         transferStatus.setText(dev.pgrazor.PtBr.tr(Control.transferStatus()));
     }
 
-    /** Manual, read-only VGP health check; never modifies gameplay settings. */
-    private void showVgpHealthReport() {
-        AlertDialog dlg = new AlertDialog.Builder(dialogContext())
-                .setTitle("Diagnóstico VGP+ · captura e giro")
-                .setMessage(vgpHealthText())
-                .setNegativeButton("Fechar", null)
-                .setPositiveButton("Atualizar", null)
-                .create();
-        dlg.setOnShowListener(ignored -> dlg.getButton(AlertDialog.BUTTON_POSITIVE)
-                .setOnClickListener(view -> dlg.setMessage(vgpHealthText())));
-        dlg.show();
-    }
-
-    private String vgpHealthText() {
-        // The status accessor enforces any pending cooldown guard before the UI snapshot.
-        String status = Control.vgpDiagnosticStatus();
-        return VgpHealthReport.build(Control.vgpOverlay(), Control.vgpEnabled(),
-                Control.vgpOptions(), Control.vgpStopOnCooldown(),
-                Cooldown.remaining(), status);
-    }
-
     private void refreshVgpStatus() {
         vgpSwitch.setChecked(Control.vgpOverlay());
-        // Keep the action accessible so an off overlay shows its explanatory dialog.
-        vgpRunButton.setEnabled(true);
-        vgpRunButton.setText(dev.pgrazor.PtBr.tr(Control.vgpEnabled()?"Parar VGP+":"Iniciar VGP+"));
         vgpStatus.setText(dev.pgrazor.PtBr.tr(Control.vgpDiagnosticStatus()));
     }
 
@@ -1503,11 +1452,10 @@ final class SettingsPanel {
     }
     private void refreshVgpOptions() {
         if(vgpIconStyleButton!=null){
-            String[] choices={"LED","GO Plus HD","GO Plus HD · fundo transparente (legado)","Personalizado"};
+            String[] choices={"LED","GO Plus HD","GO Plus HD","Imagem personalizada"};
             vgpIconStyleButton.setText(dev.pgrazor.PtBr.tr("Ícone do VGP: "+choices[Control.vgpIconStyle()]));
         }
         for(int i=0;i<3;i++)vgpChoices[i].setChecked((Control.vgpOptions()&(1<<i))!=0);
-        vgpCooldownStop.setChecked(Control.vgpStopOnCooldown());
     }
 
     private void refreshBuddy() {buddyRefresh.run();buddyStatus.setText(dev.pgrazor.PtBr.tr(BuddyEmotionSettings.status()));}

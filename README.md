@@ -1,19 +1,19 @@
 <p align="center"><img src="pgrazor/branding/pgbr-logo.webp" width="92" alt="Logotipo PGBR"></p>
 
 <h1 align="center">PGBR</h1>
-<p align="center"><strong>PGBR-v0.00.19-LT · Edição brasileira para Android</strong></p>
+<p align="center"><strong>PGBR-v0.00.20-LT · Edição brasileira para Android</strong></p>
 <p align="center">Controles de localização, joystick, captura, rotas e recursos opcionais de automação para Pokémon GO.</p>
 
-> **Status:** LT019 em validação. Corrige um bloqueio de VGP por dependência indevida de Quick Catch/auto-transferência, melhora o estado nativo de diagnóstico e remove a prévia repetida do ícone VGP. Captura e giro precisam de teste no aparelho; a máscara de nome mapa/Eu permanece experimental.
+> **Status:** LT020 em validação. Restaura a VGP simples: liga/desliga pelo ícone flutuante, confirmação contra toque acidental, duas sprites e personalização independente de imagem, opacidade e tamanho. **Sem pausa, temporizador ou opção de cooldown estimado na VGP.** Os limites internos de requisições pendentes continuam ativos; captura/giro exigem teste no aparelho.
 
 ## Baixar o PGBR
 
-A **[LT018 está publicada](https://github.com/LucianoToscano/PGBR/releases/tag/v0.00.18-LT)** como versão anterior. Não confunda seus arquivos com os da LT019.
+A **[LT019 está publicada](https://github.com/LucianoToscano/PGBR/releases/tag/v0.00.19-LT)** como versão anterior. Não confunda seus arquivos com os da LT020.
 
-Acompanhe as **[compilações completas no GitHub Actions](https://github.com/LucianoToscano/PGBR/actions/workflows/pgbr-build-full-ptbr-candidate.yml)**. Somente após uma execução LT019 bem-sucedida, baixe o artefato `PGBR-v0.00.19-LT-APKs` ou a nova release, que devem conter:
-- `PGBR-v0.00.19-LT.apk` — instalador sem Root.
-- `PGBR-v0.00.19-LT-Root.apk` — instalador com Root.
-- `PGBR-v0.00.19-LT-Root-module.zip` — módulo para Magisk/KernelSU/APatch.
+Acompanhe as **[compilações completas no GitHub Actions](https://github.com/LucianoToscano/PGBR/actions/workflows/pgbr-build-full-ptbr-candidate.yml)**. Somente após uma execução LT020 bem-sucedida, baixe o artefato `PGBR-v0.00.20-LT-APKs` ou a nova release, que devem conter:
+- `PGBR-v0.00.20-LT.apk` — instalador sem Root.
+- `PGBR-v0.00.20-LT-Root.apk` — instalador com Root.
+- `PGBR-v0.00.20-LT-Root-module.zip` — módulo para Magisk/KernelSU/APatch.
 - Comprovantes de compilação e `SHA256SUMS.txt`.
 
 A assinatura do PGBR pode ser diferente da de outras instalações. Não desinstale sua versão anterior sem preservar os dados necessários.

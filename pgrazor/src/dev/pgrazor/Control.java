@@ -186,7 +186,6 @@ public final class Control {
     public static boolean giftsAllowed(){return giftsReady&&quickSummaryReady()&&hostLive();}
     private static volatile boolean vgpEnabled,vgpReady,vgpOverlay;
     /** Persistent safety preference; when armed a live cooldown keeps VGP off. */
-    private static volatile boolean vgpStopOnCooldown;
     // Protect the floating VGP icon from accidental activation (runtime automation is unaffected).
     private static volatile boolean vgpTapProtection=true;
     private static volatile int vgpOptions=3;
@@ -240,21 +239,13 @@ public final class Control {
     public static void setHudLabelOpacity(int value){hudLabelOpacity=Math.max(0,Math.min(100,value));saveSettings();}
     public static int hudLabelTextSp(){return hudLabelTextSp;}
     public static void setHudLabelTextSp(int value){hudLabelTextSp=Math.max(9,Math.min(14,value));saveSettings();}
-    /**
-     * Runtime-only VGP state (guard reason, status text, on-screen target), the enable/cooldown
-     * guard decision and the result notification live in {@link VgpController}. The persistent
-     * overlay/stop-on-cooldown/option preferences and the {@code vgpEnabled}/{@code vgpReady} flags
-     * stay here and feed the controller through the accessors below, so the runtime state is owned
-     * in one place only. These flags remain at the bridge boundary with the other readiness gates.
-     */
+    /** Manual VGP control: visual preferences persist; active flag never persists. */
     private static final VgpController vgp = new VgpController(
         () -> vgpEnabled, value -> vgpEnabled=value,
         () -> vgpOverlay, value -> vgpOverlay=value,
-        () -> vgpStopOnCooldown, value -> vgpStopOnCooldown=value,
         () -> foreground, () -> vgpOptions,
-        () -> Cooldown.remaining(), Control::cooldownAction,
         Control::event, Control::saveSettings);
-    public static boolean vgpEnabled(){guardVgpCooldown();return vgpOverlay&&vgpEnabled;}
+    public static boolean vgpEnabled(){return vgpOverlay&&vgpEnabled;}
     public static boolean vgpOverlay(){return vgpOverlay;}
     public static void setVgpOverlay(boolean value){vgp.setOverlay(value);}
     public static boolean vgpOverlayVisible(){return vgpOverlay&&hostLive();}
@@ -267,24 +258,18 @@ public final class Control {
     public static void setVgpBackgroundOpacity(int percent){vgpBackgroundOpacity=Math.max(0,Math.min(100,percent));saveSettings();}
     public static int vgpIconSize(){return vgpIconSize;}
     public static void setVgpIconSize(int value){vgpIconSize=Math.max(28,Math.min(72,value));saveSettings();}
-    public static boolean vgpStopOnCooldown(){return vgpStopOnCooldown;}
+    /** Legacy API retained for older modules. VGP no longer stops on estimated cooldown. */
+    public static boolean vgpStopOnCooldown(){return false;}
     public static boolean vgpTapProtection(){return vgpTapProtection;}
     public static void setVgpTapProtection(boolean value){if(vgpTapProtection!=value){vgpTapProtection=value;saveSettings();}}
-    /**
-     * VGP active state is runtime only (never persisted). Turning it on while the cooldown
-     * guard is armed and a cooldown is live is refused with a visible reason; turning it off
-     * clears any guard reason.
-     */
+    /** User-controlled start/stop; no dependency on estimated cooldown. */
     public static void setVgpEnabled(boolean value){vgp.setEnabled(value);}
-    /**
-     * Arms or disarms the optional cooldown safety. Arming it while VGP is already active and a
-     * cooldown is live switches VGP off immediately; disarming clears any lingering guard reason.
-     */
-    public static void setVgpStopOnCooldown(boolean value){vgp.setStopOnCooldown(value);}
+    /** Legacy compatibility setter: always disabled, intentionally not persisted. */
+    public static void setVgpStopOnCooldown(boolean value){}
     public static void setVgpOptions(int value){vgpOptions=value&7;saveSettings();}
     public static void setVgpReady(boolean ready,String status){vgpReady=ready;vgp.setStatus(status);}
     public static void setVgpStatus(String status){vgp.setStatus(status);}
-    /** A guard reason (cooldown pause/refusal) is shown in place of a generic native status. */
+    /** The overlay/foreground refusal reason is shown ahead of generic native status. */
     public static String vgpStatus(){return vgp.status();}
     /**
      * Human-readable permission diagnosis. Showing the floating icon does NOT turn VGP on.
@@ -293,11 +278,9 @@ public final class Control {
      */
     public static String vgpDiagnosticStatus(){
         if(!vgpOverlay)return "VGP oculta: ative Exibir botão VGP. Isso não inicia a automação.";
-        // Calling vgpEnabled also enforces the optional cooldown guard before reporting state.
         if(!vgpEnabled()){
             String status=vgp.status();
-            if(status.contains("Cooldown")||status.contains("cooldown")||
-                    status.contains("foreground")||status.contains("primeiro plano"))
+            if(status.contains("foreground")||status.contains("primeiro plano"))
                 return "VGP pausada: "+status+"; reative manualmente quando estiver liberada.";
             return "VGP desligada: toque em Iniciar VGP+ ou no ícone flutuante para começar.";
         }
@@ -340,12 +323,6 @@ public final class Control {
                 +". Ações só são confirmadas pelos resultados retornados.";
         return "VGP habilitada para ações. Estado: "+nativeState;
     }
-    /**
-     * When the guard is armed, a live cooldown trips VGP off before the next request and it stays
-     * off (no auto-resume). Driven by the vgpEnabled()/vgpAllowed() heartbeat; the Cooldown read
-     * happens with no lock held and logs only on the single off transition.
-     */
-    private static void guardVgpCooldown(){vgp.guardCooldown();}
     public static void setVgpTarget(boolean visible,double x,double y,boolean spin){vgp.setTarget(visible,x,y,spin);}
     public static boolean vgpMapVisible(){long age=SystemClock.elapsedRealtime()-buddyMapSample;return buddyMapSample>0&&age>=0&&age<1500;}
     // The same icon marks a Pokemon being caught by a map tap, which works with VGP+ off as well.
@@ -357,7 +334,6 @@ public final class Control {
 
     public static boolean vgpAllowed(){
         if(!locationKnown())return false;
-        guardVgpCooldown();
         // VGP owns native inventory checks and action-gate checks independently.
         // itemAccessAllowed() also requires Quick Catch summary and auto-transfer
         // readiness, neither of which is a prerequisite for VGP capture/spin.
@@ -1586,7 +1562,6 @@ public final class Control {
                 hudAppearanceRevision++;
                 try{hudLabelTextSp=Math.max(9,Math.min(14,Integer.parseInt(p.getProperty("hudLabelTextSp","11"))));}
                 catch(NumberFormatException ignored){hudLabelTextSp=11;}
-                vgpStopOnCooldown=Boolean.parseBoolean(p.getProperty("vgpStopOnCooldown","false"));
                 // Missing/invalid preference defaults to the safer confirmation mode.
                 vgpTapProtection=!"false".equals(p.getProperty("vgpTapProtection","true"));
                 try{vgpOptions=Integer.parseInt(p.getProperty("vgpOptions","3"))&7;}catch(NumberFormatException ignored){vgpOptions=3;}
@@ -1778,7 +1753,6 @@ public final class Control {
             p.setProperty("hudBg."+HUD_BITS[i],String.valueOf(HUD_OPACITIES[i]));
             p.setProperty("hudColor."+HUD_BITS[i],String.valueOf(HUD_COLORS[i]));
         }
-        p.setProperty("vgpStopOnCooldown",String.valueOf(vgpStopOnCooldown));
         p.setProperty("vgpTapProtection",String.valueOf(vgpTapProtection));
         p.setProperty("vgpOptions",String.valueOf(vgpOptions));
         p.setProperty("buddyBerry",String.valueOf(buddyBerry));
