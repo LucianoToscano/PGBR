@@ -165,7 +165,8 @@ add_library(pgrazor_core SHARED
   evolve_transfer.cpp
   gym_runtime.cpp
   gym_repeat.cpp
-  jni_core.cpp)
+  jni_core.cpp
+  trainer_privacy_ui.cpp)
 
 target_sources(pgrazor_core PRIVATE events/event_collector.cpp)
 set_source_files_properties(events/event_collector.cpp evolve_transfer.cpp PROPERTIES COMPILE_OPTIONS "-fexceptions")

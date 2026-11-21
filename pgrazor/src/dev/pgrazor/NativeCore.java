@@ -24,6 +24,12 @@ public final class NativeCore {
     /** Owner-thread scheduler startup; exactly1 attests no competing gameplay hook owners. */
     public static native int runtimeStart(int exclusiveOwner);
 
+    /** Configures UI-only name masking. Never modifies game identity or RPC fields. */
+    public static native int trainerPrivacyConfigure(boolean enabled, String trainerName);
+
+    /** Diagnostic hook count, NOT proof that the map/profile names are protected. */
+    public static native int trainerPrivacyStatus();
+
     /** Atomic runtime counters only; safe off the Unity thread, never invokes game methods. */
     public static native long[] runtimeHealth();
 }
