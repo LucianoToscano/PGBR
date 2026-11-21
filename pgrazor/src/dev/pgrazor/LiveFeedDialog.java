@@ -131,7 +131,6 @@ public final class LiveFeedDialog {
             categoryIndex = pokemonSearchMode ? 1
                     : clamp(prefs.getInt("category", 0), 0, CATEGORIES.length - 1);
             radiusIndex = clamp(prefs.getInt("radius", 1), 0, RADII.length - 1);
-            if (pokemonSearchMode && provider == 1 && radiusIndex == 3) radiusIndex = 2;
             filters = loadFilters();
             // The session constructor must not touch the keystore on the main thread; token use is
             // confined to login()/fetch() which run on the network worker.
@@ -373,9 +372,6 @@ public final class LiveFeedDialog {
                 for (int i = 0; i < RADII.length; i++) {
                     final int index = i;
                     Button b = segButton(RADIUS_LABELS[i]);
-                    // Global is not a documented PokeList feature. Never relabel
-                    // a finite request as a worldwide result set.
-                    if (pokemonSearchMode && provider == 1 && i == 3) b.setEnabled(false);
                     b.setOnClickListener(v -> selectRadius(index));
                     radiusRow.addView(b, new LinearLayout.LayoutParams(0, dp(40), 1));
                     radiusButtons[i] = b;
@@ -385,9 +381,9 @@ public final class LiveFeedDialog {
 
             if (pokemonSearchMode) {
                 TextView providerLabel = label(provider == 1
-                        ? "Fonte real: PokeList / Moonani (conector experimental). "
-                          + "O endpoint foi identificado em APK fornecido, mas a resposta precisa ser validada; "
-                          + "limites e cobertura são definidos pela fonte."
+                        ? "Fonte: PokeList / Moonani (experimental). O app original oferece busca Global "
+                          + "(distance=0), aqui disponível com filtro de espécie/#Dex. "
+                          + "O acesso e o contrato do servidor ainda exigem validação."
                         : "Fonte real: LivePokeMap (independente do PoGoCoordinates). "
                           + "Global pode retornar apenas Pokémon 100% IV.", 12);
                 providerLabel.setPadding(0, dp(8), 0, dp(4));
@@ -399,6 +395,13 @@ public final class LiveFeedDialog {
                 search.setFilters(new android.text.InputFilter[]{
                     new android.text.InputFilter.LengthFilter(80)});
                 search.setText(pokemonQuery);
+                search.setImeOptions(android.view.inputmethod.EditorInfo.IME_ACTION_SEARCH);
+                search.setOnEditorActionListener((v, action, event) -> {
+                    if (action == android.view.inputmethod.EditorInfo.IME_ACTION_SEARCH) {
+                        requestFetch(); return true;
+                    }
+                    return false;
+                });
                 search.addTextChangedListener(new android.text.TextWatcher() {
                     public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
                     public void onTextChanged(CharSequence value, int start, int before, int count) {
@@ -412,7 +415,8 @@ public final class LiveFeedDialog {
                 });
                 root.addView(search, new LinearLayout.LayoutParams(-1, dp(48)));
                 root.addView(label("Use Filtros para IV, Shiny, XXL e PvP. "
-                        + "Toque em um Pokémon encontrado para confirmar o teleporte.", 12));
+                        + "Para Global na PokeList, informe uma espécie (ou #Dex) e toque Atualizar. "
+                        + "Toque no Pokémon encontrado para confirmar o teleporte.", 12));
             }
 
             feedStatus = label("", 12);
@@ -455,7 +459,6 @@ public final class LiveFeedDialog {
             lastUpdated = 0;
             lastError = null; note = "";
             entries.clear(); visible.clear(); distCache.clear();
-            if (selected == 1 && radiusIndex == 3) radiusIndex = 2;
             render();
         }
 
@@ -470,7 +473,7 @@ public final class LiveFeedDialog {
         }
 
         private void selectRadius(int index) {
-            if (index == radiusIndex || (pokemonSearchMode && provider == 1 && index == 3)) return;
+            if (index == radiusIndex) return;
             radiusIndex = index; prefs.edit().putInt("radius", index).apply();
             generation++; highlightAll();
             rebuildVisible(); adapter.notifyDataSetChanged();
@@ -550,8 +553,36 @@ public final class LiveFeedDialog {
 
         // ------------------------------------------------------------------ fetching
 
+        private int sourceDexFilter() {
+            if (!pokemonSearchMode) return -1;
+            String q = pokemonQuery == null ? "" : pokemonQuery.trim();
+            String number = q.startsWith("#") ? q.substring(1) : q;
+            if (number.matches("[0-9]{1,4}")) {
+                try {
+                    int dex = Integer.parseInt(number);
+                    return dex >= 1 && dex <= 1025 ? dex : -1;
+                } catch (NumberFormatException ignored) {return -1;}
+            }
+            org.json.JSONObject names = speciesNames;
+            if (names == null || q.isEmpty()) return -1;
+            int found = -1;
+            for (int dex=1; dex<=1025; dex++) {
+                String name=names.optString(Integer.toString(dex),"");
+                if (!name.isEmpty() && PokemonFeedSearch.matches(q,dex,name,name)) {
+                    if (found >= 0) return -1; // not unique: never over-filter remotely
+                    found = dex;
+                }
+            }
+            return found;
+        }
+
         private void requestFetch() {
             if (closed || showingLogin || fetchInFlight) return;
+            final int selectedDex = sourceDexFilter();
+            if (pokemonSearchMode && provider == 1 && radiusIndex == 3 && selectedDex < 1) {
+                lastError = "Informe uma espécie específica ou #Dex antes de consultar Global na PokeList.";
+                updateStatus(); return;
+            }
             long nowE = SystemClock.elapsedRealtime();
             if (nowE < backoffUntilElapsed) { updateStatus(); return; }
             // PokeList lacks published rate-limit semantics. Avoid rapid manual
@@ -571,7 +602,7 @@ public final class LiveFeedDialog {
             net.execute(() -> {
                 try {
                     LiveFeedData.Snapshot snap = selectedProvider == 1
-                            ? pokeList.fetch(lat, lon, radiusKm)
+                            ? pokeList.fetch(lat, lon, radiusKm, selectedDex)
                             : client.fetch(lat, lon, radiusKm, f);
                     if (selectedProvider == 0 && Double.isInfinite(radiusKm))
                         Control.event("feed-global", snap.entries.size() + " results");
