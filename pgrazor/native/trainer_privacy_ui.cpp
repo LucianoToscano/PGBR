@@ -24,6 +24,12 @@ std::mutex name_lock;
 std::u16string trainer_name;
 std::atomic<int> privacy_enabled{0};
 std::atomic<int> installed_count{0};
+/**
+ * Read-only discovery of the game's streamer-mode metadata.
+ * 0=not checked, 1=class unavailable, 2=class resolved, 3=class/getters verified.
+ * This does NOT mean username masking works, and never toggles game state.
+ */
+std::atomic<int> streamer_probe{0};
 TextSetter original_ui = nullptr;
 TextSetter original_tmp = nullptr;
 TextSetter original_tmp_settext = nullptr;
@@ -85,6 +91,37 @@ void tmp_set_text(void *self, void *value, const void *method) {
 
 // Discover only a validated presentation-only setter. IL2CPP MethodInfo and its
 // methodPointer are verified against the active loaded module before Dobby.
+// Names observed in the user's Pokemon GO 0.435.2 metadata, NEVER an offset
+// mapping for the PGBR 0.437.0 build. Resolve against the live runtime instead.
+void probe_game_streamer_mode(const PgrMetaApi *md) {
+    if (streamer_probe.load(std::memory_order_acquire) == 3) return;
+    PgrMetaClassQuery q{};
+    q.version = 1; q.size = sizeof(q);
+    q.name_space = "Niantic.Holoholo.StreamerMode";
+    q.name = "StreamerModeService";
+    PgrMetaClassResult found{};
+    if (md->resolve_class(&q, &found) != 0 || !found.klass) {
+        streamer_probe.store(1, std::memory_order_release);
+        return;
+    }
+    streamer_probe.store(2, std::memory_order_release);
+    // Only inspect get_IsActive and get_IsHiddenInfoPanelEnabled signatures.
+    // No invocations, mode setters, RPCs or PlayerService mutations.
+    PgrMetaMethodQuery getter{};
+    getter.version = 1; getter.size = sizeof(getter);
+    getter.owner = found.klass;
+    getter.return_type = "System.Boolean";
+    getter.is_static = 0;
+    getter.param_count = 0;
+    PgrMetaMethodResult method{};
+    getter.name = "get_IsActive";
+    if (md->validate_method(&getter, &method) != 0) return;
+    getter.name = "get_IsHiddenInfoPanelEnabled";
+    method = {};
+    if (md->validate_method(&getter, &method) != 0) return;
+    streamer_probe.store(3, std::memory_order_release);
+}
+
 void *find_text_setter(const PgrMetaApi *md, const PgrBootBinding &boot,
                        const char *ns, const char *klass, const char *method) {
     PgrMetaClassQuery cls{};
@@ -157,17 +194,16 @@ int pgrazor_trainer_privacy_status() {
     std::lock_guard<std::mutex> hold(name_lock);
     if (!trainer_name.empty()) status |= 0x10;
     if (privacy_enabled.load(std::memory_order_acquire)) status |= 0x20;
+    // Higher bits report a read-only game metadata probe, NOT name concealment.
+    status |= (streamer_probe.load(std::memory_order_acquire) & 0x3) << 8;
     // Hook presence is NOT evidence that every game screen is protected.
     return status;
 }
 
 void pgrazor_trainer_privacy_tick() {
-    if (!privacy_enabled.load(std::memory_order_acquire) || installed_count.load() == 3) return;
-    {
-        std::lock_guard<std::mutex> hold(name_lock);
-        if (trainer_name.empty()) return;
-    }
-    // Already called exclusively on a validated attached Unity scheduler thread.
+    // Called exclusively on the validated, already-attached Unity owner.
+    // Streamer-mode metadata can be checked regardless of the privacy switch.
+    // No Unity function is called unless the bootstrap has passed validation.
     const auto *boot_api = static_cast<const PgrBootApi *>(pgrazor_runtime_bootstrap_api(1));
     const auto *md = static_cast<const PgrMetaApi *>(pgrazor_runtime_metadata_api(1));
     if (!boot_api || !md) return;
@@ -176,6 +212,14 @@ void pgrazor_trainer_privacy_tick() {
         boot.runtime.string_chars == nullptr || boot.runtime.gchandle_new == nullptr ||
         boot.runtime.gchandle_get_target == nullptr || boot.runtime.thread_current == nullptr ||
         !reinterpret_cast<void *(*)()>(boot.runtime.thread_current)()) return;
+
+    probe_game_streamer_mode(md);
+    if (!privacy_enabled.load(std::memory_order_acquire) ||
+        installed_count.load(std::memory_order_acquire) == 3) return;
+    {
+        std::lock_guard<std::mutex> hold(name_lock);
+        if (trainer_name.empty()) return;
+    }
 
     // Created only once on the attached Unity owner, then pinned through a
     // process-lifetime strong GC handle (no per-frame managed allocation).
