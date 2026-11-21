@@ -1041,6 +1041,19 @@ final class SettingsPanel {
             Control.setTrainerPrivacyMode(checked?1:0);
             updatePrivacy.run();host.refresh();
         });
+        launch(privacy,"Verificar privacidade antes da live",()->{
+            new AlertDialog.Builder(dialogContext())
+                .setTitle("Teste de privacidade do treinador")
+                .setMessage("1. Ative Ocultar nome visualmente.\n"
+                    +"2. Feche e reabra o mapa do jogo. Confira se aparece ***** no lugar do seu nome.\n"
+                    +"3. Abra o perfil Eu e confira o nome novamente.\n"
+                    +"4. Desative a opção, reabra as duas telas e confirme que o nome original voltou.\n"
+                    +"5. Repita após trocar de conta, se usar mais de uma.\n\n"
+                    +"Se o nome real aparecer em qualquer uma dessas telas, o recurso NÃO protege sua live. "
+                    +"O diagnóstico do Modo Streamer apenas reconhece metadados; não ativa o modo nativo.")
+                .setPositiveButton("Entendi",null)
+                .show();
+        });
         launch(privacy,"Nome exibido nos menus do PGBR",()->{
             String[] options={"Nome original","Ocultar nome no PGBR","Mostrar apelido no PGBR"};
             new AlertDialog.Builder(dialogContext()).setTitle("Nome exibido no PGBR")

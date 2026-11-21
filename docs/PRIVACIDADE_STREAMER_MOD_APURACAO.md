@@ -18,6 +18,23 @@ Arquivo fornecido pelo usuário: `arquivos_apk_pgsharp.zip` (contendo a extraç�
 - O painel de privacidade exibe três estados possíveis do diagnóstico (classe não encontrada, classe encontrada mas assinatura incompatível, ou metadados de classe + getters reconhecidos), além de aguardando leitura. **O estado não significa que a identidade esteja visualmente protegida.**
 - A máscara visual experimental de `*****` permanece independente do modo nativo e não é considerada proteção total.
 
+## Verificação orientada no painel
+
+O PGBR agora oferece **Verificar privacidade antes da live** na seção Privacidade.
+A ação apresenta uma verificação manual: ativar máscara visual, reabrir mapa, conferir
+perfil Eu, desligar e verificar restauração, repetir em conta alternativa se disponível.
+O fluxo não lê a tela nem marca a privacidade como validada automaticamente.
+
+A detecção de metadados do serviço StreamerMode foi limitada a uma inspeção por
+processo após bootstrap validado, evitando buscar a mesma classe em cada frame de jogo.
+O diagnóstico continua independente da máscara e não alterna estado do serviço.
+
+**Limitação:** o gancho de texto existente intercepta setters Unity UI/TMP apenas quando
+o valor coincide exatamente com o nome autenticado. Conteúdo já exibido, superfícies de
+renderização diferentes e outros contextos podem continuar mostrando o nome real.
+Por isso, o resultado de testes de código ou de compilação não certifica privacidade
+durante lives.
+
 ## Critérios ainda não cumpridos
 
 1. Inspecionar a implementação correspondente ao `libil2cpp.so` **da mesma versão que o APK PGBR distribui** (a entrada de compilação LT014 é 0.437.0, não 0.435.2).

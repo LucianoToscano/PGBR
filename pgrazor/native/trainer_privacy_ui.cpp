@@ -94,7 +94,10 @@ void tmp_set_text(void *self, void *value, const void *method) {
 // Names observed in the user's Pokemon GO 0.435.2 metadata, NEVER an offset
 // mapping for the PGBR 0.437.0 build. Resolve against the live runtime instead.
 void probe_game_streamer_mode(const PgrMetaApi *md) {
-    if (streamer_probe.load(std::memory_order_acquire) == 3) return;
+    // IL2CPP class metadata is stable after the validated bootstrap. Cache all
+    // outcomes, not just success: per-frame lookups could harm FPS and battery.
+    // A new game process repeats the probe against its own loaded version.
+    if (streamer_probe.load(std::memory_order_acquire) != 0) return;
     PgrMetaClassQuery q{};
     q.version = 1; q.size = sizeof(q);
     q.name_space = "Niantic.Holoholo.StreamerMode";
