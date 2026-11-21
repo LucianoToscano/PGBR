@@ -80,11 +80,12 @@ final class VgpController {
         boolean cooldownActive=stopOnCooldown.getAsBoolean()&&cooldownRemaining.getAsLong()>0;
         boolean refused=false,on=false;
         synchronized(lock){
-            if(!overlay.getAsBoolean()||!foreground.getAsBoolean()){enabledWriter.accept(false);targetAt=0;}
+            if(!overlay.getAsBoolean()){enabledWriter.accept(false);targetAt=0;guardReason="VGP overlay hidden; turn on the VGP button first";refused=true;}
+            else if(!foreground.getAsBoolean()){enabledWriter.accept(false);targetAt=0;guardReason="App left foreground; open the game before starting VGP";refused=true;}
             else if(cooldownActive){enabledWriter.accept(false);targetAt=0;guardReason="Cooldown active; tap VGP after it clears";refused=true;}
             else{enabledWriter.accept(true);guardReason="";on=true;}
         }
-        if(refused)event.accept("vgp-cooldown-guard","Enable refused; cooldown active");
+        if(refused)event.accept("vgp-enable-refused",status());
         else if(on)event.accept("vgp-enabled","ON; runtime only");
     }
     /**
