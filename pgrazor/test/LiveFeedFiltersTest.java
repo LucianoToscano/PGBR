@@ -23,6 +23,11 @@ public final class LiveFeedFiltersTest {
         JSONObject def = new LiveFeedFilters().toViewportJson();
         check(def.length() == 21, "viewport carries all 21 keys");
         check(!def.getBoolean("show_all"), "default show_all false");
+        check(new LiveFeedFilters().toRequestJson().getBoolean("show_all"),
+            "unfiltered search requests all nearby entries even with old stored show_all=false");
+        check(!LiveFeedFilters.fromJson(new JSONObject().put("min_iv", 80))
+            .toRequestJson().getBoolean("show_all"),
+            "explicit IV filter must preserve server-side restrictions");
         check(def.getInt("min_iv") == 0 && def.getInt("max_iv") == 100, "default IV range broad");
         check(def.getInt("min_level") == 0 && def.getInt("max_level") == 50, "default level range broad");
         check("off".equals(def.getString("species_filter_mode")), "default species mode off");
