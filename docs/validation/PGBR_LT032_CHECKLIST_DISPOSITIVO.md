@@ -15,3 +15,9 @@
 | Regressões | Abrir rotas GPX, cooldown, salvar/restaurar preferências e modo Root anterior | Sem perda de configuração ou permissões |
 
 Se qualquer teste falhar, **preservar a build LT031 e a release LT023** para comparação. Não sobrescrever dados antigos. Testes devem ser feitos em ambiente controlado e respeitar termos dos serviços utilizados.
+
+## Leitura estática de logs enviados anteriormente (sem expor conta, coordenadas ou nomes)
+
+Foram relidos os arquivos `20261120-151515-619-1.zip` e `20261121-062520-615.zip`, fornecidos pelo usuário. Nas 186 amostras `runtime-gates` de 20/11 e nas 22 amostras de 21/11, **nenhuma** registrou `vgpEnabled=true` ou `vgpAllowed=true`, apesar de o backup de configurações de ambos marcar `vgpOverlay=true`. O valor `vgpOverlay` é **apenas visibilidade do botão**; `vgpEnabled` é temporário e não é persistido. Esses logs não permitem atribuir a ausência de ações ao motor nativo quando a VGP foi efetivamente ligada; evidenciam confusão plausível entre as duas opções. A LT032 acrescenta ação explícita com confirmação na tela das configurações.
+
+No log de 21/11 houve 10 alterações das opções PvP, mas **nenhum** evento `pvpExecutorReady` ou `battle-scope`; as amostras disponíveis não provam que foi gravada uma luta com o executor acionado. Não interpretar ausência de eventos como prova de falha de hook. Depois de instalar LT032, salvar Registro de execução **durante a tentativa real de VGP e PvP**, higienizar coordenadas/identidades antes de compartilhá-lo e correlacionar com estado da UI.

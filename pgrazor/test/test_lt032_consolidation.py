@@ -18,6 +18,15 @@ class ConsolidationIntegrityTest(unittest.TestCase):
         self.assertIn('pvpBattleOptions()',control)
         docs=(ROOT/'docs/PRIVACIDADE_STREAMER_MOD_APURACAO.md').read_text(encoding='utf-8')
         self.assertIn('experimental',docs.lower())
+    def test_vgp_explicit_start_requires_confirmation(self):
+        src=(ROOT/'pgrazor/src/dev/pgrazor/SettingsPanel.java').read_text(encoding='utf-8')
+        self.assertIn('Exibir botão VGP+ (não inicia)',src)
+        self.assertIn('vgpStartStopButton=launch',src)
+        self.assertIn('Control.vgpTapProtection()',src)
+        self.assertIn('Control.setVgpEnabled(true)',src)
+        self.assertIn('Control.setVgpEnabled(false)',src)
+        self.assertIn('Control.vgpDiagnosticStatus()',src)
+
     def test_latest_selector_and_ci_requirements(self):
         f=(ROOT/'tools/private_input.py').read_text(encoding='utf-8')
         self.assertIn('urllib.error.HTTPError',f)

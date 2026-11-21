@@ -66,7 +66,7 @@ final class SettingsPanel {
         quickSpinSwitch, berrySwitch, quickSummarySwitch, curveSwitch, alwaysHitSwitch, arSwitch, transferOverlaySwitch, catchChanceSwitch, autoBallSwitch, autoThrowSwitch, autoThrowMapSwitch, skipCutscenesSwitch,
         batteryResSwitch, batteryFpsSwitch, batteryQualitySwitch;
     private Button autoBallTarget, berryPriority;
-    private Button vgpIconStyleButton, joystickStyleButton, eternatusIntensityButton, eternatusSpeedButton;
+    private Button vgpIconStyleButton, vgpStartStopButton, joystickStyleButton, eternatusIntensityButton, eternatusSpeedButton;
     private BerryPriorityPicker berryPicker;
     private TextView quickSummaryLabel, vgpStatus, cutsceneStatus, healStatus, smartBattleStatus;
     private Switch healSwitch, healReviveSwitch, smartBattleSwitch, gymRepeatSwitch;
@@ -813,11 +813,31 @@ final class SettingsPanel {
         unavailableNote(page, false);
 
         LinearLayout vgpC=group(page,"Virtual Go Plus");
-        vgpSwitch=switchRow(vgpC,"VGP overlay");vgpSwitch.setChecked(Control.vgpOverlay());
+        vgpSwitch=switchRow(vgpC,"Exibir botão VGP+ (não inicia)");vgpSwitch.setChecked(Control.vgpOverlay());
         vgpSwitch.setOnCheckedChangeListener((b,checked)->{if(checked!=Control.vgpOverlay())Control.setVgpOverlay(checked);host.refresh();});
-        caption(vgpC,"A VGP funciona pelo botão flutuante no mapa: toque para ligar ou desligar. "
-                + "A proteção contra toque acidental pede confirmação ao ligar. "
+        caption(vgpC,"Exibir o botão não inicia a automação. Use Iniciar VGP+ abaixo "
+                + "ou toque no ícone flutuante no mapa e confirme. "
                 + "Sem temporizador e sem pausa por cooldown estimado.");
+        vgpStartStopButton=launch(vgpC,"Iniciar VGP+",()->{
+            if(Control.vgpEnabled()){
+                Control.setVgpEnabled(false);host.refresh();return;
+            }
+            if(!Control.vgpOverlay()){
+                new AlertDialog.Builder(dialogContext())
+                    .setTitle(dev.pgrazor.PtBr.tr("Botão VGP+ oculto"))
+                    .setMessage(dev.pgrazor.PtBr.tr("Ative Exibir botão VGP+ antes de iniciar a automação."))
+                    .setPositiveButton(dev.pgrazor.PtBr.tr("Entendi"),null).show();
+                return;
+            }
+            Runnable start=()->{Control.setVgpEnabled(true);host.refresh();};
+            if(Control.vgpTapProtection()){
+                new AlertDialog.Builder(dialogContext())
+                    .setTitle(dev.pgrazor.PtBr.tr("Iniciar Virtual GO Plus?"))
+                    .setMessage(dev.pgrazor.PtBr.tr("A VGP poderá tentar capturar Pokémon e girar Poképaradas conforme as opções marcadas. A ativação não garante prontidão do mecanismo nativo."))
+                    .setPositiveButton(dev.pgrazor.PtBr.tr("Iniciar"),(d,which)->start.run())
+                    .setNegativeButton(dev.pgrazor.PtBr.tr("Cancelar"),null).show();
+            }else start.run();
+        });
         String[] vgpLabels={"Nearby Pokémon","Nearby PokéStops","Push notifications"};
         for(int i=0;i<3;i++){final int bit=1<<i;CheckBox box=new CheckBox(activity);box.setText(dev.pgrazor.PtBr.tr(vgpLabels[i]));box.setChecked((Control.vgpOptions()&bit)!=0);vgpChoices[i]=box;vgpC.addView(box);
             box.setOnClickListener(v->{Control.setVgpOptions(box.isChecked()?Control.vgpOptions()|bit:Control.vgpOptions()&~bit);
@@ -1410,6 +1430,11 @@ final class SettingsPanel {
 
     private void refreshVgpStatus() {
         vgpSwitch.setChecked(Control.vgpOverlay());
+        if(vgpStartStopButton!=null){
+            vgpStartStopButton.setText(dev.pgrazor.PtBr.tr(
+                Control.vgpEnabled() ? "Parar VGP+" : "Iniciar VGP+"));
+            vgpStartStopButton.setEnabled(Control.vgpEnabled() || Control.vgpOverlay());
+        }
         vgpStatus.setText(dev.pgrazor.PtBr.tr(Control.vgpDiagnosticStatus()));
     }
 
