@@ -38,7 +38,18 @@ final class IFlowGoFeedClient {
                 + "&radius_km=" + enc(String.format(Locale.US, "%.1f", radius))
                 + "&layers=" + (raids ? "raids" : "spawns")
                 + "&limit=200";
-        HttpURLConnection conn = (HttpURLConnection) new URL(ENDPOINT + query).openConnection();
+        return doFetch(ENDPOINT + query, raids, false);
+    }
+
+    /** One page of the observed world search endpoint; no automated page sweeps. */
+    LiveFeedData.Snapshot fetchGlobal() throws Exception {
+        cancelled = false;
+        return doFetch("https://pokecoords.iflowgo.com/iflowgopokecoords/api/v1/pokemon-search?page=1",
+                false, true);
+    }
+
+    private LiveFeedData.Snapshot doFetch(String target, boolean raids, boolean global) throws Exception {
+        HttpURLConnection conn = (HttpURLConnection) new URL(target).openConnection();
         active = conn;
         try {
             conn.setConnectTimeout(TIMEOUT_MS);
@@ -74,7 +85,9 @@ final class IFlowGoFeedClient {
             JSONObject payload;
             try { payload = new JSONObject(new String(out.toByteArray(), StandardCharsets.UTF_8)); }
             catch (Exception e) { throw new LiveFeedClient.FeedException("iFlowGo retornou JSON inválido."); }
-            try { return IFlowGoFeedData.parse(payload, System.currentTimeMillis(), raids); }
+            try { return global
+                    ? IFlowGoFeedData.parseGlobal(payload, System.currentTimeMillis())
+                    : IFlowGoFeedData.parse(payload, System.currentTimeMillis(), raids); }
             catch (Exception e) {
                 throw new LiveFeedClient.FeedException("iFlowGo retornou campos desconhecidos nesta versão.");
             }
