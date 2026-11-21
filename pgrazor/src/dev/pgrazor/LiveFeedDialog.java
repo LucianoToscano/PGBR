@@ -478,7 +478,7 @@ public final class LiveFeedDialog {
                     else openDetails(visible.get(pos));
                 }
             });
-            TextView empty = label("No live results in range.", 14);
+            TextView empty = label("Sem aparições confirmadas para esta busca.", 14);
             empty.setGravity(Gravity.CENTER);
             empty.setPadding(0, dp(24), 0, 0);
             listHolder.addView(list, new FrameLayout.LayoutParams(-1, -1));
@@ -854,12 +854,27 @@ public final class LiveFeedDialog {
             StringBuilder sb = new StringBuilder();
             if (lastError != null) sb.append(lastError).append('\n');
             if (lastUpdated == 0) {
-                sb.append(fetchInFlight ? "Loading live results…" : "No results loaded yet.");
+                if (lastError == null) {
+                    sb.append(fetchInFlight ? "Consultando fonte de aparições…" :
+                        "Nenhum resultado carregado. Use Atualizar.");
+                }
             } else {
                 long age = Math.max(0, (System.currentTimeMillis() - lastUpdated) / 1000);
-                sb.append(visible.size()).append(visible.size() == 1 ? " result" : " results")
-                  .append(" · updated ").append(age).append("s ago");
-                if (fetchInFlight) sb.append(" · refreshing…");
+                sb.append("Exibidos: ").append(visible.size())
+                  .append(" · recebidos: ").append(entries.size())
+                  .append(" · atualizado há ").append(age).append("s");
+                if (fetchInFlight) sb.append(" · atualizando…");
+                if (visible.isEmpty()) {
+                    sb.append('\n');
+                    if (entries.isEmpty()) {
+                        sb.append("A fonte respondeu, mas não enviou aparições nesta área. ")
+                          .append("Confira cobertura, raio e autenticação da fonte.");
+                    } else {
+                        sb.append("A fonte enviou registros, mas nenhum passou nos filtros ")
+                          .append("locais de categoria, espécie, IV, distância ou expiração. ")
+                          .append("Confira os filtros e tente ampliar o raio.");
+                    }
+                }
             }
             if (note != null && !note.isEmpty()) sb.append('\n').append(note);
             feedStatus.setText(dev.pgrazor.PtBr.tr(sb.toString()));

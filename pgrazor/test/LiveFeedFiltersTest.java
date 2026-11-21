@@ -23,6 +23,11 @@ public final class LiveFeedFiltersTest {
         JSONObject def = new LiveFeedFilters().toViewportJson();
         check(def.length() == 21, "viewport carries all 21 keys");
         check(!def.getBoolean("show_all"), "default show_all false");
+        check(new LiveFeedFilters().toRequestJson().getBoolean("show_all"),
+            "unfiltered search requests all nearby entries even with old stored show_all=false");
+        check(!LiveFeedFilters.fromJson(new JSONObject().put("min_iv", 80))
+            .toRequestJson().getBoolean("show_all"),
+            "explicit IV filter must preserve server-side restrictions");
         check(def.getInt("min_iv") == 0 && def.getInt("max_iv") == 100, "default IV range broad");
         check(def.getInt("min_level") == 0 && def.getInt("max_level") == 50, "default level range broad");
         check("off".equals(def.getString("species_filter_mode")), "default species mode off");
@@ -88,6 +93,21 @@ public final class LiveFeedFiltersTest {
             .put("always_show_perfect", true));
         check(perfect.matches(1, 100, 30, -1, -1, -1, -1), "always-show perfect bypasses the level range");
         check(new LiveFeedFilters().matches(1, 50, 30, -1, -1, -1, -1), "defaults keep everything with stats");
+        check(new LiveFeedFilters().matches(1, -1, 30, -1, -1, -1, -1),
+            "defaults must keep real spawns with unknown IV");
+        check(!LiveFeedFilters.fromJson(new JSONObject().put("min_iv", 80))
+            .matches(1, -1, 30, -1, -1, -1, -1),
+            "restricted IV must reject unknown IV");
+        LiveFeedFilters speciesOnly = LiveFeedFilters.fromJson(new JSONObject()
+            .put("species_filter_mode", "allowlist")
+            .put("species_filter_list", new JSONArray().put(25)));
+        check(speciesOnly.matches(25, -1, 10, -1, -1, -1, -1),
+            "species filter must preserve known species without IV");
+        check(!speciesOnly.matches(1, -1, 10, -1, -1, -1, -1),
+            "species filter must still reject unselected species");
+        check(!LiveFeedFilters.fromJson(new JSONObject().put("filter_xxl", true))
+            .matches(25, -1, 10, -1, -1, -1, -1),
+            "XXL-only must not treat unknown size as XXL");
 
         // --- PvP only: just the ranked ones, IV/level ignored, never sent to the service ---
         LiveFeedFilters pvp = LiveFeedFilters.fromJson(new JSONObject().put("min_iv", 0).put("max_iv", 19)
