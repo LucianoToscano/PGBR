@@ -64,7 +64,7 @@ jobs:
           if (!$compiler) { $compiler = Get-Command g++ -ErrorAction SilentlyContinue }
           if (!$compiler) { throw 'Compilador C++ de testes indisponivel' }
           New-Item -ItemType Directory -Force -Path build/lt031-tests | Out-Null
-          & $compiler.Source -std=c++17 -Wall -Wextra -Werror -I pgrazor/native pgrazor/native/pvp_scene_test.cpp -o build/lt031-tests/pvp_scene.exe
+          & $compiler.Source -std=c++17 -Wall -Wextra -Werror -D_ALLOW_COMPILER_AND_STL_VERSION_MISMATCH -I pgrazor/native pgrazor/native/pvp_scene_test.cpp -o build/lt031-tests/pvp_scene.exe
           if ($LASTEXITCODE -ne 0) { throw 'Compilacao do classificador PvP falhou' }
           & build/lt031-tests/pvp_scene.exe
           if ($LASTEXITCODE -ne 0) { throw 'Transicao PvP incorreta' }
