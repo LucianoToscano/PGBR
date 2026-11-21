@@ -73,10 +73,10 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           python -B pgrazor/art_build.py --check
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          python -B tools/check.py
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Dependencias DEX
         run: python -c "import sys; sys.path.insert(0, 'pgrazor'); import dex_bridges; dex_bridges.dependencies(download=True)"
+      - name: Testar codigo PGBR apos preparar ferramentas DEX
+        run: python -B tools/check.py
       - name: Pasta temporaria de assinatura
         run: Add-Content -LiteralPath $env:GITHUB_ENV -Value "PGRAZOR_KEYSTORE=$env:RUNNER_TEMP\pgrazor-selector.jks"
       - name: Recuperar pacote-base e assinatura
