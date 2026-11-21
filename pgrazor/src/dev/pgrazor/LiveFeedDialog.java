@@ -92,6 +92,9 @@ public final class LiveFeedDialog {
             Thread t = new Thread(task, "pgrazor-livefeed"); t.setDaemon(true); return t;
         });
         private final LiveFeedClient client;
+        private final PokeListFeedClient pokeList = new PokeListFeedClient();
+        /** 0=LivePokeMap, 1=PokeList/Moonani (direct Pokémon search only). */
+        private int provider;
         private final LiveFeedIcons icons;
         private volatile org.json.JSONObject speciesNames;
         private final List<AlertDialog> children = new ArrayList<>();
@@ -124,6 +127,7 @@ public final class LiveFeedDialog {
             prefs = AccountProfiles.preferences(activity,"pgrazor-livefeed");
             pokemonQuery = prefs.getString("pokemon_query_v1", "");
             if (pokemonQuery == null || pokemonQuery.length() > 80) pokemonQuery = "";
+            provider = pokemonSearchMode ? clamp(prefs.getInt("pokemon_provider_v1", 1), 0, 1) : 0;
             categoryIndex = pokemonSearchMode ? 1
                     : clamp(prefs.getInt("category", 0), 0, CATEGORIES.length - 1);
             radiusIndex = clamp(prefs.getInt("radius", 1), 0, RADII.length - 1);
@@ -132,7 +136,7 @@ public final class LiveFeedDialog {
             // confined to login()/fetch() which run on the network worker.
             client = new LiveFeedClient(new LiveFeedSession(activity));
             icons = new LiveFeedIcons(activity);
-            showingLogin = !client.signedIn();
+            showingLogin = provider == 0 && !client.signedIn();
             net.execute(() -> {
                 try (java.io.InputStream in = PgAssets.open(activity, "pgrazor/map-icons/pokemon-names.json")) {
                     java.io.ByteArrayOutputStream bytes = new java.io.ByteArrayOutputStream();
@@ -185,6 +189,11 @@ public final class LiveFeedDialog {
             form.setFocusableInTouchMode(true);
             scroll.addView(form, new android.widget.ScrollView.LayoutParams(-1, -2));
             root.addView(scroll, new LinearLayout.LayoutParams(-1, 0, 1));
+            if (pokemonSearchMode) {
+                Button back = button("Consultar PokeList / Moonani sem login LivePokeMap");
+                form.addView(back, new LinearLayout.LayoutParams(-1, dp(52)));
+                back.setOnClickListener(v -> selectProvider(1));
+            }
             TextView intro = label("Sign in with your LivePokeMap account.", 14);
             intro.setPadding(0, 0, 0, dp(20));
             form.addView(intro);
@@ -289,10 +298,27 @@ public final class LiveFeedDialog {
             int pad = dp(14);
             root.setPadding(pad, dp(6), pad, 0);
 
+            if (pokemonSearchMode) {
+                LinearLayout sources = new LinearLayout(ui);
+                sources.setOrientation(LinearLayout.HORIZONTAL);
+                Button live = segButton("LivePokeMap");
+                Button list = segButton("PokeList / Moonani");
+                live.setOnClickListener(v -> selectProvider(0));
+                list.setOnClickListener(v -> selectProvider(1));
+                live.setTypeface(null, provider == 0
+                        ? android.graphics.Typeface.BOLD : android.graphics.Typeface.NORMAL);
+                list.setTypeface(null, provider == 1
+                        ? android.graphics.Typeface.BOLD : android.graphics.Typeface.NORMAL);
+                sources.addView(live, new LinearLayout.LayoutParams(0, dp(44), 1));
+                sources.addView(list, new LinearLayout.LayoutParams(0, dp(44), 1));
+                root.addView(sources);
+            }
+
             LinearLayout toolbar = new LinearLayout(ui);
             toolbar.setOrientation(LinearLayout.HORIZONTAL);
             Button logout = button("Log out"), refresh = button("Refresh"), filterBtn = button("Filters");
-            toolbar.addView(logout, new LinearLayout.LayoutParams(0, dp(44), 1));
+            if (provider == 0)
+                toolbar.addView(logout, new LinearLayout.LayoutParams(0, dp(44), 1));
             toolbar.addView(refresh, new LinearLayout.LayoutParams(0, dp(44), 1));
             toolbar.addView(filterBtn, new LinearLayout.LayoutParams(0, dp(44), 1));
             root.addView(toolbar);
@@ -333,6 +359,9 @@ public final class LiveFeedDialog {
                 for (int i = 0; i < RADII.length; i++) {
                     final int index = i;
                     Button b = segButton(RADIUS_LABELS[i]);
+                    // Global is not a documented PokeList feature. Never relabel
+                    // a finite request as a worldwide result set.
+                    if (pokemonSearchMode && provider == 1 && i == 3) b.setEnabled(false);
                     b.setOnClickListener(v -> selectRadius(index));
                     radiusRow.addView(b, new LinearLayout.LayoutParams(0, dp(40), 1));
                     radiusButtons[i] = b;
@@ -341,11 +370,14 @@ public final class LiveFeedDialog {
             }
 
             if (pokemonSearchMode) {
-                TextView provider = label("Fonte: LivePokeMap (independente do PoGoCoordinates). "
-                        + "O resultado depende da cobertura e do acesso da fonte. "
-                        + "Global pode retornar apenas Pokémon 100% IV.", 12);
-                provider.setPadding(0, dp(8), 0, dp(4));
-                root.addView(provider);
+                TextView providerLabel = label(provider == 1
+                        ? "Fonte real: PokeList / Moonani (conector experimental). "
+                          + "O endpoint foi identificado em APK fornecido, mas a resposta precisa ser validada; "
+                          + "limites e cobertura são definidos pela fonte."
+                        : "Fonte real: LivePokeMap (independente do PoGoCoordinates). "
+                          + "Global pode retornar apenas Pokémon 100% IV.", 12);
+                providerLabel.setPadding(0, dp(8), 0, dp(4));
+                root.addView(providerLabel);
                 EditText search = new EditText(ui);
                 search.setSingleLine(true);
                 search.setHint("Buscar espécie ou #Pokédex (ex.: Pikachu, #25)");
@@ -396,6 +428,23 @@ public final class LiveFeedDialog {
             requestFetch(); // first load immediately on entering the feed
         }
 
+        private void selectProvider(int selected) {
+            if (!pokemonSearchMode || selected == provider || closed) return;
+            ++generation;
+            client.cancel(); pokeList.cancel();
+            provider = selected;
+            prefs.edit().putInt("pokemon_provider_v1", selected).apply();
+            showingLogin = selected == 0 && !client.signedIn();
+            fetchInFlight = false;
+            backoffUntilElapsed = 0;
+            lastFetchStartedElapsed = 0;
+            lastUpdated = 0;
+            lastError = null; note = "";
+            entries.clear(); visible.clear(); distCache.clear();
+            if (selected == 1 && radiusIndex == 3) radiusIndex = 2;
+            render();
+        }
+
         // ------------------------------------------------------------------ filters
 
         private void selectCategory(int index) {
@@ -407,7 +456,7 @@ public final class LiveFeedDialog {
         }
 
         private void selectRadius(int index) {
-            if (index == radiusIndex) return;
+            if (index == radiusIndex || (pokemonSearchMode && provider == 1 && index == 3)) return;
             radiusIndex = index; prefs.edit().putInt("radius", index).apply();
             generation++; highlightAll();
             rebuildVisible(); adapter.notifyDataSetChanged();
@@ -497,11 +546,14 @@ public final class LiveFeedDialog {
             final double lat = Control.engine.latitude, lon = Control.engine.longitude;
             final double radiusKm = RADII[radiusIndex];
             final LiveFeedFilters f = filters; // immutable snapshot; safe to hand to the worker
+            final int selectedProvider = provider;
             updateStatus();
             net.execute(() -> {
                 try {
-                    LiveFeedData.Snapshot snap = client.fetch(lat, lon, radiusKm, f);
-                    if (Double.isInfinite(radiusKm))
+                    LiveFeedData.Snapshot snap = selectedProvider == 1
+                            ? pokeList.fetch(lat, lon, radiusKm)
+                            : client.fetch(lat, lon, radiusKm, f);
+                    if (selectedProvider == 0 && Double.isInfinite(radiusKm))
                         Control.event("feed-global", snap.entries.size() + " results");
                     main.post(() -> onSnapshot(g, snap));
                 } catch (LiveFeedClient.FeedException fe) {
@@ -509,7 +561,10 @@ public final class LiveFeedDialog {
                     final String msg = safeMessage(fe, "Couldn't load live results right now.");
                     main.post(() -> onFetchError(g, status, retry, msg));
                 } catch (Exception e) {
-                    main.post(() -> onFetchError(g, 0, 0, "Couldn't reach LivePokeMap. Check your connection."));
+                    main.post(() -> onFetchError(g, 0, 0,
+                            selectedProvider == 1
+                            ? "Não foi possível consultar PokeList / Moonani. Fonte indisponível."
+                            : "Couldn't reach LivePokeMap. Check your connection."));
                 }
             });
         }
@@ -532,7 +587,7 @@ public final class LiveFeedDialog {
             if (closed) return;
             if (status == 429) backoffUntilElapsed = SystemClock.elapsedRealtime() + Math.max(retryAfterMs, MIN_BACKOFF_MS);
             if (g != generation) { requestFetch(); return; }
-            if (status == 401 || !client.signedIn()) {
+            if (provider == 0 && (status == 401 || !client.signedIn())) {
                 // The client clears the session on a 401; drop back to the login form.
                 showingLogin = true; lastError = null; entries.clear(); visible.clear();
                 render();
@@ -566,7 +621,9 @@ public final class LiveFeedDialog {
             long nowE = SystemClock.elapsedRealtime();
             if (nowE < backoffUntilElapsed) {
                 long s = (backoffUntilElapsed - nowE + 999) / 1000;
-                feedStatus.setText(dev.pgrazor.PtBr.tr("Rate limited by LivePokeMap. Retrying in " + s + "s."));
+                feedStatus.setText(dev.pgrazor.PtBr.tr(
+                        "Limite de " + (provider == 1 ? "PokeList / Moonani" : "LivePokeMap")
+                        + ": consulte novamente em " + s + "s."));
                 return;
             }
             StringBuilder sb = new StringBuilder();
@@ -656,6 +713,10 @@ public final class LiveFeedDialog {
                 StringBuilder line = new StringBuilder();
                 if (sub != null && !sub.isEmpty()) line.append(sub);
                 if (d != null) { if (line.length() > 0) line.append("  ·  "); line.append(formatDistance(d)); }
+                if (pokemonSearchMode) {
+                    String credit = provider == 1 ? "PokeList / Moonani" : "LivePokeMap";
+                    line.insert(0, credit + "  ·  ");
+                }
                 holder.subtitle.setText(dev.pgrazor.PtBr.tr(line.toString()));
                 return holder.view;
             }
@@ -811,6 +872,8 @@ public final class LiveFeedDialog {
         private String detailText(LiveFeedData.Entry e, long now) {
             StringBuilder sb = new StringBuilder();
             sb.append(kindLabel(e.kind)).append('\n');
+            if (pokemonSearchMode)
+                sb.append("Fonte: ").append(provider == 1 ? "PokeList / Moonani" : "LivePokeMap").append('\n');
             String sub = displaySubtitle(e, now);
             if (sub != null && !sub.isEmpty()) sb.append(sub).append('\n');
             Double d = distCache.get(e);
@@ -865,6 +928,7 @@ public final class LiveFeedDialog {
             for (AlertDialog d : new ArrayList<>(children)) { try { d.dismiss(); } catch (RuntimeException ignored) {} }
             children.clear();
             try { client.cancel(); } catch (RuntimeException ignored) {} // disconnect any live connection off the UI
+            try { pokeList.cancel(); } catch (RuntimeException ignored) {}
             net.shutdownNow();
         }
 
