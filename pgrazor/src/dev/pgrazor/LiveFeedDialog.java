@@ -16,6 +16,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.Button;
+import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.HorizontalScrollView;
@@ -56,22 +57,26 @@ public final class LiveFeedDialog {
     private static final long MIN_BACKOFF_MS = 30_000L;
 
     /** Entry point wired by the coordinator from the quick menu / {@link Pad}. */
-    public static void show(Activity activity) { show(activity, false); }
+    public static void show(Activity activity) { show(activity, false, false); }
 
-    /** Alternative to PoGoCoordinates: species search on real LivePokeMap results. */
-    public static void showPokemonSearch(Activity activity) { show(activity, true); }
+    /** Pokémon feed search with species/IV/level and saved filter sets. */
+    public static void showPokemonSearch(Activity activity) { show(activity, true, false); }
 
-    private static void show(Activity activity, boolean pokemonSearch) {
+    /** Separate Raid feed search. Result data comes from LivePokeMap, NOT PGSharp. */
+    public static void showRaidSearch(Activity activity) { show(activity, false, true); }
+
+    private static void show(Activity activity, boolean pokemonSearch, boolean raidSearch) {
         if (activity == null || activity.isFinishing() || activity.isDestroyed()) return;
         Context ui = MapTheme.wrap(activity);
         LinearLayout root = new LinearLayout(ui);
         root.setOrientation(LinearLayout.VERTICAL);
         AlertDialog dialog = new AlertDialog.Builder(ui)
-            .setTitle(dev.pgrazor.PtBr.tr(pokemonSearch ? "Buscar Pokémon · LivePokeMap" : "LivePokeMap"))
+            .setTitle(dev.pgrazor.PtBr.tr(raidSearch ? "Buscar Reides · LivePokeMap"
+                    : pokemonSearch ? "Buscar Pokémon · LivePokeMap" : "LivePokeMap"))
             .setView(root)
             .setNegativeButton(dev.pgrazor.PtBr.tr("Close"), null)
             .create();
-        Controller controller = new Controller(activity, ui, dialog, root, pokemonSearch);
+        Controller controller = new Controller(activity, ui, dialog, root, pokemonSearch, raidSearch);
         DialogLifecycle.bind(activity, dialog, controller::close, ()->controller.showingLogin,
             controller::pauseLogin,controller::resumeLogin);
         dialog.setOnShowListener(d -> controller.attach());
@@ -86,6 +91,8 @@ public final class LiveFeedDialog {
         private final LinearLayout root;
         private final SharedPreferences prefs;
         private final boolean pokemonSearchMode;
+        private final boolean raidSearchMode;
+        private RaidFeedFilters raidFilters = RaidFeedFilters.defaults();
         private String pokemonQuery = "";
         private final Handler main = new Handler(Looper.getMainLooper());
         private final ExecutorService net = Executors.newSingleThreadExecutor(task -> {
@@ -123,14 +130,23 @@ public final class LiveFeedDialog {
         private TextView feedStatus;
 
         Controller(Activity activity, Context ui, AlertDialog dialog, LinearLayout root,
-                   boolean pokemonSearchMode) {
+                   boolean pokemonSearchMode, boolean raidSearchMode) {
             this.activity = activity; this.ui = ui; this.dialog = dialog; this.root = root;
             this.pokemonSearchMode = pokemonSearchMode;
+            this.raidSearchMode = raidSearchMode;
             prefs = AccountProfiles.preferences(activity,"pgrazor-livefeed");
+            try {
+                raidFilters = new RaidFeedFilters(
+                    prefs.getInt("raid_search_boss_v1", 0),
+                    prefs.getInt("raid_search_time_v1", 0),
+                    prefs.getInt("raid_search_type_v1", 0),
+                    prefs.getInt("raid_search_team_v1", 0),
+                    prefs.getBoolean("raid_search_hatched_v1", false));
+            } catch (RuntimeException ignored) { raidFilters = RaidFeedFilters.defaults(); }
             pokemonQuery = prefs.getString("pokemon_query_v1", "");
             if (pokemonQuery == null || pokemonQuery.length() > 80) pokemonQuery = "";
             provider = pokemonSearchMode ? clamp(prefs.getInt("pokemon_provider_v1", 0), 0, 1) : 0; // Verified login-based feed first; user choice persists.
-            categoryIndex = pokemonSearchMode ? 1
+            categoryIndex = pokemonSearchMode ? 1 : raidSearchMode ? 4
                     : clamp(prefs.getInt("category", 0), 0, CATEGORIES.length - 1);
             radiusIndex = clamp(prefs.getInt("radius", 1), 0, RADII.length - 1);
             filters = loadFilters();
@@ -349,7 +365,10 @@ public final class LiveFeedDialog {
                 }
                 requestFetch();
             });
-            filterBtn.setOnClickListener(v -> openFilters());
+            filterBtn.setOnClickListener(v -> {
+                if (raidSearchMode) openRaidFilters();
+                else openFilters();
+            });
 
             {
                 TextView around = label("Around current location", 13);
@@ -358,7 +377,7 @@ public final class LiveFeedDialog {
 
                 // The direct Pokémon search stays focused on Pokémon. The full feed
                 // retains its separate category controls unchanged.
-                if (!pokemonSearchMode) {
+                if (!pokemonSearchMode && !raidSearchMode) {
                 // Categories: a compact horizontally scrollable segmented control.
                 HorizontalScrollView catScroll = new HorizontalScrollView(ui);
                 catScroll.setHorizontalScrollBarEnabled(false);
@@ -389,6 +408,19 @@ public final class LiveFeedDialog {
                     radiusButtons[i] = b;
                 }
                 root.addView(radiusRow);
+            }
+
+            if (raidSearchMode) {
+                TextView attribution = label("Fonte dos resultados: LivePokeMap. "
+                        + "Filtros de Reides do PGBR, inspirados nas funções descritas pelo PGSharp. "
+                        + "Não utiliza o servidor privado do PGSharp. Popularidade de lobby, "
+                        + "ginásio EX e clima favorável só aparecerão quando uma fonte "
+                        + "fornecer esses dados comprovadamente.", 12);
+                attribution.setPadding(0, dp(8), 0, dp(8));
+                root.addView(attribution);
+                Button refine = button(raidFilters.summary() + " · Editar filtro");
+                refine.setOnClickListener(v -> openRaidFilters());
+                root.addView(refine, new LinearLayout.LayoutParams(-1, dp(48)));
             }
 
             if (pokemonSearchMode) {
@@ -441,6 +473,7 @@ public final class LiveFeedDialog {
             list.setOnItemClickListener((parent, view, pos, id) -> {
                 if (pos >= 0 && pos < visible.size()) {
                     if (pokemonSearchMode) confirmPokemonTeleport(visible.get(pos));
+                    else if (raidSearchMode) confirmRaidTeleport(visible.get(pos));
                     else openDetails(visible.get(pos));
                 }
             });
@@ -747,6 +780,10 @@ public final class LiveFeedDialog {
             for (LiveFeedData.Entry e : entries) {
                 if (e == null || e.expired(now)) continue;               // hide expired every pass
                 if (!categoryMatches(e)) continue;
+                if (raidSearchMode && (e.kind != LiveFeedData.Kind.RAID
+                        || !raidFilters.matches(e.dexId, e.level, e.team,
+                            e.raidHatchAt, e.expiresAt, e.raidBossLive, now)))
+                    continue;
                 if (pokemonSearchMode &&
                         (e.kind != LiveFeedData.Kind.POKEMON ||
                          !PokemonFeedSearch.matches(pokemonQuery, e.dexId, e.name, displayName(e))))
@@ -810,7 +847,7 @@ public final class LiveFeedDialog {
                 StringBuilder line = new StringBuilder();
                 if (sub != null && !sub.isEmpty()) line.append(sub);
                 if (d != null) { if (line.length() > 0) line.append("  ·  "); line.append(formatDistance(d)); }
-                if (pokemonSearchMode) {
+                if (pokemonSearchMode || raidSearchMode) {
                     String credit = provider == 1 ? "PokeList / Moonani" : "LivePokeMap";
                     line.insert(0, credit + "  ·  ");
                 }
@@ -969,7 +1006,7 @@ public final class LiveFeedDialog {
         private String detailText(LiveFeedData.Entry e, long now) {
             StringBuilder sb = new StringBuilder();
             sb.append(kindLabel(e.kind)).append('\n');
-            if (pokemonSearchMode)
+            if (pokemonSearchMode || raidSearchMode)
                 sb.append("Fonte: ").append(provider == 1 ? "PokeList / Moonani" : "LivePokeMap").append('\n');
             String sub = displaySubtitle(e, now);
             if (sub != null && !sub.isEmpty()) sb.append(sub).append('\n');
