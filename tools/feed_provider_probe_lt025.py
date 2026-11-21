@@ -49,24 +49,27 @@ def probe(name, url, body=None):
                 if k in result]
         sizes = {k: len(result[k]) for k in keys if isinstance(result[k], list)}
         print(f"{name}: HTTP_{status} JSON_object fields={','.join(keys)} list_lengths={sizes}")
+        for group in ("spawns", "raids"):
+            arr = result.get(group)
+            if isinstance(arr, list) and arr and isinstance(arr[0], dict):
+                # Only field names/types; no coordinates, IV, encounter IDs or private values.
+                fields = sorted((str(k), type(v).__name__) for k, v in arr[0].items())
+                print(f"{name}: {group}_schema={fields[:45]}")
     elif isinstance(result, list):
         print(f"{name}: HTTP_{status} JSON_list count={len(result)}")
     else:
         print(f"{name}: HTTP_{status} JSON_{type(result).__name__}")
 
 def main():
-    moonani_post = urllib.parse.urlencode({
-        "iv": "100", "pvp": "0", "pokemons": "",
-        "start": "0", "length": "5", "draw": "1"
-    }).encode("ascii")
-    probe("MOONANI_AJAX",
-          "https://moonani.com/PokeList/ajax.php?page=pokemon&action=load",
-          moonani_post)
-    query = urllib.parse.urlencode({"lat": "40.7", "lon": "-89.65",
-                                    "radius_km": "1", "layers": "spawns,raids",
-                                    "limit": "5"})
-    probe("IFLOWGO_NEARBY",
-          "https://pokecoords.iflowgo.com/iflowgopokecoords/api/v1/nearby?" + query)
+    # One bounded spawn request and one bounded raid request, separate layers.
+    # No unauthorized access attempts or retries.
+    for layer in ("spawns", "raids"):
+        query = urllib.parse.urlencode({
+            "lat": "40.7590", "lon": "-73.9855",
+            "radius_km": "3", "layers": layer, "limit": "5"
+        })
+        probe("IFLOWGO_" + layer.upper(),
+              "https://pokecoords.iflowgo.com/iflowgopokecoords/api/v1/nearby?" + query)
 
 if __name__ == "__main__":
     main()
