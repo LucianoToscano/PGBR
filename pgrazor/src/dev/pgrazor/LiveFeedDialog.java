@@ -107,6 +107,7 @@ public final class LiveFeedDialog {
         private volatile org.json.JSONObject speciesNames;
         private final List<AlertDialog> children = new ArrayList<>();
         private final Runnable tick = this::tick;
+        private final Runnable deferredFetch = this::requestFetch;
 
         // All of the following are touched on the main thread only.
         private final List<LiveFeedData.Entry> entries = new ArrayList<>();
@@ -469,6 +470,17 @@ public final class LiveFeedDialog {
                 search.setImeOptions(android.view.inputmethod.EditorInfo.IME_ACTION_SEARCH);
                 search.setOnEditorActionListener((v, action, event) -> {
                     if (action == android.view.inputmethod.EditorInfo.IME_ACTION_SEARCH) {
+                        // Explicit search may change the server-side species query.
+                        // Cancel a stale global page; the 5s request gate below
+                        // still applies before the next network call.
+                        if (provider == 2) {
+                            generation++;
+                            iFlowGo.cancel();
+                            fetchInFlight = false;
+                            entries.clear(); visible.clear(); distCache.clear();
+                            lastUpdated = 0;
+                            adapter.notifyDataSetChanged();
+                        }
                         requestFetch(); return true;
                     }
                     return false;
@@ -524,6 +536,7 @@ public final class LiveFeedDialog {
             ++generation;
             client.cancel(); pokeList.cancel(); iFlowGo.cancel();
             provider = selected;
+            main.removeCallbacks(deferredFetch);
             radiusIndex = clamp(prefs.getInt(radiusPreferenceKey(), selected == 2 ? 3 : 1),
                     0, RADII.length - 1);
             prefs.edit().putInt(pokemonSearchMode ? "pokemon_provider_v1" : "raid_provider_v1", selected).apply();
@@ -551,6 +564,7 @@ public final class LiveFeedDialog {
 
         private void selectRadius(int index) {
             if (index == radiusIndex) return;
+            main.removeCallbacks(deferredFetch);
             radiusIndex = index; prefs.edit().putInt(radiusPreferenceKey(), index).apply();
             generation++;
             client.cancel(); pokeList.cancel(); iFlowGo.cancel();
@@ -672,6 +686,7 @@ public final class LiveFeedDialog {
                 next = LiveFeedFilters.fromJson(edited);
             } catch (org.json.JSONException e) { return false; }
             filters = next;
+            main.removeCallbacks(deferredFetch);
             entries.clear(); visible.clear(); distCache = new HashMap<>();
             saveFilters();
             generation++;
@@ -796,10 +811,24 @@ public final class LiveFeedDialog {
             if (nowE < backoffUntilElapsed) { updateStatus(); return; }
             // PokeList lacks published rate-limit semantics. Avoid rapid manual
             // refreshes even when the server did not return Retry-After.
-            if ((provider == 1 || provider == 2) && lastFetchStartedElapsed > 0
+            if (provider == 1 && lastFetchStartedElapsed > 0
                     && nowE - lastFetchStartedElapsed < 60000) {
                 updateStatus(); return;
             }
+            // Auto-refresh stays at 60s, but explicit iFlowGo species/radius
+            // searches may run every 5s. A single deferred callback avoids
+            // making the search button silently do nothing under that gate.
+            if (provider == 2 && lastFetchStartedElapsed > 0
+                    && nowE - lastFetchStartedElapsed < 5000L) {
+                long remaining = 5000L - (nowE - lastFetchStartedElapsed);
+                lastError = "iFlowGo: nova consulta em " + ((remaining + 999) / 1000) + "s.";
+                main.removeCallbacks(deferredFetch);
+                main.postDelayed(deferredFetch, remaining + 40);
+                updateStatus();
+                return;
+            }
+            main.removeCallbacks(deferredFetch);
+            lastError = null;
             fetchInFlight = true;
             lastFetchStartedElapsed = nowE;
             final int g = generation;
