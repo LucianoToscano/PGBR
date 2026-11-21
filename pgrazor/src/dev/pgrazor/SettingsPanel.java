@@ -868,17 +868,23 @@ final class SettingsPanel {
             box.setText(pvpBattleLabels[i]);
             box.setChecked((Control.pvpBattleOptions()&option)!=0);
             pvpBattleChoices[i]=box;pvpBattleC.addView(box);
-            box.setOnClickListener(v->Control.setPvpBattleOptions(
-                PvpBattleMode.update(Control.pvpBattleOptions(),option,box.isChecked())));
+            box.setOnClickListener(v->{
+                Control.setPvpBattleOptions(
+                    PvpBattleMode.update(Control.pvpBattleOptions(),option,box.isChecked()));
+                refreshPvpBattles();
+            });
         }
         pvpPreferSuper=new CheckBox(activity);
         pvpPreferSuper.setText("Priorizar ataque carregado supereficaz");
         pvpPreferSuper.setChecked((Control.pvpBattleOptions()&PvpBattleMode.PREFER_SUPER)!=0);
-        pvpPreferSuper.setOnClickListener(v->Control.setPvpBattleOptions(
-            PvpBattleMode.update(Control.pvpBattleOptions(),
-                PvpBattleMode.PREFER_SUPER,pvpPreferSuper.isChecked())));
+        pvpPreferSuper.setOnClickListener(v->{
+            Control.setPvpBattleOptions(
+                PvpBattleMode.update(Control.pvpBattleOptions(),
+                    PvpBattleMode.PREFER_SUPER,pvpPreferSuper.isChecked()));
+            refreshPvpBattles();
+        });
         pvpBattleC.addView(pvpPreferSuper);
-        caption(pvpBattleC,"Se o segundo golpe for supereficaz, pode guardar energia em vez de lançar o primeiro. Limita a espera e usa o golpe pronto se o HP estiver baixo. Aguarda controlador PvP compatível.");
+        caption(pvpBattleC,"Preferências PvP: selecione e salve os modos desejados. A prioridade supereficaz requer ataque carregado.");
         pvpBattleStatus=caption(pvpBattleC,"");
 
         LinearLayout gymC = group(battleC, "Gyms");
@@ -1502,13 +1508,21 @@ final class SettingsPanel {
     }
 
     private void refreshPvpBattles() {
+        // Preferences must remain editable even without a PvP executor.
+        // This does NOT bypass Control.pvpBattleAllowed() or claim the runtime works.
         for(int i=0;i<3;i++){
             pvpBattleChoices[i].setChecked((Control.pvpBattleOptions()&(1<<i))!=0);
-            pvpBattleChoices[i].setEnabled(Control.pvpBattleReady());
+            pvpBattleChoices[i].setEnabled(true);
         }
         pvpPreferSuper.setChecked((Control.pvpBattleOptions()&PvpBattleMode.PREFER_SUPER)!=0);
-        pvpPreferSuper.setEnabled(Control.pvpBattleReady());
-        pvpBattleStatus.setText(Control.pvpBattleStatus());
+        pvpPreferSuper.setEnabled((Control.pvpBattleOptions()&PvpBattleMode.CHARGED)!=0);
+        if(Control.pvpBattleReady()){
+            pvpBattleStatus.setText(Control.pvpBattleStatus());
+        }else if((Control.pvpBattleOptions()&PvpBattleMode.ACTIONS)!=0){
+            pvpBattleStatus.setText("Preferências PvP salvas. A automação de batalha ainda não está conectada nesta versão; nenhum toque automático será executado.");
+        }else{
+            pvpBattleStatus.setText("Você pode configurar as opções, mas a automação PvP ainda não está disponível nesta versão.");
+        }
         pvpBattleStatus.setVisibility(View.VISIBLE);
     }
 
