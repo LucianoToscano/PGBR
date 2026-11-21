@@ -835,6 +835,9 @@ final class SettingsPanel {
                     .setPositiveButton("Iniciar VGP+",(dialog,which)->start.run()).show();
             }else start.run();
         });
+        launch(vgpC, "Diagnóstico rápido · captura e giro", this::showVgpHealthReport);
+        caption(vgpC, "Verifique opções de captura, giro, cooldown e motivo de bloqueio. "
+                + "Somente leitura: não inicia nem reinicia a VGP.");
         String[] vgpLabels={"Nearby Pokémon","Nearby PokéStops","Push notifications"};
         for(int i=0;i<3;i++){final int bit=1<<i;CheckBox box=new CheckBox(activity);box.setText(dev.pgrazor.PtBr.tr(vgpLabels[i]));box.setChecked((Control.vgpOptions()&bit)!=0);vgpChoices[i]=box;vgpC.addView(box);
             box.setOnClickListener(v->{Control.setVgpOptions(box.isChecked()?Control.vgpOptions()|bit:Control.vgpOptions()&~bit);
@@ -1391,6 +1394,27 @@ final class SettingsPanel {
         if(evolveTransferMode!=null)evolveTransferMode.setText(dev.pgrazor.PtBr.tr("Applies to: "+(Control.evolveTransferMode()==1?"selected species only":"current transfer rules")));
         if(evolveTransferList!=null){String sel=Control.evolveTransferSpecies();int n=sel.isEmpty()?0:sel.split(",").length;evolveTransferList.setText(dev.pgrazor.PtBr.tr(n>0?"Selected species ("+n+")":"Selected species"));}
         transferStatus.setText(dev.pgrazor.PtBr.tr(Control.transferStatus()));
+    }
+
+    /** Manual, read-only VGP health check; never modifies gameplay settings. */
+    private void showVgpHealthReport() {
+        AlertDialog dlg = new AlertDialog.Builder(dialogContext())
+                .setTitle("Diagnóstico VGP+ · captura e giro")
+                .setMessage(vgpHealthText())
+                .setNegativeButton("Fechar", null)
+                .setPositiveButton("Atualizar", null)
+                .create();
+        dlg.setOnShowListener(ignored -> dlg.getButton(AlertDialog.BUTTON_POSITIVE)
+                .setOnClickListener(view -> dlg.setMessage(vgpHealthText())));
+        dlg.show();
+    }
+
+    private String vgpHealthText() {
+        // The status accessor enforces any pending cooldown guard before the UI snapshot.
+        String status = Control.vgpDiagnosticStatus();
+        return VgpHealthReport.build(Control.vgpOverlay(), Control.vgpEnabled(),
+                Control.vgpOptions(), Control.vgpStopOnCooldown(),
+                Cooldown.remaining(), status);
     }
 
     private void refreshVgpStatus() {
