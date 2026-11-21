@@ -1,7 +1,7 @@
 <p align="center"><img src="pgrazor/branding/pgbr-logo.webp" width="92" alt="Logotipo PGBR"></p>
 
 <h1 align="center">PGBR</h1>
-<p align="center"><strong>PGBR v0.00.32-LT (candidato de teste) · Edição brasileira para Android</strong></p>
+<p align="center"><strong>PGBR-v0.00.32-LT (candidato de teste) · Edição brasileira para Android</strong></p>
 <p align="center">Controles de localização, joystick, captura, rotas e recursos opcionais de automação para Pokémon GO.</p>
 
 > **Status (21/11/2026):** LT032 é a **branch de integração de teste**. Preserva a linhagem LT023–LT031, junta as correções posteriores do pipeline LT027 e não representa homologação em aparelho. **PvP, VGP, feeds e privacidade visual exigem ensaio real**. Não há integração direta autenticada de dados PGSharp/Pokémod.
