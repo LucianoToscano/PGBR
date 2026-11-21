@@ -114,12 +114,7 @@ public final class OverlayDrag implements View.OnTouchListener {
      * rendering — otherwise a saved right-edge position can jump on relayout.
      */
     private android.graphics.Rect dragBounds(){
-        android.graphics.Rect safe=UiViewport.bounds(parent);
-        if("vgp".equals(key)&&parent.getHeight()>=parent.getWidth()){
-            safe.left=0;
-            safe.right=parent.getWidth();
-        }
-        return safe;
+        return "vgp".equals(key)?UiViewport.vgpBounds(parent):UiViewport.bounds(parent);
     }
     private float clampX(float x){
         android.graphics.Rect safe=dragBounds();
