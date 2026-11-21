@@ -101,7 +101,7 @@ public final class LiveFeedDialog {
         private final LiveFeedClient client;
         private final PokeListFeedClient pokeList = new PokeListFeedClient();
         private final IFlowGoFeedClient iFlowGo = new IFlowGoFeedClient();
-        /** 0=LivePokeMap, 1=PokeList/Moonani (direct Pokémon search only). */
+        /** 0=LivePokeMap, 1=PokeList/Moonani (Pokémon only), 2=iFlowGo. */
         private int provider;
         private final LiveFeedIcons icons;
         private volatile org.json.JSONObject speciesNames;
@@ -352,7 +352,7 @@ public final class LiveFeedDialog {
                 more.setOnClickListener(v -> new AlertDialog.Builder(ui)
                     .setTitle("Fontes e créditos")
                     .setMessage("Fontes desta busca:\n"
-                        + "• iFlowGo: radar de aparições por área (até 25 km), "
+                        + "• iFlowGo: busca mundial Pokémon por página e radar de Reides por área (até 25 km), "
                         + "consultado via HTTPS. O acesso pode mudar e exige confirmação "
                         + "das condições de integração do fornecedor.\n"
                         + "• LivePokeMap: exige conta própria e respeita suas permissões.\n"
@@ -426,7 +426,7 @@ public final class LiveFeedDialog {
                 radiusButtons = new Button[RADII.length];
                 for (int i = 0; i < RADII.length; i++) {
                     final int index = i;
-                    Button b = segButton(provider == 2 && i == 3 ? "25 km" : RADIUS_LABELS[i]);
+                    Button b = segButton(provider == 2 && i == 3 && raidSearchMode ? "25 km" : RADIUS_LABELS[i]);
                     b.setOnClickListener(v -> selectRadius(index));
                     radiusRow.addView(b, new LinearLayout.LayoutParams(0, dp(40), 1));
                     radiusButtons[i] = b;
@@ -452,9 +452,9 @@ public final class LiveFeedDialog {
                         ? "Fonte: PokeList / Moonani (experimental). Global exige espécie e "
                           + "pode ser bloqueado pela fonte (HTTP 403)."
                         : provider == 2
-                          ? "Fonte: iFlowGo. Pokémon ao vivo por área (até 25 km). "
-                            + "O botão 25 km não é uma busca mundial. "
-                            + "Dados e limites dependem do serviço."
+                          ? "Fonte: iFlowGo. Raio local até 5 km ou Global (primeira página "
+                            + "de aparições mundiais). Espécie, IV e nível são filtrados "
+                            + "no aparelho; resultados dependem da cobertura da fonte."
                           : "Fonte: LivePokeMap. Global pode retornar apenas Pokémon 100% IV.", 12);
                 providerLabel.setPadding(0, dp(8), 0, dp(4));
                 root.addView(providerLabel);
@@ -781,7 +781,9 @@ public final class LiveFeedDialog {
                     LiveFeedData.Snapshot snap = selectedProvider == 1
                             ? pokeList.fetch(lat, lon, radiusKm, selectedDex)
                             : selectedProvider == 2
-                            ? iFlowGo.fetch(lat, lon, radiusKm, raidSearchMode)
+                            ? pokemonSearchMode && Double.isInfinite(radiusKm)
+                              ? iFlowGo.fetchGlobal()
+                              : iFlowGo.fetch(lat, lon, radiusKm, raidSearchMode)
                             : client.fetch(lat, lon, radiusKm, f);
                     if (selectedProvider == 0 && Double.isInfinite(radiusKm))
                         Control.event("feed-global", snap.entries.size() + " results");
