@@ -938,6 +938,10 @@ public final class LiveFeedDialog {
             fetchInFlight = false;
             if (status == 429) backoffUntilElapsed = SystemClock.elapsedRealtime()
                     + Math.max(retryAfterMs, MIN_BACKOFF_MS);
+            if (provider == 3 && (status == 401 || status == 403)) {
+                rocketMapAccessDenied = true;
+                backoffUntilElapsed = 0;
+            }
             if (provider == 2 && (status == 401 || status == 403)) {
                 iFlowGoAccessDenied = true;
                 backoffUntilElapsed = 0;
@@ -955,7 +959,7 @@ public final class LiveFeedDialog {
                 toast("Your LivePokeMap session ended. Please sign in again.");
                 return;
             }
-            if (provider == 2 || (pokemonSearchMode && provider == 1)) {
+            if (provider == 2 || provider == 3 || (pokemonSearchMode && provider == 1)) {
                 // External entries may lose freshness when refresh fails; old Moonani entries often have no verified endTime. A failed
                 // refresh must never leave indefinite stale coordinates clickable.
                 entries.clear(); visible.clear(); distCache.clear();
@@ -978,9 +982,10 @@ public final class LiveFeedDialog {
             if (!showingLogin) {
                 rebuildVisible(); adapter.notifyDataSetChanged(); updateStatus();
                 long nowE = SystemClock.elapsedRealtime();
-                long intervalMs = (provider == 1 || provider == 2 ? Math.max(60, refreshSeconds) : refreshSeconds) * 1000L;
+                long intervalMs = (provider == 1 || provider == 2 || provider == 3 ? Math.max(60, refreshSeconds) : refreshSeconds) * 1000L;
                 if (!fetchInFlight && !(provider == 1 && pokeListAccessDenied)
                     && !(provider == 2 && iFlowGoAccessDenied)
+                    && !(provider == 3 && rocketMapAccessDenied)
                     && nowE >= backoffUntilElapsed
                     && nowE - lastFetchStartedElapsed >= intervalMs) requestFetch();
             }
@@ -989,6 +994,11 @@ public final class LiveFeedDialog {
 
         private void updateStatus() {
             if (feedStatus == null) return;
+            if (provider == 3 && rocketMapAccessDenied) {
+                feedStatus.setText("Seu servidor RocketMap recusou acesso (401/403). "
+                    + "Solicite permissão ao administrador; sem tentativas automáticas.");
+                return;
+            }
             if (provider == 2 && iFlowGoAccessDenied) {
                 feedStatus.setText("iFlowGo recusou a consulta (HTTP 401/403). "
                     + "O PGBR não fará tentativas automáticas. "
@@ -1296,6 +1306,56 @@ public final class LiveFeedDialog {
             detail.dismiss();
         }
 
+        private void configureRocketMap() {
+            if (closed) return;
+            EditText address = new EditText(ui);
+            address.setSingleLine(true);
+            address.setHint("https://seu-servidor.com");
+            address.setInputType(InputType.TYPE_CLASS_TEXT
+                    | InputType.TYPE_TEXT_VARIATION_URI);
+            address.setText(prefs.getString("rocketmap_https_url_v1", ""));
+            LinearLayout form = new LinearLayout(ui);
+            form.setOrientation(LinearLayout.VERTICAL);
+            form.setPadding(dp(16), dp(8), dp(16), dp(8));
+            form.addView(label("Informe a URL base de um RocketMap seu "
+                    + "ou autorizado. HTTPS obrigatório; não informe usuário "
+                    + "ou senha de Pokémon GO.", 13));
+            form.addView(address, new LinearLayout.LayoutParams(-1, dp(52)));
+            AlertDialog prompt = new AlertDialog.Builder(ui)
+                    .setTitle("Servidor RocketMap")
+                    .setView(form)
+                    .setNegativeButton("Cancelar", null)
+                    .setPositiveButton("Salvar", null).create();
+            trackOwn(prompt);
+            prompt.setOnShowListener(d -> {
+                MapTheme.style(form);
+                MapTheme.styleButtons(prompt);
+                prompt.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
+                    String validated;
+                    try { validated = RocketMapFeedClient.validateBaseUrl(
+                            address.getText().toString()); }
+                    catch (IllegalArgumentException ex) {
+                        address.setError(ex.getMessage()); return;
+                    }
+                    ++generation;
+                    rocketMap.cancel();
+                    fetchInFlight = false;
+                    main.removeCallbacks(deferredFetch);
+                    prefs.edit().putString("rocketmap_https_url_v1", validated).apply();
+                    rocketMapAccessDenied = false;
+                    lastFetchStartedElapsed = 0;
+                    backoffUntilElapsed = 0;
+                    lastUpdated = 0;
+                    lastError = null;
+                    entries.clear(); visible.clear(); distCache.clear();
+                    adapter.notifyDataSetChanged();
+                    prompt.dismiss();
+                    if (provider == 3) requestFetch();
+                });
+            });
+            prompt.show();
+        }
+
         private String radiusPreferenceKey() {
             // Provider-specific radius prevents an old 1/3 km LivePokeMap
             // preference from hiding iFlowGo's worldwide Pokémon page.
@@ -1307,6 +1367,7 @@ public final class LiveFeedDialog {
         private String sourceName() {
             if (provider == 1) return "PokeList / Moonani";
             if (provider == 2) return "iFlowGo";
+            if (provider == 3) return "RocketMap (meu servidor)";
             return "LivePokeMap";
         }
 
@@ -1371,6 +1432,7 @@ public final class LiveFeedDialog {
             try { client.cancel(); } catch (RuntimeException ignored) {} // disconnect any live connection off the UI
             try { pokeList.cancel(); } catch (RuntimeException ignored) {}
             try { iFlowGo.cancel(); } catch (RuntimeException ignored) {}
+            try { rocketMap.cancel(); } catch (RuntimeException ignored) {}
             net.shutdownNow();
         }
 
