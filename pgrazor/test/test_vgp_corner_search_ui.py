@@ -31,6 +31,15 @@ class VgpCornerSearchUiTests(unittest.TestCase):
         self.assertIn('"pgrazor/feed-icons/pokemon/" + dexId + ".png"', icons)
         self.assertIn("if (e.expired(System.currentTimeMillis()))", dialog)
         self.assertIn("if (!Control.canEnable())", dialog)
+        self.assertIn("PokeListFeedClient pokeList = new PokeListFeedClient()", dialog)
+        self.assertIn('segButton("PokeList / Moonani")', dialog)
+        self.assertIn('segButton("LivePokeMap")', dialog)
+        self.assertIn('provider == 1 ? "PokeList / Moonani" : "LivePokeMap"', dialog)
+        self.assertIn("PokeListFeedClient", dialog)
+        self.assertIn("entries.clear(); visible.clear(); distCache.clear();", dialog)
+        self.assertIn("provider == 1 && lastFetchStartedElapsed > 0", dialog)
+        self.assertIn("PokeList / Moonani", (ROOT / "src/dev/pgrazor/PokeListFeedData.java").read_text(encoding="utf-8"))
+        self.assertNotIn('"PGSharp" + e.name', dialog)
 
 
 if __name__ == "__main__":
