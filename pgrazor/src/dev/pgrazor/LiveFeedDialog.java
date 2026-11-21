@@ -341,9 +341,10 @@ public final class LiveFeedDialog {
             refresh.setOnClickListener(v -> {
                 // A manual retry is explicit. HTTP 401/403 must never cause
                 // automatic retries against an endpoint that refused access.
-                if (provider == 1) {
+                if (provider == 1 && pokeListAccessDenied) {
                     pokeListAccessDenied = false;
-                    backoffUntilElapsed = 0;
+                    // Explicit retry after access denial. Do not reset the
+                    // 429 Retry-After timer on ordinary refreshes.
                     lastFetchStartedElapsed = 0;
                 }
                 requestFetch();
@@ -487,7 +488,10 @@ public final class LiveFeedDialog {
         private void selectRadius(int index) {
             if (index == radiusIndex) return;
             radiusIndex = index; prefs.edit().putInt("radius", index).apply();
-            generation++; highlightAll();
+            generation++;
+            client.cancel(); pokeList.cancel();
+            fetchInFlight = false; // old generation cannot keep the new request blocked
+            highlightAll();
             rebuildVisible(); adapter.notifyDataSetChanged();
             requestFetch();
         }
@@ -513,6 +517,8 @@ public final class LiveFeedDialog {
             entries.clear(); visible.clear(); distCache = new HashMap<>();
             saveFilters();
             generation++;
+            client.cancel(); pokeList.cancel();
+            fetchInFlight = false; // previous filter request is obsolete
             rebuildVisible(); adapter.notifyDataSetChanged();
             requestFetch();
             return true;
@@ -636,9 +642,10 @@ public final class LiveFeedDialog {
         }
 
         private void onSnapshot(int g, LiveFeedData.Snapshot snap) {
+            // A response from a previously selected provider/filter/radius
+            // must never clear the active request or mix source results.
+            if (closed || showingLogin || g != generation) return;
             fetchInFlight = false;
-            if (closed || showingLogin) return;
-            if (g != generation) { requestFetch(); return; } // filters changed under this request
             entries.clear();
             if (snap != null && snap.entries != null) entries.addAll(snap.entries);
             refreshSeconds = snap != null && snap.refreshSeconds > 0 ? snap.refreshSeconds : DEFAULT_REFRESH_SECONDS;
@@ -649,8 +656,10 @@ public final class LiveFeedDialog {
         }
 
         private void onFetchError(int g, int status, long retryAfterMs, String message) {
+            // Even a late 403 from a previous source must not block the
+            // currently selected one or unlock its active fetch.
+            if (closed || g != generation) return;
             fetchInFlight = false;
-            if (closed) return;
             if (status == 429) backoffUntilElapsed = SystemClock.elapsedRealtime()
                     + Math.max(retryAfterMs, MIN_BACKOFF_MS);
             if (provider == 1 && (status == 401 || status == 403)) {
@@ -659,7 +668,6 @@ public final class LiveFeedDialog {
                 pokeListAccessDenied = true;
                 backoffUntilElapsed = 0;
             }
-            if (g != generation) { requestFetch(); return; }
             if (provider == 0 && (status == 401 || !client.signedIn())) {
                 // The client clears the session on a 401; drop back to the login form.
                 showingLogin = true; lastError = null; entries.clear(); visible.clear();
