@@ -556,13 +556,69 @@ int scenario(int n) {
       api->observe(PGR_RC_OBS_SCOPE_EXIT,&sc.scope2,0,tid);
       break;
     }
+    case 27: { // PvP: vNext fast action without an InvasionCombatState
+      api->update(1,2500,tid);api->tick(tid,0);
+      api->observe(PGR_RC_OBS_PVP_SCOPE_ENTER,&sc.vui,0,tid);
+      api->observe(PGR_RC_OBS_VNEXT_UPDATE,&sc.vui,0,tid);
+      api->tick(tid,0);
+      if(sc.vgest.tapped!=1||scope_now()!=1)return 61;
+      api->observe(PGR_RC_OBS_PVP_SCOPE_EXIT,&sc.vui,0,tid);
+      if(scope_now()!=0||roots_now()!=0||g_bad_free)return 62;
+      break;
+    }
+    case 28: { // PvP shield before any other action; only one click per prompt
+      api->update(4,2500,tid);api->tick(tid,0);
+      api->observe(PGR_RC_OBS_PVP_SCOPE_ENTER,&sc.vui,0,tid);
+      api->observe(PGR_RC_OBS_VNEXT_UPDATE,&sc.vui,0,tid);
+      api->observe(PGR_RC_OBS_SHIELD_PROMPT,&sc.shield,1,tid);
+      api->tick(tid,0);
+      if(sc.shield.shieldClicked!=1)return 63;
+      api->update(4,2500,tid);api->tick(tid,0);
+      if(sc.shield.shieldClicked!=1)return 64;
+      api->observe(PGR_RC_OBS_PVP_SCOPE_EXIT,&sc.vui,0,tid);
+      if(roots_now()!=0||g_bad_free)return 65;
+      break;
+    }
+    case 29: { // PvP charged action selects a real visible and ready vNext charge
+      api->update(2,2500,tid);api->tick(tid,0);
+      api->observe(PGR_RC_OBS_PVP_SCOPE_ENTER,&sc.vui,0,tid);
+      api->observe(PGR_RC_OBS_VNEXT_UPDATE,&sc.vui,0,tid);
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vcharge,0,tid);
+      api->tick(tid,0);
+      if(sc.vcharge.tapped!=1||scope_now()!=1)return 66;
+      api->observe(PGR_RC_OBS_SCOPE_EXIT,&sc.vui,0,tid); // wrong type must not exit PvP
+      if(scope_now()!=1)return 67;
+      api->observe(PGR_RC_OBS_PVP_SCOPE_EXIT,&sc.vui,0,tid);
+      if(roots_now()!=0||g_bad_free)return 68;
+      break;
+    }
+    case 30: { // A generic VNext screen without the typed PvP scope MUST stay inert
+      api->update(7,2500,tid);api->tick(tid,0);
+      api->observe(PGR_RC_OBS_VNEXT_UPDATE,&sc.vui,0,tid);
+      api->observe(PGR_RC_OBS_SHIELD_PROMPT,&sc.shield,1,tid);
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vcharge,0,tid);
+      api->tick(tid,0);
+      if(sc.vgest.tapped||sc.shield.shieldClicked||sc.vcharge.tapped||scope_now())return 69;
+      break;
+    }
+    case 31: { // PvP exit event must not destroy a real Rocket InvasionCombatState
+      arm(&sc.scope,1,tid);
+      api->observe(PGR_RC_OBS_PVP_SCOPE_EXIT,&sc.scope,0,tid);
+      if(scope_now()!=1)return 70;
+      api->observe(PGR_RC_OBS_UI_UPDATE,&sc.ui,0,tid);
+      api->tick(tid,0);
+      if(sc.dir.fastTried!=1)return 71;
+      api->observe(PGR_RC_OBS_SCOPE_EXIT,&sc.scope,0,tid);
+      if(roots_now()!=0||g_bad_free)return 72;
+      break;
+    }
   }
   g_cb=nullptr;api->tick(tid,1);
   if(roots_now()!=0||g_live!=0||g_bad_free)return 90;
   return 0;
 }
 
-constexpr int kScenarios = 27;
+constexpr int kScenarios = 32;
 
 }  // namespace
 
