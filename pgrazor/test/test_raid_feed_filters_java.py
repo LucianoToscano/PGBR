@@ -40,7 +40,7 @@ class RaidFeedFiltersTests(unittest.TestCase):
         self.assertIn('sourceName()',dialog)
         self.assertIn('iFlowGo.fetch(lat, lon, radiusKm, raidSearchMode)',dialog)
         self.assertIn('raid_provider_v1',dialog)
-        self.assertIn("Não utiliza o servidor privado do PGSharp",dialog)
+        self.assertIn("Não utiliza servidores privados do PGSharp",dialog)
         self.assertIn("raid_search_boss_v1",dialog)
         self.assertIn("raid_search_hatched_v1",dialog)
         self.assertIn("e.kind != LiveFeedData.Kind.RAID",dialog)
