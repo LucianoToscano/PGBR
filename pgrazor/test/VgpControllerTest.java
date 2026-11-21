@@ -104,6 +104,19 @@ public final class VgpControllerTest {
         Control.setItemReady(true,"Ready"); Control.setVgpReady(true,"Ready");
         Control.connect(); foreground(true); Control.setVgpOverlay(true); Control.setVgpEnabled(true);
         check(Control.vgpAllowed(),"Off-map foreground may run VGP");
+        // The former permission gate incorrectly depended on Quick Catch
+        // summary + the independent auto-transfer inventory adapter.
+        Control.setItemReady(false,"Inventory auto-transfer unavailable");
+        Control.configureQuickSummary(false);
+        Control.setQuickSummaryReady(false,"Quick Catch unavailable");
+        check(Control.vgpAllowed(),
+                "VGP must use its own native readiness rather than unrelated transfer/summary readiness");
+        check(Control.vgpDiagnosticStatus().contains("habilitada para ações"),
+                "Diagnostic must not falsely block VGP on optional modules");
+        // An actually unavailable native VGP must still be blocked.
+        Control.setVgpReady(false,"Native VGP unavailable");
+        check(!Control.vgpAllowed(),"VGP native engine unavailable still blocks actions");
+        Control.setVgpReady(true,"Ready");
         check(Control.vgpDiagnosticStatus().contains("habilitada para ações"),"Ready state distinguishes activation from permission");
         Control.setVgpOptions(0);
         check(!Control.vgpDiagnosticStatus().contains("habilitada"),"No actions cannot be reported as ready");
