@@ -82,6 +82,8 @@ final class SettingsPanel {
     private final CheckBox[] giftChoices=new CheckBox[3];
     private final CheckBox[] quickMenuChoices=new CheckBox[QuickMenu.CUSTOMIZABLE.length];
     private final CheckBox[] rocketChoices=new CheckBox[3];
+    private final CheckBox[] pvpBattleChoices=new CheckBox[3];
+    private TextView pvpBattleStatus;
     private final CheckBox[] battleChoices=new CheckBox[10];
     private Runnable buddyRefresh=()->{},smartRefresh=()->{};
     // Groups gated by backend readiness (catch-summary support, ball-animation support), refreshed without
@@ -856,6 +858,21 @@ final class SettingsPanel {
         caption(rocketC, "While any of these is on, the next Pokémon is picked automatically when one faints.");
         rocketStatus = caption(rocketC, "");
 
+        // PvP Battle Assistant — isolated from Rocket and PvE.
+        LinearLayout pvpBattleC=group(battleC,"PvP · Liga de Batalha GO");
+        String[] pvpBattleLabels={"Ataque ágil automático","Ataque carregado automático","Escudo automático"};
+        for(int i=0;i<3;i++){
+            final int option=1<<i;
+            CheckBox box=new CheckBox(activity);
+            box.setText(pvpBattleLabels[i]);
+            box.setChecked((Control.pvpBattleOptions()&option)!=0);
+            pvpBattleChoices[i]=box;pvpBattleC.addView(box);
+            box.setOnClickListener(v->Control.setPvpBattleOptions(
+                PvpBattleMode.update(Control.pvpBattleOptions(),option,box.isChecked())));
+        }
+        caption(pvpBattleC,"Controles PvP independentes. Disponíveis apenas após validação de um controlador compatível.");
+        pvpBattleStatus=caption(pvpBattleC,"");
+
         LinearLayout gymC = group(battleC, "Gyms");
         launch(gymC, "Gym Slotter & Berry Feeder", () -> GymAutomationSettings.show(activity));
         battleChoice(gymC,2,"Auto quick attack");
@@ -1291,6 +1308,7 @@ final class SettingsPanel {
         refreshGifts();
         refreshBattles();
         refreshRocket();
+        refreshPvpBattles();
         refreshItems();
         refreshQuickCatch();
         refreshLocationOptions();
@@ -1473,6 +1491,15 @@ final class SettingsPanel {
 
     private void refreshRocket() {
         for(int i=0;i<3;i++)rocketChoices[i].setChecked((Control.rocketOptions()&(1<<i))!=0);rocketStatus.setText(dev.pgrazor.PtBr.tr(Control.rocketStatus()));
+    }
+
+    private void refreshPvpBattles() {
+        for(int i=0;i<3;i++){
+            pvpBattleChoices[i].setChecked((Control.pvpBattleOptions()&(1<<i))!=0);
+            pvpBattleChoices[i].setEnabled(Control.pvpBattleReady());
+        }
+        pvpBattleStatus.setText(Control.pvpBattleStatus());
+        pvpBattleStatus.setVisibility(View.VISIBLE);
     }
 
     private void refreshItems() {
