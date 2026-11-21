@@ -389,6 +389,12 @@ public final class LiveFeedDialog {
                     // 429 Retry-After timer on ordinary refreshes.
                     lastFetchStartedElapsed = 0;
                 }
+                if (provider == 2 && pokemonSearchMode && fetchInFlight) {
+                    // New explicit filter request supersedes an older in-flight page.
+                    generation++;
+                    iFlowGo.cancel();
+                    fetchInFlight = false;
+                }
                 requestFetch();
             });
             filterBtn.setOnClickListener(v -> {
