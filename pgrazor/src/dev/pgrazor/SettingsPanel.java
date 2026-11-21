@@ -1023,8 +1023,18 @@ final class SettingsPanel {
                 (status & 0x10)==0?"Aguardando confirmação da identidade do treinador":
                 sinks==0?"Nenhum componente de texto Unity validado":
                 sinks+" componente(s) de texto Unity interceptado(s)";
+            int nativeStreamer=status<0?0:(status>>>8)&3;
+            String streamer=nativeStreamer==3
+                ?"metadados do serviço e seus dois indicadores reconhecidos, sem ativação"
+                :nativeStreamer==2
+                ?"classe localizada, porém assinatura dos indicadores ainda incompatível"
+                :nativeStreamer==1
+                ?"classe não encontrada nesta versão do jogo"
+                :"aguardando leitura de compatibilidade";
             gamePrivacy.setText(dev.pgrazor.PtBr.tr(
-                "Jogo: "+detail+". Proteção em tela não verificada."));
+                "Jogo: "+detail+". Proteção em tela não verificada. "
+                +"Modo Streamer nativo: "+streamer+". "
+                +"A detecção do serviço não comprova ocultação do nome do treinador."));
         };
         hideTrainer.setOnCheckedChangeListener((button,checked)->{
             if(checked==(Control.trainerPrivacyMode()!=0))return;
