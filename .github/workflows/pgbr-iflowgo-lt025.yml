@@ -26,7 +26,7 @@ jobs:
           packages: platform-tools
       - name: Android JSON source
         run: sdkmanager "sources;android-36"
-      - name: Feed model: iFlowGo, LivePokeMap, PokeList
+      - name: "Feed model: iFlowGo, LivePokeMap, PokeList"
         run: python -B -m unittest discover -s pgrazor/test -p 'test_live_feed_java.py' -v
       - name: Feed filtering / UI / access refusal
         run: |
