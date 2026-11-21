@@ -161,7 +161,7 @@ static int vgp_case(){
  auto policy=static_cast<const PgrVgpPolicyApi*>(core->query_feature(25,1));assert(policy&&policy->install(&pc)==0);
  u::api=static_cast<const PgrVgpControllerApi*>(pgrazor_vgp_controller_api(1));u::tid=gettid();auto vc=u::makeConfig();vc.policy_table=const_cast<PgrVgpPolicyApi*>(policy);assert(u::api->install(&vc)==0);u::resetScenario();
  auto c=config();c.extra_exports=&extra;extra.gchandle_new=vc.gc_new;extra.gchandle_get_target=vc.gc_get;extra.gchandle_free=vc.gc_free;c.runtime_invoke=vc.runtime_invoke;c.object_get_class=vc.object_class;c.object_unbox=vc.object_unbox;
- assert(host->configure(&c)==0);g_vgc=u::api;g_active_caps=PGR_EH_CAP_VGP;g_installed=true;install_wire();
+ assert(host->configure(&c)==0);g_vp=policy;g_vgc=u::api;g_active_caps=PGR_EH_CAP_VGP;g_installed=true;install_wire();
  PgrEncounterHostOptions o{1,sizeof(o)};o.vgp_allowed=1;o.vgp_enabled=1;o.vgp_catch_allowed=1;o.vgp_spin_allowed=1;o.lease_remaining_ms=2500;o.lat=10;o.lon=20;
  assert(host->update_options(&o,gettid())==0);assert(host->tick(gettid())==0);assert(g_last_vgp_status==PGR_VGC_ST_CATCHING);
  u::g_pollRc=PGR_VR_DONE;assert(host->tick(gettid())==0);assert(g_last_vgp_status==PGR_VGC_ST_CATCHING);
