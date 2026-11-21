@@ -37,6 +37,21 @@ class VgpAppearanceTests(unittest.TestCase):
         self.assertIn('"Opacidade do ícone VGP"',settings)
         self.assertIn('"Tamanho do VGP"',settings)
 
+    def test_vgp_all_four_corners_and_persisted_bounds(self):
+        drag=(ROOT/"src/dev/pgrazor/OverlayDrag.java").read_text(encoding="utf-8")
+        viewport=(ROOT/"src/dev/pgrazor/UiViewport.java").read_text(encoding="utf-8")
+        policy=(ROOT/"src/dev/pgrazor/UiViewportPolicy.java").read_text(encoding="utf-8")
+        pad=(ROOT/"src/dev/pgrazor/Pad.java").read_text(encoding="utf-8")
+        self.assertIn('return "vgp".equals(key)?UiViewport.vgpBounds(parent)',drag)
+        self.assertGreaterEqual(drag.count("dragBounds()"),5)
+        self.assertIn("safe.left=0;",viewport)
+        self.assertIn("safe.right=parent.getWidth();",viewport)
+        self.assertIn("UiViewport.vgpBounds(container)",pad)
+        self.assertIn("UiViewportPolicy.edgeAlignedCenter(",pad)
+        self.assertIn("static float edgeAlignedCenter(",policy)
+        # The touch box remains >=48dp even if the artwork is smaller.
+        self.assertIn("dp(Math.max(48,Control.vgpIconSize()))",pad)
+
     def test_engine_does_not_require_optional_quickcatch_or_transfer(self):
         control=(ROOT/"src/dev/pgrazor/Control.java").read_text(encoding="utf-8")
         pos=control.index("public static boolean vgpAllowed(){")
