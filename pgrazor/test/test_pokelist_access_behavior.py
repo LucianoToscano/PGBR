@@ -17,6 +17,13 @@ class PokeListAccessGuardTests(unittest.TestCase):
         self.assertIn("Não há resultados confirmados", ui)
         self.assertIn("entries.clear(); visible.clear(); distCache.clear();", ui)
         self.assertNotIn("backoffUntilElapsed = SystemClock.elapsedRealtime() + 300000L", ui)
+        self.assertIn('prefs.getInt("pokemon_provider_v1", 0)', ui)
+        self.assertIn("if (closed || showingLogin || g != generation) return;", ui)
+        self.assertIn("if (closed || g != generation) return;", ui)
+        self.assertIn("client.cancel(); pokeList.cancel();", ui)
+        self.assertIn("fetchInFlight = false; // previous filter request is obsolete", ui)
+        # Refresh after 403 must not clear a separate 429 rate limit timer.
+        self.assertNotIn("pokeListAccessDenied = false;\n                    backoffUntilElapsed = 0;", ui)
 
     def test_probe_logs_aggregates_not_private_spawn_data(self):
         probe=(ROOT.parent/"tools/pokelist_live_probe.py").read_text(encoding="utf-8")
