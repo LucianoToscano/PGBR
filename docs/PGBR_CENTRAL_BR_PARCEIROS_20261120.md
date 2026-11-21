@@ -6,10 +6,10 @@
 ## 1. Tratamento dos materiais adquiridos e das autorizações
 
 O responsável informa aquisição, autorização de desenvolvimento e parceria para uso das ferramentas listadas. A documentação localizada no Drive inclui:
-- [Inventário mestre total, identificado como autorizado para projetos/licença de desenvolvedor](https://docs.google.com/document/d/1Fe_OK_waxGUv3mtr-RBMXK9bS3UDaOhw/edit);
-- [Arquivo Mestre Pokémon — Inventário Drive](https://docs.google.com/document/d/1eICcw5lHl-vg3H_5HcGCF3p-TICD_zOuvSxo3kEZnk4/edit);
-- [PokeGoBR — Master fontes, APIs, bancos, imagens, sons e APKs](https://docs.google.com/document/d/1L--aif5EbhrInFdk1YJoVSWiRD4yp1Sn/edit);
-- [Especificação PoGoCoordinates indicada como autorizada](https://docs.google.com/document/d/18JYbiw_7xBhjEM5ePsy_3mTUORtfLgoA/edit).
+- Inventário mestre total, identificado como autorizado para projetos/licença de desenvolvedor;
+- Arquivo Mestre Pokémon — Inventário Drive;
+- PokeGoBR — Master fontes, APIs, bancos, imagens, sons e APKs;
+- Especificação PoGoCoordinates indicada como autorizada.
 
 Esses documentos comprovam a existência do inventário e das referências de autorização declaradas pelo responsável; alguns próprios inventários esclarecem que **não são, por si, contratos de redistribuição de cada fornecedor**. Não apagar nem contrariar o histórico do usuário: vincular cada concessão concreta ao componente, à versão e às condições correspondentes antes de publicar seu código ou binário. Arquivos de licença, aquisição, recibos, keys e credenciais ficam no Drive privado — **nunca no GitHub, APK, testes ou logs**. O registro técnico mantém somente ID não sensível do comprovante, escopo e estado de validação.
 
