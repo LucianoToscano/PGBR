@@ -85,13 +85,16 @@ final class ItemBadge extends View {
             c.drawBitmap(itemSprite,null,new RectF(fit[0],fit[1],fit[2],fit[3]),paint);
         }else if(itemId>=1&&itemId<=3){
             drawBall(c);
-        }else if(itemId>=100&&itemId<200){
+        }else if(itemId>=101&&itemId<=104){
             drawPotion(c);
-        }else if(itemId>=200&&itemId<300){
+        }else if(itemId==201||itemId==202){
             drawRevive(c);
-        }else if(itemId>=300&&itemId<400){
+        }else if(itemId==301){
             drawEgg(c);
         }else{
+            // Do not draw a wrong Potion/Revive/Egg for a completely different
+            // unknown item merely because its numeric ID falls in that range.
+            // Exact ID artwork always takes priority; missing art shows its ID.
             drawGeneric(c);
         }
         c.restore();

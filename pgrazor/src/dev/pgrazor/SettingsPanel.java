@@ -779,6 +779,7 @@ final class SettingsPanel {
 
         // ----- IV display: the encounter, Pokemon details and storage list IV overlays -----
         LinearLayout pokemonSearch=group(page,"Busca e rastreamento de Pokémon");
+        launch(pokemonSearch,"Buscar Pokémon e teleportar · LivePokeMap",()->LiveFeedDialog.showPokemonSearch(activity));
         launch(pokemonSearch,"Buscar por IV, Shiny, PvP e espécie",()->PogoFeedDialog.show(activity));
         launch(pokemonSearch,"Radar de Pokémon e locais próximos",()->LiveFeedDialog.show(activity));
         caption(pokemonSearch,"As fontes usam seus próprios serviços e filtros. Resultados globais e determinados dados podem exigir conta ou acesso específico.");
