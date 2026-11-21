@@ -25,5 +25,12 @@ class ItemIconAssetsTest(unittest.TestCase):
             self.assertIn("item_icon_assets()", (ROOT/package).read_text(encoding="utf-8"))
         badge=(ROOT/"src/dev/pgrazor/ItemBadge.java").read_text(encoding="utf-8")
         self.assertIn('"pgrazor/item-icons/item-"+id+".png"',badge)
+        # No fallback may invent a Potion/Revive/Egg for an unrelated item.
+        self.assertNotIn("itemId>=100&&itemId<200",badge)
+        self.assertNotIn("itemId>=200&&itemId<300",badge)
+        self.assertNotIn("itemId>=300&&itemId<400",badge)
+        self.assertIn("itemId>=101&&itemId<=104",badge)
+        self.assertIn("itemId==201||itemId==202",badge)
+        self.assertIn("itemId==301",badge)
 if __name__=="__main__":
     unittest.main()
