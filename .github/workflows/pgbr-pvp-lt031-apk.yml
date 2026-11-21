@@ -8,7 +8,23 @@ concurrency:
   group: pgbr-lt031-apk
   cancel-in-progress: true
 jobs:
+  native-pvp-fixture:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - name: Testar o classificador PvP contra NPCs
+        run: |
+          g++ -std=c++17 -Wall -Wextra -Werror -I pgrazor/native pgrazor/native/pvp_scene_test.cpp -o /tmp/pvp_scene_test
+          /tmp/pvp_scene_test
+      - name: Testar as invocacoes nativas de ataque e escudo no escopo PvP
+        run: |
+          g++ -std=c++17 -O0 -pthread -DPGR_RC_DIRECT_TEST -I pgrazor/native \
+            pgrazor/native/rocket_actions.cpp pgrazor/native/rocket_combat.cpp \
+            pgrazor/native/rocket_combat_test.cpp -o /tmp/pvp_actions_test
+          /tmp/pvp_actions_test
   apk-test:
+    needs: native-pvp-fixture
     if: github.repository == 'LucianoToscano/PGBR'
     permissions:
       contents: write # Required to fetch pinned asset from a draft release
