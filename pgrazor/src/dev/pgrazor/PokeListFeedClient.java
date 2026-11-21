@@ -22,15 +22,21 @@ final class PokeListFeedClient {
     private volatile HttpURLConnection active;
     private volatile boolean cancelled;
 
-    LiveFeedData.Snapshot fetch(double lat,double lon,double radius) throws Exception {
+    LiveFeedData.Snapshot fetch(double lat,double lon,double radius,int dexId) throws Exception {
         if (!Double.isFinite(lat) || !Double.isFinite(lon)
                 || lat < -90 || lat > 90 || lon < -180 || lon > 180)
             throw new LiveFeedClient.FeedException("Coordenadas inválidas para a busca.");
+        boolean global = Double.isInfinite(radius) && radius > 0;
+        if (global && (dexId < 1 || dexId > 1025))
+            throw new LiveFeedClient.FeedException(
+                    "Para consultar a PokeList globalmente, selecione uma espécie ou número da Pokédex.");
         cancelled = false;
-        // The analysis did not establish the unit accepted by distance.
-        // The bounded values used here are experimental and must be verified.
-        int distance = Math.max(1, Math.min(5, (int)Math.round(radius)));
-        String query = "?type=pokemon&lat=" + enc(String.format(Locale.US,"%.6f",lat))
+        // The supplied APK's FilterActivity labels distance values as km and
+        // explicitly pairs value 0 with "All". Global is allowed only with a
+        // server-side species allowlist to bound the response.
+        int distance = global ? 0 : Math.max(1, Math.min(5, (int)Math.round(radius)));
+        String query = "?type=pokemon&mons=" + (dexId >= 1 && dexId <= 1025 ? dexId : "")
+                + "&lat=" + enc(String.format(Locale.US,"%.6f",lat))
                 + "&lng=" + enc(String.format(Locale.US,"%.6f",lon))
                 + "&distance=" + distance;
         URL url = new URL(BASE + query);
