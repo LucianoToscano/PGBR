@@ -454,8 +454,8 @@ public final class LiveFeedDialog {
                           + "pode ser bloqueado pela fonte (HTTP 403)."
                         : provider == 2
                           ? "Fonte: iFlowGo. Raio local até 5 km ou Global (primeira página "
-                            + "de aparições mundiais). Espécie, IV e nível são filtrados "
-                            + "no aparelho; resultados dependem da cobertura da fonte."
+                            + "mundial). Uma espécie específica é consultada direto no servidor; "
+                            + "IV e nível são filtrados no aparelho."
                           : "Fonte: LivePokeMap. Global pode retornar apenas Pokémon 100% IV.", 12);
                 providerLabel.setPadding(0, dp(8), 0, dp(4));
                 root.addView(providerLabel);
@@ -811,7 +811,7 @@ public final class LiveFeedDialog {
                             ? pokeList.fetch(lat, lon, radiusKm, selectedDex)
                             : selectedProvider == 2
                             ? pokemonSearchMode && Double.isInfinite(radiusKm)
-                              ? iFlowGo.fetchGlobal()
+                              ? iFlowGo.fetchGlobal(selectedDex)
                               : iFlowGo.fetch(lat, lon, radiusKm, raidSearchMode)
                             : client.fetch(lat, lon, radiusKm, f);
                     if (selectedProvider == 0 && Double.isInfinite(radiusKm))
