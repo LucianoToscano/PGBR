@@ -172,7 +172,11 @@ static int vgp_case(){
  PgrVgpPolicySample before_off{};assert(policy->sample(&before_off)==0);
  assert(policy->block(gettid())==0);
  PgrVgpPolicySample latched{};assert(policy->sample(&latched)==0&&latched.blocked==1);
- o.vgp_enabled=0;assert(host->update_options(&o,gettid())==0);assert(host->tick(gettid())==0);
+ o.vgp_enabled=0;assert(host->update_options(&o,gettid())==0);
+ // Immediate owner-thread recovery on OFF (even before the next tick).
+ PgrVgpPolicySample after_toggle{};assert(policy->sample(&after_toggle)==0);
+ assert(after_toggle.blocked==0 && after_toggle.seen_size==before_off.seen_size);
+ assert(host->tick(gettid())==0);
  assert(g_last_vgp_status==PGR_VGC_ST_OFF);
  PgrVgpPolicySample after_off{};assert(policy->sample(&after_off)==0);
  assert(after_off.blocked==0 && after_off.seen_size==before_off.seen_size);
