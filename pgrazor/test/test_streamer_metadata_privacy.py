@@ -26,7 +26,7 @@ class StreamerMetadataPrivacyTests(unittest.TestCase):
         self.assertIn("A detecção do serviço não comprova ocultação do nome", settings)
         self.assertIn("Proteção em tela não verificada", settings)
         version = (ROOT / "VERSION").read_text(encoding="utf-8").strip()
-        self.assertRegex(version, r"^[0-9]+\\.[0-9]+\\.[0-9]+-LT$")
+        self.assertRegex(version, r"^[0-9]+\.[0-9]+\.[0-9]+-LT$")
         readme = (ROOT.parent / "README.md").read_text(encoding="utf-8")
         self.assertIn("PGBR-v" + version, readme)
         self.assertTrue((ROOT.parent / "docs" / "releases" / ("v" + version + ".md")).is_file())
