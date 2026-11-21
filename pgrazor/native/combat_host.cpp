@@ -7,6 +7,7 @@
 #include "hook_engine.h"
 #include "rocket_actions.h"
 #include "rocket_combat.h"
+#include "pvp_scene.h"
 #include "rocket_minigame.h"
 #include "runtime_bootstrap.h"
 #include "runtime_metadata.h"
@@ -132,6 +133,11 @@ PgrSharedMetadataOutput g_md{};
 const PgrRocketMiniApi         *g_rocket_mini    = nullptr;
 const pgr_rocket_actions_api_v1 *g_rocket_actions = nullptr;
 const pgr_rocket_combat_api_v1 *g_rocket_combat  = nullptr;
+// PvP uses the same three action bits but owns a separately typed, short-lived scope.
+// GUI transitions are sourced from the game's validated GuiController.Open hook.
+PgrPvpScene g_pvp_scene{};
+uintptr_t g_pvp_ui_root=0; // durable GC handle to VNext; never store a movable raw object
+bool g_pvp_was_ready=false;
 const pgr_battle_api_v1        *g_battles        = nullptr;
 
 std::array<std::atomic<void *>, HK_COUNT> g_originals{};
@@ -575,6 +581,63 @@ struct PinnedArgs {
 #include "pvp_probe.inc"
 bool rocket_gate(uint64_t *tid){return (g_capabilities.load()&PGR_CBH_CAP_ROCKET_COMBAT)&&g_rocket_combat&&observation_allowed(tid);}
 bool battle_gate(uint64_t *tid){return (g_capabilities.load()&PGR_CBH_CAP_BATTLES)&&g_battles&&observation_allowed(tid);}
+
+bool pvp_gate(uint64_t *tid) {
+  return rocket_gate(tid) && g_cfg.gchandle_new && g_cfg.gchandle_get_target &&
+      g_cfg.gchandle_free;
+}
+void pvp_leave(uint64_t tid,const char *reason) {
+  uintptr_t old=g_pvp_ui_root;
+  g_pvp_ui_root=0; // disarm before managed callbacks
+  if(old&&g_rocket_combat&&pvp_gate(&tid)) {
+    auto target=reinterpret_cast<void*(*)(uintptr_t)>(g_cfg.gchandle_get_target);
+    void *ui=target(old);
+    if(ui) g_rocket_combat->observe(PGR_RC_OBS_PVP_SCOPE_EXIT,ui,0,tid);
+  }
+  if(old&&g_cfg.gchandle_free)
+    reinterpret_cast<void(*)(uintptr_t)>(g_cfg.gchandle_free)(old);
+  if(old||g_pvp_was_ready) {
+    g_pvp_was_ready=false;
+    std::string json=std::string(R"({"pvpExecutorReady":false,"reason":")")+
+                     (reason?reason:"closed")+R"("})";
+    queue_event(PGR_CBH_EV_BATTLE_ACTION,0,0,tid,json.c_str());
+  }
+  drain_leaf_events(tid);
+}
+void pvp_gui_open(const char *ns,const char *name,uint64_t tid) {
+  if(!pvp_gate(&tid)||!ns||!name)return;
+  const auto before=g_pvp_scene.stage;
+  g_pvp_scene.gui(ns,name,now_ms());
+  if(before==PgrPvpScene::COMBAT && g_pvp_scene.stage==PgrPvpScene::IDLE)
+    pvp_leave(tid,"battle-ended");
+}
+void pvp_vnext_open(void *ui,uint64_t tid) {
+  if(!ui||!pvp_gate(&tid)||!g_pvp_scene.vnext(now_ms()))return;
+  if(g_pvp_ui_root)return; // same anchored scope, never replay scope-enter each frame
+  uint32_t mask=0;
+  {std::lock_guard<std::mutex> lock(g_options_mutex);
+   if(g_opts.flags&PGR_CBH_OPT_ROCKET_ALLOWED)mask=g_opts.rocket_mask;}
+  if(!(mask&7u))return;
+  pgr_rocket_combat_sample_v1 sample{};
+  if(g_rocket_combat->sample(&sample)!=PGR_RC_OK || sample.scope_active)return;
+  auto gc_new=reinterpret_cast<uintptr_t(*)(void*,int)>(g_cfg.gchandle_new);
+  auto gc_free=reinterpret_cast<void(*)(uintptr_t)>(g_cfg.gchandle_free);
+  const uintptr_t root=gc_new(ui,0);
+  if(!root)return;
+  g_rocket_combat->observe(PGR_RC_OBS_PVP_SCOPE_ENTER,ui,0,tid);
+  if(g_rocket_combat->sample(&sample)!=PGR_RC_OK || !sample.scope_active) {
+    gc_free(root);return;
+  }
+  g_pvp_ui_root=root;g_pvp_was_ready=true;
+  queue_event(PGR_CBH_EV_BATTLE_ACTION,1,0,tid,
+    R"({"pvpExecutorReady":true,"scope":"CombatVNextGuiController","experimental":true})");
+}
+void pvp_vnext_close(void *ui,uint64_t tid) {
+  if(!g_pvp_ui_root||!pvp_gate(&tid))return;
+  auto target=reinterpret_cast<void*(*)(uintptr_t)>(g_cfg.gchandle_get_target);
+  if(target(g_pvp_ui_root)==ui)pvp_leave(tid,"vnext-closed");
+}
+
 void hook_rk_enter(void *self,void *a1, void *a2, void *method){
  auto orig=reinterpret_cast<Fn4Ptr>(load_original(HK_RK_ENTER));FrameGuard frame;uint64_t tid=0;
  if(!rocket_gate(&tid)){orig(self,a1,a2,method);return;}PinnedArgs pins{self,a1,a2};
@@ -606,13 +669,17 @@ void hook_rk_ui_close(void *self,void *method){
 void hook_rk_vn_update(void *self,void *a1, void *method){
  auto orig=reinterpret_cast<Fn3Ptr>(load_original(HK_RK_VN_UPDATE));FrameGuard frame;uint64_t tid=0;
  if(!rocket_gate(&tid)){orig(self,a1,method);return;}PinnedArgs pins{self,a1};
- if(pins.valid&&rocket_gate(&tid)){g_rocket_combat->observe(PGR_RC_OBS_VNEXT_UPDATE,pins.get(0),0,tid);
+ if(pins.valid&&rocket_gate(&tid)){
+  pvp_vnext_open(pins.get(0),tid);
+  g_rocket_combat->observe(PGR_RC_OBS_VNEXT_UPDATE,pins.get(0),0,tid);
   drain_leaf_events(tid);}orig(pins.get(0),pins.get(1),method);
 }
 void hook_rk_vn_close(void *self,void *method){
  auto orig=reinterpret_cast<Fn2Ptr>(load_original(HK_RK_VN_CLOSE));FrameGuard frame;uint64_t tid=0;
  if(!rocket_gate(&tid)){orig(self,method);return;}PinnedArgs pins{self};
- if(pins.valid&&rocket_gate(&tid)){g_rocket_combat->observe(PGR_RC_OBS_VNEXT_CLOSE,pins.get(0),0,tid);
+ if(pins.valid&&rocket_gate(&tid)){
+  g_rocket_combat->observe(PGR_RC_OBS_VNEXT_CLOSE,pins.get(0),0,tid);
+  pvp_vnext_close(pins.get(0),tid);
   drain_leaf_events(tid);}orig(pins.get(0),method);
 }
 void hook_rk_prompt(void *self,uint8_t show, void *method){
