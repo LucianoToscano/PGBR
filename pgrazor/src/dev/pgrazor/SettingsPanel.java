@@ -1395,7 +1395,8 @@ final class SettingsPanel {
 
     private void refreshVgpStatus() {
         vgpSwitch.setChecked(Control.vgpOverlay());
-        vgpRunButton.setEnabled(Control.vgpOverlay());
+        // Keep the action accessible so an off overlay shows its explanatory dialog.
+        vgpRunButton.setEnabled(true);
         vgpRunButton.setText(dev.pgrazor.PtBr.tr(Control.vgpEnabled()?"Parar VGP+":"Iniciar VGP+"));
         vgpStatus.setText(dev.pgrazor.PtBr.tr(Control.vgpDiagnosticStatus()));
     }
