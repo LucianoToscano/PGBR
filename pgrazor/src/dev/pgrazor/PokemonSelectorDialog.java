@@ -202,10 +202,15 @@ public final class PokemonSelectorDialog {
                     .create();
             DialogLifecycle.bind(activity,dialog,this::close);
             dialog.setOnShowListener(d -> {
+                // The list uses weighted height. Stretch Android's dialog panels,
+                // not only the window frame, or the list may measure as 0dp.
+                MapTheme.fullScreen(dialog);
+                dialog.getWindow().clearFlags(
+                        android.view.WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM);
+                dialog.getWindow().setSoftInputMode(
+                        android.view.WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
                 MapTheme.style(root);
                 MapTheme.styleButtons(dialog);
-                dialog.getWindow().setLayout(ViewGroup.LayoutParams.MATCH_PARENT,
-                        (int)(activity.getResources().getDisplayMetrics().heightPixels * 0.78f));
             });
             dialog.show();
             updateSpeciesStatus();
