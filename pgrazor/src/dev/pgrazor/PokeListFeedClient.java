@@ -38,7 +38,8 @@ final class PokeListFeedClient {
         String query = "?type=pokemon&mons=" + (dexId >= 1 && dexId <= 1025 ? dexId : "")
                 + "&lat=" + enc(String.format(Locale.US,"%.6f",lat))
                 + "&lng=" + enc(String.format(Locale.US,"%.6f",lon))
-                + "&distance=" + distance;
+                + "&distance=" + distance
+                + "&_time=" + System.currentTimeMillis(); // observed cache-buster in supplied APK
         URL url = new URL(BASE + query);
         if (!"https".equals(url.getProtocol()))
             throw new LiveFeedClient.FeedException("HTTPS obrigatório para o feed.");
