@@ -56,17 +56,22 @@ public final class LiveFeedDialog {
     private static final long MIN_BACKOFF_MS = 30_000L;
 
     /** Entry point wired by the coordinator from the quick menu / {@link Pad}. */
-    public static void show(Activity activity) {
+    public static void show(Activity activity) { show(activity, false); }
+
+    /** Alternative to PoGoCoordinates: species search on real LivePokeMap results. */
+    public static void showPokemonSearch(Activity activity) { show(activity, true); }
+
+    private static void show(Activity activity, boolean pokemonSearch) {
         if (activity == null || activity.isFinishing() || activity.isDestroyed()) return;
         Context ui = MapTheme.wrap(activity);
         LinearLayout root = new LinearLayout(ui);
         root.setOrientation(LinearLayout.VERTICAL);
         AlertDialog dialog = new AlertDialog.Builder(ui)
-            .setTitle(dev.pgrazor.PtBr.tr("LivePokeMap"))
+            .setTitle(dev.pgrazor.PtBr.tr(pokemonSearch ? "Buscar Pokémon · LivePokeMap" : "LivePokeMap"))
             .setView(root)
             .setNegativeButton(dev.pgrazor.PtBr.tr("Close"), null)
             .create();
-        Controller controller = new Controller(activity, ui, dialog, root);
+        Controller controller = new Controller(activity, ui, dialog, root, pokemonSearch);
         DialogLifecycle.bind(activity, dialog, controller::close, ()->controller.showingLogin,
             controller::pauseLogin,controller::resumeLogin);
         dialog.setOnShowListener(d -> controller.attach());
@@ -80,6 +85,8 @@ public final class LiveFeedDialog {
         private final AlertDialog dialog;
         private final LinearLayout root;
         private final SharedPreferences prefs;
+        private final boolean pokemonSearchMode;
+        private String pokemonQuery = "";
         private final Handler main = new Handler(Looper.getMainLooper());
         private final ExecutorService net = Executors.newSingleThreadExecutor(task -> {
             Thread t = new Thread(task, "pgrazor-livefeed"); t.setDaemon(true); return t;
@@ -110,10 +117,15 @@ public final class LiveFeedDialog {
         private Button[] catButtons, radiusButtons;
         private TextView feedStatus;
 
-        Controller(Activity activity, Context ui, AlertDialog dialog, LinearLayout root) {
+        Controller(Activity activity, Context ui, AlertDialog dialog, LinearLayout root,
+                   boolean pokemonSearchMode) {
             this.activity = activity; this.ui = ui; this.dialog = dialog; this.root = root;
+            this.pokemonSearchMode = pokemonSearchMode;
             prefs = AccountProfiles.preferences(activity,"pgrazor-livefeed");
-            categoryIndex = clamp(prefs.getInt("category", 0), 0, CATEGORIES.length - 1);
+            pokemonQuery = prefs.getString("pokemon_query_v1", "");
+            if (pokemonQuery == null || pokemonQuery.length() > 80) pokemonQuery = "";
+            categoryIndex = pokemonSearchMode ? 1
+                    : clamp(prefs.getInt("category", 0), 0, CATEGORIES.length - 1);
             radiusIndex = clamp(prefs.getInt("radius", 1), 0, RADII.length - 1);
             filters = loadFilters();
             // The session constructor must not touch the keystore on the main thread; token use is
@@ -293,6 +305,9 @@ public final class LiveFeedDialog {
                 around.setPadding(0, dp(6), 0, dp(2));
                 root.addView(around);
 
+                // The direct Pokémon search stays focused on Pokémon. The full feed
+                // retains its separate category controls unchanged.
+                if (!pokemonSearchMode) {
                 // Categories: a compact horizontally scrollable segmented control.
                 HorizontalScrollView catScroll = new HorizontalScrollView(ui);
                 catScroll.setHorizontalScrollBarEnabled(false);
@@ -308,6 +323,7 @@ public final class LiveFeedDialog {
                 }
                 catScroll.addView(catRow);
                 root.addView(catScroll);
+                }
 
                 LinearLayout radiusRow = new LinearLayout(ui);
                 radiusRow.setOrientation(LinearLayout.HORIZONTAL);
@@ -324,6 +340,35 @@ public final class LiveFeedDialog {
                 root.addView(radiusRow);
             }
 
+            if (pokemonSearchMode) {
+                TextView provider = label("Fonte: LivePokeMap (independente do PoGoCoordinates). "
+                        + "O resultado depende da cobertura e do acesso da fonte. "
+                        + "Global pode retornar apenas Pokémon 100% IV.", 12);
+                provider.setPadding(0, dp(8), 0, dp(4));
+                root.addView(provider);
+                EditText search = new EditText(ui);
+                search.setSingleLine(true);
+                search.setHint("Buscar espécie ou #Pokédex (ex.: Pikachu, #25)");
+                search.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
+                search.setFilters(new android.text.InputFilter[]{
+                    new android.text.InputFilter.LengthFilter(80)});
+                search.setText(pokemonQuery);
+                search.addTextChangedListener(new android.text.TextWatcher() {
+                    public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+                    public void onTextChanged(CharSequence value, int start, int before, int count) {
+                        pokemonQuery = value.toString().trim();
+                        prefs.edit().putString("pokemon_query_v1", pokemonQuery).apply();
+                        rebuildVisible();
+                        adapter.notifyDataSetChanged();
+                        updateStatus();
+                    }
+                    public void afterTextChanged(android.text.Editable e) {}
+                });
+                root.addView(search, new LinearLayout.LayoutParams(-1, dp(48)));
+                root.addView(label("Use Filtros para IV, Shiny, XXL e PvP. "
+                        + "Toque em um Pokémon encontrado para confirmar o teleporte.", 12));
+            }
+
             feedStatus = label("", 12);
             feedStatus.setPadding(0, dp(2), 0, dp(4));
             root.addView(feedStatus);
@@ -332,7 +377,10 @@ public final class LiveFeedDialog {
             ListView list = new ListView(ui);
             list.setAdapter(adapter);
             list.setOnItemClickListener((parent, view, pos, id) -> {
-                if (pos >= 0 && pos < visible.size()) openDetails(visible.get(pos));
+                if (pos >= 0 && pos < visible.size()) {
+                    if (pokemonSearchMode) confirmPokemonTeleport(visible.get(pos));
+                    else openDetails(visible.get(pos));
+                }
             });
             TextView empty = label("No live results in range.", 14);
             empty.setGravity(Gravity.CENTER);
@@ -545,6 +593,10 @@ public final class LiveFeedDialog {
             for (LiveFeedData.Entry e : entries) {
                 if (e == null || e.expired(now)) continue;               // hide expired every pass
                 if (!categoryMatches(e)) continue;
+                if (pokemonSearchMode &&
+                        (e.kind != LiveFeedData.Kind.POKEMON ||
+                         !PokemonFeedSearch.matches(pokemonQuery, e.dexId, e.name, displayName(e))))
+                    continue;
                 // The server only partly applies the display filters (not the level range), so
                 // re-check Pokémon the way the LivePokeMap website does.
                 if (e.kind == LiveFeedData.Kind.POKEMON && !filters.matches(e.dexId, e.hasStats ? e.iv : -1,
@@ -658,6 +710,30 @@ public final class LiveFeedDialog {
         }
 
         // ------------------------------------------------------------------ detail + actions
+
+        /** One-tap selection, but never teleport without the existing confirmation. */
+        private void confirmPokemonTeleport(LiveFeedData.Entry e) {
+            if (closed || e == null || e.kind != LiveFeedData.Kind.POKEMON) return;
+            if (e.expired(System.currentTimeMillis())) {
+                toast("Este Pokémon não está mais disponível.");
+                rebuildVisible(); adapter.notifyDataSetChanged(); return;
+            }
+            if (!CooldownState.valid(e.lat, e.lon)) {
+                toast("A fonte não informou coordenadas válidas."); return;
+            }
+            AlertDialog confirmation = TeleportDialog.confirm(activity, e.lat, e.lon, (lat, lon) -> {
+                if (closed || e.expired(System.currentTimeMillis())
+                        || activity.isFinishing() || activity.isDestroyed()) return false;
+                if (!Control.canEnable()) {
+                    toast("O mecanismo de localização não está pronto."); return false;
+                }
+                Control.teleport(lat, lon);
+                toast("Teleporte solicitado: " + displayName(e));
+                dialog.dismiss();
+                return true;
+            });
+            if (confirmation != null && !children.contains(confirmation)) children.add(confirmation);
+        }
 
         private void openDetails(LiveFeedData.Entry e) {
             if (closed) return;
