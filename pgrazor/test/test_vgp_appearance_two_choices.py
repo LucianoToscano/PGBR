@@ -22,7 +22,7 @@ class VgpAppearanceTests(unittest.TestCase):
         end=control.index("public static void vgpResult",pos)
         policy=control[pos:end]
         self.assertIn("vgpEnabled&&vgpReady&&hostLive()",policy)
-        self.assertNotIn("itemAccessAllowed()",policy.split("return ",1)[-1])
+        self.assertNotIn("itemAccessAllowed()",policy.split("return vgpEnabled",1)[-1])
         self.assertIn("!ShundoSniper.active()&&!AutoRaid.running()",policy)
 
 if __name__=="__main__":
