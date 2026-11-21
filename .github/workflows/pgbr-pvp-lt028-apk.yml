@@ -1,0 +1,117 @@
+name: PGBR LT028 - APK completo de teste privado
+on:
+  push:
+    branches: [feat/lt028-pvp-battles-20261121]
+permissions:
+  contents: read
+concurrency:
+  group: pgbr-lt028-apk
+  cancel-in-progress: true
+jobs:
+  apk-test:
+    if: github.repository == 'LucianoToscano/PGBR'
+    runs-on: windows-latest
+    timeout-minutes: 75
+    defaults:
+      run:
+        shell: pwsh
+    env:
+      PGRAZOR_BUILD_TOOLS: 36.0.0
+      PGRAZOR_ANDROID_PLATFORM: android-36
+      PGRAZOR_VERSION: v0.00.28-LT
+      PGRAZOR_KEY_ALIAS: ${{ secrets.PGRAZOR_KEY_ALIAS }}
+      PGRAZOR_STORE_PASSWORD: ${{ secrets.PGRAZOR_STORE_PASSWORD }}
+      PGRAZOR_KEY_PASSWORD: ${{ secrets.PGRAZOR_KEY_PASSWORD }}
+    steps:
+      - name: Verificar que ha original e assinatura configurados
+        env:
+          PGRAZOR_INPUT_URL: ${{ secrets.PGRAZOR_INPUT_URL }}
+          PGRAZOR_KEYSTORE_BASE64: ${{ secrets.PGRAZOR_KEYSTORE_BASE64 }}
+        run: |
+          if ([string]::IsNullOrWhiteSpace($env:PGRAZOR_INPUT_URL)) { throw 'Pacote-base nao configurado' }
+          if ([string]::IsNullOrWhiteSpace($env:PGRAZOR_KEYSTORE_BASE64)) { throw 'Assinatura nao configurada' }
+          if ([string]::IsNullOrWhiteSpace($env:PGRAZOR_KEY_ALIAS)) { throw 'Alias ausente' }
+          if ([string]::IsNullOrWhiteSpace($env:PGRAZOR_STORE_PASSWORD)) { throw 'Senha de store ausente' }
+          if ([string]::IsNullOrWhiteSpace($env:PGRAZOR_KEY_PASSWORD)) { throw 'Senha de chave ausente' }
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+      - uses: android-actions/setup-android@9fc6c4e9069bf8d3d10b2204b1fb8f6ef7065407
+        with:
+          packages: platform-tools
+          log-accepted-android-sdk-licenses: false
+      - name: Android SDK e NDK
+        run: sdkmanager "platforms;android-36" "build-tools;36.0.0" "sources;android-36" "ndk;27.3.13750724" "ndk;29.0.14206865"
+      - name: CMake e Ninja nativos
+        run: python -m pip install "cmake==4.4.4" "ninja==1.13.2"
+      - name: Configuracao nativa
+        run: |
+          $sdk = $env:ANDROID_SDK_ROOT
+          if (!$sdk) { $sdk = $env:ANDROID_HOME }
+          if (!$sdk) { throw 'Android SDK indisponivel' }
+          $gameNdk = Join-Path $sdk 'ndk/27.3.13750724'
+          $artNdk = Join-Path $sdk 'ndk/29.0.14206865'
+          if (!(Test-Path (Join-Path $gameNdk 'source.properties'))) { throw 'NDK jogo ausente' }
+          if (!(Test-Path (Join-Path $artNdk 'source.properties'))) { throw 'NDK arte ausente' }
+          Add-Content $env:GITHUB_ENV "ANDROID_SDK_ROOT=$sdk"
+          Add-Content $env:GITHUB_ENV "ANDROID_NDK_HOME=$gameNdk"
+          Add-Content $env:GITHUB_ENV "PGRAZOR_ART_NDK=$artNdk"
+          Add-Content $env:GITHUB_ENV "PGRAZOR_NATIVE_DEPS=$(Join-Path $env:RUNNER_TEMP 'pgrazor-native-deps')"
+      - name: Fontes nativos verificados
+        run: |
+          python -B tools/prepare_native.py --download
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python -B pgrazor/art_build.py --check
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Dependencias DEX
+        run: python -c "import sys; sys.path.insert(0, 'pgrazor'); import dex_bridges; dex_bridges.dependencies(download=True)"
+      - name: Testar codigo PGBR apos preparar ferramentas DEX
+        run: python -B tools/check.py
+      - name: Pasta temporaria de assinatura
+        run: Add-Content -LiteralPath $env:GITHUB_ENV -Value "PGRAZOR_KEYSTORE=$env:RUNNER_TEMP\pgrazor-selector.jks"
+      - name: Recuperar pacote-base e assinatura
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          PGRAZOR_INPUT_URL: ${{ secrets.PGRAZOR_INPUT_URL }}
+          PGRAZOR_KEYSTORE_BASE64: ${{ secrets.PGRAZOR_KEYSTORE_BASE64 }}
+        run: python -B tools/private_input.py
+      - name: Compilar aplicativo PGBR completo
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: python -B pgrazor/nonroot.py --apk pgrazor/input/game.apkm --google-browser-login
+      - name: APK unico de teste
+        run: |
+          $candidate = Get-ChildItem pgrazor/build/nonroot -Directory | Sort-Object Name -Descending | Select-Object -First 1
+          if (!$candidate) { throw 'Compilacao nao gerou candidato' }
+          python -B pgrazor/release_apk.py --run $candidate.FullName --output dist/selector-lt028
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $apk = 'dist/selector-lt028/PGBR-v0.00.28-LT.apk'
+          if (!(Test-Path $apk)) { throw 'APK de teste ausente' }
+          Write-Host "SHA256: $((Get-FileHash $apk -Algorithm SHA256).Hash)"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: PGBR-v0.00.28-LT-APK-completo-teste
+          path: |
+            dist/selector-lt028/PGBR-v0.00.28-LT.apk
+            dist/selector-lt028/build-info.json
+            dist/selector-lt028/SHA256SUMS.txt
+          if-no-files-found: error
+          retention-days: 7
+      - name: Apagar chave temporaria
+        if: always()
+        run: |
+          if (!$env:PGRAZOR_KEYSTORE) { exit 0 }
+          $key = [IO.Path]::GetFullPath($env:PGRAZOR_KEYSTORE)
+          $temp = [IO.Path]::GetFullPath($env:RUNNER_TEMP).TrimEnd('\') + '\'
+          if (!$key.StartsWith($temp,[StringComparison]::OrdinalIgnoreCase)) { throw 'Chave fora do temporario' }
+          if (Test-Path $key) { Remove-Item $key }
