@@ -321,6 +321,23 @@ public final class Control {
             return "VGP bloqueada por resposta incerta/erro nativo. Pare a VGP+, "
                 +"aguarde a ação pendente terminar e inicie-a novamente manualmente. "
                 +"Os alvos recentes permanecem protegidos. Estado: "+nativeState;
+        if(nativeLower.startsWith("waiting for") ||
+           nativeLower.startsWith("initializing") ||
+           nativeLower.contains("unavailable") ||
+           nativeLower.contains("out of red") ||
+           nativeLower.contains("no regular balls") ||
+           nativeLower.contains("storage full") ||
+           nativeLower.contains("item bag full") ||
+           nativeLower.contains("catching disabled"))
+            return "VGP ligada, mas aguardando pré-requisito nativo: "+nativeState
+                +". Confira conexão, inventário ou suporte indicado.";
+        if(nativeLower.startsWith("watching") ||
+           nativeLower.startsWith("spinning") ||
+           nativeLower.startsWith("catching") ||
+           nativeLower.startsWith("checking") ||
+           nativeLower.startsWith("cleaning"))
+            return "VGP ligada e monitorando. Estado: "+nativeState
+                +". Ações só são confirmadas pelos resultados retornados.";
         return "VGP habilitada para ações. Estado: "+nativeState;
     }
     /**
