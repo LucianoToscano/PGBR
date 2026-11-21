@@ -56,3 +56,11 @@ jobs:
         run: python -c "import sys; sys.path.insert(0, 'pgrazor'); import dex_bridges; dex_bridges.dependencies(download=True)"
       - name: Compile PGBR control classes
         run: python -B pgrazor/build.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: PGBR-LT027-Selector-preview-APK-e-DEX
+          path: |
+            pgrazor/build/pgrazor-preview.apk
+            pgrazor/build/pgrazor.dex
+          if-no-files-found: error
+          retention-days: 7
