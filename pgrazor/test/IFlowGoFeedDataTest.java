@@ -36,6 +36,11 @@ public final class IFlowGoFeedDataTest {
         check(snapshot.entries.get(1).iv < 0, "unreported IV must remain unknown");
         check(snapshot.entries.get(1).id.startsWith("iflowgo:spawn:"), "source prefixes ids");
         check(snapshot.note.contains("iFlowGo"), "source attribution");
+        LiveFeedData.Snapshot global = IFlowGoFeedData.parseGlobal(
+            new JSONObject().put("items", new JSONArray().put(pokemon)), now);
+        check(global.entries.size() == 1 && global.entries.get(0).dexId == 25,
+            "world page reuses real spawn fields");
+        check(global.note.contains("primeira página"), "world limit described truthfully");
         JSONObject raid = new JSONObject().put("id", "raid-live").put("gym_name", "Ginásio Teste")
             .put("lat", 35.65).put("lon", 139.70).put("raid_pokemon_id", 150)
             .put("raid_level", 5)
