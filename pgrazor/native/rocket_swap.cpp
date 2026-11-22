@@ -1,4 +1,5 @@
 #include "rocket_swap.h"
+#include "battle_timing_policy.h"
 #include "game_bindings.h"
 #include "hook_engine.h"
 #include "rocket_combat.h"
@@ -35,8 +36,8 @@ std::atomic<Show> original{nullptr};
 void *prompt_list=nullptr,*prompt_is_open=nullptr,*button_field=nullptr,*swap_method=nullptr,*interactable=nullptr;
 void *fainted_field=nullptr,*active_field=nullptr,*active_self=nullptr;  // SwapButtonVNext overlays, GameObject.activeSelf
 uintptr_t pending=0;uint64_t pending_since=0,next_try=0;int presses=0;
-// Let the player make a manual pick before automatically selecting a replacement.
-constexpr uint64_t kSettleMs=2300,kRetryMs=1000,kGiveUpMs=8000;
+// Only the initial wait is configurable. Original retry/timeout bounds stay fixed.
+constexpr uint64_t kRetryMs=1000,kGiveUpMs=8000;
 
 uint64_t clock_ms(){timespec t{};clock_gettime(CLOCK_BOOTTIME,&t);return uint64_t(t.tv_sec)*1000+t.tv_nsec/1000000;}
 void *exp(const char *name){std::string n="il2cpp_";n+=name;void *p=dlsym(boot.handle,n.c_str());require(p,name);return p;}
@@ -74,7 +75,7 @@ void hook_show(void *self,const void *m){
  original.load(std::memory_order_acquire)(self,m);
  if(!self||!gate()||pending)return;
  pending=fn<uintptr_t(*)(void*,int)>(boot.runtime.gchandle_new)(self,0);
- pending_since=clock_ms();next_try=pending_since+kSettleMs;presses=0;
+ pending_since=clock_ms();next_try=pending_since;presses=0;
 }
 void release(){if(pending)fn<void(*)(uintptr_t)>(boot.runtime.gchandle_free)(pending);pending=0;}
 
@@ -82,11 +83,18 @@ void release(){if(pending)fn<void(*)(uintptr_t)>(boot.runtime.gchandle_free)(pen
 void step(){
  const uint64_t now=clock_ms();
  void *widget=fn<void*(*)(uintptr_t)>(boot.runtime.gchandle_get_target)(pending);
- if(!widget||now-pending_since>kGiveUpMs){release();return;}
- if(now<next_try)return;
- if(!unbox<bool>(invoke(prompt_is_open,widget))){release();return;}  // closed: picked or timed out
+ if(!widget){release();return;}
+ // Check close FIRST, even during the manual wait or after the automation timeout.
+ if(!unbox<bool>(invoke(prompt_is_open,widget))){release();return;}
  if(!rocket_battle()){release();return;}
- void *list=ref_field(widget,prompt_list);if(!list){next_try=now+kSettleMs;return;}
+ // Keep the widget rooted after timeout/disabled while it remains open: this also
+ // blocks Smart Battle from overriding the player's normal KO selector.
+ if(now<pending_since||now-pending_since>kGiveUpMs)return;
+ pgr_battle_timing::Preferences prefs{};
+ if(!pgr_battle_timing::read(transport(),prefs))return; // fail closed on stale settings
+ const uint64_t wait=pgr_battle_timing::fainted_wait_ms(prefs.fainted_choice);
+ if(wait==UINT64_MAX || now-pending_since<wait || now<next_try)return;
+ void *list=ref_field(widget,prompt_list);if(!list){next_try=now+kRetryMs;return;}
  const int count=unbox<int>(invoke(method(klass(list),"get_Count",0),list));
  void *get_item=method(klass(list),"get_Item",1);
  void *usable[16];int slots[16],n=0;
@@ -105,7 +113,7 @@ void step(){
   event("{\"phase\":\"swapped\",\"slot\":"+std::to_string(slots[pick])+",\"presses\":"+std::to_string(presses)+"}");
   next_try=now+kRetryMs;return;
  }
- next_try=now+kSettleMs;  // buttons not ready yet
+ next_try=now+kRetryMs;  // buttons not ready yet
 }
 
 void *class_of(const PgrMetaApi *api,const char *ns,const char *name){
@@ -169,5 +177,8 @@ void pgr_rocket_swap_tick(uint64_t tid){
   install();
  }catch(const Failure &f){faulted.store(true,std::memory_order_release);status("error",std::string("Rocket auto swap unavailable: ")+f.where);}
  catch(...){faulted.store(true,std::memory_order_release);status("error","Rocket auto swap unavailable: native failure");}
+}
+bool pgr_rocket_swap_prompt_active(){
+ return pending!=0 && owner.load(std::memory_order_acquire)==uint64_t(gettid());
 }
 void pgr_rocket_swap_stop(){enabled.store(false,std::memory_order_release);}
