@@ -1202,3 +1202,22 @@ Os digests são **dados da API GitHub Releases**, não hashes recalculados baixa
 **Próximas etapas:** avaliar o CI do PR e os testes sobre a HEAD final da branch, obter QA Android/Root sem mexer em branches paralelas, executar teste físico de joystick/Teleporte/GPS real e atualizar este mesmo Mestre com o resultado factual antes de qualquer merge/release.
 
 **Sincronização subsequente sem perdas:** a `main` avançou em paralelo. Foi incorporado somente o resultado dos quatro arquivos específicos do PR sobre a árvore `dc3f928e7bb4d8da9363ee45db3105bb8411e90c`, preservando os commits e arquivos atuais da principal; a resolução do mestre mantém o texto completo da `main` e acrescenta este bloco. CI no novo HEAD é exigido. Nenhuma publicação ou merge à `main` foi realizada nesta etapa.
+
+
+## 22/11/2026 — APK GPS Ekoparty QA: compilação, distribuição de teste e hashes verificados
+
+**Escopo e ligação com o PR:** [PR #109](https://github.com/LucianoToscano/PGBR/pull/109), branch `feature/ekoparty-gps-validacao-20261122` @ `34db1dc670f0b99d65fd88f615155cabf822871d`; a branch temporária de compilação `qa/ekoparty-gps-apk-20261122` deriva desse mesmo commit e acrescenta apenas o workflow isolado, no commit `46952275afabe0142f5a34f3cf7612f8af073638`. Não houve merge na `main` nem publicação de release/tag. O teste permanece `device_tested=false` até homologação física.
+
+**CI do código:** [#45057813746](https://github.com/LucianoToscano/PGBR/actions/runs/45057813746) e [governança #45057813709](https://github.com/LucianoToscano/PGBR/actions/runs/45057813709) concluídos com sucesso para o PR @ `34db1dc670f0b99d65fd88f615155cabf822871d`. **Build de APK completo:** [#45057867578](https://github.com/LucianoToscano/PGBR/actions/runs/45057867578) concluído com sucesso, workflow `pgbr-ekoparty-gps-qa.yml`, artifact GitHub `14768870561` (`PGBR-Ekoparty-GPS-Root-e-SemRoot-QA`). O pipeline compilou o APK completo, instalador Root e ZIP Zygisk, verificou a integridade cruzada via `tools/verify_release.py`, fez upload e limpou o keystore temporário. O insumo do jogo é a versão `0.437.0`; identificação de QA: `v0.00.40-LT-gpsQA`.
+
+**Hashes SHA-256 reais, conferidos no ZIP de artefatos contra o `SHA256SUMS.txt`:**
+
+| Arquivo QA | SHA-256 |
+| --- | --- |
+| `PGBR-v0.00.40-LT-gpsQA.apk` | `9e3aac858b24e01a16603edeea213c9449c9e0fc12cc3105ab94e7aeefd31f42` |
+| `PGBR-v0.00.40-LT-gpsQA-Root.apk` | `06ea20df462fec529afc2a936bab6c36775da983dd92bea45a29ca8c50729e98` |
+| `PGBR-v0.00.40-LT-gpsQA-Root-module.zip` | `53dd2ff2ddd8011d8bd03a55aadda183480624a5b06616ef17d98797ca839c5a` |
+
+**Entrega:** o artefato foi baixado e seus seis arquivos (`3` instaláveis + `2` comprovantes JSON + `SHA256SUMS.txt`) foram extraídos e verificados byte a byte no ambiente da conversa. Os links `sandbox:/mnt/data/...` são temporários da conversa, não links públicos permanentes de release; download persistente via [Actions #45057867578](https://github.com/LucianoToscano/PGBR/actions/runs/45057867578). Não gerar URLs permanentes falsas.
+
+**Pendências objetivas:** instalação real e jogo com GPS/Teleporte/joystick/GPX e alternância Root/sem Root; confirmar assinaturas de atualização e rollback, comportamento de pause/resume e restauração dos listeners. Não considerar a técnica histórica JNI proxifier/bypass da apresentação como implementada, pois a melhoria efetiva é validação do adaptador GPS já existente. Não efetuar merge nem release automaticamente.
