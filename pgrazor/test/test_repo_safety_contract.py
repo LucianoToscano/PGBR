@@ -18,6 +18,9 @@ class PackagingSafetyTests(unittest.TestCase):
     def test_archived_upstream_release_is_repo_guarded(self):
         txt=(ROOT/"upstream-workflows/release.yml").read_text()
         self.assertGreaterEqual(txt.count("github.repository == 'jpitty03/PGRazor'"),2)
+        for name in ('ci.yml','discord-release.yml','pages.yml'):
+            archived=(ROOT/'upstream-workflows'/name).read_text()
+            self.assertIn("github.repository == 'jpitty03/PGRazor'",archived)
     def test_real_ci_contract_and_vendor_bridge(self):
         ci=(ROOT/".github/workflows/pgbr-codigo-ci.yml").read_text()
         check=(ROOT/"tools/check.py").read_text()
