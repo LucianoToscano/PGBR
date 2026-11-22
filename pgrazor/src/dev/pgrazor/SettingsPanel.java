@@ -75,7 +75,7 @@ final class SettingsPanel {
     private Button vgpIconStyleButton, vgpStartStopButton, joystickStyleButton, eternatusIntensityButton, eternatusSpeedButton;
     private BerryPriorityPicker berryPicker;
     private TextView quickSummaryLabel, vgpStatus, cutsceneStatus, healStatus, smartBattleStatus;
-    private Switch healSwitch, healReviveSwitch, smartBattleSwitch, gymRepeatSwitch;
+    private Switch healSwitch, healReviveSwitch, smartBattleSwitch, smartAttackSwitch, gymRepeatSwitch;
     private Button healWhen, healThreshold, healItems;
     private final CheckBox[] vgpChoices=new CheckBox[3];
     // Status / caption lines (muted, readiness driven).
@@ -90,7 +90,6 @@ final class SettingsPanel {
     private final CheckBox[] rocketChoices=new CheckBox[3];
     private final CheckBox[] pvpBattleChoices=new CheckBox[3];
     private TextView pvpBattleStatus;
-    private CheckBox pvpPreferSuper;
     private final CheckBox[] battleChoices=new CheckBox[10];
     private Runnable buddyRefresh=()->{},smartRefresh=()->{};
     // Groups gated by backend readiness (catch-summary support, ball-animation support), refreshed without
@@ -1011,6 +1010,7 @@ final class SettingsPanel {
         LinearLayout battleC = plain(page); summaryGated.add(battleC);
         LinearLayout all = group(battleC, "All battles");
         buildSmartBattle(all);
+        buildSmartAttack(all);
         buildHealing(all);
 
         // ----- Team Rocket -----
@@ -1041,16 +1041,6 @@ final class SettingsPanel {
                 refreshRocket();
             });
         }
-        pvpPreferSuper=new CheckBox(activity);
-        pvpPreferSuper.setText("Priorizar ataque carregado supereficaz");
-        pvpPreferSuper.setChecked((Control.pvpBattleOptions()&PvpBattleMode.PREFER_SUPER)!=0);
-        pvpPreferSuper.setOnClickListener(v->{
-            Control.setPvpBattleOptions(
-                PvpBattleMode.update(Control.pvpBattleOptions(),
-                    PvpBattleMode.PREFER_SUPER,pvpPreferSuper.isChecked()));
-            refreshPvpBattles();
-        });
-        pvpBattleC.addView(pvpPreferSuper);
         caption(pvpBattleC,"Ataque ágil, carregado e escudo são compartilhados com Rocket. O executor VNext PvP é experimental; a escolha supereficaz do segundo golpe ainda não está integrada.");
         pvpBattleStatus=caption(pvpBattleC,"");
 
@@ -1082,7 +1072,7 @@ final class SettingsPanel {
     private void buildSmartBattle(LinearLayout owner) {
         smartBattleSwitch = switchRow(owner, "Smart battling"); smartBattleSwitch.setChecked(Control.smartBattle());
         smartBattleSwitch.setOnCheckedChangeListener((v,checked) -> { if(checked==Control.smartBattle())return; Control.setSmartBattle(checked); refreshSmartBattle(); });
-        caption(owner, "Picks counters for the Pokémon you are fighting: fills your team before gym, raid and Rocket battles, and swaps to your best counter during gym and Rocket battles.");
+        caption(owner, "Escolhe a equipe para Ginásios, Raides e Rocket e troca automaticamente em Ginásios e Rocket. Os demais modos exigem suporte próprio validado.");
         smartBattleStatus = caption(owner, "");
         refreshSmartBattle();
     }
@@ -1093,9 +1083,21 @@ final class SettingsPanel {
         String status=Control.smartBattleStatus(); smartBattleStatus.setText(dev.pgrazor.PtBr.tr(status)); smartBattleStatus.setVisibility(status.isEmpty()?View.GONE:View.VISIBLE);
     }
 
+    private void buildSmartAttack(LinearLayout owner){
+        smartAttackSwitch=switchRow(owner,"Smart attacking");
+        smartAttackSwitch.setChecked(Control.smartAttack());
+        smartAttackSwitch.setOnCheckedChangeListener((v,on)->{
+            if(on!=Control.smartAttack())Control.setSmartAttack(on);
+        });
+        caption(owner,"Um único controle para todos os modos: Super eficaz > Neutro > Pouco eficaz. "+
+            "A preferência é salva, mas a seleção nativa dos botões ainda não está integrada "+
+            "nem validada para todos os modos. Ataques carregados continuam instantâneos.");
+    }
+
     private void buildHealing(LinearLayout owner) {
         healSwitch = switchRow(owner, "Smart healing"); healSwitch.setChecked(Control.healEnabled());
         healSwitch.setOnCheckedChangeListener((v,checked) -> { if(checked==Control.healEnabled())return; Control.setHealEnabled(checked); refreshHealing(); });
+        caption(owner,"Usa itens após batalhas ou no mapa quando permitido; poções e revives não são usados durante combate.");
         healWhen = button(""); owner.addView(healWhen);
         healWhen.setOnClickListener(v -> { Control.setHealWhen((Control.healWhen()+1)%3); refreshHealing(); });
         healThreshold = button(""); owner.addView(healThreshold);
@@ -1534,6 +1536,7 @@ final class SettingsPanel {
         cutsceneStatus.setVisibility(Control.cutsceneSkipStatus().isEmpty()?View.GONE:View.VISIBLE);
         refreshHealing();
         refreshSmartBattle();
+        if(smartAttackSwitch!=null)smartAttackSwitch.setChecked(Control.smartAttack());
         refreshDependencies();
     }
 
@@ -1721,8 +1724,6 @@ final class SettingsPanel {
             pvpBattleChoices[i].setChecked((Control.pvpBattleOptions()&(1<<i))!=0);
             pvpBattleChoices[i].setEnabled(true);
         }
-        pvpPreferSuper.setChecked((Control.pvpBattleOptions()&PvpBattleMode.PREFER_SUPER)!=0);
-        pvpPreferSuper.setEnabled((Control.pvpBattleOptions()&PvpBattleMode.CHARGED)!=0);
         if(Control.pvpBattleReady()){
             pvpBattleStatus.setText(Control.pvpBattleStatus());
         }else if((Control.pvpBattleOptions()&PvpBattleMode.ACTIONS)!=0){

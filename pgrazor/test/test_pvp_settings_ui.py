@@ -6,7 +6,11 @@ control = (root/'pgrazor/src/dev/pgrazor/Control.java').read_text(encoding='utf-
 mode = (root/'pgrazor/src/dev/pgrazor/PvpBattleMode.java').read_text(encoding='utf-8')
 assert 'pvpBattleChoices[i].setEnabled(true);' in ui
 assert 'pvpBattleChoices[i].setEnabled(Control.pvpBattleReady())' not in ui
-assert 'pvpPreferSuper.setEnabled((Control.pvpBattleOptions()&PvpBattleMode.CHARGED)!=0);' in ui
+# One global Smart attacking switch replaces the duplicate PvP-only preference.
+assert 'smartAttackSwitch=switchRow(owner,"Smart attacking");' in ui
+assert 'pvpPreferSuper' not in ui
+assert 'public static boolean smartAttack(){return smartAttack;}' in control
+assert 'pvpBattleOptions=PvpBattleMode.update(pvpBattleOptions,PvpBattleMode.PREFER_SUPER,on);' in control
 assert 'refreshPvpBattles();' in ui and 'refreshRocket();' in ui
 assert 'Control.setRocketOptions(' in ui and 'Control.setPvpBattleOptions(' in ui
 assert 'Opções Rocket/PvP sincronizadas' in ui
