@@ -15,6 +15,7 @@ public final class ControlSettingsTest {
             Control.setAutoBerry(705); Control.setEncounterBerryEnabled(true); Control.setBuddyBerry(703);
             Control.setBattleOptions(111); Control.setBattleOptions(981); // Rapid change: the newest value must win after coalescing.
             Control.setGymRepeatEnabled(true);
+            Control.setSmartShieldTiming(2); Control.setSmartFaintedSwapTiming(0);
             Control.setLocalTimeOverlay(true);
             Control.setVgpTapProtection(false);
             Control.setRocketOptions(5);
@@ -42,6 +43,12 @@ public final class ControlSettingsTest {
             throw new AssertionError("Berry choice/overlay not persisted");
         if(Control.battleOptions()!=981||Control.battlesAllowed())throw new AssertionError("Other battle persistence/readiness");
         if(!Control.gymRepeatEnabled())throw new AssertionError("Gym repeat not persisted across process restart");
+        if(Control.smartShieldTiming()!=2||Control.smartFaintedSwapTiming()!=0||
+           !"F2|0|2|0".equals(Control.smartBattleConfig()))
+            throw new AssertionError("Battle timing options not persisted across process restart");
+        Control.setSmartShieldTiming(-1);Control.setSmartFaintedSwapTiming(4);
+        if(Control.smartShieldTiming()!=2||Control.smartFaintedSwapTiming()!=0)
+            throw new AssertionError("Invalid battle timing choice should not be accepted");
         if(!Control.localTimeOverlay())throw new AssertionError("Local clock not persisted across process restart");
         if(Control.vgpTapProtection())throw new AssertionError("VGP tap protection not persisted across cold start");
         if(Control.rocketOptions()!=5||Control.rocketAllowed())throw new AssertionError("Rocket persistence/readiness");
@@ -68,7 +75,9 @@ public final class ControlSettingsTest {
             // Read the file directly: this proves the daemon writer drained the newest coalesced snapshot.
             java.util.Properties saved=new java.util.Properties();
             try(java.io.FileInputStream in=new java.io.FileInputStream(new java.io.File(args[1],"pgrazor-settings-v1.properties"))){saved.load(in);}
-            if(!"981".equals(saved.getProperty("battleOptions"))||!"705".equals(saved.getProperty("berryPriority"))||!"5".equals(saved.getProperty("rocketOptions"))||!"true".equals(saved.getProperty("gymRepeatEnabled")))
+            if(!"981".equals(saved.getProperty("battleOptions"))||!"705".equals(saved.getProperty("berryPriority"))||!"5".equals(saved.getProperty("rocketOptions"))||!"true".equals(saved.getProperty("gymRepeatEnabled"))||
+               !"2".equals(saved.getProperty("smartShieldTiming"))||
+               !"0".equals(saved.getProperty("smartFaintedSwapTiming")))
                 throw new AssertionError("Queued settings were not flushed to disk before exit");
         }
         System.out.println("PASS: settings "+args[0]);
