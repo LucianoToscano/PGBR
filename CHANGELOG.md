@@ -1,3 +1,6 @@
+## Não lançado — prioridade simples de eficácia (22/11/2026)
+- Nova política pura compara categorias de eficácia e reutiliza a tabela de tipos. Testes usam objetos simulados; ela ainda não está ligada aos executores nem altera a escolha no jogo. A investigação identificou um indicador candidato no display VNext, mas não comprovou sua atualização para a sessão/adversário atual. Sem release.
+
 ## Não lançado — Ataque Inteligente: investigação do original (22/11/2026)
 - O APKM original 0.437.0 da biblioteca foi reconstruído e sua identidade conferida com o perfil fixado; metadados e biblioteca ARM64 foram examinados estaticamente fora do Git. Os nomes candidatos encontrados não comprovam a associação de golpes aos botões. Sem integração do motor, teste físico ou release. [Limites e evidências](docs/AUDITORIA_BATALHA_CURA_2026-11-22.md).
 
