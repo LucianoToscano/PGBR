@@ -24,9 +24,9 @@ METHODS = SINGLE | MULTI
 PAT = re.compile(r"\.\s*(" + "|".join(sorted(METHODS, key=len, reverse=True)) + r")\s*\(")
 # Bare View calls such as setContentDescription("...") have no leading dot.
 # Restrict these to literal text to avoid matching Java method declarations.
-BARE_PAT = re.compile(r"(?<![\\w$.])(?P<method>setContentDescription)\\s*\\(")
+BARE_PAT = re.compile(r"(?<![\w$.])(?P<method>setContentDescription)\s*\(")
 # Toast.makeText takes its user-facing text in argument TWO, not argument one.
-TOAST_PAT = re.compile(r"\\b(?:android\\.widget\\.)?Toast\\s*\\.\\s*makeText\\s*\\(")
+TOAST_PAT = re.compile(r"\b(?:android\.widget\.)?Toast\s*\.\s*makeText\s*\(")
 PREFIX = "dev.pgrazor.PtBr.tr("
 ROOT_PREFIX = "dev.pgrazor.root.RootPtBr.tr("
 

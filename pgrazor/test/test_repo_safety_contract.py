@@ -9,8 +9,12 @@ class PackagingSafetyTests(unittest.TestCase):
         self.assertNotIn('android:debuggable="true"',manifest)
         self.assertIn('android:debuggable="false"',manifest)
     def test_single_pr_template(self):
-        self.assertTrue((ROOT/".github/PULL_REQUEST_TEMPLATE.md").is_file())
-        self.assertFalse((ROOT/".github/pull_request_template.md").exists())
+        import subprocess
+        tracked=subprocess.run(['git','ls-tree','-r','--name-only','HEAD','--','.github'],
+                               cwd=ROOT,capture_output=True,text=True,check=True).stdout.splitlines()
+        self.assertIn('.github/PULL_REQUEST_TEMPLATE.md',tracked)
+        # Path.exists() is case-folded on Windows; only git tree entries are authoritative.
+        self.assertNotIn('.github/pull_request_template.md',tracked)
     def test_archived_upstream_release_is_repo_guarded(self):
         txt=(ROOT/"upstream-workflows/release.yml").read_text()
         self.assertGreaterEqual(txt.count("github.repository == 'jpitty03/PGRazor'"),2)
