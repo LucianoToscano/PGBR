@@ -73,6 +73,12 @@ public final class PvpChargedPreferenceTest {
             m(1,80,40,true),null,11,5,0,0,60,9,90,true),"single equipped charged attack");
         eq(PvpChargedPreference.WAIT,PvpChargedPreference.select(
             m(1,80,40,false),null,11,5,0,0,60,9,90,true),"single charged not ready");
+        eq(PvpChargedPreference.SECOND,PvpChargedPreference.select(
+            m(1,80,40,false),m(4,80,55,true),11,5,0,0,60,9,90,true),
+            "only confirmed ready second does not need unknown foe type");
+        eq(PvpChargedPreference.FIRST,PvpChargedPreference.select(
+            m(1,80,40,true),m(4,80,55,false),11,5,0,0,60,9,90,true),
+            "only confirmed ready first does not need unknown foe type");
         eq(PvpChargedPreference.WAIT,PvpChargedPreference.select(
             m(1,80,40,false),m(4,80,55,false),11,5,12,0,60,9,90,true),
             "neither ready continues quick attack");
