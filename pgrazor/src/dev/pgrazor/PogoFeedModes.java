@@ -123,8 +123,9 @@ final class PogoFeedModes {
         if (m == Mode.WEATHER && spec.isNull("weather_id")) return "Choose a weather in Filters.";
         if (m == Mode.ROCKET && (spec.isNull("type") || spec.optString("type", "").isEmpty())) return "Choose a Rocket type in Filters.";
         if (m == Mode.QUESTS && spec.optString("reward_type", "").isEmpty()) return "Escolha um tipo de recompensa nos filtros.";
-        if (m == Mode.QUESTS && "Candy".equals(spec.optString("reward_type")) && !local(lat, lon, radiusKm)
-                && arr(spec, "reward_candy_pokemon_ids").length() == 0 && arr(spec, "quest_titles").length() == 0)
+        if (m == Mode.QUESTS && CandyQuestPolicy.selectionRequired(spec.optString("reward_type"),
+                local(lat, lon, radiusKm), arr(spec, "reward_candy_pokemon_ids").length(),
+                arr(spec, "quest_titles").length()))
             return "Doces: selecione um Pokémon ou uma tarefa, ou pesquise em uma área próxima.";
         return null;
     }
