@@ -46,6 +46,8 @@ jobs:
         run: python -B -m unittest discover -s pgrazor/test -p 'test_transfer_cutoff_host.py' -v
       - name: Verificar sintaxe dos scripts Python novos
         run: python -B -m compileall -q pgrazor/test
+      - name: Confirmar fixture Java do Control e eventos de sessão
+        run: python -B -m unittest discover -s pgrazor/test -p 'test_control_fixture_contract.py' -v
       - name: Verificar Arquivo Mestre e links internos
         run: python -B -m unittest discover -s pgrazor/test -p 'test_master_governance.py' -v
       - name: Testar o inventário somente leitura
