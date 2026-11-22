@@ -41,7 +41,9 @@ void require(bool ok,const char *where){if(!ok)throw Failure{where};}
 PgrBootBinding boot{};const PgrSharedMetadataOutput *md=nullptr;
 bool busy=false,initialized=false,hooks_tried=false;
 std::atomic<bool> enabled{false},hooks_ready{false};std::atomic<uint64_t> owner{0};
-constexpr uint64_t kStepMs=250,kSettleMs=1200,kOpenMs=350,kPressRetryMs=500,kPressGiveUpMs=4500,kTableRetryMs=5000;
+// Avoid racing manual Pokémon selection in both Rocket and Gym smart swaps.
+// Rocket's fainted-prompt auto-swap waits 2300 ms as well.
+constexpr uint64_t kStepMs=250,kSettleMs=2300,kOpenMs=350,kPressRetryMs=500,kPressGiveUpMs=4500,kTableRetryMs=5000;
 constexpr int kMaxCandidates=60;
 
 uint64_t clock_ms(){timespec t{};clock_gettime(CLOCK_BOOTTIME,&t);return uint64_t(t.tv_sec)*1000+t.tv_nsec/1000000;}
