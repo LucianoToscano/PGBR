@@ -56,7 +56,7 @@ python -B pgrazor/nonroot.py --apk pgrazor/input/game.apkm
 python -B pgrazor/release_apk.py --run pgrazor/build/nonroot/RUN-ID --output pgrazor/build/release
 ```
 
-Use a pasta de execução informada pelo primeiro comando. O segundo combina o componente de configuração ARM64 que contém apenas bibliotecas, remove a exigência de instalação dividida, define o nome instalado como Pokémon GO (o menu dentro do jogo continua PGBR), alinha e assina **PGBR-v0.00.34-LT.apk** e grava os checksums. Componentes de recursos ou código são rejeitados, em vez de serem descartados silenciosamente. Nenhum desses comandos instala algo no celular.
+Use a pasta de execução informada pelo primeiro comando. O segundo combina o componente de configuração ARM64 que contém apenas bibliotecas, remove a exigência de instalação dividida, define o nome instalado como Pokémon GO (o menu dentro do jogo continua PGBR), alinha e assina o APK segundo `pgrazor/VERSION` (atualmente **PGBR-v0.00.40-LT.apk** no fluxo fixado) e grava os checksums. Componentes de recursos ou código são rejeitados, em vez de serem descartados silenciosamente. Nenhum desses comandos instala algo no celular.
 
 O empacotamento em APK único é recente e ainda exige um teste de instalação e abertura em um celular desconectado. Os pacotes divididos anteriores continuam disponíveis na pasta de execução como opção de retorno. Preserve uma instalação já testada até verificar a nova versão.
 
@@ -100,9 +100,9 @@ Configure estes segredos no GitHub Actions:
 
 Para uma entrada privada do GitHub, utilize a URL `https://api.github.com/repos/OWNER/REPO/releases/assets/ID`. O fluxo fornece um token com permissões limitadas; a autorização é removida quando o GitHub redireciona ao servidor de download assinado.
 
-Acesse **Actions → PGBR v0.00.34-LT - compilar e publicar pre-release QA → Run workflow** na branch autorizada. O workflow gera o artifact `PGBR-LT034-PGR036-Root-e-SemRoot-QA`; o envio da pré-release só acontece quando o commit estiver na `main`, após a compilação e o `verify_release.py` aprovarem os três pacotes. A opção `publish` não existe nesse fluxo; não há publicação automática na branch de revisão. Ele contém **PGBR-v0.00.34-LT.apk** (sem Root), **PGBR-v0.00.34-LT-Root.apk** (instalador Root) e **PGBR-v0.00.34-LT-Root-module.zip** (módulo Root manual). É necessário acesso de leitura ao repositório para baixar [artefatos de execução](https://docs.github.com/en/actions/how-tos/manage-workflow-runs/download-workflow-artifacts).
+**Estado auditado em 22/11/2026:** a pré-release QA [LT040](https://github.com/LucianoToscano/PGBR/releases/tag/v0.00.40-LT) já está publicada, com APK sem Root, instalador Root, ZIP Zygisk e SHA256SUMS. O workflow `pgbr-lt040-release.yml` foi congelado para reprodução forense (`workflow_dispatch`); **não** gera nova versão a partir de uma branch de auditoria nem substitui LT040. Para produzir um candidato posterior, crie uma nova tag/versão, notas e workflow próprios, rode testes em PR/branch e publique apenas artefatos aprovados pelo respectivo CI; não renomeie um APK antigo como versão nova.
 
-Depois dos testes no aparelho, execute com `publish` ligado para criar um lançamento com os três downloads, checksums e comprovantes de compilação. Tags e lançamentos existentes não são substituídos. O fluxo instala os NDKs e ferramentas fixados e prepara as dependências nativas antes dos testes e empacotamento. A preparação PowerShell escreve os caminhos em `GITHUB_ENV`, preservando os mesmos compiladores e cache nas etapas seguintes. A execução é manual, não roda para solicitações de incorporação e exige notas da versão em `docs/releases/TAG.md`. O arquivo `docs/releases/footer.md` é acrescentado automaticamente, incluindo a referência opcional de apoio. O CI de fontes não envia segredos nem arquivos do jogo.
+**Publicação:** só após conferir o build e `tools/verify_release.py`, a assinatura, os três artefatos e o SHA-256. Para cada tag nova, usar pipeline dedicado com etapas explícitas de publicação e um mecanismo de confirmação que não sobrescreva tags/assets existentes. Os fluxos históricos permanecem preservados para rastreabilidade; não presumir uma opção `publish` nos workflows LT033–LT040.
 
 O envio e a publicação conferem os três downloads com checksums e comprovantes, verificam a correspondência das versões do jogo e do lançamento e confirmam que o instalador Root contém exatamente o módulo ZIP publicado. O CI de fontes também compila o instalador Root sem o jogo nem segredos de assinatura. A chave permanece nos segredos do Actions; não a substitua entre versões.
 
@@ -118,7 +118,7 @@ Sem o segredo, a etapa de aviso registra um alerta e não envia nada. Para anunc
 
 ## Instalação e atualizações
 
-Instale o APK único pelo instalador do Android ou execute `adb install -r PGBR-v0.00.34-LT.apk` no computador. **Não desinstale uma versão PGBR funcional só para contornar erro de assinatura**: use uma compilação assinada com a chave já existente. O jogo oficial não pode ser substituído por uma compilação com assinatura diferente sem desinstalação. A remoção pode causar perda dos dados locais.
+Instale o APK único pelo instalador do Android ou execute `adb install -r PGBR-v0.00.40-LT.apk` no computador. **Não desinstale uma versão PGBR funcional só para contornar erro de assinatura**: use uma compilação assinada com a chave já existente. O jogo oficial não pode ser substituído por uma compilação com assinatura diferente sem desinstalação. A remoção pode causar perda dos dados locais.
 
 O SDK mínimo é Android 9 (API 28), mas as interceptações nativas do jogo são compatíveis apenas com a versão ARM64 fixada. Não há garantia de compatibilidade com emuladores, futuras versões ou todos os aparelhos.
 
