@@ -170,6 +170,8 @@ public final class ResearchSettings {
  public static void read(java.util.Properties p){prefs.read(p);}
  public static void write(java.util.Properties p){prefs.write(p);}
 }''',
+    # Compiled-52 session stats are integrated separately; Control needs only event dispatch here.
+    'dev/pgrazor/SessionStats.java': 'package dev.pgrazor; public final class SessionStats { static void publish(String detail){} }',
     'dev/pgrazor/ShinyScanner.java': '''package dev.pgrazor;
 public final class ShinyScanner {
  public static String config(){return "N3|1|0|700|2|8000|0|1|0|";}
