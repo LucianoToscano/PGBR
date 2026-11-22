@@ -919,3 +919,28 @@ Inventário forense pré-existente para 1.278 inclui `libmain.so`, `classes.dex`
 
 ### Diretrizes de continuidade sem perdas
 Manter Quick Snipers I/II, Radar e fonte PGBR como conceitos separados; preservar telas/ativos de menu, joystick, radar, cooldown, privacidade somente visual, permissões e preferências pré-existentes. Em avanços futuros, anotar versão/ABI/hash do binário, chamada de rede documentada, provenance, TTL/despawn, método de resultado e teste Android; distinguir **observado**, **estático/descompilado**, **implementado**, **CI passou**, **release publicada** e **funcionou fisicamente**. Não colocar keys/tokens no GitHub ou Drive nem anunciar APK funcional além das evidências. Este complemento modifica apenas a documentação canônica.
+
+
+## 22/11/2026 — LT036: relatos do usuário, auditoria e patch experimental de treinamento
+
+**Capturas anexadas nesta conversa:** o sistema Android exibiu `App não instalado` ao tentar abrir `PGBR-v0.00.35-LT.apk` (189 MB), rotulado pelo Android como `Pokémon GO`; outra captura mostra batalha de treinamento com Lickilicky (CP 1500) contra Sneasel (CP 1465), sem ataques automáticos observáveis. As fotos não comprovam que PGBR estava instalado durante o treino — a primeira mostra a falha de instalação.
+
+**Causa de instalação comprovada em fonte:** `pgrazor/nonroot.py` mantém `com.nianticlabs.pokemongo` e re-assina com a chave do PGBR. Outra instalação do mesmo pacote com certificado diferente pode provocar `INSTALL_FAILED_UPDATE_INCOMPATIBLE`, mas o código preciso ainda exige ADB. A variante Root usa instalador de pacote `dev.pgrazor.root` e módulo Zygisk, exige ambiente e versão de jogo compatíveis; não substituir o app oficial nem apagar dados do telefone automaticamente. Guia: [QA_LT036_TREINAMENTO_INSTALACAO.md](docs/QA_LT036_TREINAMENTO_INSTALACAO.md).
+
+**Problema de fonte no treinamento:** `pvp_scene.h` descartava `NpcTrainerInterstitialGui`; a mesma classe aparece em diálogos de Mateo e não prova uma batalha. No patch da branch `fix/lt036-training-shared-battle-20261122` (base `f8ad55bb186ad6321f687cef50a037964d051d96`), a GUI NPC exata só vira um candidato de **45 segundos** e precisa de `CombatPreparationRootGuiController` e callback VNext real para autorizar o motor nativo compartilhado ágil/carregado/escudo. Rocket mantém precedência e cancela até candidatos sem UI capturada; `pvpExecutorReady` indica `mode=training` na sessão apropriada. Não há ativação cega em diálogos de NPC ou em raid/gym/Max.
+
+**Código e testes preparados:** `pgrazor/native/pvp_scene.h`, `pgrazor/native/pvp_scene_test.cpp`, `pgrazor/native/combat_host.cpp`, `pgrazor/src/dev/pgrazor/Control.java`, `pgrazor/src/dev/pgrazor/SettingsPanel.java`, `pgrazor/test/test_lt036_training_scope.py`. Preservados os três bits de preferências Rocket/PvP, anti-reentrância, leases, segurança em Rocket e as releases históricas. CI, merge, APK e assinatura **ainda não haviam sido verificados** no momento deste registro inicial.
+
+**Escopo e evidência:** esta correção não demonstra ataque aceito em Pokémon GO nem resolve o impedimento de assinatura para instalar sobre clientes existentes; precisa de testes físicos separados de ágil/carregado/escudo no treinador, desafios/GBL e diagnóstico de ADB. Sem cópia literal de funções PGSharp e sem second-charged supereficaz homologado. `device_tested=false`.
+
+
+### 22/11/2026 — Preparação da pré-release LT036 e preservação dos históricos
+
+**Origem:** fotos de “App não instalado” e do combate Lickilicky/Sneasel no treinamento; motivo documentado em [QA_LT036_TREINAMENTO_INSTALACAO.md](docs/QA_LT036_TREINAMENTO_INSTALACAO.md). A nova `0.00.36-LT` contém candidato explícito de treinamento validado por NPC → preparação → VNext, usando a bitmask fast/charged/shield já compartilhada com Rocket e PvP. A mudança **não** garante ativação de toda espécie de batalha nem corrige o conflito de certificados do mesmo packageId; telas isoladas de NPC/Mateo nunca devem atacar.
+
+**Documentação e QA:** `docs/releases/v0.00.36-LT.md`, `pgrazor/VERSION`, `.github/workflows/pgbr-lt036-release.yml`, `test_lt036_release_contract.py` e `test_lt036_training_scope.py`. Contratos de LT032/33/34/35 passam a tolerar LT036 sem apagar verificações históricas. O workflow LT035 publicado deixa de ter gatilhos automáticos por alteração de VERSION e de seu próprio YAML, conservando o despacho manual e **todos os assets antigos**. README/CHANGELOG atualizados de forma aditiva.
+
+**Evidência/pendências:** alterações em código ainda aguardam verificação CI, branch isolada `fix/lt036-training-shared-battle-20261122`, sem merge automático na main antes da conclusão. A futura tag LT036, hashes e APKs exigem prova real após publicação; **não informar links hipotéticos como downloads válidos**. Status `device_tested=false`, validação de ágil/carregado/escudo e diagnóstico ADB pendentes. Sem cópia de executáveis PGSharp, credenciais ou alterações de outros projetos.
+
+
+**Validação CI #45023799721, primeiro teste:** quatro dos cinco checks passaram (host C++, NDK ARM64, website e governança). A suíte Windows falhou em **2 de 284 testes**, ambos documentais: `test_branding.test_main_readme` exigia o nome literal `PGBR-v0.00.36-LT.apk` no README; `test_lt036_release_contract.test_release_version_and_assets` interpretava UTF-8 das notas com encoding implícito Windows, causando falso negativo de “App não instalado”. O patch seguinte explicitou o nome **não publicado** no README e fixou `encoding='utf-8'` na leitura do contrato. **Novo CI e release precisam ser verificados; nenhum problema nativo foi apontado nos quatro jobs aprovados.**

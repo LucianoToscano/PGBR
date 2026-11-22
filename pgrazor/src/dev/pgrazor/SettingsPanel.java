@@ -1726,7 +1726,7 @@ final class SettingsPanel {
         if(Control.pvpBattleReady()){
             pvpBattleStatus.setText(Control.pvpBattleStatus());
         }else if((Control.pvpBattleOptions()&PvpBattleMode.ACTIONS)!=0){
-            pvpBattleStatus.setText("Opções Rocket/PvP sincronizadas. O executor VNext experimental é ativado apenas após reconhecer uma partida PvP; não use em disputas ranqueadas sem validar.");
+            pvpBattleStatus.setText("Opções Rocket/PvP sincronizadas: ágil/carregado/escudo também para treinamento após NPC + preparação + VNext. Sem homologação em aparelho.");
         }else{
             pvpBattleStatus.setText("Você pode configurar as opções, mas a automação PvP ainda não está disponível nesta versão.");
         }
