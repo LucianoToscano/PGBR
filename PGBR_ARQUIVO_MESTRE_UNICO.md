@@ -1,7 +1,7 @@
 # PGBR — ARQUIVO MESTRE ÚNICO
 > Identificador: PGBR-MASTER-001  
 > **Fonte oficial da verdade documental:** [`main/PGBR_ARQUIVO_MESTRE_UNICO.md`](https://github.com/LucianoToscano/PGBR/blob/main/PGBR_ARQUIVO_MESTRE_UNICO.md)  
-> Criado em: **21/11/2026** · Última auditoria factual deste registro: **21/11/2026**  
+> Criado em: **21/11/2026** · Última auditoria factual deste registro: **22/11/2026**  
 > Estado: **documento vivo e obrigatório; não é um selo de homologação do aplicativo.**
 
 ## Como navegar pelo Arquivo Mestre
@@ -26,6 +26,12 @@
 6. Se houver conflito entre este resumo e o código/CI atual, reportar a divergência, verificar evidências e corrigir este arquivo. **Nunca adaptar evidências a uma afirmação antiga.**
 
 Este protocolo é espelhado nas instruções `AGENTS.md`, `.github/copilot-instructions.md` e no teste `pgrazor/test/test_master_governance.py`. Estes pontos de entrada orientam agentes e CI que os consultam; não garantem leitura por qualquer ferramenta externa ou novo chat sem acesso ao repositório.
+
+## REGRA PERMANENTE DO USUÁRIO — REGISTRAR CADA ETAPA NO ARQUIVO MESTRE
+
+**Regra vinculante (22/11/2026):** todo recurso, correção, teste, atualização upstream, mudança de interface, merge, PR, build, upload e release do PGBR deve ser documentado neste **único** arquivo, na revisão correspondente. Registrar estado antes/depois, branch e commit-base/commit final, arquivos, testes com resultados reais, URLs comprovados, hashes e pendências. No momento do merge, reconferir a HEAD da `main`. **Depois da publicação**, registrar tag, commit de release e três hashes reais, com link direto ao APK que exista. Nunca declarar sucesso antes do CI, nunca inventar número de versão/artefato e nunca retirar o histórico em nome de limpeza.
+
+O release `v0.00.33-LT` é uma **nova identificação de build**, não uma mudança cosmética no nome dos APKs `v0.00.32-LT`. A versão 0.437.0 e seu versionCode são do Pokémon GO-base; o número `0.00.33-LT` identifica o PGBR e o installer Root. Publicar primeiramente como **pré-release QA**, com `device_tested=false`, sem anunciar homologação de PvP, VGP, Root+Vector, feed ou privacidade.
 
 <a id="mestre-escopo"></a>
 ## 1. Identidade, limites e missão do produto
@@ -573,3 +579,17 @@ O APK não Root de 188,8 MB permanece acessível no artifact GitHub e pelo downl
 **Regressões sazonais separadas:** o [PR #67](https://github.com/LucianoToscano/PGBR/pull/67) em [run #45003782779](https://github.com/LucianoToscano/PGBR/actions/runs/45003782779) passou cinco cenários native host reais (coletor Halloween, Mateo, Safari Always Hit, Safari throw, Safari VGP) e 3 testes JVM adicionais. Essas fixtures não alteram o APK PR #66; podem ser revisadas/mescladas depois sem tocar no código de jogo.
 
 **Restante não homologado:** não há sessão com dispositivo Android físico, prova de Halloween ativo, GO Wild com Safari/Mighty, GPX Eternatus com resgate real, PvP (ataques/escudos e escolha de segundo golpe super eficaz), giro/captura VGP+, Root/Vector, feeds externos autorizados, joystick, ícones completos e privacidade visual garantida em mapa/perfil “Eu”. As 12 prioridades permaneceram documentadas no [relatório PR #66](https://github.com/LucianoToscano/PGBR/blob/fix/lt032-eventos-menu-visibilidade-20261122/docs/PGR036_PARIDADE_EVENTOS_LT032.md) e no protocolo `docs/QA_LT032_ANDROID_FINAL.md`, que ainda depende do operador do telefone. **Não classificar como sem pendências nem publicar release definitiva até completar esses ensaios.**
+
+---
+
+## 22/11/2026 — Consolidação e pré-release PGBR v0.00.33-LT (execução controlada)
+
+**Solicitação explícita:** integrar via merge os recursos LT032 + menu Eventos + fixtures de Halloween, GO Wild/Safari e Mateo, consolidar governança e 12 cenários C++ host, incrementar o identificador do PGBR a `v0.00.33-LT`, disponibilizar três variantes em uma **pré-release QA**, e tornar obrigatória a atualização deste Mestre **em todos os PRs, merges e releases futuros**.
+
+**Base e preservação:** `main` no início da execução `072bd0b38a105612114057b2f946528582ae2d61`; branch de código QA `test/lt032-eventos-vgp-safari-host-20261122` @ `04f0203e89a54bb128158d9f831a6dc97adcc88e`, CI eventos `#45003782779` aprovado; branch de infraestrutura `maintenance/quality-gates-crossplatform-20261122` @ `ba49e7a1699e700291caf6c5289b2f5136e0614e`, CI quatro jobs `#45000885337` aprovado; arquivo mestre completo `docs/pgrazor-v036-auditoria-20261122` @ `1e5a166b52170b091eecfb228c8f5a31b5f8f22e`.
+
+**Integração em branch própria:** `release/pgbr-v0.00.33-lt-20261122`, com commit octopus inicial `aa038fbef56a017e6ade44c43d2a0fcc1a4bc65f`: preserva **todos os ancestrais** QA, manutenção, docs e `main` em quatro pais, sem sobrescrever branch de outro chat. Conflitos selecionados conscientemente: interface/traduções da árvore QA; arquivo `PGBR_ARQUIVO_MESTRE_UNICO.md` + matriz QA da branch docs; runner nativo com 12 fixtures e workflow de quatro jobs (incluindo website) da manutenção. Alterações PT-BR e componentes de interface permanecem da árvore QA; os ajustes de tradução e Runtime não são redefinidos pela versão upstream.
+
+**Política de release:** `pgrazor/VERSION = 0.00.33-LT`; novo workflow `.github/workflows/pgbr-lt033-release.yml` (mantém workflow LT032 histórico intacto) compila e executa `tools/check.py`, testes PvP host, Rust/C++/NDK, gera APK sem Root, instalador Root e módulo Zygisk assinados com os segredos oficiais do repo e verifica `tools/verify_release.py --tag v0.00.33-LT`. O ato de publicar é restrito ao push da `main` e ocorre **somente após verificação de integridade**; cria tag `v0.00.33-LT` e pré-release GitHub, sem alterar uma tag preexistente. Os três pacotes devem ter hashes próprios dessa execução, jamais reutilizar os de LT032.
+
+**Status deste registro antes de CI/merge:** integração preparada, sem proclamar PR merged, publicação concluída ou APK LT033 disponível até retorno do GitHub. Após resultado, anexar comprovantes de CI, PR de integração/merge commit, release, hashes e URLs diretos. Sem dispositivo Android, `device_tested=false`; a prioridade de recursos experimentais PvP/carregado supereficaz, VGP+ real, joystick, Root/Vector, privacidade e feeds autenticados permanece pendente e visível.

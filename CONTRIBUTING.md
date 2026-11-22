@@ -4,6 +4,10 @@
 
 For the React showcase and its independent GitHub Pages workflow, see [website development](website/README.md). Website pushes publish the site, not an APK release.
 
+## Regra obrigatória de registro no Mestre
+
+Todo PR, inclusive manutenção, documentação, UI, testes e release, deve atualizar `PGBR_ARQUIVO_MESTRE_UNICO.md` **na mesma revisão** ou indicar um PR documental vinculado que o faça antes do merge. Após publicar uma release, registrar nela a tag e o commit efetivos, os links **verificados**, os hashes finais e o status real de testes em Android. Não tratar um workflow iniciado como aprovado. Consultar `AGENTS.md` e não criar documentos Mestre alternativos.
+
 ## Pull-request expectations
 
 Keep each PR focused on **one feature, one bug fix, or one coherent maintenance task**. Include the tests and documentation needed for that change. Split unrelated features, cleanup, dependency updates, and broad formatting into separate PRs.

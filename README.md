@@ -3,17 +3,17 @@
 <h1 align="center">PGBR</h1>
 > **Arquivo Mestre Único do PGBR (leitura obrigatória):** [PGBR_ARQUIVO_MESTRE_UNICO.md](PGBR_ARQUIVO_MESTRE_UNICO.md). Fonte documental canônica na `main`; esta branch pode ter código mais avançado do que a `main`. Consulte os dois estados antes de afirmar qual versão está pronta.
 
-<p align="center"><strong>PGBR-v0.00.32-LT (candidato de teste) · Edição brasileira para Android</strong></p>
+<p align="center"><strong>PGBR-v0.00.33-LT (pré-lançamento de QA) · Edição brasileira para Android</strong></p>
 <p align="center">Controles de localização, joystick, captura, rotas e recursos opcionais de automação para Pokémon GO.</p>
 
-> **Status (21/11/2026):** LT032 é a **branch de integração de teste**. Preserva a linhagem LT023–LT031, junta as correções posteriores do pipeline LT027 e não representa homologação em aparelho. **PvP, VGP, feeds e privacidade visual exigem ensaio real**. Não há integração direta autenticada de dados PGSharp/Pokémod.
+> **Status (22/11/2026):** LT033 consolida a linhagem LT032, Eventos no menu Pokébola, correções de visibilidade, testes nativos sazonais, manutenção e rastreabilidade. A publicação é **pré-lançamento de QA**: PvP, VGP+, Root+Vector, joystick, feeds e privacidade visual ainda exigem ensaio real. Não há integração autenticada a dados privados do PGSharp/Pokémod.
 
 ## Baixar e validar
 
-- **APK de teste LT032:** `PGBR-v0.00.32-LT.apk`; procurar o artefato de 30 dias do [workflow LT032](https://github.com/LucianoToscano/PGBR/actions/workflows/pgbr-lt032-consolidado-apk.yml) depois de uma execução bem-sucedida.
-- **Última release pública com instaladores Root e sem Root:** [LT023](https://github.com/LucianoToscano/PGBR/releases/tag/v0.00.23-LT).
-- **Pontos de teste para homologação:** [checklist LT032](docs/validation/PGBR_LT032_CHECKLIST_DISPOSITIVO.md).
-- **Registro da integração:** [notas LT032](docs/releases/v0.00.32-LT.md).
+- **APK sem Root LT033:** [download da pré-release de QA](https://github.com/LucianoToscano/PGBR/releases/download/v0.00.33-LT/PGBR-v0.00.33-LT.apk) (somente após publicação confirmada). As variantes Root e Zygisk estão no [mesmo lançamento](https://github.com/LucianoToscano/PGBR/releases/tag/v0.00.33-LT). [Workflow de build LT033](https://github.com/LucianoToscano/PGBR/actions/workflows/pgbr-lt033-release.yml).
+- **Versão pública histórica preservada:** [LT023](https://github.com/LucianoToscano/PGBR/releases/tag/v0.00.23-LT). A LT033 não a substitui como versão fisicamente homologada.
+- **Pontos de teste para homologação:** [matriz Android Root e não Root](docs/QA_LT032_ANDROID_FINAL.md) (aplicável à LT033, sem aprovação física presumida).
+- **Registro da integração:** [notas LT033](docs/releases/v0.00.33-LT.md), com histórico LT032 preservado.
 
 Mantenha a versão antiga instalada e faça backup das configurações antes de testar. APK de teste compilado não equivale a versão funcional homologada ou autorizada por terceiros.
 
