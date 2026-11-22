@@ -1,0 +1,40 @@
+name: PGBR - QA Sniper 100% IV manual
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'pgrazor/src/dev/pgrazor/HundoFeedData.java'
+      - 'pgrazor/src/dev/pgrazor/HundoFeedDialog.java'
+      - 'pgrazor/src/dev/pgrazor/FeedChooser.java'
+      - 'pgrazor/test/HundoFeedDataTest.java'
+      - 'pgrazor/test/test_hundo_manual_ui_contract.py'
+      - 'pgrazor/test/test_live_feed_java.py'
+      - '.github/workflows/pgbr-hundo100-qa.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  offline-feed-and-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify manual search and confirmed teleport contract
+        run: python -B -m unittest discover -s pgrazor/test -p 'test_hundo_manual_ui_contract.py' -v
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools
+      - name: Install Android JSON SDK sources
+        run: sdkmanager "sources;android-36"
+      - name: Run existing feed parsers and new 100% IV synthetic fixtures
+        run: python -B -m unittest discover -s pgrazor/test -p 'test_live_feed_java.py' -v
