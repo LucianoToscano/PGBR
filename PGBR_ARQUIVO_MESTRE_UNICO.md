@@ -957,3 +957,6 @@ Manter Quick Snipers I/II, Radar e fonte PGBR como conceitos separados; preserva
 **Governança/releases:** preparar nova `v0.00.37-LT` e workflow próprio, preservando LT036 e anteriores; documentação `docs/releases/v0.00.37-LT.md`, README, CHANGELOG, testes de contratos das versões LT032–LT037. **Nenhum APK, tag, merge ou teste de aparelho deve ser anunciado até confirmação posterior.**
 
 **Evidência pendente:** tempo real de golpe rápido, 1° carregado, escudo gasto, 2° carregado supereficaz, desafio PvP contra amigo, Liga GO, treino contra líderes e regressão Rocket com VNext no Android (0.437.0) sob ativação de opções. O APK sem Root não altera o certificado do pacote original: permanecem conflitos de instalação em outro cliente com mesma identidade e assinatura distinta. `device_tested=false`. Não houve cópia de código PGSharp binário ou falsificação de modo do jogo.
+
+
+**Ajuste de contrato histórico LT036 durante a revisão LT037:** o teste `test_lt036_training_scope.py` preserva a exigência de Hub ou interstitial de treinador para preparação e passa a aceitar a terceira entrada validada `VERIFIED_PVP_ENTRY`, exigindo ainda `live(now)`. Não altera o motor nem exclui o teste da LT036: é evolução aditiva de asserções de fonte, com o comportamento antigo mantido nos cenários nativos. O CI subsequente precisará ser verificado.

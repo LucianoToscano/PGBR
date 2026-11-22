@@ -10,7 +10,8 @@ class TrainingScopePolicyTest(unittest.TestCase):
         java=(ROOT/"pgrazor/src/dev/pgrazor/Control.java").read_text(encoding="utf-8")
         for fragment in ("TRAINING_ENTRY_MS=45000",'"Niantic.Holoholo.Combat.NpcTrainers"',
                          '"CombatPreparationRootGuiController"',
-                         "(stage==HUB || stage==TRAINING_ENTRY) && live(now)",
+                         "(stage==HUB || stage==TRAINING_ENTRY || stage==VERIFIED_PVP_ENTRY)",
+                         "&& live(now)",
                          "stage==PREPARATION","MAX_COMBAT_MS=1200000"):
             self.assertIn(fragment,scene)
         self.assertIn("g_pvp_scene.training()",host)
