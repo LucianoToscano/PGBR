@@ -33,7 +33,7 @@ Esses documentos comprovam a existência do inventário e das referências de au
 | Pokemod Atlas 25101101 | Mapeamento, serviço, configuração do worker | Monitor de tarefas e estado por fonte, sem converter backend RDM em backend PGBR | Contrato de serviço e autenticação própria; não reutilizar tokens |
 | Pokemod Aegis 26073101 | Mapeamento, múltiplos workers, estado e reinicialização | Limites de concorrência, stop seguro, diagnóstico | Nunca iniciar workers externos sem comando do usuário |
 | PGTools 6.1.1 (estável + teste) | Regras de itens, bolas, transferência, missões, rotinas/eventos, histórico administrativo | Editores de política, exceções de missões, limites de estoque, sessão de testes | `web.zip` minificado; distinguir configuração de execução; diff da variante teste |
-| PokeList 1.3.18 | IV A/D/PS, gênero/forma, Rocket, Auto Hunt e alertas | Filtros compostos, listas de espécies, alertas com cooldown e revisão de Rocket | Catálogo com 1.008 espécies não substitui o canônico PGBR (até 1.025) |
+| Regibot 2.5.12 | Private mode (nome visual), 5 esquemas JSON/419 campos, Pokédex/PvP, Stamp Rally, cooldown/histórico, alertas, watchdog Root e controle remoto | Diagnóstico + editor de buscas/presets, check-point de eventos e painel por conta, sem carregar o injector em produção | JNI/Frida ARM64 próprio; jogo-base suportado não comprovado, 141 falhas de decompilação, backend e cobertura de privacidade pendentes |\n| PokeList 1.3.18 | IV A/D/PS, gênero/forma, Rocket, Auto Hunt e alertas | Filtros compostos, listas de espécies, alertas com cooldown e revisão de Rocket | Catálogo com 1.008 espécies não substitui o canônico PGBR (até 1.025) |
 | Shungo 1.7.2 | Startup, serviço, busca especializada e fontes de spawns | Conector de resultados apenas se protocolo/autorização da fonte estiver documentado | Binário não oferece automaticamente API dos servidores |
 | Velocity 8.8.2 | Seletor de aplicativos, WebView e ferramentas de inicialização | Ajuda contextual, diagnóstico, acesso a documentação/instalação | Evitar WebView para controles críticos e abrir URLs inseguras |
 | PoGoCoordinates / LivePokeMap | Pokémon, raids, quests, Rocket, weather, Power Spots, feeds, IV e PvP | **Reaproveitar** `PogoFeed*`/`LiveFeed*` que já existem | Respeitar autenticação, entitlement, TTL, backoff 401/403/429 |
@@ -110,7 +110,7 @@ Tela inicial tipo painel de ação; navegação `Pokémon`, `Radar`, `PvP`, `Rai
 
 ## 8. Evidência consultada
 
-- Auditoria estática privada dos 10 ZIPs enviados (PokeList, Pokemod, Atlas, Aegis, iPogo, launcher, PGTools/PGTools teste, Shungo, Velocity), além dos ZIPs anteriores de PGSharp.
+- Auditoria adicional do Regibot 2.5.12: `docs/PGBR_AUDITORIA_REGIBOT_2_5_12_20261120.md` (12º registro no manifesto; não integrado).\n- Auditoria estática privada dos 10 ZIPs enviados (PokeList, Pokemod, Atlas, Aegis, iPogo, launcher, PGTools/PGTools teste, Shungo, Velocity), além dos ZIPs anteriores de PGSharp.
 - PGBR: `docs/ARCHITECTURE.md`, `docs/PGBR_DIRETRIZ_REPLICA_INTEGRAL_20261118.md`, `THIRD_PARTY.md`, versão 0.00.15-LT.
 - PokeSearch: `AuthorizedApiCollector.java`, `PgsFilterImport.java`, `PgsSmartSearchSettings.java`, `PgsAutoHuntPolicy.java`, `PgsMissionLedgerPolicy.java`.
 - PvPPokeGo: `core/src/main/kotlin/pvppokego/core/battle/`, `core/data/PvpokeRepository.kt`, `core/vision/`.

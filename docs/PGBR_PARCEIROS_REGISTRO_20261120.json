@@ -193,6 +193,27 @@
         "help_navigation"
       ],
       "import_state": "inventory_only"
+    },
+    {
+      "id": "regibot",
+      "product": "Regibot",
+      "version": "2.5.12",
+      "game_base": null,
+      "source_type": "decompiled_apk",
+      "zip_sha256": "d5cb0675190693e2c40db5eacea277c741234314fecb40a9e6d552338e5259de",
+      "capabilities": [
+        "schema_driven_configuration",
+        "trainer_display_private_mode",
+        "pokemon_filter_presets",
+        "pokedex_pvp_goals",
+        "stamp_rallies",
+        "cooldown_history",
+        "daily_weekly_limit_dashboard",
+        "root_watchdog",
+        "remote_webhook"
+      ],
+      "import_state": "inventory_only",
+      "porting_note": "Android API 26–36; five JSON schemas (419 fields, 275 enabledWhen), arm64 injector/bridges, 141 jadx reconstruction failures. Game version compatibility, native privacy hooks and remote backends unverified; do not load injector alongside PGBR owners."
     }
   ],
   "internal_modules": [
