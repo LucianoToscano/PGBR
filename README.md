@@ -3,16 +3,16 @@
 <h1 align="center">PGBR</h1>
 > **Arquivo Mestre Único do PGBR (leitura obrigatória):** [PGBR_ARQUIVO_MESTRE_UNICO.md](PGBR_ARQUIVO_MESTRE_UNICO.md). Fonte documental canônica na `main`; esta branch pode ter código mais avançado do que a `main`. Consulte os dois estados antes de afirmar qual versão está pronta.
 
-<p align="center"><strong>PGBR-v0.00.34-LT (pré-lançamento de QA em preparação) · Edição brasileira para Android</strong></p>
+<p align="center"><strong>PGBR-v0.00.34-LT (pré-release de QA publicada) · Edição brasileira para Android</strong></p>
 <p align="center">Controles de localização, joystick, captura, rotas e recursos opcionais de automação para Pokémon GO.</p>
 
-> **Status (22/11/2026):** a candidata LT034 acrescenta Sniper 100 IV manual ao PGBR e painel PGSharp Free/Standard com key criptografada; **a consulta direta a PGSharp e a verificação de licença ainda não estão operacionais**. LT033 consolida a linhagem LT032, Eventos no menu Pokébola, correções de visibilidade, testes nativos sazonais, manutenção e rastreabilidade. A publicação é **pré-lançamento de QA**: PvP, VGP+, Root+Vector, joystick, feeds e privacidade visual ainda exigem ensaio real. Não há integração autenticada a dados privados do PGSharp/Pokémod.
+> **Status (22/11/2026):** a pré-release LT034 acrescenta Sniper 100 IV manual ao PGBR e painel PGSharp Free/Standard com key criptografada; **a consulta direta a PGSharp e a verificação de licença ainda não estão operacionais**. LT033 consolida a linhagem LT032, Eventos no menu Pokébola, correções de visibilidade, testes nativos sazonais, manutenção e rastreabilidade. A publicação é **pré-lançamento de QA**: PvP, VGP+, Root+Vector, joystick, feeds e privacidade visual ainda exigem ensaio real. Não há integração autenticada a dados privados do PGSharp/Pokémod.
 
-> **LT034:** [notas da nova versão](docs/releases/v0.00.34-LT.md) · [workflow de compilação](https://github.com/LucianoToscano/PGBR/actions/workflows/pgbr-lt034-release.yml). Baixe somente após a publicação e conferência dos hashes. LT033 permanece como opção anterior.
+> **LT034:** [notas da nova versão](docs/releases/v0.00.34-LT.md) · [workflow de compilação](https://github.com/LucianoToscano/PGBR/actions/workflows/pgbr-lt034-release.yml). A publicação foi verificada em 22/11/2026 e a LT033 permanece como opção anterior.
 
 ## Baixar e validar
 
-- **Candidata LT034:** [PGBR-v0.00.34-LT.apk](https://github.com/LucianoToscano/PGBR/releases/download/v0.00.34-LT/PGBR-v0.00.34-LT.apk) — link futuro, **não disponível até o workflow publicar e verificar**. Instalador Root e módulo Zygisk constarão da mesma pré-release QA.
+- **LT034 publicada:** [PGBR-v0.00.34-LT.apk](https://github.com/LucianoToscano/PGBR/releases/download/v0.00.34-LT/PGBR-v0.00.34-LT.apk), [instalador Root](https://github.com/LucianoToscano/PGBR/releases/download/v0.00.34-LT/PGBR-v0.00.34-LT-Root.apk) e [módulo Zygisk](https://github.com/LucianoToscano/PGBR/releases/download/v0.00.34-LT/PGBR-v0.00.34-LT-Root-module.zip). [Hashes verificados](https://github.com/LucianoToscano/PGBR/releases/download/v0.00.34-LT/SHA256SUMS.txt). **Sem homologação em dispositivo.**
 - **APK sem Root LT033:** [download da pré-release de QA](https://github.com/LucianoToscano/PGBR/releases/download/v0.00.33-LT/PGBR-v0.00.33-LT.apk) (somente após publicação confirmada). As variantes Root e Zygisk estão no [mesmo lançamento](https://github.com/LucianoToscano/PGBR/releases/tag/v0.00.33-LT). [Workflow de build LT033](https://github.com/LucianoToscano/PGBR/actions/workflows/pgbr-lt033-release.yml).
 - **Versão pública histórica preservada:** [LT023](https://github.com/LucianoToscano/PGBR/releases/tag/v0.00.23-LT). A LT033 não a substitui como versão fisicamente homologada.
 - **Pontos de teste para homologação:** [matriz Android Root e não Root](docs/QA_LT032_ANDROID_FINAL.md) (aplicável à LT033, sem aprovação física presumida).
