@@ -6,3 +6,7 @@
 // automation is on (any of auto quick attack, auto charged attack, auto shield).
 void pgr_rocket_swap_tick(uint64_t tid);
 void pgr_rocket_swap_stop();
+
+// Owner-thread observation only. While the knockout selector is open, no
+// strategic Smart Battle swap may preempt it (even with auto KO swap disabled).
+bool pgr_rocket_swap_prompt_active();
