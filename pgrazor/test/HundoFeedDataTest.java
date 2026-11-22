@@ -10,7 +10,7 @@ public final class HundoFeedDataTest {
         if (!condition) throw new AssertionError(message);
     }
 
-    private static JSONArray row(String id, int dex, double lat, double lon, long despawn) {
+    private static JSONArray row(String id, int dex, double lat, double lon, long despawn) throws JSONException {
         return new JSONArray().put(id).put(dex).put(0).put(lat).put(lon)
                 .put(despawn).put(900).put(33.5);
     }
