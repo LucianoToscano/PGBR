@@ -39,6 +39,11 @@ LINKED_FIXTURES = {
         'source': ('battles_test.cpp', 'battles.cpp'),
         'flags': ('-DPGR_BATTLE_DIRECT_TEST', '-pthread'),
     },
+    # Includes the runtime itself and replaces its clock/managed boundary with fixtures.
+    'heal_runtime_test': {
+        'source': ('heal_runtime_test.cpp',),
+        'flags': ('-pthread',),
+    },
 }
 
 def main():

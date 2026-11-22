@@ -232,8 +232,8 @@ void capture_baseline(){
 }
 
 // Uses the next item on the first queued Pokemon, or drops it when it is full or nothing is worth using.
-// ready, when supplied (the gym caller's still-ready hook), is re-checked after the Pokemon and item
-// lookups and immediately before the item is sent, so a revoked permission never issues an item.
+// Re-check settings and permission after Pokemon and item lookups, immediately before sending.
+// A gym caller supplies its own permission hook; the ordinary path requires the map.
 void heal_next(const Config &c,uint64_t now,bool (*ready)()=nullptr){
  while(!st.queue.empty()){
   const uint64_t id=st.queue.front();
@@ -247,11 +247,13 @@ void heal_next(const Config &c,uint64_t now,bool (*ready)()=nullptr){
    if(hp<max)st.skip_until[id]=now+kRetryMs;
    st.queued.erase(id);st.queue.erase(st.queue.begin());continue;
   }
-  if(ready){
-   if(!ready())return;
-   bool map=false;const Config fresh=configured(map);
-   if(!fresh.on||fresh.when==1||fresh.threshold!=c.threshold||fresh.revive!=c.revive||fresh.full!=c.full)return;
-  }
+  if(ready&&!ready())return;
+  bool map=false;const Config fresh=configured(map);
+  if(!fresh.on||fresh.threshold!=c.threshold||fresh.revive!=c.revive||fresh.full!=c.full)return;
+  // Gym scans use a forced after-battle mode, so Both is also permitted there.
+  // On the map the exact mode and map permission must still match the decision.
+  if(ready ? fresh.when==1 : (!map||fresh.when!=c.when))return;
+  if(ready&&!ready())return;
   int item=st.item_id[kind];uint64_t pid=id;void *args[]={&item,&pid};
   st.use_id=id;st.use_kind=kind;st.use_hp=hp;st.use_species=at<int32_t>(p.get(),st.f.species);st.use_sent=now;st.use_done=0;st.use_rejected=false;
   st.promise=Root(call(st.items.get(),"UseItemOnPokemon",2,args));

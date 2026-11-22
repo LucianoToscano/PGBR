@@ -1,3 +1,7 @@
+## Não lançado — proteção de cura e auditoria de batalha (22/11/2026)
+- Cura no mapa revalida configuração e permissão após consultas gerenciadas e antes do uso de item; a fixture host do runtime inclui revogação durante consultas. Não é garantia de atomicidade nem teste em aparelho.
+- Interface não promete classificação por tipo nem integração ainda inexistente. Motor de ataque, estado dinâmico, ligação a botões e homologação por modalidade continuam pendentes; tela branca sem causa comprovada. [Relatório](docs/AUDITORIA_BATALHA_CURA_2026-11-22.md). Nenhuma versão ou artefato novo.
+
 ## v0.00.40-LT — pré-release QA publicada: recuperar PvP/duelos e escopo do assistente (22/11/2026)
 - [PR #107](https://github.com/LucianoToscano/PGBR/pull/107) integrada na main no commit `f873c8652bac5dc4cded154e49fbab82bf778445` após 5 checks `success` (C++ host, NDK ARM64, Java/Root, site e governança). Correção condicional para observação de Hub/Preparação e confirmação PvP, em treino NPC, GBL e duelos com escopo nativo válido.
 - Publicação da máscara Ágil/Carregado/Escudo do usuário apenas em escopo reconhecido; desarmada em mapa, resultado, opção desligada, falha, lease expirada e alvos desconhecidos. Raid/Ginásio/Max continuam com seus motores próprios.

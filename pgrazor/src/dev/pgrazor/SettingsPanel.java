@@ -1095,9 +1095,8 @@ final class SettingsPanel {
         smartAttackSwitch.setOnCheckedChangeListener((v,on)->{
             if(on!=Control.smartAttack())Control.setSmartAttack(on);
         });
-        caption(owner,"Um único controle para todos os modos: Super eficaz > Neutro > Pouco eficaz. "+
-            "A preferência é salva, mas a seleção nativa dos botões ainda não está integrada "+
-            "nem validada para todos os modos. Ataques carregados continuam instantâneos.");
+        caption(owner,"A preferência é salva, mas a seleção inteligente dos botões ainda não está integrada "+
+            "nem validada nos modos de batalha. A automação existente continua usando seus próprios critérios.");
         shieldWaitButton=launch(owner,"Espera do Escudo",()->
             new AlertDialog.Builder(dialogContext())
                 .setTitle("Espera do Escudo Inteligente")
