@@ -738,3 +738,37 @@ O módulo Sniper 100% IV foi implementado em fonte e submetido como [PR #72](htt
 - README corrigido no commit `8d311c9fb1f3c0db5fd41c9d2d021a3e69901de9`, preservando LT033 e explicitando que link LT034 só funciona após publicação.
 - Workflow isolado LT034 reexecutado após correção no commit `bf4a659bfd7c18547935c4d6720d05204813c58d`, [run #45012893288](https://github.com/LucianoToscano/PGBR/actions/runs/45012893288). Status e resultados **pendentes de leitura efetiva**; não reutilizar artefatos do commit anterior nem anunciar link/hashes novos antes do sucesso.
 - O primeiro run da build #45012564986 pertence à revisão anterior à correção do README; seu resultado não pode substituir a validação da HEAD atual.
+
+
+---
+
+## 22/11/2026 — PUBLICAÇÃO VERIFICADA PGBR v0.00.34-LT
+
+**Pedido concluído nesta etapa:** executar merge das implementações de Sniper 100% IV + opção PGSharp Free/Standard, incrementar PGBR, compilar três variantes assinadas e publicar pré-release QA, mantendo LT033 e atualizando registro documental.
+
+**Merges e proveniência (confirmados no GitHub):**
+- [PR #72](https://github.com/LucianoToscano/PGBR/pull/72) merge `dd70a3256fc17b25b176476a60131457ba632749` — painel manual 100% IV com a fonte PGBR existente.
+- [PR #73](https://github.com/LucianoToscano/PGBR/pull/73) merge `bf1c93e43fe23a4aa6fd9934529303e22b8642c8` — opção PGSharp e cofre opt-in de key Standard.
+- [PR #74](https://github.com/LucianoToscano/PGBR/pull/74) merge `156a34d72f3f969a5b5bda878dcb548a7fed52e4` — aumento para `0.00.34-LT`, workflow exclusivo e notas de release. Esta é a fonte da tag.
+- Nenhum reset de branches e nenhum arquivo da LT033 sobrescrito; workflows históricos mantidos.
+
+**QA e compilação confirmados:**
+- Primeira revisão do CI LT034 [#45012569041](https://github.com/LucianoToscano/PGBR/actions/runs/45012569041) detectou 1 falha de contrato de nome de APK no README; corrigida em `8d311c9fb1f3c0db5fd41c9d2d021a3e69901de9`. O histórico foi preservado.
+- CI de código da PR corrigida [#45012928973](https://github.com/LucianoToscano/PGBR/actions/runs/45012928973) e auditoria [#45012929052](https://github.com/LucianoToscano/PGBR/actions/runs/45012929052): **SUCCESS**. Build preliminar da branch [#45012893288](https://github.com/LucianoToscano/PGBR/actions/runs/45012893288): **SUCCESS**, artefato GitHub ID `14751241845`.
+- CI da `main` [#45013312319](https://github.com/LucianoToscano/PGBR/actions/runs/45013312319): **SUCCESS 4/4** (C++ host, ARM64 NDK, Java/Root e website); governança [#45013312436](https://github.com/LucianoToscano/PGBR/actions/runs/45013312436) **SUCCESS**; branding [#45013312335](https://github.com/LucianoToscano/PGBR/actions/runs/45013312335) **SUCCESS**.
+- Build/release oficial `main`: [Actions #45013312358](https://github.com/LucianoToscano/PGBR/actions/runs/45013312358), **SUCCESS 2/2**, com módulo PvP host e APK/Root/integração de hashes; artifact `PGBR-LT034-PGR036-Root-e-SemRoot-QA` ID `14750583041` (194734364 bytes), separado do ZIP de homologação.
+- [Release oficial v0.00.34-LT](https://github.com/LucianoToscano/PGBR/releases/tag/v0.00.34-LT): ID `454377337`, publishedAt `2026-11-22T10:49:19Z`, `prerelease=true`, tag direcionada ao merge `156a34d72f3f969a5b5bda878dcb548a7fed52e4`. A API GitHub lista **seis assets reais** e seus digests SHA-256.
+
+**Arquivos instaláveis publicados (digest informado diretamente na API Releases):**
+
+| Artefato | Bytes reais | SHA-256 |
+| --- | ---: | --- |
+| [APK sem Root](https://github.com/LucianoToscano/PGBR/releases/download/v0.00.34-LT/PGBR-v0.00.34-LT.apk) | 188822851 | `6870ee9068acb1e0c9db67bb7d14e82bb66b57dae90555f2f8d28b162d207308` |
+| [Instalador Root APK](https://github.com/LucianoToscano/PGBR/releases/download/v0.00.34-LT/PGBR-v0.00.34-LT-Root.apk) | 8348366 | `5528f7b390859de917eec127cbd086e9d9a20fd1bd26ccfb46f334f5fe39d8f7` |
+| [Módulo Zygisk ZIP](https://github.com/LucianoToscano/PGBR/releases/download/v0.00.34-LT/PGBR-v0.00.34-LT-Root-module.zip) | 8263546 | `f39c885c5cff6a114d711b7b06907576f23fa317982fbee5eb001823c030f476` |
+
+**Demais comprovantes do mesmo release:** [SHA256SUMS.txt](https://github.com/LucianoToscano/PGBR/releases/download/v0.00.34-LT/SHA256SUMS.txt), [build-info.json](https://github.com/LucianoToscano/PGBR/releases/download/v0.00.34-LT/build-info.json) e [root-build-info.json](https://github.com/LucianoToscano/PGBR/releases/download/v0.00.34-LT/root-build-info.json). A API GitHub confirma bytes e SHA de cada um; verificação cruzada de release foi aprovada pelo workflow, sem inventar hash. A tag e os instaláveis `v0.00.33-LT` permanecem publicados inalterados.
+
+**Escopo realmente entregue:** painel manual do feed 100% IV existente, origem PGSharp identificada separadamente e armazenamento de key opt-in local. **Não foi implementado** acesso ao servidor de resultados 100% do PGSharp nem validação de key Standard. Guardar uma key não ativa licença; resultados do feed FaustusFoundry não podem ser rotulados como PGSharp. Ausência de conexão/erro retorna estado explícito, sem fabricar spawns. Sem captura automática decorrente de tocar resultado. Teleporte depende de confirmação.
+
+**Estado físico:** `device_tested=false`; nenhum teste de instalação/upgrade/rollback, servidor de feeds ao vivo, Root+Vector, VGP+ girando/capturando, uso real de ataque carregado/escudo PvP, joystick/cooldown ou ocultação visual no mapa/perfil foi homologado neste trabalho. Não afirmar conclusão funcional dessas pendências a partir de CI. Preservar backup do aparelho antes de testar.
