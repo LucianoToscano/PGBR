@@ -1,3 +1,4 @@
+# ARCHIVED UPSTREAM ONLY. Do not copy to PGBR workflows; repository-guarded.
 name: Discord release announcement
 on:
   release:
@@ -20,6 +21,7 @@ permissions:
   contents: read
 jobs:
   announce:
+    if: github.repository == 'jpitty03/PGRazor'
     runs-on: ubuntu-latest
     timeout-minutes: 3
     steps:

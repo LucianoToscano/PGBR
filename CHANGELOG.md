@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+PGBR development QA: cross-platform test portability, mandatory verification checks in PRs and main, pinned CI actions, source safeguards and PT-BR accessibility instrumentation. These changes are **not** an APK release or a claim of on-device validation. The dated v0.3.x notes below are upstream history, not new PGBR releases.
+
 ## v0.3.4
 
 [Full release notes](docs/releases/v0.3.4.md)

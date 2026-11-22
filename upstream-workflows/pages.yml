@@ -1,3 +1,4 @@
+# ARCHIVED UPSTREAM ONLY. Do not copy to PGBR workflows; repository-guarded.
 name: Website
 
 on:
@@ -17,6 +18,7 @@ concurrency:
 
 jobs:
   build:
+    if: github.repository == 'jpitty03/PGRazor'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     defaults:
@@ -34,7 +36,7 @@ jobs:
       - run: npx playwright install --with-deps chromium
       - run: npm test
       - uses: actions/upload-pages-artifact@7b1f4a764d45c48632c6b24a0339c27f5614fb0b # v4
-        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        if: github.repository == 'jpitty03/PGRazor' && github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
         with:
           path: website/dist
   deploy:
