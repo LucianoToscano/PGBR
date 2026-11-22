@@ -46,6 +46,55 @@ public final class SettingsBackupRoundTripTest {
         try{SettingsBackupStore.restore(app,bad);throw new AssertionError("invalid file accepted");}catch(JSONException expected){}
         reload(app);verify(true,1,2,"invalid file modified settings");
         check(Boolean.TRUE.equals(AccountProfiles.preferences(app,"pgrazor-map").getAll().get("Stops")),"invalid file modified preference group");
+        // Fail after SmartCatchSettings has already read the new properties and after groups changed.
+        JSONObject failed=copy(backup);failed.getJSONObject("settings").put("smartAttack","false");
+        failed.getJSONObject("settings").put("smartCatchEnabled","true");failed.put("speedKmh",9.0);
+        failed.getJSONObject("preferences").getJSONObject("pgrazor-map").put("Stops",false);
+        check(!SmartCatchSettings.config().startsWith("4;1;"),"test requires Smart Catch off");
+        ShinyScanner.failReads=1;
+        try{SettingsBackupStore.restore(app,failed);throw new AssertionError("partial Control failure accepted");}
+        catch(java.io.IOException expected){check(!SettingsBackupStore.rollbackFailed(expected),"successful rollback flagged as failed");}
+        check(!SmartCatchSettings.config().startsWith("4;1;"),"partial in-memory Control setting not rolled back");
+        verify(true,1,2,"partial Control failure did not restore live choices");
+        check(Control.engine.speedKmh==5.0,"partial failure changed speed");
+        check(Boolean.TRUE.equals(AccountProfiles.preferences(app,"pgrazor-map").getAll().get("Stops")),"partial Control failure lost preferences");
+        reload(app);verify(true,1,2,"partial Control failure persisted choices");
+        check(!SmartCatchSettings.config().startsWith("4;1;"),"partial failure persisted Smart Catch");
+        // A failed SharedPreferences commit may already have changed memory; roll back that group too.
+        AccountProfiles.failScope="pgrazor-map";AccountProfiles.failures=1;
+        try{SettingsBackupStore.restore(app,failed);throw new AssertionError("failed group commit accepted");}
+        catch(java.io.IOException expected){check(!SettingsBackupStore.rollbackFailed(expected),"group rollback should succeed");}
+        check(Boolean.TRUE.equals(AccountProfiles.preferences(app,"pgrazor-map").getAll().get("Stops")),"failed commit not rolled back");
+        reload(app);verify(true,1,2,"failed group commit changed Control");
+        // Fail after Control settings and speed were applied, when writing the location checkpoint.
+        java.lang.reflect.Field stateFile=Control.class.getDeclaredField("stateFile");stateFile.setAccessible(true);
+        stateFile.set(null,new android.util.AtomicFile(new File(root,"pgrazor-location-state-v1.txt")));Control.saveState();
+        android.util.AtomicFile.failName="pgrazor-location-state-v1.txt";android.util.AtomicFile.failWrites=1;
+        try{SettingsBackupStore.restore(app,failed);throw new AssertionError("location checkpoint failure accepted");}
+        catch(java.io.IOException expected){check(!SettingsBackupStore.rollbackFailed(expected),"location rollback should succeed");}
+        check(Control.engine.speedKmh==5.0,"speed not rolled back");reload(app);verify(true,1,2,"late Control failure not rolled back");
+        check(Boolean.TRUE.equals(AccountProfiles.preferences(app,"pgrazor-map").getAll().get("Stops")),"late Control failure lost group");
+        android.util.AtomicFile.failName="";
+        // A later group failure must undo earlier successful groups as well.
+        AccountProfiles.preferences(app,"pgrazor-overlays").edit().putFloat("cooldown.fx",0.25f).commit();
+        failed.getJSONObject("preferences").getJSONObject("pgrazor-overlays").put("cooldown.fx",0.75);
+        AccountProfiles.failScope="pgrazor-overlays";AccountProfiles.failures=1;
+        try{SettingsBackupStore.restore(app,failed);throw new AssertionError("later group failure accepted");}
+        catch(java.io.IOException expected){check(!SettingsBackupStore.rollbackFailed(expected),"later group rollback should succeed");}
+        check(Boolean.TRUE.equals(AccountProfiles.preferences(app,"pgrazor-map").getAll().get("Stops")),"earlier group not rolled back");
+        check(Float.valueOf(0.25f).equals(AccountProfiles.preferences(app,"pgrazor-overlays").getAll().get("cooldown.fx")),"failed later group not rolled back");
+        AccountProfiles.failScope="pgrazor-map";
+        // Persistent failure must be explicitly detectable by the production UI.
+        AccountProfiles.failures=2;
+        try{SettingsBackupStore.restore(app,failed);throw new AssertionError("failed group rollback accepted");}
+        catch(java.io.IOException expected){check(SettingsBackupStore.rollbackFailed(expected),"incomplete group rollback hidden");}
+        AccountProfiles.failScope="";AccountProfiles.failures=0;
+        AccountProfiles.preferences(app,"pgrazor-map").edit().putBoolean("Stops",true).commit();
+        ShinyScanner.failReads=2;
+        try{SettingsBackupStore.restore(app,failed);throw new AssertionError("failed Control rollback accepted");}
+        catch(java.io.IOException expected){check(SettingsBackupStore.rollbackFailed(expected),"incomplete Control rollback hidden");}
+        reload(app);verify(true,1,2,"previous properties should be recoverable after transient failure");
+        check(Boolean.TRUE.equals(AccountProfiles.preferences(app,"pgrazor-map").getAll().get("Stops")),"group not rolled back after Control failure");
         JSONObject again=new JSONObject(SettingsBackupStore.snapshot(app).toString());SettingsBackupRules.validate(again);
         SettingsBackupStore.restore(app,again);reload(app);verify(true,1,2,"re-export and second restore");
         // Installed legacy properties (not old backup JSON, which never contained pvpBattleOptions).

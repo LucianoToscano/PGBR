@@ -29,14 +29,24 @@ final class SettingsBackupStore {
             else edit.putString(key,(String)value);
         }if(!edit.commit())throw new IOException("Could not save settings");
     }
+    // Suppressed exceptions signal an incomplete rollback and must not be hidden by the UI.
+    static boolean rollbackFailed(Throwable error){
+        for(Throwable current=error;current!=null;current=current.getCause())
+            if(current.getSuppressed().length>0)return true;
+        return false;
+    }
     static synchronized void restore(Context context,JSONObject document)throws Exception{
         SettingsBackupRules.validate(document);JSONObject previous=snapshot(context),prefs=document.getJSONObject("preferences");
         Properties props=new Properties();JSONObject settings=document.getJSONObject("settings");for(String key:SettingsBackupRules.SETTINGS)if(settings.has(key))props.setProperty(key,settings.getString(key));
+        boolean[] attempted=new boolean[SCOPES.length];
         try{
-            for(int i=0;i<SCOPES.length;i++)if(prefs.has(SCOPES[i]))writeGroup(context,SCOPES[i],prefs.getJSONObject(SCOPES[i]),KEYS[i]);
+            for(int i=0;i<SCOPES.length;i++)if(prefs.has(SCOPES[i])){
+                attempted[i]=true; // commit() can return false after changing the in-memory map
+                writeGroup(context,SCOPES[i],prefs.getJSONObject(SCOPES[i]),KEYS[i]);
+            }
             Control.importSettings((android.app.Application)context.getApplicationContext(),props,document.getDouble("speedKmh"));
         }catch(Exception error){
-            JSONObject old=previous.getJSONObject("preferences");for(int i=0;i<SCOPES.length;i++)try{writeGroup(context,SCOPES[i],old.getJSONObject(SCOPES[i]),KEYS[i]);}catch(Exception rollback){error.addSuppressed(rollback);}
+            JSONObject old=previous.getJSONObject("preferences");for(int i=0;i<SCOPES.length;i++)if(attempted[i])try{writeGroup(context,SCOPES[i],old.getJSONObject(SCOPES[i]),KEYS[i]);}catch(Exception rollback){error.addSuppressed(rollback);}
             throw error;
         }
     }

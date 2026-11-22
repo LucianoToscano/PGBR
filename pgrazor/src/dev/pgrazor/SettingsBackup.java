@@ -72,7 +72,11 @@ final class SettingsBackup {
                     }
                     SettingsBackupStore.restore(activity,document);message="Settings restored. Return to the game to use them. VGP is off.";
                 }
-            }catch(Exception e){message="Backup failed: "+(e.getMessage()==null?"Invalid file or storage unavailable":e.getMessage());}
+            }catch(Exception e){
+                message=SettingsBackupStore.rollbackFailed(e)
+                    ?"Backup failed and rollback was incomplete. Check your settings and storage before retrying."
+                    :"Backup failed: "+(e.getMessage()==null?"Invalid file or storage unavailable":e.getMessage());
+            }
             final String text=message;activity.runOnUiThread(()->{busy=false;if(activity.isFinishing()||activity.isDestroyed())return;status.setText(dev.pgrazor.PtBr.tr(text));export.setEnabled(true);restore.setEnabled(true);back.setEnabled(true);});
         },"pgrazor-settings-backup").start();
     }

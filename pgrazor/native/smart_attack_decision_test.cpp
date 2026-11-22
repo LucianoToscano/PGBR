@@ -76,6 +76,16 @@ int main() {
     tmp=compare[0]; compare[0]=compare[1]; compare[1]=tmp; compare[0].energy=35;
     compare[0].type=10; compare[0].power=90; compare[1].power=100;
     s.opponent_types[0]=1; d=decide(s); assert(d.recommended.id==201 && near(d.recommended.adjusted_power,108));
+    // Weak super-effective charged move also loses to stronger neutral in PvE with equal costs/durations.
+    compare[0]={201,11,Kind::CHARGED,20,40,Availability::READY,2};
+    compare[1]={202,1,Kind::CHARGED,100,40,Availability::READY,2};
+    compare[2]={203,2,Kind::FAST,8,10,Availability::READY,1};
+    s.active_types[0]=10; s.opponent_types[0]=10; s.mode=Mode::PVE;
+    d=decide(s); assert(d.recommended.id==202 && near(d.recommended.score,(100+4*8.0)/6));
+    compare[0].availability=Availability::NOT_READY;compare[1].availability=Availability::NOT_READY;
+    compare[2].availability=Availability::NOT_READY;
+    assert(decide(s).status==Status::NO_READY_MOVE);
+    compare[2].availability=Availability::READY; assert(decide(s).recommended.id==203);
     // PvE compares sustained cycle efficiency, not PvP immediate power or efficacy tier.
     compare[0]={201,11,Kind::CHARGED,80,35,Availability::READY,1};
     compare[1]={202,1,Kind::CHARGED,100,80,Availability::READY,3};

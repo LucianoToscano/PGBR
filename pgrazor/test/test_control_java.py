@@ -85,8 +85,9 @@ public class Log {
 }''',
     'android/util/AtomicFile.java': '''package android.util;
 public class AtomicFile {
+ public static String failName=""; public static int failWrites=0;
  private final java.io.File file; public AtomicFile(java.io.File file){this.file=file;}
- public java.io.FileOutputStream startWrite() throws java.io.IOException {return new java.io.FileOutputStream(file);}
+ public java.io.FileOutputStream startWrite() throws java.io.IOException {if(file.getName().equals(failName)&&failWrites>0){failWrites--;throw new java.io.IOException("injected write failure");}return new java.io.FileOutputStream(file);}
  public java.io.FileInputStream openRead() throws java.io.IOException {return new java.io.FileInputStream(file);}
  public void finishWrite(java.io.FileOutputStream out){try{out.close();}catch(java.io.IOException e){throw new RuntimeException(e);}} public void failWrite(java.io.FileOutputStream out){}
 }''',
@@ -120,14 +121,17 @@ public class NotificationManager {
     'dev/pgrazor/AccountProfiles.java': """package dev.pgrazor;
 public class AccountProfiles {
  public static void init(android.app.Application app){}
- public static android.content.SharedPreferences preferences(android.content.Context context,String scope){return stores.computeIfAbsent(scope,k->new MemoryPrefs());}
+ public static android.content.SharedPreferences preferences(android.content.Context context,String scope){return stores.computeIfAbsent(scope,k->new MemoryPrefs(k));}
  private static final java.util.Map<String,MemoryPrefs> stores=new java.util.HashMap<>();
+ public static String failScope=""; public static int failures=0;
  private static final class MemoryPrefs implements android.content.SharedPreferences,android.content.SharedPreferences.Editor {
+  private final String scope; MemoryPrefs(String scope){this.scope=scope;}
   private final java.util.Map<String,Object> data=new java.util.HashMap<>();
   public java.util.Map<String,?> getAll(){return new java.util.HashMap<>(data);} public Editor edit(){return this;}
   public Editor remove(String k){data.remove(k);return this;} public Editor putBoolean(String k,boolean v){data.put(k,v);return this;}
   public Editor putFloat(String k,float v){data.put(k,v);return this;} public Editor putInt(String k,int v){data.put(k,v);return this;}
-  public Editor putString(String k,String v){data.put(k,v);return this;} public boolean commit(){return true;}
+  public Editor putString(String k,String v){data.put(k,v);return this;}
+  public boolean commit(){if(scope.equals(failScope)&&failures>0){failures--;return false;}return true;}
  }
  public static boolean allowed(){return true;}
  public static String authenticatedTrainerName(){return "";}
@@ -188,10 +192,11 @@ public final class ResearchSettings {
     'dev/pgrazor/SessionStats.java': 'package dev.pgrazor; public final class SessionStats { static void publish(String detail){} }',
     'dev/pgrazor/ShinyScanner.java': '''package dev.pgrazor;
 public final class ShinyScanner {
+ public static int failReads=0;
  public static String config(){return "N3|1|0|700|2|8000|0|1|0|";}
  static void setTarget(boolean visible,double x,double y){}
  public static void publish(String detail){}
- public static void read(java.util.Properties p){}
+ public static void read(java.util.Properties p){if(p.containsKey("smartAttack") && failReads>0){failReads--;throw new IllegalStateException("injected partial reload");}}
  public static void write(java.util.Properties p){}
 }''',
     'dev/pgrazor/ShundoSniper.java': '''package dev.pgrazor;
