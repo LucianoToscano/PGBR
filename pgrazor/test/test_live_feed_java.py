@@ -43,7 +43,9 @@ class LiveFeedJavaTests(unittest.TestCase):
                         ROOT / 'test/PokemonSelectorPolicyTest.java']
             sources.append(ROOT / 'src/dev/pgrazor/TrainerAliasPolicy.java')
             sources.extend([ROOT / 'src/dev/pgrazor/HundoFeedData.java',
-                            ROOT / 'test/HundoFeedDataTest.java'])
+                            ROOT / 'test/HundoFeedDataTest.java',
+                            ROOT / 'src/dev/pgrazor/SnipeFilters.java',
+                            ROOT / 'test/SnipeFiltersTest.java'])
             if (ROOT / 'test/LiveFeedFiltersTest.java').exists(): sources.append(ROOT / 'test/LiveFeedFiltersTest.java')
             result = subprocess.run([str(compiler), '-encoding', 'UTF-8', '-d', str(work), *map(str, sources)], capture_output=True, text=True, timeout=30)
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
@@ -51,6 +53,9 @@ class LiveFeedJavaTests(unittest.TestCase):
                 result = subprocess.run([str(runtime), '-cp', str(work), main], capture_output=True, text=True, timeout=30)
                 self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
             result = subprocess.run([str(runtime), '-cp', str(work), 'dev.pgrazor.HundoFeedDataTest'],
+                                    capture_output=True, text=True, timeout=30)
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            result = subprocess.run([str(runtime), '-cp', str(work), 'dev.pgrazor.SnipeFiltersTest'],
                                     capture_output=True, text=True, timeout=30)
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
             result = subprocess.run([str(runtime), '-cp', str(work), 'dev.pgrazor.PokeListFeedDataTest'],

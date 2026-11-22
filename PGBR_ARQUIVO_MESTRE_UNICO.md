@@ -1146,3 +1146,28 @@ O novo menu (Batalha Inteligente / Ataque Inteligente / Cura Inteligente), esper
 **Arquivos e verificações no PR:** `pvp_scene.h`, `pvp_scene_test.cpp`, `cutscene_skip.cpp`, `combat_host.cpp`, `Control.java`, `SettingsPanel.java`, `battle_timing_policy.h`, `battle_timing_policy_test.cpp`, `shared_auto_battle_gate.h` e teste, `tools/native_host_tests.py`, `test_pvp_trace_bootstrap.py`, `test_lt037_battle_allowlist.py`, `test_battle_timing_controls.py`, `SharedBattleOptionsTest.java`, `PvpBattleModeTest.java`, `ControlSettingsTest.java` e este Mestre. O fixture do classificador e o fixture do gate são executados na CI C++ portátil. Houve falha transitória de sintaxe em comentário `//` dentro de Python que **foi corrigida** no commit `30cd18ab8537e891caa14b6c6dbd22312178ffd6`. Cada novo commit cancela/verifica a execução anterior conforme política CI; usar apenas checks do último HEAD para declarar resultado.
 
 **Estado de entrega:** PR em revisão, sem merge, sem nova release/APK confirmado, testes físicos `device_tested=false`. A geração do APK e o fechamento da falha dependem de CI atual mais validação ao menos em Rocket, Treinamento, GBL, duelo de amigos, Raid/Ginásio/Max sem regressão. É incorreto anunciar 'Ataque Inteligente por eficácia funcional' ou 'PvP corrigido definitivamente' antes de um adaptador de dados validado e teste Android.
+
+---
+
+## 22/11/2026 — Sniper 1 e Sniper 2: filtros independentes no PGBR (branch `arena/75dcdb70-pgbr`)
+
+**Pedido do proprietário:** "Quero separar e usar a ferramenta de filtros Snipe 1 e 2 deste aplicativo. No PGBR", acompanhado do material de referência no Google Drive (pasta `1rOdV-0aCSc2BOD6LglwYmcY5hNEAJnvg` com `LEIAME.md`, `libmain.so` 1.278.0, `patches/dex_hooks.md`, `patches/manifest_diferencas.txt`, `referencia_original/libmain_original_unity.so`) e dos vídeos 12 ("PgSharp Sniper 1 e Sniper 2") e 21 ("PgSharp Sniper Liberado"). Registro anterior já citava "Sniper I/II independentes" como backlog preservado.
+
+**Base/branch:** `arena/75dcdb70-pgbr`, criada de `f873c8652bac5dc4cded154e49fbab82bf778445` (`main`). Nenhuma alteração em `main`, nenhuma tag, release ou APK gerado.
+
+**Escopo entregue em fonte:**
+- `pgrazor/src/dev/pgrazor/SnipeFilters.java`: modelo imutável de **um** slot (ligado/desligado, espécies 1–1025, IV mín/máx, nível mín/máx, forma exata, tempo mínimo restante). Sem Android; valida tipos, intervalos e inversões; `containsAnyKey` + `fromJson`/`toJson`/`fromEditor`; valor não informado pela fonte (`IV_UNKNOWN`, nível `NaN`, forma `-1`) nunca satisfaz limite.
+- `pgrazor/src/dev/pgrazor/SnipeFilterDialog.java`: editor de um slot, com validação que mantém o diálogo aberto em erro, e carga/gravação **por chave** em `pgrazor-snipe-filters` (`sniper1`/`sniper2`); entrada ausente, corrompida ou estranha derruba só aquele slot para o padrão.
+- `pgrazor/src/dev/pgrazor/SnipeSlotsDialog.java`: painel rolável com Sniper 1 e Sniper 2 lado a lado, listas, contagens e resumos independentes; uma requisição serve os dois (uma automática ao abrir + uma por toque, 30 s entre toques); HTTP 401/403/429 bloqueiam 5 min; corpo até 8 MB; contagem/expiração atualizadas a cada 10 s **sem rede**; teleporte só com `TeleportDialog.confirm` + `Control.canEnable()`.
+- `pgrazor/src/dev/pgrazor/HundoFeedData.java`: expõe `Entry.iv` com `FEED_CLAIMED_IV = 100`, explicitando que "100% IV" é a **declaração do esquema da fonte**, não leitura do jogo. Nenhuma regra de validação anterior mudou.
+- `pgrazor/src/dev/pgrazor/FeedChooser.java`: nova opção de índice **6**; índices 0–5 e seus textos preservados.
+- `pgrazor/test/SnipeFiltersTest.java` (fixtures sintéticas: padrões, independência dos slots, round-trip, valores desconhecidos, tempo restante, texto do editor, payloads inválidos, seleção sobre `HundoFeedData`), `pgrazor/test/test_snipe_slots_contract.py` e ligação em `pgrazor/test/test_live_feed_java.py`.
+- `docs/SNIPE_SLOTS_LT040.md`: desenho, limites e como testar.
+
+**Referência e direitos:** o pacote do Drive foi usado apenas como referência documental do comportamento do cliente PGSharp. Nenhuma linha de código, offset, hook, VM Lua, `libmain.so` ou protocolo proprietário foi copiada, portada ou redistribuída. O PGBR continua lendo **somente** a fonte 100% IV que já possuía (`ShundoSniper.FEED_URL`); não há contato com `f.pgsharp.com`, login, key ou APK do PGSharp.
+
+**Verificado nesta sessão:** `test_snipe_slots_contract.py` (7 testes, OK), `test_hundo_manual_ui_contract.py` (5, OK), `test_lt034_release_contract.py` (2, OK), `test_pgsharp_provider_contract.py` (5, OK) e `test_ptbr_glossary.py` (2, OK) executados localmente; análise sintática Java dos seis arquivos com `javalang` (sem erros de parse); conferência de balanceamento e de compatibilidade Java 8 (sem construtos Java 9+).
+
+**Não verificado nesta sessão:** compilação Java completa do app, `tools/check.py`, `test_live_feed_java.py` (exige JDK e fontes `org/json` do SDK, ausentes no sandbox), build Android, assinatura, APK, instalação e uso real. **`device_tested=false`.**
+
+**Limitações honestas:** o filtro de IV só tem efeito quando a fonte declara IV; para linhas sem IV, restam espécie, nível, forma e tempo restante. "Sniper 1/2" aqui são dois conjuntos de filtros sobre a mesma fonte — não são o motor de captura automática do cliente comercial. Nenhum resultado é capturado, teleportado ou repetido automaticamente.
