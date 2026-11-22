@@ -1,0 +1,28 @@
+name: PGBR LT032 - validar eventos Halloween GO Wild e VGP host
+on:
+  push:
+    branches: [test/lt032-eventos-vgp-safari-host-20261122]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  native-seasonal:
+    name: Fixtures nativas reais de eventos e Safari (host Linux)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.12'
+      - name: Compilar e executar collector, Safari Ball, VGP e Mateo
+        run: python -B tools/event_host_tests.py
+      - name: Testar menu Eventos e isolamento das preferencias no JVM
+        shell: bash
+        run: |
+          python -B -m unittest discover -s pgrazor/test -p test_quick_menu_events_java.py -v
+          python -B -m unittest discover -s pgrazor/test -p test_event_settings_java.py -v
