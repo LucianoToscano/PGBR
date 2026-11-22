@@ -474,7 +474,8 @@ public final class SniperPanel {
                 return;
             }
             // Guard against a double tap and against hammering the vendor.
-            if (manual && lastRequestElapsed > 0 && elapsed - lastRequestElapsed < MIN_REQUEST_GAP_MS
+            if ((manual || SpawnSourceRegistry.ID_POKELIST_PARTNER.equals(state.sourceId()))
+                    && lastRequestElapsed > 0 && elapsed - lastRequestElapsed < MIN_REQUEST_GAP_MS
                     && lastAttemptSource.equals(state.sourceId())) {
                 status.setText("Aguarde " + ((MIN_REQUEST_GAP_MS - (elapsed - lastRequestElapsed)) / 1000)
                         + "s antes de consultar esta fonte de novo.");
@@ -568,7 +569,7 @@ public final class SniperPanel {
             // "Pikachu" só filtrava o que já estava carregado e a espécie nunca era pedida à fonte.
             if (species < 0) species = PokemonFeedSearch.resolveDex(search, speciesCatalog());
             return new SpawnSearch.Request(state.sourceId(), species, state.global(),
-                    Control.currentLatitude(), Control.currentLongitude(), state.radiusKm(), false, filters);
+                    Control.currentLatitude(), Control.currentLongitude(), state.radiusKm(), false, filters, search);
         }
 
         /**
