@@ -13,6 +13,8 @@ class Lt037ReleaseContract(unittest.TestCase):
                      "tools/check.py","pgrazor/nonroot.py","pgrazor/rooted.py",
                      "tools/verify_release.py","github.ref == 'refs/heads/main'","--prerelease"):
             with self.subTest(item=item):self.assertIn(item,w)
+        self.assertIn("workflow_dispatch:",w)
+        self.assertNotIn("  push:",w)  # immutable published LT037 cannot restart on docs
         for n in (33,34,35,36):
             hist=(ROOT/f".github/workflows/pgbr-lt0{n}-release.yml").read_text(encoding="utf-8")
             self.assertIn(f"PGRAZOR_VERSION: v0.00.{n}-LT",hist)
