@@ -67,9 +67,11 @@ class LiveFeedJavaTests(unittest.TestCase):
                             ROOT / 'src/dev/pgrazor/SpawnProfiles.java',
                             ROOT / 'src/dev/pgrazor/SpawnSourceRegistry.java',
                             ROOT / 'src/dev/pgrazor/SpeciesGroups.java',
-                            # LiveFeedClient é compilado sempre (não depende do Android). A sessão
-                            # real entra junto quando há android.jar; sem ele, nenhum dublê de
-                            # segurança é usado — ver o bloco abaixo.
+                            # LiveFeedClient referencia LiveFeedSession, então as duas entram juntas
+                            # ou o parser inteiro deixa de compilar. Era esta a falha A do CI
+                            # ("LiveFeedSession cannot be resolved"). O arquivo de sessão é o REAL;
+                            # nunca um dublê de segurança.
+                            ROOT / 'src/dev/pgrazor/LiveFeedSession.java',
                             ROOT / 'src/dev/pgrazor/LiveFeedClient.java',
                             ROOT / 'src/dev/pgrazor/PokemonFeedSearch.java',
                             ROOT / 'test/PokemonFeedSearchTest.java',
@@ -84,18 +86,27 @@ class LiveFeedJavaTests(unittest.TestCase):
                 if candidate.is_file():
                     android_jar = candidate
                     break
-            # A sessão real (Keystore/GCM) só entra quando há android.jar: sem ele, compilar o arquivo
-            # de segurança é impossível e um dublê seria mentira. LiveFeedClient não depende do Android
-            # e é sempre compilado — o contrato de erro HTTP não fica sem teste.
-            session_compiled = android_jar is not None
+            # A sessão real (Keystore/GCM) usa APIs do Android. Quando o SDK está presente, o
+            # android.jar é a autoridade. Quando não está, os espelhos de API em
+            # tools/sniper_jvm/stubs/android entram como fontes — é o mesmo mecanismo que o
+            # test_stub_signature_parity.py vigia, e nenhum dublê substitui a lógica de segurança:
+            # só as assinaturas do framework. O que está sob teste (parser, cliente HTTP, sessão)
+            # é sempre o arquivo real.
             compile_sources = list(sources)
-            if session_compiled:
-                compile_sources.append(ROOT / 'src/dev/pgrazor/LiveFeedSession.java')
             compile_args = [str(compiler), '-encoding', 'UTF-8']
             if android_jar is not None:
                 compile_args += ['-classpath', str(android_jar)]
+            else:
+                compile_sources = sorted((REPO / 'tools/sniper_jvm/stubs/android').rglob('*.java')) \
+                    + compile_sources
             compile_args += ['-d', str(work), *map(str, compile_sources)]
             result = subprocess.run(compile_args, capture_output=True, text=True, timeout=120)
+            if result.returncode != 0:
+                # Diagnóstico explícito no log do CI: quais arquivos e por quê.
+                print("DIAGNOSTICO: compilacao falhou (rc=%d, android_jar=%s)"
+                      % (result.returncode, android_jar))
+                for line in ((result.stdout or '') + (result.stderr or '')).splitlines():
+                    print("DIAG " + line)
             if result.returncode != 0 and not self._android_org_json_reusable(result):
                 self.fail('o parser real não compilou.\n' + result.stdout + result.stderr)
             if result.returncode != 0:
