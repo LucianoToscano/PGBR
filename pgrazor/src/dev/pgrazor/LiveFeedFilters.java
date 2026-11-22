@@ -171,6 +171,11 @@ public final class LiveFeedFilters {
                 ? speciesList.get(0) : -1;
     }
 
+    /** Whether a provider must supply an actual Pokémon level to match. */
+    public boolean requiresKnownLevel() {
+        return minLevel > LEVEL_MIN || maxLevel < LEVEL_MAX;
+    }
+
     /** True when "PvP only" is on and at least one league is ticked. */
     public boolean pvpOnlyActive() { return pvpOnly && (showPvpGreat || showPvpUltra || showPvpLittle); }
 
