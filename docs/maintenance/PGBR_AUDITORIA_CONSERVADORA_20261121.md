@@ -1,7 +1,7 @@
 # PGBR — Auditoria conservadora de inventário e limpeza
 
 > **Data de referência:** 21/11/2026 (GitHub; não é homologação em aparelho).
-> **Fonte única de status:** [PGBR_ARQUIVO_MESTRE_UNICO.md](../../PGBR_ARQUIVO_MESTRE_UNICO.md), canônica na `main`.
+> **Fonte única de status:** [PGBR_ARQUIVO_MESTRE_UNICO.md](../../PGBR_ARQUIVO_MESTRE_UNICO.md), canônica na `main`. Este relatório foi integrado em [PR #43](https://github.com/LucianoToscano/PGBR/pull/43) e não é mestre concorrente.
 > **Escopo:** repositório `LucianoToscano/PGBR`. PokeSearch, Drive, fontes privadas e Android físico fora deste inventário.
 
 ## 1. Evidência do inventário
@@ -75,4 +75,4 @@ A `main` contém **1 grupo de arquivos idênticos**, uma cópia SVG compartilhad
 - **Scanner de links e governança:** ampliado `test_master_governance.py` para testar destinos relativos do mestre e documentação local do `AGENTS.md`. Um workflow isolado, sem secrets e só com `contents: read`, executou inventário e testes em GitHub Actions. As execuções **44972179155 e 44972174481** terminaram com sucesso; o resultado vale apenas para o escopo documental/inventário.
 - **Revisão de pastas do Drive:** `Projetos/PGBR` contém áreas separadas para Mestre, APKs QA, Código Fonte, Relatórios, Builds/Módulos e material restrito. O mestre mantém um **apontamento**, não uma cópia documental concorrente; fontes históricas PokeGoBR existentes na pasta Mestre foram mantidas intactas.
 - **Candidatos de limpeza:** nenhum arquivo rastreado com extensões típicas de APK, chaves ou resíduos (`.tmp`, `.pyc`, `.log`) encontrado nas árvores revisadas; a análise por nomes **não descarta segredos embutidos em outros arquivos**. As sete famílias de conteúdo idêntico em LT032 continuam intocadas.
-- **Critério de conclusão:** a manutenção está apta à **revisão para integração documental**, pois o CI do PR #43 passou e o diff registra **zero exclusões**; a revisão/merge continuam etapas distintas. CI de governança não substitui `tools/check.py` integral nem verificação física de APK Root/sem Root.
+- **Critério de conclusão:** a manutenção foi **integrada documentalmente à `main` pelo PR #43** com zero exclusões e CI documental aprovado; o [CI pós-merge](https://github.com/LucianoToscano/PGBR/actions/runs/44972328792) também passou. Essa integração **não publicou nem homologou** o APK LT032. CI de governança não substitui `tools/check.py` integral nem verificação física de APK Root/sem Root.
