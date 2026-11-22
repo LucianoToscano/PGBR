@@ -713,3 +713,21 @@ O módulo Sniper 100% IV foi implementado em fonte e submetido como [PR #72](htt
 - Permanecem em aberto, **não implementados nesta PR**: chamada efetiva a `f.pgsharp.com/peanuts`, respostas reais 100 IV do PGSharp, login/validação da key Standard no backend, quotas e escopos de filtros pagos, uso de coordenadas PGSharp em teleporte, APK assinado/testado fisicamente. Não declarar fonte operacional até demonstrar essas etapas.
 
 **Estado definitivo deste registro:** interface/arquitetura e cofre de key implementados, QA de compilação/contratos aprovado; rede PGSharp intencionalmente inativa por falta do contrato completo. [PR #73 em draft](https://github.com/LucianoToscano/PGBR/pull/73), depende da PR #72; nenhuma mesclada na `main`.
+
+---
+
+## 22/11/2026 — Preparação da LT034: Sniper 100% IV e provedor PGSharp separado
+
+**Pedido explícito do proprietário:** integrar o código das PRs #72 e #73 à `main`, gerar novo APK completo/Root com o mesmo certificado da LT033, publicar atualização e registrar todos os artefatos, sem apagar releases anteriores.
+
+**Base/merges verificados no GitHub:**
+- `main` antes do merge: `129108d57497f6af9f997997294b5e17c1dc0556`.
+- [PR #72](https://github.com/LucianoToscano/PGBR/pull/72): Sniper 100% IV manual, merge `dd70a3256fc17b25b176476a60131457ba632749`, testes de feed #45010221816 e CI completo #45010221821 aprovados.
+- [PR #73](https://github.com/LucianoToscano/PGBR/pull/73): origem PGSharp Free/Standard e cofre opcional de key, merge `bf1c93e43fe23a4aa6fd9934529303e22b8642c8`, teste de política + compilação Java #45011698758 aprovado.
+- Nova branch `release/pgbr-v0.00.34-lt-sniper-20261122`, inicialmente no commit da `main` `bf1c93e43fe23a4aa6fd9934529303e22b8642c8`. Não trabalhar sobre cópia anterior.
+
+**Escopo entregue pelas PRs:** o quinto item do menu é o Sniper 100 IV do PGBR, com leitura manual do JSON da fonte `ShundoSniper.FEED_URL` (FaustusFoundry), validação de frescor e coordenadas e ação de copiar/teleporte com confirmação. O sexto item PGSharp Free/Standard é uma origem distinta, com conector **inativo** e key opcional guardada em `AndroidKeyStore`, nunca transmitida nem validada nesta etapa. A edição gratuita do PGSharp inclui 100 IV Feed, mas o PGBR ainda não consulta o endpoint proprietário: não publicar alegação de “mesmos Pokémon 100% IV do PGSharp”. Nada foi alterado no PokeSearch ou no cliente comercial PGSharp.
+
+**Plano LT034:** criar workflow específico `.github/workflows/pgbr-lt034-release.yml` (preservando os workflows LT032/LT033), incrementar `pgrazor/VERSION` para `0.00.34-LT`, atualizar as verificações de regressão versionadas, criar `docs/releases/v0.00.34-LT.md`, compilar com ferramentas fixadas/entrada original revisada e segredos de assinatura existentes, executar `tools/check.py`, gerar os três pacotes, verificar `tools/verify_release.py --tag v0.00.34-LT`, `SHA256SUMS.txt` e metadados de Root, e publicar exclusivamente como **pré-release QA** da `main`. A tag LT033 e seus seis assets não podem ser substituídos.
+
+**Neste registro preliminar:** merges concluídos, preparação de nova compilação em andamento. Não há APK LT034, hash, URL de download verificada, teste físico nem disponibilidade de feed PGSharp comprovada. A publicação só será considerada concluída após presença de cada asset no release e validação de checksum; status no dispositivo permanece `device_tested=false`. Após o workflow terminar, anexar número de run, commit de merge, hashes e links efetivos neste mesmo Mestre. Preservar todas as pendências anteriores de PvP, VGP, joystick, privacidade, Root e feeds.
