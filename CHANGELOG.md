@@ -1,3 +1,9 @@
+## v0.00.41-LT — candidata de pré-release QA (22/11/2026)
+- Corrige iFlowGo ao impedir requisições com raio inválido ou #Dex fora do intervalo; Reides não são rotuladas como globais quando o conector é apenas por área.
+- Documentação de instalação/compilação atualizada; master e auditoria de regressões preservados.
+- Inclui a PR #116 já mesclada à main: recomendação experimental de ataque (não conectada ao executor) e backup de preferências.
+- **Candidata em validação:** nenhuma nova release nem APK confirmado até o GitHub Actions compilar, assinar e publicar. `device_tested=false`. Histórico LT040 preservado.
+
 ## Não lançado — correção de política Ataque Inteligente simples e auditoria (22/11/2026)
 - [PR #120](https://github.com/LucianoToscano/PGBR/pull/120): remove espera deliberada de até 5,5 s para farmar um carregado mais eficaz na política Java PvP; quando existe golpe pronto, prioriza categorias **super eficaz > neutro > resistido** e usa o primeiro em empates. Aceita só um carregado conhecido; preserva preferência OFF, confirmação de prontidão, máscaras de ataque/escudo e as cadências dos executores.
 - Estendidos testes de política para matriz 3×3, prontidão exclusiva, empate e adversário desconhecido sem inferir eficácia. Comparação LT040→main mostrou histórico linear e nenhum arquivo removido, não homologação física.
