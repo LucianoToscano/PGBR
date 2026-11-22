@@ -314,7 +314,7 @@ public final class AutoWalkDialog {
             }
             labels.add("Caminhar desde o início\n" + RouteStart.distance(toStart) + " de distância");
             actions.add(() -> walkGpx(route, points, looping, 0));
-            labels.add("Teletransportar para o início\nDepois percorrer toda a rota");
+            labels.add("Teleporte para o início\nDepois percorrer toda a rota");
             actions.add(() -> TeleportDialog.confirm(activity, points[0][0], points[0][1], (tlat, tlon) -> {
                 if (closed) return false;
                 try { Control.teleport(tlat, tlon); }
