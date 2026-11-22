@@ -1123,3 +1123,8 @@ O novo menu (Batalha Inteligente / Ataque Inteligente / Cura Inteligente), esper
 **Segurança e evidência:** 13 verificações de lógica foram realizadas para o módulo PokeSearch em interpretador JS isolado; são preliminares, não equivalem à execução Node GitHub Actions nem a testes em Android. Webhook receiver, assinatura de mensagens, configuração de origem, cobertura e funcionamento real permanecem pendentes. Não copiar chaves, cookies ou dados privados de PGSharp, Moonani/iFlowGo/PokeXperience. Não inferir IV100/Shiny, nem teletransportar sem confirmação. `device_tested=false` para novo pipeline.
 
 **Governança:** documentação do PGBR separada da mudança de código do PokeSearch; branch independente, PR sem merge automático, preservar LT039, assinaturas e todo o histórico. Depois do PR, registrar os links e gates somente conforme a evidência concreta.
+
+
+<!-- PGBR_WEBHOOK_PR_RECEIPT_20261122 -->
+### Registro factual pós-abertura da PR documental #104
+[PR #104](https://github.com/LucianoToscano/PGBR/pull/104) aberta sobre a `main` em branch isolada `docs/spawn-webhook-integration-contract-20261122`. A [verificação de Mestre e limpeza segura read-only #45049062955](https://github.com/LucianoToscano/PGBR/actions/runs/45049062955) terminou **completed/success** no commit anterior à inclusão desta nota; checagem ampla de código #45049062947 ainda estava em andamento na consulta. **Nenhuma implementação de UI, network client, build, merge ou release PGBR** neste PR. Resultado Node de PokeSearch [#45049057792](https://github.com/LucianoToscano/PokeSearch/actions/runs/45049057792) completed/success cobre apenas a biblioteca e a CLI daquele repositório.
