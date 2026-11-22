@@ -31,13 +31,14 @@ struct PgrPvpScene {
     void verified_pvp_type(uint64_t now) {
         if(!now)return;
         live(now);
-        // A validated game combat type may upgrade a pending PvP hub/preparation
-        // to a short-lived typed candidate. Previously, the HUB/PREPARATION
-        // stages rejected this proof, so a missing GUI event permanently
-        // prevented a live PvP/duel from arming.
-        // Do not override any NPC/training scope or an ongoing combat session.
-        if(mode==TRAINING || stage==COMBAT ||
-           (stage!=IDLE && stage!=HUB && stage!=PREPARATION))return;
+        // A validated game combat type can recover a pending PvP hub
+        // when its preparation GUI was not observed. A PREPARATION already
+        // validated by Hub+Preparation must retain its longer TTL rather
+        // than being downgraded to the 15-second fallback.
+        // Never override NPC/training or an ongoing combat session.
+        if(mode==TRAINING || stage==COMBAT)return;
+        if(stage==PREPARATION && mode==PVP)return;
+        if(stage!=IDLE && stage!=HUB)return;
         if(mode!=NONE && mode!=PVP)return;
         stage=VERIFIED_PVP_ENTRY;mode=PVP;
         expires_ms=until(now,VERIFIED_PVP_ENTRY_MS);
@@ -75,7 +76,8 @@ struct PgrPvpScene {
         }
         if(std::strcmp(ns,"Niantic.Holoholo.Combat.Preparation")==0 &&
            std::strcmp(name,"CombatPreparationRootGuiController")==0 &&
-           (stage==HUB || stage==TRAINING_ENTRY) && live(now)){
+           (stage==HUB || stage==TRAINING_ENTRY ||
+            (stage==VERIFIED_PVP_ENTRY && mode==PVP)) && live(now)){
             stage=PREPARATION;expires_ms=until(now,PREP_MS);
         }
     }
