@@ -20,6 +20,16 @@ REPO = ROOT.parent
 class LiveFeedJavaTests(unittest.TestCase):
     _uses_vendored_json = False
 
+    def _require_pass(self, main, result):
+        """Um main de teste do PGBR precisa terminar com 0. Falha nunca é ignorada em silêncio.
+
+        Se falhar, mostra a saída completa: é isso que diferencia "código quebrado" de
+        "ambiente sem dependência", e é o que faltava quando o CI ficava vermelho sem detalhe.
+        """
+        self.assertEqual(result.returncode, 0,
+                         '%s falhou (rc=%d)\nSTDOUT:\n%s\nSTDERR:\n%s'
+                         % (main, result.returncode, result.stdout, result.stderr))
+
     @staticmethod
     def _android_org_json_reusable(result):
         """True quando a falha foi só do org.json do SDK (ambiente), não do código do PGBR.
@@ -124,40 +134,42 @@ class LiveFeedJavaTests(unittest.TestCase):
                 self.assertEqual(retry.returncode, 0,
                                  'nem o org.json versionado compilou:\n' + retry.stdout + retry.stderr)
                 self._uses_vendored_json = True
-            for main in ['LiveFeedDataTest','SettingsBackupRulesTest','PogoFeedDataTest','PogoFeedFiltersTest'] + (['LiveFeedFiltersTest'] if (ROOT / 'test/LiveFeedFiltersTest.java').exists() else []):
+            mains = ['LiveFeedDataTest','SettingsBackupRulesTest','PogoFeedDataTest','PogoFeedFiltersTest'] \
+                + (['LiveFeedFiltersTest'] if (ROOT / 'test/LiveFeedFiltersTest.java').exists() else [])
+            for main in mains:
                 result = subprocess.run([str(runtime), '-cp', str(work), main], capture_output=True, text=True, timeout=30)
-                self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+                self._require_pass(main, result)
             result = subprocess.run([str(runtime), '-cp', str(work), 'dev.pgrazor.HundoFeedDataTest'],
-                                    capture_output=True, text=True, timeout=30)
-            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+                                    capture_output=True, text=True, timeout=60)
+            self._require_pass('HundoFeedDataTest', result)
             result = subprocess.run([str(runtime), '-cp', str(work), 'dev.pgrazor.SnipeFiltersTest'],
-                                    capture_output=True, text=True, timeout=30)
-            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+                                    capture_output=True, text=True, timeout=60)
+            self._require_pass('SnipeFiltersTest', result)
             result = subprocess.run([str(runtime), '-cp', str(work), 'dev.pgrazor.PokeListFeedDataTest'],
-                                    capture_output=True, text=True, timeout=30)
-            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+                                    capture_output=True, text=True, timeout=60)
+            self._require_pass('PokeListFeedDataTest', result)
             result = subprocess.run([str(runtime), '-cp', str(work), 'dev.pgrazor.DemoLiveFeedDataTest'],
-                                    capture_output=True, text=True, timeout=30)
-            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+                                    capture_output=True, text=True, timeout=60)
+            self._require_pass('DemoLiveFeedDataTest', result)
             result = subprocess.run([str(runtime), '-cp', str(work), 'dev.pgrazor.IFlowGoFeedDataTest'],
-                                    capture_output=True, text=True, timeout=30)
-            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+                                    capture_output=True, text=True, timeout=60)
+            self._require_pass('IFlowGoFeedDataTest', result)
             result = subprocess.run([str(runtime), '-cp', str(work), 'dev.pgrazor.RocketMapFeedDataTest'],
-                                    capture_output=True, text=True, timeout=30)
-            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+                                    capture_output=True, text=True, timeout=60)
+            self._require_pass('RocketMapFeedDataTest', result)
             result = subprocess.run([str(runtime), '-cp', str(work), 'dev.pgrazor.PokemonFeedSearchTest'],
-                                    capture_output=True, text=True, timeout=30)
-            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+                                    capture_output=True, text=True, timeout=60)
+            self._require_pass('PokemonFeedSearchTest', result)
             result = subprocess.run([str(runtime), '-cp', str(work), 'dev.pgrazor.DemoLiveFeedDataTest'],
-                                    capture_output=True, text=True, timeout=30)
-            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+                                    capture_output=True, text=True, timeout=60)
+            self._require_pass('DemoLiveFeedDataTest', result)
             result = subprocess.run([str(runtime), '-cp', str(work), 'SnipeEngineTest'],
-                                    capture_output=True, text=True, timeout=30)
-            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+                                    capture_output=True, text=True, timeout=60)
+            self._require_pass('SnipeEngineTest', result)
             self.assertIn('0 falha', result.stdout, result.stdout)
             result = subprocess.run([str(runtime), '-cp', str(work), 'dev.pgrazor.PokemonSelectorPolicyTest'],
-                                    capture_output=True, text=True, timeout=30)
-            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+                                    capture_output=True, text=True, timeout=60)
+            self._require_pass('PokemonSelectorPolicyTest', result)
 
 
 if __name__ == '__main__':
