@@ -998,7 +998,7 @@ public final class LiveFeedDialog {
                             ? pokeList.fetch(lat, lon, radiusKm, selectedDex)
                             : selectedProvider == 2
                             ? pokemonSearchMode && Double.isInfinite(radiusKm)
-                              ? iFlowGo.fetchGlobal(remoteDex)
+                              ? iFlowGo.fetchGlobal(remoteDex, IFlowGoFeedClient.GLOBAL_PAGES)
                               : iFlowGo.fetch(lat, lon, radiusKm, raidSearchMode)
                             : selectedProvider == 3
                             ? rocketMap.fetch(configuredRocket, lat, lon, radiusKm, raidSearchMode,
