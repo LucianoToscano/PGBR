@@ -3,6 +3,7 @@
 // Callers must establish the live button/slot association and revalidate before acting.
 #include "battle_counter.h"
 #include <cstdint>
+#include "charge_effect_ui.h"
 
 namespace pgr_smart_priority {
 
@@ -52,5 +53,36 @@ inline Result choose(bool enabled, uint64_t session, uint64_t opponent,
   }
   const int selected = static_cast<int>(buttons[1].effect) > static_cast<int>(buttons[0].effect) ? 1 : 0;
   return {ResultKind::SELECTED, buttons[selected].handle};
+}
+
+// Optional VNext display-only selector. Each candidate refers to a rooted
+// ChargeAttackDisplayVNext already observed AFTER its original state update.
+// A batch token is only an update-coherence hint, not an opponent ID.
+// This never overrides the legacy path unless BOTH charged buttons are ready,
+// recently observed together and their typed effect classifications are valid.
+struct DisplayCandidate {
+  pgr_charge_effect_ui::Sample sample{};
+  uint64_t observed_ms = 0;
+  bool ready = false;
+};
+inline int choose_display(bool enabled,uint64_t now,const DisplayCandidate *items,
+                          std::size_t count) {
+  if(!enabled||!items||count!=2||now==0)return -1;
+  constexpr uint64_t kMaxAgeMs=200;
+  const auto &a=items[0],&b=items[1];
+  if(!a.ready||!b.ready||!a.observed_ms||!b.observed_ms||
+     a.observed_ms>now||b.observed_ms>now||
+     now-a.observed_ms>kMaxAgeMs||now-b.observed_ms>kMaxAgeMs||
+     a.observed_ms>b.observed_ms+kMaxAgeMs||
+     b.observed_ms>a.observed_ms+kMaxAgeMs)return -1;
+  if(!a.sample.batch_token||a.sample.batch_token!=b.sample.batch_token||
+     pgr_charge_effect_ui::pack(a.sample)==0||
+     pgr_charge_effect_ui::pack(b.sample)==0||
+     a.sample.slot==b.sample.slot)return -1;
+  const int first=a.sample.slot==pgr_charge_effect_ui::Slot::FIRST?0:1;
+  const int second=1-first;
+  const auto tier1=items[first].sample.tier;
+  const auto tier2=items[second].sample.tier;
+  return static_cast<int>(tier2)>static_cast<int>(tier1)?second:first;
 }
 } // namespace pgr_smart_priority
