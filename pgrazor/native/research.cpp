@@ -30,7 +30,8 @@ template<class F>F fn(void *p){require(p,"missing runtime export");return reinte
 PgrBootBinding boot{};const PgrSharedMetadataOutput *md=nullptr;
 uint64_t owner=0;bool busy=false,ready=false;
 constexpr uint64_t kScanMs=2000,kRetryMs=10000,kTimeoutMs=20000,kGapMs=1500,kWindowMs=600000;
-constexpr unsigned kMaxQuests=200,kMaxActionsPerWindow=40;
+// Claims, removals and encounter catches all count; an event that hands out a task per stop needs room.
+constexpr unsigned kMaxQuests=200,kMaxActionsPerWindow=80;
 uint64_t clock_ms(){timespec t{};clock_gettime(CLOCK_BOOTTIME,&t);return uint64_t(t.tv_sec)*1000+t.tv_nsec/1000000;}
 void *exp(const char *name){std::string n="il2cpp_";n+=name;void *p=dlsym(boot.handle,n.c_str());require(p,name);return p;}
 struct Root {
@@ -134,6 +135,8 @@ struct State {
  std::string pending_id;std::map<std::string,int> failed;std::map<std::string,uint64_t> not_before;  // removal retries
  std::map<std::string,std::string> labels;  // template -> "task text|reward", localized once
  std::string catalog;uint64_t next_scan=0,next_action=0,retry=0,window=0,recheck=0;unsigned actions=0;
+ bool claims_waiting=false;  // logged once each time claims start waiting on the game
+ bool capped=false;          // the action limit pause was reported for this window
 };
 State st;
 constexpr uint64_t kRecheckMs=60000;
@@ -368,15 +371,30 @@ void step(uint64_t tid){
  const uint64_t now=clock_ms();if(now<st.next_scan)return;st.next_scan=now+kScanMs;
  const auto c=config();const auto quests=field_research();
  if(!c.valid||(!c.claim&&!c.remove&&!c.catch_encounters)||now<st.next_action)return;
- if(now-st.window>=kWindowMs){st.window=now;st.actions=0;}
- if(st.actions>=kMaxActionsPerWindow)return;
- // Claims first; one request at a time, each quest instance at most once.
+ if(now-st.window>=kWindowMs){st.window=now;st.actions=0;st.capped=false;}
+ if(st.actions>=kMaxActionsPerWindow){
+  if(!st.capped){st.capped=true;const uint64_t left=(st.window+kWindowMs-now+999)/1000;
+   status("waiting","Paused: "+std::to_string(kMaxActionsPerWindow)+" research actions in 10 minutes; resumes in "+
+    std::to_string(left/60)+":"+(left%60<10?"0":"")+std::to_string(left%60));}
+  return;
+ }
+ // Claims first; one request at a time, each quest instance at most once. While the game is busy
+ // completing an exclusive quest, claims wait but removals still go ahead.
+ bool claims_wait=false;
  for(auto wanted:{pgr_research::CLAIM,pgr_research::REMOVE})
   for(const auto &q:quests)
    if(!st.handled.count(q.id)&&!(st.not_before.count(q.id)&&now<st.not_before[q.id])&&pgr_research::decide(q,c,st.challenge,st.active)==wanted){
-    if(wanted==pgr_research::CLAIM&&unbox<bool>(call(st.quests.get(),"get_ExclusiveQuestCompletionInProgress")))return;
-    submit(q,wanted);return;
+    if(wanted==pgr_research::CLAIM){
+     if(claims_wait)continue;
+     if(unbox<bool>(call(st.quests.get(),"get_ExclusiveQuestCompletionInProgress"))){
+      claims_wait=true;
+      if(!st.claims_waiting){st.claims_waiting=true;status("waiting","Claims wait while the game completes a research reward",q.templ);}
+      continue;
+     }
+    }
+    st.claims_waiting=claims_wait;submit(q,wanted);return;
    }
+ st.claims_waiting=claims_wait;
  // Then the waiting research encounters, one at a time. VGP may run alongside: the caught
  // Pokemon waits for the shared transfer slot to be free.
  if(c.catch_encounters)begin_encounter();
