@@ -15,6 +15,7 @@ public final class RocketMapFeedDataTest {
                 .put("latitude", 35.66).put("longitude", 139.70)
                 .put("individual_attack", 15).put("individual_defense", 15)
                 .put("individual_stamina", 15).put("cp", 500)
+                .put("level", 24)
                 .put("disappear_time", now + 120000);
         JSONObject unknown = new JSONObject().put("encounter_id", "unknown")
                 .put("pokemon_id", 26).put("latitude", 35.67).put("longitude", 139.71)
@@ -33,9 +34,12 @@ public final class RocketMapFeedDataTest {
         LiveFeedData.Entry e = p.entries.get(0);
         ok(e.kind == LiveFeedData.Kind.POKEMON && e.dexId == 25, "dex matches");
         ok(e.iv == 100 && e.cp == 500 && e.expiresAt == now + 120000, "known stats and expiry");
+        ok(e.level == 24, "authorized bridge level is preserved");
+        ok(e.details.contains("Nv 24"), "confirmed level appears in details");
         ok(e.id.contains("18446744073709551615"), "64-bit encounter identity preserved as string");
         ok(p.entries.get(1).iv < 0 && !p.entries.get(1).hasStats, "unknown IV is not zero");
         ok(p.entries.get(1).attrs.atkIv < 0, "unknown component stays unknown");
+        ok(p.entries.get(1).level < 0, "missing level stays unknown and never matches strict filter");
         ok(p.note.contains("RocketMap"), "provider attribution");
 
         JSONObject hatch = new JSONObject().put("end", now + 240000)

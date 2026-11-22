@@ -43,11 +43,16 @@ final class RocketMapFeedData {
                 double iv = atk >= 0 && def >= 0 && sta >= 0
                         ? 100.0 * (atk + def + sta) / 45.0 : -1;
                 int cp = number(p, "cp", 0, 20000);
+                // Optional field present in the authorized PokeSearch bridge,
+                // absent in many classic RocketMap servers.
+                int level = number(p, "level", 1, 55);
+                if (level < 0) level = number(p, "pokemon_level", 1, 55);
                 int gender = number(p, "gender", 0, 3);
                 String name = clean(p.optString("pokemon_name", ""), 80);
                 if (name.isEmpty()) name = "#" + dex;
                 StringBuilder detail = new StringBuilder();
                 if (cp >= 0) detail.append("PC ").append(cp);
+                if (level >= 0) append(detail, "Nv " + level);
                 if (iv >= 0) append(detail, String.format(Locale.US, "%.1f%% IV", iv));
                 if (atk >= 0 && def >= 0 && sta >= 0)
                     append(detail, atk + "/" + def + "/" + sta);
@@ -55,7 +60,7 @@ final class RocketMapFeedData {
                         number(p, "form", 0, 99999), number(p, "costume", 0, 99999),
                         gender, -1, atk, def, sta, -1, -1, -1);
                 results.add(new LiveFeedData.Entry(id, LiveFeedData.Kind.POKEMON,
-                        name, detail.toString(), lat, lon, dex, cp, -1, iv,
+                        name, detail.toString(), lat, lon, dex, cp, level, iv,
                         expires, iv >= 0, 0, 0, false, false, attrs));
             }
         } else {

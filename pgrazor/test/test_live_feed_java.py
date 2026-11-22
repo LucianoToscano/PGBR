@@ -37,6 +37,7 @@ class LiveFeedJavaTests(unittest.TestCase):
                         ROOT / 'src/dev/pgrazor/PogoFeedData.java', ROOT / 'src/dev/pgrazor/PogoFeedFilters.java', ROOT / 'test/PogoFeedDataTest.java', ROOT / 'test/PogoFeedFiltersTest.java',
                         ROOT / 'src/dev/pgrazor/PokeListFeedData.java', ROOT / 'test/PokeListFeedDataTest.java',
                         ROOT / 'src/dev/pgrazor/IFlowGoFeedData.java', ROOT / 'test/IFlowGoFeedDataTest.java',
+                        ROOT / 'src/dev/pgrazor/DemoLiveFeedData.java', ROOT / 'test/DemoLiveFeedDataTest.java',
                         ROOT / 'src/dev/pgrazor/RocketMapFeedData.java', ROOT / 'test/RocketMapFeedDataTest.java',
                         ROOT / 'src/dev/pgrazor/CooldownState.java',
                         ROOT / 'src/dev/pgrazor/PokemonSelectorPolicy.java',
@@ -68,6 +69,9 @@ class LiveFeedJavaTests(unittest.TestCase):
                                     capture_output=True, text=True, timeout=30)
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
             result = subprocess.run([str(runtime), '-cp', str(work), 'dev.pgrazor.PokeListFeedDataTest'],
+                                    capture_output=True, text=True, timeout=30)
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            result = subprocess.run([str(runtime), '-cp', str(work), 'dev.pgrazor.DemoLiveFeedDataTest'],
                                     capture_output=True, text=True, timeout=30)
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
             result = subprocess.run([str(runtime), '-cp', str(work), 'dev.pgrazor.IFlowGoFeedDataTest'],
