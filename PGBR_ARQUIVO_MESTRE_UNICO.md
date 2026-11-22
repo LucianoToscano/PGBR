@@ -1325,3 +1325,6 @@ Referências: https://github.com/LucianoToscano/PGBR/pull/108 ; https://github.c
 
 **Pendências do titular não solucionáveis pelo cliente:** B1 backend/feed real; B2 licença escrita; B3 regras de coordenada/cache; B4 URL + credenciais de staging; B5 PostgreSQL aplicado/testado; B6 legado Firebase; B7 catálogo com direitos; B8 cobertura dos campos; B9 parceiros/chaves/escopos; B10 retenção/logs. Webhooks fornecidos na entrega são `server-side` e ainda precisam de gateway push próprio, licenciado e homologado; não embutir `X-Internal-Key` nem segredo HMAC em Android.
 
+
+**Recibo verificado do código da PR #118 (HEAD `012507f0017a789a10d4eba887b2a96dc5081f53`):** GitHub Actions [Sniper JVM #45079763823](https://github.com/LucianoToscano/PGBR/actions/runs/45079763823) `completed/success`: `SnipeEngineTest` **160 verificações / 0 falhas**, matriz HTTPS **12 casos**, `PokeListPartnerClientTest` **26 verificações**, e compilação de motor + painel contra stubs. [Governança #45079763854](https://github.com/LucianoToscano/PGBR/actions/runs/45079763854) `completed/success`. Esses resultados comprovam contratos/código, **não** API real, instalação ou gameplay. Dependências B1–B10 abertas em [issue #119](https://github.com/LucianoToscano/PGBR/issues/119). Registrar novo HEAD do documento e conferir CI após o presente recibo; não confundir com testes Android.
+
