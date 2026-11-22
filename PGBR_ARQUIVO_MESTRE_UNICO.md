@@ -546,3 +546,30 @@ O PGRazor upstream `v0.3.6` de 21/11/2026 continua como último release observad
 **Falhas de CI diagnosticadas e solucionadas, sem alteração de runtime:** primeira tentativa não tinha `dobby.h` no include de testes; segunda encontrou que o stub compilatório pré-existente não definia o tipo `DobbyRegisterContext` e que fixtures Safari não incluíam `<initializer_list>`. Foi criado um *stub exclusivo de host* `pgrazor/test/seasonal-stubs/dobby.h` de registro x86_64 (não usado pelo build do jogo), e foram adicionadas apenas as inclusões C++ faltantes aos arquivos de teste. A terceira execução concluiu toda a matriz.
 
 **Distinção essencial:** a aprovação não equivale a capturar caixas do Halloween 2026 em jogo real, nem comprova estoque Safari/Mighty ou giro/captura VGP+. Exigir testes no Android e período de evento ativo antes da release. A PR de código/menu #66 passou integralmente o [CI #45003323966](https://github.com/LucianoToscano/PGBR/actions/runs/45003323966), com três jobs verdes. O empacotamento [#45003323939](https://github.com/LucianoToscano/PGBR/actions/runs/45003323939) estava gerando o instalador Root ao escrever esta atualização, sem resultado de artifact conferido ainda.
+
+---
+
+## 22/11/2026 — Artefato LT032 com Eventos restaurados (PR #66) verificado
+
+**CI de código:** [run #45003323966](https://github.com/LucianoToscano/PGBR/actions/runs/45003323966) `success` nos três jobs — Windows `tools/check.py` + JVM + Root, Linux C++ host, NDK ARM64. Os novos testes de visibilidade de Eventos (bit 512), Selector Pokémon (8192) e persistência da máscara (16383) compilaram e passaram. A [governança #45003328261](https://github.com/LucianoToscano/PGBR/actions/runs/45003328261) também passou.
+
+**Compilação e artefatos:** [run #45003323939](https://github.com/LucianoToscano/PGBR/actions/runs/45003323939) `success` em `native-pvp-fixture` e `apk-test`. ZIP de QA `PGBR-LT032-PGR036-Root-e-SemRoot-QA`, artifact GitHub **14746594462**, compilado de `adf3b5c4b0dbe1eb7736669256b1cc5d85d622a8` (PR #66, após teste/doc e ativação de workflow). ZIP testado por CRC; arquivos extraídos e cada SHA-256 comparado à linha respectiva de `SHA256SUMS.txt`, `build-info.json` e `root-build-info.json`.
+
+| Pacote do PR #66 com Menu Eventos | Bytes | SHA-256 exato |
+| --- | ---: | --- |
+| `PGBR-v0.00.32-LT.apk` (não Root) | 188810563 | `8eb1c6b7e8802b12116a74c2c5dae4ad586d8efc636d217c7a67e4417930df9f` |
+| `PGBR-v0.00.32-LT-Root.apk` (instalador) | 8336078 | `ad0c55a725c8123a83e1dda06f25ca3c17a08bd96fafc25874cee3c0fb6648dd` |
+| `PGBR-v0.00.32-LT-Root-module.zip` (Zygisk) | 8251835 | `aa4146e2b4b34bc17eb62debd7c82faa42b842868ed00fa87b3dd0a6e30bada5` |
+
+Conferidos dentro dos binários: versão `v0.00.32-LT`, jogo `0.437.0` code `2026110902`, `compiledGameplay=true`, `QuickMenuVisibilityPolicy` presente em DEX e strings “Mostrar Eventos no Menu Pokébola” e “Abrir seletor de Eventos” presentes; ícone VGP OFF recuperado `192×192` idêntico pixel a pixel ao atlas WebP `192×576` **dentro do APK**. Instalador Root embute um módulo ZIP cujo SHA-256 coincide com o externo; módulo tem ABIs `arm64-v8a` e `x86_64`. Detectado Android APK Signing Block em ambos APKs (checagem estrutural, não substitui `apksigner verify`/instalação). `device_tested=false`. A revisão PR #66 é draft e não foi mesclada na `main`.
+
+**Backups confirmados no Google Drive** `PGBR/04_Builds_e_Modulos_PGBR`, sem sobrescrever pacotes anteriores:
+- [Root APK 8336078 bytes](https://drive.google.com/file/d/1IeEK19k7FatCQsw4k4l-GFPPbrihjyD6/view)
+- [Zygisk módulo 8251835 bytes](https://drive.google.com/file/d/10aDPsjYrrahR2MbiUKP24QgvrAJuMA_N/view)
+- [SHA256SUMS da mesma execução](https://drive.google.com/file/d/1HZYnR7cX_ycQxT-tFXmvhb18-ozdmROr/view)
+
+O APK não Root de 188,8 MB permanece acessível no artifact GitHub e pelo download da conversa; a integração Drive já teve limite de tamanho para esse arquivo e não se declarou upload concluído.
+
+**Regressões sazonais separadas:** o [PR #67](https://github.com/LucianoToscano/PGBR/pull/67) em [run #45003782779](https://github.com/LucianoToscano/PGBR/actions/runs/45003782779) passou cinco cenários native host reais (coletor Halloween, Mateo, Safari Always Hit, Safari throw, Safari VGP) e 3 testes JVM adicionais. Essas fixtures não alteram o APK PR #66; podem ser revisadas/mescladas depois sem tocar no código de jogo.
+
+**Restante não homologado:** não há sessão com dispositivo Android físico, prova de Halloween ativo, GO Wild com Safari/Mighty, GPX Eternatus com resgate real, PvP (ataques/escudos e escolha de segundo golpe super eficaz), giro/captura VGP+, Root/Vector, feeds externos autorizados, joystick, ícones completos e privacidade visual garantida em mapa/perfil “Eu”. As 12 prioridades permaneceram documentadas no [relatório PR #66](https://github.com/LucianoToscano/PGBR/blob/fix/lt032-eventos-menu-visibilidade-20261122/docs/PGR036_PARIDADE_EVENTOS_LT032.md) e no protocolo `docs/QA_LT032_ANDROID_FINAL.md`, que ainda depende do operador do telefone. **Não classificar como sem pendências nem publicar release definitiva até completar esses ensaios.**
