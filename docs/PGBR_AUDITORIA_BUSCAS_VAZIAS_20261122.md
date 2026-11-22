@@ -19,21 +19,47 @@ nenhum provedor (`curl` → `http=000`), então toda verificação é de contrat
 | 8 | "Nenhum resultado" único para todas as causas | `LiveFeedDialog.rebuildVisible` | sem instrumentação | contadores por causa (expirados, categoria, espécie, IV/nível/PvP, filtro de reide, raio, coordenada) → `Descartados: …`; zerados a cada passagem | `test_feed_layer_capabilities.py` |
 | 9 | Controle de raio ignorado no modo demo | `DemoLiveFeedData.sample` | fixture fixo | sobrecarga com `radiusKm`, nota "N de M exemplos dentro de X km"; teleporte continua bloqueado | `DemoLiveFeedDataTest` (+7) |
 | 10 | Matriz HTTP nunca executada | `tools/sniper_jvm/compile_engine.py` | só compilava o teste | harness exige `PASS:` da matriz além do `0 falha` do motor | `HttpErrorMatrixTest` (12) |
+| 11 | **Sniper 1/2 não abria** quando o slot salvo tinha só `{"enabled":true}` | `SnipeFilters.fromJson` | `o.get("species")` sem `has()`; `org.json` do Android **lança** `No value for species` | `get` guardado por `has()` | `SnipeFiltersTest` (+3) |
+| 12 | Backup de configurações dava exceção crua sem `version`/`speedKmh` | `SettingsBackupRules.validate` | mesmo padrão `get()` sem `has()` | campos opcionais com fallback validado | `SettingsBackupRulesTest` |
+| 13 | **CI vermelho** em 4 workflows: `NoClassDefFoundError: org/json/JSONObject` | `test_pokemon_feed_search_java.py` | compilava com `-classpath android.jar` e executava só com o diretório de saída | `org_json_support.py` + classpath de execução igual ao de compilação | `test_runtime_classpath_contract.py` (3) |
 
 ## 2. Evidência de execução
 
 ```
 cd pgrazor/test && python3 -m unittest discover -p "test_*.py"
-Ran 316 tests — OK (skipped=63)
+Ran 329 tests — OK (skipped=64)              # sandbox sem JDK
+                                              # com JDK: 328 OK + 1 erro só de dependência
+                                              # fixada (dexlib2 ausente; o CI a baixa antes)
 
 ECJ_JAR=tools/sniper_jvm/ecj.jar python3 tools/sniper_jvm/compile_engine.py
-SnipeEngineTest: 148 verificações, 0 falha(s)
+SnipeEngineTest: 160 verificações, 0 falha(s)
 PASS: 12 casos da matriz de validação de servidor HTTPS
 OK: motor + matriz HTTP + painel compilados e suíte verde contra os stubs.
+
+# reprodução do defeito 13 (prova de que o teste pegava o defeito)
+compilação com a dependência:            rc 0
+forma antiga (runtime sem dependência):  rc 1  NoClassDefFoundError: org/json/JSONObject
+forma nova (mesmo classpath):            rc 0  PASS: 18 verificações
 ```
 
 Commits: `a1e0af4` (camadas+busca+vazio), `844b59f` (paginação), `677a82e` (matriz HTTP),
-`227a9d1` (diagnóstico de descartes), `648d3bd` (epoch em segundos).
+`227a9d1` (diagnóstico de descartes), `648d3bd` (epoch em segundos), `7b840a5` (defeitos 11/12),
+`09eb28e` (defeito 13).
+
+### 2.1 Situação do CI — commit `09eb28e` (todos verdes)
+
+| Workflow | Estado |
+|---|---|
+| PGBR sniper engine (JVM) — `45072235918` | success |
+| PGBR - QA Sniper 1 e 2 (filtros separados) — `45072235946` | success |
+| PGBR - QA Sniper 100% IV manual — `45072235980` | success |
+| PGBR Radar Filters and Authorized Webhook QA — `45072235934` | success (2 jobs) |
+| PGBR - QA PGSharp free and optional key — `45072235917` | success |
+| PGBR - Arquivo Mestre e limpeza segura — `45072235971` | success |
+| PGBR - verificacao de codigo em PRs e main — `45072235950` | success (4 jobs, inclui o `check.py` real e a compilação Java) |
+
+Nenhum resultado de commit anterior foi usado como comprovação do commit novo: a tabela acima é
+do run disparado por `09eb28e`.
 
 ## 3. Bloqueios e limites honestos
 
@@ -41,7 +67,12 @@ Commits: `a1e0af4` (camadas+busca+vazio), `844b59f` (paginação), `677a82e` (ma
   reais com evidência" **não** pode ser afirmado por mim; o que está provado é o contrato de
   parsing/URL/erro e a lista de motivos de vazio.
 - **Sem build Android / sem APK**: `device_tested=false`. O harness compila contra stubs
-  (`tools/sniper_jvm/stubs`), o que não substitui `android.jar`.
+  (`tools/sniper_jvm/stubs`), o que não substitui `android.jar`. Nesta sessão o JDK do sandbox e
+  o `ecj.jar` em cache desapareceram; a compilação Java local foi restaurada baixando o ECJ
+  3.38.0 de um blob público (Maven e releases do GitHub estão bloqueados) e compilando com
+  `-source 21 -target 21`. O emulador de `javac` aponta para esse ECJ.
+- **O binário `aar`/APK não foi gerado aqui**: nenhuma build Android rodou neste ambiente;
+  não existe link de APK para este commit.
 - **Cobertura por fonte**: iFlowGo não tem camada de ginásio/parada (agora declarado na UI);
   PokeList só Pokémon; demo só exemplos fictícios.
 - **PokeSearch**: push/PR negado (`403` — sem permissão de escrita para o token desta sessão).
