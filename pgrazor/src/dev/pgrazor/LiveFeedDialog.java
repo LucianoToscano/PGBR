@@ -878,6 +878,28 @@ public final class LiveFeedDialog {
 
         private void requestFetch() {
             if (closed || showingLogin || fetchInFlight) return;
+            if (provider == 4 && pokemonSearchMode) {
+                // No trainer-specific shiny or background observation exists
+                // in the offline fixture; never show fictional Pokémon as
+                // matches of a filter that cannot be truthfully evaluated.
+                try {
+                    org.json.JSONObject requested = filters.toStoredJson();
+                    if (requested.optBoolean("shiny_only", false)
+                            || requested.optBoolean("background_only", false)) {
+                        entries.clear(); visible.clear(); distCache.clear();
+                        lastUpdated=0;
+                        lastError="DEMO OFFLINE: Shiny individual e fundos especiais "
+                                + "não são simulados nem confirmados. Desative esses filtros.";
+                        adapter.notifyDataSetChanged();
+                        updateStatus();
+                        return;
+                    }
+                } catch (org.json.JSONException invalid) {
+                    lastError="Filtros da demonstração inválidos; use Limpar filtros.";
+                    updateStatus();
+                    return;
+                }
+            }
             if ((provider == 1 && pokeListAccessDenied)
                     || (provider == 2 && iFlowGoAccessDenied)
                     || (provider == 3 && rocketMapAccessDenied)) {
