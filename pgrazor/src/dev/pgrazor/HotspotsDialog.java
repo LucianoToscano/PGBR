@@ -18,18 +18,34 @@ public final class HotspotsDialog {
         Context ui=MapTheme.wrap(activity);
         LinearLayout root=new LinearLayout(ui);root.setOrientation(LinearLayout.VERTICAL);
         int pad=MapTheme.dp(ui,12);root.setPadding(pad,pad,pad,pad);
-        TextView note=new TextView(ui);note.setText(dev.pgrazor.PtBr.tr("Choose a hotspot. Listed UTC offsets are supplied references and may vary seasonally."));note.setTextSize(12);root.addView(note);
+        TextView note=new TextView(ui);note.setText("Selecione um local. Data, hora e fuso são atualizados automaticamente.");note.setTextSize(12);root.addView(note);
         ScrollView scroll=new ScrollView(ui);LinearLayout rows=new LinearLayout(ui);rows.setOrientation(LinearLayout.VERTICAL);scroll.addView(rows);
         root.addView(scroll,new LinearLayout.LayoutParams(-1,0,1));
         AlertDialog dialog=new AlertDialog.Builder(ui).setTitle(dev.pgrazor.PtBr.tr("Hotspots")).setView(root).setNegativeButton(dev.pgrazor.PtBr.tr("Close"),null).create();
+        java.util.List<TextView> labels=new java.util.ArrayList<>();
         for(Hotspots.Spot spot:Hotspots.ALL) {
             TextView row=new TextView(ui);row.setTextSize(15);row.setPadding(pad,pad,pad,pad);
-            row.setText(dev.pgrazor.PtBr.tr(spot.name+"\n"+spot.city+", "+spot.country+"  ·  "+spot.utc));
+            labels.add(row);
             row.setClickable(true);row.setFocusable(true);
             row.setOnClickListener(v->{dialog.dismiss();selection.select(spot);});rows.addView(row);
         }
-        DialogLifecycle.bind(activity,dialog,null);
-        dialog.setOnShowListener(d->{MapTheme.fullScreen(dialog);MapTheme.style(root);MapTheme.styleButtons(dialog);});
+        // Refresh visible local clocks every 30 seconds; cancel on dialog lifecycle end.
+        boolean hours24=android.text.format.DateFormat.is24HourFormat(activity);
+        Runnable[] tick=new Runnable[1];
+        tick[0]=()->{
+            long now=System.currentTimeMillis();
+            for(int j=0;j<labels.size();j++){
+                Hotspots.Spot spot=Hotspots.ALL.get(j);
+                labels.get(j).setText(spot.name+"\n"+spot.city+", "+spot.country+"\n"+spot.local(now,hours24));
+            }
+            if(dialog.isShowing())root.postDelayed(tick[0],30000L);
+        };
+        tick[0].run();
+        DialogLifecycle.bind(activity,dialog,()->root.removeCallbacks(tick[0]));
+        dialog.setOnShowListener(d->{
+            MapTheme.fullScreen(dialog);MapTheme.style(root);MapTheme.styleButtons(dialog);
+            root.removeCallbacks(tick[0]);root.postDelayed(tick[0],30000L);
+        });
         dialog.show();return dialog;
     }
 

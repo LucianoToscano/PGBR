@@ -54,6 +54,8 @@
 #include "auto_throw.h"
 #include "map_auto_throw.h"
 #include "research.h"
+#include "session_stats.h"
+#include "route_gift.h"
 #include "storage_iv.h"
 #include "cutscene_skip.h"
 #include "rocket_swap.h"
@@ -2566,6 +2568,8 @@ static int api_tick(uint64_t proven_tid) {
   if(!raid_block){
     pgr_gift_batch_tick(os_tid, &g_md);
     pgr_research_tick(os_tid, &g_md);
+    pgr_session_stats_tick(os_tid, &g_md);
+    pgr_route_gift_tick(os_tid, &g_md);
   }
   pgr_storage_iv_tick(os_tid, &g_md);
   pgr_cutscene_skip_tick(os_tid, &g_md);
@@ -2612,6 +2616,7 @@ static int api_stop(uint64_t proven_tid) {
     if (g_vgc && (g_active_caps & PGR_EH_CAP_VGP)) {
       pgr_gift_batch_stop();
       pgr_research_stop();
+      pgr_route_gift_stop();
       pgr_storage_iv_stop();
       pgr_cutscene_skip_stop(tid);
       pgr_rocket_swap_stop();

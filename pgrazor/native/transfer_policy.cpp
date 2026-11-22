@@ -21,7 +21,7 @@ int decide(const PgrTransferInput *v) {
     if(v->flags&192)return 8;
     // Legacy zero means 90%; positive reserved encodes the chosen keep-IV threshold + 1.
     const uint32_t limit=v->reserved==0?90u:v->reserved-1u;
-    if(limit!=90&&limit!=95&&limit!=97&&limit!=98&&limit!=99&&limit!=100&&limit!=101)return 17;
+    if(limit>101)return 17;
     if(limit<=100&&(v->attack+v->defense+v->stamina)*100>=int(limit)*45)return 9;
     for(uint32_t bit=0;bit<6;++bit)if(v->protect&v->flags&(1u<<bit))return 10+bit;
     // Protect bit 7 (128): keep a costumed Pokemon (facts flag bit 8).

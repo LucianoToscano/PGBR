@@ -18,7 +18,7 @@ import org.json.JSONObject;
  *   <li>{@code POST /raids/search} {bosses:[{pokemon_id,form_id,variant}], tiers:[1..16],
  *       exclusive_mode:all|ex_only|normal_only, status:active|egg, boosted_only}</li>
  *   <li>{@code POST /quests/search} {reward_type, reward_pokemon_ids, reward_item_ids,
- *       reward_mega_pokemon_ids, reward_stardust_amounts, reward_pokecoin_amounts, quest_titles}</li>
+ *       reward_mega_pokemon_ids, reward_candy_pokemon_ids, reward_stardust_amounts, reward_pokecoin_amounts, quest_titles}</li>
  *   <li>{@code POST /weather/search} {weather_id:1..7}</li>
  *   <li>{@code POST /rocket/search} {type} (ids from {@code GET /rocket/types})</li>
  *   <li>{@code POST /powerspots/search} {pokemon_ids, battle_levels:[1..6], active_only}</li>
@@ -56,7 +56,7 @@ final class PogoFeedModes {
     static final String[] RAID_STATUS_LABELS = {"Active", "Egg"};
     /** Weather ids 1..7 (index + 1). */
     static final String[] WEATHERS = {"Sunny", "Rainy", "Partly Cloudy", "Cloudy", "Windy", "Snow", "Fog"};
-    static final String[] REWARD_TYPES = {"Pokemon", "Item", "Stardust", "Mega Energy", "PokéCoin"};
+    static final String[] REWARD_TYPES = {"Pokemon", "Item", "Stardust", "Mega Energy", "Candy", "PokéCoin"};
     /** Power spot battle levels 1..6 (index + 1). */
     static final String[] SPOT_LEVELS = {"1★", "2★", "3★", "4★", "5★", "6★ (G-Max)"};
     /** Fallback when {@code GET /rocket/types} cannot be loaded: {id, label, group}. */
@@ -97,8 +97,9 @@ final class PogoFeedModes {
         } catch (JSONException ignored) { }
         return o;
     }
+    /** The candy list contains catalog IDs (species * 1,000,000 + form). */
     static final String[] QUEST_LISTS = {"reward_pokemon_ids", "reward_item_ids", "reward_mega_pokemon_ids",
-        "reward_stardust_amounts", "reward_pokecoin_amounts", "quest_titles"};
+        "reward_candy_pokemon_ids", "reward_stardust_amounts", "reward_pokecoin_amounts", "quest_titles"};
 
     /** The saved spec of a mode, layered over the defaults so a missing key never breaks a search. */
     static JSONObject load(SharedPreferences prefs, Mode m) {
@@ -118,11 +119,20 @@ final class PogoFeedModes {
     }
 
     /** A required choice the site also insists on, or null when the spec can be searched. */
-    static String missing(Mode m, JSONObject spec) {
+    static String missing(Mode m, JSONObject spec, double lat, double lon, double radiusKm) {
         if (m == Mode.WEATHER && spec.isNull("weather_id")) return "Choose a weather in Filters.";
         if (m == Mode.ROCKET && (spec.isNull("type") || spec.optString("type", "").isEmpty())) return "Choose a Rocket type in Filters.";
-        if (m == Mode.QUESTS && spec.optString("reward_type", "").isEmpty()) return "Choose a reward type in Filters.";
+        if (m == Mode.QUESTS && spec.optString("reward_type", "").isEmpty()) return "Escolha um tipo de recompensa nos filtros.";
+        if (m == Mode.QUESTS && CandyQuestPolicy.selectionRequired(spec.optString("reward_type"),
+                local(lat, lon, radiusKm), arr(spec, "reward_candy_pokemon_ids").length(),
+                arr(spec, "quest_titles").length()))
+            return "Doces: selecione um Pokémon ou uma tarefa, ou pesquise em uma área próxima.";
         return null;
+    }
+
+    static boolean local(double lat, double lon, double radiusKm) {
+        return radiusKm > 0 && radiusKm <= PogoFeedClient.MAX_SEARCH_RADIUS_KM
+            && Double.isFinite(lat) && Double.isFinite(lon) && Math.abs(lat) <= 90 && Math.abs(lon) <= 180;
     }
 
     /** Request body: the spec's API keys plus the search area ({@code radiusKm} outside 0..1000 = worldwide). */
@@ -152,8 +162,7 @@ final class PogoFeedModes {
                 break;
             default: break;
         }
-        boolean local = radiusKm > 0 && radiusKm <= PogoFeedClient.MAX_SEARCH_RADIUS_KM
-                && Double.isFinite(lat) && Double.isFinite(lon) && Math.abs(lat) <= 90 && Math.abs(lon) <= 180;
+        boolean local = local(lat, lon, radiusKm);
         b.put("center_lat", local ? (Object) lat : JSONObject.NULL);
         b.put("center_lng", local ? (Object) lon : JSONObject.NULL);
         b.put("radius_km", local ? (Object) Math.max(0.1, radiusKm) : JSONObject.NULL);

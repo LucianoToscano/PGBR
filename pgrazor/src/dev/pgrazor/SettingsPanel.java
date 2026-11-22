@@ -52,6 +52,12 @@ final class SettingsPanel {
     private final java.util.List<MenuIcon> homeIcons=new java.util.ArrayList<>();
     private int current=-1, homeScroll;
     private EditText settingsSearch;
+    private TextView sessionStatsSummary;
+    private Button sessionStatsToggle;
+    private boolean sessionStats24h;
+    private LinearLayout settingsSearchResults;
+    private SettingsSearch settingsSearchIndex;
+    private final java.util.List<View> settingsSearchTargets=new java.util.ArrayList<>();
     private Switch incubatorSwitch;
     private Button incubatorPriority;
     private Button uiScale;
@@ -63,7 +69,7 @@ final class SettingsPanel {
     private Button evolveTransferStages, evolveTransferMode, evolveTransferList;
     // Boolean settings use proper switches.
     private Switch idleWalkSwitch, locationSwitch, vgpSwitch, joystickSwitch, cooldownSwitch, localTimeSwitch, encounterCounterSwitch, encounterOverlaySwitch, spawnSwitch, autoTransferSwitch,
-        quickSpinSwitch, berrySwitch, quickSummarySwitch, curveSwitch, alwaysHitSwitch, arSwitch, transferOverlaySwitch, catchChanceSwitch, autoBallSwitch, autoThrowSwitch, autoThrowMapSwitch, skipCutscenesSwitch,
+        quickSpinSwitch, berrySwitch, quickSummarySwitch, curveSwitch, alwaysHitSwitch, arSwitch, transferOverlaySwitch, catchChanceSwitch, autoBallSwitch, autoThrowSwitch, autoThrowMapSwitch, skipCutscenesSwitch, routeGiftSwitch,
         batteryResSwitch, batteryFpsSwitch, batteryQualitySwitch;
     private Button autoBallTarget, berryPriority;
     private Button vgpIconStyleButton, vgpStartStopButton, joystickStyleButton, eternatusIntensityButton, eternatusSpeedButton;
@@ -194,23 +200,88 @@ final class SettingsPanel {
         TextView note=caption(owner,"Some settings here are not available yet.");
         (needsBall?ballNotes:summaryNotes).add(note);
     }
-    /** Search existing categories and their nested controls without changing any settings or hiding capabilities. */
-    private void filterSettings(String raw){
-        String query=java.text.Normalizer.normalize(raw==null?"":raw,java.text.Normalizer.Form.NFD)
-            .replaceAll("\\p{M}","").toLowerCase(Locale.ROOT).trim();
-        for(int i=0;i<homeRows.size();i++){
-            StringBuilder content=new StringBuilder(homeNames.get(i).getText()).append(' ');
-            collectSearchLabels(pages.get(i),content);
-            String normalized=java.text.Normalizer.normalize(content.toString(),java.text.Normalizer.Form.NFD)
-                .replaceAll("\\p{M}","").toLowerCase(Locale.ROOT);
-            homeRows.get(i).setVisibility(query.isEmpty()||normalized.contains(query)?View.VISIBLE:View.GONE);
+    /** Creates a compact, accent-insensitive index of real controls, including nested settings. */
+    private void indexSettingsOnce(){
+        if(settingsSearchIndex!=null)return;
+        settingsSearchIndex=new SettingsSearch();
+        settingsSearchTargets.clear();
+        for(int i=0;i<pages.size();i++){
+            String category=pageTitles.get(i);
+            settingsSearchTargets.add(pages.get(i));
+            settingsSearchIndex.add(category,"Categorias",category,i);
+            indexSettingControls(pages.get(i),category,i);
         }
     }
-    private static void collectSearchLabels(View view,StringBuilder result){
-        if(view instanceof TextView)result.append(((TextView)view).getText()).append(' ');
+    private void indexSettingControls(View view,String category,int pageIndex){
+        if(view instanceof TextView){
+            TextView textView=(TextView)view;
+            boolean candidate=view instanceof Button||view instanceof CheckBox||view instanceof Switch;
+            // A switch-row label belongs to its horizontal control row and is a valid search target.
+            if(!candidate && view.getParent() instanceof LinearLayout){
+                LinearLayout parent=(LinearLayout)view.getParent();
+                candidate=parent.getOrientation()==LinearLayout.HORIZONTAL&&parent.getChildCount()>1;
+            }
+            if(candidate){
+                String label=SettingsSearch.cleanName(textView.getText().toString());
+                if(label.length()>2 && settingsSearchTargets.size()<1000) {
+                    settingsSearchTargets.add(view);
+                    settingsSearchIndex.add(label,"Opções",category,pageIndex);
+                }
+            }
+        }
         if(view instanceof ViewGroup){
             ViewGroup group=(ViewGroup)view;
-            for(int i=0;i<group.getChildCount();i++)collectSearchLabels(group.getChildAt(i),result);
+            for(int i=0;i<group.getChildCount();i++)indexSettingControls(group.getChildAt(i),category,pageIndex);
+        }
+    }
+    private void openSearchTarget(SettingsSearch.Entry entry){
+        if(entry.id<0||entry.id>=settingsSearchTargets.size()||entry.page>=pages.size())return;
+        open(entry.page);
+        View target=settingsSearchTargets.get(entry.id),page=pages.get(entry.page);
+        // A setting may belong to a collapsed section. Reveal its ancestors but do not toggle the setting.
+        for(View walk=target;walk!=page&&walk!=null;){
+            if(walk.getVisibility()==View.GONE)walk.setVisibility(View.VISIBLE);
+            if(!(walk.getParent() instanceof View))break;
+            walk=(View)walk.getParent();
+        }
+        bodyScroll.post(()->{
+            int y=page.getTop();
+            for(View walk=target;walk!=page&&walk!=null;){
+                y+=walk.getTop();
+                if(!(walk.getParent() instanceof View))break;
+                walk=(View)walk.getParent();
+            }
+            bodyScroll.smoothScrollTo(0,Math.max(0,y-dp(54)));
+        });
+    }
+    /** Search by name, aliases, group and category; tap any result to open and scroll to its control. */
+    private void filterSettings(String raw){
+        String query=SettingsSearch.normalize(raw);
+        if(settingsSearchResults==null)return;
+        settingsSearchResults.removeAllViews();
+        settingsSearchResults.setVisibility(query.isEmpty()?View.GONE:View.VISIBLE);
+        if(query.isEmpty()){
+            for(LinearLayout row:homeRows)row.setVisibility(View.VISIBLE);
+            return;
+        }
+        indexSettingsOnce();
+        java.util.List<SettingsSearch.Entry> matches=settingsSearchIndex.find(query);
+        java.util.HashSet<Integer> shownPages=new java.util.HashSet<>();
+        int visible=0;
+        for(SettingsSearch.Entry match:matches){
+            shownPages.add(match.page);
+            if(visible++>=14)continue; // Avoid an unbounded dynamic result list on small phones.
+            Button result=button(match.name+"  ·  "+match.category);
+            result.setAllCaps(false);
+            result.setContentDescription("Abrir configuração "+match.name);
+            result.setOnClickListener(v->openSearchTarget(match));
+            settingsSearchResults.addView(result,new LinearLayout.LayoutParams(-1,dp(46)));
+        }
+        for(int i=0;i<homeRows.size();i++)
+            homeRows.get(i).setVisibility(shownPages.contains(i)?View.VISIBLE:View.GONE);
+        if(matches.isEmpty()){
+            TextView empty=text("Nenhuma configuração encontrada.",13,muted());
+            settingsSearchResults.addView(empty);
         }
     }
     /** Shows the home screen (index -1) or one category page, keeping the home scroll position for the way back. */
@@ -269,6 +340,20 @@ final class SettingsPanel {
         // Home screen: the always-visible location status, then one icon row per category.
         home = new LinearLayout(activity); home.setOrientation(LinearLayout.VERTICAL); body.addView(home);
         coords = text("", 16, ink()); coords.setPadding(dp(4), dp(6), dp(4), dp(10)); home.addView(coords);
+        // Session stats from read-only lifetime counters; accounts are kept in separate local histories.
+        LinearLayout sessionCard=new LinearLayout(activity);sessionCard.setOrientation(LinearLayout.VERTICAL);
+        sessionCard.setPadding(dp(12),dp(10),dp(12),dp(10));
+        sessionCard.setBackground(rounded(Control.darkTheme()?Color.rgb(28,39,53):Color.rgb(232,241,247),12));
+        TextView statsLabel=text("Estatísticas de jogo · últimas 1 hora / 24 horas",14,accent());
+        sessionCard.addView(statsLabel);
+        sessionStatsSummary=text("Aguardando primeira leitura da sessão…",12,ink());
+        sessionStatsSummary.setPadding(0,dp(7),0,dp(7));sessionCard.addView(sessionStatsSummary);
+        sessionStatsToggle=button("Ver últimas 24 horas");sessionCard.addView(sessionStatsToggle);
+        sessionStatsToggle.setOnClickListener(v->{
+            sessionStats24h=!sessionStats24h;refreshSessionStats();
+        });
+        LinearLayout.LayoutParams cardParams=new LinearLayout.LayoutParams(-1,-2);
+        cardParams.bottomMargin=dp(10);home.addView(sessionCard,cardParams);
         settingsSearch = new EditText(activity);
         settingsSearch.setSingleLine(true);
         settingsSearch.setTextSize(15);
@@ -277,6 +362,10 @@ final class SettingsPanel {
         settingsSearch.setInputType(InputType.TYPE_CLASS_TEXT);
         settingsSearch.setPadding(dp(12),dp(10),dp(12),dp(10));
         home.addView(settingsSearch,new LinearLayout.LayoutParams(-1,dp(52)));
+        settingsSearchResults=new LinearLayout(activity);
+        settingsSearchResults.setOrientation(LinearLayout.VERTICAL);
+        settingsSearchResults.setVisibility(View.GONE);
+        home.addView(settingsSearchResults,new LinearLayout.LayoutParams(-1,-2));
         settingsSearch.addTextChangedListener(new android.text.TextWatcher(){
             public void beforeTextChanged(CharSequence s,int start,int count,int after){}
             public void onTextChanged(CharSequence s,int start,int before,int count){filterSettings(s.toString());}
@@ -722,21 +811,58 @@ final class SettingsPanel {
         autoTransferSwitch.setOnCheckedChangeListener((v,checked) -> { if(checked==Control.autoTransferEnabled())return; Control.setAutoTransferEnabled(autoTransferSwitch.isChecked()); host.refresh(); });
         transferIvLimit=button("");txC.addView(transferIvLimit);
         transferIvLimit.setOnClickListener(v->{
-            int[] values=Control.TRANSFER_IV_CHOICES;
-            String[] labels={"Manter IV 90% ou mais","Manter IV 95% ou mais","Manter IV 97% ou mais",
-                "Manter IV 98% ou mais","Manter IV 99% ou mais","Manter somente IV 100%",
-                "Manter apenas os Pokémon protegidos / marcados"};
-            new AlertDialog.Builder(dialogContext()).setTitle(dev.pgrazor.PtBr.tr("Transferência por IV"))
-                .setSingleChoiceItems(labels,java.util.Arrays.binarySearch(values,Control.transferIvKeepPercent()),(dlg,i)->{
-                    dlg.dismiss();
-                    if(values[i]==101){
-                        new AlertDialog.Builder(dialogContext()).setTitle(dev.pgrazor.PtBr.tr("Confirmar regra irreversível"))
-                            .setMessage(dev.pgrazor.PtBr.tr("Este modo poderá transferir até Pokémon com IV 100%! Apenas favoritos, espécies marcadas, Pokémon protegidos por categorias e pelas regras PvP serão preservados. Transferências não podem ser desfeitas."))
-                            .setNegativeButton(dev.pgrazor.PtBr.tr("Cancelar"),null)
-                            .setPositiveButton(dev.pgrazor.PtBr.tr("Confirmar"),(d,w)->{Control.setTransferIvKeepPercent(101);host.refresh();})
-                            .show();
-                    }else{Control.setTransferIvKeepPercent(values[i]);host.refresh();}
-                }).setNegativeButton(dev.pgrazor.PtBr.tr("Cancelar"),null).show();
+            // Compatibility: the previously selected 101 ("protect only") remains opt-in.
+            // New choices 0..100 are used by the existing packed native transfer contract.
+            LinearLayout box=new LinearLayout(activity);box.setOrientation(LinearLayout.VERTICAL);
+            int pad=dp(16);box.setPadding(pad,pad,pad,pad);
+            TextView help=text("Limite de IV para manter as novas capturas (0–100%). 0% mantém todos; 100% mantém somente IV 100%. Favoritos e proteções continuam valendo.",13,muted());
+            box.addView(help);
+            android.widget.SeekBar slider=new android.widget.SeekBar(activity);
+            slider.setMax(100);slider.setProgress(Math.min(100,Control.transferIvKeepPercent()));
+            box.addView(slider,new LinearLayout.LayoutParams(-1,dp(52)));
+            EditText typed=new EditText(activity);
+            typed.setSingleLine(true);typed.setInputType(InputType.TYPE_CLASS_NUMBER);
+            typed.setText(String.valueOf(slider.getProgress()));
+            typed.setSelectAllOnFocus(true);typed.setContentDescription("Limite de IV de 0 a 100 por cento");
+            box.addView(typed);
+            slider.setOnSeekBarChangeListener(new android.widget.SeekBar.OnSeekBarChangeListener(){
+                public void onProgressChanged(android.widget.SeekBar bar,int value,boolean byUser){
+                    if(byUser&&!typed.getText().toString().equals(String.valueOf(value)))typed.setText(String.valueOf(value));
+                }
+                public void onStartTrackingTouch(android.widget.SeekBar bar){}
+                public void onStopTrackingTouch(android.widget.SeekBar bar){}
+            });
+            typed.addTextChangedListener(new android.text.TextWatcher(){
+                public void beforeTextChanged(CharSequence s,int start,int count,int after){}
+                public void onTextChanged(CharSequence s,int start,int before,int count){
+                    try{int value=Integer.parseInt(s.toString());
+                        if(value>=0&&value<=100&&value!=slider.getProgress())slider.setProgress(value);
+                    }catch(NumberFormatException ignored){}
+                }
+                public void afterTextChanged(android.text.Editable s){}
+            });
+            AlertDialog chooser=new AlertDialog.Builder(dialogContext())
+                .setTitle(dev.pgrazor.PtBr.tr("Manter Pokémon a partir deste IV"))
+                .setView(box).setNegativeButton(dev.pgrazor.PtBr.tr("Cancelar"),null)
+                .setNeutralButton(dev.pgrazor.PtBr.tr("Somente protegidos"),null)
+                .setPositiveButton(dev.pgrazor.PtBr.tr("Aplicar"),null).create();
+            chooser.setOnShowListener(d->{
+                chooser.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v2->{
+                    int value;
+                    try{value=Integer.parseInt(typed.getText().toString());}
+                    catch(NumberFormatException bad){typed.setError("Digite um valor de 0 a 100");return;}
+                    if(value<0||value>100){typed.setError("Digite um valor de 0 a 100");return;}
+                    Control.setTransferIvKeepPercent(value);host.refresh();chooser.dismiss();
+                });
+                chooser.getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener(v2->
+                    new AlertDialog.Builder(dialogContext()).setTitle("Confirmar regra irreversível")
+                        .setMessage("Este modo poderá transferir até Pokémon com IV 100%! Somente favoritos, espécies selecionadas e Pokémon protegidos serão preservados. Não é possível desfazer transferências.")
+                        .setNegativeButton("Cancelar",null)
+                        .setPositiveButton("Confirmar",(prompt,which)->{
+                            Control.setTransferIvKeepPercent(101);host.refresh();chooser.dismiss();
+                        }).show());
+            });
+            chooser.show();
         });
         caption(txC,"As transferências são permanentes e só se aplicam a novas capturas. Favoritos e Pokémon com dados desconhecidos são preservados.");
         transferStatus = caption(txC, "");
@@ -865,6 +991,13 @@ final class SettingsPanel {
         quickSpinSwitch = switchRow(stops, "Quick spin"); quickSpinSwitch.setChecked(Control.quickSpinEnabled());
         quickSpinSwitch.setOnCheckedChangeListener((v,checked) -> { if(checked==Control.quickSpinEnabled())return; Control.setQuickSpinEnabled(quickSpinSwitch.isChecked()); });
         quickSpinStatus = caption(stops, "");
+        LinearLayout mateo=group(page,"Rotas");summaryGated.add((View)mateo.getParent());
+        routeGiftSwitch=switchRow(mateo,"Trocar presentes com Mateo");
+        routeGiftSwitch.setChecked(Control.routeGiftExchange());
+        routeGiftSwitch.setOnCheckedChangeListener((v,checked)->{
+            if(checked!=Control.routeGiftExchange())Control.setRouteGiftExchange(checked);
+        });
+        caption(mateo,"Opcional: durante uma Rota, troca o presente com Mateo usando os comandos normais do jogo. Não negocia Pokémon e não ativa outras automações.");
 
         // ----- Inventory (opens its modal directly) -----
         LinearLayout itemsC = group(page, "Items"); summaryGated.add((View)itemsC.getParent());
@@ -1240,8 +1373,29 @@ final class SettingsPanel {
         return out.length()==0?"All off":out.toString();
     }
     private void summary(int index,String value){TextView view=pageSummaries.get(index);if(!value.contentEquals(view.getText()))view.setText(dev.pgrazor.PtBr.tr(value));}
+    private void refreshSessionStats(){
+        if(sessionStatsSummary==null)return;
+        long window=sessionStats24h?SessionStatsHistory.DAY_MS:SessionStatsHistory.HOUR_MS;
+        SessionStatsHistory.Change changes=SessionStats.change(window);
+        sessionStatsToggle.setText(sessionStats24h?"Ver última hora":"Ver últimas 24 horas");
+        if(changes==null){
+            sessionStatsSummary.setText("Aguardando estatísticas do jogo…");
+            return;
+        }
+        java.util.Locale pt=new java.util.Locale("pt","BR");
+        sessionStatsSummary.setText(String.format(pt,
+            "XP +%,d · Poeira +%,d\nCapturas %,d · Encontros %,d\nPoképaradas %,d · Caminhada %.2f km · Ovos %,d",
+            Math.round(changes.get(SessionStatsHistory.XP)),
+            Math.round(changes.get(SessionStatsHistory.DUST)),
+            Math.round(changes.get(SessionStatsHistory.CAUGHT)),
+            Math.round(changes.get(SessionStatsHistory.SEEN)),
+            Math.round(changes.get(SessionStatsHistory.STOPS)),
+            changes.get(SessionStatsHistory.KM),
+            Math.round(changes.get(SessionStatsHistory.HATCHED))));
+    }
     private void refreshHome(){
         if(current>=0)return;
+        refreshSessionStats();
         summary(0,(Control.desiredEnabled()?"Spoofing on":"Spoofing off")+String.format(Locale.US," · %.1f km/h",Control.engine.speedKmh));
         summary(1,"Relógio local, tempo de espera e legendas do mapa");
         summary(2,active("Quick catch",Control.quickSummaryEnabled(),"Auto throw",Control.autoThrow(),"Auto ball",Control.autoBall(),"Curveball",Control.throwCurve(),"Always hit",Control.throwAlwaysHit(),"Berries",Control.encounterBerryEnabled()));
@@ -1574,6 +1728,7 @@ final class SettingsPanel {
         berryPriority.setText(dev.pgrazor.PtBr.tr("Berry priority: "+BerryPriorityPicker.summary()));
         berryPicker.refresh();
         quickSpinSwitch.setChecked(Control.quickSpinEnabled());quickSpinStatus.setText(dev.pgrazor.PtBr.tr(Control.quickSpinStatus()));
+        routeGiftSwitch.setChecked(Control.routeGiftExchange());
         quickSummaryLabel.setText(dev.pgrazor.PtBr.tr(Control.quickSummaryAutoDismiss() ? "Quick catch" : "Faster catch summary"));
         quickSummarySwitch.setChecked(Control.quickSummaryEnabled());
         quickSummarySwitch.setEnabled(Control.quickSummaryConfigured());
