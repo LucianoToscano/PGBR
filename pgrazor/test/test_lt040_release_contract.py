@@ -19,9 +19,10 @@ class Lt040ReleaseContract(unittest.TestCase):
             "battle_timing_policy_test.cpp",
             "test_pvp_settings_ui.py","test_manual_battle_choice_grace.py",
             "test_battle_timing_controls.py",
-            "workflow_dispatch:","  push:","--prerelease","--latest=false",
+            "workflow_dispatch:","--prerelease","--latest=false",
             "gh release view","gh release create"):
             with self.subTest(term=term):self.assertIn(term,new)
+        self.assertNotIn("  push:",new)  # published LT040 is immutable
         self.assertIn("github.ref == 'refs/heads/main'",new)
         self.assertNotIn("PGBR-v0.00.39-LT.apk",new)
         for old in ("pgbr-lt037-release.yml","pgbr-lt038-release.yml","pgbr-lt039-release.yml"):
