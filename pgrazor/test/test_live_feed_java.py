@@ -14,9 +14,23 @@ import unittest
 from test_control_java import java_tools
 
 ROOT = Path(__file__).resolve().parents[1]
+REPO = ROOT.parent
 
 
 class LiveFeedJavaTests(unittest.TestCase):
+    _uses_vendored_json = False
+
+    @staticmethod
+    def _android_org_json_reusable(result):
+        """True quando a falha foi só do org.json do SDK (ambiente), não do código do PGBR.
+
+        Diferencia defeito real de dependência indisponível: se algum arquivo do PGBR falhou,
+        isso NÃO é ambiente e o teste precisa falhar.
+        """
+        text = (result.stdout or '') + (result.stderr or '')
+        errors = [line for line in text.splitlines() if '. ERROR in ' in line]
+        return bool(errors) and all('org/json' in line for line in errors)
+
     def test_feed_data(self):
         sdk = Path(os.environ.get('ANDROID_HOME', str(Path(os.environ.get('LOCALAPPDATA', str(Path.home()))) / 'Android/Sdk')))
         candidates = sorted((sdk / 'sources').glob('android-*/org/json'), reverse=True)
@@ -53,11 +67,9 @@ class LiveFeedJavaTests(unittest.TestCase):
                             ROOT / 'src/dev/pgrazor/SpawnProfiles.java',
                             ROOT / 'src/dev/pgrazor/SpawnSourceRegistry.java',
                             ROOT / 'src/dev/pgrazor/SpeciesGroups.java',
-                            # LiveFeedClient depende de LiveFeedSession (Keystore/GCM). O arquivo REAL é
-                            # compilado: ele só usa APIs do android.jar, então compila sem Android e não
-                            # há dublê de segurança. Antes ele faltava e o CI quebrava com
-                            # LiveFeedSession cannot be resolved (falha A).
-                            ROOT / 'src/dev/pgrazor/LiveFeedSession.java',
+                            # LiveFeedClient é compilado sempre (não depende do Android). A sessão
+                            # real entra junto quando há android.jar; sem ele, nenhum dublê de
+                            # segurança é usado — ver o bloco abaixo.
                             ROOT / 'src/dev/pgrazor/LiveFeedClient.java',
                             ROOT / 'src/dev/pgrazor/PokemonFeedSearch.java',
                             ROOT / 'test/PokemonFeedSearchTest.java',
@@ -72,17 +84,35 @@ class LiveFeedJavaTests(unittest.TestCase):
                 if candidate.is_file():
                     android_jar = candidate
                     break
+            # A sessão real (Keystore/GCM) só entra quando há android.jar: sem ele, compilar o arquivo
+            # de segurança é impossível e um dublê seria mentira. LiveFeedClient não depende do Android
+            # e é sempre compilado — o contrato de erro HTTP não fica sem teste.
+            session_compiled = android_jar is not None
+            compile_sources = list(sources)
+            if session_compiled:
+                compile_sources.append(ROOT / 'src/dev/pgrazor/LiveFeedSession.java')
             compile_args = [str(compiler), '-encoding', 'UTF-8']
             if android_jar is not None:
                 compile_args += ['-classpath', str(android_jar)]
-            compile_args += ['-d', str(work), *map(str, sources)]
-            if android_jar is None:
-                self.assertTrue(any(p.name == 'LiveFeedSession.java' for p in sources),
-                                'a sessão real precisa estar na lista de fontes')
-                self.skipTest('android.jar não encontrado: a sessão real (Keystore) não pode ser '
-                              'compilada aqui. Instale o SDK para rodar este teste de verdade.')
-            result = subprocess.run(compile_args, capture_output=True, text=True, timeout=60)
-            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            compile_args += ['-d', str(work), *map(str, compile_sources)]
+            result = subprocess.run(compile_args, capture_output=True, text=True, timeout=120)
+            if result.returncode != 0 and not self._android_org_json_reusable(result):
+                self.fail('o parser real não compilou.\n' + result.stdout + result.stderr)
+            if result.returncode != 0:
+                # As fontes do SDK não compilaram neste JDK (isso já acontecia antes destas
+                # mudanças). Cai para a implementação org.json versionada, que segue a mesma API,
+                # e registra o fato: o teste continua exercitando o parser real.
+                stub_json = sorted((REPO / 'tools/sniper_jvm/stubs/org/json').glob('*.java'))
+                self.assertTrue(stub_json, 'sem org.json utilizável: o parser não pode ser testado')
+                fallback = [str(compiler), '-encoding', 'UTF-8', '-d', str(work)]
+                if android_jar is not None:
+                    fallback += ['-classpath', str(android_jar)]
+                fallback += [*map(str, stub_json),
+                             *map(str, [p for p in compile_sources if 'org/json' not in p.as_posix()])]
+                retry = subprocess.run(fallback, capture_output=True, text=True, timeout=120)
+                self.assertEqual(retry.returncode, 0,
+                                 'nem o org.json versionado compilou:\n' + retry.stdout + retry.stderr)
+                self._uses_vendored_json = True
             for main in ['LiveFeedDataTest','SettingsBackupRulesTest','PogoFeedDataTest','PogoFeedFiltersTest'] + (['LiveFeedFiltersTest'] if (ROOT / 'test/LiveFeedFiltersTest.java').exists() else []):
                 result = subprocess.run([str(runtime), '-cp', str(work), main], capture_output=True, text=True, timeout=30)
                 self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
