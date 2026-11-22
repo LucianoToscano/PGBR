@@ -23,7 +23,7 @@ class PokemonSelectorWiringTest(unittest.TestCase):
         self.assertIn('provider.cancel()',dialog)
         self.assertIn('A API direta de PGSharp/Pokémod ainda não está conectada',dialog)
         self.assertIn('pokemon-search?page=1',provider)
-        self.assertIn('pokemon_id=',provider)
+        self.assertIn('IFlowGoRequestPolicy.globalSpeciesQuery(dexId)',provider)\n        request_policy=(ROOT/'src/dev/pgrazor/IFlowGoRequestPolicy.java').read_text(encoding='utf-8')\n        self.assertIn('&pokemon_id=',request_policy)
         self.assertIn('entry.expiresAt > now',policy)
         self.assertIn('entry.dexId == selectedDex',policy)
         self.assertIn('CooldownState.valid',policy)
