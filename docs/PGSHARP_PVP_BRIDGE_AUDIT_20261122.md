@@ -15,3 +15,12 @@ O responsável declarou possuir autorização para aproveitamento de funções e
 
 ## Teste e limites
 O novo teste `pgrazor/test/test_pvp_trace_bootstrap.py` protege a sequência bootstrap -> tentativa única -> instalação e o caso de observador PvP sem hooks de animação. **Teste local não executado nesta sessão; CI e aparelho ainda pendentes.** Isso não prova que o Auto PvP ataca, lança carregado, usa escudo nem funciona em GBL. O selector supereficaz de segundo golpe permanece sem executor nativo. Não copiar offsets de versões antigas ou fabricar JNI, servidor ou API.
+
+
+## Preparação da LT035 — sessão PvP mais estável
+- `pvp_scene.h`: callbacks VNext renovam prazo de inatividade de cinco minutos dentro de uma sessão já reconhecida; limite global absoluto de vinte minutos. Não renova com Unity ticks genéricos, NPC ou interface sem prova da sequência.
+- `combat_host.cpp`: saída de combate ao mudar da etapa COMBAT para qualquer outra etapa.
+- `pvp_scene_test.cpp`: adiciona casos de expiração, renovação, teto de vinte minutos, regressão de relógio e nova partida.
+- Novo workflow de pré-release QA LT035 e mudança de `pgrazor/VERSION`, sem tocar na tag LT034. A compilação e publicação reais dependem de CI da main; não anunciar APK antes da criação.
+
+**Código próprio do PGBR:** o acesso aos bytes dos APKs PGSharp para copiar funções exatas não foi possível; não substituir por supostos offsets nem afirmar extração.

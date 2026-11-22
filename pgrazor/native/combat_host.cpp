@@ -628,7 +628,7 @@ void pvp_gui_open(const char *ns,const char *name,uint64_t tid) {
   if(!pvp_gate(&tid)||!ns||!name)return;
   const auto before=g_pvp_scene.stage;
   g_pvp_scene.gui(ns,name,now_ms());
-  if(before==PgrPvpScene::COMBAT && g_pvp_scene.stage==PgrPvpScene::IDLE)
+  if(before==PgrPvpScene::COMBAT && g_pvp_scene.stage!=PgrPvpScene::COMBAT)
     pvp_leave(tid,"battle-ended");
 }
 void pvp_vnext_open(void *ui,uint64_t tid) {
