@@ -25,8 +25,12 @@ int main(){
     assert(s.vnext(102)&&s.pvp()&&s.allowlisted());
     s.reset();
     hub(s,110);prep(s,111);s.verified_pvp_type(112);
-    assert(s.stage==PgrPvpScene::VERIFIED_PVP_ENTRY);
-    assert(s.vnext(113)&&s.pvp()&&s.allowlisted());
+    assert(s.stage==PgrPvpScene::PREPARATION); // preserve validated 3-minute prep
+    assert(s.vnext(170112)&&s.pvp()&&s.allowlisted());
+    s.reset();
+    hub(s,113);s.verified_pvp_type(114);prep(s,115);
+    assert(s.stage==PgrPvpScene::PREPARATION); // late preparation extends typed proof
+    assert(s.vnext(170115)&&s.pvp()&&s.allowlisted());
     s.reset();
     hub(s,120);s.verified_pvp_type(121);
     assert(!s.vnext(15121)); // typed proof still expires after 15 seconds
