@@ -654,7 +654,9 @@ void pvp_vnext_open(void *ui,uint64_t tid) {
   }
   g_pvp_ui_root=root;g_pvp_was_ready=true;
   queue_event(PGR_CBH_EV_BATTLE_ACTION,1,0,tid,
-    R"({"pvpExecutorReady":true,"scope":"CombatVNextGuiController","experimental":true})");
+    g_pvp_scene.training()
+      ? R"({"pvpExecutorReady":true,"mode":"training","scope":"CombatVNextGuiController","experimental":true})"
+      : R"({"pvpExecutorReady":true,"mode":"pvp","scope":"CombatVNextGuiController","experimental":true})");
 }
 void pvp_vnext_close(void *ui,uint64_t tid) {
   if(!g_pvp_ui_root||!pvp_gate(&tid))return;
@@ -666,7 +668,9 @@ void hook_rk_enter(void *self,void *a1, void *a2, void *method){
  auto orig=reinterpret_cast<Fn4Ptr>(load_original(HK_RK_ENTER));FrameGuard frame;uint64_t tid=0;
  if(!rocket_gate(&tid)){orig(self,a1,a2,method);return;}PinnedArgs pins{self,a1,a2};
  if(pins.valid&&rocket_gate(&tid)){
-  if(g_pvp_ui_root){g_pvp_scene.reset();pvp_leave(tid,"rocket-scope-override");}
+  // An exact Rocket InvasionCombatState always overrides pending training.
+  g_pvp_scene.reset();
+  if(g_pvp_ui_root)pvp_leave(tid,"rocket-scope-override");
   g_rocket_combat->observe(PGR_RC_OBS_SCOPE_ENTER,pins.get(0),0,tid);
   if(g_rocket_mini)g_rocket_mini->restore();sync_minigame_policy(now_ms());
   drain_leaf_events(tid);}orig(pins.get(0),pins.get(1),pins.get(2),method);

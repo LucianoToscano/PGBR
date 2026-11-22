@@ -1887,9 +1887,11 @@ public final class Control {
                 org.json.JSONObject b=new org.json.JSONObject(detail);
                 if(b.has("pvpExecutorReady")){
                     pvpBattleReady=b.optBoolean("pvpExecutorReady",false);
+                    String battleMode="training".equals(b.optString("mode","pvp"))
+                        ?"Treinamento VNext":"PvP VNext";
                     pvpBattleStatus=pvpBattleReady
-                        ?"PvP VNext em teste: executor conectado. Ataques e escudos dependem dos controles do jogo."
-                        :"PvP VNext aguardando partida reconhecida: "+b.optString("reason","pronto para observar");
+                        ?battleMode+" em teste: executor conectado, sem confirmação de ataque aceito."
+                        :battleMode+" aguardando partida reconhecida: "+b.optString("reason","pronto para observar");
                 }else if(b.has("pvpAction")){
                     pvpBattleStatus="PvP VNext: comando "+b.optString("pvpAction")+" enviado ao jogo (sem confirmação de acerto).";
                 }
