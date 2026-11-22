@@ -1,7 +1,7 @@
 name: PGBR LT032 - compilação APK completo QA (inclui port PGR 036)
 on:
   push:
-    branches: [integracao/lt032-recuperacao-20261121, integracao/lt032-pgrazor-035-036-20261122, integracao/lt032-qa-consolidada-20261122, integracao/lt032-qa-quality-stage-20261122]
+    branches: [integracao/lt032-recuperacao-20261121, integracao/lt032-pgrazor-035-036-20261122, integracao/lt032-qa-consolidada-20261122, integracao/lt032-qa-quality-stage-20261122, integracao/lt032-root-nonroot-qa-20261122]
   workflow_dispatch:
 permissions:
   contents: read
@@ -138,12 +138,28 @@ jobs:
           $apk = 'dist/pgbr-lt032/PGBR-v0.00.32-LT.apk'
           if (!(Test-Path $apk)) { throw 'APK de teste ausente' }
           Write-Host "SHA256: $((Get-FileHash $apk -Algorithm SHA256).Hash)"
+      - name: Compilar modulo Root e instalador com o mesmo DEX validado
+        run: |
+          python -B pgrazor/rooted.py pgrazor/input/game.apkm --skip-build --download --output dist/pgbr-lt032
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Verificar integridade cruzada das tres variantes
+        run: |
+          python -B tools/verify_release.py dist/pgbr-lt032 --tag v0.00.32-LT
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          foreach ($name in @('PGBR-v0.00.32-LT.apk','PGBR-v0.00.32-LT-Root.apk','PGBR-v0.00.32-LT-Root-module.zip')) {
+            $asset = Join-Path 'dist/pgbr-lt032' $name
+            if (!(Test-Path -LiteralPath $asset)) { throw "Artefato ausente: $name" }
+            Write-Host "$name SHA256 $((Get-FileHash -LiteralPath $asset -Algorithm SHA256).Hash)"
+          }
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: PGBR-LT032-PGR036-APK-completo-QA
+          name: PGBR-LT032-PGR036-Root-e-SemRoot-QA
           path: |
             dist/pgbr-lt032/PGBR-v0.00.32-LT.apk
+            dist/pgbr-lt032/PGBR-v0.00.32-LT-Root.apk
+            dist/pgbr-lt032/PGBR-v0.00.32-LT-Root-module.zip
             dist/pgbr-lt032/build-info.json
+            dist/pgbr-lt032/root-build-info.json
             dist/pgbr-lt032/SHA256SUMS.txt
           if-no-files-found: error
           retention-days: 30
