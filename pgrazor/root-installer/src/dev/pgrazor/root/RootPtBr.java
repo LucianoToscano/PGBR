@@ -450,7 +450,7 @@ public final class RootPtBr {
         m.put("Send & Open Gifts", "Enviar e abrir presentes");
         m.put("Each task runs when you start it.", "Cada tarefa é executada quando você a inicia.");
         m.put("Shundo Sniper (Experimental)", "Caçador de Shundo (experimental)");
-        m.put("Shiny Scanner (Experimental)", "Scanner de Shiny (experimental)");
+        m.put("Shiny Scanner (Experimental)", "Scanner de Brilhantes (experimental)");
         m.put("Daily Incense Session", "Sessão do Incenso de Aventura Diário");
         m.put("Field research", "Pesquisas de campo");
         m.put("Settings for limited-time events.", "Configurações para eventos por tempo limitado.");
@@ -489,8 +489,8 @@ public final class RootPtBr {
         m.put("Send gifts", "Enviar presentes");
         m.put("Auto-Raid running", "Reide automático em execução");
         m.put("Shundo Sniper running", "Caçador de Shundo em execução");
-        m.put("Shiny Scanner on", "Scanner Shiny ativado");
-        m.put("Shundo, shiny scan, raids, incense, gym feeding, gifts, evolve, research", "Shundo, scanner Shiny, Reides, incenso, alimentação de Ginásios, presentes, evolução e pesquisas");
+        m.put("Shiny Scanner on", "Scanner de Brilhantes ativado");
+        m.put("Shundo, shiny scan, raids, incense, gym feeding, gifts, evolve, research", "Shundo, scanner de Brilhantes, reides, incenso, alimentação de Ginásios, presentes, evolução e pesquisas");
         m.put("Halloween · Go Wild", "Halloween · Área Selvagem GO");
         m.put("Dark", "Escuro");
         m.put("Light", "Claro");
@@ -617,10 +617,10 @@ public final class RootPtBr {
         m.put("Search could not be completed. Please try again.", "Não foi possível concluir a busca. Tente novamente.");
         m.put("No matching places found. Try a broader name or add a city.", "Nenhum local correspondente encontrado. Experimente um nome mais abrangente ou inclua uma cidade.");
         m.put("Show ", "Mostrar ");
-        m.put("My Shinies", "Meus Shiny");
+        m.put("My Shinies", "Meus Brilhantes");
         m.put("Choose species (N)", "Escolher espécies (N)");
-        m.put("My Shinies filters", "Filtros de Meus Shiny");
-        m.put("Applies to My Shinies only. Your other Nearby settings are kept.", "Aplica-se somente a Meus Shiny. Suas outras configurações de Próximos são mantidas.");
+        m.put("My Shinies filters", "Filtros de Meus Brilhantes");
+        m.put("Applies to My Shinies only. Your other Nearby settings are kept.", "Aplica-se somente a Meus Brilhantes. Suas outras configurações de Próximos são mantidas.");
         m.put("Show everything (overrides the filters below)", "Mostrar tudo (ignora os filtros abaixo)");
         m.put("Min IV", "IV mínimo");
         m.put("Max IV", "IV máximo");
@@ -638,9 +638,9 @@ public final class RootPtBr {
         m.put("Max PvP rank", "Ranking PvP máximo");
         m.put("With a league ticked, each refresh searches one by one, 10 s apart: first by IV, then Great League, then Ultra League. All results are added to the feed.", "Com uma liga selecionada, cada atualização faz buscas separadas por 10 segundos: primeiro por IV, depois pela Grande Liga e, por fim, pela Ultra-Liga. Todos os resultados são adicionados à lista.");
         m.put("Lists only Pokémon ranked within the max rank in a ticked league.", "Mostra apenas Pokémon com classificação dentro do limite escolhido na liga selecionada.");
-        m.put("Shiny only", "Somente Shiny");
+        m.put("Shiny only", "Somente Brilhantes");
         m.put("Background only", "Somente com fundo");
-        m.put("Shinies & backgrounds", "Shiny e fundos");
+        m.put("Shinies & backgrounds", "Brilhantes e fundos");
         m.put("Show my backgrounds", "Mostrar meus fundos");
         m.put("Species", "Espécies");
         m.put("All species", "Todas as espécies");
@@ -813,7 +813,7 @@ public final class RootPtBr {
         m.put("Ball", "Pokébola");
         m.put("Standard berry", "Fruta padrão");
         m.put("Berry", "Fruta");
-        m.put("Shiny or IV ≥90%: Ultra Ball + Golden Razz", "Shiny ou IV ≥90%: Ultra Bola + Fruta Frambo Dourada");
+        m.put("Shiny or IV ≥90%: Ultra Ball + Golden Razz", "Brilhante ou IV ≥90%: Ultra Bola + Fruta Frambo Dourada");
         m.put("Premium", "Especial");
         m.put("High CP threshold (0–10000)", "Limite de PC alto (0–10000)");
         m.put("High level threshold (0–50)", "Limite de nível alto (0–50)");
@@ -884,7 +884,7 @@ public final class RootPtBr {
         m.put("Send &amp; Open Gifts", "Enviar e abrir presentes");
         m.put("Sends your available gifts to eligible friends, then opens the gifts you have received. ", "Envia seus presentes disponíveis para amigos elegíveis e depois abre os presentes recebidos. ");
         m.put("Each friend is handled once. The game's own daily limits for sending and opening still apply, so some ", "Cada amigo é processado uma vez. Os limites diários do jogo para enviar e abrir presentes continuam valendo, portanto alguns ");
-        m.put("then battles using your raid auto-attack settings and catches the boss. Stops at the raid limit, after a shiny ", "depois batalha usando suas configurações de ataques automáticos em Reides e tenta capturar o chefe. Para ao atingir o limite de Reides ou após capturar um Shiny ");
+        m.put("then battles using your raid auto-attack settings and catches the boss. Stops at the raid limit, after a shiny ", "depois batalha usando suas configurações de ataques automáticos em Reides e tenta capturar o chefe. Para ao atingir o limite de Reides ou após capturar um Brilhante ");
         m.put("is caught if selected, or after two consecutive losses. Stop ends the session after its current raid.", "se a opção estiver marcada, ou após duas derrotas consecutivas. Parar encerra a sessão depois da Reide atual.");
         m.put("Uses an allowed free pass before a Premium Battle Pass. Remote Raid Passes are never used.", "Usa primeiro um Passe de Reide gratuito permitido e depois um Passe de Batalha Premium. Passes de Reide a Distância nunca são usados.");
         m.put("Golden Razz takes priority and falls back to Razz when unavailable. Leave both unchecked to use no berries. ", "Frambo Dourada tem prioridade; usa Frambo comum quando a dourada não estiver disponível. Deixe ambas desmarcadas para não usar frutas. ");
@@ -1461,6 +1461,8 @@ public final class RootPtBr {
         m.put("Your account doesn't have access to this feature.", "Sua conta não tem acesso a este recurso.");
         m.put("Your session has expired. Please sign in again.", "Sua sessão expirou. Entre novamente.");
         m.put("Too many requests. Please wait before refreshing.", "Muitas solicitações. Aguarde antes de atualizar.");
+        m.put("Quests", "Pesquisas");
+        m.put("Primal", "Primitivo");
         LABELS = Collections.unmodifiableMap(m);
     }
     private RootPtBr() {}
