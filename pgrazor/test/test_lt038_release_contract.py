@@ -13,6 +13,8 @@ class Lt038ReleaseContract(unittest.TestCase):
                      "tools/check.py","pgrazor/nonroot.py","pgrazor/rooted.py",
                      "tools/verify_release.py","--prerelease"):
             with self.subTest(item=item): self.assertIn(item,w)
+        self.assertIn("workflow_dispatch:", w)
+        self.assertNotIn("  push:", w)  # no rebuild on later version/doc commits
         notes=(ROOT/"docs/releases/v0.00.38-LT.md").read_text(encoding="utf-8")
         self.assertIn("device_tested=false",notes)
         self.assertIn("ainda guarda somente a preferência",notes)
