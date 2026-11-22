@@ -92,9 +92,16 @@ public final class SpawnSearch {
         public final boolean global;
         public final double latitude, longitude, radiusKm;
         public final boolean raidsOnly;
+        /** Optional immutable slot filters, for providers that can narrow server-side. */
+        public final SpawnFilters filters;
 
         public Request(String sourceId, int species, boolean global, double latitude, double longitude,
                        double radiusKm, boolean raidsOnly) {
+            this(sourceId, species, global, latitude, longitude, radiusKm, raidsOnly, null);
+        }
+
+        public Request(String sourceId, int species, boolean global, double latitude, double longitude,
+                       double radiusKm, boolean raidsOnly, SpawnFilters filters) {
             this.sourceId = sourceId;
             this.species = species;
             this.global = global;
@@ -102,6 +109,7 @@ public final class SpawnSearch {
             this.longitude = longitude;
             this.radiusKm = radiusKm;
             this.raidsOnly = raidsOnly;
+            this.filters = filters;
         }
 
         /** True when a radius query has usable coordinates. */
