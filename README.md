@@ -12,7 +12,7 @@
 
 > **LT035 publicada (QA):** [notas da LT035](docs/releases/v0.00.35-LT.md) · [release oficial](https://github.com/LucianoToscano/PGBR/releases/tag/v0.00.35-LT) · [execução de build validada #45018980405](https://github.com/LucianoToscano/PGBR/actions/runs/45018980405). Os três pacotes foram compilados, assinados e verificados no CI. **Auto PvP não homologado em dispositivo (`device_tested=false`)**; não é cópia de funções do APK PGSharp.
 
-> **LT036 em preparação:** reconhecimento experimental de treinamento após NPC + preparação + VNext com as opções ágil/carregado/escudo compartilhadas do Rocket. **Não homologado em aparelho.** O APK sem Root não substitui uma instalação de Pokémon GO/PGSharp com certificado diferente: ver [diagnóstico de instalação](docs/QA_LT036_TREINAMENTO_INSTALACAO.md). A LT035 continua publicada até a nova release ser confirmada.
+> **LT036 em preparação:** o nome reservado do instalador é `PGBR-v0.00.36-LT.apk` (**ainda não publicado; não é link de download**). reconhecimento experimental de treinamento após NPC + preparação + VNext com as opções ágil/carregado/escudo compartilhadas do Rocket. **Não homologado em aparelho.** O APK sem Root não substitui uma instalação de Pokémon GO/PGSharp com certificado diferente: ver [diagnóstico de instalação](docs/QA_LT036_TREINAMENTO_INSTALACAO.md). A LT035 continua publicada até a nova release ser confirmada.
 
 ## Baixar e validar
 
