@@ -703,3 +703,13 @@ O módulo Sniper 100% IV foi implementado em fonte e submetido como [PR #72](htt
 **Limites preservados:** nenhum request HTTP ao PGSharp, nenhuma key transmitida/verificada, nenhum feed proprietário consumido, nenhuma captura ou teleporte PGSharp validado; configuração de key **não** é login. API, autenticação, lat/lng/IV/despawn e permissões do serviço deverão ser confirmados em nova etapa. Não gerar keygen, não copiar credenciais de Pokémon GO, não inventar resultados, não usar automaticamente backend alternativo sob o nome PGSharp.
 
 **Estado desta revisão:** IMPLEMENTADO EM FONTE (UI, política, cofre); QA automático sendo verificado em [workflow da PR #73](https://github.com/LucianoToscano/PGBR/pull/73/checks); compilação e teste Android físico não equivalentes; nenhum APK novo/publicação/merge. Atualizar este registro com resultados efetivos após os jobs terminarem. **A linha LT033 publicada permanece imutável, `device_tested=false`.**
+
+
+### CI validado — ponte PGSharp Free/Standard — PR #73
+Última alteração de código do conector opcional: commit `2366ccc0948b79b7469e0598d54dab7c4817b213`, que protege as tarefas de key contra encerramento da tela. A anotação do Mestre foi acrescentada no commit `1d00a173bbf782916d72b0be62e3cdf3f7fd0bfd`.
+
+- [QA PGSharp Free/Key #45011614066](https://github.com/LucianoToscano/PGBR/actions/runs/45011614066): **SUCCESS**; verificações Java de níveis Free/Standard, proteção de chave/isolamento de origem e compilação de todas as classes Java Android. **Não são testes de acesso à API proprietária nem teste físico**.
+- [Auditoria Mestre e inventário #45011614067](https://github.com/LucianoToscano/PGBR/actions/runs/45011614067): **SUCCESS**, sem exclusão.
+- Permanecem em aberto, **não implementados nesta PR**: chamada efetiva a `f.pgsharp.com/peanuts`, respostas reais 100 IV do PGSharp, login/validação da key Standard no backend, quotas e escopos de filtros pagos, uso de coordenadas PGSharp em teleporte, APK assinado/testado fisicamente. Não declarar fonte operacional até demonstrar essas etapas.
+
+**Estado definitivo deste registro:** interface/arquitetura e cofre de key implementados, QA de compilação/contratos aprovado; rede PGSharp intencionalmente inativa por falta do contrato completo. [PR #73 em draft](https://github.com/LucianoToscano/PGBR/pull/73), depende da PR #72; nenhuma mesclada na `main`.
