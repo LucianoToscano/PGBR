@@ -1,3 +1,10 @@
+## Não lançado — Escudo Inteligente e Troca após Nocaute configuráveis (22/11/2026)
+- Branch isolada `feat/smart-shield-swap-timings-20261122` sobre `be01d9b59a9e1f31f292b8c562744e5801993d08` (LT038 preservada; sem merge ou nova release automática).
+- Menu PT-BR em Ataque Inteligente: escudo 0 / 1.500 (padrão) / 3.000 ms / desativado; KO VNext 400 / 2.000 (padrão) / 6.000 ms / desativado; escolhas únicas persistentes.
+- Snapshot tipado F2 no slot 21 já existente, verificação de frescor/geração, política nativa de escudo e swap KO; seletor manual respeitado e Batalha Inteligente não preempta KO.
+- Intervalo técnico pós-escudo de 250 ms, cadências ágil/carregado e política de troca estratégica de 2.300 ms **não alterados**. Retentativa KO de 1.000 ms e limite de 8.000 ms preservados.
+- Regressões de política C++, contrato de fonte e persistência JVM atualizadas; resultados de CI e homologação física devem ser registrados com evidência. Não há APK desta branch até build verificado.
+
 ## v0.00.38-LT — pré-release QA publicada: menu único, atrasos manuais e priorização ainda não conectada (22/11/2026)
 - Batalha Inteligente → Ataque Inteligente → Cura Inteligente, com apenas uma preferência persistente.
 - Espera de 2,3 segundos para troca manual e 1,7 segundo para escudo, sem adiar ataque carregado.
