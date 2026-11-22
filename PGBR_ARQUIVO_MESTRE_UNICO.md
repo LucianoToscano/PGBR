@@ -1309,3 +1309,14 @@ Referências: https://github.com/LucianoToscano/PGBR/pull/108 ; https://github.c
 - Regionais, raros e evento ficam bloqueados até existir lista verificável.
 - Shiny é exibido como **possibilidade** da espécie ou **confirmação** do fornecedor, nunca como garantia.
 - PoGoCoordinates continua exigindo o fluxo de revelação do próprio fornecedor (cotas dele) e não é oferecida como fonte direta do Sniper.
+
+## 22/11/2026 — Auditoria geral antirregressão, PR #121 (correção subordinada à PR #115)
+
+**Governança:** base `main` `b355def7f6693b4d7f88c802b6ea40df018f0490`; branch `audit/pgbr-regressions-20261122-2020` criada do SHA `1932edfe1a538f86132456cf4d0a9451adc0b485` da PR #115. PR de revisão: https://github.com/LucianoToscano/PGBR/pull/121, destino `arena/75dcdb70-pgbr`. Nenhum merge ou publicação em `main`; PRs paralelas #117 (batalha/cura), #118 (PokeList Partner) e release LT040 imutável foram preservadas.
+
+**Auditoria de downgrade:** a comparação de commits LT037→LT040 mostrou +118 commits e nenhum arquivo marcado como removido, e LT040→main mostrou +16 commits, também sem remoção de arquivo; **isso não equivale à prova de que o comportamento PvP/Root/etc. não regrediu**. A regressão de batalha relatada entre LT037/LT039 não teve homologação no aparelho nesta auditoria. Ataque Inteligente segue sem associação inequívoca do golpe recomendado ao botão/executor (PR #117, não alterada); release mais recente efetivamente publicada continua `v0.00.40-LT`, QA, `device_tested=false`.
+
+**Correções verificadas na leitura de código e comprometidas na PR #121:** `SniperPanel.java` agenda atualização automática somente com opção ligada, respeitando cadência e limites, impede reaparição de linhas expiradas, aplica ordenação ao snapshot existente sem HTTP, cancela/descarta consultas e resultados ao trocar fornecedor; `IFlowGoFeedClient.java` registra a existência de página seguinte mesmo quando a cota de duas páginas foi atingida e preserva total desconhecido como cobertura incerta. `SpawnConnectors.java`, `SpawnSourceRegistry.java`, `docs/SNIPER_ENGINE_LT040.md`, `README.md` e `docs/ROOTED.md` tiveram documentação corrigida sem remover histórico. Cinco testes estáticos novos em `pgrazor/test/test_sniper_panel_contract.py`. Inventário e limitações: `docs/AUDITORIA_GERAL_REGRESSOES_2026-11-22.md`.
+
+**Níveis de evidência:** implementação/contratos presentes na branch; resultado dos **novos** checks CI, compilação de APK completo, Android físico, assinatura, upload e release posterior devem ser verificados separadamente, nunca presumidos. A PR #115 tinha 7/7 workflows aprovados no SHA anterior `1932edfe`, mas isso não aprova automaticamente a PR #121. Nenhuma chamada real a fornecedores foi executada. Após integrar PR #121 em #115 e só após revisar #115 para `main`, revalidar todos os gates e atualizar este Mestre com resultados, hashes e links efetivos. A PR #118 continuará dependente da PR #115.
+
