@@ -10,7 +10,15 @@ import subprocess
 import tempfile
 
 ROOT=Path(__file__).resolve().parents[1]
-FIXTURES=('auto_raid_policy_test.cpp',)
+FIXTURES=(
+    'auto_raid_policy_test.cpp',
+    'batch_evolution_policy_test.cpp',
+    'buddy_emotion_policy_test.cpp',
+    'incense_guard_policy_test.cpp',
+    'remote_gym_policy_test.cpp',
+    'research_policy_test.cpp',
+    'shiny_scan_policy_test.cpp',
+)
 
 def main():
     parser=argparse.ArgumentParser()
