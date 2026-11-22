@@ -972,3 +972,6 @@ O workflow [#45024489012](https://github.com/LucianoToscano/PGBR/actions/runs/45
 - [SHA256SUMS.txt](https://github.com/LucianoToscano/PGBR/releases/download/v0.00.36-LT/SHA256SUMS.txt): 281 bytes, SHA-256 `cddb0e3080276f135ec728f17420f121da080ec75d9da354b425450de9d26ffe`.
 
 **Separação de versões:** LT036 contém o reconhecimento experimental de treinador NPC sem a nova política de ativação global por escopo. Esta última integra a proposta LT037, ainda em PR/QA. Nenhuma dessas versões tem validação física de combate (`device_tested=false`), e APK sem Root ainda conflita com instalação assinada por outra chave. LT035 e demais tags mantidas. O registro da futura LT037 deve ocorrer apenas depois do resultado CI/tag/arquivos verificados.
+
+
+**Proteção adicional no CI pré-merge:** `tools/native_host_tests.py` agora inclui `pvp_scene_test.cpp` e `shared_auto_battle_gate_test.cpp` no allowlist de fixtures C++ independentes de Android. Assim, falhas de tipo/ordem de PvP privado, treino, Rocket, máscara efetiva/lease e raid/Max são detectadas em PR antes da publicação, além do fixture no workflow de release LT037. Não equivale a teste físico; aguardar checks da HEAD atual.
