@@ -57,6 +57,9 @@ import org.json.JSONObject;
 public final class SniperPanel {
     private SniperPanel() {}
 
+    /** Ephemeral Partner key: never placed in SharedPreferences, backups, source or logs. */
+    private static volatile String partnerSessionKey = "";
+
     /** Opens the panel on the requested slot. */
     public static void show(Activity activity, String slot) {
         if (activity == null || activity.isFinishing() || activity.isDestroyed()) return;
@@ -488,7 +491,8 @@ public final class SniperPanel {
                 try { source.cancel(); } catch (RuntimeException ignored) { }
             }
             final int token = generation.incrementAndGet();
-            final SpawnSearch.Source connector = SpawnConnectors.create(state.sourceId(), rocketBaseUrl());
+            final SpawnSearch.Source connector = SpawnConnectors.create(state.sourceId(), rocketBaseUrl(),
+                    partnerBaseUrl(), partnerSessionKey);
             if (connector == null) {
                 status.setText("Fonte sem conector disponível nesta versão: " + info.label + ".");
                 return;
@@ -534,6 +538,13 @@ public final class SniperPanel {
                     render();
                 });
             });
+        }
+
+        private String partnerBaseUrl() {
+            try {
+                return AccountProfiles.preferences(activity, "pgbr-pokelist-partner-v1")
+                        .getString("endpoint", "");
+            } catch (RuntimeException unavailable) { return ""; }
         }
 
         private String rocketBaseUrl() {
@@ -619,6 +630,70 @@ public final class SniperPanel {
             });
         }
 
+        /** Partner setup is opt-in; only the HTTPS origin persists, never a bearer secret. */
+        private void configurePartner() {
+            LinearLayout root = new LinearLayout(ui);
+            root.setOrientation(LinearLayout.VERTICAL);
+            root.setPadding(MapTheme.dp(ui, 16), MapTheme.dp(ui, 12),
+                    MapTheme.dp(ui, 16), MapTheme.dp(ui, 12));
+
+            TextView warning = new TextView(ui);
+            warning.setText("A PokeList Partner API precisa de URL HTTPS, chave própria e "
+                    + "licença escrita aprovada pelo titular. O feed real deve estar conectado. "
+                    + "A chave fica somente em memória até fechar o aplicativo.");
+            root.addView(warning);
+
+            EditText endpoint = new EditText(ui);
+            endpoint.setSingleLine(true);
+            endpoint.setHint("https://api.parceiro-autorizado.com");
+            endpoint.setText(partnerBaseUrl());
+            root.addView(endpoint);
+
+            EditText secret = new EditText(ui);
+            secret.setSingleLine(true);
+            secret.setInputType(129); // TYPE_CLASS_TEXT | TYPE_TEXT_VARIATION_PASSWORD
+            secret.setHint(partnerSessionKey.isEmpty()
+                    ? "plp_<id>.<segredo> — chave fornecida pelo titular"
+                    : "Chave ativa nesta sessão (deixe vazio para manter)");
+            root.addView(secret);
+
+            AlertDialog setup = new AlertDialog.Builder(ui)
+                    .setTitle("Configurar PokeList Partner")
+                    .setView(root)
+                    .setPositiveButton("Usar nesta sessão", (d, which) -> {
+                        String url;
+                        try {
+                            url = PokeListPartnerClient.safeEndpoint(endpoint.getText().toString());
+                        } catch (LiveFeedClient.FeedException invalid) {
+                            Toast.makeText(activity, invalid.getMessage(), Toast.LENGTH_LONG).show();
+                            return;
+                        }
+                        String supplied = secret.getText().toString().trim();
+                        if (!supplied.isEmpty()) partnerSessionKey = supplied;
+                        if (!partnerSessionKey.matches(
+                                "plp_[A-Za-z0-9_-]{1,96}\\.[A-Za-z0-9_-]{8,256}")) {
+                            Toast.makeText(activity, "Chave do parceiro inválida ou ausente.",
+                                    Toast.LENGTH_LONG).show();
+                            return;
+                        }
+                        AccountProfiles.preferences(activity, "pgbr-pokelist-partner-v1")
+                                .edit().putString("endpoint", url).apply();
+                        state = state.withSource(SpawnSourceRegistry.ID_POKELIST_PARTNER);
+                        save();
+                        render();
+                        search(false);
+                    })
+                    .setNeutralButton("Apagar chave", (d, which) -> {
+                        partnerSessionKey = "";
+                        Toast.makeText(activity, "Chave removida da sessão.", Toast.LENGTH_SHORT).show();
+                    })
+                    .setNegativeButton("Cancelar", null)
+                    .create();
+            DialogLifecycle.bind(activity, setup, null);
+            setup.setOnShowListener(d -> MapTheme.styleButtons(setup));
+            setup.show();
+        }
+
         private void openSources() {
             List<SpawnSourceRegistry.SourceInfo> all = SpawnSourceRegistry.all();
             final List<SpawnSourceRegistry.SourceInfo> selectable = new ArrayList<>();
@@ -637,6 +712,10 @@ public final class SniperPanel {
                     DialogLifecycle.bind(activity, explained, null);
                     explained.setOnShowListener(shown -> MapTheme.styleButtons(explained));
                     explained.show();
+                    return;
+                }
+                if (SpawnSourceRegistry.ID_POKELIST_PARTNER.equals(info.id)) {
+                    configurePartner();
                     return;
                 }
                 state = state.withSource(info.id);
