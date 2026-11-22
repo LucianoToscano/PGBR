@@ -161,6 +161,16 @@ public final class LiveFeedFilters {
         return true;
     }
 
+    /**
+     * When the user chose exactly one species in Filters, the global iFlowGo
+     * request can narrow its FIRST server page before local filtering.
+     * With multiple species, the provider has no verified OR-filter contract.
+     */
+    public int singleAllowedSpecies() {
+        return MODE_ALLOWLIST.equals(speciesMode) && speciesList.size() == 1
+                ? speciesList.get(0) : -1;
+    }
+
     /** True when "PvP only" is on and at least one league is ticked. */
     public boolean pvpOnlyActive() { return pvpOnly && (showPvpGreat || showPvpUltra || showPvpLittle); }
 
