@@ -101,6 +101,24 @@ public final class PokeListPartnerClientTest {
         catch (LiveFeedClient.FeedException ok) { failed = true; }
         yes(failed, "no live feed rejected");
 
+        // Local filters are sent to the provider only when capabilities advertise server_side.
+        SpawnFilters ivFilters = new SpawnFilters.Builder().iv(90, 100).build();
+        JSONObject enabled = new JSONObject().put("filters", new JSONArray()
+                .put(new JSONObject().put("filter", "iv_min/iv_max (percentual)")
+                        .put("position", "server_side"))
+                .put(new JSONObject().put("filter", "size")
+                        .put("position", "unsupported")));
+        JSONObject remote = new JSONObject();
+        PokeListPartnerClient.applyRemoteFilters(remote, ivFilters, enabled);
+        yes(remote.optInt("iv_min", -1) == 90 && remote.optInt("iv_max", -1) == 100,
+                "declared server-side IV bounds are forwarded");
+        yes(!remote.has("size") && !remote.has("gender"),
+                "unsupported values are not sent");
+        remote = new JSONObject();
+        PokeListPartnerClient.applyRemoteFilters(remote, ivFilters, new JSONObject());
+        yes(!remote.has("iv_min") && !remote.has("iv_max"),
+                "unknown capabilities never imply support");
+
         System.out.println("PASS: PokeListPartnerClientTest " + checks + " verificações");
     }
 }
