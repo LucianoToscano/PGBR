@@ -16,11 +16,12 @@ struct PgrPvpScene {
     Stage stage=IDLE;
     Mode mode=NONE;
     uint64_t expires_ms=0, started_ms=0, last_vnext_ms=0;
+    uint64_t typed_expires_ms=0; // independent short-lived proof; never shortens HUB
     static uint64_t until(uint64_t now,uint64_t span) {
         const uint64_t max=std::numeric_limits<uint64_t>::max();
         return now>max-span?max:now+span;
     }
-    void reset(){stage=IDLE;mode=NONE;expires_ms=started_ms=last_vnext_ms=0;}
+    void reset(){stage=IDLE;mode=NONE;expires_ms=started_ms=last_vnext_ms=typed_expires_ms=0;}
     bool training() const {return stage==COMBAT && mode==TRAINING;}
     bool pvp() const {return stage==COMBAT && mode==PVP;}
     // Called only after the 0.437.0 CombatTypeExtensions.IsPvPCombat
@@ -31,15 +32,16 @@ struct PgrPvpScene {
     void verified_pvp_type(uint64_t now) {
         if(!now)return;
         live(now);
-        // A validated game combat type can recover a pending PvP hub
-        // when its preparation GUI was not observed. A PREPARATION already
-        // validated by Hub+Preparation must retain its longer TTL rather
-        // than being downgraded to the 15-second fallback.
+        // An explicit PvP type proof is short-lived and independent from
+        // the Hub -> Preparation GUI lease. A valid Hub must not lose its
+        // usual preparation window because a legacy UI proof arrived early.
         // Never override NPC/training or an ongoing combat session.
         if(mode==TRAINING || stage==COMBAT)return;
-        if(stage==PREPARATION && mode==PVP)return;
-        if(stage!=IDLE && stage!=HUB)return;
-        if(mode!=NONE && mode!=PVP)return;
+        if(stage==HUB && mode==PVP){
+            typed_expires_ms=until(now,VERIFIED_PVP_ENTRY_MS);
+            return;
+        }
+        if(stage!=IDLE || mode!=NONE)return;
         stage=VERIFIED_PVP_ENTRY;mode=PVP;
         expires_ms=until(now,VERIFIED_PVP_ENTRY_MS);
     }
@@ -76,14 +78,17 @@ struct PgrPvpScene {
         }
         if(std::strcmp(ns,"Niantic.Holoholo.Combat.Preparation")==0 &&
            std::strcmp(name,"CombatPreparationRootGuiController")==0 &&
-           (stage==HUB || stage==TRAINING_ENTRY ||
-            (stage==VERIFIED_PVP_ENTRY && mode==PVP)) && live(now)){
-            stage=PREPARATION;expires_ms=until(now,PREP_MS);
+           (stage==HUB || stage==TRAINING_ENTRY) && live(now)){
+            stage=PREPARATION;typed_expires_ms=0;
+            expires_ms=until(now,PREP_MS);
         }
     }
     bool vnext(uint64_t now) {
         if(!live(now))return false;
-        if(stage==PREPARATION || (stage==VERIFIED_PVP_ENTRY && mode==PVP)){
+        const bool typed_hub=stage==HUB && mode==PVP &&
+            typed_expires_ms!=0 && now<typed_expires_ms;
+        if(stage==PREPARATION || (stage==VERIFIED_PVP_ENTRY && mode==PVP) ||
+           typed_hub){
             stage=COMBAT;started_ms=last_vnext_ms=now;
             expires_ms=until(now,COMBAT_IDLE_MS);
         }else if(stage==COMBAT){
