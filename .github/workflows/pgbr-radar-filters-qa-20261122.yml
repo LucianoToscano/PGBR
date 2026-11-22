@@ -38,17 +38,22 @@ jobs:
         run: sdkmanager "sources;android-36"
       - name: Live feed model / filtering / provider behavior
         run: |
-          python -B -m unittest discover -s pgrazor/test -p 'test_live_feed_java.py' -v 2>&1 | tee /tmp/qa1.log || {
-            { echo '### Falha no parser do feed'; echo '```'; grep -E "DIAG |Error|FAIL|Traceback|ERROR in" /tmp/qa1.log | head -80; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
-            echo "::error title=Feed QA::$(grep -m1 -E 'DIAG .*ERROR in|AssertionError|FAIL' /tmp/qa1.log | cut -c1-900)"
-            exit 1
-          }
-          python -B -m unittest discover -s pgrazor/test -p 'test_pokemon_feed_search_java.py' -v
-          python -B -m unittest discover -s pgrazor/test -p 'test_iflowgo_wiring.py' -v
-          python -B -m unittest discover -s pgrazor/test -p 'test_rocketmap_wiring.py' -v
-          python -B -m unittest discover -s pgrazor/test -p 'test_pokelist_access_behavior.py' -v
-          python -B -m unittest discover -s pgrazor/test -p 'test_raid_feed_filters_java.py' -v
-          python -B -m unittest discover -s pgrazor/test -p 'test_demo_feed_wiring.py' -v
+          set -o pipefail
+          failed=0
+          for pattern in test_live_feed_java.py test_pokemon_feed_search_java.py test_iflowgo_wiring.py \
+                         test_rocketmap_wiring.py test_pokelist_access_behavior.py test_raid_feed_filters_java.py \
+                         test_demo_feed_wiring.py; do
+            echo "=== $pattern"
+            if python -B -m unittest discover -s pgrazor/test -p "$pattern" -v 2>&1 | tee "/tmp/$pattern.log"; then
+              echo "- OK: $pattern" >> "$GITHUB_STEP_SUMMARY"
+            else
+              failed=1
+              echo "- FALHOU: $pattern" >> "$GITHUB_STEP_SUMMARY"
+              { echo '```'; tail -40 "/tmp/$pattern.log"; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+              echo "::error title=$pattern::$(grep -m1 -E 'FAIL|Error' "/tmp/$pattern.log" | cut -c1-900)"
+            fi
+          done
+          exit $failed
 
   android-controls-compile:
     runs-on: windows-latest
