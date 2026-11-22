@@ -69,7 +69,7 @@ final class SettingsPanel {
     private Button evolveTransferStages, evolveTransferMode, evolveTransferList;
     // Boolean settings use proper switches.
     private Switch idleWalkSwitch, locationSwitch, vgpSwitch, joystickSwitch, cooldownSwitch, localTimeSwitch, encounterCounterSwitch, encounterOverlaySwitch, spawnSwitch, autoTransferSwitch,
-        quickSpinSwitch, berrySwitch, quickSummarySwitch, curveSwitch, alwaysHitSwitch, arSwitch, transferOverlaySwitch, catchChanceSwitch, autoBallSwitch, autoThrowSwitch, autoThrowMapSwitch, skipCutscenesSwitch,
+        quickSpinSwitch, berrySwitch, quickSummarySwitch, curveSwitch, alwaysHitSwitch, arSwitch, transferOverlaySwitch, catchChanceSwitch, autoBallSwitch, autoThrowSwitch, autoThrowMapSwitch, skipCutscenesSwitch, routeGiftSwitch,
         batteryResSwitch, batteryFpsSwitch, batteryQualitySwitch;
     private Button autoBallTarget, berryPriority;
     private Button vgpIconStyleButton, vgpStartStopButton, joystickStyleButton, eternatusIntensityButton, eternatusSpeedButton;
@@ -991,6 +991,13 @@ final class SettingsPanel {
         quickSpinSwitch = switchRow(stops, "Quick spin"); quickSpinSwitch.setChecked(Control.quickSpinEnabled());
         quickSpinSwitch.setOnCheckedChangeListener((v,checked) -> { if(checked==Control.quickSpinEnabled())return; Control.setQuickSpinEnabled(quickSpinSwitch.isChecked()); });
         quickSpinStatus = caption(stops, "");
+        LinearLayout mateo=group(page,"Rotas");summaryGated.add((View)mateo.getParent());
+        routeGiftSwitch=switchRow(mateo,"Trocar presentes com Mateo");
+        routeGiftSwitch.setChecked(Control.routeGiftExchange());
+        routeGiftSwitch.setOnCheckedChangeListener((v,checked)->{
+            if(checked!=Control.routeGiftExchange())Control.setRouteGiftExchange(checked);
+        });
+        caption(mateo,"Opcional: durante uma Rota, troca o presente com Mateo usando os comandos normais do jogo. Não negocia Pokémon e não ativa outras automações.");
 
         // ----- Inventory (opens its modal directly) -----
         LinearLayout itemsC = group(page, "Items"); summaryGated.add((View)itemsC.getParent());
@@ -1721,6 +1728,7 @@ final class SettingsPanel {
         berryPriority.setText(dev.pgrazor.PtBr.tr("Berry priority: "+BerryPriorityPicker.summary()));
         berryPicker.refresh();
         quickSpinSwitch.setChecked(Control.quickSpinEnabled());quickSpinStatus.setText(dev.pgrazor.PtBr.tr(Control.quickSpinStatus()));
+        routeGiftSwitch.setChecked(Control.routeGiftExchange());
         quickSummaryLabel.setText(dev.pgrazor.PtBr.tr(Control.quickSummaryAutoDismiss() ? "Quick catch" : "Faster catch summary"));
         quickSummarySwitch.setChecked(Control.quickSummaryEnabled());
         quickSummarySwitch.setEnabled(Control.quickSummaryConfigured());
