@@ -1,3 +1,9 @@
+## v0.00.41-LT — candidata de pré-release QA (22/11/2026)
+- Corrige iFlowGo ao impedir requisições com raio inválido ou #Dex fora do intervalo; Reides não são rotuladas como globais quando o conector é apenas por área.
+- Documentação de instalação/compilação atualizada; master e auditoria de regressões preservados.
+- Inclui a PR #116 já mesclada à main: recomendação experimental de ataque (não conectada ao executor) e backup de preferências.
+- **Candidata em validação:** nenhuma nova release nem APK confirmado até o GitHub Actions compilar, assinar e publicar. `device_tested=false`. Histórico LT040 preservado.
+
 ## v0.00.40-LT — pré-release QA publicada: recuperar PvP/duelos e escopo do assistente (22/11/2026)
 - [PR #107](https://github.com/LucianoToscano/PGBR/pull/107) integrada na main no commit `f873c8652bac5dc4cded154e49fbab82bf778445` após 5 checks `success` (C++ host, NDK ARM64, Java/Root, site e governança). Correção condicional para observação de Hub/Preparação e confirmação PvP, em treino NPC, GBL e duelos com escopo nativo válido.
 - Publicação da máscara Ágil/Carregado/Escudo do usuário apenas em escopo reconhecido; desarmada em mapa, resultado, opção desligada, falha, lease expirada e alvos desconhecidos. Raid/Ginásio/Max continuam com seus motores próprios.
