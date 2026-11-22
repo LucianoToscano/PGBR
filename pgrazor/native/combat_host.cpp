@@ -8,6 +8,7 @@
 #include "rocket_actions.h"
 #include "rocket_combat.h"
 #include "pvp_scene.h"
+#include "shared_auto_battle_gate.h"
 #include "rocket_minigame.h"
 #include "runtime_bootstrap.h"
 #include "runtime_metadata.h"
@@ -579,8 +580,9 @@ void sync_minigame_policy(uint64_t now) {
         }
     }
 
-    const bool mini_allowed = active_ok && !combat_failed && scope_active &&
-                              ((rocket_mask & 2u) != 0) && (rem_ms > 0);
+    // Rocket-specific minigame must never run inside PvP/training.
+    const bool mini_allowed = active_ok && !g_pvp_ui_root && !combat_failed &&
+                              scope_active && ((rocket_mask & 2u) != 0) && (rem_ms > 0);
     g_rocket_mini->update(mini_allowed ? 1 : 0,
                           mini_allowed ? static_cast<int64_t>(rem_ms) : 0);
     g_mini_active.store(mini_allowed ? 1u : 0u, std::memory_order_release);
@@ -640,7 +642,11 @@ void pvp_vnext_open(void *ui,uint64_t tid) {
   if(g_pvp_ui_root)return; // same anchored scope, never replay scope-enter each frame
   uint32_t mask=0;
   {std::lock_guard<std::mutex> lock(g_options_mutex);
-   if(g_opts.flags&PGR_CBH_OPT_ROCKET_ALLOWED)mask=g_opts.rocket_mask;}
+   const uint64_t now=now_ms();
+   if((g_opts.flags&(PGR_CBH_OPT_ACTIVE|PGR_CBH_OPT_ROCKET_ALLOWED))==
+      (PGR_CBH_OPT_ACTIVE|PGR_CBH_OPT_ROCKET_ALLOWED) &&
+      !(g_opts.flags&PGR_CBH_OPT_STOPPING) &&
+      now && now<g_rocket_deadline_ms)mask=g_opts.rocket_mask&7u;}
   if(!(mask&7u))return;
   pgr_rocket_combat_sample_v1 sample{};
   if(g_rocket_combat->sample(&sample)!=PGR_RC_OK || sample.scope_active)return;
@@ -1525,10 +1531,23 @@ void refresh_leaf_gates(){
  const uint64_t battle=active&&(g_opts.flags&PGR_CBH_OPT_BATTLES_ALLOWED)&&now<g_battle_deadline_ms?std::min<uint64_t>(2500,g_battle_deadline_ms-now):0;
  const uint64_t rocket=active&&(g_opts.flags&PGR_CBH_OPT_ROCKET_ALLOWED)&&now<g_rocket_deadline_ms?std::min<uint64_t>(2500,g_rocket_deadline_ms-now):0;
  bool rocket_active=false,rocket_failed=false;
- if((caps&PGR_CBH_CAP_ROCKET_COMBAT)&&g_rocket_combat){g_rocket_combat->update(g_opts.rocket_mask,rocket,owner);pgr_rocket_combat_sample_v1 sample{};
-  if(g_rocket_combat->sample(&sample)==0){rocket_active=sample.scope_active!=0;rocket_failed=sample.failed!=0;}else rocket_failed=true;}
+ uint32_t auto_mask=0;
+ if((caps&PGR_CBH_CAP_ROCKET_COMBAT)&&g_rocket_combat){
+  pgr_rocket_combat_sample_v1 sample{};
+  if(g_rocket_combat->sample(&sample)==PGR_RC_OK){
+   rocket_active=sample.scope_active!=0;rocket_failed=sample.failed!=0;
+  }else rocket_failed=true;
+  auto_mask=PgrSharedAutoBattleGate::effective(
+      g_opts.rocket_mask,active&&!rocket_failed,rocket>0,rocket_active,
+      g_pvp_ui_root!=0,g_pvp_scene);
+  // Zero outside a verified scope; the saved user preferences never change.
+  g_rocket_combat->update(auto_mask,auto_mask?rocket:0,owner);
+ }
  if((caps&PGR_CBH_CAP_BATTLES)&&g_battles)g_battles->update(g_opts.battle_mask,battle,rocket_active?1:0,owner);
- if((caps&PGR_CBH_CAP_ROCKET_MINIGAME)&&g_rocket_mini){bool on=active&&rocket&&!rocket_failed&&rocket_active&&(g_opts.rocket_mask&2);g_rocket_mini->update(on?1:0,on?int64_t(rocket):0);g_mini_active.store(on?1:0);}
+ if((caps&PGR_CBH_CAP_ROCKET_MINIGAME)&&g_rocket_mini){
+  const bool on=active&&rocket&&!g_pvp_ui_root&&!rocket_failed&&rocket_active&&(auto_mask&2u);
+  g_rocket_mini->update(on?1:0,on?int64_t(rocket):0);g_mini_active.store(on?1:0);
+ }
 }
 int api_revoke();
 int api_update(const PgrCombatHostOptions *opts) {
@@ -1682,7 +1701,9 @@ int api_tick(uint64_t proven_tid) {
     {std::lock_guard<std::mutex> lock(g_options_mutex);
      pvp_disarm=pvp_disarm||(g_opts.flags&PGR_CBH_OPT_ACTIVE)==0||
                 (g_opts.flags&PGR_CBH_OPT_ROCKET_ALLOWED)==0||
-                (g_opts.rocket_mask&7u)==0;}
+                (g_opts.flags&PGR_CBH_OPT_STOPPING)!=0||
+                (g_opts.rocket_mask&7u)==0||
+                now_ms()>=g_rocket_deadline_ms;}
     if(pvp_disarm&&g_pvp_ui_root)pvp_leave(proven_tid,terminal()?"host-stopped":"scope-ended");
     // Re-read and serialize gate publication after each managed leaf pass. A revoke
     // during Rocket work cannot be overwritten by a stale pre-tick Battle snapshot.

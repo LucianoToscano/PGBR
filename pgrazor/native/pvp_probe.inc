@@ -66,6 +66,13 @@ void observe_pvp_legacy_ui(void *ui,uint64_t tid) {
   if(exc||!boxed||class_of(boxed)!=md_c(6))return;
   void *answer=unbox(boxed);
   if(!answer||*static_cast<const uint8_t*>(answer)!=1)return;
+  // Type-positive live director is mandatory for private friend battles.
+  // Never reinterpret a Rocket scope as PvP (even if a future build returns
+  // the same CombatType category); never spoof a game mode or server data.
+  pgr_rocket_combat_sample_v1 scope{};
+  if(g_rocket_combat&&g_rocket_combat->sample(&scope)==PGR_RC_OK &&
+     scope.scope_active&&!g_pvp_ui_root)return;
+  g_pvp_scene.positive_pvp(now_ms());
   if(!g_pvp_probe.seen) {
     g_pvp_probe.seen=true;
     queue_event(PGR_CBH_EV_BATTLE_ACTION,1,0,tid,
