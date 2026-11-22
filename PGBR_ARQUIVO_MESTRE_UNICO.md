@@ -156,4 +156,19 @@ A disponibilidade de serviço externo é variável. Falhas `401/403`, `429 Retry
 | 21/11/2026 | Criado um **Arquivo Mestre Único** e definida hierarquia de evidências, estado LT032, backups, riscos e prioridades. | Fonte canônica no `main`; outras branches podem conter espelhos idênticos necessários à leitura local, sempre subordinados à versão da `main`. |
 | 21/11/2026 | Verificado sucesso de CI LT032 sem Root, Root+Zygisk e teste isolado VGP. | **CI verde; dispositivo não homologado; PRs #40/#41/#42 ainda drafts.** |
 
+| 21/11/2026 | Inventário conservador de `main` e três variantes LT032; proposta de higiene documental no [PR #43](https://github.com/LucianoToscano/PGBR/pull/43), sem excluir arquivos nem promover código de LT032. | **1.966 arquivos na `main`; 2.176 no candidato LT032; 7 grupos idênticos em LT032 preservados. Testes/CI do PR e merge ainda não comprovados.** |
+
 **Regra de atualização:** acrescente uma linha com data, novo estado e evidência para cada conclusão relevante. Preserve histórico em Git; nunca apague status antigo sem explicar a substituição.
+
+## 14. Auditoria conservadora e organização — proposta PR #43 (21/11/2026)
+
+**Referência detalhada (não é mestre concorrente):** [docs/maintenance/PGBR_AUDITORIA_CONSERVADORA_20261121.md](docs/maintenance/PGBR_AUDITORIA_CONSERVADORA_20261121.md). Este arquivo registra evidência e só passa a ser a referência canônica quando o PR correspondente for revisado e integrado à `main`.
+
+- **Inventário GitHub completo (árvore não truncada):** `main` no commit `284e5a583e6de9fcb256ae5b213bb4b352a09819` possui **1.966 arquivos rastreados**, com 34.782.810 bytes de blobs. O candidato LT032 no commit `15252c491d0c823ceb924516ae950abd685e931a` possui **2.176 arquivos**, com 38.012.286 bytes. Diferença de caminhos: 210 adições, 123 modificações e **nenhuma remoção** do inventário da `main`.
+- **Outras árvores examinadas:** PR #41, commit `fb42bbf37783cd458772dd9bf3896ee020d4854c` (2.177 arquivos); PR #42, commit `a24aa693aefb858ff0f350e1e13257bc5b01de22` (2.181 arquivos). As branches não foram fundidas entre si nem promovidas à `main`.
+- **Duplicidades byte a byte:** um grupo em `main` (logo SVG) e sete grupos no LT032 (cópias de logos e cinco sprites de bagas para pontos de consumo diferentes). **Preservados integralmente**: mesma hash não prova que links, pacotes Android ou caminhos sejam intercambiáveis.
+- **Higiene não destrutiva proposta:** corrigir a referência quebrada do arquivo de recuperação em `PGBR_IMPORTACAO.md`, manter `AGENTS.md` rastreável removendo sua entrada do `.gitignore`, acrescentar apenas ignores de resíduos gerados, tornar o README mais preciso sobre LT001/LT023/LT032 e fornecer links diretos dos assets oficiais LT023 já confirmados.
+- **Controle repetível proposto:** `tools/repo_inventory.py` realiza **somente leitura** do checkout (`git ls-files`, SHA-256, classificação e alertas); `pgrazor/test/test_repo_inventory.py` exercita preservação de arquivos. O script não apaga, move nem reescreve nada. A execução real em CI ainda precisa ser verificada.
+- **Situação da mudança:** [PR #43](https://github.com/LucianoToscano/PGBR/pull/43) **rascunho** para revisão. Não foi criada release/APK nesta manutenção. Compilação, instalação física, VGP, PvP e homologação da LT032 permanecem com o estado descrito nas seções anteriores, sem nova alegação de funcionamento.
+
+**Critério permanente de limpeza:** primeiro consultar este mestre, depois inventariar, provar uso/ausência de uso por referências, comparar hashes, preservar licenças e rollback, e testar Root/sem Root. Somente excluir em mudança específica revisada, com preservação verificada. **Tamanho, nome antigo ou conteúdo duplicado não autorizam exclusão.**
