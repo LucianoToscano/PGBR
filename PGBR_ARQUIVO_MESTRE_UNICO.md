@@ -648,3 +648,28 @@ O workflow `.github/workflows/pgbr-lt033-release.yml` também passa a ter filtro
 **Evidência da release que continua válida:** [workflow de publicação #45006532739](https://github.com/LucianoToscano/PGBR/actions/runs/45006532739) **success**, [CI `main` da versão #45006532866](https://github.com/LucianoToscano/PGBR/actions/runs/45006532866) **success**, tag e release `v0.00.33-LT` id 454333149 com links diretos ao APK, Root e ZIP no quadro “FECHAMENTO factual”. Nenhuma tag foi sobrescrita, nem foi feito novo upload binário nesta tarefa.
 
 **Falta comprovar antes de homologação:** instalação em aparelho Android físico; ataques carregados/escudos e priorização supereficaz no PvP; VGP+ capturando/girando; Root+Vector; joystick; privacidade visual no mapa/perfil; eventos sazonais reais; feeds autorizados e comparação visual. Status permanece **pré-release QA / `device_tested=false`**. A regra permanente exige atualizar este mesmo Mestre após cada mudança relevante; esta anotação documenta o merge #69 de forma retroativa e verificável, sem inventar resultados físicos.
+
+---
+## 22/11/2026 — Implementação do painel manual Sniper 100% IV (branch de recurso)
+
+**Ramo e base conferidos:** `feat/sniper100iv-manual-feed-20261122`, criado a partir da `main` em `129108d57497f6af9f997997294b5e17c1dc0556`. **Natureza:** adição funcional em código-fonte, revisão/CI pendentes; **não** é release LT034, teste físico, conexão de feed aprovada ou APK assinado.
+
+### Pedido e referência de comportamento
+O responsável reiterou sua autorização previamente declarada e documentada no Guia Mestre PokeSearch (LT364/LT365), sem exigir repetição da solicitação. Os vídeos PGSharp 11, 12 e 21 e a captura de configurações mostram Radar Próximos, Sniper I/II independentes e listagem 100% IV no plano gratuito do PGSharp, com limitação de filtros. Essa UI não concede ao PGBR acesso automático à API proprietária do PGSharp. O trabalho aqui reutiliza o código e a URL de feed compacto **já existentes no próprio PGBR**, não tenta reproduzir autenticação de outro cliente.
+
+### Mudanças realizadas na branch
+- `pgrazor/src/dev/pgrazor/HundoFeedData.java`: decodificador independente `v=1` de `hundos.json` (id, espécie, forma, lat/lon, expiração, CP e nível opcionais). Rejeita snapshot ausente, antigo ou com data futura, coordenadas inválidas, IDs/espécies fora de domínio, alvos expirados e duplicados; impõe limites de linhas. As entradas “100% IV” são **afirmações do feed**, não IVs conferidos por leitura do jogo. Sem preencher estatísticas ausentes.
+- `pgrazor/src/dev/pgrazor/HundoFeedDialog.java`: painel Android com sprites por espécie via `LiveFeedIcons`, pesquisa local por #Dex, uma consulta inicial e atualização **somente manual**, limite mínimo de 30 s entre requisições, sem autorretry; recusa HTTP 401/403/429 e respostas acima de 8 MB; status explícito de erro/indisponibilidade. Atualiza contagem e expiração visual a cada 10 s **sem consumir rede**. Toque permite copiar coordenadas ou encaminhar teleporte via `TeleportDialog.confirm` e `Control.canEnable()`; nunca captura automaticamente.
+- `pgrazor/src/dev/pgrazor/FeedChooser.java`: adiciona uma quinta opção “Sniper 100% IV · PGBR” **sem mudar os índices 0–3** das buscas Pokémon/reides, Radar LivePokeMap e PoGoCoordinates. Não modifica os dois Snipers já existentes nem sua persistência.
+- `pgrazor/test/HundoFeedDataTest.java`: fixtures sintéticas de expiração, idade, formato, deduplicação, atributos desconhecidos e lista vazia.
+- `pgrazor/test/test_live_feed_java.py`: conecta esse teste ao runner JVM existente com `org.json` Android.
+- `pgrazor/test/test_hundo_manual_ui_contract.py`: guardas estáticas para preservar menu, impedir automação acidental e exigir confirmação/estado de prontidão.
+- `.github/workflows/pgbr-hundo100-qa.yml`: pipeline PR para as verificações acima.
+- `docs/HUNDO_FEED_AUTORIZACAO.md`: preserva a declaração prévia do usuário e documenta condições concretas da leitura manual, sem confundir licença comercial e viabilidade de backend.
+
+### Evidência e limites
+**Executado:** leitura do Mestre, inspeção do código da `main`, gravação dos arquivos na branch, conferência das alterações em GitHub. **Pendente:** executar/testar CI e compilação Android, consultar uma resposta do feed em produção, validar botão/resultados/cooldown/teleporte em Samsung físico, auditar comportamento de contas e artefatos. A URL pública referenciada pelo código não pôde ser comprovada operacional na tentativa de verificação web desta conversa; o painel falha explicitamente fechado em caso de erro, sem criar spawns. Não foram alterados servidor, credenciais, automação Shundo existente, PvP, VGP+, joystick, APK original PGSharp ou projeto PokeSearch.
+
+**Backlog paralelo preservado:** controles de Sniper I/II horizontal/vertical inspirados nas mídias, ícones/vetores de menu e efeitos de toque do PGSharp como referência (não importar sem direito de distribuição), PvP de ataques/esquivas/escudos e compatibilidade de joystick. Nenhum desses itens foi homologado ou anunciado como corrigido por esta PR.
+
+**Estado:** FONTE ALTERADA, QA PENDENTE, `device_tested=false`. Integrar somente com PR revisada e comparar de novo com a HEAD vigente antes do merge. Sem criar nova release automaticamente.
