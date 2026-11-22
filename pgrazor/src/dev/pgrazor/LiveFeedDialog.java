@@ -863,18 +863,18 @@ public final class LiveFeedDialog {
                             || selected.optBoolean("background_only", false)
                             || selected.optBoolean("filter_xxs", false)
                             || selected.optBoolean("filter_xxl", false)
-                            || filters.pvpOnlyActive()
-                            // RocketMap's public /raw_data pokemon object has
-                            // CP and individual IVs, but no confirmed level.
-                            || provider == 3 && (selected.optInt("min_level", 0) > 0
-                                    || selected.optInt("max_level", 50) < 50);
+                            || filters.pvpOnlyActive();
+                    // A configured Golbat/PokeSearch bridge can add an optional
+                    // exact level to /raw_data. Let the local filter decide;
+                    // missing level must never count as a strict match.
                     if (unsupported) {
                         entries.clear(); visible.clear(); distCache.clear();
                         lastUpdated = 0;
                         lastError = sourceName()
                                 + " não confirma Shiny individual, fundos, tamanhos XXS/XXL "
-                                + "nem rankings PvP; RocketMap também não informa nível. "
-                                + "Desative esses filtros ou escolha outra fonte.";
+                                + "nem rankings PvP. Nível funciona apenas quando "
+                                + "o servidor envia um campo verificado. "
+                                + "Desative os filtros sem suporte ou escolha outra fonte.";
                         adapter.notifyDataSetChanged();
                         updateStatus();
                         return;
@@ -1140,6 +1140,8 @@ public final class LiveFeedDialog {
                     continue;
                 // The server only partly applies the display filters (not the level range), so
                 // re-check Pokémon the way the LivePokeMap website does.
+                if (e.kind == LiveFeedData.Kind.POKEMON && provider == 3
+                        && filters.requiresKnownLevel() && e.level <= 0) continue;
                 if (e.kind == LiveFeedData.Kind.POKEMON && !filters.matches(e.dexId, e.hasStats ? e.iv : -1,
                         e.level, e.attrs.size, e.attrs.pvpGreatRank, e.attrs.pvpUltraRank, e.attrs.pvpLittleRank))
                     continue;
