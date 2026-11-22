@@ -39,6 +39,8 @@ O PGBR é um projeto experimental independente. O tempo de espera (*cooldown*) �
 
 ## Documentação
 
+- [Arquivo Mestre Único (leitura obrigatória)](PGBR_ARQUIVO_MESTRE_UNICO.md)
+- [Inventário e limpeza conservadora](docs/maintenance/PGBR_AUDITORIA_CONSERVADORA_20261121.md)
 - [Instalação, assinatura e compilação](docs/BUILDING.md)
 - [Compatibilidade e arquitetura](docs/ARCHITECTURE.md)
 - [Instalador Root](docs/ROOTED.md)
