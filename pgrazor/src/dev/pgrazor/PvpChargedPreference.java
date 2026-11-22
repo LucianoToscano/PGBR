@@ -4,6 +4,12 @@ package dev.pgrazor;
 final class PvpChargedPreference {
     static final int UNKNOWN=-1, WAIT=0, FIRST=1, SECOND=2;
     static final int MAX_EXTRA_FAST=4, MIN_SAFE_HP=35;
+    static final int RESISTED=0, NEUTRAL=1, SUPER_EFFECTIVE=2;
+    static int effectivenessTier(double multiplier){
+        if(!Double.isFinite(multiplier)||multiplier<=0)return -1;
+        if(multiplier>1.00001)return SUPER_EFFECTIVE;
+        return multiplier<0.99999?RESISTED:NEUTRAL;
+    }
     // HoloPokemonType: 1 Normal, 2 Fighting, 3 Flying, 4 Poison, 5 Ground,
     // 6 Rock, 7 Bug, 8 Ghost, 9 Steel, 10 Fire, 11 Water, 12 Grass,
     // 13 Electric, 14 Psychic, 15 Ice, 16 Dragon, 17 Dark, 18 Fairy.
@@ -61,33 +67,36 @@ final class PvpChargedPreference {
         // The observed UI-ready state is authoritative; energy alone cannot force a charge tap.
         boolean oneReady=first.ready&&energy>=first.cost;
         boolean twoReady=second.ready&&energy>=second.cost;
-        boolean oneSuper=superEffective(first,opponent1,opponent2);
-        boolean twoSuper=superEffective(second,opponent1,opponent2);
-        if(oneSuper&&twoSuper){
-            if(oneReady&&twoReady)
-                return value(second,attacker1,attacker2,opponent1,opponent2)>
-                       value(first,attacker1,attacker2,opponent1,opponent2)?SECOND:FIRST;
+        // Effectiveness is primary: super effective > neutral > resisted.
+        // A neutral SECOND move must beat a resisted FIRST move.
+        final double effect1=effectiveness(first.type,opponent1,opponent2);
+        final double effect2=effectiveness(second.type,opponent1,opponent2);
+        final int tier1=effectivenessTier(effect1);
+        final int tier2=effectivenessTier(effect2);
+        if(tier1==tier2){
+            if(oneReady&&twoReady){
+                if(tier1==RESISTED&&effect2>effect1+0.00001)return SECOND;
+                if(tier1==SUPER_EFFECTIVE&&
+                   value(second,attacker1,attacker2,opponent1,opponent2)>
+                   value(first,attacker1,attacker2,opponent1,opponent2))return SECOND;
+                return FIRST; // Preserve neutral tie behavior.
+            }
             if(oneReady)return FIRST;
             if(twoReady)return SECOND;
             return WAIT;
         }
-        if(oneSuper!=twoSuper){
-            Move best=oneSuper?first:second;
-            boolean bestReady=oneSuper?oneReady:twoReady;
-            boolean otherReady=oneSuper?twoReady:oneReady;
-            if(bestReady)return oneSuper?FIRST:SECOND;
-            if(otherReady){
-                int gap=best.cost-energy;
-                // Waiting is bounded by remaining energy, HP and the controller's timeout.
-                if(canFarm&&hpPercent>=MIN_SAFE_HP&&fastEnergyGain>0&&gap>0&&
-                   (gap+fastEnergyGain-1)/fastEnergyGain<=MAX_EXTRA_FAST)return WAIT;
-                return oneSuper?SECOND:FIRST;
-            }
-            return WAIT;
+        final boolean preferFirst=tier1>tier2;
+        final Move preferred=preferFirst?first:second;
+        final boolean preferredReady=preferFirst?oneReady:twoReady;
+        final boolean alternativeReady=preferFirst?twoReady:oneReady;
+        if(preferredReady)return preferFirst?FIRST:SECOND;
+        if(alternativeReady){
+            final int gap=preferred.cost-energy;
+            // Bounded farming: the controller also enforces a 5500 ms timeout.
+            if(canFarm&&hpPercent>=MIN_SAFE_HP&&fastEnergyGain>0&&gap>0&&
+               (gap+fastEnergyGain-1)/fastEnergyGain<=MAX_EXTRA_FAST)return WAIT;
+            return preferFirst?SECOND:FIRST;
         }
-        // When neither move is super effective, preserve first-ready behavior.
-        if(oneReady)return FIRST;
-        if(twoReady)return SECOND;
         return WAIT;
     }
 }

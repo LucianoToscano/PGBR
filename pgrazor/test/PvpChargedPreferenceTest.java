@@ -40,8 +40,24 @@ public final class PvpChargedPreferenceTest {
             m(4,80,55,false),11,5,12,0,45,9,95,false),"no quick attack fallback");
         eq(PvpChargedPreference.UNKNOWN,PvpChargedPreference.select(m(11,80,40,true),
             m(4,80,55,false),11,5,0,0,45,9,95,true),"unknown target type fail closed");
+        eq(PvpChargedPreference.SECOND,PvpChargedPreference.select(m(11,80,40,true),
+            m(4,80,55,true),11,5,11,0,60,9,90,true),
+            "neutral second outranks resisted first");
+        eq(PvpChargedPreference.FIRST,PvpChargedPreference.select(m(4,80,40,true),
+            m(11,80,55,true),11,5,11,0,60,9,90,true),
+            "neutral first outranks resisted second");
+        eq(PvpChargedPreference.SECOND,PvpChargedPreference.select(m(13,80,40,true),
+            m(4,80,55,true),11,5,5,0,60,9,90,true),
+            "neutral outranks doubly resisted");
+        eq(PvpChargedPreference.WAIT,PvpChargedPreference.select(m(11,80,40,true),
+            m(4,80,55,false),11,5,11,0,47,9,90,true),
+            "bounded wait for neutral while resisted is ready");
         eq(PvpChargedPreference.FIRST,PvpChargedPreference.select(m(11,80,40,true),
-            m(4,80,55,true),11,5,11,0,60,9,90,true),"no super keeps first button");
+            m(4,80,55,false),11,5,11,0,47,9,20,true),
+            "critical hp uses available resisted move");
+        eq(PvpChargedPreference.FIRST,PvpChargedPreference.select(m(4,80,40,true),
+            m(11,80,55,true),11,5,12,0,60,9,90,true),
+            "super effective outranks resisted even if button two is ready");
         PvpBattleController c=new PvpBattleController();
         eq(PvpBattleController.QUICK,decide(c,sample(100,1000,45,90,true,false,12)),
             "hold charged first and use quick");
@@ -59,6 +75,13 @@ public final class PvpChargedPreferenceTest {
             "begin preference wait");
         eq(PvpBattleController.CHARGED,decide(c,sample(102,7000,45,90,true,false,12)),
             "timeout falls back to ready first");
+        c.reset();
+        eq(PvpBattleController.CHARGED_SECOND,
+            decide(c,new PvpBattleController.Observation(
+                PvpBattleController.MODE_PVP,105,1000,1000,true,true,true,
+                true,false,false,false,11,5,11,0,60,9,90,
+                m(11,80,40,true),m(4,80,55,true))),
+            "controller picks neutral second instead of resisted first");
         c.reset();
         eq(PvpBattleController.CHARGED,decide(c,new PvpBattleController.Observation(
             PvpBattleController.MODE_PVP,103,1000,1000,true,true,true,true,false,false,false)),
