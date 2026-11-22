@@ -1396,6 +1396,71 @@ public final class RootPtBr {
         m.put("Stop Auto-Raid first.", "Interrompa as Reides automáticas primeiro.");
         m.put("Galarian bird found — walking and VGP stopped", "Ave de Galar encontrada — caminhada e VGP interrompidos");
         m.put("Max", "Máximo");
+        m.put("Not running", "Não está em execução");
+        m.put("Any tier", "Qualquer nível de reide");
+        m.put("Any boss", "Qualquer chefe de reide");
+        m.put("No limit", "Sem limite");
+        m.put("Join the nearest raid wherever it is", "Entrar na reide mais próxima, independentemente da distância");
+        m.put("Only raids within ", "Somente reides em um raio de ");
+        m.put("1-star", "1 estrela");
+        m.put("3-star", "3 estrelas");
+        m.put("5-star / Legendary", "5 estrelas / Lendário");
+        m.put("Ultra Beast", "Ultracriatura");
+        m.put("Tier 1", "Nível 1");
+        m.put("Tier 2", "Nível 2");
+        m.put("Tier 3", "Nível 3");
+        m.put("Tier 4", "Nível 4");
+        m.put("Legendary Mega", "Mega Lendário");
+        m.put("Elite", "Elite");
+        m.put("Shadow Tier 1", "Sombrio nível 1");
+        m.put("Shadow Tier 2", "Sombrio nível 2");
+        m.put("Shadow Tier 3", "Sombrio nível 3");
+        m.put("Shadow Tier 4", "Sombrio nível 4");
+        m.put("Shadow Legendary", "Lendário Sombrio");
+        m.put("Super Mega", "Super Mega");
+        m.put("EX only", "Somente EX");
+        m.put("Normal only", "Somente normal");
+        m.put("Raid filters", "Filtros de reides");
+        m.put("Quest filters", "Filtros de pesquisas");
+        m.put("Weather filters", "Filtros de clima");
+        m.put("Rocket filters", "Filtros da Equipe Rocket");
+        m.put("Power Spot filters", "Filtros de Pontos de Poder");
+        m.put("Choose a weather in Filters.", "Escolha uma condição climática em Filtros.");
+        m.put("Choose a Rocket type in Filters.", "Escolha um tipo da Equipe Rocket em Filtros.");
+        m.put("Minimum players in lobby (1-20)", "Mínimo de jogadores na sala (1–20)");
+        m.put("Maximum completed raids (1-100)", "Máximo de reides concluídas (1–100)");
+        m.put("Lobby wait in seconds (15-120)", "Tempo de espera na sala em segundos (15–120)");
+        m.put("All Pokemon", "Todos os Pokémon");
+        m.put("Ultra Beasts", "Ultracriaturas");
+        m.put("Mega-capable", "Apto à megaevolução");
+        m.put("Primal-capable", "Apto à Reversão Primitiva");
+        m.put("Stage 2 (e.g. Ivysaur)", "Estágio 2 (ex.: Ivysaur)");
+        m.put("Stage 3 (e.g. Venusaur)", "Estágio 3 (ex.: Venusaur)");
+        m.put("Mighty (GO Wild Area)", "Poderosos (Área Selvagem GO)");
+        m.put("No matches", "Nenhum resultado");
+        m.put(" shown", " exibidos");
+        m.put("Sunny", "Ensolarado");
+        m.put("Rainy", "Chuvoso");
+        m.put("Partly Cloudy", "Parcialmente nublado");
+        m.put("Cloudy", "Nublado");
+        m.put("Windy", "Ventando");
+        m.put("Snow", "Neve");
+        m.put("Fog", "Neblina");
+        m.put("Gym (Blue)", "Ginásio (azul)");
+        m.put("Gym (Red)", "Ginásio (vermelho)");
+        m.put("Gym (Yellow)", "Ginásio (amarelo)");
+        m.put("Stops (1–", "Paradas (1–");
+        m.put("; blank = all):", "; em branco = todas):");
+        m.put(" stops in route (", " paradas na rota (");
+        m.put(" nearby).", " locais próximos).");
+        m.put("A route is running: ", "Uma rota está em andamento: ");
+        m.put(" of ", " de ");
+        m.put(" stops done.", " paradas concluídas.");
+        m.put("VGP ball throw", "Arremesso de bola pelo VGP");
+        m.put("Not caught - fled", "Não capturado — fugiu");
+        m.put("Your account doesn't have access to this feature.", "Sua conta não tem acesso a este recurso.");
+        m.put("Your session has expired. Please sign in again.", "Sua sessão expirou. Entre novamente.");
+        m.put("Too many requests. Please wait before refreshing.", "Muitas solicitações. Aguarde antes de atualizar.");
         LABELS = Collections.unmodifiableMap(m);
     }
     private RootPtBr() {}
@@ -1422,6 +1487,13 @@ public final class RootPtBr {
     private static String translateLine(String line) {
         String exact = LABELS.get(line);
         if (exact != null) return exact;
+        // UI-only numeric status from Shiny Scanner; never alter protocol keys. 
+        if (line.matches("All [0-9]+ nearby checked"))
+            return line.replaceFirst("^All ([0-9]+) nearby checked$", "$1 locais próximos verificados");
+        if (line.matches("[0-9]+ checked, [0-9]+ shinies"))
+            return line.replaceFirst("^([0-9]+) checked, ([0-9]+) shinies$", "$1 verificados, $2 brilhantes");
+        if (line.matches("[0-9]+/[0-9]+ in 24 h"))
+            return line.replaceFirst("^([0-9]+/[0-9]+) in 24 h$", "$1 nas últimas 24 h");
         // A maior frase deve vencer: a ordem de HashMap nao e deterministica.
         String prefix = null;
         String suffix = null;
