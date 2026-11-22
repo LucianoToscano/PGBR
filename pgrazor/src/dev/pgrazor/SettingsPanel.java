@@ -333,7 +333,7 @@ final class SettingsPanel {
         discord.setOnClickListener(v -> {
             try { activity.startActivity(new Intent(Intent.ACTION_VIEW, android.net.Uri.parse("https://discord.gg/9QqfkDSQX3"))); }
             catch (android.content.ActivityNotFoundException unavailable) {
-                android.widget.Toast.makeText(activity, "No app available to open Discord links", android.widget.Toast.LENGTH_SHORT).show();
+                android.widget.Toast.makeText(activity, dev.pgrazor.PtBr.tr("No app available to open Discord links"), android.widget.Toast.LENGTH_SHORT).show();
             }
         });
 
@@ -618,7 +618,7 @@ final class SettingsPanel {
         caption(joystickArt,"A tempestade gira em duas camadas com fumaça e iluminação. Desative a animação para manter o visual limpo; o vórtice anterior continua disponível.");
         launch(joystickArt,"Escolher imagem do joystick no celular",()->{
             if(Control.engine.routeProgress().active){
-                android.widget.Toast.makeText(activity,"Pause ou encerre a rota antes de abrir o seletor de imagens do Android.",android.widget.Toast.LENGTH_LONG).show();
+                android.widget.Toast.makeText(activity,dev.pgrazor.PtBr.tr("Pause ou encerre a rota antes de abrir o seletor de imagens do Android."),android.widget.Toast.LENGTH_LONG).show();
             }else JoystickImage.select(activity);
         });
         launch(joystickArt,"Restaurar imagem original do joystick",()->{JoystickImage.reset(activity);host.refresh();});
