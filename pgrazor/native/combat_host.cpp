@@ -138,6 +138,7 @@ const pgr_rocket_combat_api_v1 *g_rocket_combat  = nullptr;
 PgrPvpScene g_pvp_scene{};
 uintptr_t g_pvp_ui_root=0; // durable GC handle to VNext; never store a movable raw object
 bool g_pvp_was_ready=false;
+bool g_pvp_training_scope=false; // typed mode retained through scope exit telemetry
 const pgr_battle_api_v1        *g_battles        = nullptr;
 
 std::array<std::atomic<void *>, HK_COUNT> g_originals{};
@@ -384,9 +385,10 @@ void drain_leaf_events(uint64_t tid) {
                 case PGR_RC_EVT_SCOPE:
                     if(rev.aux==2||rev.aux==3){
                         const bool opened=rev.aux==2;
-                        queue_event(PGR_CBH_EV_BATTLE_SCOPE, 0x505650, opened?1:0, tid,
-                            opened?R"({"mode":"pvp","active":true,"ui":"vnext"})":
-                                   R"({"mode":"pvp","active":false,"ui":"vnext"})");
+                        std::snprintf(buf,sizeof(buf),
+                          "{\"mode\":\"%s\",\"active\":%s,\"ui\":\"vnext\"}",
+                          g_pvp_training_scope?"training":"pvp",opened?"true":"false");
+                        queue_event(PGR_CBH_EV_BATTLE_SCOPE, 0x505650, opened?1:0, tid,buf);
                     }else{
                         std::snprintf(buf, sizeof(buf), "{\"active\":%s}", rev.aux ? "true" : "false");
                         queue_event(PGR_CBH_EV_ROCKET_SCOPE, rev.aux ? 1 : 0, 0, tid, buf);
@@ -396,7 +398,9 @@ void drain_leaf_events(uint64_t tid) {
                 case PGR_RC_EVT_UI:
                     if(g_pvp_ui_root){
                         queue_event(PGR_CBH_EV_BATTLE_ACTION,1,0,tid,
-                          R"({"pvpUI":"vnext","received":true})");
+                          g_pvp_training_scope
+                            ? R"({"mode":"training","pvpUI":"vnext","received":true})"
+                            : R"({"mode":"pvp","pvpUI":"vnext","received":true})");
                         break;
                     }
                     std::snprintf(buf, sizeof(buf), "{\"source\":\"%s\"}",
@@ -408,7 +412,8 @@ void drain_leaf_events(uint64_t tid) {
                         const char *act=rev.id==PGR_RC_ACT_SHIELD?"shield":
                                         rev.id==PGR_RC_ACT_CHARGED?"charged":"quick";
                         std::snprintf(buf,sizeof(buf),
-                          "{\"pvpAction\":\"%s\",\"path\":\"vnext\",\"invoked\":true}",act);
+                          "{\"mode\":\"%s\",\"pvpAction\":\"%s\",\"path\":\"vnext\",\"invoked\":true}",
+                          g_pvp_training_scope?"training":"pvp",act);
                         queue_event(PGR_CBH_EV_BATTLE_ACTION,rev.id,rev.aux,tid,buf);
                         break;
                     }
@@ -625,11 +630,13 @@ void pvp_leave(uint64_t tid,const char *reason) {
     reinterpret_cast<void(*)(uintptr_t)>(g_cfg.gchandle_free)(old);
   if(old||g_pvp_was_ready) {
     g_pvp_was_ready=false;
-    std::string json=std::string(R"({"pvpExecutorReady":false,"reason":")")+
-                     (reason?reason:"closed")+R"("})";
+    std::string json=std::string(R"({"pvpExecutorReady":false,"mode":")")+
+                     (g_pvp_training_scope?"training":"pvp")+
+                     R"(","reason":")"+(reason?reason:"closed")+R"("})";
     queue_event(PGR_CBH_EV_BATTLE_ACTION,0,0,tid,json.c_str());
   }
   drain_leaf_events(tid);
+  g_pvp_training_scope=false;
 }
 void pvp_gui_open(const char *ns,const char *name,uint64_t tid) {
   if(!pvp_gate(&tid)||!ns||!name)return;
@@ -667,6 +674,7 @@ void pvp_vnext_open(void *ui,uint64_t tid) {
     gc_free(root);return;
   }
   g_pvp_ui_root=root;g_pvp_was_ready=true;
+  g_pvp_training_scope=g_pvp_scene.training();
   queue_event(PGR_CBH_EV_BATTLE_ACTION,1,0,tid,
     g_pvp_scene.training()
       ? R"({"pvpExecutorReady":true,"mode":"training","scope":"CombatVNextGuiController","experimental":true})"

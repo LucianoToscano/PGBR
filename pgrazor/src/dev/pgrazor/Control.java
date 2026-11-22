@@ -1893,7 +1893,8 @@ public final class Control {
                         ?battleMode+" em teste: executor conectado, sem confirmação de ataque aceito."
                         :battleMode+" aguardando partida reconhecida: "+b.optString("reason","pronto para observar");
                 }else if(b.has("pvpAction")){
-                    pvpBattleStatus="PvP VNext: comando "+b.optString("pvpAction")+" enviado ao jogo (sem confirmação de acerto).";
+                    String mode="training".equals(b.optString("mode","pvp"))?"Treinamento":"PvP";
+                    pvpBattleStatus=mode+" VNext: comando "+b.optString("pvpAction")+" invocado (sem confirmação de acerto).";
                 }
             }catch(Exception ignored){}
         }
