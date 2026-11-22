@@ -772,3 +772,11 @@ O módulo Sniper 100% IV foi implementado em fonte e submetido como [PR #72](htt
 **Escopo realmente entregue:** painel manual do feed 100% IV existente, origem PGSharp identificada separadamente e armazenamento de key opt-in local. **Não foi implementado** acesso ao servidor de resultados 100% do PGSharp nem validação de key Standard. Guardar uma key não ativa licença; resultados do feed FaustusFoundry não podem ser rotulados como PGSharp. Ausência de conexão/erro retorna estado explícito, sem fabricar spawns. Sem captura automática decorrente de tocar resultado. Teleporte depende de confirmação.
 
 **Estado físico:** `device_tested=false`; nenhum teste de instalação/upgrade/rollback, servidor de feeds ao vivo, Root+Vector, VGP+ girando/capturando, uso real de ataque carregado/escudo PvP, joystick/cooldown ou ocultação visual no mapa/perfil foi homologado neste trabalho. Não afirmar conclusão funcional dessas pendências a partir de CI. Preservar backup do aparelho antes de testar.
+
+
+## 22/11/2026 — PGBR: correção isolada do observador PvP (PGSharp como referência)
+**Pedido:** portar as funções de Auto PvP do PGSharp para PGBR, com autorização declarada pelo responsável. **Base:** `main` @ `1e68fcd3a18e37b26a93a801b2eadd60b5166512`; branch isolada `fix/pvp-pgsharp-screen-observer-20261122`. Fontes: APKs PGSharp 1.33.0, 1.50.3, 1.278.0 e vídeos 13/14 previamente inventariados no Drive.
+
+**Mudança real em fonte:** `pgrazor/native/cutscene_skip.cpp` não torna `tried` permanente antes do bootstrap IL2CPP e aceita o observador `GuiController.Open` validado quando nenhum hook opcional de cutscene está disponível. Novo teste de regressão `pgrazor/test/test_pvp_trace_bootstrap.py`; detalhamento em `docs/PGSHARP_PVP_BRIDGE_AUDIT_20261122.md`. Sem alteração de ABI, recursos Rocket, ataques/escudos, UI, PokéSearch, APKs nem automação em servidores.
+
+**Evidência e limites:** não foi possível inspecionar os executáveis dos APKs nem reproduzir os MP4 no runtime nesta sessão; não foi importado código fechado do PGSharp. Nenhuma função de Auto PvP foi homologada; testes locais e CI ainda pendentes, `device_tested=false`; segundo carregado supereficaz continua não integrado. Revisão pendente por PR, sem merge/publicação automática.
