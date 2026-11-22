@@ -1372,6 +1372,20 @@
     "Up Grade": "Melhora",
     "Gen4 Evolution Stone": "Pedra de Sinnoh",
     "Purified Gem": "Gema Purificada",
-    "Rare Candy XL": "Doce Raro GG"
+    "Rare Candy XL": "Doce Raro GG",
+    "Catch it": "Capturar",
+    "Dismiss": "Dispensar",
+    "Enter valid coordinates and speed (0.5–60).": "Informe coordenadas válidas e velocidade entre 0,5 e 60.",
+    "PGBR overlay shown": "Sobreposição do PGBR exibida",
+    "Enter valid coordinates": "Informe coordenadas válidas",
+    "Map-tap settings changed; tap the map again.": "Configurações de toque no mapa alteradas; toque novamente no mapa.",
+    "PGBR · control preview": "PGBR · prévia dos controles",
+    "Joystick and coordinate controls.\nThis preview does not change device GPS or connect to Pokémon GO.\nMovement pauses when you leave the app.": "Controles de joystick e coordenadas.\nEsta prévia não altera o GPS do dispositivo nem se conecta ao Pokémon GO.\nO movimento pausa ao sair do aplicativo.",
+    "Export this run's log (.txt)": "Exportar o log desta execução (.txt)",
+    "Log exported": "Log exportado",
+    "No log file to save": "Nenhum arquivo de log disponível para salvar",
+    "Stop Auto-Raid first.": "Interrompa as Reides automáticas primeiro.",
+    "Galarian bird found — walking and VGP stopped": "Ave de Galar encontrada — caminhada e VGP interrompidos",
+    "Max": "Máximo"
   }
 }
