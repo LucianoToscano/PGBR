@@ -3,12 +3,14 @@
 <h1 align="center">PGBR</h1>
 > **Arquivo Mestre Único do PGBR (leitura obrigatória):** [PGBR_ARQUIVO_MESTRE_UNICO.md](PGBR_ARQUIVO_MESTRE_UNICO.md). Fonte documental canônica na `main`; esta branch pode ter código mais avançado do que a `main`. Consulte os dois estados antes de afirmar qual versão está pronta.
 
-<p align="center"><strong>PGBR-v0.00.34-LT (pré-release de QA publicada) · Edição brasileira para Android</strong></p>
+<p align="center"><strong>PGBR-v0.00.35-LT (candidato a pré-release QA; publicação pendente) · Edição brasileira para Android</strong></p>
 <p align="center">Controles de localização, joystick, captura, rotas e recursos opcionais de automação para Pokémon GO.</p>
 
 > **Status (22/11/2026):** a pré-release LT034 acrescenta Sniper 100 IV manual ao PGBR e painel PGSharp Free/Standard com key criptografada; **a consulta direta a PGSharp e a verificação de licença ainda não estão operacionais**. LT033 consolida a linhagem LT032, Eventos no menu Pokébola, correções de visibilidade, testes nativos sazonais, manutenção e rastreabilidade. A publicação é **pré-lançamento de QA**: PvP, VGP+, Root+Vector, joystick, feeds e privacidade visual ainda exigem ensaio real. Não há integração autenticada a dados privados do PGSharp/Pokémod.
 
 > **LT034:** [notas da nova versão](docs/releases/v0.00.34-LT.md) · [workflow de compilação](https://github.com/LucianoToscano/PGBR/actions/workflows/pgbr-lt034-release.yml). A publicação foi verificada em 22/11/2026 e a LT033 permanece como opção anterior.
+
+> **LT035 candidato PvP:** [notas de QA](docs/releases/v0.00.35-LT.md) · [workflow de build e publicação](https://github.com/LucianoToscano/PGBR/actions/workflows/pgbr-lt035-release.yml). O arquivo `PGBR-v0.00.35-LT.apk` **ainda não está publicado nesta revisão do código**. A LT034 permanece a opção de download realmente verificada; não anunciar PvP homologado antes do teste no aparelho.
 
 ## Baixar e validar
 

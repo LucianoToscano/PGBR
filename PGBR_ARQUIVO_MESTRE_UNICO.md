@@ -801,3 +801,7 @@ A API Releases segue retornando `prerelease=true` e seis assets com os **mesmos 
 
 ### Continuidade de desenvolvimento paralelo — novo ramo sobre a main atual
 No momento desta integração, a main já havia avançado até `19a42fd564e77e2f1303714a1734dc00cf9cd692` por outros chats alterando exclusivamente o Mestre; esses registros foram preservados integralmente. Branch de integração limpa `release/pgbr-lt035-pvp-rebased-20261122` sobre essa base, com os mesmos arquivos de código da revisão PvP LT035 e adição documental sem sobrescrever histórico. A versão permanece pré-release QA e `device_tested=false`.
+
+
+### LT035 — contrato de versões e branding (preparação QA)
+O versionamento 0.00.35-LT exigiu atualizar os contratos de testes anteriores (LT032, LT033, LT034) para **aceitar a nova versão sem remover a validação histórica**. Adicionado `test_lt035_release_contract.py` que verifica workflow/nomes, preservação de workflows 33/34, estado `device_tested=false` e guardas de escopo PvP. README e CHANGELOG foram atualizados para mostrar LT035 como **candidato ainda não publicado**, mantendo o download LT034 existente como versão verificadamente publicada. CI e nova release não são presumidos.
