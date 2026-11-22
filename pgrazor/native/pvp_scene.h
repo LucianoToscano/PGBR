@@ -2,6 +2,7 @@
 #include <cstdint>
 #include <cstring>
 #include <limits>
+#include "battle_target_policy.h"
 
 // Only verified 0.437.0 GUI sequences can arm a vNext combat session.
 // NPC interstitial is also used by Mateo gifts: it alone NEVER attacks.
@@ -34,7 +35,11 @@ struct PgrPvpScene {
         expires_ms=until(now,VERIFIED_PVP_ENTRY_MS);
     }
     bool allowlisted() const {
-        return stage==COMBAT && (mode==PVP || mode==TRAINING);
+        const PgrAutoBattleTarget kind =
+            mode==PVP?PgrAutoBattleTarget::PVP:
+            mode==TRAINING?PgrAutoBattleTarget::TRAINER_NPC:
+            PgrAutoBattleTarget::UNKNOWN;
+        return stage==COMBAT && pgr_rocket_assist_target(kind);
     }
     bool live(uint64_t now) {
         if(!now||!expires_ms||now>=expires_ms){reset();return false;}
