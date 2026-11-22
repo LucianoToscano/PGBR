@@ -52,6 +52,9 @@ final class SettingsPanel {
     private final java.util.List<MenuIcon> homeIcons=new java.util.ArrayList<>();
     private int current=-1, homeScroll;
     private EditText settingsSearch;
+    private LinearLayout settingsSearchResults;
+    private SettingsSearch settingsSearchIndex;
+    private final java.util.List<View> settingsSearchTargets=new java.util.ArrayList<>();
     private Switch incubatorSwitch;
     private Button incubatorPriority;
     private Button uiScale;
@@ -194,23 +197,88 @@ final class SettingsPanel {
         TextView note=caption(owner,"Some settings here are not available yet.");
         (needsBall?ballNotes:summaryNotes).add(note);
     }
-    /** Search existing categories and their nested controls without changing any settings or hiding capabilities. */
-    private void filterSettings(String raw){
-        String query=java.text.Normalizer.normalize(raw==null?"":raw,java.text.Normalizer.Form.NFD)
-            .replaceAll("\\p{M}","").toLowerCase(Locale.ROOT).trim();
-        for(int i=0;i<homeRows.size();i++){
-            StringBuilder content=new StringBuilder(homeNames.get(i).getText()).append(' ');
-            collectSearchLabels(pages.get(i),content);
-            String normalized=java.text.Normalizer.normalize(content.toString(),java.text.Normalizer.Form.NFD)
-                .replaceAll("\\p{M}","").toLowerCase(Locale.ROOT);
-            homeRows.get(i).setVisibility(query.isEmpty()||normalized.contains(query)?View.VISIBLE:View.GONE);
+    /** Creates a compact, accent-insensitive index of real controls, including nested settings. */
+    private void indexSettingsOnce(){
+        if(settingsSearchIndex!=null)return;
+        settingsSearchIndex=new SettingsSearch();
+        settingsSearchTargets.clear();
+        for(int i=0;i<pages.size();i++){
+            String category=pageTitles.get(i);
+            settingsSearchTargets.add(pages.get(i));
+            settingsSearchIndex.add(category,"Categorias",category,i);
+            indexSettingControls(pages.get(i),category,i);
         }
     }
-    private static void collectSearchLabels(View view,StringBuilder result){
-        if(view instanceof TextView)result.append(((TextView)view).getText()).append(' ');
+    private void indexSettingControls(View view,String category,int pageIndex){
+        if(view instanceof TextView){
+            TextView textView=(TextView)view;
+            boolean candidate=view instanceof Button||view instanceof CheckBox||view instanceof Switch;
+            // A switch-row label belongs to its horizontal control row and is a valid search target.
+            if(!candidate && view.getParent() instanceof LinearLayout){
+                LinearLayout parent=(LinearLayout)view.getParent();
+                candidate=parent.getOrientation()==LinearLayout.HORIZONTAL&&parent.getChildCount()>1;
+            }
+            if(candidate){
+                String label=SettingsSearch.cleanName(textView.getText().toString());
+                if(label.length()>2 && settingsSearchTargets.size()<1000) {
+                    settingsSearchTargets.add(view);
+                    settingsSearchIndex.add(label,"Opções",category,pageIndex);
+                }
+            }
+        }
         if(view instanceof ViewGroup){
             ViewGroup group=(ViewGroup)view;
-            for(int i=0;i<group.getChildCount();i++)collectSearchLabels(group.getChildAt(i),result);
+            for(int i=0;i<group.getChildCount();i++)indexSettingControls(group.getChildAt(i),category,pageIndex);
+        }
+    }
+    private void openSearchTarget(SettingsSearch.Entry entry){
+        if(entry.id<0||entry.id>=settingsSearchTargets.size()||entry.page>=pages.size())return;
+        open(entry.page);
+        View target=settingsSearchTargets.get(entry.id),page=pages.get(entry.page);
+        // A setting may belong to a collapsed section. Reveal its ancestors but do not toggle the setting.
+        for(View walk=target;walk!=page&&walk!=null;){
+            if(walk.getVisibility()==View.GONE)walk.setVisibility(View.VISIBLE);
+            if(!(walk.getParent() instanceof View))break;
+            walk=(View)walk.getParent();
+        }
+        bodyScroll.post(()->{
+            int y=page.getTop();
+            for(View walk=target;walk!=page&&walk!=null;){
+                y+=walk.getTop();
+                if(!(walk.getParent() instanceof View))break;
+                walk=(View)walk.getParent();
+            }
+            bodyScroll.smoothScrollTo(0,Math.max(0,y-dp(54)));
+        });
+    }
+    /** Search by name, aliases, group and category; tap any result to open and scroll to its control. */
+    private void filterSettings(String raw){
+        String query=SettingsSearch.normalize(raw);
+        if(settingsSearchResults==null)return;
+        settingsSearchResults.removeAllViews();
+        settingsSearchResults.setVisibility(query.isEmpty()?View.GONE:View.VISIBLE);
+        if(query.isEmpty()){
+            for(LinearLayout row:homeRows)row.setVisibility(View.VISIBLE);
+            return;
+        }
+        indexSettingsOnce();
+        java.util.List<SettingsSearch.Entry> matches=settingsSearchIndex.find(query);
+        java.util.HashSet<Integer> shownPages=new java.util.HashSet<>();
+        int visible=0;
+        for(SettingsSearch.Entry match:matches){
+            shownPages.add(match.page);
+            if(visible++>=14)continue; // Avoid an unbounded dynamic result list on small phones.
+            Button result=button(match.name+"  ·  "+match.category);
+            result.setAllCaps(false);
+            result.setContentDescription("Abrir configuração "+match.name);
+            result.setOnClickListener(v->openSearchTarget(match));
+            settingsSearchResults.addView(result,new LinearLayout.LayoutParams(-1,dp(46)));
+        }
+        for(int i=0;i<homeRows.size();i++)
+            homeRows.get(i).setVisibility(shownPages.contains(i)?View.VISIBLE:View.GONE);
+        if(matches.isEmpty()){
+            TextView empty=text("Nenhuma configuração encontrada.",13,muted());
+            settingsSearchResults.addView(empty);
         }
     }
     /** Shows the home screen (index -1) or one category page, keeping the home scroll position for the way back. */
@@ -277,6 +345,10 @@ final class SettingsPanel {
         settingsSearch.setInputType(InputType.TYPE_CLASS_TEXT);
         settingsSearch.setPadding(dp(12),dp(10),dp(12),dp(10));
         home.addView(settingsSearch,new LinearLayout.LayoutParams(-1,dp(52)));
+        settingsSearchResults=new LinearLayout(activity);
+        settingsSearchResults.setOrientation(LinearLayout.VERTICAL);
+        settingsSearchResults.setVisibility(View.GONE);
+        home.addView(settingsSearchResults,new LinearLayout.LayoutParams(-1,-2));
         settingsSearch.addTextChangedListener(new android.text.TextWatcher(){
             public void beforeTextChanged(CharSequence s,int start,int count,int after){}
             public void onTextChanged(CharSequence s,int start,int before,int count){filterSettings(s.toString());}
