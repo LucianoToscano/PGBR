@@ -24,6 +24,23 @@ int main(){
     prep(s,45301);assert(!s.vnext(45302)); // expired interstitial
     s.gui("Not.Combat","NpcTrainerInterstitialGui",400);
     prep(s,401);assert(!s.vnext(402)); // namespace matters
+    PgrPvpScene friendBattle;
+    friendBattle.positive_pvp(1000);assert(!friendBattle.vnext(1001));
+    prep(friendBattle,1002);assert(friendBattle.vnext(1003)&&friendBattle.pvp());
+    friendBattle.gui("Niantic.Holoholo.Combat.Resolution","CombatResolveGuiController",1004);
+    assert(!friendBattle.vnext(1005));
+    PgrPvpScene directFriend;
+    prep(directFriend,3000);assert(!directFriend.vnext(3001));
+    directFriend.positive_pvp(3002);assert(directFriend.vnext(3003)&&directFriend.pvp());
+    PgrPvpScene raidOrMax;
+    prep(raidOrMax,4000);assert(!raidOrMax.vnext(4001));
+    assert(!raidOrMax.vnext(49000)); // generic preparation expires
+    PgrPvpScene staleFriend;
+    staleFriend.positive_pvp(5000);
+    prep(staleFriend,50001);assert(!staleFriend.vnext(50002));
+    PgrPvpScene trainingOnly;
+    npc(trainingOnly,7000);trainingOnly.positive_pvp(7001);
+    prep(trainingOnly,7002);assert(trainingOnly.vnext(7003)&&trainingOnly.training());
     hub(s,500);prep(s,501);assert(!s.vnext(181000)); // prep expiry
     hub(s,900000);prep(s,900001);assert(s.vnext(900002));
     assert(!s.vnext(1200003)); // no heartbeat: expires

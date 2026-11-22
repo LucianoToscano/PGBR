@@ -1,3 +1,9 @@
+## v0.00.37-LT — candidato QA Auto Ataque por escopo (22/11/2026)
+- Máscara de ataque ágil, carregado e escudo **única e persistida**, mas somente armada automaticamente em Rocket/treinamento/PvP reais; desarmada fora da batalha, por opção desligada ou lease encerrada.
+- Desafios privados/friends aceitos via `CombatDirectorV2.IsPvPCombat` validado + preparação + VNext; o preparo genérico de raid/max sozinho nunca arma.
+- Reutiliza também o `ParticleTapInputChallenge` do carregado em Rocket/treino/PvP com escopo validado, preservando motores separados de ginásios, reides e Batalhas Max.
+- C++ e contratos Python com cenários de exclusão e timers. `device_tested=false`, instalação com assinatura diferente e golpes realmente aceitos ainda precisam de evidência.
+
 ## v0.00.36-LT — candidato QA: treinamento e diagnóstico de instalação (22/11/2026)
 - Candidato NPC de 45 s precisa de preparação e VNext antes de habilitar motor Rocket/PvP de fast/charged/shield.
 - Elimina falso positivo por interstitial isolado de Mateo; status `mode=training`, Rocket prioritário, sem mudança de ABI.

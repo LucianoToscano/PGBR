@@ -944,3 +944,40 @@ Manter Quick Snipers I/II, Radar e fonte PGBR como conceitos separados; preserva
 
 
 **Validação CI #45023799721, primeiro teste:** quatro dos cinco checks passaram (host C++, NDK ARM64, website e governança). A suíte Windows falhou em **2 de 284 testes**, ambos documentais: `test_branding.test_main_readme` exigia o nome literal `PGBR-v0.00.36-LT.apk` no README; `test_lt036_release_contract.test_release_version_and_assets` interpretava UTF-8 das notas com encoding implícito Windows, causando falso negativo de “App não instalado”. O patch seguinte explicitou o nome **não publicado** no README e fixou `encoding='utf-8'` na leitura do contrato. **Novo CI e release precisam ser verificados; nenhum problema nativo foi apontado nos quatro jobs aprovados.**
+
+
+### 22/11/2026 — LT037 Auto Ataque compartilhado Rocket/treinamento/PvP/duelos privados (solicitação adicional do usuário)
+
+**Requisito exato:** ativar/desativar automaticamente **apenas os comandos já escolhidos** de ataque ágil (1), carregado (2) e escudo (4) em Rocket, treino com líder e PvP (GBL/desafio entre amigos), usando o mesmo motor nativo de combate em modos diferentes; não remapear identidades dos inimigos em RPC/servidor. Excluir batalhas de poder/Max e reides. Manter ginásios no executor separado preexistente.
+
+**Auditoria da LT036:** `Control.java` já sincroniza `rocketOptions` e `pvpBattleOptions` (os três bits); `combat_host.cpp` enviava máscara Rocket ao `rocket_combat->update` até quando nenhum escopo existia, embora o motor impedisse ações sem estado. O detector de PvP requeria Hub → Preparação → VNext, enquanto um desafio privado pode não usar o Hub. Há um observador validado de `CombatDirectorV2` e `CombatTypeExtensions.IsPvPCombat` que anteriormente emitia apenas telemetria, sem integrar-se à máquina de estados. Não declarar que todas as versões/clientes realmente geram as telas pesquisadas.
+
+**Implementação da branch `fix/lt037-auto-battle-multi-scope-20261122`, iniciada na main `8715c5c584a048f60a606cc47885c08f75c06e78`:** `shared_auto_battle_gate.h` calcula máscara efetiva 0 quando não há escopo ativo/lease/opções/host, preservando preferências. `combat_host.cpp` amarra atualização das opções ao escopo de Rocket ou UI VNext de PvP/treinamento; também exige lease viva ao emitir executor pronto, revoga por prazo expirado e mantém o `ParticleTapInputChallenge` (minijogo do carregado) disponível em Rocket/PvP/treino tipados, respeitando bit carregado e lease. `pvp_probe.inc` conecta observação positiva `IsPvPCombat` validada à `pvp_scene.h` com janela tipada; assim, desafios diretos aceitam ordem positivo → preparação ou preparação → positivo, mas **não** VNext genérico sem resultado positivo nem NPC/Mateo isolado. Classes `InvasionCombatState` e `CombatVNextGuiController` continuam separadas, mesmo que compartilhem motor de taps. `pvp_scene_test.cpp` e `shared_auto_battle_gate_test.cpp` exercitam cenários negativos e positivos.
+
+**Governança/releases:** preparar nova `v0.00.37-LT` e workflow próprio, preservando LT036 e anteriores; documentação `docs/releases/v0.00.37-LT.md`, README, CHANGELOG, testes de contratos das versões LT032–LT037. **Nenhum APK, tag, merge ou teste de aparelho deve ser anunciado até confirmação posterior.**
+
+**Evidência pendente:** tempo real de golpe rápido, 1° carregado, escudo gasto, 2° carregado supereficaz, desafio PvP contra amigo, Liga GO, treino contra líderes e regressão Rocket com VNext no Android (0.437.0) sob ativação de opções. O APK sem Root não altera o certificado do pacote original: permanecem conflitos de instalação em outro cliente com mesma identidade e assinatura distinta. `device_tested=false`. Não houve cópia de código PGSharp binário ou falsificação de modo do jogo.
+
+
+**Ajuste de contrato histórico LT036 durante a revisão LT037:** o teste `test_lt036_training_scope.py` preserva a exigência de Hub ou interstitial de treinador para preparação e passa a aceitar a terceira entrada validada `VERIFIED_PVP_ENTRY`, exigindo ainda `live(now)`. Não altera o motor nem exclui o teste da LT036: é evolução aditiva de asserções de fonte, com o comportamento antigo mantido nos cenários nativos. O CI subsequente precisará ser verificado.
+
+
+### 22/11/2026 — Release intermediária LT036 publicada e comprovada
+
+O workflow [#45024489012](https://github.com/LucianoToscano/PGBR/actions/runs/45024489012) encerrou **completed/success**; a pré-release [v0.00.36-LT](https://github.com/LucianoToscano/PGBR/releases/tag/v0.00.36-LT) publicou estes arquivos, verificados por GitHub Releases API:
+
+- [PGBR-v0.00.36-LT.apk](https://github.com/LucianoToscano/PGBR/releases/download/v0.00.36-LT/PGBR-v0.00.36-LT.apk): 188.822.851 bytes, SHA-256 `453c5e47a00b022750150f3b9bcf6dc2c06032b285976de5b05d2ebc9c3d1ea3`.
+- [PGBR-v0.00.36-LT-Root.apk](https://github.com/LucianoToscano/PGBR/releases/download/v0.00.36-LT/PGBR-v0.00.36-LT-Root.apk): 8.348.366 bytes, SHA-256 `a7ca62a91b4050accc8893fdaad22ec9e499a4405bdce98b1ada491d2d1a4e8a`.
+- [PGBR-v0.00.36-LT-Root-module.zip](https://github.com/LucianoToscano/PGBR/releases/download/v0.00.36-LT/PGBR-v0.00.36-LT-Root-module.zip): 8.264.501 bytes, SHA-256 `a7568c523aee06f45a3059dfa230fe2d41ae6b60180c100df74887f6b0449d3f`.
+- [SHA256SUMS.txt](https://github.com/LucianoToscano/PGBR/releases/download/v0.00.36-LT/SHA256SUMS.txt): 281 bytes, SHA-256 `cddb0e3080276f135ec728f17420f121da080ec75d9da354b425450de9d26ffe`.
+
+**Separação de versões:** LT036 contém o reconhecimento experimental de treinador NPC sem a nova política de ativação global por escopo. Esta última integra a proposta LT037, ainda em PR/QA. Nenhuma dessas versões tem validação física de combate (`device_tested=false`), e APK sem Root ainda conflita com instalação assinada por outra chave. LT035 e demais tags mantidas. O registro da futura LT037 deve ocorrer apenas depois do resultado CI/tag/arquivos verificados.
+
+
+**Proteção adicional no CI pré-merge:** `tools/native_host_tests.py` agora inclui `pvp_scene_test.cpp` e `shared_auto_battle_gate_test.cpp` no allowlist de fixtures C++ independentes de Android. Assim, falhas de tipo/ordem de PvP privado, treino, Rocket, máscara efetiva/lease e raid/Max são detectadas em PR antes da publicação, além do fixture no workflow de release LT037. Não equivale a teste físico; aguardar checks da HEAD atual.
+
+
+**Revisão adicional do carregado LT037:** `rocket_minigame.cpp` opera sobre `Niantic.Holoholo.Combat.InputChallenge.ParticleTapInputChallenge`, com hooks e metadados validados. O uso da "mesma função Rocket" inclui o minijogo depois do primeiro clique de carregado. A lógica de política anterior em LT036 já permitia o minijogo dentro de uma sessão tipada PvP. LT037 preserva isso para Rocket/PvP/treinamento sob escopo ativo, opção carregado e lease válida, sem habilitar em raids/Max fora desse escopo. Sem prova física de acerto nem minijogo completo.
+
+
+**Regressão de interface preservada:** a legenda do assistente mantém o prefixo `Opções Rocket/PvP sincronizadas` esperado pelo contrato `test_pvp_settings_ui.py`, acrescentando o comportamento de ativação por escopo. A preferência única permanece distinta do estado de execução; a correção não liga opções marcadas como desligadas pelo usuário.
