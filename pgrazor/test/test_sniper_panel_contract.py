@@ -169,6 +169,53 @@ class SniperPanelContractTest(unittest.TestCase):
         # Sem total do servidor, assume primeira página em vez de afirmar cobertura total.
         self.assertIn('return SpawnSearch.Coverage.FIRST_PAGE;', connectors)
 
+    def test_auto_refresh_is_live_and_rate_paced(self):
+        panel = read('SniperPanel.java')
+        self.assertIn('int cadenceSeconds = state.autoRefreshSeconds();', panel)
+        self.assertIn('lastAutoAttemptElapsed = elapsed;', panel)
+        self.assertIn('Math.max(MIN_REQUEST_GAP_MS, cadenceSeconds * 1000L)', panel)
+        self.assertIn('if (dueSinceRequest && dueSinceAttempt)', panel)
+        self.assertIn('search(false);', panel)
+        self.assertIn('main.postDelayed(tick, TICK_MS);', panel)
+
+    def test_results_list_is_not_nested_in_scrollview(self):
+        panel = read('SniperPanel.java')
+        opening = panel.split('void open() {', 1)[1].split('private Button tab(', 1)[0]
+        self.assertIn('root.addView(list, new LinearLayout.LayoutParams(-1, 0, 1));', opening)
+        self.assertIn('.setView(root)', opening)
+        self.assertNotIn('.setView(new ScrollView(ui) {{ addView(root); }})', opening)
+
+    def test_expired_rows_cannot_reappear_on_rerender(self):
+        panel = read('SniperPanel.java')
+        self.assertIn('if (spawn.expired(System.currentTimeMillis())) continue;', panel)
+        self.assertIn('if (expiredOnScreen && !fetching) render();', panel)
+
+    def test_changing_source_invalidates_pending_query(self):
+        panel = read('SniperPanel.java')
+        block = panel.split('private void openSources() {', 1)[1].split('private void openSort()', 1)[0]
+        for guard in ('generation.incrementAndGet()', 'source.cancel()', 'source = null;',
+                      'fetching = false;', 'result = null;', 'visible.clear();'):
+            self.assertIn(guard, block)
+        self.assertLess(block.index('generation.incrementAndGet()'),
+                        block.index('state = state.withSource(info.id)'))
+
+    def test_sorting_reapplies_cached_rows_without_network(self):
+        panel = read('SniperPanel.java')
+        block = panel.split('private void openSort() {', 1)[1].split('private void openProfiles()', 1)[0]
+        self.assertIn('SpawnSearch.refilter(result,', block)
+        self.assertIn('state.order()', block)
+        self.assertNotIn('search(true)', block)
+        self.assertNotIn('search(false)', block)
+
+    def test_pagination_does_not_call_two_pages_a_full_response_when_more_exist(self):
+        client = read('IFlowGoFeedClient.java')
+        self.assertIn('boolean morePages = IFlowGoFeedData.hasNextPage(', client)
+        self.assertIn('pagesAvailable = page + 1;', client)
+        self.assertIn('pagesAvailable = totalKnown ? page : 0;', client)
+        self.assertNotIn('if (page < pages) pagesAvailable = page + 1;', client)
+        registry = read('SpawnConnectors.java')
+        self.assertIn('SpawnSearch.Coverage.PARTIAL_PAGES', registry)
+
     def test_hundo_source_is_fetched_not_faked(self):
         text = read('SpawnConnectors.java')
         self.assertIn('ShundoSniper.FEED_URL', text)

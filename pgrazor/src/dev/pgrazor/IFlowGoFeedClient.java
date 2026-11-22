@@ -90,12 +90,19 @@ final class IFlowGoFeedClient {
                     .entries) {
                 if (ids.add(entry.id)) entries.add(entry);
             }
-            if (page == 1) pagesAvailable = 0;
-            if (!IFlowGoFeedData.hasNextPage(payload, page, 200)) {
-                if (page == 1) pagesAvailable = 1;      // unknown total: do not claim more
+            // A missing/invalid total is not evidence of full coverage, even if no further
+            // page can be requested. Always keep the note honest about unknown pagination.
+            int reportedTotal = payload.optInt("total", -1);
+            boolean totalKnown = payload.has("total") && !payload.isNull("total")
+                    && reportedTotal >= 0;
+            boolean morePages = IFlowGoFeedData.hasNextPage(payload, page, 200);
+            if (!morePages) {
+                pagesAvailable = totalKnown ? page : 0;
                 break;
             }
-            if (page < pages) pagesAvailable = page + 1;
+            // Report a *known next page* even when our local safety cap stops here.
+            // In particular, page 2 of 5 must never be presented as "2 de 2".
+            pagesAvailable = page + 1;
         }
         if (pagesShown == 0) throw pageFailure != null ? pageFailure
                 : new LiveFeedClient.FeedException("iFlowGo global não retornou nenhuma página.");
