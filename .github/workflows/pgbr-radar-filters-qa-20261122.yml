@@ -2,13 +2,16 @@ name: PGBR Radar Filters and Authorized Webhook QA
 
 on:
   push:
-    branches: [fix/radar-source-filter-search-20261122]
+    branches: [fix/radar-source-filter-search-20261122, feat/demo-radar-source-20261122]
   pull_request:
     paths:
       - 'pgrazor/src/dev/pgrazor/LiveFeedFilters.java'
       - 'pgrazor/src/dev/pgrazor/LiveFeedDialog.java'
       - 'pgrazor/src/dev/pgrazor/RocketMapFeedClient.java'
       - 'pgrazor/test/LiveFeedFiltersTest.java'
+      - 'pgrazor/src/dev/pgrazor/DemoLiveFeedData.java'
+      - 'pgrazor/test/DemoLiveFeedDataTest.java'
+      - 'pgrazor/test/test_demo_feed_wiring.py'
       - '.github/workflows/pgbr-radar-filters-qa-20261122.yml'
   workflow_dispatch:
 
@@ -41,6 +44,7 @@ jobs:
           python -B -m unittest discover -s pgrazor/test -p 'test_rocketmap_wiring.py' -v
           python -B -m unittest discover -s pgrazor/test -p 'test_pokelist_access_behavior.py' -v
           python -B -m unittest discover -s pgrazor/test -p 'test_raid_feed_filters_java.py' -v
+          python -B -m unittest discover -s pgrazor/test -p 'test_demo_feed_wiring.py' -v
 
   android-controls-compile:
     runs-on: windows-latest

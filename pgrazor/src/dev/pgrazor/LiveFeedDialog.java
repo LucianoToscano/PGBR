@@ -102,7 +102,7 @@ public final class LiveFeedDialog {
         private final PokeListFeedClient pokeList = new PokeListFeedClient();
         private final IFlowGoFeedClient iFlowGo = new IFlowGoFeedClient();
         private final RocketMapFeedClient rocketMap = new RocketMapFeedClient();
-        /** 0=LivePokeMap, 1=PokeList/Moonani (Pokémon only), 2=iFlowGo, 3=RocketMap. */
+        /** 0=LivePokeMap, 1=PokeList/Moonani, 2=iFlowGo, 3=RocketMap, 4=DEMO only. */
         private int provider;
         private final LiveFeedIcons icons;
         private volatile org.json.JSONObject speciesNames;
@@ -153,8 +153,8 @@ public final class LiveFeedDialog {
             } catch (RuntimeException ignored) { raidFilters = RaidFeedFilters.defaults(); }
             pokemonQuery = prefs.getString("pokemon_query_v1", "");
             if (pokemonQuery == null || pokemonQuery.length() > 80) pokemonQuery = "";
-            provider = pokemonSearchMode ? clamp(prefs.getInt("pokemon_provider_v1", 2), 0, 3)
-                    : raidSearchMode ? clamp(prefs.getInt("raid_provider_v1", 2), 0, 3) : 0;
+            provider = pokemonSearchMode ? clamp(prefs.getInt("pokemon_provider_v1", 2), 0, 4)
+                    : raidSearchMode ? clamp(prefs.getInt("raid_provider_v1", 2), 0, 4) : 0;
             // iFlowGo offers a verified-in-network area feed without requiring a LivePokeMap login.
             // Existing explicit provider selections remain saved independently per search.
             categoryIndex = pokemonSearchMode ? 1 : raidSearchMode ? 4
@@ -225,6 +225,9 @@ public final class LiveFeedDialog {
                 liveAlternative.setOnClickListener(v -> selectProvider(2));
             }
             if (pokemonSearchMode || raidSearchMode) {
+                Button demo = button("Abrir demonstração OFFLINE · dados FICTÍCIOS");
+                form.addView(demo, new LinearLayout.LayoutParams(-1, dp(52)));
+                demo.setOnClickListener(v -> selectProvider(4));
                 Button rocket = button("Usar servidor RocketMap HTTPS");
                 form.addView(rocket, new LinearLayout.LayoutParams(-1, dp(52)));
                 rocket.setOnClickListener(v -> selectProvider(3));
@@ -363,12 +366,24 @@ public final class LiveFeedDialog {
                 rocket.setTypeface(null, provider == 3
                         ? android.graphics.Typeface.BOLD : android.graphics.Typeface.NORMAL);
                 sources.addView(rocket, new LinearLayout.LayoutParams(-2, dp(44)));
-                // Horizontal scrolling prevents four source labels from being
+                Button demo = segButton("DEMO OFFLINE");
+                demo.setOnClickListener(v -> selectProvider(4));
+                demo.setTypeface(null, provider == 4
+                        ? android.graphics.Typeface.BOLD : android.graphics.Typeface.NORMAL);
+                sources.addView(demo, new LinearLayout.LayoutParams(-2, dp(44)));
+                // Horizontal scrolling prevents source labels from being
                 // clipped on narrow Android screens.
                 HorizontalScrollView scroll = new HorizontalScrollView(ui);
                 scroll.setHorizontalScrollBarEnabled(false);
                 scroll.addView(sources);
                 root.addView(scroll);
+                if (provider == 4) {
+                    TextView warning = label("MODO DEMONSTRAÇÃO — DADOS FICTÍCIOS. "
+                        + "Sem acesso aos servidores do jogo ou scanners; "
+                        + "teleporte e movimentação DESATIVADOS.", 13);
+                    warning.setTextColor(0xffffc36a);
+                    root.addView(warning);
+                }
                 if (provider == 3) {
                     Button config = button("Configurar servidor RocketMap HTTPS");
                     config.setOnClickListener(v -> configureRocketMap());
@@ -484,7 +499,9 @@ public final class LiveFeedDialog {
                 radiusButtons = new Button[RADII.length];
                 for (int i = 0; i < RADII.length; i++) {
                     final int index = i;
-                    Button b = segButton((provider == 3 || provider == 2 && raidSearchMode) && i == 3 ? "25 km" : RADIUS_LABELS[i]);
+                    Button b = segButton(provider == 4 && i == 3 ? "Exemplos"
+                        : (provider == 3 || provider == 2 && raidSearchMode) && i == 3
+                            ? "25 km" : RADIUS_LABELS[i]);
                     b.setOnClickListener(v -> selectRadius(index));
                     radiusRow.addView(b, new LinearLayout.LayoutParams(0, dp(40), 1));
                     radiusButtons[i] = b;
@@ -494,7 +511,8 @@ public final class LiveFeedDialog {
 
             if (raidSearchMode) {
                 TextView attribution = label("Fonte: " + sourceName()
-                        + ". Reides reais, se informadas pelo serviço. "
+                        + (provider == 4 ? ". Reides totalmente FICTÍCIAS, apenas demonstração. "
+                                : ". Reides reais, se informadas pelo serviço. ")
                         + "Aparições por área no iFlowGo (máx. 25 km), não feed global. "
                         + "Não utiliza servidores privados do PGSharp. "
                         + "Popularidade do lobby e clima só são exibidos se comprovados.", 12);
@@ -506,7 +524,13 @@ public final class LiveFeedDialog {
             }
 
             if (pokemonSearchMode) {
-                TextView providerLabel = label(provider == 1
+                TextView providerLabel = label(provider == 4
+                        ? "DADOS FICTÍCIOS — TESTE OFFLINE de busca, IV, espécie, nível e listas. "
+                            + "Não representam capturas ou coordenadas reais."
+                        : provider == 3
+                          ? "Fonte: RocketMap / PokeSearch autorizado. Configure HTTPS e "
+                            + "chave privada de leitura. Cobertura depende do scanner."
+                        : provider == 1
                         ? "Fonte: PokeList / Moonani (experimental). Global exige espécie e "
                           + "pode ser bloqueado pela fonte (HTTP 403)."
                         : provider == 2
@@ -566,9 +590,12 @@ public final class LiveFeedDialog {
                     public void afterTextChanged(android.text.Editable e) {}
                 });
                 root.addView(search, new LinearLayout.LayoutParams(-1, dp(48)));
-                root.addView(label("Use Filtros para IV, Shiny, XXL e PvP. "
-                        + "Para Global na PokeList, informe uma espécie (ou #Dex) e toque Atualizar. "
-                        + "Toque no Pokémon encontrado para confirmar o teleporte.", 12));
+                root.addView(label(provider == 4
+                        ? "Use Filtros para testar espécie, IV, XXL, rank PvP e nível com "
+                          + "registros FICTÍCIOS. Nenhum toque permite teleporte."
+                        : "Use Filtros para IV, Shiny, XXL e PvP. "
+                          + "Para Global na PokeList, informe uma espécie (ou #Dex) e toque Atualizar. "
+                          + "Toque no Pokémon encontrado para confirmar o teleporte.", 12));
             }
 
             feedStatus = label("", 12);
@@ -580,12 +607,15 @@ public final class LiveFeedDialog {
             list.setAdapter(adapter);
             list.setOnItemClickListener((parent, view, pos, id) -> {
                 if (pos >= 0 && pos < visible.size()) {
-                    if (pokemonSearchMode) confirmPokemonTeleport(visible.get(pos));
+                    if (provider == 4) showDemoDetail(visible.get(pos));
+                    else if (pokemonSearchMode) confirmPokemonTeleport(visible.get(pos));
                     else if (raidSearchMode) confirmRaidTeleport(visible.get(pos));
                     else openDetails(visible.get(pos));
                 }
             });
-            TextView empty = label("Sem aparições confirmadas para esta busca.", 14);
+            TextView empty = label(provider == 4
+                    ? "Nenhum EXEMPLO fictício passou pelos filtros atuais."
+                    : "Sem aparições confirmadas para esta busca.", 14);
             empty.setGravity(Gravity.CENTER);
             empty.setPadding(0, dp(24), 0, 0);
             listHolder.addView(list, new FrameLayout.LayoutParams(-1, -1));
@@ -848,6 +878,28 @@ public final class LiveFeedDialog {
 
         private void requestFetch() {
             if (closed || showingLogin || fetchInFlight) return;
+            if (provider == 4 && pokemonSearchMode) {
+                // No trainer-specific shiny or background observation exists
+                // in the offline fixture; never show fictional Pokémon as
+                // matches of a filter that cannot be truthfully evaluated.
+                try {
+                    org.json.JSONObject requested = filters.toStoredJson();
+                    if (requested.optBoolean("shiny_only", false)
+                            || requested.optBoolean("background_only", false)) {
+                        entries.clear(); visible.clear(); distCache.clear();
+                        lastUpdated=0;
+                        lastError="DEMO OFFLINE: Shiny individual e fundos especiais "
+                                + "não são simulados nem confirmados. Desative esses filtros.";
+                        adapter.notifyDataSetChanged();
+                        updateStatus();
+                        return;
+                    }
+                } catch (org.json.JSONException invalid) {
+                    lastError="Filtros da demonstração inválidos; use Limpar filtros.";
+                    updateStatus();
+                    return;
+                }
+            }
             if ((provider == 1 && pokeListAccessDenied)
                     || (provider == 2 && iFlowGoAccessDenied)
                     || (provider == 3 && rocketMapAccessDenied)) {
@@ -957,7 +1009,9 @@ public final class LiveFeedDialog {
                         // ambiguous or not found in the local name catalog.
                         remoteDex = f.singleAllowedSpecies();
                     }
-                    LiveFeedData.Snapshot snap = selectedProvider == 1
+                    LiveFeedData.Snapshot snap = selectedProvider == 4
+                            ? DemoLiveFeedData.sample(lat, lon, System.currentTimeMillis(), raidSearchMode)
+                            : selectedProvider == 1
                             ? pokeList.fetch(lat, lon, radiusKm, selectedDex)
                             : selectedProvider == 2
                             ? pokemonSearchMode && Double.isInfinite(radiusKm)
@@ -1258,9 +1312,25 @@ public final class LiveFeedDialog {
 
         // ------------------------------------------------------------------ detail + actions
 
+        /** Preview entries never trigger a GPS action, even through a detail screen. */
+        private void showDemoDetail(LiveFeedData.Entry e) {
+            if (closed || e == null) return;
+            AlertDialog detail = new AlertDialog.Builder(ui)
+                .setTitle("DEMONSTRAÇÃO — Pokémon/Reide fictício")
+                .setMessage("DADOS FICTÍCIOS para apresentar os filtros do PGBR.\n\n"
+                    + displayName(e) + "\n" + e.details
+                    + "\n\nNenhum scanner confirmou esta aparição. "
+                    + "Teleporte, caminhada e cópia de coordenadas indisponíveis.")
+                .setPositiveButton("Fechar",null)
+                .create();
+            trackOwn(detail);
+            detail.show();
+        }
+
         /** One-tap selection, but never teleport without the existing confirmation. */
         private void confirmPokemonTeleport(LiveFeedData.Entry e) {
             if (closed || e == null || e.kind != LiveFeedData.Kind.POKEMON) return;
+            if (provider == 4) {showDemoDetail(e);return;}
             if (e.expired(System.currentTimeMillis())) {
                 toast("Este Pokémon não está mais disponível.");
                 rebuildVisible(); adapter.notifyDataSetChanged(); return;
@@ -1285,6 +1355,7 @@ public final class LiveFeedDialog {
         /** Same user-confirmed location action as Pokémon results, but for raids. */
         private void confirmRaidTeleport(LiveFeedData.Entry e) {
             if (closed || e == null || e.kind != LiveFeedData.Kind.RAID) return;
+            if (provider == 4) {showDemoDetail(e);return;}
             if (e.expiresAt <= System.currentTimeMillis()) {
                 toast("Esta reide expirou.");
                 rebuildVisible(); adapter.notifyDataSetChanged(); return;
@@ -1308,6 +1379,7 @@ public final class LiveFeedDialog {
 
         private void openDetails(LiveFeedData.Entry e) {
             if (closed) return;
+            if (provider == 4) {showDemoDetail(e);return;}
             long now = System.currentTimeMillis();
             if (e.expired(now)) { toast("That result just expired."); rebuildVisible(); adapter.notifyDataSetChanged(); return; }
             LinearLayout body = new LinearLayout(ui);
@@ -1349,7 +1421,7 @@ public final class LiveFeedDialog {
 
         /** Walk/Teleport only after a fresh validity, readiness and foreground check. */
         private void applyMove(LiveFeedData.Entry e, boolean teleport, AlertDialog detail) {
-            if (closed) return;
+            if (closed || provider == 4) return;
             long now = System.currentTimeMillis();
             if (e.expired(now)) { toast("That result just expired."); detail.dismiss(); rebuildVisible(); adapter.notifyDataSetChanged(); return; }
             if (!Control.canEnable()) { toast("Location adapter is not ready."); return; }
@@ -1364,6 +1436,7 @@ public final class LiveFeedDialog {
         }
 
         private void openMap(LiveFeedData.Entry e, AlertDialog detail) {
+            if (provider == 4) {showDemoDetail(e);return;}
             if (!Double.isFinite(e.lat) || !Double.isFinite(e.lon)) { toast("That result has no valid location."); return; }
             try {
                 // Centred on the selected result, with both Teleport and Walk callbacks. We never push
@@ -1455,6 +1528,7 @@ public final class LiveFeedDialog {
             if (provider == 1) return "PokeList / Moonani";
             if (provider == 2) return "iFlowGo";
             if (provider == 3) return "RocketMap (meu servidor)";
+            if (provider == 4) return "DEMONSTRAÇÃO OFFLINE — FICTÍCIOS";
             return "LivePokeMap";
         }
 
