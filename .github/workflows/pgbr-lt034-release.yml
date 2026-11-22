@@ -1,4 +1,5 @@
 name: PGBR v0.00.34-LT - compilar e publicar pre-release QA
+# LT034 is a separate immutable tag; the README filename contract was corrected before this rerun.
 on:
   push:
     branches: [main, release/pgbr-v0.00.34-lt-sniper-20261122]
