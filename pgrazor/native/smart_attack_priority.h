@@ -3,6 +3,7 @@
 // Callers must establish the live button/slot association and revalidate before acting.
 #include "battle_counter.h"
 #include <cstdint>
+#include <cstddef>
 #include "charge_effect_ui.h"
 
 namespace pgr_smart_priority {
