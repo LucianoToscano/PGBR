@@ -1,5 +1,9 @@
 # PGBR LT032 — Protocolo de homologação Android (Root e sem Root)
 
+## Pacote candidato mais recente (comprovado por hashes)
+
+Revisão QA: PGBR `v0.00.32-LT`, Pokémon GO `0.437.0`, commit `954e4c0c53e32cf853b261cdceb5da83f94a8bf9`, GitHub Actions [#45000567415](https://github.com/LucianoToscano/PGBR/actions/runs/45000567415), artifact `14745906741`. SHA do APK não Root: `bad3febe5988f627633704be31099fdba430f37e1e823b5d390a4149fa1d4e5a`; instalador Root: `286cbbc3d04d1ee8c7cb167e94947885787f2779405862ec2d3ae3df9bf05cd1`; módulo: `b4887fb7fba58e251aeaf5589a649080f1574c98d35b24f74c1581ceba600093`. É QA: `device_tested=false`. A variante mais antiga não tem o fallback VGP original reconstruído.
+
 > **Status:** lista de execução para dispositivo real. O CI passou nas etapas explicitamente marcadas no Mestre, mas **nenhum resultado abaixo é automaticamente um teste físico aprovado**. Registrar modelo, Android, arquitetura, versão do jogo, commit, SHA-256 e horário antes de preencher.
 
 ## Preparação e recuperação

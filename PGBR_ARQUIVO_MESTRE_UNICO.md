@@ -481,3 +481,28 @@ A matriz de homologação funcional foi registrada em [`docs/QA_LT032_ANDROID_FI
 A ampliação do gate C++ no PR #58 passou 12 fixtures host Linux [job #45000885337](https://github.com/LucianoToscano/PGBR/actions/runs/45000885337), incluindo 27 cenários Rocket e 296 checks Auto-Raid. O build de website, o NDK ARM64 e a suíte Windows/Java/Python/Node/Root desse mesmo run também terminaram **success**: o CI completo [#45000885337](https://github.com/LucianoToscano/PGBR/actions/runs/45000885337) foi aprovado nos **quatro jobs**, inclusive os 12 testes C++ host.
 
 Requisitos de conclusão inequívoca: o GitHub aprovar o build final de código e de três variantes, os hashes coincidirem com os recibos, o PNG VGP íntegro estar presente **no APK**, e a matriz em aparelho real ter resultados registrados. Fechar o projeto com “sem pendências” enquanto essas evidências estiverem ausentes seria incorreto.
+
+---
+
+## 22/11/2026 — QA final PR #65: APK com VGP corrigido e backup verificado
+
+**Código-fonte, CI e APK concluídos para esta revisão, não homologação no jogo.** [PR #65](https://github.com/LucianoToscano/PGBR/pull/65), código base PGBR LT032 + PR64 glossário PT-BR + fallback VGP do atlas original, commit de build `954e4c0c53e32cf853b261cdceb5da83f94a8bf9`. O [workflow completo #45000567415](https://github.com/LucianoToscano/PGBR/actions/runs/45000567415) passou nos dois jobs, incluindo fixtures PvP e compilação/assinatura/empacotamento Root e sem Root. [CI completo #45000567442](https://github.com/LucianoToscano/PGBR/actions/runs/45000567442) terminou `success` em Linux C++/NDK ARM64 e Windows Java/Python/Node/Root; a suíte Python/Java registrou **261 testes, OK (skipped=1)**. [Verificação pixel-exata #45000567430](https://github.com/LucianoToscano/PGBR/actions/runs/45000567430) também passou com `contents: read`. C++ de manutenção ampliado em PR58 [#45000885337](https://github.com/LucianoToscano/PGBR/actions/runs/45000885337): quatro jobs aprovados e **12 suítes host**. O PR65 não efetuou merge em `main`, respeitando integração paralela sem perdas.
+
+**Artefato Github:** id **14745906741**, nome `PGBR-LT032-PGR036-Root-e-SemRoot-QA`, download ZIP da execução #45000567415. ZIP extraído e conferido independentemente por CRC, SHA256SUMS, JSON de build e de Root, versão 0.437.0 código 2026110902, ABIs, módulo embarcado no instalador e modos compilados.
+
+| Pacote, build com PT-BR e VGP OFF corrigido | Bytes exatos | SHA-256 confirmado |
+| --- | ---: | --- |
+| `PGBR-v0.00.32-LT.apk` — jogo não Root | 188810563 | `bad3febe5988f627633704be31099fdba430f37e1e823b5d390a4149fa1d4e5a` |
+| `PGBR-v0.00.32-LT-Root.apk` — instalador Root | 8336078 | `286cbbc3d04d1ee8c7cb167e94947885787f2779405862ec2d3ae3df9bf05cd1` |
+| `PGBR-v0.00.32-LT-Root-module.zip` — módulo Zygisk | 8251277 | `b4887fb7fba58e251aeaf5589a649080f1574c98d35b24f74c1581ceba600093` |
+
+**Novo teste direto do PNG dentro do APK:** `assets/pgrazor/map-icons/vgp-device-off.png` tem 46937 bytes e é PNG RGBA **192×192**, decodifica integralmente, com todos os pixels idênticos à célula OFF da imagem original `vgp-hd-states.webp` 192×576. O ZIP não Root possui modo `compiledGameplay=true` e o instalador Root embute um módulo com o mesmo SHA da distribuição externa. O bloco de assinatura Android foi detectado nos dois APKs, sem afirmar auditoria independente criptográfica de certificado. O recibo de CI diz **`device_tested=false`**.
+
+**Backup Google Drive efetivamente confirmado**, na pasta `PGBR/04_Builds_e_Modulos_PGBR`, preservando os backups antigos:
+- [Instalador Root 8.336.078 bytes](https://drive.google.com/file/d/1DFcqUyYxZQwELJjG78d4ibOiTwXZnu1w/view)
+- [Módulo Zygisk 8.251.277 bytes](https://drive.google.com/file/d/1C_oFdwWxEsyz1bELOoSnSceghYn8fJE4/view)
+- [SHA256SUMS da mesma execução](https://drive.google.com/file/d/13EDOPrBH9QXx6wc4NFaQlCXEOSOxRwHr/view)
+
+O APK não Root completo de 188,8 MB **não** entrou no Drive: a integração rejeitou o upload como `file_too_large` (limite não contornável por nova tentativa). A cópia binária do APK íntegro foi baixada do GitHub na conversa e o artefato GitHub id 14745906741 permanece como fonte de backup; não confundir com os arquivos de build anterior existentes no Drive.
+
+**Critérios ainda externos ao código:** instalar em Android real e provar PvP carregado/ágil/escudos, VGP giro/captura, joystick, Root+Vector, privacidade do nome, pesquisa ao vivo e validade das credenciais/termos dos feeds. A matriz para preencher os testes físicos está em [`docs/QA_LT032_ANDROID_FINAL.md`](docs/QA_LT032_ANDROID_FINAL.md). Sem essas evidências não é legítimo declarar "sem pendências" ou promover para `main`.
