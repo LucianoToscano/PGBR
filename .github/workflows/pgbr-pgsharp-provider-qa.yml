@@ -1,0 +1,41 @@
+name: PGBR - QA PGSharp free and optional key
+
+on:
+  pull_request:
+    branches:
+      - main
+      - feat/sniper100iv-manual-feed-20261122
+    paths:
+      - 'pgrazor/src/dev/pgrazor/PgSharp*.java'
+      - 'pgrazor/src/dev/pgrazor/FeedChooser.java'
+      - 'pgrazor/test/PgSharpFeedPolicyTest.java'
+      - 'pgrazor/test/test_pgsharp_provider_contract.py'
+      - 'pgrazor/test/test_pgsharp_policy_java.py'
+      - '.github/workflows/pgbr-pgsharp-provider-qa.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  contract-policy-and-compile:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile and execute pure Java tier contract
+        run: python -B -m unittest discover -s pgrazor/test -p 'test_pgsharp_policy_java.py' -v
+      - name: Check source isolation, encrypted local key and existing menu
+        run: python -B -m unittest discover -s pgrazor/test -p 'test_pgsharp_provider_contract.py' -v
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools
+      - name: Android app Java compile (no game APK, no credentials)
+        run: python -B pgrazor/build.py --test-only
