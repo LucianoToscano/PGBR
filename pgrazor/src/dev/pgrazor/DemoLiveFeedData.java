@@ -12,6 +12,43 @@ import java.util.Locale;
 final class DemoLiveFeedData {
     private DemoLiveFeedData() {}
 
+    /**
+     * Radius-aware sample, so the demo exercises the real radius control instead of ignoring it.
+     *
+     * <p>A radius at or above {@link #ALL_RADIUS_KM}, infinite (the "Global" setting) or non-finite
+     * returns the whole fixture; otherwise only entries whose distance from the centre is inside the
+     * radius are returned, and the snapshot note states both numbers. Teleport stays blocked either
+     * way — this method never touches Control.
+     */
+    static LiveFeedData.Snapshot sample(double centerLat, double centerLon, long now, boolean raids,
+                                        double radiusKm) {
+        LiveFeedData.Snapshot all = sample(centerLat, centerLon, now, raids);
+        if (!Double.isFinite(radiusKm) || radiusKm >= ALL_RADIUS_KM || radiusKm <= 0) return all;
+        double useLat = Double.isFinite(centerLat) ? centerLat : -23.550520;
+        double useLon = Double.isFinite(centerLon) ? centerLon : -46.633308;
+        List<LiveFeedData.Entry> inside = new ArrayList<>();
+        for (LiveFeedData.Entry e : all.entries)
+            if (distanceKm(useLat, useLon, e.lat, e.lon) <= radiusKm) inside.add(e);
+        String note = "MODO DEMONSTRAÇÃO OFFLINE — dados FICTÍCIOS. " + inside.size() + " de "
+                + all.entries.size() + " exemplos dentro de " + (int) Math.ceil(radiusKm) + " km. "
+                + "Nenhuma aparição foi consultada. Não use estas coordenadas.";
+        return new LiveFeedData.Snapshot(inside, now, 60, note);
+    }
+
+    /** Radius at or above this is treated as "no radius limit" (the dialog's Global option). */
+    static final double ALL_RADIUS_KM = 1000;
+
+    /** Great-circle distance in km, using the same formula as the rest of the app. */
+    static double distanceKm(double lat1, double lon1, double lat2, double lon2) {
+        if (!Double.isFinite(lat1) || !Double.isFinite(lon1)
+                || !Double.isFinite(lat2) || !Double.isFinite(lon2)) return Double.NaN;
+        double dLat = Math.toRadians(lat2 - lat1), dLon = Math.toRadians(lon2 - lon1);
+        double a = Math.sin(dLat / 2) * Math.sin(dLat / 2)
+                + Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2))
+                * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+        return 6371.0 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    }
+
     static LiveFeedData.Snapshot sample(double centerLat, double centerLon,
                                         long now, boolean raids) {
         if (!Double.isFinite(centerLat) || Math.abs(centerLat)>89.9

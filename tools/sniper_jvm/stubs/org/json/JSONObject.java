@@ -116,6 +116,14 @@ public class JSONObject {
     }
     public java.util.Iterator<String> keys() { return new ArrayList<>(values.keySet()).iterator(); }
 
+    /** Same contract as the Android implementation: the key names, or null when empty. */
+    public JSONArray names() {
+        if (values.isEmpty()) return null;
+        JSONArray names = new JSONArray();
+        for (String key : values.keySet()) names.put(key);
+        return names;
+    }
+
     /** Removes every key; used by tests that recycle an instance. */
     public JSONObject clearAll() { values.clear(); return this; }
 

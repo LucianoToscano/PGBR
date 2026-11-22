@@ -67,6 +67,9 @@ final class RocketMapFeedData {
             JSONObject gyms = body.optJSONObject("gyms");
             if (gyms == null) throw new JSONException(
                     "RocketMap: não há campo gyms (verifique o servidor e permissões)");
+            // Gyms without a raid are still real gyms: they belong to the Gym layer, not the raid one.
+            readPlainGyms(gyms, now, results, ids);
+            readPokestops(body.optJSONObject("pokestops"), now, results, ids);
             JSONArray gymIDs = gyms.names();
             if (gymIDs != null) for (int i=0; i<Math.min(MAX_ROWS, gymIDs.length()); i++) {
                 String gymID = gymIDs.optString(i, "");
@@ -103,6 +106,65 @@ final class RocketMapFeedData {
         return new LiveFeedData.Snapshot(results, now, 60,
                 "Fonte: servidor RocketMap configurado pelo usuário; cobertura depende "
                         + "do scanner conectado. Não é o serviço PGSharp.");
+    }
+
+    /**
+     * Gyms that currently have no raid. Previously they were silently skipped, so the "Gyms" layer
+     * always looked empty even on a healthy server. A gym is a real object with real coordinates; its
+     * team is reported only when the server states it.
+     */
+    private static void readPlainGyms(JSONObject gyms, long now, List<LiveFeedData.Entry> results,
+                                      Set<String> ids) {
+        JSONArray gymIDs = gyms.names();
+        if (gymIDs == null) return;
+        for (int i = 0; i < Math.min(MAX_ROWS, gymIDs.length()); i++) {
+            JSONObject gym = gyms.optJSONObject(String.valueOf(gymIDs.opt(i)));
+            if (gym == null) continue;
+            if (gym.optJSONObject("raid") != null) continue;   // handled by the raid branch
+            double lat = gym.optDouble("latitude", Double.NaN);
+            double lon = gym.optDouble("longitude", Double.NaN);
+            if (!validCoords(lat, lon)) continue;
+            String id = key(gym, "gym_id", "rocket:gym:", 0, lat, lon);
+            if (!ids.add(id)) continue;
+            int team = number(gym, "team_id", 0, 3);
+            String name = clean(gym.optString("name", ""), 80);
+            if (name.isEmpty()) name = "Ginásio";
+            StringBuilder detail = new StringBuilder("Ginásio");
+            if (team == 1) append(detail, "Time Azul");
+            else if (team == 2) append(detail, "Time Vermelho");
+            else if (team == 3) append(detail, "Time Amarelo");
+            int slots = number(gym, "slots_available", 0, 6);
+            if (slots >= 0) append(detail, slots + " vaga(s)");
+            results.add(new LiveFeedData.Entry(id, LiveFeedData.Kind.GYM, name, detail.toString(),
+                    lat, lon, -1, -1, -1, -1, 0, false, Math.max(0, team), 0, false));
+        }
+    }
+
+    /**
+     * PokéStops from the same response. {@code lure_expiration} drives the luring state; a stop with a
+     * lure in the past is reported as a plain stop rather than invented as lured.
+     */
+    private static void readPokestops(JSONObject stops, long now, List<LiveFeedData.Entry> results,
+                                      Set<String> ids) {
+        if (stops == null) return;
+        JSONArray stopIDs = stops.names();
+        if (stopIDs == null) return;
+        for (int i = 0; i < Math.min(MAX_ROWS, stopIDs.length()); i++) {
+            JSONObject stop = stops.optJSONObject(String.valueOf(stopIDs.opt(i)));
+            if (stop == null) continue;
+            double lat = stop.optDouble("latitude", Double.NaN);
+            double lon = stop.optDouble("longitude", Double.NaN);
+            if (!validCoords(lat, lon)) continue;
+            String id = key(stop, "pokestop_id", "rocket:stop:", 0, lat, lon);
+            if (!ids.add(id)) continue;
+            long lure = unixMillis(stop.opt("lure_expiration"));
+            boolean lured = lure > now;
+            String name = clean(stop.optString("name", ""), 80);
+            if (name.isEmpty()) name = "PokéParada";
+            results.add(new LiveFeedData.Entry(id, LiveFeedData.Kind.STOP, name,
+                    lured ? "PokéParada com isca ativa" : "PokéParada", lat, lon,
+                    -1, -1, -1, -1, lured ? lure : 0, false, 0, 0, false));
+        }
     }
 
     /** RocketMap's CustomJSONEncoder writes UTC datetimes in Unix milliseconds. */

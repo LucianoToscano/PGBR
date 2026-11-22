@@ -29,6 +29,23 @@ public final class DemoLiveFeedDataTest {
         LiveFeedData.Snapshot fallback=DemoLiveFeedData.sample(
             Double.NaN, Double.POSITIVE_INFINITY,now,false);
         ok(fallback.entries.size()==8,"invalid current game position uses only safe demo center");
-        System.out.println("PASS: demo entries clearly fictitious and bounded; Raid/IV/PvP examples");
+        // Radius-aware demo: the radius control must be exercised, not ignored.
+        LiveFeedData.Snapshot wide=DemoLiveFeedData.sample(-23.55,-46.63,now,false,25);
+        ok(wide.entries.size()==8,"25 km keeps every example (fixture is ~200 m wide)");
+        ok(wide.note.contains("8 de 8"),"note states shown/total");
+        LiveFeedData.Snapshot none=DemoLiveFeedData.sample(-23.55,-46.63,now,false,0.001);
+        ok(none.entries.size()<8,"very small radius excludes distant examples");
+        LiveFeedData.Snapshot global=DemoLiveFeedData.sample(-23.55,-46.63,now,false,
+                Double.POSITIVE_INFINITY);
+        ok(global.entries.size()==8,"global radius returns the whole fixture");
+        // The fixture is generated around the player, never around real spawns: a far centre must
+        // produce examples near THAT centre (and still fictional), not leak any real coordinate.
+        LiveFeedData.Snapshot far=DemoLiveFeedData.sample(51.5,-0.12,now,false,1);
+        ok(far.entries.size()==8,"fixture follows the player position");
+        for (LiveFeedData.Entry e:far.entries)
+            ok(DemoLiveFeedData.distanceKm(51.5,-0.12,e.lat,e.lon)<1,"every example is near the centre");
+        ok(DemoLiveFeedData.distanceKm(-23.55,-46.63,-23.55,-46.63)==0,"distance of a point to itself");
+        System.out.println("PASS: demo entries clearly fictitious and bounded; Raid/IV/PvP examples; "
+                + "radius filter honoured");
     }
 }

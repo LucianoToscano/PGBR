@@ -67,7 +67,9 @@ final class RocketMapFeedClient {
         double swLon = Math.max(-180, lon-dLon), neLon = Math.min(180, lon+dLon);
         String qs = String.format(Locale.US,
                 "?swLat=%.6f&swLng=%.6f&neLat=%.6f&neLng=%.6f"
-                + "&pokemon=%s&gyms=%s&pokestops=false&scanned=false&spawnpoints=false",
+                // pokestops are requested for every layer: they are a real /raw_data field and the
+                // "Stops" filter has nothing to show without them.
+                + "&pokemon=%s&gyms=%s&pokestops=true&scanned=false&spawnpoints=false",
                 swLat,swLon,neLat,neLon,raidsOnly?"false":"true",raidsOnly?"true":"false");
         HttpURLConnection conn = (HttpURLConnection)new URL(base+"/raw_data"+qs).openConnection();
         active = conn;

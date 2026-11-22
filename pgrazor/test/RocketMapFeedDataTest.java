@@ -77,6 +77,46 @@ public final class RocketMapFeedDataTest {
             RocketMapFeedData.parse(new JSONObject().put("pokemons", new JSONArray()), now, true);
             throw new AssertionError("missing gym field must not silently succeed");
         } catch (org.json.JSONException expected) {}
-        System.out.println("PASS: RocketMap live Pokémon and Reides defensive contracts");
+        // Regression: gyms without a raid and PokéStops used to be discarded, so the "Gyms" and
+        // "Stops" layers were permanently empty even on a healthy server.
+        JSONObject quietGym = new JSONObject().put("gym_id", "gym-quiet")
+                .put("latitude", 35.70).put("longitude", 139.65)
+                .put("team_id", 2).put("name", "Ginásio Fictício").put("slots_available", 3);
+        JSONObject stop = new JSONObject().put("pokestop_id", "stop-a")
+                .put("latitude", 35.71).put("longitude", 139.66).put("name", "Parada Fictícia");
+        JSONObject lured = new JSONObject().put("pokestop_id", "stop-b")
+                .put("latitude", 35.72).put("longitude", 139.67)
+                .put("lure_expiration", now + 600000);
+        JSONObject expiredLure = new JSONObject().put("pokestop_id", "stop-c")
+                .put("latitude", 35.73).put("longitude", 139.68)
+                .put("lure_expiration", now - 600000);
+        LiveFeedData.Snapshot layers = RocketMapFeedData.parse(new JSONObject()
+                .put("gyms", new JSONObject().put("gym-a", gym).put("gym-quiet", quietGym))
+                .put("pokestops", new JSONObject().put("stop-a", stop)
+                        .put("stop-b", lured).put("stop-c", expiredLure)), now, true);
+        int gymRows = 0, stopRows = 0, raidRows = 0;
+        boolean quietSeen = false, lureSeen = false;
+        for (LiveFeedData.Entry row : layers.entries) {
+            if (row.kind == LiveFeedData.Kind.GYM) { gymRows++; if (row.team == 2) quietSeen = true; }
+            if (row.kind == LiveFeedData.Kind.STOP) {
+                stopRows++;
+                if (row.expiresAt > now && !lureSeen) lureSeen = row.details.contains("isca");
+            }
+            if (row.kind == LiveFeedData.Kind.RAID) raidRows++;
+        }
+        ok(gymRows == 1, "a gym without a raid still appears in the Gym layer");
+        ok(quietSeen, "the gym keeps the team the server reported");
+        ok(stopRows == 3, "every PokéStop with valid coordinates is returned");
+        ok(lureSeen, "a lure in the future is shown as an active lure");
+        ok(raidRows == 1, "the raid layer keeps only the live raid");
+        ok(layers.entries.size() == 5, "layers do not duplicate the same object");
+        // A stop without usable coordinates is dropped, not placed at 0,0.
+        JSONObject brokenStop = new JSONObject().put("pokestop_id", "stop-bad")
+                .put("latitude", 0).put("longitude", 0);
+        LiveFeedData.Snapshot refused = RocketMapFeedData.parse(new JSONObject()
+                .put("gyms", new JSONObject())
+                .put("pokestops", new JSONObject().put("stop-bad", brokenStop)), now, true);
+        ok(refused.entries.isEmpty(), "0,0 is never accepted as a PokéStop position");
+        System.out.println("PASS: RocketMap live Pokémon, Reides, Gym and PokéStop layers");
     }
 }

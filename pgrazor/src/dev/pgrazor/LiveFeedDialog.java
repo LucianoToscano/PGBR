@@ -136,6 +136,7 @@ public final class LiveFeedDialog {
         private Button[] catButtons, radiusButtons;
         private Button raidFilterButton;
         private TextView feedStatus;
+        private TextView emptyView;
 
         Controller(Activity activity, Context ui, AlertDialog dialog, LinearLayout root,
                    boolean pokemonSearchMode, boolean raidSearchMode) {
@@ -613,11 +614,10 @@ public final class LiveFeedDialog {
                     else openDetails(visible.get(pos));
                 }
             });
-            TextView empty = label(provider == 4
-                    ? "Nenhum EXEMPLO fictício passou pelos filtros atuais."
-                    : "Sem aparições confirmadas para esta busca.", 14);
+            TextView empty = label("", 14);
             empty.setGravity(Gravity.CENTER);
-            empty.setPadding(0, dp(24), 0, 0);
+            empty.setPadding(dp(16), dp(24), dp(16), 0);
+            emptyView = empty;
             listHolder.addView(list, new FrameLayout.LayoutParams(-1, -1));
             listHolder.addView(empty, new FrameLayout.LayoutParams(-1, -2, Gravity.CENTER_HORIZONTAL));
             list.setEmptyView(empty);
@@ -855,25 +855,8 @@ public final class LiveFeedDialog {
 
         private int sourceDexFilter(String requestedQuery) {
             if (!pokemonSearchMode) return -1;
-            String q = requestedQuery == null ? "" : requestedQuery.trim();
-            String number = q.startsWith("#") ? q.substring(1) : q;
-            if (number.matches("[0-9]{1,4}")) {
-                try {
-                    int dex = Integer.parseInt(number);
-                    return dex >= 1 && dex <= 1025 ? dex : -1;
-                } catch (NumberFormatException ignored) {return -1;}
-            }
-            org.json.JSONObject names = speciesNames;
-            if (names == null || q.isEmpty()) return -1;
-            int found = -1;
-            for (int dex=1; dex<=1025; dex++) {
-                String name=names.optString(Integer.toString(dex),"");
-                if (!name.isEmpty() && PokemonFeedSearch.matches(q,dex,name,name)) {
-                    if (found >= 0) return -1; // not unique: never over-filter remotely
-                    found = dex;
-                }
-            }
-            return found;
+            // Same resolution the list uses, so a name search cannot hide its own results.
+            return PokemonFeedSearch.resolveDex(requestedQuery, speciesNames);
         }
 
         private void requestFetch() {
@@ -1010,7 +993,7 @@ public final class LiveFeedDialog {
                         remoteDex = f.singleAllowedSpecies();
                     }
                     LiveFeedData.Snapshot snap = selectedProvider == 4
-                            ? DemoLiveFeedData.sample(lat, lon, System.currentTimeMillis(), raidSearchMode)
+                            ? DemoLiveFeedData.sample(lat, lon, System.currentTimeMillis(), raidSearchMode, radiusKm)
                             : selectedProvider == 1
                             ? pokeList.fetch(lat, lon, radiusKm, selectedDex)
                             : selectedProvider == 2
@@ -1172,6 +1155,13 @@ public final class LiveFeedDialog {
             }
             if (note != null && !note.isEmpty()) sb.append('\n').append(note);
             feedStatus.setText(dev.pgrazor.PtBr.tr(sb.toString()));
+            if (emptyView != null) {
+                String reason = emptyReason();
+                if (reason != null) emptyView.setText(dev.pgrazor.PtBr.tr(reason));
+                else emptyView.setText(dev.pgrazor.PtBr.tr(provider == 4
+                        ? "Nenhum EXEMPLO fictício passou pelos filtros atuais."
+                        : "Sem aparições confirmadas para esta busca."));
+            }
         }
 
         // ------------------------------------------------------------------ list model
@@ -1184,14 +1174,14 @@ public final class LiveFeedDialog {
             for (LiveFeedData.Entry e : entries) {
                 if (e == null || e.expired(now)) continue;               // hide expired every pass
                 if (!categoryMatches(e)) continue;
-                if (raidSearchMode && (e.kind != LiveFeedData.Kind.RAID
-                        || !raidFilters.matches(e.dexId, e.level, e.team,
-                            e.raidHatchAt, e.expiresAt, e.raidBossLive, now)))
+                // Only RAID rows are subject to the raid filter. Gym/Stop/Power Spot rows used to be
+                // dropped here before the category switch ran, which made those tabs permanently empty.
+                if (raidSearchMode && e.kind == LiveFeedData.Kind.RAID
+                        && !raidFilters.matches(e.dexId, e.level, e.team,
+                            e.raidHatchAt, e.expiresAt, e.raidBossLive, now))
                     continue;
-                if (pokemonSearchMode &&
-                        (e.kind != LiveFeedData.Kind.POKEMON ||
-                         !PokemonFeedSearch.matches(pokemonQuery, e.dexId, e.name, displayName(e))))
-                    continue;
+                if (pokemonSearchMode && e.kind != LiveFeedData.Kind.POKEMON) continue;
+                if (pokemonSearchMode && !matchesQuery(e)) continue;
                 // The server only partly applies the display filters (not the level range), so
                 // re-check Pokémon the way the LivePokeMap website does.
                 if (e.kind == LiveFeedData.Kind.POKEMON && provider == 3
@@ -1209,6 +1199,18 @@ public final class LiveFeedDialog {
             Collections.sort(list, (a, b) -> Double.compare(dist.get(a), dist.get(b)));
             visible.clear(); visible.addAll(list);
             distCache = dist;
+        }
+
+        /**
+         * Local text match for one row. A query that resolves to a single species (a name like
+         * "Pikachu" or "#25") matches that species by dex; everything else uses the fuzzy matcher. This
+         * is what keeps the list consistent with the species actually requested from the server.
+         */
+        private boolean matchesQuery(LiveFeedData.Entry e) {
+            if (pokemonQuery == null || pokemonQuery.trim().isEmpty()) return true;
+            int resolved = PokemonFeedSearch.resolveDex(pokemonQuery, speciesNames);
+            if (resolved > 0) return e.dexId == resolved;
+            return PokemonFeedSearch.matches(pokemonQuery, e.dexId, e.name, displayName(e));
         }
 
         private boolean categoryMatches(LiveFeedData.Entry e) {
@@ -1522,6 +1524,50 @@ public final class LiveFeedDialog {
             if (provider == 2) return raidSearchMode
                     ? "iflowgo_raid_radius_v1" : "iflowgo_pokemon_radius_v1";
             return "radius";
+        }
+
+        /**
+         * Whether the selected source publishes records of this layer at all.
+         *
+         * <p>The category buttons are shared by every source, but the sources differ: PokeList and the
+         * online Pokémon feed publish Pokémon only, iFlowGo publishes Pokémon and Raids (no gym, stop or
+         * power-spot layer), and the offline demo has no gym/stop example. Before this check a tab backed
+         * by a source without that layer just stayed empty, which looked exactly like "nothing nearby"
+         * instead of "this source cannot answer that".
+         */
+        private boolean sourcePublishes(LiveFeedData.Kind kind) {
+            switch (provider) {
+                case 1: return kind == LiveFeedData.Kind.POKEMON;
+                case 2: return kind == LiveFeedData.Kind.POKEMON || kind == LiveFeedData.Kind.RAID;
+                case 3: return kind == LiveFeedData.Kind.POKEMON || kind == LiveFeedData.Kind.RAID
+                        || kind == LiveFeedData.Kind.GYM || kind == LiveFeedData.Kind.STOP;
+                case 4: return kind == LiveFeedData.Kind.POKEMON || kind == LiveFeedData.Kind.RAID;
+                default: return kind == LiveFeedData.Kind.POKEMON;
+            }
+        }
+
+        /** The layer requested by the current tab, or null for "All". */
+        private LiveFeedData.Kind requestedLayer() {
+            switch (categoryIndex) {
+                case 1: return LiveFeedData.Kind.POKEMON;
+                case 2: return LiveFeedData.Kind.STOP;
+                case 3: return LiveFeedData.Kind.GYM;
+                case 4: return LiveFeedData.Kind.RAID;
+                case 5: return LiveFeedData.Kind.STATION;
+                default: return null;
+            }
+        }
+
+        /** Explicit reason an otherwise empty list is empty, or null when the list has rows. */
+        private String emptyReason() {
+            if (!visible.isEmpty()) return null;
+            LiveFeedData.Kind layer = requestedLayer();
+            if (layer != null && !sourcePublishes(layer)) {
+                return "A fonte " + sourceName() + " não publica " + kindLabel(layer)
+                        + ". Esta aba fica vazia por limitação da fonte, não por falta de dados: "
+                        + "escolha outra fonte ou outra aba.";
+            }
+            return null;
         }
 
         private String sourceName() {

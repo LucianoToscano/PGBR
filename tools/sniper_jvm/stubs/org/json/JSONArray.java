@@ -34,6 +34,10 @@ public class JSONArray {
         return fallback;
     }
     public String optString(int index) { Object v = opt(index); return v == null ? "" : String.valueOf(v); }
+    public String optString(int index, String fallback) {
+        Object v = opt(index);
+        return v == null ? fallback : String.valueOf(v);
+    }
     public JSONObject optJSONObject(int index) { Object v = opt(index); return v instanceof JSONObject ? (JSONObject) v : null; }
 
     @Override public String toString() { return Json.writeArray(values); }

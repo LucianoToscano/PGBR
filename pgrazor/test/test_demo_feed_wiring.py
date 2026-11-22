@@ -10,7 +10,10 @@ class DemoFeedWiringTests(unittest.TestCase):
         data=(ROOT/"src/dev/pgrazor/DemoLiveFeedData.java").read_text(encoding="utf-8")
         self.assertIn('Button demo = segButton("DEMO OFFLINE")',ui)
         self.assertIn("selectProvider(4)",ui)
-        self.assertIn("DemoLiveFeedData.sample(lat, lon, System.currentTimeMillis(), raidSearchMode)",ui)
+        # O raio agora é aplicado ao fixture: a demonstração exercita o controle de raio real.
+        self.assertIn("DemoLiveFeedData.sample(lat, lon, System.currentTimeMillis(), raidSearchMode, radiusKm)",ui)
+        self.assertIn("ALL_RADIUS_KM",data)
+        self.assertIn("inside.size() + \" de \"", data)
         self.assertIn("if (provider == 4) showDemoDetail(visible.get(pos));",ui)
         self.assertIn("if (closed || provider == 4) return;",ui)
         self.assertIn('if (provider == 4) {showDemoDetail(e);return;}',ui)
