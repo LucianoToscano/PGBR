@@ -95,6 +95,7 @@ final class PokeListPartnerClient {
             query.put("active_only", true);
             query.put("sort", "expires_at");
             query.put("limit", pageLimit);
+            applyRemoteFilters(query, request.filters, capabilities);
             if (cursor != null) query.put("cursor", cursor);
             Page result = parsePage(send(origin, "/v1/search/pokemon", query),
                     System.currentTimeMillis());
@@ -111,6 +112,70 @@ final class PokeListPartnerClient {
                 : request.global ? SpawnSearch.Coverage.FULL_RESPONSE : SpawnSearch.Coverage.AREA;
         // FULL_RESPONSE means all ingested rows for this query, NOT worldwide scanning coverage.
         return out;
+    }
+
+    /**
+     * Forward only filters that /v1/capabilities explicitly advertises as server-side.
+     * Everything else remains a strict local filter in the shared Sniper engine.
+     */
+    static void applyRemoteFilters(JSONObject query, SpawnFilters filters, JSONObject capabilities)
+            throws JSONException {
+        if (filters == null) return;
+        JSONObject local = filters.toJson();
+        String[][] mapping = {
+            {"min_iv", "iv_min"}, {"max_iv", "iv_max"},
+            {"min_attack", "attack_min"}, {"max_attack", "attack_max"},
+            {"min_defense", "defense_min"}, {"max_defense", "defense_max"},
+            {"min_stamina", "stamina_min"}, {"max_stamina", "stamina_max"},
+            {"min_cp", "cp_min"}, {"max_cp", "cp_max"},
+            {"min_level", "level_min"}, {"max_level", "level_max"}
+        };
+        for (String[] pair : mapping) {
+            if (local.has(pair[0]) && supportsField(capabilities, pair[1]))
+                query.put(pair[1], local.opt(pair[0]));
+        }
+        if (local.optBoolean("perfect_only", false)
+                && supportsField(capabilities, "iv_min")) query.put("iv_min", 100);
+        if (local.optBoolean("zero_only", false)) {
+            for (String key : new String[]{"attack_max", "defense_max", "stamina_max"})
+                if (supportsField(capabilities, key)) query.put(key, 0);
+        }
+        int gender = local.optInt("gender", SpawnFilters.GENDER_ANY);
+        if (gender >= 1 && gender <= 3 && supportsField(capabilities, "gender"))
+            query.put("gender", gender);
+        int size = local.optInt("size", SpawnFilters.SIZE_ANY);
+        if (supportsField(capabilities, "size")) {
+            if (size == SpawnFilters.SIZE_XXS) query.put("size", "xxs");
+            if (size == SpawnFilters.SIZE_XXL) query.put("size", "xxl");
+        }
+        if (local.optBoolean("shiny_possible_only", false)
+                && supportsField(capabilities, "shiny_status"))
+            query.put("shiny_status", "eligible"); // eligibility != individual shiny
+        int league = local.optInt("league", SpawnFilters.LEAGUE_ANY);
+        if (supportsField(capabilities, "pvp_league")) {
+            if (league == SpawnFilters.LEAGUE_GREAT) query.put("pvp_league", "great");
+            if (league == SpawnFilters.LEAGUE_ULTRA) query.put("pvp_league", "ultra");
+            int maxRank = local.optInt("max_rank", SpawnFilters.UNSET);
+            if (maxRank > 0 && (league == SpawnFilters.LEAGUE_GREAT
+                    || league == SpawnFilters.LEAGUE_ULTRA)
+                    && supportsField(capabilities, "pvp_rank_max"))
+                query.put("pvp_rank_max", maxRank);
+        }
+        // Numeric form ids cannot be mapped to the contract's string form without a catalogue.
+        // shiny_confirmed_only cannot be forwarded: verified_for_account is not supported.
+    }
+
+    private static boolean supportsField(JSONObject capabilities, String field) {
+        JSONArray flags = capabilities == null ? null : capabilities.optJSONArray("filters");
+        if (flags == null) return false;
+        String family = field.replaceAll("_(min|max)$", "_*");
+        for (int i = 0; i < flags.length(); i++) {
+            JSONObject f = flags.optJSONObject(i);
+            if (f == null || !"server_side".equals(f.optString("position", ""))) continue;
+            String label = f.optString("filter", "");
+            if (label.contains(field) || label.contains(family)) return true;
+        }
+        return false;
     }
 
     /** No response from the reference backend is promoted to a production feed by UI guesses. */
