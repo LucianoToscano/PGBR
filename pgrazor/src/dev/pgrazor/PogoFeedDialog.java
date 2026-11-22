@@ -449,7 +449,7 @@ public final class PogoFeedDialog {
                 FeedTheme.style(box); FeedTheme.styleGameButtons(box); FeedTheme.styleButtons(ask);
                 ask.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
                     String token = input.getText().toString().trim().replaceAll("^\"|\"$", "");
-                    if (!token.startsWith("eyJ") || token.split("\\.").length != 3) { input.setError("That doesn't look like a token (it starts with eyJ…)."); return; }
+                    if (!token.startsWith("eyJ") || token.split("\\.").length != 3) { input.setError(dev.pgrazor.PtBr.tr("That doesn't look like a token (it starts with eyJ…).")); return; }
                     net.execute(() -> {
                         boolean ok;
                         try { client.saveSession(token); ok = true; } catch (Exception e) { ok = false; }

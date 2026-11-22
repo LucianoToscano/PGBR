@@ -127,7 +127,7 @@ public final class GameRoutesDialog {
         private void stop() {
             if (closed) return;
             Control.stopGameRoutes();
-            Toast.makeText(activity, "Route automation stopped.", Toast.LENGTH_SHORT).show();
+            Toast.makeText(activity, dev.pgrazor.PtBr.tr("Route automation stopped."), Toast.LENGTH_SHORT).show();
             poll();
         }
 

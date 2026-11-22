@@ -52,7 +52,7 @@ public final class QuickLocationDialogs {
         if (!pasted.isEmpty()) {
             coordinates.setText(pasted);
             coordinates.setSelection(pasted.length());
-            coordinates.setContentDescription("Coordenadas válidas preenchidas da área de transferência");
+            coordinates.setContentDescription(dev.pgrazor.PtBr.tr("Coordenadas válidas preenchidas da área de transferência"));
         }
         form.addView(coordinates);
         AlertDialog dialog = new AlertDialog.Builder(ctx).setTitle(dev.pgrazor.PtBr.tr("Go to coordinates")).setView(form)
@@ -104,7 +104,7 @@ public final class QuickLocationDialogs {
                 }
                 showFavoriteList(activity,target,snap);
                 if(snap.damaged)Toast.makeText(activity,
-                    "Alguns locais não puderam ser lidos; os válidos foram preservados.",
+                    dev.pgrazor.PtBr.tr("Alguns locais não puderam ser lidos; os válidos foram preservados."),
                     Toast.LENGTH_LONG).show();
             });
         },"pgrazor-favorites-read").start();
