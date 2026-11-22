@@ -53,7 +53,7 @@ class PackageTests(unittest.TestCase):
             nonroot.main(['--probe','--runtime-abi','x86_64'])
 
     def test_research_zip_preserves_game_and_bundles_only_retained_probes(self):
-        with tempfile.TemporaryDirectory(dir=ROOT/'build') as temp:
+        with tempfile.TemporaryDirectory(prefix='pgbr-fixture-') as temp:
             work=Path(temp);source=work/'game.apk';dex=work/'module.dex'
             (work/'VERSION').write_text('v0.2.5', encoding='utf-8')
             dex.write_bytes(b'dex fixture')
@@ -111,7 +111,7 @@ class PackageTests(unittest.TestCase):
         source=ROOT/'build/pgrazor-preview.apk'
         if not source.exists(): self.skipTest('Preview APK not built')
         original_hash=runtime_assets.sha256(source)
-        with tempfile.TemporaryDirectory(dir=ROOT/'build') as temp:
+        with tempfile.TemporaryDirectory(prefix='pgbr-fixture-') as temp:
             output=Path(temp)/'patched.apk'
             nonroot.rewrite_apk(source,output,base=True,preview=True,assets={'assets/pgrazor/mode.json':b'{"gadget":false}'})
             with zipfile.ZipFile(source) as before,zipfile.ZipFile(output) as after:
@@ -126,40 +126,40 @@ class PackageTests(unittest.TestCase):
                 nonroot.rewrite_apk(output,Path(temp)/'twice.apk',base=True,preview=True)
 
     def test_bundle_paths_are_never_used_as_output_paths(self):
-        with tempfile.TemporaryDirectory(dir=ROOT/'build') as temp:
+        with tempfile.TemporaryDirectory(prefix='pgbr-fixture-') as temp:
             work=Path(temp); bundle=work/'input.apkm'
             with zipfile.ZipFile(bundle,'w') as out: out.writestr('../../outside.apk',b'fixture')
             apks=nonroot.input_apks(bundle,work)
             self.assertEqual(apks,[work/'input-0.apk']); self.assertEqual(apks[0].read_bytes(),b'fixture')
 
     def test_missing_runtime_never_downloads_without_flag(self):
-        with tempfile.TemporaryDirectory(dir=ROOT/'build') as temp,patch.object(runtime_assets,'ROOT',Path(temp)),patch.object(runtime_assets,'get') as network:
+        with tempfile.TemporaryDirectory(prefix='pgbr-fixture-') as temp,patch.object(runtime_assets,'ROOT',Path(temp)),patch.object(runtime_assets,'get') as network:
             with self.assertRaisesRegex(RuntimeError,'No download attempted'): runtime_assets.gadget('arm64-v8a')
             network.assert_not_called()
 
     def test_bridge_is_pinned_and_tampering_is_rejected(self):
         self.assertEqual(runtime_assets.sha256(runtime_assets.java_bridge()),runtime_assets.BRIDGE_SHA256)
-        with tempfile.TemporaryDirectory(dir=ROOT/'build') as temp,patch.object(runtime_assets,'ROOT',Path(temp)):
+        with tempfile.TemporaryDirectory(prefix='pgbr-fixture-') as temp,patch.object(runtime_assets,'ROOT',Path(temp)):
             with self.assertRaisesRegex(RuntimeError,'missing'): runtime_assets.java_bridge()
             vendor=Path(temp)/'vendor'; vendor.mkdir()
             (vendor/'frida-java-bridge-302a588.js').write_text('modified bridge')
             with self.assertRaisesRegex(RuntimeError,'checksum mismatch'): runtime_assets.java_bridge()
 
     def test_elf_architecture_verified(self):
-        with tempfile.TemporaryDirectory(dir=ROOT/'build') as temp:
+        with tempfile.TemporaryDirectory(prefix='pgbr-fixture-') as temp:
             path=Path(temp)/'gadget.so'; header=bytearray(64); header[:6]=b'\x7fELF\x02\x01'; struct.pack_into('<HH',header,16,3,183); path.write_bytes(header)
             runtime_assets.verify_elf(path,'arm64-v8a')
             with self.assertRaisesRegex(RuntimeError,'architecture'): runtime_assets.verify_elf(path,'x86_64')
 
     def test_stale_source_rejected(self):
-        with tempfile.TemporaryDirectory(dir=ROOT/'build') as temp,patch.object(nonroot,'ROOT',Path(temp)):
+        with tempfile.TemporaryDirectory(prefix='pgbr-fixture-') as temp,patch.object(nonroot,'ROOT',Path(temp)):
             work=Path(temp); (work/'build').mkdir(); (work/'src').mkdir(); (work/'AndroidManifest.xml').write_text('new')
             (work/'VERSION').write_text('0.1.6')
             (work/'build/build-state.json').write_text(json.dumps({'sources':{}}))
             with self.assertRaisesRegex(RuntimeError,'stale'): nonroot.validated_build()
 
     def test_current_receipt_accepts_version_and_rejects_changed_release(self):
-        with tempfile.TemporaryDirectory(dir=ROOT/'build') as temp, patch.object(nonroot,'ROOT',Path(temp)), \
+        with tempfile.TemporaryDirectory(prefix='pgbr-fixture-') as temp, patch.object(nonroot,'ROOT',Path(temp)), \
              patch.dict(nonroot.build.os.environ, {'PGRAZOR_VERSION':'v0.1.6'}):
             work=Path(temp); (work/'build').mkdir(); (work/'src').mkdir()
             (work/'AndroidManifest.xml').write_text('manifest')

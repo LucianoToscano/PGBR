@@ -38,10 +38,8 @@ Thumbs.db
 /website/dist/
 /website/test-results/
 /website/playwright-report/
-*.txt
-!**/CMakeLists.txt
+# Documentation and fixture .txt files remain visible to git; do not commit private logs.
 *.gpx
-!/pgrazor/research/README.txt
 /user-reports
 
 # Resíduos locais gerados por ferramentas (não apagar backups rastreados).

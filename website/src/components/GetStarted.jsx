@@ -26,7 +26,7 @@ export default function GetStarted() {
 
       <div className="cta">
         <a className="btn btn--primary" href={links.releasesLatest}>
-          Baixar a versão de teste
+          Ver compilações de teste
           <ArrowIcon />
         </a>
         {/* Link do projeto de origem temporariamente oculto, mantendo os créditos legais. */}
