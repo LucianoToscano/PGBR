@@ -213,8 +213,8 @@ public final class ResearchSettings {
         row.setGravity(android.view.Gravity.CENTER_VERTICAL);
         row.setPadding(0, MapTheme.dp(ui, 12), 0, MapTheme.dp(ui, 4));
         TextView title = new TextView(ui);
-        String text = (collapsible ? (open ? "▾ " : "▸ ") : "") + categoryName(category) + " (" + templates.size() + ")";
-        if (picked > 0) text += " · " + picked + " ticked";
+        String text = (collapsible ? (open ? "▾ " : "▸ ") : "") + dev.pgrazor.PtBr.tr(categoryName(category)) + " (" + templates.size() + ")";
+        if (picked > 0) text += " · " + picked + (picked == 1 ? " selecionada" : " selecionadas");
         title.setText(dev.pgrazor.PtBr.tr(text));
         title.setTypeface(title.getTypeface(), android.graphics.Typeface.BOLD);
         title.setPadding(0, MapTheme.dp(ui, 8), 0, MapTheme.dp(ui, 8));
