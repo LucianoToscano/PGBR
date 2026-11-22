@@ -411,3 +411,23 @@ O [PR #62](https://github.com/LucianoToscano/PGBR/pull/62) mudou 16 arquivos Jav
 [PR #63](https://github.com/LucianoToscano/PGBR/pull/63) — branch `integracao/lt032-root-ptbr-final-qa-20261122`, sobre PR #61 — reúne os 16 arquivos Java traduzidos e o fixture do PR #62 com todos os módulos Root e sem Root anteriormente testados. A execução [#44991558398](https://github.com/LucianoToscano/PGBR/actions/runs/44991558398) foi iniciada para compilar **novamente** todos os artefatos já com as traduções. **Ainda não confundir as APKs do #61 com resultados do #63** até inspecionar novos hashes e recibos.
 
 **Não encerrar homologação de produto** sem instalação real, PvP GBL, escudos/ataques, VGP com capturas/giro, acessórios/sprites, joystick no jogo, privacidade streaming, comparação do Root+Vector e disponibilização autorizada de feeds de observações.
+
+---
+
+## 22/11/2026 — LT032 QA final com PT-BR aprovado e hashes conferidos
+
+**Conclusão verificável de build (não de homologação no aparelho).** A execução [GitHub Actions #44991558398](https://github.com/LucianoToscano/PGBR/actions/runs/44991558398) do [PR #63](https://github.com/LucianoToscano/PGBR/pull/63) e commit de origem `987910c43e020ee03bff273d7d6f2e1a45b88e62` terminou `success` nos dois jobs: fixtures nativas PvP e `apk-test`. Os três pacotes LT032 com as alterações PT-BR do PR #62 foram **efetivamente** gerados. O artefato baixado foi `PGBR-LT032-PGR036-Root-e-SemRoot-QA` ID **14741698780**, contendo 3 binários e recibos. A execução independente do [PR #62, #44991466213](https://github.com/LucianoToscano/PGBR/actions/runs/44991466213) passou três jobs (Java/Windows, C++ host e NDK ARM64) após reparo do fixture `PtBr`.
+
+Verificação adicional independente da interface do GitHub: ZIP íntegro (`ZipFile.testzip() == None`), leitura de `SHA256SUMS.txt`, `build-info.json`, `root-build-info.json`, versão `0.437.0`, código `2026110902`, arquitetura `arm64-v8a`, módulos compilados, integridade do ZIP embutido no instalador Root, e presença de `zygisk/arm64-v8a.so` + `zygisk/x86_64.so`. **Valores finais (não reutilizar hashes dos builds anteriores):**
+
+| Pacote, compilação com PT-BR | Bytes exatos | SHA-256 |
+| --- | ---: | --- |
+| `PGBR-v0.00.32-LT.apk` não Root | 188761411 | `dfdc61998058f6767e39d2e6507ad78f55040b9330b56a6ed1a85c773e04ee9e` |
+| `PGBR-v0.00.32-LT-Root.apk` instalador Root | 8286926 | `fdc219fb0148bd4c2d564ccb3aeabb7ab16afbd60c08cce18482edc3e09b242a` |
+| `PGBR-v0.00.32-LT-Root-module.zip` módulo Zygisk | 8204368 | `8c723bb17a41571cb42861971288aa2ab7721174095e4012d5bdd9f9c90164f0` |
+
+**Backup no Google Drive:** dentro da pasta existente `PGBR/04_Builds_e_Modulos_PGBR`, foram colocados e conferidos por metadados: [instalador Root](https://drive.google.com/file/d/18LmSk5x4sSdwTVoDTaR7uPyHKHFM3-a8/view), [módulo Zygisk](https://drive.google.com/file/d/1Rt6L0ZnEcq3Swa5VzeCXtSJ6d_3_b8-O/view) e [SHA256SUMS](https://drive.google.com/file/d/1C7nUTJgb2I4iix3L1OD6md-SXhv8uLEh/view). A cópia integral ZIP de ~194,6 MB não pôde ser inserida por limite de upload da integração Drive (100 MB); o APK não Root de 188,8 MB também não foi enviado ao Drive. Sua fonte preservada é o artifact GitHub #14741698780 e o arquivo baixado nesta conversa. **Não confundir ausência de cópia no Drive com ausência do APK.**
+
+**Status de publicação:** compilação, hashes e correspondência das três variantes **aprovados**; nenhum instalador foi fisicamente executado nesta sessão; `device_tested=false` consta no recibo. Preservar a versão instalada atual e rollback. Não marcar como corrigidos sem observação: inicialização e convivência Root+Vector, automação de PvP (ataque carregado/ágil/escudo, leitura de eficácia, estado/energia), VGP/auto spin e auto catch, buscas e feeds de spawns em tempo real com licença confirmada, ícones e sprites de itens, menu, joystick no aparelho, ocultação visual do nome do treinador no mapa/perfil e compatibilidade de assinatura/pacote clone. **Não promover os PRs draft #58–#63 para `main` sem revisão de diffs e validação Android.**
+
+**Governança:** o progresso em arquivos, CI e commits está concluído para esta etapa. As ações de dispositivo e feeds externos continuam registradas como validações de produto necessárias, não como sucesso presumido.
