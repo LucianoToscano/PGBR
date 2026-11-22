@@ -37,6 +37,8 @@ public class JSONObject {
     'dev/pgrazor/BatchEvolutionSettings.java': 'package dev.pgrazor; public class BatchEvolutionSettings {public static boolean active;public static boolean enabled(){return active;}}',
     'dev/pgrazor/GymAutomationSettings.java': 'package dev.pgrazor; public class GymAutomationSettings {public static boolean active;public static boolean running(){return active;}}',
     'dev/pgrazor/SmartCatchSettings.java': 'package dev.pgrazor; public class SmartCatchSettings {public static boolean active;public static boolean gymSpinActive(){return active;}}',
+    # UI-only translation boundary: actual dictionary/rendering is not under test here.
+    'dev/pgrazor/PtBr.java': 'package dev.pgrazor; public final class PtBr {public static String tr(String s){return s;}}',
     'dev/pgrazor/Control.java': '''package dev.pgrazor;
 public class Control {
  public static MotionEngine engine=new MotionEngine();

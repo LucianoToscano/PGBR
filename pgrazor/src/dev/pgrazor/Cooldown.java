@@ -187,7 +187,7 @@ public final class Cooldown {
                     ((ClipboardManager)a.getSystemService(Context.CLIPBOARD_SERVICE))
                         .setPrimaryClip(ClipData.newPlainText("Coordenadas",
                             String.format(Locale.US,"%.7f, %.7f",e.lat,e.lon)));
-                    Toast.makeText(a,"Coordenadas copiadas",Toast.LENGTH_SHORT).show();
+                    Toast.makeText(a,dev.pgrazor.PtBr.tr("Coordenadas copiadas"),Toast.LENGTH_SHORT).show();
                 });
                 map.setOnClickListener(v->WorldMapDialog.show(a,e.lat,e.lon,
                     (lat,lon)->mapApply(a,lat,lon,false),(lat,lon)->mapApply(a,lat,lon,true)));

@@ -45,7 +45,7 @@ public final class PreviewActivity extends Activity {
         if(request!=40 || result!=RESULT_OK || data==null || data.getData()==null || Control.currentLog()==null) return;
         try {
             LogExport.save(this,data.getData(),Control.currentLog());
-            Toast.makeText(this,"Log exported",Toast.LENGTH_SHORT).show();
+            Toast.makeText(this,dev.pgrazor.PtBr.tr("Log exported"),Toast.LENGTH_SHORT).show();
         } catch(IOException error) { Toast.makeText(this,"Export failed: "+error.getMessage(),Toast.LENGTH_LONG).show(); }
     }
 }
