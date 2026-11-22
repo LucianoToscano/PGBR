@@ -106,6 +106,14 @@ public final class PtBrDynamicTest {
         eq("Sends your available gifts, then opens received gifts.", "Envia os presentes disponíveis e depois abre os recebidos.");
         eq("Sends your available gifts to eligible friends, then opens the gifts you have received. Each friend is handled once. The game's own daily limits for sending and opening still apply, so some may be skipped. A single pass runs now — there is no recurring schedule.", "Envia seus presentes disponíveis para amigos elegíveis e depois abre os presentes recebidos. Cada amigo é processado uma vez. Os limites diários do jogo para envio e abertura continuam valendo, então alguns podem ser ignorados. Uma única execução começa agora, sem agendamento recorrente.");
         eq("Feeds the gyms you currently defend once, using surplus berries. Nanab is fed down to its reserve, then surplus Razz. Pinap is optional and off by default. A single batch runs now — there is no recurring schedule. The game's own server limits still apply, so some feeds may be declined. No dust or candy payout is promised.", "Alimenta uma vez os Ginásios que você defende com frutas excedentes. A Fruta Caxí é usada até atingir sua reserva; depois, a Fruta Frambo excedente. A Fruta Abacaxi é opcional e vem desativada. O lote é executado uma única vez, sem agendamento recorrente. Os limites do servidor do jogo continuam valendo e algumas alimentações podem ser recusadas. Não há garantia de Poeira Estelar nem de doces.");
+        eq("Teleport", "Teleporte");
+        eq("Walk / double tap teleport", "Caminhar / toque duplo: Teleporte");
+        eq("Teleport to the beginning\nThen walk the whole route", "Teleporte para o início\nDepois percorrer toda a rota");
+        eq("Teleport to selected destination", "Teleporte para o destino selecionado");
+        eq("Select to place the destination pin here, then choose Teleport or Walk here.", "Selecione para colocar o pino de destino aqui e escolha Teleporte ou Caminhar até aqui.");
+        eq("Teleport\nJump straight to the raid", "Teleporte\nIr diretamente até a Reide");
+        eq("Select shows this destination on the map. Choose Teleport or Walk here there to apply it.", "Selecionar mostra este destino no mapa. Depois, escolha Teleporte ou Caminhar até lá.");
+        eq("Teleport cooldown", "Tempo de espera do teleporte");
         System.out.println("PGBR: testes de textos dinamicos aprovados.");
     }
 }
