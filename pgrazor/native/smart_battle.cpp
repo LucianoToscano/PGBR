@@ -1,4 +1,6 @@
 #include "smart_battle.h"
+#include "battle_timing_policy.h"
+#include "rocket_swap.h"
 #include "battle_counter.h"
 #include "smart_battle_party.h"
 #include "combat_host.h"
@@ -108,11 +110,13 @@ const PgrRuntimeTransportApi *transport(){return static_cast<const PgrRuntimeTra
 void event(const std::string &json){auto tr=transport();if(!tr)return;PgrRuntimeTransportString s[]={{"smart-battle",12},{json.c_str(),uint32_t(json.size())}};tr->emit(19,nullptr,0,s,2);}
 void status(const char *phase,const std::string &message){event(std::string("{\"phase\":\"")+phase+"\",\"message\":\""+message+"\"}");}
 
-// "F1|enabled"; anything else (or a stale snapshot) means off.
+// F2 preserves the original enable bit and independently transports two timing choices.
+// A missing, stale or incoherent snapshot always disables autonomous smart swapping.
 bool configured(){
- auto tr=transport();PgrRuntimeTransportSample a{};char s[16]{};uint32_t n=0;
- if(!tr||tr->sample(&a)||!a.snapshot_fresh||a.fault||tr->get_string(21,s,sizeof(s)-1,&n)||n!=4||std::memcmp(s,"F1|1",4)!=0)return false;
- int active=0,ready=0;tr->get_bool(3,&active);tr->get_bool(16,&ready);return active&&ready;
+ auto tr=transport();pgr_battle_timing::Preferences cfg{};
+ if(!pgr_battle_timing::read(tr,cfg)||!cfg.smart_battle)return false;
+ int active=0,ready=0;
+ return tr->get_bool(3,&active)==0&&tr->get_bool(16,&ready)==0&&active&&ready;
 }
 pgr_smart_party::HealingPolicy healing_policy(){
  auto tr=transport();PgrRuntimeTransportSample a{};char s[64]{};uint32_t n=0;
@@ -549,6 +553,9 @@ bool rocket_battle(){
 
 void battle_step(){
  const uint64_t now=clock_ms();if(now<next_step)return;next_step=now+kStepMs;
+ // A fainted-Pokemon prompt is owned by rocket_swap, including when Auto Swap is
+ // disabled. Never let a strategic swap shortcut the player's chosen grace window.
+ if(pgr_rocket_swap_prompt_active()){press=Press{};rocket_watch=Watch{};return;}
  if(press.on){continue_press(now);return;}
  if(gym_battle())step_gym(now);else gym_watch=Watch{};
  if(rocket_battle())step_rocket(now);else rocket_watch=Watch{};
