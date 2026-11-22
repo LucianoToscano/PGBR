@@ -12,7 +12,6 @@ final class PvpBattleController {
     static final int NO_ACTION = 0, QUICK = 1, CHARGED = 2, SHIELD = 3, NEXT_POKEMON = 4, CHARGED_SECOND = 5;
     private static final long MAX_SAMPLE_AGE_MS = 350;
     private static final long QUICK_INTERVAL_MS = 175;
-    private static final long MAX_PREFERRED_WAIT_MS = 5500;
 
     static final class Observation {
         final int mode;
@@ -61,15 +60,12 @@ final class PvpBattleController {
 
     private long liveBattleId, lastQuickMs = Long.MIN_VALUE;
     private boolean chargedConsumed, secondConsumed, shieldConsumed, nextConsumed, lastChargedReady, lastSecondReady;
-    private long priorityWaitSince=-1;
-    private int previousOpponent1,previousOpponent2;
 
     void reset() {
         liveBattleId = 0;
         lastQuickMs = Long.MIN_VALUE;
         chargedConsumed = secondConsumed = shieldConsumed = nextConsumed = false;
         lastChargedReady = lastSecondReady = false;
-        priorityWaitSince=-1;previousOpponent1=previousOpponent2=0;
     }
 
     int decide(Observation s, int selectedOptions,
@@ -92,10 +88,6 @@ final class PvpBattleController {
         if (!firstReady || (firstReady&&!lastChargedReady)) chargedConsumed=false;
         if (!secondReady || (secondReady&&!lastSecondReady)) secondConsumed=false;
         lastChargedReady=firstReady;lastSecondReady=secondReady;
-        if(previousOpponent1!=s.opponent1||previousOpponent2!=s.opponent2){
-            priorityWaitSince=-1;previousOpponent1=s.opponent1;previousOpponent2=s.opponent2;
-        }
-
         if (!s.inputReady) return NO_ACTION;
         // Never tap through a modal, even if the associated option is disabled.
         if (s.chooseNextPrompt) {
@@ -116,13 +108,6 @@ final class PvpBattleController {
                 choice=PvpChargedPreference.select(s.firstMove,s.secondMove,
                     s.attacker1,s.attacker2,s.opponent1,s.opponent2,
                     s.energy,s.fastEnergyGain,s.hpPercent,mayFarm);
-                if(choice==PvpChargedPreference.WAIT){
-                    if(priorityWaitSince<0)priorityWaitSince=s.nowMs;
-                    if(s.nowMs-priorityWaitSince>=MAX_PREFERRED_WAIT_MS)
-                        choice=PvpChargedPreference.select(s.firstMove,s.secondMove,
-                            s.attacker1,s.attacker2,s.opponent1,s.opponent2,
-                            s.energy,s.fastEnergyGain,s.hpPercent,false);
-                } else priorityWaitSince=-1;
                 if(choice==PvpChargedPreference.FIRST&&!chargedConsumed){
                     chargedConsumed=true;return CHARGED;
                 }
