@@ -1147,6 +1147,43 @@ O novo menu (Batalha Inteligente / Ataque Inteligente / Cura Inteligente), esper
 
 **Estado de entrega:** PR em revisão, sem merge, sem nova release/APK confirmado, testes físicos `device_tested=false`. A geração do APK e o fechamento da falha dependem de CI atual mais validação ao menos em Rocket, Treinamento, GBL, duelo de amigos, Raid/Ginásio/Max sem regressão. É incorreto anunciar 'Ataque Inteligente por eficácia funcional' ou 'PvP corrigido definitivamente' antes de um adaptador de dados validado e teste Android.
 
+
+## 22/11/2026 — Integração #107 confirmada e lançamento LT040 preparado (pendente de release)
+
+**Integração real de código:** [PR PGBR #107](https://github.com/LucianoToscano/PGBR/pull/107) integrada na main no commit **`f873c8652bac5dc4cded154e49fbab82bf778445`** após aprovação dos **cinco checks** no HEAD `e17ae9019dae201b5a9330ff28e124e093724f29`: Java/Root, C++ host (15 fixtures incluindo cena PvP e gate do assistente), NDK ARM64, website e governança. [CI da PR](https://github.com/LucianoToscano/PGBR/actions/runs/45053315564). Isso comprova código e compilações parciais, **não** homologação física.
+
+**Branch de release:** `release/lt040-pvp-scope-20261122`, iniciada no commit já integrado `f873c865...`, preservando LT037/LT038/LT039. Propõe `pgrazor/VERSION=0.00.40-LT`, novas notas `docs/releases/v0.00.40-LT.md`, workflow separado `.github/workflows/pgbr-lt040-release.yml`, novo contrato `test_lt040_release_contract.py`, README/CHANGELOG e atualização dos contratos de versão históricos para permitir a nova versão sem reabrir tags passadas. Nenhum segredo, APK binário ou fonte de fornecedor inserido no GitHub.
+
+**Política de lançamento:** apenas ao integrar a branch de release na main, workflow `push` restrito à nova versão/novo workflow/notas inicia build de QA para sem Root, Root e Zygisk; verifica hashes e integridade cruzada e publica somente uma tag nova `v0.00.40-LT` caso ela ainda não exista. Nunca atualizar tag LT039 nem confundir um workflow com um APK publicado. Se a versão LT040 for publicada, remover gatilhos de push na definição LT040 em um PR posterior (manual only), preservando auditoria e evitar disparos históricos. Associar URLs e SHA-256 reais no Mestre após recibos API. `device_tested=false` até teste Android de GBL/duelo/NPC/Rocket/PVE. Permanecem pendentes eficácia nativa de `smartAttack` (#90), falhas possíveis de detecção VNext-only e tela branca do minijogo.
+
+
+## 22/11/2026 — Recibo factual de merge do lançamento LT040 e registros cruzados
+
+**Main e código funcional:** PR [#107](https://github.com/LucianoToscano/PGBR/pull/107) integrada em `f873c8652bac5dc4cded154e49fbab82bf778445`, após 5 checks concluídos com êxito no HEAD `e17ae9019dae201b5a9330ff28e124e093724f29`. Recuperação de cenas PvP, observer passivo, gate compartilhado somente em sessão validada, diagnóstico e seleções de tempo (sem `Desativado`). `device_tested=false`; a integração não prova a aceitação real de ataques no Android.
+
+**Nova versão:** PR de lançamento [#110](https://github.com/LucianoToscano/PGBR/pull/110) integrada na `main` em `57f6789bb887ef372ba84c922f9c27c00ce3f1bf` (HEAD de release `a0563c36ad91efafb4dc159aff07145047bd8d1f`). Foram 5 checks `success` da PR, incluindo 292 testes, código Java/Root, C++ host, NDK ARM64, website e governança; a falha prévia de nome de APK no README foi corrigida antes do merge. Workflow de lançamento dedicado [Actions #45054751331](https://github.com/LucianoToscano/PGBR/actions/runs/45054751331) foi acionado por push na main; `native-pvp-fixture` passou, e `apk-test` iniciou. **No momento deste recibo, publicação de `v0.00.40-LT` e links/hash de APK ainda não estavam confirmados; nunca considerá-los existentes só pela configuração.** A LT039 e todas as versões anteriores permanecem imutáveis. `device_tested=false`.
+
+**Outros arquivos mestres atualizados sem editar aplicativos:** auditoria do mesmo chat foi integrada em [PokeSearch PR #558](https://github.com/LucianoToscano/PokeSearch/pull/558), commit `5149baae8117294bf7b31eb98ef620ddf2610d17`, arquivo `docs/GUIA_MESTRE.md`; [PvPPokeGo PR #56](https://github.com/LucianoToscano/PvPPokeGo/pull/56), commit `79fc9b032842cd87bcce75b38fcb9fd0b8935ff9`, arquivo `docs/CONSOLIDATED_PROJECT_CONTEXT_2026-09-26.md`; e [PGSharp PR #15](https://github.com/LucianoToscano/PGSharp/pull/15), commit `b9f8dbc67d60f3b3d50e64f928fc919babc5c70e`, `README.md` canônico de referência. Todos foram conferidos na `main` dos respectivos repositórios; sem mudança de código, APK, release, login, API, HUD ou integração de terceiros nesses três projetos. Não alegar cópia de implementação binária do PGSharp.
+
+**Acompanhamento:** usuário solicitou link direto quando o APK novo existir. Foi criada a automação de verificação da release LT040 com ID `6b03334eb52881919bb678ab8493b2fb`, somente para comunicar links reais após confirmação de assets/hashes ou falha definitiva; a presença de monitor não equivale a build aprovada. PGBR [issue #105](https://github.com/LucianoToscano/PGBR/issues/105) continua aberta para reprodução física do assistente e da detecção PvP VNext-only, [#90](https://github.com/LucianoToscano/PGBR/issues/90) continua aberta para ligação real do algoritmo Super eficaz > Neutro > Pouco eficaz; esbranquiçamento do minijogo continua pendente.
+
+**Próxima atualização factual obrigatória:** após o término do workflow, verificar estado `completed/success`, lista real de seis assets, tamanho/digest, tag, links diretos; registrar o recibo neste **mesmo** Mestre e congelar o gatilho `push` da LT040 para manutenção `workflow_dispatch` apenas. Não reescrever histórico anterior.
+
+
+## 22/11/2026 — LT040 publicada: recibos GitHub e congelamento do lançamento
+
+**Merge/release confirmado:** a [PR #110](https://github.com/LucianoToscano/PGBR/pull/110) foi integrada na main em `57f6789bb887ef372ba84c922f9c27c00ce3f1bf`, após 5 checks `success`. [Workflow de build #45054751331](https://github.com/LucianoToscano/PGBR/actions/runs/45054751331) terminou **`completed/success`**, com `native-pvp-fixture` e `apk-test` aprovados, e a [pré-release v0.00.40-LT](https://github.com/LucianoToscano/PGBR/releases/tag/v0.00.40-LT) foi publicada em **2026-11-22T18:32:42Z**, `draft=false`, `prerelease=true`. API GitHub confirmou seis anexos, incluindo os três pacotes, recibos e `SHA256SUMS.txt`. Assinatura via Secrets; sem chave publicada.
+
+| Asset verificado pela API GitHub | Bytes | SHA-256 |
+|---|---:|---|
+| [PGBR-v0.00.40-LT.apk](https://github.com/LucianoToscano/PGBR/releases/download/v0.00.40-LT/PGBR-v0.00.40-LT.apk) | 188831043 | `1326f2223c454de50a99900e1b5e8d1ccca9759fbca1e134ffcc678a9cfa1a56` |
+| [PGBR-v0.00.40-LT-Root.apk](https://github.com/LucianoToscano/PGBR/releases/download/v0.00.40-LT/PGBR-v0.00.40-LT-Root.apk) | 8356558 | `204b6e8529693c1985488405de8cb5dd430d384e9feac1a818fbc6035963f4a8` |
+| [PGBR-v0.00.40-LT-Root-module.zip](https://github.com/LucianoToscano/PGBR/releases/download/v0.00.40-LT/PGBR-v0.00.40-LT-Root-module.zip) | 8271707 | `9817fe4062657cb5241119de6c9182d0853b7b7a44aacf176734ccf588e5951c` |
+| [SHA256SUMS.txt](https://github.com/LucianoToscano/PGBR/releases/download/v0.00.40-LT/SHA256SUMS.txt) | 281 | `0cf3768167964a577dd8c9f8159230ccbb284d01e6c37eb7f53d64a8bf88c9ad` |
+
+Os digests são **dados da API GitHub Releases**, não hashes recalculados baixando o APK. Artefatos LT037, LT038 e LT039 mantidos imutáveis. A `main` recebeu recibos documentais das integrações do PokeSearch #558, PvPPokeGo #56 e PGSharp #15 via PGBR [PR #112](https://github.com/LucianoToscano/PGBR/pull/112), merge `27a39ced365c4978df216f89fad4b5aa9f57a0c0`. A presente alteração de manutenção remove gatilho `push` de `.github/workflows/pgbr-lt040-release.yml`, deixando `workflow_dispatch` para reproduções controladas, e ajusta teste de contrato; nenhum rebuild de uma tag antiga deve disparar.
+
+**Sem homologação física:** `device_tested=false`. A escolha de golpe por eficácia permanece não implementada nativamente [#90](https://github.com/LucianoToscano/PGBR/issues/90), duelos sem Hub/CombatUI podem não passar no classificador [#105](https://github.com/LucianoToscano/PGBR/issues/105), e a tela branca de carregado não foi corrigida. A pré-release permite avaliação no Android, mas os checks **não** provam dano/escudo efetivamente aceitos. O monitor provisório da release, ID `6b03334eb52881919bb678ab8493b2fb`, foi **desativado** após os links diretos serem confirmados, para evitar avisos redundantes.
 ---
 
 ## 22/11/2026 — Sniper 1 e Sniper 2: filtros independentes no PGBR (branch `arena/75dcdb70-pgbr`)
