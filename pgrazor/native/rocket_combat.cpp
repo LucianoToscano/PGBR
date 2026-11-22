@@ -50,6 +50,7 @@ static_assert(offsetof(pgr_rocket_combat_sample_v1, owned_roots) == 56, "sample 
 namespace {
 
 constexpr uint64_t kMaxLeaseMs = 2500;  // feature 20 lease cap (clamp here too for the top gate)
+constexpr uint64_t kShieldChoiceGraceMs = 1700;  // manual No/Yes shield priority
 
 // --- lifetime / publication ---------------------------------------------------------
 std::mutex                    g_install_mutex;
@@ -105,6 +106,7 @@ void    *g_shield_handle = nullptr;  // shield modal
 void    *g_charges[PGR_RC_MAX_CHARGES] = {nullptr};
 uint32_t g_charge_count = 0;
 bool     g_shield_used = false;
+uint64_t g_shield_opened_ms = 0; // per-prompt epoch, cleared on close
 bool     g_failed = false;
 int32_t  g_gate = -1;         // last emitted attack-gate reason (-1 == none, like rocketState.gate=null)
 uint64_t g_last_fast_ms = 0;  // 5 s de-dupe of the quick telemetry event
@@ -249,6 +251,7 @@ void drop_ui()  { void *h = g_ui_handle;  g_ui_handle = nullptr;  refresh(); gc_
 void drop_vui() { void *h = g_vui_handle; g_vui_handle = nullptr; refresh(); gc_free(h); }
 // rocketDrop('shield'): notify feature 20 PROMPT_CLOSE first, then detach + free.
 void drop_shield(uint64_t tid) {
+  g_shield_opened_ms = 0;
   if (!g_shield_handle) return;
   pol_observe(PGR_ROCKET_PROMPT_CLOSE, tid);
   void *h = g_shield_handle; g_shield_handle = nullptr; refresh(); gc_free(h);
@@ -268,7 +271,7 @@ void rocket_clear(uint64_t tid) {
   g_state_handle = g_ui_handle = g_vui_handle = g_shield_handle = g_pending_ui = nullptr;
   g_pvp_scope = false;
   std::memset(g_charges, 0, sizeof(g_charges)); g_charge_count = 0;
-  g_pending_ui_token = 0; g_shield_used = false; g_failed = false; g_gate = -1; g_last_fast_ms = 0;
+  g_pending_ui_token = 0; g_shield_used = false; g_shield_opened_ms = 0; g_failed = false; g_gate = -1; g_last_fast_ms = 0;
   ++g_epoch;
   refresh();
   for (uint32_t i = 0; i < n; ++i) gc_free(old[i]);
@@ -460,7 +463,11 @@ int api_observe(uint32_t kind,void *obj,int32_t aux,uint64_t tid){
       refresh();break;
     case PGR_RC_OBS_SHIELD_PROMPT:
       drop_shield(tid);if(stale(epoch))break;g_shield_used=false;
-      if(aux){g_shield_handle=incoming.release();pol_observe(PGR_ROCKET_PROMPT_OPEN,tid);}refresh();break;
+      if(aux){
+        g_shield_handle=incoming.release();
+        g_shield_opened_ms=boottime_ms();
+        pol_observe(PGR_ROCKET_PROMPT_OPEN,tid);
+      }refresh();break;
     case PGR_RC_OBS_SHIELD_MANUAL:{
       void *cur=gc_target(g_shield_handle);if(stale(epoch))break;
       if(cur&&cur==obj){g_shield_used=true;pol_observe(PGR_ROCKET_SHIELD_USED,tid);}break;
@@ -625,6 +632,11 @@ void tick_body(uint64_t tid, uint64_t now) {
         drop_shield(tid);
       } else if ((mask & 4u) && !g_shield_used && cs == g_cfg.state_open &&
                  read_s32(gui, g_cfg.f_shields) > 0) {
+        // Allow the user to choose No shield before touching the shield button.
+        // This delay applies ONLY to shields, not charged attacks.
+        const uint64_t shield_now=boottime_ms();
+        if(!g_shield_opened_ms || shield_now<g_shield_opened_ms ||
+           shield_now-g_shield_opened_ms<kShieldChoiceGraceMs)return;
         void *button = read_ref(gui, g_cfg.f_button);
         if (button) {
           Root b; b.acquire(button, &err); if (err) { if(!stale(epoch))fault(tid); return; }

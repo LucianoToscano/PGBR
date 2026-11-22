@@ -280,7 +280,8 @@ int scenario(int n) {
       arm(&sc.scope, 4, tid);
       api->observe(PGR_RC_OBS_SHIELD_PROMPT, &sc.shield, 1, tid);
       api->tick(tid, 0);
-      if (sc.shield.shieldClicked != 1) return 3;
+      if (sc.shield.shieldClicked != 0) return 3; // manual choice first
+      usleep(1800000);
       api->update(4, 2500, tid); api->tick(tid, 0);
       if (sc.shield.shieldClicked != 1) return 4;  // shield_used blocks a second press
       break;
@@ -572,7 +573,8 @@ int scenario(int n) {
       api->observe(PGR_RC_OBS_VNEXT_UPDATE,&sc.vui,0,tid);
       api->observe(PGR_RC_OBS_SHIELD_PROMPT,&sc.shield,1,tid);
       api->tick(tid,0);
-      if(sc.shield.shieldClicked!=1)return 63;
+      if(sc.shield.shieldClicked!=0)return 63;
+      usleep(1800000);
       api->update(4,2500,tid);api->tick(tid,0);
       if(sc.shield.shieldClicked!=1)return 64;
       api->observe(PGR_RC_OBS_PVP_SCOPE_EXIT,&sc.vui,0,tid);
@@ -612,13 +614,24 @@ int scenario(int n) {
       if(roots_now()!=0||g_bad_free)return 72;
       break;
     }
+    case 32: { // Manual No closes the shield prompt before automation runs.
+      arm(&sc.scope,4,tid);
+      api->observe(PGR_RC_OBS_SHIELD_PROMPT,&sc.shield,1,tid);
+      api->tick(tid,0);
+      if(sc.shield.shieldClicked!=0)return 73;
+      api->observe(PGR_RC_OBS_SHIELD_CLOSE,&sc.shield,0,tid);
+      usleep(1800000);
+      api->update(4,2500,tid);api->tick(tid,0);
+      if(sc.shield.shieldClicked!=0)return 74;
+      break;
+    }
   }
   g_cb=nullptr;api->tick(tid,1);
   if(roots_now()!=0||g_live!=0||g_bad_free)return 90;
   return 0;
 }
 
-constexpr int kScenarios = 32;
+constexpr int kScenarios = 33;
 
 }  // namespace
 
