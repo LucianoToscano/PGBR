@@ -1110,3 +1110,16 @@ O novo menu (Batalha Inteligente / Ataque Inteligente / Cura Inteligente), esper
 **Estado funcional e limitações mantidas:** escudo 0/1.500/3.000 ms/OFF e troca após nocaute VNext 400/2.000/6.000 ms/OFF; prioridade manual, persistência F2, 250 ms pós-escudo, 150 ms ágil, 500 ms Legacy / 600 ms VNext carregado, 1.000 ms retry KO, 8.000 ms timeout. A seleção estratégica de 2.300 ms continua preservada. `smartAttack` ainda é preferência sem associação nativa universal dos botões de golpes; tela branca do minijogo continua sem causa confirmada. **Aprovação de CI e build NÃO equivale à homologação física: `device_tested=false`**. Testar no Android os oito modos de configuração, cancelamento manual, PvP/treino com identificadores confirmados, Root/sem Root; preservar backup e releases anteriores.
 
 **Proteção contra recompilação histórica:** após publicar, a configuração da LT039 torna-se de manutenção manual `workflow_dispatch` apenas. Esta proteção é registrada em PR de recibo independente, sem reescrever a tag ou anexos da release.
+
+
+## 22/11/2026 — Estudo Ekoparty/PGSharp (2021) e proteção da entrega de GPS (branch isolada)
+
+**Pedido:** estudar o PDF `21-10-ekoparty-mobile-hacking-space-pgsharp.pdf` e o repositório [romainthomas/pgsharp](https://github.com/romainthomas/pgsharp), avaliando implementação no PGBR. **Origem canônica antes de editar:** `main` @ `5087e7486e90f84167017b500cc8c3319e050825`. Branch independente: `feature/ekoparty-gps-validacao-20261122`. Nenhuma substituição ou merge em `main` nesta etapa.
+
+**Evidência histórica:** o material refere-se ao PGSharp 1.33.0 / Pokémon GO 0.221.0 (2021), não ao binário atual. Páginas 26–30 tratam `nativeLocationUpdate`/GPS, 31–36 JNI e registro de natives, 24–25 bypass de assinatura e 48 exemplo Unity. Não copiar offsets, APK embarcado, código obfuscado ou mecanismos de atestação.
+
+**Recurso incremental na branch:** o PGBR **já possui** adaptador de GPS em `GameLocationDelivery.java`. Foi adicionada uma fronteira de validação de latitude/longitude, velocidade e direção **antes** da invocação do método nativo original. Valores inválidos não geram fix sintético e não suprimem o callback real; fix válido subsequente retorna ao fluxo usual. `pgrazor/test/GameLocationDeliveryTest.java` foi ampliado com cenários negativos e recuperação; documentação técnica: [mapeamento histórico para a arquitetura atual](docs/research/PGSHARP_EKOPARTY_2021_GPS_PGBR.md).
+
+**Níveis de evidência:** código fonte modificado em branch; testes JVM/CI **não verificados ainda** no instante do registro; Android APK **não compilado** por esta tarefa; aparelho **não testado**; `device_tested=false`; release **não publicada**. Não afirmar implementação de proxy JNI ou bypass de assinatura, porque não foram realizados. O GPS existente não deve ser descrito como novo.
+
+**Próximas etapas:** avaliar o CI do PR e os testes sobre a branch, obter QA Android/Root sem mexer em branches paralelas, executar teste físico de joystick/Teleporte/GPS real e atualizar este mesmo Mestre com o resultado factual antes de qualquer merge/release.
