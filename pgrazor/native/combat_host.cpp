@@ -606,6 +606,13 @@ bool pvp_gate(uint64_t *tid) {
   return rocket_gate(tid) && g_cfg.gchandle_new && g_cfg.gchandle_get_target &&
       g_cfg.gchandle_free;
 }
+// Feature 19 tracks raid, gym and Max via exact state classes, separately
+// from Rocket. Unknown mode or missing classifier fails closed.
+bool pve_exclusion_clear(uint64_t *tid) {
+  if(!battle_gate(tid))return false;
+  pgr_battle_sample_v1 pve{};
+  return g_battles->sample(&pve)==PGR_BATTLE_OK && !pve.scope_active;
+}
 void pvp_leave(uint64_t tid,const char *reason) {
   uintptr_t old=g_pvp_ui_root;
   g_pvp_ui_root=0; // disarm before managed callbacks
@@ -633,7 +640,14 @@ void pvp_gui_open(const char *ns,const char *name,uint64_t tid) {
 }
 void pvp_vnext_open(void *ui,uint64_t tid) {
   if(!ui||!pvp_gate(&tid))return;
-  if(!g_pvp_scene.vnext(now_ms())){
+  // A VNext GUI alone never grants permission. Existing raid/gym/Max
+  // native scopes always win; missing classification also denies.
+  if(!pve_exclusion_clear(&tid)){
+    g_pvp_scene.reset();
+    if(g_pvp_ui_root)pvp_leave(tid,"excluded-pve-scope");
+    return;
+  }
+  if(!g_pvp_scene.vnext(now_ms()) || !g_pvp_scene.allowlisted()){
     if(g_pvp_ui_root)pvp_leave(tid,"scope-expired");
     return;
   }
@@ -661,7 +675,12 @@ void pvp_vnext_open(void *ui,uint64_t tid) {
 void pvp_vnext_close(void *ui,uint64_t tid) {
   if(!g_pvp_ui_root||!pvp_gate(&tid))return;
   auto target=reinterpret_cast<void*(*)(uintptr_t)>(g_cfg.gchandle_get_target);
-  if(target(g_pvp_ui_root)==ui)pvp_leave(tid,"vnext-closed");
+  if(target(g_pvp_ui_root)==ui){
+    // A later VNext controller must be reclassified; do not inherit this
+    // battle's allowlisted flag after its GUI was destroyed.
+    g_pvp_scene.reset();
+    pvp_leave(tid,"vnext-closed");
+  }
 }
 
 void hook_rk_enter(void *self,void *a1, void *a2, void *method){
@@ -750,7 +769,12 @@ void hook_shared_vn_observe(void *self,void *battle_state,void *method){
 template<HookSlot SLOT,uint32_t KIND,int DESC> void hook_bt_2arg(void *self,void *method){
  auto orig=reinterpret_cast<Fn2Ptr>(load_original(SLOT));FrameGuard frame;uint64_t tid=0;
  if(!battle_gate(&tid)){orig(self,method);return;}PinnedArgs pins{self};
- if(pins.valid&&battle_gate(&tid)){g_battles->observe(KIND,pins.get(0),DESC,tid);drain_leaf_events(tid);
+ if(pins.valid&&battle_gate(&tid)){
+  if constexpr(KIND==PGR_BATTLE_OBS_SCOPE_ENTER){
+    g_pvp_scene.reset();
+    if(g_pvp_ui_root)pvp_leave(tid,"pve-scope-enter");
+  }
+  g_battles->observe(KIND,pins.get(0),DESC,tid);drain_leaf_events(tid);
   // Forward the GymBattleState scope lifecycle to the gym-repeat leaf (owner thread).
   if constexpr(SLOT==HK_BT_SC1_ENTER)gym_repeat_scope(1,tid);
   else if constexpr(SLOT==HK_BT_SC1_EXIT)gym_repeat_scope(0,tid);
@@ -764,7 +788,13 @@ template<HookSlot SLOT,uint32_t KIND,int DESC> void hook_bt_3arg(void *self,void
 template<HookSlot SLOT,uint32_t KIND,int DESC> void hook_bt_4arg(void *self,void *a1,void *a2,void *method){
  auto orig=reinterpret_cast<Fn4Ptr>(load_original(SLOT));FrameGuard frame;uint64_t tid=0;
  if(!battle_gate(&tid)){orig(self,a1,a2,method);return;}PinnedArgs pins{self,a1,a2};
- if(pins.valid&&battle_gate(&tid)){g_battles->observe(KIND,pins.get(0),DESC,tid);drain_leaf_events(tid);}orig(pins.get(0),pins.get(1),pins.get(2),method);
+ if(pins.valid&&battle_gate(&tid)){
+  if constexpr(KIND==PGR_BATTLE_OBS_SCOPE_ENTER){
+    g_pvp_scene.reset();
+    if(g_pvp_ui_root)pvp_leave(tid,"pve-scope-enter");
+  }
+  g_battles->observe(KIND,pins.get(0),DESC,tid);drain_leaf_events(tid);
+ }orig(pins.get(0),pins.get(1),pins.get(2),method);
 }
 void hook_bt_leg_init(void *self,void *p1,void *p2,PgrVec3Val pos,void *method){
  auto orig=reinterpret_cast<FnLegInitPtr>(load_original(HK_BT_LEG_INIT));FrameGuard frame;uint64_t tid=0;
@@ -1678,7 +1708,8 @@ int api_tick(uint64_t proven_tid) {
 
     const uint32_t caps=g_capabilities.load();
     auto terminal=[](){return g_stopping.load()||g_failed.load();};
-    bool pvp_disarm=terminal()||!g_pvp_scene.live(now_ms());
+    bool pvp_disarm=terminal()||!g_pvp_scene.live(now_ms())||
+                     !pve_exclusion_clear(&proven_tid);
     {std::lock_guard<std::mutex> lock(g_options_mutex);
      pvp_disarm=pvp_disarm||(g_opts.flags&PGR_CBH_OPT_ACTIVE)==0||
                 (g_opts.flags&PGR_CBH_OPT_ROCKET_ALLOWED)==0||

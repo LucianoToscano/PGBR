@@ -66,6 +66,9 @@ void observe_pvp_legacy_ui(void *ui,uint64_t tid) {
   if(exc||!boxed||class_of(boxed)!=md_c(6))return;
   void *answer=unbox(boxed);
   if(!answer||*static_cast<const uint8_t*>(answer)!=1)return;
+  // The game's validated CombatType explicitly identifies PvP (also private
+  // challenges); a genuine VNext callback is required before action.
+  g_pvp_scene.verified_pvp_type(now_ms());
   if(!g_pvp_probe.seen) {
     g_pvp_probe.seen=true;
     queue_event(PGR_CBH_EV_BATTLE_ACTION,1,0,tid,
