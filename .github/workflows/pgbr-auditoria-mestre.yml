@@ -46,6 +46,10 @@ jobs:
         run: python -B -m unittest discover -s pgrazor/test -p 'test_transfer_cutoff_host.py' -v
       - name: Verificar sintaxe dos scripts Python novos
         run: python -B -m compileall -q pgrazor/test
+      - name: Validar trava de joystick (limites e estilos PGBR)
+        run: |
+          python -B -m unittest discover -s pgrazor/test -p 'test_joystick_lock_java.py' -v
+          python -B -m unittest discover -s pgrazor/test -p 'test_joystick_lock_integration.py' -v
       - name: Verificar Arquivo Mestre e links internos
         run: python -B -m unittest discover -s pgrazor/test -p 'test_master_governance.py' -v
       - name: Testar o inventário somente leitura
