@@ -311,7 +311,7 @@ class ControlJavaTests(unittest.TestCase):
             self.assertEqual(tested.returncode, 0, tested.stdout + tested.stderr)
             tested = subprocess.run([str(runtime), '-cp', str(classes), 'dev.pgrazor.ControlIdleWalkingTest'], capture_output=True, text=True, timeout=15)
             self.assertEqual(tested.returncode, 0, tested.stdout + tested.stderr)
-            for phase in ('save','load'):
+            for phase in ('save','load','load-off'):
                 tested=subprocess.run([str(runtime),'-cp',str(classes),'dev.pgrazor.ControlSettingsTest',phase,str(work)],capture_output=True,text=True,timeout=15)
                 self.assertEqual(tested.returncode,0,tested.stdout+tested.stderr)
             tested = subprocess.run([str(runtime), '-cp', str(classes), 'dev.pgrazor.ControlSettingsReloadTest',str(work)],

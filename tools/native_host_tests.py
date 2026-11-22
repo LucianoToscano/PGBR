@@ -12,6 +12,7 @@ import tempfile
 ROOT=Path(__file__).resolve().parents[1]
 FIXTURES=(
     'battle_timing_policy_test.cpp',
+    'smart_attack_decision_test.cpp',
     'auto_raid_policy_test.cpp',
     'batch_evolution_policy_test.cpp',
     'buddy_emotion_policy_test.cpp',
