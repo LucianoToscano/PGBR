@@ -65,8 +65,8 @@ public final class PtBrDynamicTest {
         eq("Sunny", "Ensolarado");
         eq("Gym (Blue)", "Ginásio (azul)");
         eq("Minimum players in lobby (1-20)", "Mínimo de jogadores na sala (1–20)");
-        eq("No limit\\nJoin the nearest raid wherever it is", "Sem limite\\nEntrar na reide mais próxima, independentemente da distância");
-        eq("5 km\\nOnly raids within 5 km of where you press Start", "5 km\\nSomente reides em um raio de 5 km do ponto onde você toca em Iniciar");
+        eq("No limit\nJoin the nearest raid wherever it is", "Sem limite\nEntrar na reide mais próxima, independentemente da distância");
+        eq("5 km\nOnly raids within 5 km of where you press Start", "5 km\nSomente reides em um raio de 5 km do ponto onde você toca em Iniciar");
         eq("All 8 nearby checked · 13 checked, 0 shinies · 54/8000 in 24 h", "8 locais próximos verificados · 13 verificados, 0 brilhantes · 54/8000 nas últimas 24 h");
         eq("Your account doesn't have access to this feature.", "Sua conta não tem acesso a este recurso.");
         eq("Stops (1–", "Paradas (1–");
