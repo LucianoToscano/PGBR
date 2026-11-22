@@ -605,3 +605,7 @@ A primeira compilação em [Actions #45005115642](https://github.com/LucianoTosc
 ## 22/11/2026 — Ajuste idempotente do arquivo upstream após merge LT033
 
 Depois do merge PR #68 em `main` @ `28a365fec1277033a1089cb394aecd6e9cc01115`, a execução de arquivo histórico upstream [#45006532786](https://github.com/LucianoToscano/PGBR/actions/runs/45006532786) falhou porque a release `archive-pgrazor-source-root-20261118` **já existia**. Isso não foi falha dos APKs LT033 e não autoriza substituir esse arquivo histórico. A branch `fix/lt033-archive-idempotency-20261122`, baseada exatamente nessa HEAD da main, acrescenta uma verificação de existência com retorno idempotente e leitura da quantidade de assets, preservando a release original. O workflow continuará limitado a alterações no próprio YAML (`on.push.paths`), sem disparar em atualizações comuns da documentação. **CI/merge desta correção pendentes até verificar o novo PR.**
+
+
+### Ajuste complementar no PR #69 (sem cancelar build da release)
+O workflow `.github/workflows/pgbr-lt033-release.yml` também passa a ter filtro `push.paths` restrito à versão, à própria definição da build e às notas versionadas. O motivo é evitar que a documentação/merge corretivo do arquivo histórico dispare de novo o pipeline de 75 minutos para a **mesma tag imutável**. A execução manual `workflow_dispatch` permanece disponível. O build oficial já iniciado em `main` @ `28a365fec1277033a1089cb394aecd6e9cc01115` não sofre alteração retroativa.

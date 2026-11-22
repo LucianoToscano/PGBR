@@ -2,6 +2,12 @@ name: PGBR v0.00.33-LT - compilar e publicar pre-release QA
 on:
   push:
     branches: [main, release/pgbr-v0.00.33-lt-20261122]
+    # Only an actual LT033 version/build definition change should republish the
+    # immutable tag. Docs/maintenance-only merges must not restart a 75m build.
+    paths:
+      - 'pgrazor/VERSION'
+      - '.github/workflows/pgbr-lt033-release.yml'
+      - 'docs/releases/v0.00.33-LT.md'
   workflow_dispatch:
 permissions:
   contents: read
