@@ -22,6 +22,7 @@ FIXTURES=(
     'battle_counter_test.cpp',
     'smart_battle_party_test.cpp',
     'pvp_rank_test.cpp',
+    'pvp_scene_test.cpp', // pure state machine; requires no Android or hook stubs
 )
 
 # Explicitly linked, host-only tests of the real gameplay controller. These are
