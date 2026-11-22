@@ -26,6 +26,9 @@ class PtBrGlossaryTests(unittest.TestCase):
             "Auto-claim completed field research",
             "No root access. Grant root to this app in your root manager, then Re-check.",
             "Batch evolution",
+            "Teleport",
+            "Teleport to selected destination",
+            "Teleport cooldown",
             "Search radius",
             "Settings backup",
             "Catch it",
@@ -56,6 +59,8 @@ class PtBrGlossaryTests(unittest.TestCase):
             with self.subTest(key=key):
                 self.assertIn(key, entries)
                 self.assertNotEqual(entries[key], key)
+        self.assertEqual(entries["Teleport"], "Teleporte")
+        self.assertEqual(entries["Teleport cooldown"], "Tempo de espera do teleporte")
         for key, value in entries.items():
             self.assertTrue(key and value, key)
 
