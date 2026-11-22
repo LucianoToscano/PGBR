@@ -1,0 +1,201 @@
+name: PGBR - GPS Ekoparty QA (sem release)
+# Build isolado somente na branch QA de GPS. Nao publica release, nao cria tag.
+# Artefatos com retencao de 30 dias. Entrada privada e certificado sao lidos
+# dos segredos existentes pelo mesmo fluxo de build verificado da LT040.
+on:
+  push:
+    branches:
+      - qa/ekoparty-gps-apk-20261122
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: pgbr-ekoparty-gpsqa-apk-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  native-pvp-fixture:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - name: Testar escopos PvP e treino sem falsos positivos
+        run: |
+          g++ -std=c++17 -Wall -Wextra -Werror -I pgrazor/native pgrazor/native/pvp_scene_test.cpp -o /tmp/pvp_scene_test
+          /tmp/pvp_scene_test
+      - name: Testar allowlist do motor compartilhado (Rocket, PvP, treino)
+        run: |
+          g++ -std=c++17 -Wall -Wextra -Werror -I pgrazor/native pgrazor/native/battle_target_policy_test.cpp -o /tmp/battle_target_policy_test
+          /tmp/battle_target_policy_test
+      - name: Testar todos os tempos e snapshots fail-closed
+        run: |
+          g++ -std=c++17 -Wall -Wextra -Werror -I pgrazor/native pgrazor/native/battle_timing_policy_test.cpp -o /tmp/battle_timing_test
+          /tmp/battle_timing_test
+      - name: Testar as invocacoes nativas de ataque e escudo no escopo PvP
+        run: |
+          g++ -std=c++17 -O0 -pthread -DPGR_RC_DIRECT_TEST -I pgrazor/native \
+            pgrazor/native/rocket_actions.cpp pgrazor/native/rocket_combat.cpp \
+            pgrazor/native/rocket_combat_test.cpp -o /tmp/pvp_actions_test
+          /tmp/pvp_actions_test
+  apk-test:
+    needs: native-pvp-fixture
+    if: github.repository == 'LucianoToscano/PGBR' && github.ref == 'refs/heads/qa/ekoparty-gps-apk-20261122'
+    permissions:
+      contents: write # Required to fetch pinned asset from a draft release
+    runs-on: windows-latest
+    timeout-minutes: 75
+    defaults:
+      run:
+        shell: pwsh
+    env:
+      PGRAZOR_BUILD_TOOLS: 36.0.0
+      PGRAZOR_ANDROID_PLATFORM: android-36
+      PGRAZOR_VERSION: v0.00.40-LT-gpsQA
+      PGRAZOR_KEY_ALIAS: ${{ secrets.PGRAZOR_KEY_ALIAS }}
+      PGRAZOR_STORE_PASSWORD: ${{ secrets.PGRAZOR_STORE_PASSWORD }}
+      PGRAZOR_KEY_PASSWORD: ${{ secrets.PGRAZOR_KEY_PASSWORD }}
+    steps:
+      - name: Verificar que ha original e assinatura configurados
+        env:
+          PGRAZOR_KEYSTORE_BASE64: ${{ secrets.PGRAZOR_KEYSTORE_BASE64 }}
+        run: |
+          if ([string]::IsNullOrWhiteSpace($env:PGRAZOR_KEYSTORE_BASE64)) { throw 'Assinatura nao configurada' }
+          if ([string]::IsNullOrWhiteSpace($env:PGRAZOR_KEY_ALIAS)) { throw 'Alias ausente' }
+          if ([string]::IsNullOrWhiteSpace($env:PGRAZOR_STORE_PASSWORD)) { throw 'Senha de store ausente' }
+          if ([string]::IsNullOrWhiteSpace($env:PGRAZOR_KEY_PASSWORD)) { throw 'Senha de chave ausente' }
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.12'
+      # Fail fast before SDK/NDK setup if draft asset access is not granted.
+      - name: Pasta temporaria de assinatura
+        run: Add-Content -LiteralPath $env:GITHUB_ENV -Value "PGRAZOR_KEYSTORE=$env:RUNNER_TEMP\pgrazor-selector.jks"
+      - name: Recuperar pacote-base pinado e assinatura
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PGRAZOR_KEYSTORE_BASE64: ${{ secrets.PGRAZOR_KEYSTORE_BASE64 }}
+        run: python -B tools/lt028_pinned_input.py
+      - name: Testar configurações PvP editáveis sem ativar ações não suportadas
+        run: python -B pgrazor/test/test_pvp_settings_ui.py
+      - name: Testar preferências sincronizadas Rocket e PvP
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path build/lt032-tests | Out-Null
+          javac -encoding UTF-8 -d build/lt032-tests pgrazor/src/dev/pgrazor/PvpBattleMode.java pgrazor/src/dev/pgrazor/SharedBattleOptions.java pgrazor/test/SharedBattleOptionsTest.java
+          if ($LASTEXITCODE -ne 0) { throw 'javac falhou' }
+          java -cp build/lt032-tests dev.pgrazor.SharedBattleOptionsTest
+          if ($LASTEXITCODE -ne 0) { throw 'teste de preferências falhou' }
+      - name: Testar transicoes PvP e treinador NPC com preparacao
+        shell: pwsh
+        run: |
+          $compiler = Get-Command clang++ -ErrorAction SilentlyContinue
+          if (!$compiler) { $compiler = Get-Command g++ -ErrorAction SilentlyContinue }
+          if (!$compiler) { throw 'Compilador C++ de testes indisponivel' }
+          New-Item -ItemType Directory -Force -Path build/lt032-tests | Out-Null
+          & $compiler.Source -std=c++17 -Wall -Wextra -Werror -D_ALLOW_COMPILER_AND_STL_VERSION_MISMATCH -I pgrazor/native pgrazor/native/pvp_scene_test.cpp -o build/lt032-tests/pvp_scene.exe
+          if ($LASTEXITCODE -ne 0) { throw 'Compilacao do classificador PvP falhou' }
+          & build/lt032-tests/pvp_scene.exe
+          if ($LASTEXITCODE -ne 0) { throw 'Transicao PvP incorreta' }
+      - name: Testar politica de alvos permitidos no Windows
+        shell: pwsh
+        run: |
+          $compiler = Get-Command clang++ -ErrorAction SilentlyContinue
+          if (!$compiler) { $compiler = Get-Command g++ -ErrorAction SilentlyContinue }
+          if (!$compiler) { throw 'Compilador C++ ausente' }
+          & $compiler.Source -std=c++17 -Wall -Wextra -Werror -D_ALLOW_COMPILER_AND_STL_VERSION_MISMATCH -I pgrazor/native pgrazor/native/battle_target_policy_test.cpp -o build/lt032-tests/battle_target_policy.exe
+          if ($LASTEXITCODE -ne 0) { throw 'Compilacao da allowlist falhou' }
+          & build/lt032-tests/battle_target_policy.exe
+          if ($LASTEXITCODE -ne 0) { throw 'Politica de alvos incorreta' }
+      - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+      - uses: android-actions/setup-android@9fc6c4e9069bf8d3d10b2204b1fb8f6ef7065407
+        with:
+          packages: platform-tools
+          log-accepted-android-sdk-licenses: false
+      - name: Android SDK e NDK
+        run: sdkmanager "platforms;android-36" "build-tools;36.0.0" "sources;android-36" "ndk;27.3.13750724" "ndk;29.0.14206865"
+      - name: CMake e Ninja nativos
+        run: python -m pip install "cmake==4.4.4" "ninja==1.13.2"
+      - name: Configuracao nativa
+        run: |
+          $sdk = $env:ANDROID_SDK_ROOT
+          if (!$sdk) { $sdk = $env:ANDROID_HOME }
+          if (!$sdk) { throw 'Android SDK indisponivel' }
+          $gameNdk = Join-Path $sdk 'ndk/27.3.13750724'
+          $artNdk = Join-Path $sdk 'ndk/29.0.14206865'
+          if (!(Test-Path (Join-Path $gameNdk 'source.properties'))) { throw 'NDK jogo ausente' }
+          if (!(Test-Path (Join-Path $artNdk 'source.properties'))) { throw 'NDK arte ausente' }
+          Add-Content $env:GITHUB_ENV "ANDROID_SDK_ROOT=$sdk"
+          Add-Content $env:GITHUB_ENV "ANDROID_NDK_HOME=$gameNdk"
+          Add-Content $env:GITHUB_ENV "PGRAZOR_ART_NDK=$artNdk"
+          Add-Content $env:GITHUB_ENV "PGRAZOR_NATIVE_DEPS=$(Join-Path $env:RUNNER_TEMP 'pgrazor-native-deps')"
+      - name: Fontes nativos verificados
+        run: |
+          python -B tools/prepare_native.py --download
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python -B pgrazor/art_build.py --check
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Dependencias DEX
+        run: python -c "import sys; sys.path.insert(0, 'pgrazor'); import dex_bridges; dex_bridges.dependencies(download=True)"
+      - name: Auditoria de integridade dos modulos preservados
+        run: python -B pgrazor/test/test_lt032_consolidation.py
+      - name: Testar codigo PGBR apos preparar ferramentas DEX
+        run: python -B tools/check.py
+      - name: Testar menu inteligente e janelas de escolha manual
+        run: |
+          python -B pgrazor/test/test_pvp_settings_ui.py
+          python -B pgrazor/test/test_manual_battle_choice_grace.py
+          python -B pgrazor/test/test_battle_timing_controls.py
+          python -B pgrazor/test/test_lt040_release_contract.py
+      - name: Compilar aplicativo PGBR completo
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: python -B pgrazor/nonroot.py --apk pgrazor/input/game.apkm --google-browser-login
+      - name: APK unico de teste
+        run: |
+          $candidate = Get-ChildItem pgrazor/build/nonroot -Directory | Sort-Object Name -Descending | Select-Object -First 1
+          if (!$candidate) { throw 'Compilacao nao gerou candidato' }
+          python -B pgrazor/release_apk.py --run $candidate.FullName --output dist/pgbr-ekoparty-gpsqa
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $apk = 'dist/pgbr-ekoparty-gpsqa/PGBR-v0.00.40-LT-gpsQA.apk'
+          if (!(Test-Path $apk)) { throw 'APK de teste ausente' }
+          Write-Host "SHA256: $((Get-FileHash $apk -Algorithm SHA256).Hash)"
+      - name: Compilar modulo Root e instalador com o mesmo DEX validado
+        run: |
+          python -B pgrazor/rooted.py pgrazor/input/game.apkm --skip-build --download --output dist/pgbr-ekoparty-gpsqa
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Verificar integridade cruzada das tres variantes
+        run: |
+          python -B tools/verify_release.py dist/pgbr-ekoparty-gpsqa --tag v0.00.40-LT-gpsQA
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          foreach ($name in @('PGBR-v0.00.40-LT-gpsQA.apk','PGBR-v0.00.40-LT-gpsQA-Root.apk','PGBR-v0.00.40-LT-gpsQA-Root-module.zip')) {
+            $asset = Join-Path 'dist/pgbr-ekoparty-gpsqa' $name
+            if (!(Test-Path -LiteralPath $asset)) { throw "Artefato ausente: $name" }
+            Write-Host "$name SHA256 $((Get-FileHash -LiteralPath $asset -Algorithm SHA256).Hash)"
+          }
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: PGBR-Ekoparty-GPS-Root-e-SemRoot-QA
+          path: |
+            dist/pgbr-ekoparty-gpsqa/PGBR-v0.00.40-LT-gpsQA.apk
+            dist/pgbr-ekoparty-gpsqa/PGBR-v0.00.40-LT-gpsQA-Root.apk
+            dist/pgbr-ekoparty-gpsqa/PGBR-v0.00.40-LT-gpsQA-Root-module.zip
+            dist/pgbr-ekoparty-gpsqa/build-info.json
+            dist/pgbr-ekoparty-gpsqa/root-build-info.json
+            dist/pgbr-ekoparty-gpsqa/SHA256SUMS.txt
+          if-no-files-found: error
+          retention-days: 30
+      - name: Apagar chave temporaria
+        if: always()
+        run: |
+          if (!$env:PGRAZOR_KEYSTORE) { exit 0 }
+          $key = [IO.Path]::GetFullPath($env:PGRAZOR_KEYSTORE)
+          $temp = [IO.Path]::GetFullPath($env:RUNNER_TEMP).TrimEnd('\') + '\'
+          if (!$key.StartsWith($temp,[StringComparison]::OrdinalIgnoreCase)) { throw 'Chave fora do temporario' }
+          if (Test-Path $key) { Remove-Item $key }
