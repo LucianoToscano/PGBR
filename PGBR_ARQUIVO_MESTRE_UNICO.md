@@ -784,3 +784,20 @@ A documentação final foi incorporada na [PR #75](https://github.com/LucianoTos
 - [#45014540433](https://github.com/LucianoToscano/PGBR/actions/runs/45014540433): **SUCCESS**, governança, integridade do Mestre e auditoria conservadora.
 
 A API Releases segue retornando `prerelease=true` e seis assets com os **mesmos bytes e digests SHA-256** já registrados na tabela de publicação acima. A nota é apenas documental: **nenhuma nova compilação, alteração de assinatura, reconstrução ou substituição do APK LT034 ocorreu**. Os links de download direto e os três hashes da publicação anterior continuam canônicos. O status `device_tested=false` permanece; o feed diretamente originado no PGSharp e o login Standard seguem não implementados, conforme registro anterior.
+
+
+## 22/11/2026 — PGBR: correção isolada do observador PvP (PGSharp como referência)
+**Pedido:** portar as funções de Auto PvP do PGSharp para PGBR, com autorização declarada pelo responsável. **Base:** `main` @ `1e68fcd3a18e37b26a93a801b2eadd60b5166512`; branch isolada `fix/pvp-pgsharp-screen-observer-20261122`. Fontes: APKs PGSharp 1.33.0, 1.50.3, 1.278.0 e vídeos 13/14 previamente inventariados no Drive.
+
+**Mudança real em fonte:** `pgrazor/native/cutscene_skip.cpp` não torna `tried` permanente antes do bootstrap IL2CPP e aceita o observador `GuiController.Open` validado quando nenhum hook opcional de cutscene está disponível. Novo teste de regressão `pgrazor/test/test_pvp_trace_bootstrap.py`; detalhamento em `docs/PGSHARP_PVP_BRIDGE_AUDIT_20261122.md`. Sem alteração de ABI, recursos Rocket, ataques/escudos, UI, PokéSearch, APKs nem automação em servidores.
+
+**Evidência e limites:** não foi possível inspecionar os executáveis dos APKs nem reproduzir os MP4 no runtime nesta sessão; não foi importado código fechado do PGSharp. Nenhuma função de Auto PvP foi homologada; testes locais e CI ainda pendentes, `device_tested=false`; segundo carregado supereficaz continua não integrado. Revisão pendente por PR, sem merge/publicação automática.
+
+
+## 22/11/2026 — LT035: Auto PvP, observador e ciclo de vida; candidato a QA
+**Branch isolada:** `fix/pvp-pgsharp-screen-observer-20261122`, PR #76. **Base:** main `1e68fcd3a18e37b26a93a801b2eadd60b5166512`; primeiro commit `5f130d0f7bfbb2d075891ca13c17b8a16e82258e` com 5/5 verificações CI `success` no GitHub. O próximo commit também corrige `pvp_scene.h`/`combat_host.cpp`: sessão reconhecida Hub→Preparação→VNext, renovação somente por eventos VNext válidos, limite absoluto 20 minutos, bloqueio de NPC/resolução e expiração sem observação. Novo teste de regressão `pvp_scene_test.cpp`. Preserva Rocket, reides, VGP, joystick, PokeSearch e a ABI existente.
+
+**Release:** versão 0.00.35-LT, notas `docs/releases/v0.00.35-LT.md` e novo workflow `.github/workflows/pgbr-lt035-release.yml` para compilar/assinar/publicar apenas como pré-release QA, mantendo v0.00.34 intacta. A compilação e os links da LT035 precisam ser verificados pela execução, **não presumidos**. A fonte da mudança é código próprio PGBR; **não houve extração/cópia literal** de funções dos APKs PGSharp 1.33/1.50/1.278 na sessão por indisponibilidade de runtime binário, embora o responsável declare autorização. As duas mídias PvP têm auditoria prévia, sem reprodução nova. **device_tested=false** e segundo carregado supereficaz não conectado ao nativo; pendência de teste real GBL, escudos e golpes permanece.
+
+### Continuidade de desenvolvimento paralelo — novo ramo sobre a main atual
+No momento desta integração, a main já havia avançado até `19a42fd564e77e2f1303714a1734dc00cf9cd692` por outros chats alterando exclusivamente o Mestre; esses registros foram preservados integralmente. Branch de integração limpa `release/pgbr-lt035-pvp-rebased-20261122` sobre essa base, com os mesmos arquivos de código da revisão PvP LT035 e adição documental sem sobrescrever histórico. A versão permanece pré-release QA e `device_tested=false`.

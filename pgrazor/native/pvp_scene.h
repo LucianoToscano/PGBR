@@ -1,16 +1,22 @@
 #pragma once
 #include <cstdint>
 #include <cstring>
+#include <limits>
 
-// Conservative transition filter for the 0.437.0 PvP GUI sequence.
-// A generic VNext battle is NEVER classified as PvP without the Combat Hub
-// followed by the preparation view; NPC battles and resolve cancel the lease.
+// Require the 0.437.0 Hub -> Preparation sequence; a generic VNext
+// controller cannot open a PvP scope by itself. NPC and results clear it.
 struct PgrPvpScene {
     enum Stage { IDLE=0, HUB=1, PREPARATION=2, COMBAT=3 };
+    static constexpr uint64_t HUB_MS=600000, PREP_MS=180000;
+    static constexpr uint64_t COMBAT_IDLE_MS=300000, MAX_COMBAT_MS=1200000;
     Stage stage=IDLE;
-    uint64_t expires_ms=0;
+    uint64_t expires_ms=0, started_ms=0, last_vnext_ms=0;
 
-    void reset(){stage=IDLE;expires_ms=0;}
+    static uint64_t until(uint64_t now,uint64_t span) {
+        const uint64_t max=std::numeric_limits<uint64_t>::max();
+        return now>max-span?max:now+span;
+    }
+    void reset(){stage=IDLE;expires_ms=started_ms=last_vnext_ms=0;}
     bool live(uint64_t now) {
         if(!now||!expires_ms||now>=expires_ms){reset();return false;}
         return stage!=IDLE;
@@ -25,17 +31,29 @@ struct PgrPvpScene {
         }
         if(std::strcmp(ns,"Niantic.Holoholo.Combat.HubState")==0 &&
            std::strcmp(name,"CombatHubGuiController")==0){
-            stage=HUB;expires_ms=now+600000;return;
+            reset();stage=HUB;expires_ms=until(now,HUB_MS);return;
         }
         if(std::strcmp(ns,"Niantic.Holoholo.Combat.Preparation")==0 &&
            std::strcmp(name,"CombatPreparationRootGuiController")==0 &&
            stage==HUB && live(now)){
-            stage=PREPARATION;expires_ms=now+180000;
+            stage=PREPARATION;expires_ms=until(now,PREP_MS);
         }
     }
     bool vnext(uint64_t now) {
         if(!live(now))return false;
-        if(stage==PREPARATION){stage=COMBAT;expires_ms=now+300000;}
+        if(stage==PREPARATION){
+            stage=COMBAT;started_ms=last_vnext_ms=now;
+            expires_ms=until(now,COMBAT_IDLE_MS);
+        }else if(stage==COMBAT){
+            // Renew only after an actual VNext update in the same recognized
+            // battle, never on unrelated Unity ticks. Hard-stop at 20 min.
+            if(!started_ms||now<last_vnext_ms||now<started_ms||
+               now-started_ms>=MAX_COMBAT_MS){reset();return false;}
+            last_vnext_ms=now;
+            const uint64_t cap=until(started_ms,MAX_COMBAT_MS);
+            const uint64_t renewed=until(now,COMBAT_IDLE_MS);
+            expires_ms=renewed<cap?renewed:cap;
+        }
         return stage==COMBAT;
     }
 };
