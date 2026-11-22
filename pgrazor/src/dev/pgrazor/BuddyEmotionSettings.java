@@ -149,7 +149,7 @@ public final class BuddyEmotionSettings {
         DialogLifecycle.bind(activity,d,null);d.setOnShowListener(x->{MapTheme.style(edit);MapTheme.styleButtons(d);d.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v->{
             if(!sameAccount(account)||!preferences.enabled()){refresh.run();d.dismiss();return;}
             try{int n=Integer.parseInt(edit.getText().toString().trim());if(n<0||n>1000)throw new NumberFormatException();set("Reserve",n);refresh.run();d.dismiss();}
-            catch(NumberFormatException invalid){edit.setError("Enter a whole number from 0 to 1000.");}
+            catch(NumberFormatException invalid){edit.setError(dev.pgrazor.PtBr.tr("Enter a whole number from 0 to 1000."));}
         });});d.show();
     }
 }
