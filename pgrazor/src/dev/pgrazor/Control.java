@@ -898,8 +898,19 @@ public final class Control {
     public static String healStatus(){return healEnabled?healStatus:"";}
     // Smart battling: one switch, off by default. Native smart_battle.cpp owns all of the behaviour.
     private static volatile boolean smartBattle;
+    // One persistent preference for all battle modes; native selection is not yet wired.
+    private static volatile boolean smartAttack;
     private static volatile String smartBattleStatus="";
     public static boolean smartBattle(){return smartBattle;}
+    public static boolean smartAttack(){return smartAttack;}
+    public static void setSmartAttack(boolean on){
+        if(smartAttack==on)return;
+        smartAttack=on;
+        // Retain the legacy PvP preference without modifying fast/charged/shield bits.
+        pvpBattleOptions=PvpBattleMode.update(pvpBattleOptions,PvpBattleMode.PREFER_SUPER,on);
+        saveSettings();
+        event("smart-attack",on?"PREFERENCE_ON":"PREFERENCE_OFF");
+    }
     public static void setSmartBattle(boolean on){smartBattle=on;if(!on)smartBattleStatus="";saveSettings();event("smart-battle",on?"ON":"OFF");}
     public static String smartBattleStatus(){return smartBattle?smartBattleStatus:"";}
     /** "F1|enabled" for native Smart battling (transport slot 21). */
@@ -1621,6 +1632,12 @@ public final class Control {
                 rocketOptions=SharedBattleOptions.restoreActions(
                     p.containsKey("rocketOptions"),legacyRocket,legacyPvP);
                 pvpBattleOptions=SharedBattleOptions.pvpMask(rocketOptions,legacyPvP);
+                // Migrate the old PvP toggle. This stores preference only,
+                // never claims that native move selection is connected.
+                smartAttack=Boolean.parseBoolean(p.getProperty("smartAttack",
+                    String.valueOf((legacyPvP&PvpBattleMode.PREFER_SUPER)!=0)));
+                pvpBattleOptions=PvpBattleMode.update(
+                    pvpBattleOptions,PvpBattleMode.PREFER_SUPER,smartAttack);
                 pvpBattleReady=false;
                 pvpBattleStatus="Assistente PvP indisponível: aguardando controlador compatível";
                 itemTransferEnabled=Boolean.parseBoolean(p.getProperty("itemTransfer","false"));
@@ -1809,7 +1826,7 @@ public final class Control {
         p.setProperty("battleOptions",String.valueOf(battleOptions));
         p.setProperty("gymRepeatEnabled",String.valueOf(gymRepeatEnabled));
         p.setProperty("rocketOptions",String.valueOf(rocketOptions));
-        p.setProperty("pvpBattleOptions",String.valueOf(pvpBattleOptions));
+        p.setProperty("pvpBattleOptions",String.valueOf(pvpBattleOptions));p.setProperty("smartAttack",String.valueOf(smartAttack));
         p.setProperty("itemTransfer",String.valueOf(itemTransferEnabled));p.setProperty("itemRules",itemRules);p.setProperty("itemLimits",itemLimits);p.setProperty("itemCatalog",itemCatalog);
         p.setProperty("quickSpin",String.valueOf(quickSpinEnabled));
         p.setProperty("eternatusWithoutVgp",String.valueOf(eternatusWithoutVgp));
