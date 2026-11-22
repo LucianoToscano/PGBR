@@ -42,7 +42,8 @@ inline uint32_t state_batch_token(const void *state) {
   // Mix full pointer bits; collisions only cause fallback to be less strict,
   // never establish the identity of a Pokemon or the effective target.
   x=(x>>4)^(x>>23)^(x>>41);
-  return static_cast<uint32_t>(x&0x1FFFFFu) ?: 1u;
+  const uint32_t token=static_cast<uint32_t>(x&0x1FFFFFu);
+  return token?token:1u;
 }
 
 inline bool type_named(const PgrMetaExports &m,const void *type,const char *expected) {
