@@ -471,3 +471,13 @@ Para enfrentar a cobertura insuficiente dos 134 fixtures nativos, a branch de ma
 - `battles_test.cpp` ligado a `battles.cpp` com `PGR_BATTLE_DIRECT_TEST`: reides/ginásios/Max, troca, desvio, recuperação de estado e orbes Max.
 
 O [job Linux da execução #45000885337](https://github.com/LucianoToscano/PGBR/actions/runs/45000885337) passou os 12 testes; os logs registraram explicitamente **296/296 checks Auto-Raid, 53/53 verificações Shiny e 27 casos Rocket**, além dos outros testes de cenário. O website e a compilação de políticas NDK da mesma execução também passaram, mas o gate Java/Windows ainda estava em andamento no momento deste registro. **Não afirmar 134/134 executados**: os 122 fixtures restantes requerem avaliação de dependências e uma matriz de testes adicional. Nenhum desses resultados comprova ataque ou escudo funcionando no jogo real sem Android.
+
+---
+
+## 22/11/2026 — Matriz de aceite de dispositivo e cobertura CI
+
+A matriz de homologação funcional foi registrada em [`docs/QA_LT032_ANDROID_FINAL.md`](docs/QA_LT032_ANDROID_FINAL.md), commit `0e771ede5e725d21ad458c16521c6917e868ff10`. Inclui critérios mensuráveis de instalação/rollback, correlação SHA-256, VGP OFF/ON/ERRO, auto catch/spin, joystick nos cinco estilos e trava 250ms, deslocamento relativo à câmera, PvP ataques/escudos e supereficácia, Rocket/Ginásio/Reide/Max, privacidade visual `*****`, consultas autorizadas, stats, Mateo, Rotas e transferências irreversíveis. **Não é uma declaração de testes em telefone**: campos PASS/FAIL foram deixados em branco para execução real pelo operador.
+
+A ampliação do gate C++ no PR #58 passou 12 fixtures host Linux [job #45000885337](https://github.com/LucianoToscano/PGBR/actions/runs/45000885337), incluindo 27 cenários Rocket e 296 checks Auto-Raid. O build de website e o NDK ARM64 desse mesmo run também passaram; conferir status global de Windows antes de declarar esse run integralmente aprovado.
+
+Requisitos de conclusão inequívoca: o GitHub aprovar o build final de código e de três variantes, os hashes coincidirem com os recibos, o PNG VGP íntegro estar presente **no APK**, e a matriz em aparelho real ter resultados registrados. Fechar o projeto com “sem pendências” enquanto essas evidências estiverem ausentes seria incorreto.
