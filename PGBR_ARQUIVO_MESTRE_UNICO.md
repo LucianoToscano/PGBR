@@ -1124,3 +1124,14 @@ O novo menu (Batalha Inteligente / Ataque Inteligente / Cura Inteligente), esper
 **Ataque Inteligente:** já documentado como **preferência de menu persistida, mas ainda não conectada ao executor nativo universal de golpes 1/2 por eficácia**. Progresso e critérios na [issue #90](https://github.com/LucianoToscano/PGBR/issues/90) (comentada com esta ocorrência). A LT039 **não** implementa esse recurso apesar do switch visível; não confundir com minijogo Excelente.
 
 **Situação deste registro:** triagem de vídeo + código e abertura de issue, **sem correção funcional em código, sem merge, sem build, sem release, sem homologação** (`device_tested=false`). Histórico LT039 e branches paralelas intocados. Não alegar que a troca de janela seja causa confirmada. A presente branch/PR são **exclusivamente documentais** e não acionam APK.
+
+
+### 22/11/2026, 14:46 BRT — Segunda gravação LT039: Treinamento NPC e esbranquiçamento do carregado
+
+**Fonte privada:** Screen_Recording_20261122_144657.mp4, vídeo de 84,39 s enviado no chat (não anexar ao GitHub). É uma batalha de Treinamento contra líder de equipe NPC com Combusken, Magcargo e Flareon; **não é evidência de GBL contra pessoa real**. A tela identifica o PGBR LT039.
+
+**Linha do tempo visual:** aproximadamente 6–10, 22–26, 36–38, 50–52 e 66 s: minijogo carregado quase inteiramente esbranquiçado. Por volta de 42–44 s: Batalha Inteligente e Ataque Inteligente aparecem ligados. Em ~56 s: Ataque Inteligente desligado; ~58 s: ligado, com Ágil, Carregado e Escudo marcados em Rocket e PvP. ~60 s: Ágil e Carregado desmarcados nas duas seções, Escudo marcado. ~70 s: Ataque Inteligente desligado; ~72 s: ligado. As opções Rocket/PvP sincronizadas explicam o espelhamento visual; o vídeo sozinho **não prova** se houve toque do usuário ou regressão da preferência. As animações e mensagens de carregado não demonstram se foram disparadas automaticamente.
+
+**Próxima verificação:** complementar issue [#105](https://github.com/LucianoToscano/PGBR/issues/105) com rastreio sanitizado do modo TRAINER_NPC, transições NpcTrainerInterstitialGui→Preparação→VNext, telemetria de estado, máscara 1/2/4, lease, owner e causa de saída do escopo ao abrir/fechar menu. Reproduzir com toggles ligados e alterados, nova sessão, GBL, duelos de amigos, Rocket e regressões em PVE. Investigar **tela branca de carregado** em subsistema gráfico separado. A seleção por eficácia do Ataque Inteligente continua pendente na [#90](https://github.com/LucianoToscano/PGBR/issues/90).
+
+**Status:** documentação e triagem confirmadas no PR #106; sem patch funcional, sem testes de executor no Android, sem CI desta atualização, sem merge/release/APK novo. Não anunciar funcionalidade corrigida. Preservar o PGRazor original, builds anteriores e demais branches.
