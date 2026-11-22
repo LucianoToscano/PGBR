@@ -534,3 +534,15 @@ O PGRazor upstream `v0.3.6` de 21/11/2026 continua como último release observad
 - [Governança #45003328261](https://github.com/LucianoToscano/PGBR/actions/runs/45003328261) — garantir inventário e Mestre sem perdas.
 
 **Estado dos dois primeiros gates ao escrever:** execução em andamento, ainda sem atestado de sucesso nem novo link de APK verificado. A PR permanece draft e `main` intocada. Testes de Android físico e links de feed autorizados seguem bloqueados por ambiente/credenciais/consentimento.
+
+---
+
+## 22/11/2026 — PR #67: cinco regressões nativas sazonais aprovadas
+
+[PR #67](https://github.com/LucianoToscano/PGBR/pull/67), branch `test/lt032-eventos-vgp-safari-host-20261122`, base PR #66 @ `adf3b5c4b0dbe1eb7736669256b1cc5d85d622a8`, criado para validar código de Eventos sem Android, com permissão GitHub somente leitura, sem modificar artefatos de gameplay.
+
+**CI confirmado:** [run #45003782779](https://github.com/LucianoToscano/PGBR/actions/runs/45003782779) `success`. O log registra **5 fixtures C++ host**, executando implementações nativas reais: `events/event_collector_test.cpp` (Halloween, atribuição de callback, encontros OFF e ações manuais), `route_gift_policy_test.cpp` (Mateo), `safari_always_hit_test.cpp`, `safari_throws_test.cpp` e `safari_vgp_actions_test.cpp`. As **3 verificações JVM em duas suítes** `test_quick_menu_events_java.py` e `test_event_settings_java.py` também passaram (2+1 testes).
+
+**Falhas de CI diagnosticadas e solucionadas, sem alteração de runtime:** primeira tentativa não tinha `dobby.h` no include de testes; segunda encontrou que o stub compilatório pré-existente não definia o tipo `DobbyRegisterContext` e que fixtures Safari não incluíam `<initializer_list>`. Foi criado um *stub exclusivo de host* `pgrazor/test/seasonal-stubs/dobby.h` de registro x86_64 (não usado pelo build do jogo), e foram adicionadas apenas as inclusões C++ faltantes aos arquivos de teste. A terceira execução concluiu toda a matriz.
+
+**Distinção essencial:** a aprovação não equivale a capturar caixas do Halloween 2026 em jogo real, nem comprova estoque Safari/Mighty ou giro/captura VGP+. Exigir testes no Android e período de evento ativo antes da release. A PR de código/menu #66 passou integralmente o [CI #45003323966](https://github.com/LucianoToscano/PGBR/actions/runs/45003323966), com três jobs verdes. O empacotamento [#45003323939](https://github.com/LucianoToscano/PGBR/actions/runs/45003323939) estava gerando o instalador Root ao escrever esta atualização, sem resultado de artifact conferido ainda.
