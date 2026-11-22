@@ -66,8 +66,14 @@ $nonroot = Assert-PlainPath (Join-Path $build 'nonroot') $project
 $retentionPath = Assert-PlainPath (Join-Path $project 'build-retention.json') $project
 $retentionHash = (Get-FileHash -LiteralPath $retentionPath -Algorithm SHA256).Hash.ToLowerInvariant()
 $retention = Get-Content -LiteralPath $retentionPath -Raw | ConvertFrom-Json
-if ((Get-Property $retention 'schema') -ne 1 -or $null -eq (Get-Property $retention 'pinnedRuns')) {
-    throw 'Invalid retention configuration; expected schema 1 and pinnedRuns.'
+# Do not test array-valued properties via a function's pipeline output: PowerShell
+# enumerates an empty array into $null, incorrectly treating a valid [] as missing.
+$pinnedRunsProperty = $retention.PSObject.Properties['pinnedRuns']
+if ((Get-Property $retention 'schema') -ne 1 -or
+    $null -eq $pinnedRunsProperty -or
+    $null -eq $pinnedRunsProperty.Value -or
+    $pinnedRunsProperty.Value -isnot [array]) {
+    throw 'Invalid retention configuration; expected schema 1 and a pinnedRuns array.'
 }
 $pins = @{}
 foreach ($pin in $retention.pinnedRuns) {
@@ -79,7 +85,12 @@ foreach ($pin in $retention.pinnedRuns) {
     $null = Assert-PlainPath (Join-Path $nonroot $name) $project
     $pins[$name] = $reason
 }
-if ($pins.Count -eq 0) { throw 'At least one current/rollback pin is required.' }
+if ($pins.Count -eq 0) {
+    # Fail closed without failing an otherwise successful APK build. In particular,
+    # never decide on behalf of the user which existing local build is a rollback.
+    Write-Output 'Cleanup skipped: no current/rollback run is pinned. Nothing was deleted.'
+    return
+}
 
 $started = [DateTime]::UtcNow
 $cutoff = $started.AddMinutes(-$MinAgeMinutes)
