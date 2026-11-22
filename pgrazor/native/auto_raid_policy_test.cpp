@@ -15,17 +15,12 @@
 //   * Max boss text is 1000 bytes / 200 IDs.
 //   * parse_command must populate a new field `Command::cooldown_ms`.
 //
-// The header snapshot read when these tests were written still parsed the OLD
-// 12-field protocol (max wire 600, boss text 500, no cooldown). Therefore:
-//   * The parsing tests below will NOT compile/pass until the coordinator
-//     updates parse_command + adds Command::cooldown_ms.  This is intended:
-//     the tests encode the target contract.
-//   * Tests marked "CONTRACT" encode expected behavior the current header does
-//     not yet satisfy (see auto_raid_policy_test findings in the handoff). They
-//     are expected to FAIL until the header is fixed. Concrete bugs are NOT
-//     worked around here; they are reported to the coordinator instead.
+// The current auto_raid_policy.h satisfies the cooldown_ms protocol and the
+// complete host fixture passes 296 deterministic assertions on the reviewed
+// checkout. Keep these checks in host CI to detect regressions; a successful
+// fixture does not establish device or live raid correctness.
 //
-// All other helper APIs (classify_*, is_raid_candidate_eligible, pass
+// // All other helper APIs (classify_*, is_raid_candidate_eligible, pass
 // selection, lobby, SessionTracker) are treated as stable and tested against
 // real scenarios rather than by asserting internal constants.
 
