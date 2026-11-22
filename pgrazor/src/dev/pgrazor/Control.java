@@ -900,9 +900,24 @@ public final class Control {
     private static volatile boolean smartBattle;
     // One persistent preference for all battle modes; native selection is not yet wired.
     private static volatile boolean smartAttack;
+    // Independent options; indices 0..3 map to native F2 timing policy, including Disabled.
+    // Defaults intentionally replace LT038's fixed 1.7 s shield / 2.3 s fainted choice.
+    private static volatile int smartShieldTiming=1, smartFaintedSwapTiming=1;
     private static volatile String smartBattleStatus="";
     public static boolean smartBattle(){return smartBattle;}
     public static boolean smartAttack(){return smartAttack;}
+    public static int smartShieldTiming(){return smartShieldTiming;}
+    public static int smartFaintedSwapTiming(){return smartFaintedSwapTiming;}
+    public static void setSmartShieldTiming(int choice){
+        if(choice<0||choice>3||smartShieldTiming==choice)return;
+        smartShieldTiming=choice;saveSettings();
+        event("smart-shield-timing",String.valueOf(choice));
+    }
+    public static void setSmartFaintedSwapTiming(int choice){
+        if(choice<0||choice>3||smartFaintedSwapTiming==choice)return;
+        smartFaintedSwapTiming=choice;saveSettings();
+        event("smart-fainted-swap-timing",String.valueOf(choice));
+    }
     public static void setSmartAttack(boolean on){
         if(smartAttack==on)return;
         smartAttack=on;
@@ -913,8 +928,11 @@ public final class Control {
     }
     public static void setSmartBattle(boolean on){smartBattle=on;if(!on)smartBattleStatus="";saveSettings();event("smart-battle",on?"ON":"OFF");}
     public static String smartBattleStatus(){return smartBattle?smartBattleStatus:"";}
-    /** "F1|enabled" for native Smart battling (transport slot 21). */
-    public static String smartBattleConfig(){return "F1|"+(smartBattle?1:0);}
+    /** "F2|enabled|shield-choice|fainted-swap-choice" (existing transport slot 21).
+     *  The same coherent snapshot supplies both options to the shared native consumers. */
+    public static String smartBattleConfig(){
+        return "F2|"+(smartBattle?1:0)+"|"+smartShieldTiming+"|"+smartFaintedSwapTiming;
+    }
     /** "H2|enabled|when|threshold|revive|full" for the native healer (transport slot 18). */
     public static String healConfig(){return "H2|"+(healEnabled?1:0)+"|"+healWhen+"|"+healThreshold+"|"+(healRevive?1:0)+"|"+(healFull?1:0);}
     public static void configureQuickBall(boolean configured) {
@@ -1636,6 +1654,9 @@ public final class Control {
                 // never claims that native move selection is connected.
                 smartAttack=Boolean.parseBoolean(p.getProperty("smartAttack",
                     String.valueOf((legacyPvP&PvpBattleMode.PREFER_SUPER)!=0)));
+                // Older installs have neither key; use the explicit new defaults.
+                smartShieldTiming=readBoundedVisual(p,"smartShieldTiming",1,0,3);
+                smartFaintedSwapTiming=readBoundedVisual(p,"smartFaintedSwapTiming",1,0,3);
                 pvpBattleOptions=PvpBattleMode.update(
                     pvpBattleOptions,PvpBattleMode.PREFER_SUPER,smartAttack);
                 pvpBattleReady=false;
@@ -1827,6 +1848,8 @@ public final class Control {
         p.setProperty("gymRepeatEnabled",String.valueOf(gymRepeatEnabled));
         p.setProperty("rocketOptions",String.valueOf(rocketOptions));
         p.setProperty("pvpBattleOptions",String.valueOf(pvpBattleOptions));p.setProperty("smartAttack",String.valueOf(smartAttack));
+        p.setProperty("smartShieldTiming",String.valueOf(smartShieldTiming));
+        p.setProperty("smartFaintedSwapTiming",String.valueOf(smartFaintedSwapTiming));
         p.setProperty("itemTransfer",String.valueOf(itemTransferEnabled));p.setProperty("itemRules",itemRules);p.setProperty("itemLimits",itemLimits);p.setProperty("itemCatalog",itemCatalog);
         p.setProperty("quickSpin",String.valueOf(quickSpinEnabled));
         p.setProperty("eternatusWithoutVgp",String.valueOf(eternatusWithoutVgp));
