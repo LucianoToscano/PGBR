@@ -150,7 +150,7 @@ final class SettingsPanel {
     /** A clean close affix: a small X drawn inside a 48dp hitbox. */
     private final class CloseIcon extends View {
         private final Paint paint=new Paint(Paint.ANTI_ALIAS_FLAG);
-        CloseIcon(Context c){super(c);setContentDescription("Close PGBR settings");setFocusable(true);setClickable(true);
+        CloseIcon(Context c){super(c);setContentDescription(dev.pgrazor.PtBr.tr("Close PGBR settings"));setFocusable(true);setClickable(true);
             setBackground(new android.graphics.drawable.RippleDrawable(android.content.res.ColorStateList.valueOf(0x3345e1ba),null,rounded(0xffffffff,24)));}
         protected void onDraw(Canvas c){super.onDraw(c);float cx=getWidth()/2f,cy=getHeight()/2f,r=dp(8);paint.setStyle(Paint.Style.STROKE);paint.setStrokeCap(Paint.Cap.ROUND);paint.setStrokeWidth(dp(2));paint.setColor(muted());c.drawLine(cx-r,cy-r,cx+r,cy+r,paint);c.drawLine(cx-r,cy+r,cx+r,cy-r,paint);}
     }
@@ -158,7 +158,7 @@ final class SettingsPanel {
     /** A drawn back chevron inside a 48dp hitbox; shown only while a category page is open. */
     private final class BackIcon extends View {
         private final Paint paint=new Paint(Paint.ANTI_ALIAS_FLAG);
-        BackIcon(Context c){super(c);setContentDescription("Back to all settings");setFocusable(true);setClickable(true);
+        BackIcon(Context c){super(c);setContentDescription(dev.pgrazor.PtBr.tr("Back to all settings"));setFocusable(true);setClickable(true);
             setBackground(new android.graphics.drawable.RippleDrawable(android.content.res.ColorStateList.valueOf(0x3345e1ba),null,rounded(0xffffffff,24)));}
         protected void onDraw(Canvas c){super.onDraw(c);float cx=getWidth()/2f,cy=getHeight()/2f,r=dp(7);paint.setStyle(Paint.Style.STROKE);paint.setStrokeCap(Paint.Cap.ROUND);paint.setStrokeJoin(Paint.Join.ROUND);paint.setStrokeWidth(dp(2));paint.setColor(accent());
             Path p=new Path();p.moveTo(cx+r/2,cy-r);p.lineTo(cx-r/2,cy);p.lineTo(cx+r/2,cy+r);c.drawPath(p,paint);}
@@ -333,7 +333,7 @@ final class SettingsPanel {
         discord.setOnClickListener(v -> {
             try { activity.startActivity(new Intent(Intent.ACTION_VIEW, android.net.Uri.parse("https://discord.gg/9QqfkDSQX3"))); }
             catch (android.content.ActivityNotFoundException unavailable) {
-                android.widget.Toast.makeText(activity, "No app available to open Discord links", android.widget.Toast.LENGTH_SHORT).show();
+                android.widget.Toast.makeText(activity, dev.pgrazor.PtBr.tr("No app available to open Discord links"), android.widget.Toast.LENGTH_SHORT).show();
             }
         });
 
@@ -618,7 +618,7 @@ final class SettingsPanel {
         caption(joystickArt,"A tempestade gira em duas camadas com fumaça e iluminação. Desative a animação para manter o visual limpo; o vórtice anterior continua disponível.");
         launch(joystickArt,"Escolher imagem do joystick no celular",()->{
             if(Control.engine.routeProgress().active){
-                android.widget.Toast.makeText(activity,"Pause ou encerre a rota antes de abrir o seletor de imagens do Android.",android.widget.Toast.LENGTH_LONG).show();
+                android.widget.Toast.makeText(activity,dev.pgrazor.PtBr.tr("Pause ou encerre a rota antes de abrir o seletor de imagens do Android."),android.widget.Toast.LENGTH_LONG).show();
             }else JoystickImage.select(activity);
         });
         launch(joystickArt,"Restaurar imagem original do joystick",()->{JoystickImage.reset(activity);host.refresh();});
@@ -823,7 +823,7 @@ final class SettingsPanel {
             EditText typed=new EditText(activity);
             typed.setSingleLine(true);typed.setInputType(InputType.TYPE_CLASS_NUMBER);
             typed.setText(String.valueOf(slider.getProgress()));
-            typed.setSelectAllOnFocus(true);typed.setContentDescription("Limite de IV de 0 a 100 por cento");
+            typed.setSelectAllOnFocus(true);typed.setContentDescription(dev.pgrazor.PtBr.tr("Limite de IV de 0 a 100 por cento"));
             box.addView(typed);
             slider.setOnSeekBarChangeListener(new android.widget.SeekBar.OnSeekBarChangeListener(){
                 public void onProgressChanged(android.widget.SeekBar bar,int value,boolean byUser){
@@ -850,8 +850,8 @@ final class SettingsPanel {
                 chooser.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v2->{
                     int value;
                     try{value=Integer.parseInt(typed.getText().toString());}
-                    catch(NumberFormatException bad){typed.setError("Digite um valor de 0 a 100");return;}
-                    if(value<0||value>100){typed.setError("Digite um valor de 0 a 100");return;}
+                    catch(NumberFormatException bad){typed.setError(dev.pgrazor.PtBr.tr("Digite um valor de 0 a 100"));return;}
+                    if(value<0||value>100){typed.setError(dev.pgrazor.PtBr.tr("Digite um valor de 0 a 100"));return;}
                     Control.setTransferIvKeepPercent(value);host.refresh();chooser.dismiss();
                 });
                 chooser.getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener(v2->
@@ -1266,7 +1266,7 @@ final class SettingsPanel {
             aliasDialog.setOnShowListener(d->aliasDialog.getButton(AlertDialog.BUTTON_POSITIVE)
                 .setOnClickListener(v->{
                     if(!Control.setCustomTrainerAlias(name.getText().toString())){
-                        name.setError("Use de 2 a 24 caracteres válidos.");return;
+                        name.setError(dev.pgrazor.PtBr.tr("Use de 2 a 24 caracteres válidos."));return;
                     }
                     updatePrivacy.run();host.refresh();aliasDialog.dismiss();
                 }));
@@ -1483,7 +1483,7 @@ final class SettingsPanel {
         final Runnable[] poll=new Runnable[1];poll[0]=()->{if(!dialog.isShowing())return;Control.requestItemCatalog();populate.run();dependencies.run();status.setText(dev.pgrazor.PtBr.tr(Control.itemStatus()));handler.postDelayed(poll[0],1000);};
         itemDialogs.add(dialog);
         dialog.setOnDismissListener(d->{handler.removeCallbacks(poll[0]);itemDialogs.remove(dialog);});dialog.show();styleTree(form);handler.post(poll[0]);
-        dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v->{StringBuilder rules=new StringBuilder(),all=new StringBuilder();for(java.util.Map.Entry<Integer,EditText> e:inputs.entrySet()){int cap;try{cap=Integer.parseInt(e.getValue().getText().toString().trim());if(cap<0||cap>100000)throw new NumberFormatException();}catch(NumberFormatException invalid){e.getValue().setError("Enter 0 to 100000");return;}String rule=e.getKey()+":"+cap+";";all.append(rule);if(boxes.get(e.getKey()).isChecked())rules.append(rule);}
+        dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v->{StringBuilder rules=new StringBuilder(),all=new StringBuilder();for(java.util.Map.Entry<Integer,EditText> e:inputs.entrySet()){int cap;try{cap=Integer.parseInt(e.getValue().getText().toString().trim());if(cap<0||cap>100000)throw new NumberFormatException();}catch(NumberFormatException invalid){e.getValue().setError(dev.pgrazor.PtBr.tr("Enter 0 to 100000"));return;}String rule=e.getKey()+":"+cap+";";all.append(rule);if(boxes.get(e.getKey()).isChecked())rules.append(rule);}
             Control.saveItemRules(enabled.isChecked(),rules.toString(),all.toString());dialog.dismiss();host.refresh();});
     }
 
