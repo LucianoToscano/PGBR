@@ -836,3 +836,60 @@ O merge da main iniciou o **workflow de release LT035** [#45018980405](https://g
 Outros comprovantes publicados: [SHA256SUMS.txt](https://github.com/LucianoToscano/PGBR/releases/download/v0.00.35-LT/SHA256SUMS.txt), [build-info.json](https://github.com/LucianoToscano/PGBR/releases/download/v0.00.35-LT/build-info.json), [root-build-info.json](https://github.com/LucianoToscano/PGBR/releases/download/v0.00.35-LT/root-build-info.json). Os três pacotes estão disponíveis nos links diretos registrados acima, sob o mesmo release.
 
 **Escopo entregue em código:** observação de UI PvP após bootstrap tardio, aceitação do observador mesmo sem hooks de animação, expiração renovável exclusivamente por atualização VNext de sessão reconhecida, limite máximo de 20 minutos e proteção contra NPCs/resultados. **Limites inalterados:** não se extraiu nem se copiou rotinas literais PvP dos binários PGSharp 1.33.0, 1.50.3 e 1.278.0; a existência de UI nos vídeos não é prova de implementação compatível. `device_tested=false`; golpes rápidos/carregados, escudos e segundo golpe supereficaz ainda carecem de comprovação funcional em GBL e desafio no aparelho. A publicação é QA, não homologação de gameplay.
+
+
+---
+
+<!-- CHAT_PGSHARP_PVP_CROSSPROJECT_20261122 -->
+## 22/11/2026 — Consolidação do chat: PGSharp 1.33/1.50/1.278, Auto PvP PGBR LT035 e projetos irmãos
+
+**Fonte:** histórico desta conversa com a pesquisa, solicitações de copiar funcionalidades PvP, implantação própria PGBR, QA, merge, release e atualizações aos quatro mestres. **Escopo do registro:** somente documentação; não altera executores ou versões. Protocolo Global: conferir Mestre e GitHub HEAD, preservar trabalhos paralelos, branch/PR por tarefa, rastrear fonte e testes, jamais excluir histórico.
+
+### 1. APKs e vídeos identificados
+
+| Versão/material | Referência verificável | Limite de conclusão |
+| --- | --- | --- |
+| PGSharp 1.33.0 (2021) | [pgs1.33.0.apk no Drive](https://drive.google.com/file/d/1qvz4iYBRGfZZycazYagpxLaXMQqx2d48/view); [análise independente romainthomas/pgsharp](https://github.com/romainthomas/pgsharp) | Lua, símbolos e hooks históricos incluindo CombatDirector__Initialize, mas **nenhuma prova de Auto PvP** em 1.33. Repositório acadêmico ≠ fonte oficial completa do PGSharp. |
+| PGSharp 1.50.3 (~2022) | [pgsharp_v1.50.3.apk](https://drive.google.com/file/d/1GuH3JkL77DYC7FfZujcEFxfy4rrafM32/view) | Linha 1.50 lançou **Raid & Gym Battle Assistant** para PvE; não se comprovou executor de GBL. |
+| PGSharp 1.278.0, jogo 0.437.0 (2026) | [pgs1.278.0_0.437.0_GDvJI(arm64).apk](https://drive.google.com/file/d/13wvFdgVpnVHXsRUftJYjWiyQCzmJDsiU/view) | Strings e recursos de batalha catalogados anteriormente, sem diff binário completo validado neste chat. |
+| Vídeo 13 | [Assistente Batalha PvP](https://drive.google.com/file/d/1O6OyTOvJcFcKps5Qn9tHgJoqsfU3tTXM/view), ~44,2 s na auditoria anterior | HUD de ataque ágil, carregado e escudo sobre GBL. |
+| Vídeo 14 | [Assistente Batalha PvP](https://drive.google.com/file/d/1CuMTP0q8X2NSV_8wHmogbeGwTIMimz7n/view), ~76,6 s na auditoria anterior | HUD durante golpes, trocas e animações de escudo. |
+
+**Ressalva técnica:** os vídeos foram analisados por relatório visual anterior, **não reproduzidos novamente** na sessão da implementação. O runtime não permitiu extração/diff real dos três APKs. Nenhuma função binária do PGSharp foi literalmente copiada ou atribuída a offsets verificados. A manifestação do responsável sobre autorização é **declaração do usuário**, não uma auditoria de direitos.
+
+### 2. Alvos de inspeção e separação de escopos
+
+Inventário forense pré-existente para 1.278 inclui `libmain.so`, `classes.dex` do plugin, `res/layout/hl_settings_object_pvpinfo.xml`, `res/layout/hl_context_panel.xml`, e strings `BATTLEASSIST`, `BREAD_BATTLEASSIST`, `rocketFlowIncident`, `battleAssistant`, `breadBattleFast`, `breadBattleCharge1`, `CombatVNextBattleStateShim`, `RaidBattleState`, `GymBattleState`, `pvpCombatStats`, `PVPIV`, `rocket.shield`. Presença de identificadores não comprova execução automática contra jogadores. `PVPIV` descreve rank/estatística; reides/ginásios, Rocket, Max e GBL possuem estados e políticas diferentes. No repositório histórico 1.33, buscas por `pvp` e `autobattle` não localizaram implementação; **ausência em pesquisa textual não significa prova de inexistência no binário**.
+
+### 3. Código PGBR realmente implementado e liberado
+
+- `pgrazor/native/cutscene_skip.cpp`: observa abertura de `GuiController.Open` em modo validado; bootstrap IL2CPP indisponível no primeiro tick agora pode ser reavaliado sem consumir permanentemente a tentativa; observador permanece útil quando nenhum hook opcional de pular cutscenes funciona.
+- `pgrazor/native/pvp_scene.h` e `combat_host.cpp`: escopo PvP reconhecido por Hub → Preparação → CombatVNext; NPC/resolução cancelam; renovação somente sob chamadas válidas VNext com prazo de inatividade e máximo absoluto de 20 minutos; sair da fase COMBAT desarma a sessão.
+- `pgrazor/native/pvp_scene_test.cpp` e `pgrazor/test/test_pvp_trace_bootstrap.py`: regressões para ordem de telas, NPC, timeout, relógio, bootstrap, observador sem hooks de animação.
+- Políticas legadas, contratos LT032/33/34, `test_archiver_idempotency_policy.py`, `test_lt035_release_contract.py`, workflows antigos, README/CHANGELOG e Mestre foram ajustados para permitir LT035 **sem reiniciar releases históricas**.
+- Permanecem limites identificados: flags e bitmask compartilhados Rocket/PvP; segundo golpe carregado mais eficaz `PREFER_SUPER` não validado no executor nativo; execução invocada não comprova toque aceito; escudo, troca e minigame ainda exigem instrumentação/ensaio físico. Não declarar essas pendências como resolvidas.
+
+### 4. PRs, testes, merge, build e release
+
+- [PR #76](https://github.com/LucianoToscano/PGBR/pull/76): correção inicial; CI 5/5 em `5f130d0f7bfbb2d075891ca13c17b8a16e82258e`; encerrada **sem merge** após substituição.
+- [PR #78](https://github.com/LucianoToscano/PGBR/pull/78): tentativa intermediária; encerrada **sem merge**, por conflito com documentação paralela.
+- [PR #79](https://github.com/LucianoToscano/PGBR/pull/79): integração sem perdas do código e QA LT035; CI 5/5; **merged** em `e91b881f000fe7da9f57aed2cafabb1b4a9a1899`.
+- [PR #80](https://github.com/LucianoToscano/PGBR/pull/80): registro no Mestre pós-merge, **merged** em `13a7c91d329fc179bbedbe4e514b303958a7d389`.
+- [PR #81](https://github.com/LucianoToscano/PGBR/pull/81): documentação de release verificada, README e SHA-256, CI 5/5; **merged** em `01111cad8f0ddf0e6f3cd16a63752334956777da`.
+- [GitHub Actions LT035 #45018980405](https://github.com/LucianoToscano/PGBR/actions/runs/45018980405): **completed/success**, fixture PvP, build APK não Root, Root/Zygisk, assinatura/integração, checagem cruzada e publicação de arquivos.
+- [Release v0.00.35-LT](https://github.com/LucianoToscano/PGBR/releases/tag/v0.00.35-LT): **pré-release QA** publicada em 22/11/2026 11:58:51 UTC, preservando LT034 e anteriores.
+  - [PGBR sem Root](https://github.com/LucianoToscano/PGBR/releases/download/v0.00.35-LT/PGBR-v0.00.35-LT.apk): 188.822.851 bytes; SHA-256 `31f361c2b3284a329a6a82e1bf194d6d2dd8a9dd03e6485bccfe94ce6db5d3aa`.
+  - [Instalador Root](https://github.com/LucianoToscano/PGBR/releases/download/v0.00.35-LT/PGBR-v0.00.35-LT-Root.apk): 8.348.366 bytes; SHA-256 `031e4dd2113027520df37fe97f172f7838c6defbf524d2b15b511cdf11645597`.
+  - [Módulo Zygisk](https://github.com/LucianoToscano/PGBR/releases/download/v0.00.35-LT/PGBR-v0.00.35-LT-Root-module.zip): 8.264.186 bytes; SHA-256 `0d972a46dc128b93c8dfab9b00b80676c3cb1adeb59d789a6d4c222a1918ff6e`.
+  - [SHA256SUMS.txt](https://github.com/LucianoToscano/PGBR/releases/download/v0.00.35-LT/SHA256SUMS.txt). Hashes provenientes da API de release e já registrados no Mestre; **não** homologação física.
+
+### 5. Matriz de responsabilidades para projetos irmãos
+
+| Projeto | Uso desta pesquisa | Não confundir |
+| --- | --- | --- |
+| **PGBR** | Observador PvP, executor nativo experimental, `PvpBattleController.java`, `PvpChargedPreference.java`, `rocket_combat.cpp`, `rocket_actions.cpp` | Políticas Java e APIs nativas são camadas diferentes. Segundo carregado, escudo e ações aceitas não foram validados em jogo real. |
+| **PvPPokeGo** | Core desacoplado de OCR, energia, eficácia, preferências e sugestões/intenções; potencial contrato de integração com PGBR | Lógica de preferência/carregado 1/2 não equivale a executor já ligado ao PGBR ou ao jogo. |
+| **PokeSearch** | Catálogos de espécies, PvP rank, tipos, sprites, referência de dados e biblioteca compartilhável | Nenhuma alteração em P1/P2, login, feeds, Auto Hunt ou release oficial LT409 foi realizada. |
+| **PGSharp (repositório do usuário)** | Biblioteca de evidências, estudo comparativo e construtor próprio experimental | Não é o código oficial do fornecedor nem prova de código Auto PvP extraído; direitos de terceiros não são inferidos do nome do repositório. |
+
+**Estado final verificável:** correções próprias PGBR, testes/CI, merge, três APKs e registro documental da LT035 **concluídos**. **Pendências explícitas:** diff binário real das três versões PGSharp; recuperação de funções exatas; reprodução nova dos dois MP4; comprovação de Auto PvP em GBL, seleção de segundo carregado, escudos, trocas, tolerância a mudanças de UI; **device_tested=false**. Esta consolidação documental não gera outra release nem resolve pendências de runtime.
