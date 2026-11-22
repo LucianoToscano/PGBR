@@ -919,3 +919,16 @@ Inventário forense pré-existente para 1.278 inclui `libmain.so`, `classes.dex`
 
 ### Diretrizes de continuidade sem perdas
 Manter Quick Snipers I/II, Radar e fonte PGBR como conceitos separados; preservar telas/ativos de menu, joystick, radar, cooldown, privacidade somente visual, permissões e preferências pré-existentes. Em avanços futuros, anotar versão/ABI/hash do binário, chamada de rede documentada, provenance, TTL/despawn, método de resultado e teste Android; distinguir **observado**, **estático/descompilado**, **implementado**, **CI passou**, **release publicada** e **funcionou fisicamente**. Não colocar keys/tokens no GitHub ou Drive nem anunciar APK funcional além das evidências. Este complemento modifica apenas a documentação canônica.
+
+
+## 22/11/2026 — LT036: relatos do usuário, auditoria e patch experimental de treinamento
+
+**Capturas anexadas nesta conversa:** o sistema Android exibiu `App não instalado` ao tentar abrir `PGBR-v0.00.35-LT.apk` (189 MB), rotulado pelo Android como `Pokémon GO`; outra captura mostra batalha de treinamento com Lickilicky (CP 1500) contra Sneasel (CP 1465), sem ataques automáticos observáveis. As fotos não comprovam que PGBR estava instalado durante o treino — a primeira mostra a falha de instalação.
+
+**Causa de instalação comprovada em fonte:** `pgrazor/nonroot.py` mantém `com.nianticlabs.pokemongo` e re-assina com a chave do PGBR. Outra instalação do mesmo pacote com certificado diferente pode provocar `INSTALL_FAILED_UPDATE_INCOMPATIBLE`, mas o código preciso ainda exige ADB. A variante Root usa instalador de pacote `dev.pgrazor.root` e módulo Zygisk, exige ambiente e versão de jogo compatíveis; não substituir o app oficial nem apagar dados do telefone automaticamente. Guia: [QA_LT036_TREINAMENTO_INSTALACAO.md](docs/QA_LT036_TREINAMENTO_INSTALACAO.md).
+
+**Problema de fonte no treinamento:** `pvp_scene.h` descartava `NpcTrainerInterstitialGui`; a mesma classe aparece em diálogos de Mateo e não prova uma batalha. No patch da branch `fix/lt036-training-shared-battle-20261122` (base `f8ad55bb186ad6321f687cef50a037964d051d96`), a GUI NPC exata só vira um candidato de **45 segundos** e precisa de `CombatPreparationRootGuiController` e callback VNext real para autorizar o motor nativo compartilhado ágil/carregado/escudo. Rocket mantém precedência e cancela até candidatos sem UI capturada; `pvpExecutorReady` indica `mode=training` na sessão apropriada. Não há ativação cega em diálogos de NPC ou em raid/gym/Max.
+
+**Código e testes preparados:** `pgrazor/native/pvp_scene.h`, `pgrazor/native/pvp_scene_test.cpp`, `pgrazor/native/combat_host.cpp`, `pgrazor/src/dev/pgrazor/Control.java`, `pgrazor/src/dev/pgrazor/SettingsPanel.java`, `pgrazor/test/test_lt036_training_scope.py`. Preservados os três bits de preferências Rocket/PvP, anti-reentrância, leases, segurança em Rocket e as releases históricas. CI, merge, APK e assinatura **ainda não haviam sido verificados** no momento deste registro inicial.
+
+**Escopo e evidência:** esta correção não demonstra ataque aceito em Pokémon GO nem resolve o impedimento de assinatura para instalar sobre clientes existentes; precisa de testes físicos separados de ágil/carregado/escudo no treinador, desafios/GBL e diagnóstico de ADB. Sem cópia literal de funções PGSharp e sem second-charged supereficaz homologado. `device_tested=false`.
