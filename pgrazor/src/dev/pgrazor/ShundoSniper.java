@@ -205,7 +205,7 @@ public final class ShundoSniper {
     }
 
     static void setEnabled(Context context, boolean on) {
-        if(on&&AutoRaid.running()){Toast.makeText(context,"Stop Auto-Raid first.",Toast.LENGTH_SHORT).show();return;}
+        if(on&&AutoRaid.running()){Toast.makeText(context,dev.pgrazor.PtBr.tr("Stop Auto-Raid first."),Toast.LENGTH_SHORT).show();return;}
         synchronized (LOCK) {
             if (on == enabled) return;
             enabled = on; dark = false; readinessWait = "";
@@ -588,7 +588,7 @@ public final class ShundoSniper {
             if (enabled && useLive && !liveNote.isEmpty()) b.append('\n').append(liveNote);
             if (enabled && useFeed && !feedNote.isEmpty()) b.append('\n').append(feedNote);
             if (enabled && usePogo && !pogoNote.isEmpty()) b.append('\n').append(pogoNote);
-            b.append(b.length() > 0 ? "\n" : "").append("This session: checked ").append(checked).append(" · shiny ").append(shinies).append(" · caught ").append(caught);
+            b.append(b.length() > 0 ? "\n" : "").append("Nesta sessão: verificados ").append(checked).append(" · brilhantes ").append(shinies).append(" · capturados ").append(caught);
             for (String line : recent) b.append("\n• ").append(line);
             return b.toString();
         }

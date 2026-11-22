@@ -264,9 +264,9 @@ public final class ShinyScanner {
             status.setText(dev.pgrazor.PtBr.tr(status()));
             synchronized (LOCK) {
                 on.setChecked(prefs.enabled); notifyBox.setChecked(prefs.notify); stopBox.setChecked(prefs.stopWalking); holdBox.setChecked(prefs.hold);
-                speed.setText(dev.pgrazor.PtBr.tr("Speed: " + ShinyScanPreferences.speedSummary(prefs.speed)));
-                species.setText(dev.pgrazor.PtBr.tr("Species: " + speciesSummary(prefs.species)));
-                limit.setText(dev.pgrazor.PtBr.tr("Encounter limit: " + ShinyScanPreferences.limitSummary(prefs.dailyLimit)));
+                speed.setText("Velocidade: "+new String[]{"Cuidadosa","Normal","Rápida"}[prefs.speed]);
+                species.setText(dev.pgrazor.PtBr.tr("Espécies: " + speciesSummary(prefs.species)));
+                limit.setText("Limite de encontros: "+(prefs.dailyLimit==0?"Sem limite":prefs.dailyLimit+" em 24 horas"));
             }
             refreshing[0] = false;
         };
@@ -280,21 +280,22 @@ public final class ShinyScanner {
         holdBox.setOnCheckedChangeListener((v, checked) -> { if (refreshing[0]) return; synchronized (LOCK) { prefs.hold = checked; } Control.saveSettings(); update.run(); });
         speed.setOnClickListener(v -> {
             String[] labels = new String[ShinyScanPreferences.SPEED_LABELS.length];
-            String[] hints = {"1 check every 2 s", "About 1 a second", "Up to 3 a second"};
-            for (int i = 0; i < labels.length; i++) labels[i] = ShinyScanPreferences.SPEED_LABELS[i] + "\n" + hints[i];
-            choose(activity, "Scan speed", labels, index -> { synchronized (LOCK) { prefs.speed = index; } Control.saveSettings(); update.run(); });
+            String[] hints = {"1 verificação a cada 2 s", "Cerca de 1 por segundo", "Até 3 por segundo"};
+            final String[] translated={"Cuidadosa","Normal","Rápida"};
+            for (int i = 0; i < labels.length; i++) labels[i] = translated[i] + "\n" + hints[i];
+            choose(activity, "Velocidade de verificação", labels, index -> { synchronized (LOCK) { prefs.speed = index; } Control.saveSettings(); update.run(); });
         });
         limit.setOnClickListener(v -> {
             final int[] choices = ShinyScanPreferences.LIMIT_CHOICES;
             String[] labels = new String[choices.length];
             for (int i = 0; i < choices.length; i++)
-                labels[i] = choices[i] == 0 ? "No limit" : choices[i] + " in 24 hours";
-            choose(activity, "Encounter limit", labels, index -> { synchronized (LOCK) { prefs.dailyLimit = choices[index]; } Control.saveSettings(); update.run(); });
+                labels[i] = choices[i] == 0 ? "Sem limite" : choices[i] + " encontros em 24 horas";
+            choose(activity, "Limite de encontros", labels, index -> { synchronized (LOCK) { prefs.dailyLimit = choices[index]; } Control.saveSettings(); update.run(); });
         });
-        species.setOnClickListener(v -> PokemonSpeciesDialog.show(activity, "Species to check", "species", AutoRaidPreferences.MAX_BOSSES,
+        species.setOnClickListener(v -> PokemonSpeciesDialog.show(activity, "Espécies para verificar", "species", AutoRaidPreferences.MAX_BOSSES,
             () -> { synchronized (LOCK) { return prefs.species; } },
             value -> { String list = AutoRaidPreferences.normalizeBosses(value); synchronized (LOCK) { prefs.species = list; } Control.saveSettings(); },
-            update, "Every species (no selection)", null));
+            update, "Todas as espécies (sem seleção)", null));
 
         update.run();
         ScrollView scroll = new ScrollView(ui); scroll.addView(body);

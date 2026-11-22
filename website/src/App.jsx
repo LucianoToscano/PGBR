@@ -10,7 +10,7 @@ import GuideDetail from './components/GuideDetail.jsx';
 import { featureGuides } from './components/guideData.js';
 import { useTheme } from './hooks/useTheme.js';
 
-const HOME_TITLE = 'PGBR-v0.00.01-LT — edição brasileira';
+const HOME_TITLE = 'PGBR-v0.00.03-LT — edição brasileira';
 const HOME_DESCRIPTION =
   'PGBR: controles de localização, joystick, rotas e opções de automação em português brasileiro para Android ARM64.';
 
@@ -44,16 +44,16 @@ export default function App() {
     let title = HOME_TITLE;
     let description = HOME_DESCRIPTION;
     if (route.view === 'index') {
-      title = 'Feature guides — PGBR';
+      title = 'Guias de recursos — PGBR';
       description =
-        'Step-by-step how-to guides for PGBR’s catching, location, automation, and personalisation features.';
+        'Guias passo a passo dos recursos de captura, localização, automação e personalização do PGBR.';
     } else if (route.view === 'detail' && guide) {
-      title = `${guide.title} — PGBR feature guide`;
+      title = `${guide.title} — Guia do PGBR`;
       description = guide.summary || description;
     } else if (route.view === 'detail') {
-      title = 'Guide not found — PGBR';
+      title = 'Guia não encontrado — PGBR';
       description =
-        'That PGBR feature guide could not be found. Browse the full list of feature guides.';
+        'O guia solicitado não foi encontrado. Consulte a lista completa de recursos.';
     }
     document.title = title;
     if (meta && description) meta.content = description;
@@ -73,7 +73,7 @@ export default function App() {
 
   return (
     <>
-      <a className="skip-link" href="#main">Skip to content</a>
+      <a className="skip-link" href="#main">Ir para o conteúdo</a>
       <Header theme={theme} onToggleTheme={toggle} onGuide={onGuide} />
       <main id="main" tabIndex={-1}>
         {route.view === 'home' && (

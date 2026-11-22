@@ -64,7 +64,7 @@ public class AutoWalkTest {
         // Zero is the only sub-0.5 value allowed.
         rejects(() -> at(0, 0).speed(0.3), "Rejects speed between 0 and 0.5");
         rejects(() -> at(0, 0).speed(-1), "Rejects negative speed");
-        rejects(() -> at(0, 0).speed(31), "Rejects speed above 30");
+        rejects(() -> at(0, 0).speed(60.1), "Rejects speed above 60");
         rejects(() -> at(0, 0).speed(Double.NaN), "Rejects NaN speed");
     }
 

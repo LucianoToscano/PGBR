@@ -25,6 +25,7 @@ public final class Control {
  public static Error failure; public static Runnable callback;
  public static void event(String kind,String detail){events.add(kind+"|"+detail);
   if(callback!=null)callback.run();if(failure!=null)throw failure;}
+ public static int syncTrainerPrivacyDisplay(){return 0;}
 }''',
 }
 

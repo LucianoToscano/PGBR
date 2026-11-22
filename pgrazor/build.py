@@ -23,9 +23,9 @@ def release_version(root):
     return 'v' + version.removeprefix('v')
 
 def map_icon_assets():
-    """Bundled POI marker PNGs plus the Pokemon name table for assets/pgrazor/map-icons.
+    """Bundled POI marker PNGs, HD VGP WebP sprites and the Pokemon name table for assets/pgrazor/map-icons.
 
-    Only direct *.png children of assets/map-icons are taken (no recursion/traversal), and the
+    Only direct *.png and *.webp children of assets/map-icons are taken (no recursion/traversal), and the
     archive name is always the bare file name so a crafted source path cannot escape the folder.
     pokemon-names.json (the raid-boss name lookup read by the Java map) is included under the same
     bare-name, no-symlink, stays-inside-the-folder checks. Both preview and nonroot packaging reuse
@@ -34,7 +34,7 @@ def map_icon_assets():
     source = ROOT / 'assets/map-icons'
     icons = {}
     if source.is_dir():
-        for path in sorted(source.glob('*.png')):
+        for path in sorted(list(source.glob('*.png')) + list(source.glob('*.webp'))):
             if path.is_symlink() or not path.resolve().is_relative_to(source.resolve()):
                 raise ValueError("Map icon escapes asset directory")
             if path.is_file():
@@ -42,6 +42,20 @@ def map_icon_assets():
         names = source / 'pokemon-names.json'
         if names.is_file() and not names.is_symlink() and names.resolve().is_relative_to(source.resolve()):
             icons.setdefault(names.name, names)
+    return icons
+
+def item_icon_assets():
+    """Verified original item sprites (numeric item ID); no recursion or path traversal."""
+    source = ROOT / 'assets/item-icons'
+    icons = {}
+    if source.is_dir():
+        for path in sorted(source.glob('item-*.png')):
+            if not re.fullmatch(r'item-[1-9][0-9]{0,5}\.png', path.name):
+                continue
+            if path.is_symlink() or not path.resolve().is_relative_to(source.resolve()):
+                raise ValueError('Item icon escapes asset directory')
+            if path.is_file():
+                icons[path.name] = path
     return icons
 
 def feed_icon_assets():
@@ -100,6 +114,11 @@ def main():
     run('java','-cp',BUILD/'tests','CameraHeadingStateTest')
     run('javac','-encoding','UTF-8','-d',BUILD/'tests',ROOT/'src/dev/pgrazor/ShundoPacing.java',ROOT/'test/ShundoPacingTest.java')
     run('java','-cp',BUILD/'tests','dev.pgrazor.ShundoPacingTest')
+    run('javac','-encoding','UTF-8','-d',BUILD/'tests',ROOT/'src/dev/pgrazor/PvpBattleMode.java',ROOT/'test/PvpBattleModeTest.java')
+    run('java','-cp',BUILD/'tests','dev.pgrazor.PvpBattleModeTest')
+    run('javac','-encoding','UTF-8','-d',BUILD/'tests',ROOT/'src/dev/pgrazor/PvpBattleMode.java',ROOT/'src/dev/pgrazor/PvpChargedPreference.java',ROOT/'src/dev/pgrazor/PvpBattleController.java',ROOT/'test/PvpBattleControllerTest.java',ROOT/'test/PvpChargedPreferenceTest.java')
+    run('java','-cp',BUILD/'tests','dev.pgrazor.PvpBattleControllerTest')
+    run('java','-cp',BUILD/'tests','dev.pgrazor.PvpChargedPreferenceTest')
     if args.test_only: return
     version = release_version(ROOT)
     # Fresh outputs prevent a failed compiler from silently reusing old classes.
@@ -121,7 +140,10 @@ def main():
     with zipfile.ZipFile(unsigned,'a',zipfile.ZIP_DEFLATED) as out:
         out.write(BUILD/'dex/classes.dex','classes.dex')
         for name,path in map_icon_assets().items(): out.write(path,'assets/pgrazor/map-icons/'+name)
+        for name,path in item_icon_assets().items(): out.write(path,'assets/pgrazor/item-icons/'+name)
         for name,path in feed_icon_assets().items(): out.write(path,'assets/pgrazor/feed-icons/pokemon/'+name)
+        logo=ROOT/'branding/pgbr-logo.webp'
+        if logo.is_file(): out.write(logo,'assets/pgrazor/branding/pgbr-logo.webp')
     run(TOOLS/'zipalign.exe','-f','4',unsigned,BUILD/'preview-aligned.apk')
     apk=BUILD/'pgrazor-preview.apk'
     run(TOOLS/'apksigner.bat','sign',*signing_args(),'--out',apk,BUILD/'preview-aligned.apk')

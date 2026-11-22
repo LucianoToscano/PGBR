@@ -21,8 +21,8 @@ public final class EventPanel {
         if (activity.isFinishing() || activity.isDestroyed()) return;
         AlertDialog dialog = dev.pgrazor.ChoiceList.attach(new AlertDialog.Builder(theme(activity, dark))
             .setTitle(dev.pgrazor.PtBr.tr("Events"))
-            .setNegativeButton(dev.pgrazor.PtBr.tr("Close"), null).create(), new String[]{"Halloween 2026", "Go Wild November 2026"},
-            index -> { if (index == 0) showHalloween(activity, dark); else showGoWild(activity, dark); });
+            .setNegativeButton(dev.pgrazor.PtBr.tr("Close"), null).create(), new String[]{"Halloween 2026", "Área Selvagem · novembro de 2026", "Evento Rota Doces Eternatus"},
+            index -> { if (index == 0) showHalloween(activity, dark); else if(index==1) showGoWild(activity,dark); else showEternatus(activity,dark); });
         bind(activity, dialog, () -> {});
         dialog.show();
     }
@@ -146,6 +146,192 @@ public final class EventPanel {
         });
         bind(activity, dialog, () -> {});
         dialog.show();
+    }
+
+
+    /** One-at-a-time Eternatus research tracking; no unverified reward recognition. */
+    public static void showEternatus(Activity activity,boolean dark){
+        if(activity.isFinishing()||activity.isDestroyed())return;
+        Context ui=theme(activity,dark);
+        LinearLayout layout=new LinearLayout(ui);layout.setOrientation(LinearLayout.VERTICAL);
+        int pad=Math.round(16*ui.getResources().getDisplayMetrics().density);
+        layout.setPadding(pad,pad,pad,pad);
+        TextView gpxStatus=new TextView(ui);
+        gpxStatus.setTextSize(15);
+        gpxStatus.setPadding(0,0,0,pad/2);
+        layout.addView(gpxStatus);
+        android.widget.Button importGpx=new android.widget.Button(ui);
+        importGpx.setAllCaps(false);
+        importGpx.setText("Importar GPX");
+        layout.addView(importGpx);
+        android.widget.Button savedGpx=new android.widget.Button(ui);
+        savedGpx.setAllCaps(false);
+        savedGpx.setText("Carregar GPX salvo");
+        layout.addView(savedGpx);
+        TextView startPositionLabel=new TextView(ui);
+        startPositionLabel.setText("Iniciar / retomar na coordenada (1 até o total da rota):");
+        startPositionLabel.setTextSize(13);
+        layout.addView(startPositionLabel);
+        android.widget.EditText startPosition=new android.widget.EditText(ui);
+        startPosition.setSingleLine(true);
+        startPosition.setInputType(android.text.InputType.TYPE_CLASS_NUMBER);
+        startPosition.setSelectAllOnFocus(true);
+        startPosition.setText(String.valueOf(dev.pgrazor.EternatusRouteRunner.resumePosition()));
+        startPosition.setContentDescription("Número da coordenada inicial da rota Eternatus");
+        layout.addView(startPosition);
+        final String[] selected={dev.pgrazor.EternatusRouteRunner.selectedTemplate()};
+        android.widget.Button select=new android.widget.Button(ui);
+        select.setAllCaps(false);
+        select.setText("Escolher pesquisa");
+        for (String[] task : dev.pgrazor.ResearchSettings.observedTemplates()) {
+            if (task[0].equals(selected[0])) {
+                select.setText(dev.pgrazor.PtBr.tr(task[1]) + "\n" + dev.pgrazor.PtBr.tr(task[2]));
+                break;
+            }
+        }
+        layout.addView(select);
+        android.widget.CheckBox verifiedReward=new android.widget.CheckBox(ui);
+        verifiedReward.setText(dev.pgrazor.PtBr.tr("Conferi que a missão selecionada concede 25 doces Eternatus"));
+        layout.addView(verifiedReward);
+        android.widget.CheckBox withoutVgp=new android.widget.CheckBox(ui);
+        withoutVgp.setText("Sem VGP: giro rápido e captura assistida ao tocar no mapa");
+        withoutVgp.setChecked(dev.pgrazor.Control.eternatusWithoutVgp());
+        withoutVgp.setOnCheckedChangeListener((button,enabled)->
+            dev.pgrazor.Control.setEternatusWithoutVgp(enabled));
+        layout.addView(withoutVgp);
+        android.widget.CheckBox continueByTime=new android.widget.CheckBox(ui);
+        continueByTime.setText("Avançar após tempo de ação mesmo sem resgate confirmado (sem contar doces)");
+        continueByTime.setChecked(dev.pgrazor.Control.eternatusTimedAdvance());
+        continueByTime.setOnCheckedChangeListener((button,enabled)->
+            dev.pgrazor.Control.setEternatusTimedAdvance(enabled));
+        layout.addView(continueByTime);
+        select.setOnClickListener(v->{
+            java.util.List<String[]> catalog=dev.pgrazor.ResearchSettings.observedTemplates();
+            if(catalog.isEmpty()){
+                android.widget.Toast.makeText(activity,"Nenhuma pesquisa foi detectada. Abra Pesquisas após receber uma missão no jogo.",android.widget.Toast.LENGTH_LONG).show();
+                return;
+            }
+            String[] labels = new String[catalog.size()];
+            java.util.Set<String> seen = new java.util.HashSet<>();
+            java.util.Set<String> duplicates = new java.util.HashSet<>();
+            for (int i = 0; i < labels.length; i++) {
+                String[] q = catalog.get(i);
+                labels[i] = dev.pgrazor.PtBr.tr(q[1]) + "\n" + dev.pgrazor.PtBr.tr(q[2]);
+                if (!seen.add(labels[i])) duplicates.add(labels[i]);
+            }
+            for (int i = 0; i < labels.length; i++)
+                if (duplicates.contains(labels[i])) labels[i] += "\n" + catalog.get(i)[0];
+            new AlertDialog.Builder(ui).setTitle("Escolher pesquisa")
+                .setItems(labels,(d,choice)->{
+                    String[] q = catalog.get(choice);
+                    if (dev.pgrazor.EternatusRouteRunner.chooseTemplate(q[0])) {
+                        verifiedReward.setChecked(false);
+                        selected[0] = q[0];
+                        select.setText(labels[choice]);
+                    }
+                }).setNegativeButton("Cancelar",null).show();
+        });
+        android.widget.Button startAuto=new android.widget.Button(ui);
+        startAuto.setAllCaps(false);startAuto.setText("Ativar rota");layout.addView(startAuto);
+        android.widget.Button stopAuto=new android.widget.Button(ui);
+        stopAuto.setAllCaps(false);stopAuto.setText("Desativar");layout.addView(stopAuto);
+        android.widget.Button skipMissing=new android.widget.Button(ui);
+        skipMissing.setAllCaps(false);skipMissing.setText("Pular parada sem missão (manual)");
+        layout.addView(skipMissing);
+        TextView diagnostic=new TextView(ui);
+        diagnostic.setTextSize(12);
+        diagnostic.setText("Cada parada espera o cooldown chegar a zero + 3 segundos. No modo sem VGP, Giro rápido exige abrir o disco e Captura no mapa exige tocar no Pokémon: isso NÃO automatiza os toques. A continuação por tempo ocorre após 22 s de ferramentas prontas, mas NUNCA soma doces sem confirmação real.");
+        layout.addView(diagnostic);
+        TextView tally = new TextView(ui);
+        tally.setPadding(0,pad/2,0,0);
+        tally.setTextSize(13);
+        layout.addView(tally);
+        ScrollView scroll=new ScrollView(ui);scroll.addView(layout);
+        AlertDialog dialog=new AlertDialog.Builder(ui).setTitle(dev.pgrazor.PtBr.tr("Evento Rota Doces Eternatus"))
+            .setView(scroll).setNegativeButton(dev.pgrazor.PtBr.tr("Fechar"),null).create();
+        importGpx.setOnClickListener(v->{dialog.dismiss();dev.pgrazor.GpxRouteDialog.importGpx(activity,"Eternatus",selectedRoute->{
+            if(!dev.pgrazor.EternatusRouteRunner.chooseRoute(selectedRoute))
+                android.widget.Toast.makeText(activity,"Rota indisponível ou com mais de "+dev.pgrazor.GpxCodec.MAX_POINTS+" paradas.",android.widget.Toast.LENGTH_LONG).show();
+            dev.pgrazor.GpxRouteDialog.whenResumed(activity,()->showEternatus(activity,dark));
+        });});
+        savedGpx.setOnClickListener(v->{dialog.dismiss();dev.pgrazor.GpxRouteDialog.chooseSaved(activity,selectedRoute->{
+            if(!dev.pgrazor.EternatusRouteRunner.chooseRoute(selectedRoute))
+                android.widget.Toast.makeText(activity,"Rota indisponível ou com mais de "+dev.pgrazor.GpxCodec.MAX_POINTS+" paradas.",android.widget.Toast.LENGTH_LONG).show();
+            dev.pgrazor.GpxRouteDialog.whenResumed(activity,()->showEternatus(activity,dark));
+        });});
+        startAuto.setOnClickListener(v->{
+            if(!verifiedReward.isChecked() && !continueByTime.isChecked()){
+                android.widget.Toast.makeText(activity,
+                    "Confirme a recompensa de 25 doces ou habilite o avanço por tempo sem contabilizar doces.",
+                    android.widget.Toast.LENGTH_LONG).show();return;
+            }
+            new AlertDialog.Builder(ui).setTitle("Iniciar rota Eternatus?")
+                .setMessage("Iniciar pela coordenada escolhida? Todas as ações aguardam cooldown verde + 3 segundos. "
+                    +(withoutVgp.isChecked()
+                        ? "Sem VGP: você precisará tocar na PokéParada e no Pokémon, usando giro/captura assistidos. "
+                        : "Com VGP+: giro e captura automáticos disponíveis. ")
+                    +(continueByTime.isChecked()
+                        ? "Se não houver confirmação, avançará após 22 segundos com ferramentas prontas, SEM registrar doces."
+                        : "Só avançará com resgate confirmado ou salto manual.")
+                    +" Pesquisas incompletas diferentes podem ser descartadas.")
+                .setNegativeButton("Cancelar",null)
+                .setPositiveButton("Iniciar e teleportar",(d,w)->{
+                    int startAt;
+                    try { startAt=Integer.parseInt(startPosition.getText().toString().trim()); }
+                    catch(NumberFormatException bad){ startAt=-1; }
+                    if(!dev.pgrazor.EternatusRouteRunner.start(activity,startAt))
+                        android.widget.Toast.makeText(activity,dev.pgrazor.EternatusRouteRunner.status(),android.widget.Toast.LENGTH_LONG).show();
+                    else dialog.dismiss();
+                }).show();
+        });
+        stopAuto.setOnClickListener(v->{
+            dev.pgrazor.EternatusRouteRunner.stop("Rota desativada.");
+            dev.pgrazor.EternatusMission.stop("Desativado.");
+        });
+        skipMissing.setOnClickListener(v->new AlertDialog.Builder(ui)
+            .setTitle("Pular esta parada sem resgate?")
+            .setMessage("Avançar manualmente para a próxima coordenada? Esta ação NÃO confirma uma missão, NÃO registra doces e respeita o cooldown.")
+            .setNegativeButton("Cancelar",null)
+            .setPositiveButton("Pular parada",(d,w)->{
+                if(!dev.pgrazor.EternatusRouteRunner.skipCurrentStop())
+                    android.widget.Toast.makeText(activity,
+                        "Não foi possível pular: aguarde cooldown, verifique a rota ou encerre a última parada.",
+                        android.widget.Toast.LENGTH_LONG).show();
+            }).show());
+        android.os.Handler clock=new android.os.Handler(android.os.Looper.getMainLooper());
+        bind(activity,dialog,()->clock.removeCallbacksAndMessages(null));
+        dialog.show();
+        Runnable poll=new Runnable(){
+            public void run(){
+                if(!dialog.isShowing())return;
+                dev.pgrazor.GpxRoute planned=dev.pgrazor.EternatusRouteRunner.plannedRoute();
+                boolean active=dev.pgrazor.EternatusRouteRunner.active();
+                gpxStatus.setText(planned == null ? "Escolha uma rota GPX para começar."
+                    : planned.name + " · " + planned.size() + " paradas\n" + dev.pgrazor.EternatusRouteRunner.status());
+                importGpx.setEnabled(!active);
+                savedGpx.setEnabled(!active);
+                select.setEnabled(!active);
+                verifiedReward.setEnabled(!active);
+                withoutVgp.setEnabled(!active);
+                continueByTime.setEnabled(!active);
+                startPosition.setEnabled(!active);
+                if(planned!=null){
+                    startPositionLabel.setText("Iniciar / retomar na coordenada (1 a "+planned.size()+")");
+                }
+                startAuto.setEnabled(!active && planned != null
+                    && (verifiedReward.isChecked() || continueByTime.isChecked())
+                    && !selected[0].isEmpty());
+                stopAuto.setEnabled(active || dev.pgrazor.EternatusMission.active());
+                skipMissing.setEnabled(active && dev.pgrazor.EternatusRouteRunner.totalStops() >
+                    dev.pgrazor.EternatusRouteRunner.currentStop());
+                tally.setText("Resgates confirmados nesta conta: "
+                    +dev.pgrazor.EternatusProgress.confirmed(activity)
+                    +"\nParadas sem resgate confirmado nesta rota: "
+                    +dev.pgrazor.EternatusRouteRunner.unverifiedStops());
+                clock.postDelayed(this,1000);
+            }
+        };
+        clock.post(poll);
     }
 
     private static void bind(Activity owner, AlertDialog dialog, Runnable cleanup) {

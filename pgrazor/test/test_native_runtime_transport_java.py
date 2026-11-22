@@ -39,6 +39,7 @@ def control_shell():
     specs.append(('smartBattleConfig', '', 'String'))
     specs.append(('evolveTransferConfig', '', 'String'))
     specs.append(('shinyScanConfig', '', 'String'))
+    specs.append(('routeGiftConfig', '', 'String'))
     methods = []
     for name, params, expected_result in specs:
         actual = re.search(r'public static\s+(?:synchronized\s+)?([\w\[\]]+)\s+' + name + r'\(([^)]*)\)', source)
@@ -68,6 +69,8 @@ def control_shell():
             body = 'reads++;return "B2|1|0|1|0";'
         elif name == 'shinyScanConfig':
             body = 'reads++;return "N3|5|1|700|2|8000|1|1|0|25,129";'
+        elif name == 'routeGiftConfig':
+            body = 'reads++;return "M1|1";'
         elif name == 'evolveTransferConfig':
             body = 'reads++;return "1|1|1|2|10,13";'
         elif name == 'smartBattleConfig':
@@ -92,6 +95,10 @@ def control_shell():
         else:
             body = 'return true;' if expected_result == 'boolean' else ''
         methods.append('public static ' + expected_result + ' ' + name + '(' + signature + '){' + body + '}')
+    # The wire ID remains transferProtect for ABI stability; production resolves it to
+    # a separate getter whose high byte carries the configured IV threshold.
+    assert re.search(r'public static int nativeTransferProtect\(\)', source)
+    methods.append('public static int nativeTransferProtect(){reads++;return 0;}')
     return '''package dev.pgrazor;
 public final class Control {
  public static int connects, renewals, disconnects;

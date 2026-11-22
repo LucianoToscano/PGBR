@@ -215,7 +215,12 @@ extern "C" int pgr_pvp_keep(void *pokemon, int attack, int defense, int stamina,
     write(text, capacity, "pvp-check-unavailable");
     return 2;
   }
-  if (found == LOOKUP_UNKNOWN_FORM) return 0;
+  // Unknown event/costume forms have no safe rank entry. With PvP protection enabled,
+  // fail closed instead of authorizing an irreversible transfer on incomplete data.
+  if (found == LOOKUP_UNKNOWN_FORM) {
+    write(text, capacity, "pvp-form-unavailable");
+    return 2;
+  }
   pgr_pvp::Keep why{};
   if (!pgr_pvp::keep(facts.entry, facts.shadow, attack, defense, stamina, facts.multiplier, config, &why)) return 0;
   static const char *const tags[] = {"GL", "UL", "ML"};

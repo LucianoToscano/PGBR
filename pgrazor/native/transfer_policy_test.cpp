@@ -36,6 +36,19 @@ int main(int argc,char **argv) {
  v.keep_count=0xffffffff;if(api->decide(&v)!=2)return 10;
  v.keep_all=1;if(api->decide(&v)!=1)return 11;
  v.keep_all=0;v.keep_count=0;v.attack=-1;if(api->decide(&v)!=5)return 12;
- std::puts("PASS native transfer policy: exhaustive IV thresholds, 0/0/0 keep, category masks, unknown data and custom keep priority");
+ // Every supported limit includes full IV combinations; 101 means IV alone protects none.
+ v.known=255;v.flags=0;v.protect=0;v.keep_count=0;v.keep_all=0;v.species=25;
+ for(unsigned limit=0;limit<=101;++limit){
+  v.reserved=limit+1;
+  for(int a=0;a<16;++a)for(int d=0;d<16;++d)for(int s=0;s<16;++s){
+   v.attack=a;v.defense=d;v.stamina=s;
+   bool expected=limit<=100&&(a+d+s)*100>=int(limit)*45;
+   if(api->decide(&v)!=(expected?9:0))return 14;
+  }
+ }
+ v.reserved=1000;if(api->decide(&v)!=17)return 15;
+ v.reserved=102;v.attack=v.defense=v.stamina=15;int32_t kept[]{25};
+ v.keep_count=1;v.keep_ids=kept;if(api->decide(&v)!=4)return 16;
+ std::puts("PASS transfer policy: 0..100% IV thresholds, 101 legacy explicit-only and invalid configuration keep");
  return 0;
 }

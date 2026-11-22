@@ -2,6 +2,12 @@
 
 **Antes de qualquer tarefa do PGBR, LEIA INTEGRALMENTE [PGBR_ARQUIVO_MESTRE_UNICO.md](PGBR_ARQUIVO_MESTRE_UNICO.md); confira a versão canônica da [main](https://github.com/LucianoToscano/PGBR/blob/main/PGBR_ARQUIVO_MESTRE_UNICO.md).** Não responder como se tivesse lido sem abrir. Se não estiver acessível, declarar limitação. Não criar outros mestres concorrentes. Todas as alterações verificadas de status devem atualizar o mestre canônico. Em seguida cumprir também as regras abaixo.
 
+## REGRA PERMANENTE — ATUALIZAR O ARQUIVO MESTRE EM TODAS AS ENTREGAS
+
+**Obrigatório, sem exceções:** toda correção, recurso, alteração de interface, teste, atualização de upstream, PR, merge, mudança de versão, build, upload ou release deve deixar registro factual no **mesmo** `PGBR_ARQUIVO_MESTRE_UNICO.md`. Preparar o registro no mesmo PR, com branch, HEAD, arquivos relevantes, evidência real, testes, links, limitações e pendências. **Após** o merge/build/release, atualizar novamente o Mestre na `main` com commit final, tag publicada, SHA-256 e URLs que existirem; não classificar resultados pendentes como aprovados. Não criar um segundo mestre, não substituir histórico nem apagar evidências anteriores.
+
+O trabalho só é encerrado depois de conferir a HEAD e os links de destino, preservar os outros chats/branches, confirmar os resultados e deixar o Mestre sincronizado. Builds não homologados em Android permanecem `QA / device_tested=false` mesmo quando são publicados como pré-release.
+
 # PGBR — Instruções para desenvolvimento e auditoria
 
 Leia `README.md`, `docs/BUILDING.md`, `docs/ARCHITECTURE.md`, `docs/ROOTED.md`, `docs/GAME_UPDATES.md` e `THIRD_PARTY.md`. Documentos históricos LT013 não existem na `main`: consultar [release notes LT013](https://github.com/LucianoToscano/PGBR/blob/integracao/lt032-recuperacao-20261121/docs/releases/v0.00.13-LT.md) e [auditoria LT013](https://github.com/LucianoToscano/PGBR/blob/integracao/lt032-recuperacao-20261121/AUDITORIA_IA_COMECE_AQUI_LT013.md) apenas na branch indicada.

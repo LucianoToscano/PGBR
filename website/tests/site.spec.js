@@ -27,21 +27,21 @@ test('defaults to dark and remembers the chosen theme', async ({ page }) => {
   await page.emulateMedia({ colorScheme: 'light' });
   await page.goto('./');
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
-  await page.getByRole('button', { name: 'Switch to light theme' }).click();
+  await page.getByRole('button', { name: 'Alternar para o tema claro' }).click();
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
   await page.reload();
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
-  await page.getByRole('button', { name: 'Switch to dark theme' }).click();
+  await page.getByRole('button', { name: 'Alternar para o tema escuro' }).click();
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
 });
 
 test('settings guide and screenshot viewer work with the keyboard', async ({ page }) => {
   await page.goto('./');
-  const catching = page.getByRole('tab', { name: 'Catching', exact: true });
+  const catching = page.getByRole('tab', { name: 'Capturas', exact: true });
   await catching.focus();
   await page.keyboard.press('ArrowRight');
-  await expect(page.getByRole('tab', { name: 'Explore', exact: true })).toHaveAttribute('aria-selected', 'true');
-  await expect(page.getByRole('tabpanel', { name: 'Explore', exact: true })).toBeVisible();
+  await expect(page.getByRole('tab', { name: 'Exploração', exact: true })).toHaveAttribute('aria-selected', 'true');
+  await expect(page.getByRole('tabpanel', { name: 'Exploração', exact: true })).toBeVisible();
   const shot = page.locator('.shot-btn').first();
   await shot.focus();
   await page.keyboard.press('Enter');
@@ -54,7 +54,7 @@ test('settings guide and screenshot viewer work with the keyboard', async ({ pag
 test('cooldown nav link reveals the section and its estimate table', async ({ page }) => {
   await page.goto('./');
   // The nav link lives behind the hamburger on narrow viewports; open it first.
-  const toggle = page.getByRole('button', { name: 'Open menu' });
+  const toggle = page.getByRole('button', { name: 'Abrir menu' });
   if (await toggle.isVisible()) {
     await toggle.click();
   }
@@ -64,8 +64,8 @@ test('cooldown nav link reveals the section and its estimate table', async ({ pa
   await expect(section.getByRole('heading', { level: 2 })).toBeVisible();
 
   const table = section.locator('table.cooldown__table');
-  await expect(table.first().getByRole('columnheader', { name: 'Distance (km)' })).toBeVisible();
-  await expect(table.first().getByRole('columnheader', { name: /Wait/ })).toBeVisible();
+  await expect(table.first().getByRole('columnheader', { name: 'Distância (km)' })).toBeVisible();
+  await expect(table.first().getByRole('columnheader', { name: /Espera/ })).toBeVisible();
   // Endpoints of the chart confirm the data rendered in order.
   await expect(table.getByRole('rowheader', { name: '1', exact: true })).toBeVisible();
   await expect(table.getByRole('rowheader', { name: '1350+' })).toBeVisible();
@@ -91,10 +91,10 @@ test('cooldown chart shows every estimate without internal scrolling or competit
 
 test('cooldown trigger and safe groups expand', async ({ page }) => {
   await page.goto('./');
-  const safe = page.locator('.cooldown__group', { hasText: 'Does not start it' });
-  await expect(safe.getByText('Teleporting by itself')).toBeHidden();
+  const safe = page.locator('.cooldown__group', { hasText: 'Não inicia a espera' });
+  await expect(safe.getByText('Teletransportar sem realizar outra ação')).toBeHidden();
   await safe.locator('summary').click();
-  await expect(safe.getByText('Teleporting by itself')).toBeVisible();
+  await expect(safe.getByText('Teletransportar sem realizar outra ação')).toBeVisible();
 });
 
 test('current stable release notes accompany the latest download', async ({ page }) => {

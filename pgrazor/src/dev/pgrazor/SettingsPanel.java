@@ -51,26 +51,33 @@ final class SettingsPanel {
     private final java.util.List<TextView> pageSummaries=new java.util.ArrayList<>(), homeNames=new java.util.ArrayList<>();
     private final java.util.List<MenuIcon> homeIcons=new java.util.ArrayList<>();
     private int current=-1, homeScroll;
+    private EditText settingsSearch;
+    private TextView sessionStatsSummary;
+    private Button sessionStatsToggle;
+    private boolean sessionStats24h;
+    private LinearLayout settingsSearchResults;
+    private SettingsSearch settingsSearchIndex;
+    private final java.util.List<View> settingsSearchTargets=new java.util.ArrayList<>();
     private Switch incubatorSwitch;
     private Button incubatorPriority;
     private Button uiScale;
     private TextView incubatorStatus;
     // Primary action and cycle/dialog rows.
-    private Button mapTap, throwGrade, throwVariety, storageIv, ivCatchMode, ivOwnedMode, itemSettings, cameraSample, interactionCapture, transferKeepList;
+    private Button mapTap, throwGrade, throwVariety, storageIv, ivCatchMode, ivOwnedMode, itemSettings, cameraSample, interactionCapture, transferKeepList, transferIvLimit;
     // Evolve-before-transfer rows: enable switch, stages cycle, selection-mode cycle, selected-species picker.
     private Switch evolveTransferSwitch;
     private Button evolveTransferStages, evolveTransferMode, evolveTransferList;
     // Boolean settings use proper switches.
     private Switch idleWalkSwitch, locationSwitch, vgpSwitch, joystickSwitch, cooldownSwitch, localTimeSwitch, encounterCounterSwitch, encounterOverlaySwitch, spawnSwitch, autoTransferSwitch,
-        quickSpinSwitch, berrySwitch, quickSummarySwitch, curveSwitch, alwaysHitSwitch, arSwitch, transferOverlaySwitch, catchChanceSwitch, autoBallSwitch, autoThrowSwitch, autoThrowMapSwitch, skipCutscenesSwitch,
+        quickSpinSwitch, berrySwitch, quickSummarySwitch, curveSwitch, alwaysHitSwitch, arSwitch, transferOverlaySwitch, catchChanceSwitch, autoBallSwitch, autoThrowSwitch, autoThrowMapSwitch, skipCutscenesSwitch, routeGiftSwitch,
         batteryResSwitch, batteryFpsSwitch, batteryQualitySwitch;
     private Button autoBallTarget, berryPriority;
+    private Button vgpIconStyleButton, vgpStartStopButton, joystickStyleButton, eternatusIntensityButton, eternatusSpeedButton;
     private BerryPriorityPicker berryPicker;
     private TextView quickSummaryLabel, vgpStatus, cutsceneStatus, healStatus, smartBattleStatus;
     private Switch healSwitch, healReviveSwitch, smartBattleSwitch, gymRepeatSwitch;
     private Button healWhen, healThreshold, healItems;
     private final CheckBox[] vgpChoices=new CheckBox[3];
-    private CheckBox vgpCooldownStop;
     // Status / caption lines (muted, readiness driven).
     private TextView state, steeringStatus, spawnStatus, quickSummaryStatus, transferStatus, quickSpinStatus,
         buddyStatus, giftStatus, itemStatus, rocketStatus, battleStatus, quickBallStatus, ivStatus, cameraStatus, interactionStatus;
@@ -81,6 +88,9 @@ final class SettingsPanel {
     private final CheckBox[] giftChoices=new CheckBox[3];
     private final CheckBox[] quickMenuChoices=new CheckBox[QuickMenu.CUSTOMIZABLE.length];
     private final CheckBox[] rocketChoices=new CheckBox[3];
+    private final CheckBox[] pvpBattleChoices=new CheckBox[3];
+    private TextView pvpBattleStatus;
+    private CheckBox pvpPreferSuper;
     private final CheckBox[] battleChoices=new CheckBox[10];
     private Runnable buddyRefresh=()->{},smartRefresh=()->{};
     // Groups gated by backend readiness (catch-summary support, ball-animation support), refreshed without
@@ -120,7 +130,7 @@ final class SettingsPanel {
         Switch sw=new Switch(activity);sw.setContentDescription(dev.pgrazor.PtBr.tr(label));sw.setClickable(true);r.addView(sw,new LinearLayout.LayoutParams(-2,-2));
         owner.addView(r);return sw;
     }
-    private TextView caption(LinearLayout owner,String s){TextView t=new TextView(activity);t.setText(dev.pgrazor.PtBr.tr(s));t.setTextSize(11);owner.addView(t);captions.add(t);return t;}
+    private TextView caption(LinearLayout owner,String s){TextView t=new TextView(activity);t.setText(dev.pgrazor.PtBr.tr(s));t.setTextSize(13);owner.addView(t);captions.add(t);return t;}
 
     /** Shows the destination theme: golden sun in dark mode, indigo moon in light mode. */
     private final class ThemeIcon extends View {
@@ -140,7 +150,7 @@ final class SettingsPanel {
     /** A clean close affix: a small X drawn inside a 48dp hitbox. */
     private final class CloseIcon extends View {
         private final Paint paint=new Paint(Paint.ANTI_ALIAS_FLAG);
-        CloseIcon(Context c){super(c);setContentDescription("Close PGBR settings");setFocusable(true);setClickable(true);
+        CloseIcon(Context c){super(c);setContentDescription(dev.pgrazor.PtBr.tr("Close PGBR settings"));setFocusable(true);setClickable(true);
             setBackground(new android.graphics.drawable.RippleDrawable(android.content.res.ColorStateList.valueOf(0x3345e1ba),null,rounded(0xffffffff,24)));}
         protected void onDraw(Canvas c){super.onDraw(c);float cx=getWidth()/2f,cy=getHeight()/2f,r=dp(8);paint.setStyle(Paint.Style.STROKE);paint.setStrokeCap(Paint.Cap.ROUND);paint.setStrokeWidth(dp(2));paint.setColor(muted());c.drawLine(cx-r,cy-r,cx+r,cy+r,paint);c.drawLine(cx-r,cy+r,cx+r,cy-r,paint);}
     }
@@ -148,7 +158,7 @@ final class SettingsPanel {
     /** A drawn back chevron inside a 48dp hitbox; shown only while a category page is open. */
     private final class BackIcon extends View {
         private final Paint paint=new Paint(Paint.ANTI_ALIAS_FLAG);
-        BackIcon(Context c){super(c);setContentDescription("Back to all settings");setFocusable(true);setClickable(true);
+        BackIcon(Context c){super(c);setContentDescription(dev.pgrazor.PtBr.tr("Back to all settings"));setFocusable(true);setClickable(true);
             setBackground(new android.graphics.drawable.RippleDrawable(android.content.res.ColorStateList.valueOf(0x3345e1ba),null,rounded(0xffffffff,24)));}
         protected void onDraw(Canvas c){super.onDraw(c);float cx=getWidth()/2f,cy=getHeight()/2f,r=dp(7);paint.setStyle(Paint.Style.STROKE);paint.setStrokeCap(Paint.Cap.ROUND);paint.setStrokeJoin(Paint.Join.ROUND);paint.setStrokeWidth(dp(2));paint.setColor(accent());
             Path p=new Path();p.moveTo(cx+r/2,cy-r);p.lineTo(cx-r/2,cy);p.lineTo(cx+r/2,cy+r);c.drawPath(p,paint);}
@@ -162,7 +172,7 @@ final class SettingsPanel {
         final int index=pages.size();
         LinearLayout row=new LinearLayout(activity);row.setOrientation(LinearLayout.HORIZONTAL);row.setGravity(Gravity.CENTER_VERTICAL);row.setMinimumHeight(dp(60));
         row.setPadding(dp(12),dp(8),dp(6),dp(8));row.setClickable(true);row.setFocusable(true);
-        MenuIcon glyph=new MenuIcon(activity,icon);glyph.accent=true;row.addView(glyph,new LinearLayout.LayoutParams(dp(26),dp(26)));
+        MenuIcon glyph=new MenuIcon(activity,icon);glyph.accent=true;row.addView(glyph,new LinearLayout.LayoutParams(dp(Control.menuIconSizeDp()+4),dp(Control.menuIconSizeDp()+4)));
         LinearLayout texts=new LinearLayout(activity);texts.setOrientation(LinearLayout.VERTICAL);texts.setPadding(dp(10),0,0,0);
         TextView name=text(label,15,ink());texts.addView(name);
         TextView summary=text("",12,muted());summary.setMaxLines(2);summary.setEllipsize(android.text.TextUtils.TruncateAt.END);texts.addView(summary);
@@ -189,6 +199,90 @@ final class SettingsPanel {
     private void unavailableNote(LinearLayout owner,boolean needsBall){
         TextView note=caption(owner,"Some settings here are not available yet.");
         (needsBall?ballNotes:summaryNotes).add(note);
+    }
+    /** Creates a compact, accent-insensitive index of real controls, including nested settings. */
+    private void indexSettingsOnce(){
+        if(settingsSearchIndex!=null)return;
+        settingsSearchIndex=new SettingsSearch();
+        settingsSearchTargets.clear();
+        for(int i=0;i<pages.size();i++){
+            String category=pageTitles.get(i);
+            settingsSearchTargets.add(pages.get(i));
+            settingsSearchIndex.add(category,"Categorias",category,i);
+            indexSettingControls(pages.get(i),category,i);
+        }
+    }
+    private void indexSettingControls(View view,String category,int pageIndex){
+        if(view instanceof TextView){
+            TextView textView=(TextView)view;
+            boolean candidate=view instanceof Button||view instanceof CheckBox||view instanceof Switch;
+            // A switch-row label belongs to its horizontal control row and is a valid search target.
+            if(!candidate && view.getParent() instanceof LinearLayout){
+                LinearLayout parent=(LinearLayout)view.getParent();
+                candidate=parent.getOrientation()==LinearLayout.HORIZONTAL&&parent.getChildCount()>1;
+            }
+            if(candidate){
+                String label=SettingsSearch.cleanName(textView.getText().toString());
+                if(label.length()>2 && settingsSearchTargets.size()<1000) {
+                    settingsSearchTargets.add(view);
+                    settingsSearchIndex.add(label,"Opções",category,pageIndex);
+                }
+            }
+        }
+        if(view instanceof ViewGroup){
+            ViewGroup group=(ViewGroup)view;
+            for(int i=0;i<group.getChildCount();i++)indexSettingControls(group.getChildAt(i),category,pageIndex);
+        }
+    }
+    private void openSearchTarget(SettingsSearch.Entry entry){
+        if(entry.id<0||entry.id>=settingsSearchTargets.size()||entry.page>=pages.size())return;
+        open(entry.page);
+        View target=settingsSearchTargets.get(entry.id),page=pages.get(entry.page);
+        // A setting may belong to a collapsed section. Reveal its ancestors but do not toggle the setting.
+        for(View walk=target;walk!=page&&walk!=null;){
+            if(walk.getVisibility()==View.GONE)walk.setVisibility(View.VISIBLE);
+            if(!(walk.getParent() instanceof View))break;
+            walk=(View)walk.getParent();
+        }
+        bodyScroll.post(()->{
+            int y=page.getTop();
+            for(View walk=target;walk!=page&&walk!=null;){
+                y+=walk.getTop();
+                if(!(walk.getParent() instanceof View))break;
+                walk=(View)walk.getParent();
+            }
+            bodyScroll.smoothScrollTo(0,Math.max(0,y-dp(54)));
+        });
+    }
+    /** Search by name, aliases, group and category; tap any result to open and scroll to its control. */
+    private void filterSettings(String raw){
+        String query=SettingsSearch.normalize(raw);
+        if(settingsSearchResults==null)return;
+        settingsSearchResults.removeAllViews();
+        settingsSearchResults.setVisibility(query.isEmpty()?View.GONE:View.VISIBLE);
+        if(query.isEmpty()){
+            for(LinearLayout row:homeRows)row.setVisibility(View.VISIBLE);
+            return;
+        }
+        indexSettingsOnce();
+        java.util.List<SettingsSearch.Entry> matches=settingsSearchIndex.find(query);
+        java.util.HashSet<Integer> shownPages=new java.util.HashSet<>();
+        int visible=0;
+        for(SettingsSearch.Entry match:matches){
+            shownPages.add(match.page);
+            if(visible++>=14)continue; // Avoid an unbounded dynamic result list on small phones.
+            Button result=button(match.name+"  ·  "+match.category);
+            result.setAllCaps(false);
+            result.setContentDescription("Abrir configuração "+match.name);
+            result.setOnClickListener(v->openSearchTarget(match));
+            settingsSearchResults.addView(result,new LinearLayout.LayoutParams(-1,dp(46)));
+        }
+        for(int i=0;i<homeRows.size();i++)
+            homeRows.get(i).setVisibility(shownPages.contains(i)?View.VISIBLE:View.GONE);
+        if(matches.isEmpty()){
+            TextView empty=text("Nenhuma configuração encontrada.",13,muted());
+            settingsSearchResults.addView(empty);
+        }
     }
     /** Shows the home screen (index -1) or one category page, keeping the home scroll position for the way back. */
     private void open(int index){
@@ -234,17 +328,51 @@ final class SettingsPanel {
         discord.setContentDescription(dev.pgrazor.PtBr.tr("Join the PGBR Discord community"));
         discord.setClickable(true); discord.setFocusable(true); sectionHeads.add(discord);
         panel.addView(discord, new LinearLayout.LayoutParams(-1,dp(48)));
+        // Links externos da comunidade ficam ocultos até decisão editorial do PGBR.
+        discord.setVisibility(View.GONE);
         discord.setOnClickListener(v -> {
             try { activity.startActivity(new Intent(Intent.ACTION_VIEW, android.net.Uri.parse("https://discord.gg/9QqfkDSQX3"))); }
             catch (android.content.ActivityNotFoundException unavailable) {
-                android.widget.Toast.makeText(activity, "No app available to open Discord links", android.widget.Toast.LENGTH_SHORT).show();
+                android.widget.Toast.makeText(activity, dev.pgrazor.PtBr.tr("No app available to open Discord links"), android.widget.Toast.LENGTH_SHORT).show();
             }
         });
 
         // Home screen: the always-visible location status, then one icon row per category.
         home = new LinearLayout(activity); home.setOrientation(LinearLayout.VERTICAL); body.addView(home);
         coords = text("", 16, ink()); coords.setPadding(dp(4), dp(6), dp(4), dp(10)); home.addView(coords);
+        // Session stats from read-only lifetime counters; accounts are kept in separate local histories.
+        LinearLayout sessionCard=new LinearLayout(activity);sessionCard.setOrientation(LinearLayout.VERTICAL);
+        sessionCard.setPadding(dp(12),dp(10),dp(12),dp(10));
+        sessionCard.setBackground(rounded(Control.darkTheme()?Color.rgb(28,39,53):Color.rgb(232,241,247),12));
+        TextView statsLabel=text("Estatísticas de jogo · últimas 1 hora / 24 horas",14,accent());
+        sessionCard.addView(statsLabel);
+        sessionStatsSummary=text("Aguardando primeira leitura da sessão…",12,ink());
+        sessionStatsSummary.setPadding(0,dp(7),0,dp(7));sessionCard.addView(sessionStatsSummary);
+        sessionStatsToggle=button("Ver últimas 24 horas");sessionCard.addView(sessionStatsToggle);
+        sessionStatsToggle.setOnClickListener(v->{
+            sessionStats24h=!sessionStats24h;refreshSessionStats();
+        });
+        LinearLayout.LayoutParams cardParams=new LinearLayout.LayoutParams(-1,-2);
+        cardParams.bottomMargin=dp(10);home.addView(sessionCard,cardParams);
+        settingsSearch = new EditText(activity);
+        settingsSearch.setSingleLine(true);
+        settingsSearch.setTextSize(15);
+        settingsSearch.setHint(dev.pgrazor.PtBr.tr("Buscar configurações, ferramentas e opções"));
+        settingsSearch.setContentDescription(dev.pgrazor.PtBr.tr("Buscar nas configurações do PGBR"));
+        settingsSearch.setInputType(InputType.TYPE_CLASS_TEXT);
+        settingsSearch.setPadding(dp(12),dp(10),dp(12),dp(10));
+        home.addView(settingsSearch,new LinearLayout.LayoutParams(-1,dp(52)));
+        settingsSearchResults=new LinearLayout(activity);
+        settingsSearchResults.setOrientation(LinearLayout.VERTICAL);
+        settingsSearchResults.setVisibility(View.GONE);
+        home.addView(settingsSearchResults,new LinearLayout.LayoutParams(-1,-2));
+        settingsSearch.addTextChangedListener(new android.text.TextWatcher(){
+            public void beforeTextChanged(CharSequence s,int start,int count,int after){}
+            public void onTextChanged(CharSequence s,int start,int before,int count){filterSettings(s.toString());}
+            public void afterTextChanged(android.text.Editable editable){}
+        });
         buildLocationPage();
+        buildMapIndicatorsPage();
         buildCatchingPage();
         buildPokemonPage();
         buildGoPlusPage();
@@ -254,11 +382,180 @@ final class SettingsPanel {
         buildEventsPage();
         buildDisplayPage();
         buildAccountsPage();   // last: its Diagnostics group collects status lines created by the pages above
+        filterSettings("");
 
         // Closing the full-screen settings panel simply returns to the game (or the quick menu on the next tap).
         closeIcon.setOnClickListener(v -> panel.setVisibility(View.GONE));
         // The settings panel is a full-screen modal now; it consumes taps so the game behind it stays inert.
         panel.setClickable(true);
+    }
+
+    private static String eternityIntensityLabel(int intensity){
+        return intensity>=2?"Épica":"Suave";
+    }
+    private static String eternitySpeedLabel(int speed){
+        return speed==0?"Lenta":speed==2?"Rápida":"Normal";
+    }
+    private void showEternatusFxChoice(boolean intensityChoice){
+        String[] choices=intensityChoice
+            ? new String[]{"Suave • menos brilho","Épica • vórtice, fumaça e iluminação fortes"}
+            : new String[]{"Lenta","Normal","Rápida"};
+        int selected=intensityChoice?Control.eternatusFxIntensity()-1:Control.eternatusFxSpeed();
+        new AlertDialog.Builder(dialogContext())
+            .setTitle(intensityChoice?"Intensidade da tempestade":"Velocidade do vórtice")
+            .setSingleChoiceItems(choices,selected,(dialog,which)->{
+                dialog.dismiss();
+                if(intensityChoice){
+                    Control.setEternatusFxIntensity(which+1);
+                    if(eternatusIntensityButton!=null)
+                        eternatusIntensityButton.setText("Intensidade da tempestade: "+
+                            eternityIntensityLabel(Control.eternatusFxIntensity()));
+                }else{
+                    Control.setEternatusFxSpeed(which);
+                    if(eternatusSpeedButton!=null)
+                        eternatusSpeedButton.setText("Velocidade do vórtice: "+
+                            eternitySpeedLabel(Control.eternatusFxSpeed()));
+                }
+                host.refresh();
+            }).setNegativeButton("Cancelar",null).show();
+    }
+
+    private static String joystickStyleName(int style){
+        switch(style){
+            case 1:return "Eternatus • Tempestade viva";
+            case 2:return "HUD translúcido • Setas";
+            case 3:return "Imagem personalizada";
+            case 4:return "Eternatus • Vórtice anterior";
+            default:return "Joystick original";
+        }
+    }
+    private void showJoystickStyles(){
+        Context ui=dialogContext();
+        LinearLayout content=new LinearLayout(ui);
+        content.setOrientation(LinearLayout.VERTICAL);
+        content.setPadding(dp(12),dp(8),dp(12),dp(8));
+        ScrollView scroll=new ScrollView(ui);scroll.addView(content);
+        final AlertDialog[] chosen={null};
+        for(int style=0;style<=4;style++){
+            final int selection=style;
+            LinearLayout option=new LinearLayout(ui);
+            option.setOrientation(LinearLayout.HORIZONTAL);
+            option.setGravity(Gravity.CENTER_VERTICAL);
+            option.setPadding(dp(8),dp(6),dp(8),dp(6));
+            option.setBackground(SettingsUi.rounded(activity,style==Control.joystickStyle()?0x3041d9cc:0x138c92a0,dp(14)));
+            LinearLayout.LayoutParams optionParams=new LinearLayout.LayoutParams(-1,dp(78));
+            optionParams.bottomMargin=dp(6);
+            content.addView(option,optionParams);
+            FrameLayout preview=new FrameLayout(ui);
+            option.addView(preview,new LinearLayout.LayoutParams(dp(60),dp(60)));
+            if(style==1||style==2||style==4){
+                String name=style==2?"hud":"eternatus";
+                String[] layers = style == 1 ? (Control.joystickEternatusEffects()
+                    ? new String[]{"clean", "storm", "thumb"}
+                    : new String[]{"clean", "thumb"})
+                    : style == 4 && Control.joystickEternatusEffects()
+                        ? new String[]{"vortex", "rim", "thumb"}
+                        : new String[]{"base", "thumb"};
+                for(String layer : layers){
+                    String file=style==1
+                        ? "pgrazor/map-icons/joystick-eternatus-morph-"+layer+".webp"
+                        : "pgrazor/map-icons/joystick-"+name+"-"+layer+".webp";
+                    try(java.io.InputStream image=PgAssets.open(activity,file)){
+                        Bitmap bitmap=BitmapFactory.decodeStream(image);
+                        if(bitmap==null)continue;
+                        ImageView thumbnail=new ImageView(ui);
+                        thumbnail.setImageBitmap(bitmap);
+                        if(style==1 && layer.equals("storm"))thumbnail.setAlpha(.65f);
+                        thumbnail.setScaleType(ImageView.ScaleType.FIT_CENTER);
+                        int size = dp(layer.equals("thumb") ? (style == 2 ? 20 : 22) : 60);
+                        FrameLayout.LayoutParams artParams=new FrameLayout.LayoutParams(size,size,Gravity.CENTER);
+                        preview.addView(thumbnail,artParams);
+                    }catch(Exception ignored){}
+                }
+            }else{
+                TextView glyph=new TextView(ui);
+                glyph.setText(dev.pgrazor.PtBr.tr(style==0?"◉":"▣"));
+                glyph.setTextSize(30);glyph.setGravity(Gravity.CENTER);
+                glyph.setTextColor(SettingsUi.accent());
+                preview.addView(glyph,new FrameLayout.LayoutParams(-1,-1));
+            }
+            TextView name=new TextView(ui);
+            name.setText(dev.pgrazor.PtBr.tr(joystickStyleName(style)));
+            name.setTextSize(14);
+            name.setTextColor(SettingsUi.ink());
+            name.setPadding(dp(8),0,0,0);
+            option.addView(name,new LinearLayout.LayoutParams(0,-2,1f));
+            RadioButton radio=new RadioButton(ui);
+            radio.setChecked(Control.joystickStyle()==style);
+            radio.setClickable(false);radio.setFocusable(false);
+            option.addView(radio);
+            option.setClickable(true);option.setFocusable(true);
+            option.setContentDescription(dev.pgrazor.PtBr.tr(joystickStyleName(style)));
+            option.setOnClickListener(v->{
+                if(chosen[0]!=null)chosen[0].dismiss();
+                if(selection==3){JoystickImage.select(activity);return;}
+                host.releaseJoystick(true);
+                Control.setJoystickStyle(selection);
+                if(joystickStyleButton!=null)
+                    joystickStyleButton.setText(dev.pgrazor.PtBr.tr("Estilo do joystick: "+joystickStyleName(selection)));
+                host.refresh();
+            });
+        }
+        chosen[0]=new AlertDialog.Builder(ui)
+            .setTitle(dev.pgrazor.PtBr.tr("Escolher estilo do joystick"))
+            .setView(scroll)
+            .setNegativeButton(dev.pgrazor.PtBr.tr("Fechar"),null)
+            .create();
+        chosen[0].setOnShowListener(dialog->MapTheme.styleButtons(chosen[0]));
+        chosen[0].show();
+    }
+
+    private void configureHudIndicator(String name,int bit){
+        final Context ctx=dialogContext();
+        LinearLayout body=new LinearLayout(ctx);body.setOrientation(LinearLayout.VERTICAL);
+        int padding=dp(16);body.setPadding(padding,dp(6),padding,dp(6));
+        TextView desc=new TextView(ctx);
+        desc.setText("Fundo desta legenda: "+Control.hudBackgroundOpacity(bit)+"%");
+        desc.setTextSize(14);body.addView(desc);
+        SeekBar opacity=new SeekBar(ctx);opacity.setMax(100);
+        opacity.setProgress(Control.hudBackgroundOpacity(bit));body.addView(opacity);
+        opacity.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){
+            public void onProgressChanged(SeekBar bar,int percent,boolean user){
+                if(!user)return;
+                Control.setHudBackgroundOpacity(bit,percent);
+                desc.setText("Fundo desta legenda: "+percent+"%");host.refresh();
+            }
+            public void onStartTrackingTouch(SeekBar bar){}
+            public void onStopTrackingTouch(SeekBar bar){}
+        });
+        if (bit == Control.HUD_COOLDOWN) {
+            int[] sizes = {0, 11, 13, 15, 18, 20};
+            String[] names = {"Automático", "11 sp", "13 sp", "15 sp", "18 sp", "20 sp"};
+            Button size = button("Tamanho do contador · " + (Control.cooldownTextSp() == 0
+                ? names[0] : Control.cooldownTextSp() + " sp"));
+            body.addView(size);
+            size.setOnClickListener(v -> new AlertDialog.Builder(ctx).setTitle("Tamanho do contador")
+                .setSingleChoiceItems(names, java.util.Arrays.binarySearch(sizes, Control.cooldownTextSp()), (dialog, index) -> {
+                    Control.setCooldownTextSp(sizes[index]);
+                    size.setText("Tamanho do contador · " + names[index]);
+                    host.refresh();
+                    dialog.dismiss();
+                }).setNegativeButton("Cancelar", null).show());
+        }
+        Button color=button("Cor: "+Control.HUD_PALETTE_NAMES[Control.hudPaletteIndex(bit)]);
+        body.addView(color);
+        color.setOnClickListener(v->{
+            new AlertDialog.Builder(ctx).setTitle("Cor: "+name)
+                .setSingleChoiceItems(Control.HUD_PALETTE_NAMES,Control.hudPaletteIndex(bit),(dialog,choice)->{
+                    Control.setHudPaletteIndex(bit,choice);
+                    color.setText("Cor: "+Control.HUD_PALETTE_NAMES[choice]);
+                    host.refresh();dialog.dismiss();
+                }).setNegativeButton("Cancelar",null).show();
+        });
+        AlertDialog dialog=new AlertDialog.Builder(ctx).setTitle(name)
+            .setView(body).setPositiveButton("Concluído",null).create();
+        dialog.setOnShowListener(d->MapTheme.styleButtons(dialog));
+        dialog.show();
     }
 
     private void buildLocationPage() {
@@ -267,9 +564,64 @@ final class SettingsPanel {
         locationSwitch.setOnCheckedChangeListener((v,checked)->{if(checked==Control.desiredEnabled())return;host.releaseJoystick(true);Control.setLocationSpoofing(checked);host.refresh();});
         steeringStatus = caption(loc, "Joystick follows the camera");
         launch(loc, "Coordinates & speed", host::editLocation);
+        launch(loc, "Velocidades rápidas: 0 / 9,3 / 18,6 / 30 / 60 km/h",()->{
+            final double[] speeds={0,9.3,18.6,30,60};
+            final String[] labels={"0,0 km/h · Parado","9,3 km/h","18,6 km/h","30 km/h","60 km/h"};
+            int current=0;
+            for(int i=0;i<speeds.length;i++)if(Math.abs(Control.engine.speedKmh-speeds[i])<0.001)current=i;
+            new AlertDialog.Builder(dialogContext()).setTitle("Velocidade de movimento")
+                .setSingleChoiceItems(labels,current,(d,index)->{
+                    Control.engine.speed(speeds[index]);Control.saveState();host.refresh();d.dismiss();
+                }).setNegativeButton("Cancelar",null).show();
+        });
         launch(loc, "World map", host::openMap);
         joystickSwitch = switchRow(loc, "Show joystick"); joystickSwitch.setChecked(Control.joystickVisible());
         joystickSwitch.setOnCheckedChangeListener((v,checked) -> { if(checked==Control.joystickVisible())return; host.setJoystickVisible(checked); });
+        LinearLayout joystickArt=section(loc,"Aparência do joystick",false);
+        TextView joystickSizeLabel=new TextView(activity);joystickSizeLabel.setTextSize(13);
+        joystickSizeLabel.setText(dev.pgrazor.PtBr.tr("Tamanho do joystick: "+Control.joystickSizeDp()+" dp"));joystickArt.addView(joystickSizeLabel);
+        SeekBar joystickSize=new SeekBar(activity);joystickSize.setMax(132);joystickSize.setProgress(Control.joystickSizeDp()-88);
+        joystickArt.addView(joystickSize);
+        joystickSize.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){
+            public void onProgressChanged(SeekBar bar,int progress,boolean user){
+                if(user){Control.setJoystickSizeDp(88+progress);joystickSizeLabel.setText(dev.pgrazor.PtBr.tr("Tamanho do joystick: "+Control.joystickSizeDp()+" dp"));host.refresh();}
+            }
+            public void onStartTrackingTouch(SeekBar bar){}
+            public void onStopTrackingTouch(SeekBar bar){}
+        });
+        TextView joystickOpacityLabel=new TextView(activity);joystickOpacityLabel.setTextSize(13);
+        joystickOpacityLabel.setText(dev.pgrazor.PtBr.tr("Opacidade do joystick: "+Control.joystickOpacity()+"%"));joystickArt.addView(joystickOpacityLabel);
+        SeekBar joystickOpacity=new SeekBar(activity);joystickOpacity.setMax(90);joystickOpacity.setProgress(Control.joystickOpacity()-10);
+        joystickArt.addView(joystickOpacity);
+        joystickOpacity.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){
+            public void onProgressChanged(SeekBar bar,int progress,boolean user){
+                if(user){Control.setJoystickOpacity(10+progress);joystickOpacityLabel.setText(dev.pgrazor.PtBr.tr("Opacidade do joystick: "+Control.joystickOpacity()+"%"));host.refresh();}
+            }
+            public void onStartTrackingTouch(SeekBar bar){}
+            public void onStopTrackingTouch(SeekBar bar){}
+        });
+        caption(joystickArt,"A transparência controla quanto do mapa aparece sob o joystick.");
+        joystickStyleButton=launch(joystickArt,
+            "Estilo do joystick: "+joystickStyleName(Control.joystickStyle()),this::showJoystickStyles);
+        Switch neonEffects=switchRow(joystickArt,"Animação Eternatus · limpo ↔ tempestade");
+        neonEffects.setChecked(Control.joystickEternatusEffects());
+        neonEffects.setOnCheckedChangeListener((v,on)->{
+            Control.setJoystickEternatusEffects(on);host.refresh();
+        });
+        caption(joystickArt,"Ciclo automático: forma limpa → tempestade iluminada → vórtice girando → forma limpa. A Pokébola Eternatus acompanha o mesmo ciclo.");
+        eternatusIntensityButton=launch(joystickArt,
+            "Intensidade da tempestade: "+eternityIntensityLabel(Control.eternatusFxIntensity()),
+            ()->showEternatusFxChoice(true));
+        eternatusSpeedButton=launch(joystickArt,
+            "Velocidade do vórtice: "+eternitySpeedLabel(Control.eternatusFxSpeed()),
+            ()->showEternatusFxChoice(false));
+        caption(joystickArt,"A tempestade gira em duas camadas com fumaça e iluminação. Desative a animação para manter o visual limpo; o vórtice anterior continua disponível.");
+        launch(joystickArt,"Escolher imagem do joystick no celular",()->{
+            if(Control.engine.routeProgress().active){
+                android.widget.Toast.makeText(activity,dev.pgrazor.PtBr.tr("Pause ou encerre a rota antes de abrir o seletor de imagens do Android."),android.widget.Toast.LENGTH_LONG).show();
+            }else JoystickImage.select(activity);
+        });
+        launch(joystickArt,"Restaurar imagem original do joystick",()->{JoystickImage.reset(activity);host.refresh();});
         idleWalkSwitch = switchRow(loc, "Idle walking");idleWalkSwitch.setChecked(Control.idleWalking());
         idleWalkSwitch.setOnCheckedChangeListener((v,checked)->{if(checked!=Control.idleWalking())Control.setIdleWalking(checked);});
         caption(loc, "When idle, start walking in a circle. Speed 0 pauses it.");
@@ -282,19 +634,109 @@ final class SettingsPanel {
         spawnStatus = caption(map, "");
         caption(map, "Can cause lag in busy areas with many nearby Pokémon. Turn it off if the game stutters.");
 
-        LinearLayout overlays = group(loc, "Cooldown & time");
-        cooldownSwitch = switchRow(overlays, "Cooldown overlay"); cooldownSwitch.setChecked(Control.cooldownOverlay());
-        cooldownSwitch.setOnCheckedChangeListener((v,checked) -> { if(checked==Control.cooldownOverlay())return; Control.setCooldownOverlay(cooldownSwitch.isChecked()); host.refresh(); });
-        launch(overlays, "Cooldown history", () -> Cooldown.show(activity));
-        localTimeSwitch = switchRow(overlays, "Show local time"); localTimeSwitch.setChecked(Control.localTimeOverlay());
-        localTimeSwitch.setOnCheckedChangeListener((v,checked) -> { if(checked==Control.localTimeOverlay())return; Control.setLocalTimeOverlay(localTimeSwitch.isChecked()); host.refresh(); });
-        caption(overlays, "Time at your spoofed location.");
-        LinearLayout encounters = group(loc, "Encounter counter");
-        encounterCounterSwitch = switchRow(encounters, "Count encounters"); encounterCounterSwitch.setChecked(Control.encounterCounter());
-        encounterCounterSwitch.setOnCheckedChangeListener((v,checked) -> { if(checked==Control.encounterCounter())return; Control.setEncounterCounter(encounterCounterSwitch.isChecked()); host.refresh(); });
-        encounterOverlaySwitch = switchRow(encounters, "Show the count on the map"); encounterOverlaySwitch.setChecked(Control.encounterOverlay());
-        encounterOverlaySwitch.setOnCheckedChangeListener((v,checked) -> { if(checked==Control.encounterOverlay())return; Control.setEncounterOverlay(encounterOverlaySwitch.isChecked()); host.refresh(); });
-        caption(encounters, "Wild Pokémon this account has encountered in the last 24 hours on this device while PGBR was running, shown next to the PGBR title. Encounters made elsewhere, and lure, incense, raid and research encounters, are not counted.");
+
+    }
+
+    // Keep the original four stored format IDs stable across updates and imported profiles.
+    private static final int[] CLOCK_FORMAT_IDS = {4, 5, 2, 1, 3, 0, 6};
+    private static final String[] CLOCK_EXAMPLES = {
+        "Só hora · 14:17", "Hora e data · 14:17 · 20/11/26", "Com fuso · 14:17 GMT-03:00",
+        "Com bandeira · 🇧🇷 14:17 - 20/11/26", "Com ícones · 🕒 14:17 🗓 20/11/26",
+        "Bandeira e ícones · 🇧🇷 🕒 14:17 🗓 20/11/26",
+        "Bandeira + cidade · 🇧🇷 Fortaleza • 14:17 · 20/11/26"
+    };
+    private static final String[] COOLDOWN_STYLES = {"Discreto", "Chamativo"};
+    private Button clockFormatButton, cooldownStyleButton;
+
+    private int selectedClockChoice() {
+        for (int i = 0; i < CLOCK_FORMAT_IDS.length; i++)
+            if (CLOCK_FORMAT_IDS[i] == Control.localTimeFormat()) return i;
+        return 0;
+    }
+
+    private void buildMapIndicatorsPage() {
+        LinearLayout page = page(MenuIcon.MAP, "Hora, cooldown e legendas");
+        LinearLayout clock = group(page, "Hora local");
+        localTimeSwitch = switchRow(clock, "Mostrar hora no mapa");
+        localTimeSwitch.setOnCheckedChangeListener((v, on) -> {
+            if (on == (Control.localTimeOverlay() && Control.hudLabelVisible(Control.HUD_LOCALTIME))) return;
+            if (on) Control.setHudLabelVisible(Control.HUD_LOCALTIME, true);
+            Control.setLocalTimeOverlay(on);
+            host.refresh();
+        });
+        clockFormatButton = launch(clock, "Formato da hora", () -> new AlertDialog.Builder(dialogContext())
+            .setTitle("Formato da hora local").setSingleChoiceItems(CLOCK_EXAMPLES, selectedClockChoice(), (dialog, index) -> {
+                Control.setLocalTimeFormat(CLOCK_FORMAT_IDS[index]);
+                dialog.dismiss();
+                host.refresh();
+            }).setNegativeButton("Cancelar", null).show());
+        launch(clock, "Cor e fundo da hora", () -> configureHudIndicator("Hora local", Control.HUD_LOCALTIME));
+
+        LinearLayout cooldown = group(page, "Cooldown");
+        cooldownSwitch = switchRow(cooldown, "Mostrar tempo de espera no mapa");
+        cooldownSwitch.setOnCheckedChangeListener((v, on) -> {
+            if (on == (Control.cooldownOverlay() && Control.hudLabelVisible(Control.HUD_COOLDOWN))) return;
+            if (on) Control.setHudLabelVisible(Control.HUD_COOLDOWN, true);
+            Control.setCooldownOverlay(on);
+            host.refresh();
+        });
+        cooldownStyleButton = launch(cooldown, "Estilo do contador", () -> new AlertDialog.Builder(dialogContext())
+            .setTitle("Estilo do cooldown").setSingleChoiceItems(COOLDOWN_STYLES, Control.cooldownEmphasis() ? 1 : 0,
+                (dialog, index) -> {
+                    Control.setCooldownEmphasis(index == 1);
+                    dialog.dismiss();
+                    host.refresh();
+                }).setNegativeButton("Cancelar", null).show());
+        caption(cooldown, "A contagem usa a cor escolhida. Ao chegar a 0:00:00, números e contorno ficam verdes automaticamente. Sem localização, o contador mostra —, nunca um verde falso.");
+        launch(cooldown, "Tamanho, cor e fundo", () -> configureHudIndicator("Cooldown", Control.HUD_COOLDOWN));
+        launch(cooldown, "Histórico de cooldown", () -> Cooldown.show(activity));
+
+        LinearLayout hud=section(page,"Outras legendas do mapa",false);
+        caption(hud,"Cada legenda tem seu próprio controle. Desativar uma legenda não desliga o recurso nem oculta seus ícones de ação. Alertas de Shiny continuam funcionando.");
+        final int[] captionBits={Control.HUD_VGP,Control.HUD_BUDDY,Control.HUD_AUTOMATION,
+            Control.HUD_GYM,Control.HUD_CATCH,Control.HUD_ENCOUNTERS,Control.HUD_SHINY};
+        final String[] captionNames={"Status VGP+","Energia do companheiro","Status das automações",
+            "Status de Gym Slotter e frutas","Chance de captura","Contador de encontros",
+            "Aviso de Shiny encontrado"};
+        final Switch[] captionSwitches=new Switch[captionBits.length];
+        for(int i=0;i<captionBits.length;i++){
+            final int bit=captionBits[i];
+            Switch item=switchRow(hud,"Exibir: "+captionNames[i]);captionSwitches[i]=item;
+            item.setChecked(Control.hudLabelVisible(bit));
+            item.setOnCheckedChangeListener((v,on)->{
+                if(Control.hudLabelVisible(bit)!=on){Control.setHudLabelVisible(bit,on);host.refresh();}
+            });
+        }
+        launch(hud,"Mostrar todas as legendas do mapa",()->{
+            Control.setHudLabelsVisible(true);
+            for(Switch item:captionSwitches)item.setChecked(true);
+            host.refresh();
+        });
+        launch(hud,"Ocultar todas as legendas do mapa",()->{
+            Control.setHudLabelsVisible(false);
+            for(Switch item:captionSwitches)item.setChecked(false);
+            host.refresh();
+        });
+        TextView fontLabel=new TextView(activity);fontLabel.setTextSize(13);
+        fontLabel.setText(dev.pgrazor.PtBr.tr("Tamanho das legendas: "+Control.hudLabelTextSp()+" sp"));hud.addView(fontLabel);
+        SeekBar fontSlider=new SeekBar(activity);fontSlider.setMax(5);
+        fontSlider.setProgress(Control.hudLabelTextSp()-9);hud.addView(fontSlider);
+        fontSlider.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){
+            public void onProgressChanged(SeekBar bar,int progress,boolean fromUser){
+                if(!fromUser)return;
+                Control.setHudLabelTextSp(progress+9);
+                fontLabel.setText(dev.pgrazor.PtBr.tr("Tamanho das legendas: "+Control.hudLabelTextSp()+" sp"));host.refresh();
+            }
+            public void onStartTrackingTouch(SeekBar bar){}
+            public void onStopTrackingTouch(SeekBar bar){}
+        });
+        launch(hud,"Personalizar cor e fundo de cada legenda",()->{
+            new AlertDialog.Builder(dialogContext()).setTitle("Selecionar indicador")
+                .setItems(captionNames,(d,index)->configureHudIndicator(captionNames[index],captionBits[index]))
+                .setNegativeButton("Cancelar",null).show();
+        });
+        caption(hud,"As cores e a transparência de cada legenda são salvas separadamente. Com fundo 0%, apenas o símbolo ou número permanece visível.");
+
     }
 
     private void buildCatchingPage() {
@@ -357,12 +799,72 @@ final class SettingsPanel {
         LinearLayout page = page(MenuIcon.BOX, "Pokémon & Transfer");
         unavailableNote(page, false);
 
+        LinearLayout searchTools = group(page, "Busca inteligente");
+        caption(searchTools, "Monte buscas para a coleção do Pokémon GO sem modificar sua conta. "
+                +"Termos dependentes de idioma podem precisar de tradução.");
+        launch(searchTools, "Gerador de buscas da coleção", () -> PokemonInventorySearchDialog.show(activity));
+
         // ----- Transfer on catch (gated by catch-summary support) -----
         LinearLayout transfer = plain(page); summaryGated.add(transfer);
         LinearLayout txC = group(transfer, "Transfer on catch");
-        autoTransferSwitch = switchRow(txC, "Transfer below 90% IV"); autoTransferSwitch.setChecked(Control.autoTransferEnabled());
+        autoTransferSwitch = switchRow(txC, "Transferir automaticamente novas capturas"); autoTransferSwitch.setChecked(Control.autoTransferEnabled());
         autoTransferSwitch.setOnCheckedChangeListener((v,checked) -> { if(checked==Control.autoTransferEnabled())return; Control.setAutoTransferEnabled(autoTransferSwitch.isChecked()); host.refresh(); });
-        caption(txC, "Transfers are permanent. Favorites and unknown data are always kept.");
+        transferIvLimit=button("");txC.addView(transferIvLimit);
+        transferIvLimit.setOnClickListener(v->{
+            // Compatibility: the previously selected 101 ("protect only") remains opt-in.
+            // New choices 0..100 are used by the existing packed native transfer contract.
+            LinearLayout box=new LinearLayout(activity);box.setOrientation(LinearLayout.VERTICAL);
+            int pad=dp(16);box.setPadding(pad,pad,pad,pad);
+            TextView help=text("Limite de IV para manter as novas capturas (0–100%). 0% mantém todos; 100% mantém somente IV 100%. Favoritos e proteções continuam valendo.",13,muted());
+            box.addView(help);
+            android.widget.SeekBar slider=new android.widget.SeekBar(activity);
+            slider.setMax(100);slider.setProgress(Math.min(100,Control.transferIvKeepPercent()));
+            box.addView(slider,new LinearLayout.LayoutParams(-1,dp(52)));
+            EditText typed=new EditText(activity);
+            typed.setSingleLine(true);typed.setInputType(InputType.TYPE_CLASS_NUMBER);
+            typed.setText(String.valueOf(slider.getProgress()));
+            typed.setSelectAllOnFocus(true);typed.setContentDescription(dev.pgrazor.PtBr.tr("Limite de IV de 0 a 100 por cento"));
+            box.addView(typed);
+            slider.setOnSeekBarChangeListener(new android.widget.SeekBar.OnSeekBarChangeListener(){
+                public void onProgressChanged(android.widget.SeekBar bar,int value,boolean byUser){
+                    if(byUser&&!typed.getText().toString().equals(String.valueOf(value)))typed.setText(String.valueOf(value));
+                }
+                public void onStartTrackingTouch(android.widget.SeekBar bar){}
+                public void onStopTrackingTouch(android.widget.SeekBar bar){}
+            });
+            typed.addTextChangedListener(new android.text.TextWatcher(){
+                public void beforeTextChanged(CharSequence s,int start,int count,int after){}
+                public void onTextChanged(CharSequence s,int start,int before,int count){
+                    try{int value=Integer.parseInt(s.toString());
+                        if(value>=0&&value<=100&&value!=slider.getProgress())slider.setProgress(value);
+                    }catch(NumberFormatException ignored){}
+                }
+                public void afterTextChanged(android.text.Editable s){}
+            });
+            AlertDialog chooser=new AlertDialog.Builder(dialogContext())
+                .setTitle(dev.pgrazor.PtBr.tr("Manter Pokémon a partir deste IV"))
+                .setView(box).setNegativeButton(dev.pgrazor.PtBr.tr("Cancelar"),null)
+                .setNeutralButton(dev.pgrazor.PtBr.tr("Somente protegidos"),null)
+                .setPositiveButton(dev.pgrazor.PtBr.tr("Aplicar"),null).create();
+            chooser.setOnShowListener(d->{
+                chooser.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v2->{
+                    int value;
+                    try{value=Integer.parseInt(typed.getText().toString());}
+                    catch(NumberFormatException bad){typed.setError(dev.pgrazor.PtBr.tr("Digite um valor de 0 a 100"));return;}
+                    if(value<0||value>100){typed.setError(dev.pgrazor.PtBr.tr("Digite um valor de 0 a 100"));return;}
+                    Control.setTransferIvKeepPercent(value);host.refresh();chooser.dismiss();
+                });
+                chooser.getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener(v2->
+                    new AlertDialog.Builder(dialogContext()).setTitle("Confirmar regra irreversível")
+                        .setMessage("Este modo poderá transferir até Pokémon com IV 100%! Somente favoritos, espécies selecionadas e Pokémon protegidos serão preservados. Não é possível desfazer transferências.")
+                        .setNegativeButton("Cancelar",null)
+                        .setPositiveButton("Confirmar",(prompt,which)->{
+                            Control.setTransferIvKeepPercent(101);host.refresh();chooser.dismiss();
+                        }).show());
+            });
+            chooser.show();
+        });
+        caption(txC,"As transferências são permanentes e só se aplicam a novas capturas. Favoritos e Pokémon com dados desconhecidos são preservados.");
         transferStatus = caption(txC, "");
 
         LinearLayout keepC = group(transfer, "Always keep");
@@ -390,7 +892,7 @@ final class SettingsPanel {
                 for(int j=0;j<ranks.length;j++)if(ranks[j]==Control.pvpRank(league)){next=ranks[(j+1)%ranks.length];break;}
                 Control.setPvpRank(league,next);host.refresh();});
             pvpC.addView(row);}
-        caption(pvpC, "PvP keeps a catch whose IVs rank within the chosen top in a league that is on, for it or anything it evolves into. That species must be in PvPoke's top "+Control.PVP_META+" for the league, and it must still fit under the league's CP cap. Ranks allow levels up to 50.");
+        caption(pvpC, "O limite geral de IV (inclusive 100%) não elimina as proteções selecionadas. Se o Pokémon for Top 1 ou estiver dentro do Top configurado em qualquer liga ativada, ele será mantido mesmo abaixo de 100% IV. A checagem inclui evoluções, limites de PC e a lista de "+Control.PVP_META+" espécies relevantes por liga.");
 
         LinearLayout evolveC = group(transfer, "Evolve before transferring");
         evolveTransferSwitch = switchRow(evolveC, "Evolve before transferring");
@@ -405,6 +907,19 @@ final class SettingsPanel {
         caption(evolveC, "New catches only; requires Transfer above. Uses candy for ordinary evolutions, without items or special conditions. Keep rules always apply. If evolution is unavailable, transfer normally. Selected species mode keeps every species outside its list.");
 
         // ----- IV display: the encounter, Pokemon details and storage list IV overlays -----
+        LinearLayout pokemonSearch=group(page,"Busca e rastreamento de Pokémon");
+        launch(pokemonSearch,"Filtro de Pokémon e resultados · estilo PGSharp",()->LiveFeedDialog.showPokemonSearch(activity));
+        launch(pokemonSearch,"Filtro de Reides e resultados · estilo PGSharp",()->LiveFeedDialog.showRaidSearch(activity));
+        launch(pokemonSearch,"Buscar por IV, Shiny, PvP e espécie",()->PogoFeedDialog.show(activity));
+        launch(pokemonSearch,"Radar de Pokémon e locais próximos",()->LiveFeedDialog.show(activity));
+        caption(pokemonSearch,"As fontes usam seus próprios serviços e filtros. Resultados globais e determinados dados podem exigir conta ou acesso específico.");
+        LinearLayout encounters = section(page, "Encounter counter", false);
+        encounterCounterSwitch = switchRow(encounters, "Count encounters"); encounterCounterSwitch.setChecked(Control.encounterCounter());
+        encounterCounterSwitch.setOnCheckedChangeListener((v,checked) -> { if(checked==Control.encounterCounter())return; Control.setEncounterCounter(encounterCounterSwitch.isChecked()); host.refresh(); });
+        encounterOverlaySwitch = switchRow(encounters, "Show the count on the map"); encounterOverlaySwitch.setChecked(Control.encounterOverlay());
+        encounterOverlaySwitch.setOnCheckedChangeListener((v,checked) -> { if(checked==Control.encounterOverlay())return; Control.setEncounterOverlay(encounterOverlaySwitch.isChecked()); host.refresh(); });
+        caption(encounters, "Wild Pokémon this account has encountered in the last 24 hours on this device while PGBR was running, shown next to the PGBR title. Encounters made elsewhere, and lure, incense, raid and research encounters, are not counted.");
+
         LinearLayout iv = group(page, "IV display");
         // One button per screen; each tap moves to the next format, with Off between the last and first.
         ivCatchMode = button(""); iv.addView(ivCatchMode);
@@ -424,16 +939,51 @@ final class SettingsPanel {
         unavailableNote(page, false);
 
         LinearLayout vgpC=group(page,"Virtual Go Plus");
-        vgpSwitch=switchRow(vgpC,"VGP overlay");vgpSwitch.setChecked(Control.vgpOverlay());
+        vgpSwitch=switchRow(vgpC,"Exibir botão VGP+ (não inicia)");vgpSwitch.setChecked(Control.vgpOverlay());
         vgpSwitch.setOnCheckedChangeListener((b,checked)->{if(checked!=Control.vgpOverlay())Control.setVgpOverlay(checked);host.refresh();});
+        caption(vgpC,"Exibir o botão não inicia a automação. Use Iniciar VGP+ abaixo "
+                + "ou toque no ícone flutuante no mapa e confirme. "
+                + "Sem temporizador e sem pausa por cooldown estimado.");
+        vgpStartStopButton=launch(vgpC,"Iniciar VGP+",()->{
+            if(Control.vgpEnabled()){
+                Control.setVgpEnabled(false);host.refresh();return;
+            }
+            if(!Control.vgpOverlay()){
+                new AlertDialog.Builder(dialogContext())
+                    .setTitle(dev.pgrazor.PtBr.tr("Botão VGP+ oculto"))
+                    .setMessage(dev.pgrazor.PtBr.tr("Ative Exibir botão VGP+ antes de iniciar a automação."))
+                    .setPositiveButton(dev.pgrazor.PtBr.tr("Entendi"),null).show();
+                return;
+            }
+            Runnable start=()->{Control.setVgpEnabled(true);host.refresh();};
+            if(Control.vgpTapProtection()){
+                new AlertDialog.Builder(dialogContext())
+                    .setTitle(dev.pgrazor.PtBr.tr("Iniciar Virtual GO Plus?"))
+                    .setMessage(dev.pgrazor.PtBr.tr("A VGP poderá tentar capturar Pokémon e girar Poképaradas conforme as opções marcadas. A ativação não garante prontidão do mecanismo nativo."))
+                    .setPositiveButton(dev.pgrazor.PtBr.tr("Iniciar"),(d,which)->start.run())
+                    .setNegativeButton(dev.pgrazor.PtBr.tr("Cancelar"),null).show();
+            }else start.run();
+        });
         String[] vgpLabels={"Nearby Pokémon","Nearby PokéStops","Push notifications"};
         for(int i=0;i<3;i++){final int bit=1<<i;CheckBox box=new CheckBox(activity);box.setText(dev.pgrazor.PtBr.tr(vgpLabels[i]));box.setChecked((Control.vgpOptions()&bit)!=0);vgpChoices[i]=box;vgpC.addView(box);
             box.setOnClickListener(v->{Control.setVgpOptions(box.isChecked()?Control.vgpOptions()|bit:Control.vgpOptions()&~bit);
                 if(bit==4&&box.isChecked()&&Build.VERSION.SDK_INT>=33&&activity.checkSelfPermission("android.permission.POST_NOTIFICATIONS")!=android.content.pm.PackageManager.PERMISSION_GRANTED)activity.requestPermissions(new String[]{"android.permission.POST_NOTIFICATIONS"},7301);
             });
         }
-        vgpCooldownStop=new CheckBox(activity);vgpCooldownStop.setText(dev.pgrazor.PtBr.tr("Stop on cooldown (estimated)"));vgpCooldownStop.setContentDescription(dev.pgrazor.PtBr.tr("Stop Virtual Go Plus during the estimated action cooldown"));vgpCooldownStop.setChecked(Control.vgpStopOnCooldown());vgpC.addView(vgpCooldownStop);
-        vgpCooldownStop.setOnClickListener(v->{if(vgpCooldownStop.isChecked()!=Control.vgpStopOnCooldown())Control.setVgpStopOnCooldown(vgpCooldownStop.isChecked());host.refresh();});
+        Switch accidentalTap=switchRow(vgpC,"Evitar toque acidental no VGP+");
+        accidentalTap.setChecked(Control.vgpTapProtection());
+        accidentalTap.setOnCheckedChangeListener((button,checked)->Control.setVgpTapProtection(checked));
+        caption(vgpC,"A confirmação evita ativação acidental. Desligar continua com um toque.");
+        vgpIconStyleButton=launch(vgpC,"Ícone do VGP",this::showVgpAppearance);
+        launch(vgpC,"Diagnóstico VGP+ (somente leitura)",()->{
+            String report=VgpHealthReport.build(Control.vgpOverlay(),
+                Control.vgpEnabled(),Control.vgpOptions(),Control.vgpDiagnosticStatus());
+            new AlertDialog.Builder(dialogContext())
+                .setTitle(dev.pgrazor.PtBr.tr("Diagnóstico Virtual GO Plus"))
+                .setMessage(report)
+                .setPositiveButton(dev.pgrazor.PtBr.tr("Fechar"),null)
+                .show();
+        });
         vgpStatus=caption(vgpC,Control.vgpStatus());
         smartRefresh=SmartCatchSettings.populate(activity,vgpC);
 
@@ -441,6 +991,13 @@ final class SettingsPanel {
         quickSpinSwitch = switchRow(stops, "Quick spin"); quickSpinSwitch.setChecked(Control.quickSpinEnabled());
         quickSpinSwitch.setOnCheckedChangeListener((v,checked) -> { if(checked==Control.quickSpinEnabled())return; Control.setQuickSpinEnabled(quickSpinSwitch.isChecked()); });
         quickSpinStatus = caption(stops, "");
+        LinearLayout mateo=group(page,"Rotas");summaryGated.add((View)mateo.getParent());
+        routeGiftSwitch=switchRow(mateo,"Trocar presentes com Mateo");
+        routeGiftSwitch.setChecked(Control.routeGiftExchange());
+        routeGiftSwitch.setOnCheckedChangeListener((v,checked)->{
+            if(checked!=Control.routeGiftExchange())Control.setRouteGiftExchange(checked);
+        });
+        caption(mateo,"Opcional: durante uma Rota, troca o presente com Mateo usando os comandos normais do jogo. Não negocia Pokémon e não ativa outras automações.");
 
         // ----- Inventory (opens its modal directly) -----
         LinearLayout itemsC = group(page, "Items"); summaryGated.add((View)itemsC.getParent());
@@ -460,9 +1017,42 @@ final class SettingsPanel {
         LinearLayout rocketC = group(battleC, "Team Rocket");
         String[] rocketLabels={"Auto quick attack","Auto charged attack","Auto shield"};
         for(int i=0;i<3;i++){final int bit=1<<i;CheckBox box=new CheckBox(activity);box.setText(dev.pgrazor.PtBr.tr(rocketLabels[i]));box.setChecked((Control.rocketOptions()&bit)!=0);rocketChoices[i]=box;rocketC.addView(box);
-            box.setOnClickListener(v->Control.setRocketOptions(box.isChecked()?Control.rocketOptions()|bit:Control.rocketOptions()&~bit));}
-        caption(rocketC, "While any of these is on, the next Pokémon is picked automatically when one faints.");
+            box.setOnClickListener(v->{
+                Control.setRocketOptions(box.isChecked()?Control.rocketOptions()|bit:Control.rocketOptions()&~bit);
+                refreshRocket();
+                refreshPvpBattles();
+            });}
+        caption(rocketC, "Ataques e escudos são compartilhados com PvP. A execução automática Rocket só funciona quando o controlador Rocket está pronto.");
         rocketStatus = caption(rocketC, "");
+
+        // PvP has the same three action flags as Rocket, with its own runtime gate.
+        LinearLayout pvpBattleC=group(battleC,"PvP · Liga de Batalha GO");
+        String[] pvpBattleLabels={"Ataque ágil automático","Ataque carregado automático","Escudo automático"};
+        for(int i=0;i<3;i++){
+            final int option=1<<i;
+            CheckBox box=new CheckBox(activity);
+            box.setText(pvpBattleLabels[i]);
+            box.setChecked((Control.pvpBattleOptions()&option)!=0);
+            pvpBattleChoices[i]=box;pvpBattleC.addView(box);
+            box.setOnClickListener(v->{
+                Control.setPvpBattleOptions(
+                    PvpBattleMode.update(Control.pvpBattleOptions(),option,box.isChecked()));
+                refreshPvpBattles();
+                refreshRocket();
+            });
+        }
+        pvpPreferSuper=new CheckBox(activity);
+        pvpPreferSuper.setText("Priorizar ataque carregado supereficaz");
+        pvpPreferSuper.setChecked((Control.pvpBattleOptions()&PvpBattleMode.PREFER_SUPER)!=0);
+        pvpPreferSuper.setOnClickListener(v->{
+            Control.setPvpBattleOptions(
+                PvpBattleMode.update(Control.pvpBattleOptions(),
+                    PvpBattleMode.PREFER_SUPER,pvpPreferSuper.isChecked()));
+            refreshPvpBattles();
+        });
+        pvpBattleC.addView(pvpPreferSuper);
+        caption(pvpBattleC,"Ataque ágil, carregado e escudo são compartilhados com Rocket. O executor VNext PvP é experimental; a escolha supereficaz do segundo golpe ainda não está integrada.");
+        pvpBattleStatus=caption(pvpBattleC,"");
 
         LinearLayout gymC = group(battleC, "Gyms");
         launch(gymC, "Gym Slotter & Berry Feeder", () -> GymAutomationSettings.show(activity));
@@ -576,15 +1166,51 @@ final class SettingsPanel {
         launch(page, "Mass Evolve", () -> BatchEvolutionSettings.show(activity));
         LinearLayout research = group(page, "Field research");
         launch(research, "Research", () -> ResearchSettings.show(activity));
+        LinearLayout gpxResearch = group(page, "GPX e missões");
+        caption(gpxResearch, "Importe uma rota GPX, escolha as pesquisas que deseja manter e configure o arremesso Excelente no VGP+. A caminhada por GPX, o giro de Poképaradas e as pesquisas ainda são funções independentes.");
+        launch(gpxResearch, "Importar GPX / caminhada automática", () -> AutoWalkDialog.show(activity));
+        launch(gpxResearch, "Selecionar missões desejadas", () -> ResearchSettings.show(activity));
+        launch(gpxResearch, "Configurar arremesso Excelente", () -> SmartCatchSettings.show(activity));
     }
 
     private void buildEventsPage() {
         LinearLayout page = page(MenuIcon.EVENTS, "Events");
         caption(page, "Settings for limited-time events.");
+        Switch eventShortcut=switchRow(page,"Mostrar Eventos no Menu Pokébola");
+        eventShortcut.setChecked(Control.quickMenuVisible(QuickMenuVisibilityPolicy.EVENTS_BIT));
+        eventShortcut.setOnCheckedChangeListener((button,checked)->{
+            if(checked==Control.quickMenuVisible(QuickMenuVisibilityPolicy.EVENTS_BIT))return;
+            Control.setQuickMenuVisible(QuickMenuVisibilityPolicy.EVENTS_BIT,checked);
+            // Keep the Display > Quick menu entries checkbox synchronized, if built.
+            if(quickMenuChoices[9]!=null)quickMenuChoices[9].setChecked(checked);
+            host.refresh();
+        });
+        launch(page,"Abrir seletor de Eventos",()->
+            dev.pgrazor.events.EventPanel.showSelector(activity,Control.darkTheme()));
+        caption(page,"Halloween: coletor só ativa quando o runtime informa disponibilidade; "
+            +"GO Wild: Safari Balls apenas para Mighty, com VGP+ ou Auto Ball ativado. "
+            +"Rota Eternatus: exige GPX e confirmação real das pesquisas.");
         launch(page, "Halloween 2026", () -> dev.pgrazor.events.EventPanel.showHalloween(activity, Control.darkTheme()));
         launch(page, "Go Wild November 2026", () -> dev.pgrazor.events.EventPanel.showGoWild(activity, Control.darkTheme()));
+        launch(page, "Evento Rota Doces Eternatus", () -> dev.pgrazor.events.EventPanel.showEternatus(activity, Control.darkTheme()));
     }
 
+    private interface VisualChange{void set(int value);}
+    private void visualSlider(LinearLayout owner,String title,int min,int max,int initial,VisualChange change){
+        TextView label=new TextView(activity);label.setTextSize(13);
+        label.setText(dev.pgrazor.PtBr.tr(title+": "+initial+(title.contains("Opacidade")?"%":" dp")));
+        owner.addView(label);
+        SeekBar slider=new SeekBar(activity);slider.setMax(max-min);slider.setProgress(initial-min);
+        owner.addView(slider);
+        slider.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){
+            public void onProgressChanged(SeekBar bar,int progress,boolean fromUser){
+                if(!fromUser)return;int value=min+progress;change.set(value);
+                label.setText(dev.pgrazor.PtBr.tr(title+": "+value+(title.contains("Opacidade")?"%":" dp")));
+            }
+            public void onStartTrackingTouch(SeekBar bar){}
+            public void onStopTrackingTouch(SeekBar bar){}
+        });
+    }
     private void buildDisplayPage() {
         LinearLayout page = page(MenuIcon.SETTINGS, "Display & Performance");
         darkSwitch = switchRow(page, "Dark theme"); darkSwitch.setChecked(Control.darkTheme());
@@ -596,6 +1222,75 @@ final class SettingsPanel {
         skipCutscenesSwitch.setOnCheckedChangeListener((v,checked) -> { if(checked==Control.skipCutscenes())return; Control.setSkipCutscenes(checked); });
         cutsceneStatus = caption(page, "");  // shown only when the native module reports an error
 
+        // The game UI hook is a best-effort compatibility probe, not an attested privacy shield.
+        LinearLayout privacy=group(page,"Privacidade do treinador");
+        caption(privacy,"Oculta o nome nos menus do PGBR e tenta substituir somente o texto "
+            +"do próprio treinador por ***** em componentes de exibição do Unity. "
+            +"A cobertura do mapa e do perfil Eu ainda precisa ser confirmada no aparelho. "
+            +"Não considere esta opção uma proteção garantida para lives e gravações.");
+        final Switch hideTrainer=switchRow(privacy,"Ocultar nome visualmente");
+        final TextView preview=caption(privacy,"");
+        final TextView gamePrivacy=caption(privacy,"");
+        Runnable updatePrivacy=()->{
+            hideTrainer.setChecked(Control.trainerPrivacyMode()!=0);
+            preview.setText(dev.pgrazor.PtBr.tr(
+                "Exibição no PGBR: "+(Control.trainerPrivacyMode()==1?"*****":
+                    Control.trainerPrivacyMode()==2?Control.trainerAlias():"Nome original")));
+            int status=Control.trainerPrivacyDisplayStatus();
+            int sinks=status & 0x0F;
+            String detail=status<0?"Módulo visual indisponível":
+                (status & 0x10)==0?"Aguardando confirmação da identidade do treinador":
+                sinks==0?"Nenhum componente de texto Unity validado":
+                sinks+" componente(s) de texto Unity interceptado(s)";
+            int nativeStreamer=status<0?0:(status>>>8)&3;
+            String streamer=nativeStreamer==3
+                ?"metadados do serviço e seus dois indicadores reconhecidos, sem ativação"
+                :nativeStreamer==2
+                ?"classe localizada, porém assinatura dos indicadores ainda incompatível"
+                :nativeStreamer==1
+                ?"classe não encontrada nesta versão do jogo"
+                :"aguardando leitura de compatibilidade";
+            gamePrivacy.setText(dev.pgrazor.PtBr.tr(
+                "Jogo: "+detail+". Proteção em tela não verificada. "
+                +"Modo Streamer nativo: "+streamer+". "
+                +"A detecção do serviço não comprova ocultação do nome do treinador."));
+        };
+        hideTrainer.setOnCheckedChangeListener((button,checked)->{
+            if(checked==(Control.trainerPrivacyMode()!=0))return;
+            Control.setTrainerPrivacyMode(checked?1:0);
+            updatePrivacy.run();host.refresh();
+        });
+        launch(privacy,"Nome exibido nos menus do PGBR",()->{
+            String[] options={"Nome original","Ocultar nome no PGBR","Mostrar apelido no PGBR"};
+            new AlertDialog.Builder(dialogContext()).setTitle("Nome exibido no PGBR")
+                .setSingleChoiceItems(options,Control.trainerPrivacyMode(),(d,choice)->{
+                    Control.setTrainerPrivacyMode(choice);updatePrivacy.run();host.refresh();d.dismiss();
+                }).setNegativeButton("Cancelar",null).show();
+        });
+        launch(privacy,"Definir meu apelido",()->{
+            EditText name=new EditText(dialogContext());
+            name.setSingleLine(true);
+            name.setFilters(new android.text.InputFilter[]{new android.text.InputFilter.LengthFilter(24)});
+            name.setText(Control.trainerAlias());
+            name.setHint("PGBR Treinador");
+            AlertDialog aliasDialog=new AlertDialog.Builder(dialogContext()).setTitle("Apelido local")
+                .setMessage("De 2 a 24 caracteres: letras, números, espaços, ponto, traço ou sublinhado.")
+                .setView(name).setNegativeButton("Cancelar",null)
+                .setPositiveButton("Salvar",null).create();
+            aliasDialog.setOnShowListener(d->aliasDialog.getButton(AlertDialog.BUTTON_POSITIVE)
+                .setOnClickListener(v->{
+                    if(!Control.setCustomTrainerAlias(name.getText().toString())){
+                        name.setError(dev.pgrazor.PtBr.tr("Use de 2 a 24 caracteres válidos."));return;
+                    }
+                    updatePrivacy.run();host.refresh();aliasDialog.dismiss();
+                }));
+            aliasDialog.show();
+        });
+        launch(privacy,"Gerar apelido PGBR aleatório",()->{
+            Control.regenerateTrainerAlias();Control.setTrainerPrivacyMode(2);
+            updatePrivacy.run();host.refresh();
+        });
+        updatePrivacy.run();
         LinearLayout battery = group(page, "Battery usage");
         caption(battery, "Lower graphics to save battery and keep the phone cooler. Each turns back to the game's own setting when switched off.");
         batteryResSwitch = switchRow(battery, "Lower resolution"); batteryResSwitch.setChecked(Control.batteryLowRes());
@@ -607,6 +1302,40 @@ final class SettingsPanel {
         batteryQualitySwitch.setOnCheckedChangeListener((v,checked) -> { if(checked!=Control.batteryLowQuality())Control.setBatteryLowQuality(checked); });
         caption(battery, "Turns off shadows, fog, water reflections, grass in encounters, HDR and anti-aliasing, and shows less far detail.");
 
+        LinearLayout appearance=group(page,"Personalização dos ícones e fundos");
+        visualSlider(appearance,"Tamanho dos ícones dos menus",16,40,Control.menuIconSizeDp(),value->{
+            Control.setMenuIconSizeDp(value);host.refresh();});
+        launch(appearance,"Ícone do menu principal: PGBR / PGEterna / Personalizado",()->{
+            String[] labels={"PGBR (azul pulsante)","PGEterna (efeitos Eternatus)","Imagem escolhida no celular"};
+            new AlertDialog.Builder(dialogContext()).setTitle("Ícone do menu principal")
+                .setSingleChoiceItems(labels,Control.menuLauncherIconStyle(),(dialog,which)->{
+                    dialog.dismiss();
+                    if(which==2){
+                        OverlayArtwork.select(activity,"launcher",()->{Control.setMenuLauncherIconStyle(2);host.refresh();});
+                    }else{Control.setMenuLauncherIconStyle(which);host.refresh();}
+                }).setNegativeButton("Cancelar",null).show();
+        });
+        visualSlider(appearance,"Tamanho do botão principal",28,96,Control.menuLauncherSizeDp(),value->{
+            Control.setMenuLauncherSizeDp(value);host.refresh();});
+        visualSlider(appearance,"Opacidade do ícone principal",10,100,Control.menuLauncherOpacity(),value->{
+            Control.setMenuLauncherOpacity(value);host.refresh();});
+        visualSlider(appearance,"Opacidade do fundo principal",0,100,Control.menuLauncherBgOpacity(),value->{
+            Control.setMenuLauncherBgOpacity(value);host.refresh();});
+        visualSlider(appearance,"Tamanho do ícone de ginásios",24,110,Control.gymIconSizeDp(),value->{
+            Control.setGymIconSizeDp(value);host.refresh();});
+        visualSlider(appearance,"Opacidade do ícone de ginásios",10,100,Control.gymIconOpacity(),value->{
+            Control.setGymIconOpacity(value);host.refresh();});
+        visualSlider(appearance,"Opacidade do fundo de ginásios",0,100,Control.gymBackgroundOpacity(),value->{
+            Control.setGymBackgroundOpacity(value);host.refresh();});
+        launch(appearance,"Exibir ou ocultar ícone do ginásio e frutas",()->GymAutomationSettings.show(activity));
+        launch(appearance,"Escolher símbolo do ginásio no celular",()->OverlayArtwork.select(activity,"gym",host::refresh));
+        launch(appearance,"Escolher fruta do botão no celular",()->OverlayArtwork.select(activity,"berry",host::refresh));
+        launch(appearance,"Restaurar símbolos originais do ginásio e fruta",()->{
+            OverlayArtwork.reset(activity,"gym",()->OverlayArtwork.reset(activity,"berry",host::refresh));
+        });
+        visualSlider(appearance,"Opacidade dos fundos flutuantes",0,100,Control.overlayBackgroundOpacity(),value->{
+            Control.setOverlayBackgroundOpacity(value);host.applyTheme();host.refresh();});
+        caption(appearance,"0% deixa os fundos flutuantes transparentes. Janelas de confirmação permanecem legíveis para evitar ações acidentais.");
         LinearLayout menu = group(page,"Quick menu entries");
         caption(menu,"Choose which entries appear. This does not turn features on or off. Settings stays visible.");
         for(int i=0;i<QuickMenu.CUSTOMIZABLE.length;i++){
@@ -625,6 +1354,11 @@ final class SettingsPanel {
             else activity.startActivity(new Intent(activity,LogActivity.class).putExtra("settingsBackup",true));
         });
         launch(page, "Run log / export", () -> LogActivity.open(activity));
+        launch(page, "Verificar atualizações do PGBR", () -> UpdateChecker.check(activity));
+        Switch autoUpdateNotice=switchRow(page,"Avisar automaticamente sobre novas versões");
+        autoUpdateNotice.setChecked(UpdateChecker.automaticEnabled(activity));
+        autoUpdateNotice.setOnCheckedChangeListener((button,on)->UpdateChecker.setAutomaticEnabled(activity,on));
+        caption(page,"O aviso aparece automaticamente ao abrir o PGBR quando há uma versão pública mais recente. Baixar e instalar exigem confirmação.");
 
         // ----- Diagnostics (status plumbing kept out of everyday settings) -----
         LinearLayout diag = section(page, "Diagnostics", false);
@@ -653,18 +1387,40 @@ final class SettingsPanel {
         return out.length()==0?"All off":out.toString();
     }
     private void summary(int index,String value){TextView view=pageSummaries.get(index);if(!value.contentEquals(view.getText()))view.setText(dev.pgrazor.PtBr.tr(value));}
+    private void refreshSessionStats(){
+        if(sessionStatsSummary==null)return;
+        long window=sessionStats24h?SessionStatsHistory.DAY_MS:SessionStatsHistory.HOUR_MS;
+        SessionStatsHistory.Change changes=SessionStats.change(window);
+        sessionStatsToggle.setText(sessionStats24h?"Ver última hora":"Ver últimas 24 horas");
+        if(changes==null){
+            sessionStatsSummary.setText("Aguardando estatísticas do jogo…");
+            return;
+        }
+        java.util.Locale pt=new java.util.Locale("pt","BR");
+        sessionStatsSummary.setText(String.format(pt,
+            "XP +%,d · Poeira +%,d\nCapturas %,d · Encontros %,d\nPoképaradas %,d · Caminhada %.2f km · Ovos %,d",
+            Math.round(changes.get(SessionStatsHistory.XP)),
+            Math.round(changes.get(SessionStatsHistory.DUST)),
+            Math.round(changes.get(SessionStatsHistory.CAUGHT)),
+            Math.round(changes.get(SessionStatsHistory.SEEN)),
+            Math.round(changes.get(SessionStatsHistory.STOPS)),
+            changes.get(SessionStatsHistory.KM),
+            Math.round(changes.get(SessionStatsHistory.HATCHED))));
+    }
     private void refreshHome(){
         if(current>=0)return;
+        refreshSessionStats();
         summary(0,(Control.desiredEnabled()?"Spoofing on":"Spoofing off")+String.format(Locale.US," · %.1f km/h",Control.engine.speedKmh));
-        summary(1,active("Quick catch",Control.quickSummaryEnabled(),"Auto throw",Control.autoThrow(),"Auto ball",Control.autoBall(),"Curveball",Control.throwCurve(),"Always hit",Control.throwAlwaysHit(),"Berries",Control.encounterBerryEnabled()));
-        summary(2,active("Auto-transfer",Control.autoTransferEnabled(),"Evolve first",Control.autoTransferEnabled()&&Control.evolveTransferEnabled(),"IVs shown",Control.ivCatchMode()!=0||Control.ivOwnedMode()!=0||Control.storageIvMode()!=0));
-        summary(3,active("Go Plus overlay",Control.vgpOverlay(),"Quick spin",Control.quickSpinEnabled(),"Item cleanup",Control.itemTransferEnabled()));
-        summary(4,active("Smart battling",Control.smartBattle(),"Smart healing",Control.healEnabled(),"Auto attacks",Control.battleOptions()!=0||Control.rocketOptions()!=0,"Gym repeat",Control.gymRepeatEnabled()));
-        summary(5,active("Buddy engine",BuddyEmotionSettings.enabled(),"Auto incubate",Control.autoIncubate(),"Open gifts",(Control.giftOptions()&1)!=0,"Send gifts",(Control.giftOptions()&2)!=0));
-        summary(6,AutoRaid.running()?"Auto-Raid running":ShundoSniper.active()?"Shundo Sniper running":ShinyScanner.enabled()?"Shiny Scanner on":"Shundo, shiny scan, raids, incense, gym feeding, gifts, evolve, research");
-        summary(7,"Halloween · Go Wild");
-        summary(8,"UI "+Control.uiScalePercent()+"% · "+(Control.darkTheme()?"Dark":"Light")+" theme"+(Control.skipCutscenes()?" · Skip cutscenes":""));
-        summary(9,"Accounts, export / import, run log, diagnostics");
+        summary(1,"Relógio local, tempo de espera e legendas do mapa");
+        summary(2,active("Quick catch",Control.quickSummaryEnabled(),"Auto throw",Control.autoThrow(),"Auto ball",Control.autoBall(),"Curveball",Control.throwCurve(),"Always hit",Control.throwAlwaysHit(),"Berries",Control.encounterBerryEnabled()));
+        summary(3,active("Auto-transfer",Control.autoTransferEnabled(),"Evolve first",Control.autoTransferEnabled()&&Control.evolveTransferEnabled(),"IVs shown",Control.ivCatchMode()!=0||Control.ivOwnedMode()!=0||Control.storageIvMode()!=0));
+        summary(4,active("Go Plus overlay",Control.vgpOverlay(),"Quick spin",Control.quickSpinEnabled(),"Item cleanup",Control.itemTransferEnabled()));
+        summary(5,active("Smart battling",Control.smartBattle(),"Smart healing",Control.healEnabled(),"Auto attacks",Control.battleOptions()!=0||Control.rocketOptions()!=0,"Gym repeat",Control.gymRepeatEnabled()));
+        summary(6,active("Buddy engine",BuddyEmotionSettings.enabled(),"Auto incubate",Control.autoIncubate(),"Open gifts",(Control.giftOptions()&1)!=0,"Send gifts",(Control.giftOptions()&2)!=0));
+        summary(7,AutoRaid.running()?"Auto-Raid running":ShundoSniper.active()?"Shundo Sniper running":ShinyScanner.enabled()?"Shiny Scanner on":"Shundo, shiny scan, raids, incense, gym feeding, gifts, evolve, research");
+        summary(8,"Halloween · Go Wild");
+        summary(9,"UI "+Control.uiScalePercent()+"% · "+(Control.darkTheme()?"Dark":"Light")+" theme"+(Control.skipCutscenes()?" · Skip cutscenes":""));
+        summary(10,"Accounts, export / import, run log, diagnostics");
     }
 
     /** The root panel view; Pad owns attachment to the window and insets wiring. */
@@ -704,7 +1460,12 @@ final class SettingsPanel {
         if(coords!=null)coords.setTextColor(ink());
         for(LinearLayout row:homeRows)MapTheme.setButtonBackground(row);
         for(TextView name:homeNames)name.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
-        for(MenuIcon icon:homeIcons)icon.invalidate();
+        for(MenuIcon icon:homeIcons){
+            ViewGroup.LayoutParams lp=icon.getLayoutParams();
+            int size=dp(Control.menuIconSizeDp()+4);
+            if(lp!=null&&(lp.width!=size||lp.height!=size)){lp.width=size;lp.height=size;icon.setLayoutParams(lp);}
+            icon.invalidate();
+        }
         if(backIcon!=null)backIcon.invalidate();
         if(closeIcon!=null)closeIcon.invalidate();
         if(themeIcon!=null){themeIcon.setContentDescription(dev.pgrazor.PtBr.tr(Control.darkTheme()?"Switch to light theme":"Switch to dark theme"));themeIcon.invalidate();}
@@ -720,10 +1481,14 @@ final class SettingsPanel {
         for(String row:Control.itemRules().split(";"))try{String[] b=row.split(":");int id=Integer.parseInt(b[0]);selected.add(id);limits.put(id,Integer.parseInt(b[1]));}catch(RuntimeException ignored){}
         LinearLayout rows=new LinearLayout(activity);rows.setOrientation(LinearLayout.VERTICAL);ScrollView scroll=new ScrollView(activity);scroll.addView(rows);form.addView(scroll,new LinearLayout.LayoutParams(-1,dp(380)));
         java.util.Map<Integer,CheckBox> boxes=new java.util.LinkedHashMap<>();java.util.Map<Integer,EditText> inputs=new java.util.LinkedHashMap<>();
-        Runnable populate=()->{for(String row:Control.itemCatalog().split("\n")){String[] b=row.split("\\|",-1);if(b.length!=3)continue;int id;try{id=Integer.parseInt(b[0]);}catch(NumberFormatException invalid){continue;}if(boxes.containsKey(id)){boxes.get(id).setText(dev.pgrazor.PtBr.tr(b[1]+" ("+b[2]+" in bag)"));continue;}
+        Runnable populate=()->{for(String row:Control.itemCatalog().split("\n")){String[] b=row.split("\\|",-1);if(b.length!=3)continue;int id;try{id=Integer.parseInt(b[0]);}catch(NumberFormatException invalid){continue;}if(boxes.containsKey(id)){boxes.get(id).setText(dev.pgrazor.PtBr.tr((dev.pgrazor.PtBr.tr(b[1])+" ("+b[2]+" na bolsa)")));continue;}
             LinearLayout line=new LinearLayout(activity);line.setOrientation(LinearLayout.HORIZONTAL);line.setGravity(Gravity.CENTER_VERTICAL);
-            CheckBox box=new CheckBox(activity);box.setText(dev.pgrazor.PtBr.tr(b[1]+" ("+b[2]+" in bag)"));box.setChecked(selected.contains(id));line.addView(box,new LinearLayout.LayoutParams(0,-2,1));
-            EditText cap=new EditText(dialogContext());cap.setInputType(InputType.TYPE_CLASS_NUMBER);cap.setSingleLine(true);cap.setHint(dev.pgrazor.PtBr.tr("Max"));cap.setText(dev.pgrazor.PtBr.tr(String.valueOf(limits.containsKey(id)?limits.get(id):100)));cap.setContentDescription(dev.pgrazor.PtBr.tr("Maximum "+b[1]+" to keep"));SettingsUi.enabled(cap,enabled.isChecked()&&box.isChecked());box.setOnCheckedChangeListener((button,checked)->SettingsUi.enabled(cap,enabled.isChecked()&&checked));line.addView(cap,new LinearLayout.LayoutParams(dp(80),-2));rows.addView(line);styleTree(line);boxes.put(id,box);inputs.put(id,cap);
+            ItemBadge itemArt=new ItemBadge(activity,id);
+            LinearLayout.LayoutParams artLayout=new LinearLayout.LayoutParams(dp(26),dp(26));
+            artLayout.rightMargin=dp(4);line.addView(itemArt,artLayout);
+            CheckBox box=new CheckBox(activity);box.setText(dev.pgrazor.PtBr.tr((dev.pgrazor.PtBr.tr(b[1])+" ("+b[2]+" na bolsa)")));box.setChecked(selected.contains(id));line.addView(box,new LinearLayout.LayoutParams(0,-2,1));
+            itemArt.setAlpha(box.isChecked()?1f:0.70f);
+            EditText cap=new EditText(dialogContext());cap.setInputType(InputType.TYPE_CLASS_NUMBER);cap.setSingleLine(true);cap.setHint(dev.pgrazor.PtBr.tr("Max"));cap.setText(dev.pgrazor.PtBr.tr(String.valueOf(limits.containsKey(id)?limits.get(id):100)));cap.setContentDescription(dev.pgrazor.PtBr.tr((dev.pgrazor.PtBr.tr("Maximum ")+dev.pgrazor.PtBr.tr(b[1])+dev.pgrazor.PtBr.tr(" to keep"))));SettingsUi.enabled(cap,enabled.isChecked()&&box.isChecked());box.setOnCheckedChangeListener((button,checked)->{SettingsUi.enabled(cap,enabled.isChecked()&&checked);itemArt.setAlpha(checked?1f:0.70f);});line.addView(cap,new LinearLayout.LayoutParams(dp(72),-2));rows.addView(line);styleTree(line);box.setTextSize(12);boxes.put(id,box);inputs.put(id,cap);
         }};populate.run();
         Runnable dependencies=()->{for(java.util.Map.Entry<Integer,CheckBox> entry:boxes.entrySet()){SettingsUi.enabled(entry.getValue(),enabled.isChecked());SettingsUi.enabled(inputs.get(entry.getKey()),enabled.isChecked()&&entry.getValue().isChecked());}};
         enabled.setOnCheckedChangeListener((v,on)->dependencies.run());dependencies.run();
@@ -732,12 +1497,21 @@ final class SettingsPanel {
         final Runnable[] poll=new Runnable[1];poll[0]=()->{if(!dialog.isShowing())return;Control.requestItemCatalog();populate.run();dependencies.run();status.setText(dev.pgrazor.PtBr.tr(Control.itemStatus()));handler.postDelayed(poll[0],1000);};
         itemDialogs.add(dialog);
         dialog.setOnDismissListener(d->{handler.removeCallbacks(poll[0]);itemDialogs.remove(dialog);});dialog.show();styleTree(form);handler.post(poll[0]);
-        dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v->{StringBuilder rules=new StringBuilder(),all=new StringBuilder();for(java.util.Map.Entry<Integer,EditText> e:inputs.entrySet()){int cap;try{cap=Integer.parseInt(e.getValue().getText().toString().trim());if(cap<0||cap>100000)throw new NumberFormatException();}catch(NumberFormatException invalid){e.getValue().setError("Enter 0 to 100000");return;}String rule=e.getKey()+":"+cap+";";all.append(rule);if(boxes.get(e.getKey()).isChecked())rules.append(rule);}
+        dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v->{StringBuilder rules=new StringBuilder(),all=new StringBuilder();for(java.util.Map.Entry<Integer,EditText> e:inputs.entrySet()){int cap;try{cap=Integer.parseInt(e.getValue().getText().toString().trim());if(cap<0||cap>100000)throw new NumberFormatException();}catch(NumberFormatException invalid){e.getValue().setError(dev.pgrazor.PtBr.tr("Enter 0 to 100000"));return;}String rule=e.getKey()+":"+cap+";";all.append(rule);if(boxes.get(e.getKey()).isChecked())rules.append(rule);}
             Control.saveItemRules(enabled.isChecked(),rules.toString(),all.toString());dialog.dismiss();host.refresh();});
     }
 
     void refresh() {
         refreshHome();
+        if(joystickStyleButton!=null){
+            String desired="Estilo do joystick: "+joystickStyleName(Control.joystickStyle());
+            if(!desired.contentEquals(joystickStyleButton.getText()))
+                joystickStyleButton.setText(dev.pgrazor.PtBr.tr(desired));
+        }
+        for(MenuIcon icon:homeIcons){
+            ViewGroup.LayoutParams lp=icon.getLayoutParams();int size=dp(Control.menuIconSizeDp()+4);
+            if(lp!=null&&(lp.width!=size||lp.height!=size)){lp.width=size;lp.height=size;icon.setLayoutParams(lp);}
+        }
         darkSwitch.setChecked(Control.darkTheme());
         refreshLocationStatus();
         refreshDiagnostics();
@@ -750,6 +1524,7 @@ final class SettingsPanel {
         refreshGifts();
         refreshBattles();
         refreshRocket();
+        refreshPvpBattles();
         refreshItems();
         refreshQuickCatch();
         refreshLocationOptions();
@@ -764,9 +1539,10 @@ final class SettingsPanel {
 
     private void refreshDependencies(){
         for(CheckBox box:vgpChoices)SettingsUi.enabled(box,Control.vgpOverlay());
-        SettingsUi.enabled(vgpCooldownStop,Control.vgpOverlay());smartRefresh.run();
+        smartRefresh.run();
         for(CheckBox box:transferProtection)SettingsUi.enabled(box,Control.autoTransferEnabled());
         SettingsUi.enabled(transferKeepList,Control.autoTransferEnabled());
+        SettingsUi.enabled(transferIvLimit,Control.autoTransferEnabled());
         SettingsUi.enabled((View)transferOverlaySwitch.getParent(),Control.autoTransferEnabled());
         // Evolve before transferring needs the auto-transfer master; its options need the feature on, and
         // the selected-species list only matters in "Selected species only" mode.
@@ -815,6 +1591,9 @@ final class SettingsPanel {
     private void refreshTransfer() {
         quickSummaryStatus.setText(dev.pgrazor.PtBr.tr(Control.quickSummaryStatus()));
         autoTransferSwitch.setChecked(Control.autoTransferEnabled());
+        if(transferIvLimit!=null)transferIvLimit.setText(dev.pgrazor.PtBr.tr(Control.transferIvKeepPercent()==101?
+            "IV: manter apenas protegidos / marcados":
+            "IV: manter "+Control.transferIvKeepPercent()+"% ou mais"));
         for(int i=0;i<transferProtection.length;i++)transferProtection[i].setChecked((Control.transferProtect()&(1<<i))!=0);
         for(int i=0;i<3;i++){pvpKeep[i].setChecked(Control.pvpKeep(i));pvpRank[i].setText(dev.pgrazor.PtBr.tr("Top "+Control.pvpRank(i)));pvpRank[i].setEnabled(Control.pvpKeep(i));}
         if(transferKeepList!=null){String kept=Control.transferKeepSpecies();int n=kept.isEmpty()?0:kept.split(",").length;transferKeepList.setText(dev.pgrazor.PtBr.tr(n>0?"Custom keep list ("+n+")":"Custom keep list"));}
@@ -827,7 +1606,13 @@ final class SettingsPanel {
     }
 
     private void refreshVgpStatus() {
-        vgpSwitch.setChecked(Control.vgpOverlay());vgpStatus.setText(dev.pgrazor.PtBr.tr(Control.vgpStatus()));
+        vgpSwitch.setChecked(Control.vgpOverlay());
+        if(vgpStartStopButton!=null){
+            vgpStartStopButton.setText(dev.pgrazor.PtBr.tr(
+                Control.vgpEnabled() ? "Parar VGP+" : "Iniciar VGP+"));
+            vgpStartStopButton.setEnabled(Control.vgpEnabled() || Control.vgpOverlay());
+        }
+        vgpStatus.setText(dev.pgrazor.PtBr.tr(Control.vgpDiagnosticStatus()));
     }
 
     private void refreshIncubation() {
@@ -837,9 +1622,81 @@ final class SettingsPanel {
         incubatorStatus.setText(dev.pgrazor.PtBr.tr(Control.autoIncubate() ? Control.incubatorStatus() : "Off"));
     }
 
+    private void showVgpAppearance(){
+        LinearLayout content=new LinearLayout(activity);content.setOrientation(LinearLayout.VERTICAL);
+        content.setPadding(dp(16),dp(10),dp(16),dp(8));
+        TextView hint=new TextView(activity);
+        hint.setText("Escolha o ícone. A transparência do fundo é ajustada separadamente; "
+                + "0% deixa apenas o desenho, sem o círculo cinza.");
+        hint.setTextSize(13);content.addView(hint);
+        LinearLayout previews=new LinearLayout(activity);
+        previews.setGravity(Gravity.CENTER);previews.setOrientation(LinearLayout.HORIZONTAL);
+        content.addView(previews);
+        // There are exactly TWO icon designs. The old third option reused the
+        // identical vgp-hd-states.webp asset and differed only by background opacity.
+        final ImageView[] choices=new ImageView[2];
+        final LinearLayout[] tiles=new LinearLayout[2];
+        final String[] files={"vgp-ring.png","vgp-hd-states.webp"};
+        final String[] labels={"LED","GO Plus HD"};
+        for(int i=0;i<choices.length;i++){
+            final int style=i;
+            LinearLayout tile=new LinearLayout(activity);tiles[i]=tile;
+            tile.setOrientation(LinearLayout.VERTICAL);
+            tile.setGravity(Gravity.CENTER);
+            ImageView image=new ImageView(activity);choices[i]=image;
+            try(java.io.InputStream in=PgAssets.open(activity,"pgrazor/map-icons/"+files[i])){
+                Bitmap bitmap=BitmapFactory.decodeStream(in);
+                if(i==1&&bitmap!=null&&bitmap.getHeight()==bitmap.getWidth()*3)
+                    bitmap=Bitmap.createBitmap(bitmap,0,2*bitmap.getWidth(),bitmap.getWidth(),bitmap.getWidth());
+                image.setImageBitmap(bitmap);
+            }catch(java.io.IOException|RuntimeException ignored){}
+            image.setScaleType(ImageView.ScaleType.FIT_CENTER);
+            image.setPadding(dp(8),dp(8),dp(8),dp(8));
+            tile.addView(image,new LinearLayout.LayoutParams(-1,dp(80)));
+            TextView label=new TextView(activity);
+            label.setText(labels[i]);label.setTextSize(13);label.setGravity(Gravity.CENTER);
+            tile.addView(label,new LinearLayout.LayoutParams(-1,dp(26)));
+            previews.addView(tile,new LinearLayout.LayoutParams(0,dp(112),1f));
+            tile.setContentDescription(labels[i]);
+            tile.setClickable(true);tile.setFocusable(true);
+            tile.setOnClickListener(v->{
+                Control.setVgpIconStyle(style);
+                for(int j=0;j<tiles.length;j++)
+                    tiles[j].setBackgroundColor(j==style?0x3340BDAA:Color.TRANSPARENT);
+                host.refresh();
+                refreshVgpOptions();
+            });
+        }
+        // Legacy style=2 was the same HD asset with background forcibly hidden.
+        // Preserve its transparent appearance until the user selects a new style.
+        int current=Control.vgpIconStyle()==0?0:1;
+        tiles[current].setBackgroundColor(0x3340BDAA);
+        visualSlider(content,"Tamanho do VGP",28,72,Control.vgpIconSize(),value->{
+            Control.setVgpIconSize(value);host.refresh();});
+        visualSlider(content,"Opacidade do ícone VGP",10,100,Control.vgpIconOpacity(),value->{
+            Control.setVgpIconOpacity(value);host.refresh();});
+        visualSlider(content,"Fundo cinza (0% = transparente)",0,100,
+            Control.vgpIconStyle()==2?0:Control.vgpBackgroundOpacity(),value->{
+                // Convert legacy backgroundless style into the same HD icon
+                // with an independent alpha control, instead of duplicating an icon.
+                if(Control.vgpIconStyle()==2)Control.setVgpIconStyle(1);
+                Control.setVgpBackgroundOpacity(value);host.refresh();refreshVgpOptions();
+            });
+        launch(content,"Escolher imagem VGP no celular",()->OverlayArtwork.select(activity,"vgp",()->{
+            Control.setVgpIconStyle(3);host.refresh();refreshVgpOptions();
+        }));
+        launch(content,"Restaurar imagem original VGP",()->OverlayArtwork.reset(activity,"vgp",()->{
+            Control.setVgpIconStyle(1);host.refresh();refreshVgpOptions();
+        }));
+        new AlertDialog.Builder(dialogContext()).setTitle("Aparência do VGP")
+            .setView(content).setPositiveButton("Concluir",null).show();
+    }
     private void refreshVgpOptions() {
+        if(vgpIconStyleButton!=null){
+            String[] choices={"LED","GO Plus HD","GO Plus HD","Imagem personalizada"};
+            vgpIconStyleButton.setText(dev.pgrazor.PtBr.tr("Ícone do VGP: "+choices[Control.vgpIconStyle()]));
+        }
         for(int i=0;i<3;i++)vgpChoices[i].setChecked((Control.vgpOptions()&(1<<i))!=0);
-        vgpCooldownStop.setChecked(Control.vgpStopOnCooldown());
     }
 
     private void refreshBuddy() {buddyRefresh.run();buddyStatus.setText(dev.pgrazor.PtBr.tr(BuddyEmotionSettings.status()));}
@@ -857,6 +1714,25 @@ final class SettingsPanel {
         for(int i=0;i<3;i++)rocketChoices[i].setChecked((Control.rocketOptions()&(1<<i))!=0);rocketStatus.setText(dev.pgrazor.PtBr.tr(Control.rocketStatus()));
     }
 
+    private void refreshPvpBattles() {
+        // Preferences must remain editable even without a PvP executor.
+        // This does NOT bypass Control.pvpBattleAllowed() or claim the runtime works.
+        for(int i=0;i<3;i++){
+            pvpBattleChoices[i].setChecked((Control.pvpBattleOptions()&(1<<i))!=0);
+            pvpBattleChoices[i].setEnabled(true);
+        }
+        pvpPreferSuper.setChecked((Control.pvpBattleOptions()&PvpBattleMode.PREFER_SUPER)!=0);
+        pvpPreferSuper.setEnabled((Control.pvpBattleOptions()&PvpBattleMode.CHARGED)!=0);
+        if(Control.pvpBattleReady()){
+            pvpBattleStatus.setText(Control.pvpBattleStatus());
+        }else if((Control.pvpBattleOptions()&PvpBattleMode.ACTIONS)!=0){
+            pvpBattleStatus.setText("Opções Rocket/PvP sincronizadas. O executor VNext experimental é ativado apenas após reconhecer uma partida PvP; não use em disputas ranqueadas sem validar.");
+        }else{
+            pvpBattleStatus.setText("Você pode configurar as opções, mas a automação PvP ainda não está disponível nesta versão.");
+        }
+        pvpBattleStatus.setVisibility(View.VISIBLE);
+    }
+
     private void refreshItems() {
         itemSettings.setText(dev.pgrazor.PtBr.tr("Auto-transfer items: "+(Control.itemTransferEnabled()?"ON":"OFF")));itemStatus.setText(dev.pgrazor.PtBr.tr(Control.itemStatus()));
     }
@@ -866,6 +1742,7 @@ final class SettingsPanel {
         berryPriority.setText(dev.pgrazor.PtBr.tr("Berry priority: "+BerryPriorityPicker.summary()));
         berryPicker.refresh();
         quickSpinSwitch.setChecked(Control.quickSpinEnabled());quickSpinStatus.setText(dev.pgrazor.PtBr.tr(Control.quickSpinStatus()));
+        routeGiftSwitch.setChecked(Control.routeGiftExchange());
         quickSummaryLabel.setText(dev.pgrazor.PtBr.tr(Control.quickSummaryAutoDismiss() ? "Quick catch" : "Faster catch summary"));
         quickSummarySwitch.setChecked(Control.quickSummaryEnabled());
         quickSummarySwitch.setEnabled(Control.quickSummaryConfigured());
@@ -878,7 +1755,12 @@ final class SettingsPanel {
         mapTap.setText(dev.pgrazor.PtBr.tr("Game map tap: "+new String[]{"Do nothing","Walk","Teleport","Walk / double tap teleport"}[Control.mapTapMode()]));
         mapTap.setEnabled(Control.quickBallConfigured());
         spawnSwitch.setChecked(Control.spawnBooster());spawnSwitch.setEnabled(Control.spawnAllowed());spawnStatus.setText(dev.pgrazor.PtBr.tr(Control.spawnStatus()));
-        localTimeSwitch.setChecked(Control.localTimeOverlay());
+        localTimeSwitch.setChecked(Control.localTimeOverlay() && Control.hudLabelVisible(Control.HUD_LOCALTIME));
+        cooldownSwitch.setChecked(Control.cooldownOverlay() && Control.hudLabelVisible(Control.HUD_COOLDOWN));
+        String clockLabel = "Formato da hora · " + CLOCK_EXAMPLES[selectedClockChoice()];
+        if (!clockLabel.contentEquals(clockFormatButton.getText())) clockFormatButton.setText(clockLabel);
+        String cooldownLabel = "Estilo do contador · " + COOLDOWN_STYLES[Control.cooldownEmphasis() ? 1 : 0];
+        if (!cooldownLabel.contentEquals(cooldownStyleButton.getText())) cooldownStyleButton.setText(cooldownLabel);
         encounterCounterSwitch.setChecked(Control.encounterCounter());encounterOverlaySwitch.setChecked(Control.encounterOverlay());
         SettingsUi.enabled(encounterOverlaySwitch,Control.encounterCounter());
         if(current<0){String home=EncounterCounter.title();if(!home.contentEquals(title.getText()))title.setText(dev.pgrazor.PtBr.tr(home));}

@@ -1,0 +1,43 @@
+name: PGBR LT028 - Testes da logica PvP
+on:
+  push:
+    branches:
+      - feat/lt028-pvp-battles-20261121
+    paths:
+      - 'pgrazor/src/dev/pgrazor/PvpBattleMode.java'
+      - 'pgrazor/src/dev/pgrazor/PvpBattleController.java'
+      - 'pgrazor/src/dev/pgrazor/PvpChargedPreference.java'
+      - 'pgrazor/test/PvpBattleModeTest.java'
+      - 'pgrazor/test/PvpBattleControllerTest.java'
+      - 'pgrazor/test/PvpChargedPreferenceTest.java'
+      - '.github/workflows/pgbr-pvp-lt028-unit.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  pure-java:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Validar prioridade do golpe carregado e isolamento das batalhas
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/pgbr-pvp-tests
+          javac -encoding UTF-8 -d /tmp/pgbr-pvp-tests \
+            pgrazor/src/dev/pgrazor/PvpBattleMode.java \
+            pgrazor/src/dev/pgrazor/PvpChargedPreference.java \
+            pgrazor/src/dev/pgrazor/PvpBattleController.java \
+            pgrazor/test/PvpBattleModeTest.java \
+            pgrazor/test/PvpBattleControllerTest.java \
+            pgrazor/test/PvpChargedPreferenceTest.java
+          java -cp /tmp/pgbr-pvp-tests dev.pgrazor.PvpBattleModeTest
+          java -cp /tmp/pgbr-pvp-tests dev.pgrazor.PvpBattleControllerTest
+          java -cp /tmp/pgbr-pvp-tests dev.pgrazor.PvpChargedPreferenceTest

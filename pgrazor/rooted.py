@@ -167,7 +167,10 @@ def payload_assets(download=False):
     if len(sources) != len(names): raise RuntimeError('All five ART dependency licenses required')
     for name, source in zip(names, sources): assets['pgrazor/art-notices/' + name] = Path(source)
     for name, path in build.map_icon_assets().items(): assets['pgrazor/map-icons/' + name] = Path(path)
+    for name, path in build.item_icon_assets().items(): assets['pgrazor/item-icons/' + name] = Path(path)
     for name, path in build.feed_icon_assets().items(): assets['pgrazor/feed-icons/pokemon/' + name] = Path(path)
+    logo=ROOT/'branding/pgbr-logo.webp'
+    if logo.is_file(): assets['pgrazor/branding/pgbr-logo.webp']=logo
     return assets
 
 

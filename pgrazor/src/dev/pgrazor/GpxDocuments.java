@@ -38,6 +38,13 @@ public final class GpxDocuments extends Fragment {
         launch(activity, intent, callback);
     }
 
+    /** Picks only user-selected local images, without filesystem or media permissions. */
+    public static void openImage(Activity activity,Callback callback){
+        Intent intent=new Intent(Intent.ACTION_OPEN_DOCUMENT)
+            .addCategory(Intent.CATEGORY_OPENABLE).setType("image/*");
+        launch(activity,intent,callback);
+    }
+
     /** Opens the system picker to create a writable document (export) with a suggested file name. */
     public static void create(Activity activity, String suggestedName, Callback callback) {
         Intent intent = new Intent(Intent.ACTION_CREATE_DOCUMENT)

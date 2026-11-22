@@ -1,6 +1,7 @@
 #include "game_bindings.h"
 #include "shared_host.h"
 #include "shared_catch.h"
+#include "max_catch_flag.h"
 #include "summary_completion.h"
 #include "details_completion.h"
 #include "details_recovery.h"
@@ -24,6 +25,7 @@
 #include <cstring>
 #include <cstdlib>
 #include <algorithm>
+#include <string>
 #include <cstdio>
 #include <time.h>
 #include <unistd.h>
@@ -89,24 +91,24 @@ void emit(uint32_t kind,uint64_t slot=0,int status=0,uint32_t flags=0,int before
  events[(event_head+event_count++)%events.size()]={1,sizeof(PgrSharedHostEvent),kind,flags,status,before,after,reason,++serial,slot,tid()};
 }
 void fault(int rc){failed=true;stopping=true;emit(8,0,rc);}
-struct Gate {uint32_t flags,protect,count;uint64_t epoch,remaining;std::array<int32_t,2000> ids;};
-Gate gate(){Gate g{};std::lock_guard<std::mutex> lock(options_mutex);g.flags=options.flags;g.protect=options.protect;g.epoch=options.epoch;g.count=options.keep_count;std::copy_n(keep.begin(),g.count,g.ids.begin());const auto n=now();g.remaining=!stopping&&!failed&&(g.flags&PGR_SHH_ALLOWED)&&n&&n<deadline?std::min<uint64_t>(2500,deadline-n):0;return g;}
+struct Gate {uint32_t flags,protect,count,keep_iv;uint64_t epoch,remaining;std::array<int32_t,2000> ids;};
+Gate gate(){Gate g{};std::lock_guard<std::mutex> lock(options_mutex);g.flags=options.flags;g.protect=options.protect;g.keep_iv=options.reserved;g.epoch=options.epoch;g.count=options.keep_count;std::copy_n(keep.begin(),g.count,g.ids.begin());const auto n=now();g.remaining=!stopping&&!failed&&(g.flags&PGR_SHH_ALLOWED)&&n&&n<deadline?std::min<uint64_t>(2500,deadline-n):0;return g;}
 bool scheduler_current(){return !pulse_generation||table<PgrUnitySchedulerApi>(pgrazor_unity_scheduler_api(2))->valid(pulse_generation)==1;}
 bool transport_current(){if(!(cfg.transport_flags&1))return true;PgrRuntimeTransportSample s{};return transport->sample(&s)==0&&s.snapshot_fresh&&!s.fault&&s.snapshot_seq==transport_sequence&&s.generation==transport_generation;}
 bool refresh_transport_current();
 bool current(uint64_t epoch){if(!owned()||!scheduler_current()||!refresh_transport_current())return false;const auto g=gate();return g.remaining&&g.epoch==epoch;}
-const char *keep_reason(int code){static const char *reasons[]={"none","keep-all","invalid-keep-list","unknown-species","custom-keep-list","unknown-iv","unknown-category","unknown-size","favorite-or-egg","iv-at-least-90","protected-rare","protected-shiny","protected-event","protected-background","protected-xxs","protected-xxl","invalid-native-input","native-transfer-blocked","pvp-rank","protected-zero-iv","protected-costume"};return code>=0&&code<21?reasons[code]:"native-transfer-blocked";}
+const char *keep_reason(int code){static const char *reasons[]={"none","keep-all","invalid-keep-list","unknown-species","custom-keep-list","unknown-iv","unknown-category","unknown-size","favorite-or-egg","iv-at-least-cutoff","protected-rare","protected-shiny","protected-event","protected-background","protected-xxs","protected-xxl","invalid-native-input","native-transfer-blocked","pvp-rank","protected-zero-iv","protected-costume"};return code>=0&&code<21?reasons[code]:"native-transfer-blocked";}
 bool publish(uint32_t opcode,const char *text=nullptr,int boolean=-1){PgrRuntimeTransportString s{text,text?uint32_t(std::strlen(text)):0};const int64_t value=boolean;const int rc=transport->emit(opcode,boolean<0?nullptr:&value,boolean<0?0:1,text?&s:nullptr,text?1:0);if(rc!=0&&rc!=PGR_TRANSPORT_STOPPED){failed=true;stopping=true;return false;}return true;}
 void transport_event(uint32_t kind,uint64_t slot,int status,uint32_t flags,int before,int after,int reason){
  const char *name="native-shared-event",*why="";
  switch(kind){case 1:name="candidate-initialized";break;case 2:name="candidate-cancelled";break;case 3:name="summary-dismiss-invoked";break;case 4:name="details-dismiss-invoked";break;case 5:name="transfer-requested";break;
  case 6:name=status==PGR_TX_EVENT_COMPLETE&&(flags&1)?"transfer-confirmed":"transfer-error";why=status==PGR_TX_EVENT_TIMEOUT?"response-timeout":"server-result";break;
- case 7:name="transfer-kept";why=keep_reason(status);break;case 8:name="fault";break;case 9:name="metadata-ready";break;case 10:name="direct-catch-fallback";break;case 11:name="direct-catch-returned";break;case 12:name="candidate-armed";break;case 13:name="stopped";break;case 14:name="summary-canvas-hide";break;case 15:name="summary-canvas-before-dismiss";break;case 16:name="summary-alpha-hook";break;}
+ case 7:name="transfer-kept";why=keep_reason(status);break;case 8:name="fault";break;case 9:name="metadata-ready";break;case 10:name="direct-catch-fallback";break;case 11:name="direct-catch-returned";break;case 12:name="candidate-armed";break;case 13:name="stopped";break;case 14:name="summary-canvas-hide";break;case 15:name="summary-canvas-before-dismiss";break;case 16:name="summary-alpha-hook";break;case 17:name="summary-ok-pressed";break;case 18:name="summary-ok-waiting";break;}
  char json[768];const int n=std::snprintf(json,sizeof(json),"{\"kind\":\"%s\",\"backend\":\"native\",\"boottimeMs\":%llu,\"tid\":%llu,\"slot\":%llu,\"status\":%d,\"invoked\":%s,\"stateBefore\":%d,\"stateAfter\":%d,\"guiGone\":%s,\"advanced\":%s,\"reason\":\"%s\",\"reasonCode\":%d,\"transferAvailable\":%s}",name,(unsigned long long)now(),(unsigned long long)tid(),(unsigned long long)slot,status,(flags&1)?"true":"false",before,after,(flags&2)?"true":"false",((flags&2)||((flags&4)&&after!=2))?"true":"false",why,reason,(capabilities&PGR_SHH_TRANSFER)?"true":"false");
  if(n<=0||size_t(n)>=sizeof(json)){failed=true;stopping=true;return;}
  PgrRuntimeTransportString strings[]={{"quick-close",11},{json,uint32_t(n)}};
  const int rc=transport->emit(19,nullptr,0,strings,2);if(rc!=0&&rc!=PGR_TRANSPORT_STOPPED){failed=true;stopping=true;return;}
- if(kind==9){publish(16,nullptr,1);publish(45,"Ready: Quick Catch",1);publish(23,(capabilities&PGR_SHH_TRANSFER)?"Ready: new catches only; IV below 90%":"Unavailable: native transfer prerequisites",(capabilities&PGR_SHH_TRANSFER)?1:0);}
+ if(kind==9){publish(16,nullptr,1);publish(45,"Ready: Quick Catch",1);publish(23,(capabilities&PGR_SHH_TRANSFER)?"Ready: new catches only; IV below the chosen cutoff":"Unavailable: native transfer prerequisites",(capabilities&PGR_SHH_TRANSFER)?1:0);}
  else if(kind==5)publish(56,"Transfer requested; waiting for bag update");
  else if(kind==6){if(status==PGR_TX_EVENT_COMPLETE&&(flags&1)){publish(56,"Transferred newly caught Pokemon");publish(22,"transferred");}else{char message[128];std::snprintf(message,sizeof(message),"Transfer Error: %s",why);publish(56,message);publish(22,"transfer-error");}}
  else if(kind==7){char message[128];std::snprintf(message,sizeof(message),"Kept: %s",why);publish(56,message);}
@@ -119,14 +121,21 @@ void poll_transport(){if(!(cfg.transport_flags&1))return;PgrRuntimeTransportSamp
  if(fresh)fresh=transport->get_bool(25,&dismiss)==0&&transport->get_bool(5,&allow_transfer)==0&&transport->get_bool(35,&keep_all)==0&&transport->get_int(8,&protect)==0;
  bool valid_keep=true;if(fresh){const int rc=transport->get_string(4,text,sizeof(text),&len);if(rc==PGR_TRANSPORT_ERR_RANGE){valid_keep=false;len=0;}else if(rc)fresh=false;else valid_keep=parse_keep(text,len,ids,count);}
  if(fresh)fresh=transport->sample(&end)==0&&end.snapshot_fresh&&!end.fault&&end.snapshot_seq==start.snapshot_seq&&end.generation==start.generation;
- if(!fresh){dismiss=allow_transfer=keep_all=0;count=0;protect=255;valid_keep=true;transport_sequence=transport_generation=0;}else {transport_sequence=start.snapshot_seq;transport_generation=start.generation;}
- if(protect<0||protect>255)protect=255;
+ // Preserve the PGBR transport contract: low eight bits hold the protection mask;
+ // high bits carry keep-IV + 1 (0 means historical 90%). An invalid value fails closed.
+ uint32_t keep_iv=0;
+ if(fresh) {
+  if(protect<0||((uint32_t(protect)>>8)>102u))fresh=false;
+  else {keep_iv=uint32_t(protect)>>8;protect&=255;}
+ }
+ if(!fresh){dismiss=allow_transfer=keep_all=0;count=0;protect=255;keep_iv=0;valid_keep=true;transport_sequence=transport_generation=0;}
+ else {transport_sequence=start.snapshot_seq;transport_generation=start.generation;}
  // The overlay's Keep All flag gates manual catches below, not the VGP broker.
  const bool enabled=allow_transfer&&valid_keep&&(capabilities&PGR_SHH_TRANSFER);
  const uint32_t flags=(dismiss||allow_transfer?PGR_SHH_ALLOWED:0)|(dismiss?PGR_SHH_DISMISS:0)|(enabled?PGR_SHH_TRANSFER_ENABLED:0)|(keep_all?PGR_SHH_KEEP_ALL:0);
- uint64_t epoch=1;{std::lock_guard<std::mutex> lock(options_mutex);epoch=options.epoch?options.epoch:1;const bool changed=((options.flags^flags)&(PGR_SHH_ALLOWED|PGR_SHH_DISMISS|PGR_SHH_TRANSFER_ENABLED|PGR_SHH_KEEP_ALL))||options.protect!=uint32_t(protect)||options.keep_count!=count||!std::equal(ids.begin(),ids.begin()+count,keep.begin())||transport_keep_valid!=valid_keep;
+ uint64_t epoch=1;{std::lock_guard<std::mutex> lock(options_mutex);epoch=options.epoch?options.epoch:1;const bool changed=((options.flags^flags)&(PGR_SHH_ALLOWED|PGR_SHH_DISMISS|PGR_SHH_TRANSFER_ENABLED|PGR_SHH_KEEP_ALL))||options.protect!=uint32_t(protect)||options.reserved!=keep_iv||options.keep_count!=count||!std::equal(ids.begin(),ids.begin()+count,keep.begin())||transport_keep_valid!=valid_keep;
   if(changed||!(flags&PGR_SHH_ALLOWED)||now()>=deadline)++epoch;}
- transport_keep_valid=valid_keep;PgrSharedHostOptions next{1,sizeof(next),flags,uint32_t(protect),epoch,fresh?2500u:0u,ids.data(),count,0};if(update(&next)!=0){failed=true;stopping=true;}
+ transport_keep_valid=valid_keep;PgrSharedHostOptions next{1,sizeof(next),flags,uint32_t(protect),epoch,fresh?2500u:0u,ids.data(),count,keep_iv};if(update(&next)!=0){failed=true;stopping=true;}
 }
 struct Record {
  uint64_t key=0,slot=0,epoch=0,id=0,canvas=0,transfer_token=0;
@@ -143,7 +152,15 @@ Record *by_slot(uint64_t slot){for(auto &r:records)if(r.slot==slot&&slot)return 
 Record *by_gui(void *gui){if(!gui)return nullptr;for(auto &r:records)if(r.slot&&target(r.gui)==gui)return &r;return nullptr;}
 void drain(){PgrSharedCatchEvent e{};while(sh->next_event(&e)==1){auto r=by_slot(e.slot);if(r&&!r->invoked){emit(2,r->slot,0,0,0,0,e.reason);release(*r);}}}
 void cancel(Record &r,int reason=8){if(!r.slot||r.cancelled||r.invoked)return;r.cancelled=true;sh->cancel(r.slot,reason,tid());}
-Record *create(void *gui,bool details=false){if(gui)if(auto r=by_gui(gui))return r;auto g=gate();if(!g.remaining)return nullptr;
+// The summary GUI left to the game after a Max, raid or Rocket catch. Every summary hook asks for a record,
+// so the same GUI is skipped by all of them, not only the first.
+void *skipped_summary=nullptr;
+uint64_t skipped_at=0;
+Record *create(void *gui,bool details=false){if(gui)if(auto r=by_gui(gui))return r;
+ if(gui&&skipped_summary&&target(skipped_summary)==gui)return nullptr;
+ auto g=gate();if(!g.remaining)return nullptr;
+ // A Max Battle, raid or Rocket catch summary is left to the game: its own exit restores the map (see max_catch_flag.h).
+ if(!details&&pgr_take_max_catch()){if(gui){free_root(skipped_summary);skipped_summary=hold(gui);skipped_at=now();}emit(2,0,0,0,0,0,9);return nullptr;}
  const uint64_t key=++next_key;uint64_t slot=0;const int rc=sh->upsert(key,details?1:0,tid(),&slot);drain();if(rc<0){fault(rc);return nullptr;}if(!slot)return nullptr;
  for(auto &r:records)if(!r.slot){r.key=key;r.slot=slot;r.epoch=g.epoch;r.details=details;record_count.fetch_add(1);if(gui){r.gui=hold(gui);if(!r.gui){cancel(r);drain();return nullptr;}}return &r;}
  sh->cancel(slot,8,tid());drain();fault(-13);return nullptr;
@@ -319,7 +336,7 @@ int external_submit(const PgrTransferExecRequest *input,uint64_t *token){
  if(slot==external_tokens.end()||external_count+2*(active+1)>external_events.size())return -3;
  PgrTransferExecRequest request=*input;request.epoch=g.epoch;request.tid=tid();
  request.input.protect=g.protect;request.input.keep_all=0; // Background catches use main settings.
- request.input.keep_count=g.count;request.input.keep_ids=g.ids.data();
+ request.input.keep_count=g.count;request.input.keep_ids=g.ids.data();request.input.reserved=g.keep_iv;
  if(transfer_policy->decide(&request.input)!=0)return 0;
  external_submitting=true;
  struct Clear {~Clear(){external_submitting=false;}} clear;
@@ -349,7 +366,7 @@ bool transfer(Record &r,bool direct=false){auto g=gate();if(!(capabilities&PGR_S
  else {auto q=details_request(r);if(dc->validate(&q)!=1)return false;}
  if(!current(r.epoch))return false;
  PgrTransferExecRequest request{1,sizeof(request),r.id,r.epoch,tid(),bag.get(),pokemon.get(),{}};
- request.input={1,sizeof(PgrTransferInput),facts.attack,facts.defense,facts.stamina,facts.species,g.protect,facts.known,facts.flags,uint32_t((g.flags&PGR_SHH_KEEP_ALL)!=0),g.count,0,g.ids.data()};
+ request.input={1,sizeof(PgrTransferInput),facts.attack,facts.defense,facts.stamina,facts.species,g.protect,facts.known,facts.flags,uint32_t((g.flags&PGR_SHH_KEEP_ALL)!=0),g.count,g.keep_iv,g.ids.data()};
  const int policy=transfer_policy->decide(&request.input);if(policy){emit(7,r.slot,policy);return false;}
  // PvP keep runs only when every other rule would transfer.
  if(pgr_pvp_keep){char pvp[96];if(pgr_pvp_keep(pokemon.get(),facts.attack,facts.defense,facts.stamina,facts.species,tid(),pvp,sizeof(pvp))>0){
@@ -433,6 +450,99 @@ void complete_details(Record &r){auto q=details_request(r);if(dc->validate(&q)!=
  try{if(token)rc=dc->complete(&q,token,&out);}catch(...){invoking=false;invoking_gui=nullptr;fault(-11);throw;}invoking=false;invoking_gui=nullptr;
  const bool advanced=(out.flags&2)||((out.flags&4)&&out.after!=2);hide_after(r,out.flags,out.after,rc);emit(4,r.slot,rc,out.flags,out.before,out.after);sh->finish(r.slot,advanced?1:0,tid());release(r);
 }
+// After a Max Battle, raid or Rocket catch, Quick Catch closes the summary with its own OK button, so the
+// game's exit for that battle runs and restores the map. Unity's Button.onClick is invoked once the button
+// is active and interactable; after 15 s it is left to the player.
+struct OkCalls {bool tried=false,ok=false;void *(*field)(void*,const char*)=nullptr;void (*read)(void*,void*,void*)=nullptr;
+ void *(*method)(void*,const char*,int)=nullptr;void *get_component=nullptr,*in_children=nullptr,*all_in_children=nullptr,*button_type=nullptr,*pgo_type=nullptr,*behaviour_type=nullptr;
+ const char *(*class_name)(void*)=nullptr;size_t (*array_length)(void*)=nullptr;} ok_calls;
+bool ok_calls_ready(){
+ if(ok_calls.tried)return ok_calls.ok;ok_calls.tried=true;
+ PgrBootBinding b{};if(table<PgrBootApi>(pgrazor_runtime_bootstrap_api(1))->snapshot(&b)||!b.handle)return false;
+ const auto meta=table<PgrMetaApi>(pgrazor_runtime_metadata_api(1));
+ auto find=[&](const char *ns,const char *name)->void*{PgrMetaClassQuery q{1,sizeof(q)};q.name_space=ns;q.name=name;PgrMetaClassResult r{};return meta->resolve_class(&q,&r)?nullptr:const_cast<void*>(r.klass);};
+ // The summary's OK is the game's own PgoButton (Pixel, 2026-11-20); Unity's Button is kept as a fallback.
+ void *button=find("UnityEngine.UI","Button"),*pgo=find("Niantic.Holoholo.UI","PgoButton"),*component=find("UnityEngine","Component");
+ auto methods=reinterpret_cast<void*(*)(void*,void**)>(dlsym(b.handle,"il2cpp_class_get_methods"));
+ auto name_of=reinterpret_cast<const char*(*)(void*)>(dlsym(b.handle,"il2cpp_method_get_name"));
+ auto type_object=reinterpret_cast<void*(*)(void*)>(dlsym(b.handle,"il2cpp_type_get_object"));
+ auto count=reinterpret_cast<uint32_t(*)(void*)>(b.meta.method_get_param_count);
+ auto param=reinterpret_cast<void*(*)(void*,uint32_t)>(b.meta.method_get_param);
+ auto type_name=reinterpret_cast<char*(*)(void*)>(b.meta.type_get_name);auto release=reinterpret_cast<void(*)(void*)>(b.meta.mem_free);
+ if(!button||!component||!methods||!name_of||!type_object||!count||!param||!type_name||!release||!b.meta.class_get_type)return false;
+ // Component.GetComponent(System.Type); the string overload has the same name and argument count.
+ // GetComponent / GetComponentInChildren / GetComponentsInChildren taking only a System.Type.
+ void *iter=nullptr;
+ for(int n=0;n<512;++n){void *m=methods(component,&iter);if(!m)break;const char *mn=name_of(m);
+  if(!mn||count(m)!=1)continue;
+  void **slot=!std::strcmp(mn,"GetComponent")?&ok_calls.get_component:!std::strcmp(mn,"GetComponentInChildren")?&ok_calls.in_children:
+              !std::strcmp(mn,"GetComponentsInChildren")?&ok_calls.all_in_children:nullptr;
+  if(!slot||*slot)continue;
+  char *t=type_name(param(m,0));const bool by_type=t&&!std::strcmp(t,"System.Type");if(t)release(t);
+  if(by_type)*slot=m;}
+ void *type=type_object(reinterpret_cast<void*(*)(void*)>(b.meta.class_get_type)(button));
+ ok_calls.button_type=type?hold(type):nullptr;
+ if(pgo){void *pt=type_object(reinterpret_cast<void*(*)(void*)>(b.meta.class_get_type)(pgo));ok_calls.pgo_type=pt?hold(pt):nullptr;}
+ if(void *behaviour=find("UnityEngine","MonoBehaviour")){void *bt=type_object(reinterpret_cast<void*(*)(void*)>(b.meta.class_get_type)(behaviour));ok_calls.behaviour_type=bt?hold(bt):nullptr;}
+ ok_calls.class_name=reinterpret_cast<const char*(*)(void*)>(dlsym(b.handle,"il2cpp_class_get_name"));
+ ok_calls.array_length=reinterpret_cast<size_t(*)(void*)>(dlsym(b.handle,"il2cpp_array_length"));
+ ok_calls.field=reinterpret_cast<void*(*)(void*,const char*)>(b.meta.class_get_field_from_name);
+ ok_calls.read=reinterpret_cast<void(*)(void*,void*,void*)>(cfg.field_get_value);
+ ok_calls.method=reinterpret_cast<void*(*)(void*,const char*,int)>(b.meta.class_get_method_from_name);
+ ok_calls.ok=ok_calls.get_component&&(ok_calls.button_type||ok_calls.pgo_type)&&ok_calls.field&&ok_calls.read&&ok_calls.method;
+ return ok_calls.ok;
+}
+void *class_of(void *o){return reinterpret_cast<void*(*)(void*)>(cfg.object_get_class)(o);}
+bool call_bool(void *o,const char *name,bool *value){
+ void *m=ok_calls.method(class_of(o),name,0);if(!m)return false;bool ok=false;void *box=invoke(m,o,nullptr,&ok);
+ if(!ok||!box)return false;void *raw=reinterpret_cast<void*(*)(void*)>(cfg.object_unbox)(box);if(!raw)return false;
+ *value=*static_cast<uint8_t*>(raw)!=0;return true;
+}
+// Why the OK press is still waiting, logged once per change (summary-ok-waiting, reasonCode).
+int ok_wait=0;
+void ok_waiting(int why){if(why!=ok_wait){ok_wait=why;emit(18,0,0,0,0,0,why);}}
+// Lists the components under the OK rectangle once, for when no Unity Button is found there.
+void describe_ok(void *rect){
+ if(!ok_calls.all_in_children||!ok_calls.behaviour_type||!ok_calls.class_name||!ok_calls.array_length||!(cfg.transport_flags&1))return;
+ bool ok=false;void *args[]={target(ok_calls.behaviour_type)};if(!args[0])return;
+ Root all(invoke(ok_calls.all_in_children,rect,args,&ok));if(!ok||!all.get())return;
+ std::string names;const size_t n=std::min<size_t>(ok_calls.array_length(all.get()),24);
+ for(size_t i=0;i<n;++i){void *item=*reinterpret_cast<void**>(static_cast<char*>(all.get())+32+i*8);if(!item)continue;
+  const char *name=ok_calls.class_name(class_of(item));if(!name)continue;
+  if(!names.empty())names+=',';for(const char *c=name;*c&&names.size()<600;++c)if(*c!='"'&&*c!='\\')names+=*c;}
+ char json[768];const int len=std::snprintf(json,sizeof(json),"{\"kind\":\"summary-ok-components\",\"backend\":\"native\",\"components\":\"%s\"}",names.c_str());
+ if(len>0&&size_t(len)<sizeof(json)){PgrRuntimeTransportString strings[]={{"quick-close",11},{json,uint32_t(len)}};transport->emit(19,nullptr,0,strings,2);}
+}
+void press_skipped_ok(){
+ if(!skipped_summary)return;
+ void *gui=target(skipped_summary);const uint64_t t=now();
+ if(!gui||!t||t-skipped_at>15000){ok_waiting(gui?9:8);free_root(skipped_summary);ok_wait=0;return;}
+ if(t-skipped_at<1000)return;  // let the summary open and its score rollup start
+ if(!ok_calls_ready()){ok_waiting(1);free_root(skipped_summary);ok_wait=0;return;}
+ void *field=ok_calls.field(class_of(gui),"okButtonRect");if(!field){ok_waiting(2);free_root(skipped_summary);ok_wait=0;return;}
+ void *rect_raw=nullptr;ok_calls.read(gui,field,&rect_raw);if(!rect_raw){ok_waiting(3);return;}
+ Root rect(rect_raw);if(!rect.get()){ok_waiting(3);return;}
+ // A PgoButton first, then a Unity Button, on the layout rectangle or one of its children.
+ bool ok=false;Root button(nullptr);
+ for(void *handle:{ok_calls.pgo_type,ok_calls.button_type}){
+  void *type=target(handle);if(!type||button.get())continue;void *args[]={type};
+  for(void *lookup:{ok_calls.get_component,ok_calls.in_children}){
+   if(!lookup||button.get())continue;Root found(invoke(lookup,rect.get(),args,&ok));if(ok&&found.get())std::swap(button.value,found.value);}
+ }
+ if(!button.get()){if(ok_wait!=4)describe_ok(rect.get());ok_waiting(4);return;}
+ bool active=false,interactable=false;
+ if(!call_bool(button.get(),"get_isActiveAndEnabled",&active)){ok_waiting(5);return;}
+ if(!active){ok_waiting(6);return;}
+ if(!call_bool(button.get(),"get_Interactable",&interactable)&&!call_bool(button.get(),"IsInteractable",&interactable)){ok_waiting(5);return;}
+ if(!interactable){ok_waiting(7);return;}
+ void *on_click=ok_calls.method(class_of(button.get()),"get_OnClick",0);
+ if(!on_click)on_click=ok_calls.method(class_of(button.get()),"get_onClick",0);
+ if(!on_click){ok_waiting(10);return;}
+ Root event(invoke(on_click,button.get(),nullptr,&ok));if(!ok||!event.get()){ok_waiting(10);return;}
+ void *fire=ok_calls.method(class_of(event.get()),"Invoke",0);if(!fire){ok_waiting(10);return;}
+ free_root(skipped_summary);ok_wait=0;  // pressed once, whatever the outcome
+ invoke(fire,event.get(),nullptr,&ok);emit(17,0,ok?1:0);
+}
 int tick(uint64_t proven,uint64_t sequence){if(!ready)return -1;if(proven!=tid()||!owned())return -2;if(busy)return 0;
  struct Busy {Busy(){busy=true;}~Busy(){busy=false;}} scope;
  ticks.fetch_add(1);poll_transport();const auto g=gate();gates(g);
@@ -441,8 +551,10 @@ int tick(uint64_t proven,uint64_t sequence){if(!ready)return -1;if(proven!=tid()
  if(pending.response&&(!current(pending.epoch)||now()>=pending.expires))release_pending();
  if(!opener_depth)poll_bridge(!stopping);
  PgrSharedCatchDecision decision{};sh->select(0,tid(),&decision);drain();
- if(stopping){if(!opener_depth){for(auto &r:records)release(r);release_pending();}return 0;}
- discover();if(!g.remaining||opener_depth||!sequence)return 0;
+ if(stopping){if(!opener_depth){for(auto &r:records)release(r);release_pending();free_root(skipped_summary);free_root(ok_calls.button_type);free_root(ok_calls.pgo_type);free_root(ok_calls.behaviour_type);ok_calls=OkCalls{};}return 0;}
+ discover();
+ if(skipped_summary&&!opener_depth){if(g.remaining)press_skipped_ok();else ok_waiting(11);}
+ if(!g.remaining||opener_depth||!sequence)return 0;
  mark_opening();
  const int rc=sh->select(sequence,tid(),&decision);drain();if(rc<0){fault(rc);return rc;}if(decision.action==PGR_SH_ACT_NONE)return 0;
  auto r=by_slot(decision.slot);if(!r||r->cancelled)return 0;if(decision.action==PGR_SH_ACT_ARM){emit(12,r->slot);return 0;}
@@ -515,7 +627,7 @@ int configure(const PgrSharedHostConfig *input){
  int rc=table<PgrSharedMetadataApi>(pgrazor_shared_metadata_api(2))->resolve(&cfg.metadata,&md);if(rc)return rc;
  owner=tid();rc=install_leaves();if(rc){failed=true;return rc;}rc=install_hooks();if(rc){failed=true;return rc;}installed=true;accepted_config=*input;ready=true;emit(9);return 0;
 }
-int update(const PgrSharedHostOptions *input){if(!input||input->version!=1||input->size!=sizeof(*input)||input->flags&~15u||input->protect&~255u||input->reserved||input->keep_count>keep.size()||(input->keep_count&&!input->keep_ids)||!input->epoch)return -1;
+int update(const PgrSharedHostOptions *input){if(!input||input->version!=1||input->size!=sizeof(*input)||input->flags&~15u||input->protect&~255u||input->reserved>102u||input->keep_count>keep.size()||(input->keep_count&&!input->keep_ids)||!input->epoch)return -1;
  for(uint32_t i=0;i<input->keep_count;++i)if(input->keep_ids[i]<1||input->keep_ids[i]>2000)return -1;
  {std::lock_guard<std::mutex> lock(options_mutex);if(input->epoch<options.epoch)return -2;options=*input;options.keep_ids=nullptr;if(input->keep_count)std::copy_n(input->keep_ids,input->keep_count,keep.begin());const auto n=now();deadline=n&&(input->flags&1)?n+std::min<uint64_t>(2500,input->remaining_ms):0;}
  if(!(input->flags&1)){sh->update(0,0,input->epoch,0);sc->update(0,0,input->epoch,0);dc->update(0,0,input->epoch,0);cv->update(0,0,input->epoch,0);tx->update(0,0,input->epoch,0);cc->update(0,0,input->epoch,0);}return 0;

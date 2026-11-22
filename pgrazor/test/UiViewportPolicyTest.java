@@ -3,6 +3,7 @@ package dev.pgrazor;
 public final class UiViewportPolicyTest {
     public static void main(String[] args){
         testLauncherAndJoystick();
+        testVgpCornerAlignment();
         int cases=0;
         for(int widthDp:new int[]{240,280,320,360,412,600,840})
         for(int heightDp:new int[]{240,320,480,640,960})
@@ -34,6 +35,41 @@ public final class UiViewportPolicyTest {
             cases++;
         }
         System.out.println("PASS UiViewportPolicy: "+cases+" combinations; 240-840dp, portrait/landscape, density .75-4, font scale 1-3, UI scale .5-2, cutout/system bars, scrolling viewport and rotation");
+    }
+    private static void testVgpCornerAlignment(){
+        // Hit target is minimum 48dp, sprite can be 28-32dp. At any of
+        // the four corners the actual artwork, not only the invisible touch
+        // box, must touch the safe edge. Same formula works in landscape.
+        for(int[] bounds:new int[][]{{0,400,24,900},{31,380,48,700},{0,800,0,400}}){
+            int left=bounds[0],right=bounds[1],top=bounds[2],bottom=bounds[3];
+            for(int hit:new int[]{48,64,72}){
+                for(int sprite:new int[]{28,32,48}){
+                    if(sprite>hit)continue;
+                    float startX=UiViewportPolicy.edgeAlignedCenter(left,left,right,hit,sprite);
+                    float endX=UiViewportPolicy.edgeAlignedCenter(right-hit,left,right,hit,sprite);
+                    float startY=UiViewportPolicy.edgeAlignedCenter(top,top,bottom,hit,sprite);
+                    float endY=UiViewportPolicy.edgeAlignedCenter(bottom-hit,top,bottom,hit,sprite);
+                    near(left+startX-sprite/2f,left);
+                    near(right-hit+endX+sprite/2f,right);
+                    near(top+startY-sprite/2f,top);
+                    near(bottom-hit+endY+sprite/2f,bottom);
+                    for(int x=left;x<=right-hit;x+=5){
+                        float center=UiViewportPolicy.edgeAlignedCenter(x,left,right,hit,sprite);
+                        if(x+center-sprite/2f<left-.001f||
+                           x+center+sprite/2f>right+.001f)
+                            throw new AssertionError("VGP sprite escaped horizontal bound");
+                    }
+                    for(int y=top;y<=bottom-hit;y+=5){
+                        float center=UiViewportPolicy.edgeAlignedCenter(y,top,bottom,hit,sprite);
+                        if(y+center-sprite/2f<top-.001f||
+                           y+center+sprite/2f>bottom+.001f)
+                            throw new AssertionError("VGP sprite escaped vertical bound");
+                    }
+                    near(UiViewportPolicy.edgeAlignedCenter(
+                         left+(right-left-hit)/2f,left,right,hit,sprite),hit/2f);
+                }
+            }
+        }
     }
     private static void testLauncherAndJoystick(){
         // Nonzero left/top insets, asymmetric bars, and both independent Pad controls.

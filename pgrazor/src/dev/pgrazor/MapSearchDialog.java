@@ -55,7 +55,7 @@ public final class MapSearchDialog {
         int pad = dp(activity, 12);
         layout.setPadding(pad, pad, pad, pad);
 
-        layout.addView(label(ui, "Search near the map area, or enter coordinates (latitude, longitude). Add a city for places farther away.", 13));
+        layout.addView(label(ui, PtBr.tr("Search near the map area, or enter coordinates (latitude, longitude). Add a city for places farther away."), 13));
 
         EditText input = new EditText(ui);
         input.setHint(dev.pgrazor.PtBr.tr("Place, address or coordinates"));
@@ -65,7 +65,7 @@ public final class MapSearchDialog {
         input.setImeOptions(EditorInfo.IME_ACTION_SEARCH);
         input.setFilters(new InputFilter[] { new InputFilter.LengthFilter(QUERY_LIMIT) });
 
-        Button searchButton = button(ui, "Search");
+        Button searchButton = button(ui, PtBr.tr("Search"));
         LinearLayout inputRow = new LinearLayout(ui);
         inputRow.setGravity(Gravity.CENTER_VERTICAL);
         inputRow.addView(input, new LinearLayout.LayoutParams(0, -2, 1));
@@ -82,10 +82,10 @@ public final class MapSearchDialog {
         scroller.addView(resultList);
         layout.addView(scroller, new LinearLayout.LayoutParams(-1, 0, 1));
 
-        TextView attribution = label(ui, "Search: Photon / OpenStreetMap contributors", 11);
+        TextView attribution = label(ui, PtBr.tr("Search: Photon / OpenStreetMap contributors"), 11);
         attribution.setPadding(0, dp(activity, 6), 0, 0);
         layout.addView(attribution);
-        layout.addView(label(ui, "Results may be incomplete.", 11));
+        layout.addView(label(ui, PtBr.tr("Results may be incomplete."), 11));
 
         Controller controller = new Controller(activity, lat, lon, input, searchButton, status, resultList, callback);
 

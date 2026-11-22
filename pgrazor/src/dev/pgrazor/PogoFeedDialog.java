@@ -449,7 +449,7 @@ public final class PogoFeedDialog {
                 FeedTheme.style(box); FeedTheme.styleGameButtons(box); FeedTheme.styleButtons(ask);
                 ask.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
                     String token = input.getText().toString().trim().replaceAll("^\"|\"$", "");
-                    if (!token.startsWith("eyJ") || token.split("\\.").length != 3) { input.setError("That doesn't look like a token (it starts with eyJ…)."); return; }
+                    if (!token.startsWith("eyJ") || token.split("\\.").length != 3) { input.setError(dev.pgrazor.PtBr.tr("That doesn't look like a token (it starts with eyJ…).")); return; }
                     net.execute(() -> {
                         boolean ok;
                         try { client.saveSession(token); ok = true; } catch (Exception e) { ok = false; }
@@ -746,6 +746,7 @@ public final class PogoFeedDialog {
             if (f.getMinIv() > 0 || f.getMaxIv() < 100) p.add(f.getMinIv() + (f.getMaxIv() < 100 ? "–" + f.getMaxIv() : "+") + "% IV");
             if (f.isShowPvpGreat() || f.isShowPvpUltra()) p.add((f.isShowPvpGreat() ? "GL" : "") + (f.isShowPvpGreat() && f.isShowPvpUltra() ? "+" : "") + (f.isShowPvpUltra() ? "UL" : ""));
             if (f.isShinyOnly()) p.add("Shiny");
+            if (f.hasExactIvFilter()) p.add("IV "+(f.getExactAttack()<0?"*":f.getExactAttack())+"/"+(f.getExactDefense()<0?"*":f.getExactDefense())+"/"+(f.getExactStamina()<0?"*":f.getExactStamina()));
             if (PogoFeedFilters.MODE_ALLOWLIST.equals(f.getSpeciesMode())) p.add(f.getSpeciesList().size() + " species");
             return p.isEmpty() ? "Any" : PogoFeedModes.join(p, " · ");
         }
@@ -815,7 +816,7 @@ public final class PogoFeedDialog {
             if (mode != PogoFeedModes.Mode.POKEMON) { openModeFilters(mode); return; }
             org.json.JSONObject working;
             try {
-                working = filters.toViewportJson(); // a fresh, mutable copy the modal edits in place
+                working = filters.toStoredJson(); // provider fields plus PGBR-only visual filters
             } catch (org.json.JSONException e) { toast("Couldn't open the filters."); return; }
             PogoFeedFilterDialog.show(activity, ui, false, working, speciesNames, prefs,
                 this::trackOwn, this::applyFilters);
@@ -884,7 +885,7 @@ public final class PogoFeedDialog {
 
         private void saveFilters() {
             try {
-                prefs.edit().putString("filters_v1", filters.toViewportJson().toString()).apply();
+                prefs.edit().putString("filters_v1", filters.toStoredJson().toString()).apply();
             } catch (org.json.JSONException ignored) { }
         }
 
@@ -982,7 +983,7 @@ public final class PogoFeedDialog {
         /** One search in a non-Pokémon mode; its rows replace that mode's list (revealed coords kept). */
         private void fetchMode(PogoFeedModes.Mode m, int g, double lat, double lon, double radiusKm) {
             final org.json.JSONObject spec = PogoFeedModes.load(prefs, m);
-            String missing = PogoFeedModes.missing(m, spec);
+            String missing = PogoFeedModes.missing(m, spec, lat, lon, radiusKm);
             if (missing != null) {
                 fetchInFlight = false;
                 note = missing; updateStatus();
@@ -1175,7 +1176,11 @@ public final class PogoFeedDialog {
             List<PogoFeedData.Entry> list = new ArrayList<>();
             for (PogoFeedData.Entry e : entries) {
                 if (e == null || e.expired(now)) continue;               // hide expired every pass
-                // The server applies the filters; no client-side IV gate (it would fight the always-show exceptions).
+                // Exact individual IV criteria are local-only: absent stats must NOT match.
+                // Standard server-side percent/range filters are intentionally not repeated here.
+                if (mode == PogoFeedModes.Mode.POKEMON && filters.hasExactIvFilter()
+                        && (e.attrs == null || !filters.matchesExactIvs(
+                                e.attrs.atkIv, e.attrs.defIv, e.attrs.staIv))) continue;
                 // Every found Pokémon stays listed until its despawn reaches 0, whatever the current
                 // radius/filters: those only shape the next searches. Rows without coordinates
                 // (not revealed yet) are listed after the located ones.

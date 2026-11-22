@@ -36,6 +36,27 @@ int main(){
  assert(parses("R2|1|0|0|CHALLENGE_CATCH_EASY",c));
  assert(decide(quest(5,5),c,challenge,active)==NONE&&decide(quest(2,5),c,challenge,active)==REMOVE);
  assert(decide(quest(5,5,"CHALLENGE_CATCH_EASY",true),Config{},challenge,active)==NONE);  // invalid config
+ assert(parses("R3|2|1|1|WANTED_QUEST",c)&&c.valid&&c.remove&&c.keep_selected&&c.claim);
+ assert(decide(quest(1,3,"WANTED_QUEST"),c,challenge,active)==NONE); // keep desired
+ assert(decide(quest(1,3,"UNWANTED"),c,challenge,active)==REMOVE); // delete unwanted
+ assert(decide(quest(3,3,"UNWANTED"),c,challenge,active)==CLAIM); // completed never discarded
+ assert(decide(quest(1,3,"UNWANTED",true),c,challenge,active)==NONE); // protect gym bonus
+ assert(decide(quest(0,0,"UNWANTED"),c,challenge,active)==NONE); // unknown target protected
+ assert(parses("R3|2|1|1|",c)&&!c.remove&&c.keep_selected); // blank selection disables deletion
+ assert(decide(quest(1,3,"UNWANTED"),c,challenge,active)==NONE);
+ assert(!parses("R3|3|0|0|WANTED_QUEST",c)); // invalid legacy mode
+ assert(parses("R4|3|1|0|CHALLENGE_EXCELLENT",c)&&c.keep_selected&&c.claim_selected_only);
+ assert(decide(quest(0,1,"CHALLENGE_EXCELLENT"),c,challenge,active)==NONE);
+ assert(decide(quest(0,1,"UNWANTED"),c,challenge,active)==REMOVE);
+ assert(decide(quest(1,1,"CHALLENGE_EXCELLENT"),c,challenge,active)==CLAIM);
+ assert(decide(quest(1,1,"UNWANTED"),c,challenge,active)==NONE); // never claim unrelated reward
+ assert(decide(quest(0,1,"UNWANTED",true),c,challenge,active)==NONE);
+ assert(!parses("R4|3|1|0|",c));  // empty target must not auto-remove any task
+ assert(!parses("R4|2|1|0|CHALLENGE_EXCELLENT",c)); // no silent downgrade
+ assert(!parses("R4|0|1|0|CHALLENGE_EXCELLENT",c)); // event mode must be exact-template only
+ assert(!parses("R4|1|1|0|CHALLENGE_EXCELLENT",c)); // event mode must not fall back to unscoped claims
+ assert(!parses("R4|3|1|0|bad",c)); // exact template key, no arbitrary string
+ assert(parses("R2|1|0|0|OLD_QUEST",c)&&c.remove&&!c.keep_selected); // backwards compatible
  assert(remove_retry_ms(1)==30000&&remove_retry_ms(2)==120000&&remove_retry_ms(3)==0&&remove_retry_ms(0)==0);
  std::puts("PASS research policy: wire config bounds, claim-before-remove, selected templates only, bonus/special/claimed tasks protected, bounded removal retries");
  return 0;

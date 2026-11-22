@@ -14,6 +14,7 @@ import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
 STUBS = {
+    "dev/pgrazor/EternatusRouteRunner.java": "package dev.pgrazor; public final class EternatusRouteRunner { public static void tick(){} public static void stop(String reason){} }",
     "dev/pgrazor/AutoRaid.java": "package dev.pgrazor; public class AutoRaid { public static void travel(long s,long t,double a,double b){} public static void reset(){} public static void read(java.util.Properties p){} public static void write(java.util.Properties p){} public static String config(){return null;} public static void tick(boolean b){} public static boolean running(){return false;} public static void publish(String s){} }",
     "dev/pgrazor/GiftBatchSettings.java": "package dev.pgrazor; public class GiftBatchSettings {public static void reset(){} public static String config(){return null;} public static void publish(String s){} public static boolean running(){return false;}}",
     'dev/pgrazor/events/EventSettings.java': 'package dev.pgrazor.events; public final class EventSettings {public static boolean vgpSafari, autoSafari; public static boolean wildVgpSafari(android.app.Application app){return vgpSafari;} public static boolean wildAutoBallSafari(android.app.Application app){return autoSafari;} public static boolean boxCollectorEnabled(android.app.Application app){return false;} public static void publishBoxCollectorCapability(boolean value){}}',
@@ -115,6 +116,7 @@ public class NotificationManager {
 public class AccountProfiles {
  public static void init(android.app.Application app){}
  public static boolean allowed(){return true;}
+ public static String authenticatedTrainerName(){return "";}
  public static java.io.File file(android.app.Application app,String name){return new java.io.File(app.getFilesDir(),name);}
  public static String command(){return "";}
  public static String[] commandSnapshot(){return new String[]{"", "0"};}
@@ -124,6 +126,11 @@ public class AccountProfiles {
  public static void logoutComplete(){}
  public static void logoutFailed(){} static void signInResetComplete(){} static void sessionSaved(){}
 }""",
+    'dev/pgrazor/NativeCore.java': '''package dev.pgrazor;
+public final class NativeCore {
+ public static int trainerPrivacyConfigure(boolean enabled,String name){return 0;}
+ public static int trainerPrivacyStatus(){return 0;}
+}''',
     'dev/pgrazor/Pad.java': '''package dev.pgrazor;
 public class Pad {public final android.app.Activity activity; public Pad(android.app.Activity a){activity=a;} public void close(){} public void confirmStopRoute(){} public void confirmMapTeleport(double lat,double lon,int mode,int epoch){}}''',
     'dev/pgrazor/LogActivity.java': 'package dev.pgrazor; public class LogActivity extends android.app.Activity {}',
@@ -163,6 +170,8 @@ public final class ResearchSettings {
  public static void read(java.util.Properties p){prefs.read(p);}
  public static void write(java.util.Properties p){prefs.write(p);}
 }''',
+    # Compiled-52 session stats are integrated separately; Control needs only event dispatch here.
+    'dev/pgrazor/SessionStats.java': 'package dev.pgrazor; public final class SessionStats { static void publish(String detail){} }',
     'dev/pgrazor/ShinyScanner.java': '''package dev.pgrazor;
 public final class ShinyScanner {
  public static String config(){return "N3|1|0|700|2|8000|0|1|0|";}
@@ -210,6 +219,7 @@ public final class GoogleBrowserAuth {
  public static void onHostPaused(android.app.Activity activity){}
 }''',
     'dev/pgrazor/GoogleAuthActivity.java': 'package dev.pgrazor; public class GoogleAuthActivity extends android.app.Activity {}',
+    'dev/pgrazor/UpdateChecker.java': 'package dev.pgrazor; public final class UpdateChecker { static void checkAutomatically(android.app.Activity activity){} }',
 }
 
 
@@ -242,7 +252,7 @@ class ControlJavaTests(unittest.TestCase):
                 source.write_text(text, encoding='utf-8')
                 sources.append(source)
             sources.extend(ROOT / 'src/dev/pgrazor' / name for name in (
-                'Control.java', 'MapCatchStatus.java', 'MotionEngine.java', 'LocationState.java', 'GameRoutesController.java',
+                'Control.java', 'QuickMenuVisibilityPolicy.java', 'PvpBattleMode.java', 'SharedBattleOptions.java', 'TrainerAliasPolicy.java', 'MapCatchStatus.java', 'MotionEngine.java', 'LocationState.java', 'GameRoutesController.java',
                 'CameraHeadingState.java', 'CameraSteering.java',
                 'BerryPriority.java', 'MapTapSequence.java', 'CooldownState.java',
                 'VgpController.java', 'CatchOutcomeController.java', 'SettingsWriter.java', 'SmartCatchPreferences.java', 'GymAutomationPreferences.java', 'BuddyEmotionPreferences.java', 'ResearchPreferences.java'))
@@ -251,7 +261,7 @@ class ControlJavaTests(unittest.TestCase):
                             ROOT / 'test/VgpControllerTest.java',ROOT / 'test/CooldownTest.java',ROOT / 'test/ControlCooldownTest.java',
                             ROOT / 'test/ControlSettingsReloadTest.java',ROOT / 'test/ControlItemCatalogTest.java',ROOT / 'test/ControlIdleWalkingTest.java'])
             classes = work / 'classes'
-            sdk = Path(os.environ.get('ANDROID_HOME', str(Path(os.environ['LOCALAPPDATA']) / 'Android/Sdk')))
+            sdk = Path(os.environ.get('ANDROID_HOME') or os.environ.get('ANDROID_SDK_ROOT') or str(Path(os.environ.get('LOCALAPPDATA', str(Path.home()))) / 'Android/Sdk'))
             json_sources = sorted((sdk / 'sources').glob('android-*/org/json'), reverse=True)
             if not json_sources:
                 self.skipTest('Android SDK JSON sources unavailable')
@@ -288,7 +298,7 @@ class ControlJavaTests(unittest.TestCase):
             tested = subprocess.run([str(runtime), '-cp', str(classes), 'dev.pgrazor.VgpControllerTest'],
                                     capture_output=True, text=True, timeout=15)
             self.assertEqual(tested.returncode, 0, tested.stdout + tested.stderr)
-            self.assertIn('PASS: real Control VGP', tested.stdout)
+            self.assertIn('PASS: VGP simple manual toggle', tested.stdout)
             tested = subprocess.run([str(runtime), '-cp', str(classes), 'dev.pgrazor.CooldownTest'],
                                     capture_output=True, text=True, timeout=15)
             self.assertEqual(tested.returncode, 0, tested.stdout + tested.stderr)

@@ -28,6 +28,12 @@ class PtBrGlossaryTests(unittest.TestCase):
             "Batch evolution",
             "Search radius",
             "Settings backup",
+            "Catch it",
+            "Dismiss",
+            "Export this run's log (.txt)",
+            "Galarian bird found — walking and VGP stopped",
+            "No log file to save",
+            "Stop Auto-Raid first.",
         ):
             with self.subTest(key=key):
                 self.assertIn(key, entries)

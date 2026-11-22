@@ -97,7 +97,8 @@ uint32_t                      g_fifo_head = 0, g_fifo_tail = 0, g_fifo_size = 0;
 // --- owner-thread-only Rocket state (mirrors rocketState in rocket.js) --------------
 uint64_t g_epoch = 0;        // bumped on every clear/enter/exit; cancels straddling actions
 bool     g_in_tick = false;  // non-reentrant tick body guard (observe/begin_ui/end_ui are NOT gated)
-void    *g_state_handle = nullptr;   // InvasionCombatState scope
+void    *g_state_handle = nullptr;   // InvasionCombatState (Rocket) or PvP VNext UI (explicit PvP scope)
+bool     g_pvp_scope = false;        // never infer from mask; set only by confirmed PvP GUI sequence
 void    *g_ui_handle = nullptr;      // legacy CombatUI
 void    *g_vui_handle = nullptr;     // vNext gui
 void    *g_shield_handle = nullptr;  // shield modal
@@ -265,6 +266,7 @@ void rocket_clear(uint64_t tid) {
   if (g_pending_ui) old[n++] = g_pending_ui;
   for (uint32_t i = 0; i < g_charge_count; ++i) old[n++] = g_charges[i];
   g_state_handle = g_ui_handle = g_vui_handle = g_shield_handle = g_pending_ui = nullptr;
+  g_pvp_scope = false;
   std::memset(g_charges, 0, sizeof(g_charges)); g_charge_count = 0;
   g_pending_ui_token = 0; g_shield_used = false; g_failed = false; g_gate = -1; g_last_fast_ms = 0;
   ++g_epoch;
@@ -386,27 +388,40 @@ int api_update(uint32_t mask, uint64_t lease_ms, uint64_t proven_tid) {
 int api_observe(uint32_t kind,void *obj,int32_t aux,uint64_t tid){
   if(!g_installed.load()||!on_unity(tid)||g_stop_requested.load())return PGR_RC_OK;
   FrameGuard guard;const uint64_t epoch=++g_epoch;cancel_inflight(tid);
-  const bool capture=kind==PGR_RC_OBS_SCOPE_ENTER||kind==PGR_RC_OBS_UI_UPDATE||
-    kind==PGR_RC_OBS_VNEXT_UPDATE||kind==PGR_RC_OBS_SHIELD_PROMPT;
+  const bool pvp_enter=kind==PGR_RC_OBS_PVP_SCOPE_ENTER;
+  const bool capture=kind==PGR_RC_OBS_SCOPE_ENTER||pvp_enter||
+    kind==PGR_RC_OBS_UI_UPDATE||kind==PGR_RC_OBS_VNEXT_UPDATE||
+    kind==PGR_RC_OBS_SHIELD_PROMPT;
   void *klass=kind==PGR_RC_OBS_SCOPE_ENTER?g_cfg.class_rocket:
-    kind==PGR_RC_OBS_UI_UPDATE?g_cfg.class_rui:
-    kind==PGR_RC_OBS_VNEXT_UPDATE?g_cfg.class_rvui:g_cfg.class_rshield;
+    (pvp_enter||kind==PGR_RC_OBS_VNEXT_UPDATE)?g_cfg.class_rvui:
+    kind==PGR_RC_OBS_UI_UPDATE?g_cfg.class_rui:g_cfg.class_rshield;
   bool err=false;Root incoming;
   if(capture){
-    if((kind!=PGR_RC_OBS_SCOPE_ENTER&&!g_state_handle)||!exact(obj,klass)||stale(epoch))return PGR_RC_OK;
+    if((kind!=PGR_RC_OBS_SCOPE_ENTER&&!pvp_enter&&!g_state_handle)||
+       !exact(obj,klass)||stale(epoch))return PGR_RC_OK;
     incoming.acquire(obj,&err);if(stale(epoch))return PGR_RC_OK;
     if(err){fault(tid);return PGR_RC_OK;}
   }
   switch(kind){
-    case PGR_RC_OBS_SCOPE_ENTER:{
+    case PGR_RC_OBS_SCOPE_ENTER:
+    case PGR_RC_OBS_PVP_SCOPE_ENTER:{
+      // Invalidate the previous scope and all in-flight action tickets first.
       rocket_clear(tid);
       if(stale(epoch+1))break;
-      g_state_handle=incoming.release();pol_observe(PGR_ROCKET_ENTER,tid);
-      g_scope_serial.fetch_add(1);refresh();push_event(PGR_RC_EVT_SCOPE,0,1);break;
+      g_pvp_scope=pvp_enter;
+      g_state_handle=incoming.release();
+      pol_observe(PGR_ROCKET_ENTER,tid); // generic cadence tickets; NOT an InvasionCombatState
+      g_scope_serial.fetch_add(1);refresh();
+      push_event(PGR_RC_EVT_SCOPE,0,pvp_enter?2:1);break;
     }
-    case PGR_RC_OBS_SCOPE_EXIT:{
+    case PGR_RC_OBS_SCOPE_EXIT:
+    case PGR_RC_OBS_PVP_SCOPE_EXIT:{
       void *cur=gc_target(g_state_handle);if(stale(epoch))break;
-      if(cur&&cur==obj){rocket_clear(tid);if(!stale(epoch+1))push_event(PGR_RC_EVT_SCOPE,0,0);}break;
+      if(cur&&cur==obj&&g_pvp_scope==(kind==PGR_RC_OBS_PVP_SCOPE_EXIT)){
+        const bool was_pvp=g_pvp_scope;
+        rocket_clear(tid);
+        if(!stale(epoch+1))push_event(PGR_RC_EVT_SCOPE,0,was_pvp?3:0);
+      }break;
     }
     case PGR_RC_OBS_UI_UPDATE:{
       void *cur=gc_target(g_ui_handle);if(stale(epoch))break;
@@ -589,7 +604,8 @@ void tick_body(uint64_t tid, uint64_t now) {
   bool err = false;
 
   void *scope=gc_target(g_state_handle);if(stale(epoch))return;
-  const bool scope_ok=exact(scope,g_cfg.class_rocket);if(stale(epoch))return;
+  const bool scope_ok=exact(scope,g_pvp_scope?g_cfg.class_rvui:g_cfg.class_rocket);
+  if(stale(epoch))return;
   if(!scope_ok){rocket_clear(tid);return;}
 
   // (1) shield first.

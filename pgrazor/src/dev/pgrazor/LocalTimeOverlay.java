@@ -3,48 +3,76 @@ package dev.pgrazor;
 import android.app.Activity;
 import android.graphics.Typeface;
 import android.os.SystemClock;
-import android.text.format.DateFormat;
 import android.view.Gravity;
 import android.widget.TextView;
-import java.util.Locale;
 
 /** Small local clock driven by Pad's existing lifecycle/tick, with no background timer. */
 final class LocalTimeOverlay extends TextView {
     private final LocalTimeClock clock = new LocalTimeClock();
+    private final LocalTimeCityLookup cityLookup = new LocalTimeCityLookup();
     private long lastRefresh;
+    private int lastFormat = -1;
     private boolean closed;
+    private int lastAppearanceKey=Integer.MIN_VALUE;
 
     LocalTimeOverlay(Activity activity) {
         super(activity);
-        setTextSize(13); setTypeface(Typeface.DEFAULT, Typeface.BOLD);
+        setTextSize(11); setTypeface(Typeface.DEFAULT, Typeface.BOLD);
         setGravity(Gravity.CENTER); setSingleLine(true);
-        int padding = SettingsUi.dp(activity, 10);
+        int padding = SettingsUi.dp(activity, 4);
         setPadding(padding, 0, padding, 0);
-        setMinWidth(SettingsUi.dp(activity, 100));
+        setIncludeFontPadding(false);
+        setMinWidth(SettingsUi.dp(activity, 48));
         setVisibility(GONE);
         applyTheme();
     }
 
     void applyTheme() {
-        setBackground(SettingsUi.rounded(getContext(), Control.darkTheme() ? 0xcc141b25 : 0xccf1f5f8, 10));
-        setTextColor(SettingsUi.ink());
+        int opacity=Control.hudBackgroundOpacity(Control.HUD_LOCALTIME), font=Control.hudLabelTextSp();
+        int key=(Control.hudAppearanceRevision()*101+font)*2+(Control.darkTheme()?1:0);
+        if(key==lastAppearanceKey)return;
+        lastAppearanceKey=key;
+        int alpha=Math.round(opacity*255f/100f);
+        int rgb=0x101924;
+        setBackground(alpha==0?null:SettingsUi.rounded(getContext(),(alpha<<24)|rgb,7));
+        setTextSize(font);
+        setTextColor(Control.hudLabelColor(Control.HUD_LOCALTIME));
+        setShadowLayer(SettingsUi.dp(getContext(),2),0,0,0xff000000);
     }
 
     void refresh(boolean allowed) {
-        boolean visible = !closed && allowed && Control.localTimeOverlay() && Control.desiredEnabled();
+        applyTheme();
+        boolean visible = !closed && allowed && Control.hudLabelsVisible()
+            && Control.localTimeOverlay() && Control.desiredEnabled();
         boolean showing = getVisibility() == VISIBLE;
         if (visible != showing) setVisibility(visible ? VISIBLE : GONE);
         if (!visible || !isShown() || getWindowVisibility() != VISIBLE) return;
         long elapsed = SystemClock.elapsedRealtime();
-        if (showing && elapsed - lastRefresh < 1000) return;
+        int format = Control.localTimeFormat();
+        if (showing && elapsed - lastRefresh < 1000 && format == lastFormat) return;
+        lastFormat = format;
         lastRefresh = elapsed;
-        String label = clock.label(Control.engine.latitude, Control.engine.longitude,
-                System.currentTimeMillis(), DateFormat.is24HourFormat(getContext()), Locale.getDefault());
+        double latitude=Control.engine.latitude, longitude=Control.engine.longitude;
+        String label = clock.compactLabel(latitude, longitude, System.currentTimeMillis(), format);
+        // ICU maps the IANA time zone to a country region; no network or location permission needed.
+        if ((format < 2 || format == 6) && !"--:--".equals(label)) try {
+            String zone=TimeZoneLookup.zoneId(latitude,longitude);
+            String region=android.icu.util.TimeZone.getRegion(zone);
+            if(region!=null&&region.matches("[A-Z]{2}")){
+                String flag=new String(Character.toChars(0x1f1e6+region.charAt(0)-'A'))
+                    +new String(Character.toChars(0x1f1e6+region.charAt(1)-'A'));
+                if(format==6){
+                    String city=cityLookup.resolve(getContext(),latitude,longitude,
+                        ()->post(()->{ if(!closed)lastRefresh=0; }));
+                    label=flag+"  "+(city.isEmpty()?"":city+"  •  ")+label;
+                }else label=flag+"  "+label;
+            }
+        } catch(RuntimeException ignored){ /* Ocean and unknown region: show time without flag. */ }
         if (!label.contentEquals(getText())) {
             setText(label);
-            setContentDescription("Local time at spoofed location: " + label + ". Drag to move.");
+            setContentDescription("Hora local: " + label + ". Arraste para mover.");
         }
     }
 
-    void close() { closed = true; setVisibility(GONE); }
+    void close() { closed = true; cityLookup.close(); setVisibility(GONE); }
 }

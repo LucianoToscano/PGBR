@@ -1,0 +1,86 @@
+name: PGBR - verificacao incremental Eternatus e privacidade
+on:
+  push:
+    branches: [feature/eternatus-rota-automatica-lt, feature/lt-pvp-protecao-icones-hud-velocidades, feature/lt-hud-historico-locais-20261120, feature/eternatus-morph-tempestade-lt010, feature/eternatus-vortex-fx-lt011, fix/lt012-integracao-pr9-eternatus-20261120, fix/lt013-cooldown-verde-eternatus-20261120]
+  pull_request:
+    branches: [feature/pt-br-traducao, feature/lt-hud-historico-locais-20261120]
+permissions:
+  contents: read
+jobs:
+  unit-java:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Testar coordenador GPX e cooldown
+        run: python -B -m unittest discover -s pgrazor/test -p 'test_eternatus_route_java.py' -v
+      - name: Validar morph suave e imagens do usuário (Joystick e Pokébola)
+        run: python -B -m unittest discover -s pgrazor/test -p 'test_eternatus_morph_java.py' -v
+      - name: Testar ciclo da tempestade, vórtice real, efeitos da Pokébola
+        run: python -B -m unittest discover -s pgrazor/test -p 'test_eternatus_fx_java.py' -v
+      - name: Testar proporcao dos sprites e botoes claros do historico
+        run: python -B -m unittest discover -s pgrazor/test -p 'test_item_sprite_fit_java.py' -v
+      - name: Testar verde quando cooldown chegar a zero
+        run: |
+          mkdir -p build/pgbr-cooldown-visual
+          javac -encoding UTF-8 -d build/pgbr-cooldown-visual pgrazor/src/dev/pgrazor/CooldownVisual.java pgrazor/test/CooldownVisualTest.java
+          java -cp build/pgbr-cooldown-visual dev.pgrazor.CooldownVisualTest
+      - name: Testar mascara visual somente do treinador autenticado
+        run: |
+          g++ -std=c++17 -Wall -Wextra -Werror -Ipgrazor/native pgrazor/native/trainer_privacy_policy_test.cpp -o /tmp/pgbr-trainer-privacy-test
+          /tmp/pgbr-trainer-privacy-test
+          g++ -std=c++17 -Wall -Wextra -Werror -fsyntax-only -Ipgrazor/test/stubs -Ipgrazor/native pgrazor/native/trainer_privacy_ui.cpp
+      - name: Validar apelidos de treinador
+        run: |
+          mkdir -p build/pgbr-unit
+          javac -encoding UTF-8 -d build/pgbr-unit pgrazor/src/dev/pgrazor/TrainerAliasPolicy.java pgrazor/test/TrainerAliasPolicyTest.java
+          java -cp build/pgbr-unit dev.pgrazor.TrainerAliasPolicyTest
+      - name: Testar proteção PvP Top 1 versus limite IV 100%
+        run: |
+          g++ -std=c++17 -O2 -Ipgrazor/native pgrazor/native/transfer_policy.cpp pgrazor/native/pvp_rank.cpp pgrazor/native/transfer_or_pvp_regression_test.cpp -o /tmp/pgbr-pvp-transfer-test
+          /tmp/pgbr-pvp-transfer-test
+      - name: Conferir 37 sprites de itens e os três empacotadores
+        run: python -B -m unittest discover -s pgrazor/test -p 'test_item_icon_assets.py' -v
+      - name: Verificar integridade do diff
+        run: git diff --check HEAD~1 HEAD
+
+  android-controls:
+    runs-on: windows-latest
+    timeout-minutes: 35
+    env:
+      PGRAZOR_BUILD_TOOLS: 36.0.0
+      PGRAZOR_ANDROID_PLATFORM: android-36
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools
+          log-accepted-android-sdk-licenses: false
+      - name: Android SDK 36
+        shell: pwsh
+        run: sdkmanager "platforms;android-36" "build-tools;36.0.0" "sources;android-36"
+      - name: Preparar ferramentas DEX
+        run: python -c "import sys; sys.path.insert(0, 'pgrazor'); import dex_bridges; dex_bridges.dependencies(download=True)"
+      - name: Executar verificacoes completas dos fontes
+        run: python -B tools/check.py
+      - name: Compilar controles Java Android
+        run: python -B pgrazor/build.py

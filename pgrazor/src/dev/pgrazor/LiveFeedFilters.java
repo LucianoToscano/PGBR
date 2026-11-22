@@ -143,13 +143,18 @@ public final class LiveFeedFilters {
                 && !filterXxs && !filterXxl && MODE_OFF.equals(speciesMode)
                 && !showPvpGreat && !showPvpUltra && !showPvpLittle) return true;
         if (alwaysShowRare) return true;
-        if (ivPercent < 0) return showAll && minIv == IV_MIN && maxIv == IV_MAX;
         boolean xxs = size == 1, xxl = size == 5;
-        if (ivPercent >= 100 && alwaysShowPerfect || ivPercent == 0 && alwaysShowZero
+        if (ivPercent >= 0 && (ivPercent >= 100 && alwaysShowPerfect
+                || ivPercent == 0 && alwaysShowZero)
                 || alwaysShowSize && (xxs || xxl)) return true;
         if (MODE_ALLOWLIST.equals(speciesMode) && !speciesList.contains(dexId)) return false;
         if (pvpMatch) return true;
-        if (ivPercent < minIv || ivPercent > maxIv) return false;
+        // Missing IV is unknown, not zero. A broad IV range must not hide
+        // valid live spawns from a provider that does not report IV.
+        // Conversely, a restrictive IV range must never claim an unknown match.
+        if (ivPercent < 0) {
+            if (minIv != IV_MIN || maxIv != IV_MAX) return false;
+        } else if (ivPercent < minIv || ivPercent > maxIv) return false;
         if (level > 0 && (minLevel > LEVEL_MIN && level < minLevel || maxLevel < LEVEL_MAX && level > maxLevel))
             return false;
         if (filterXxs || filterXxl) return filterXxs && xxs || filterXxl && xxl;
@@ -170,11 +175,27 @@ public final class LiveFeedFilters {
      */
     public JSONObject toRequestJson() throws JSONException {
         JSONObject f = toViewportJson();
+        // Historic profiles stored show_all=false even with every restriction
+        // disabled. That can make a live map return nothing to an otherwise
+        // unfiltered search. Keep the stored preference intact, but request
+        // the complete nearby feed only when absolutely no narrowing option
+        // is active. Explicit species/IV/PvP/shiny/size filters remain intact.
+        if (isBroadUnfilteredSearch()) f.put("show_all", true);
         if (pvpOnlyActive()) {
             f.put("min_iv", IV_MIN); f.put("max_iv", IV_MAX);
             f.put("min_level", LEVEL_MIN); f.put("max_level", LEVEL_MAX);
         }
         return f;
+    }
+
+    private boolean isBroadUnfilteredSearch() {
+        return minIv == IV_MIN && maxIv == IV_MAX
+                && minLevel == LEVEL_MIN && maxLevel == LEVEL_MAX
+                && MODE_OFF.equals(speciesMode) && !filterXxs && !filterXxl
+                && !showPvpGreat && !showPvpUltra && !showPvpLittle
+                && !pvpOnly && !shinyOnly && !backgroundOnly && !showMyBackgrounds
+                && !alwaysShowPerfect && !alwaysShowZero
+                && !alwaysShowRare && !alwaysShowSize;
     }
 
     /** Full 21-key display-filter object for {@code POST /api/map/viewport}. */

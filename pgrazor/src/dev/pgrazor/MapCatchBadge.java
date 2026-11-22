@@ -24,7 +24,7 @@ final class MapCatchBadge extends View {
     @Override protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
         canvas.save(); canvas.scale(getWidth()/54f, getHeight()/54f);
-        paint.setStyle(Paint.Style.FILL); paint.setColor(SettingsUi.surface());
+        paint.setStyle(Paint.Style.FILL); paint.setColor((SettingsUi.surface()&0x00ffffff)|(Math.round(Control.overlayBackgroundOpacity()*255f/100f)<<24));
         canvas.drawRoundRect(1,1,53,53,14,14,paint);
         int tint = "CAUGHT".equals(label) ? Color.rgb(33,188,125)
             : "FLED".equals(label) || "STOPPED".equals(label) ? Color.rgb(235,126,85) : SettingsUi.accent();

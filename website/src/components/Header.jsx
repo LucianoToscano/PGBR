@@ -46,14 +46,14 @@ export default function Header({ theme, onToggleTheme, onGuide = false }) {
     <header className="site-header" ref={headerRef}>
       <div className="site-header__inner">
         <a className="brand" href={brandHref}>
-          <img className="brand__mark" src={asset('logo.svg')} alt="" width="28" height="28" />
+          <img className="brand__mark" src={asset('logo.webp')} alt="" width="28" height="28" />
           <span className="brand__name">PGBR</span>
         </a>
 
         <nav
           id={NAV_ID}
           className={`site-nav${open ? ' is-open' : ''}`}
-          aria-label="Primary"
+          aria-label="Navegação principal"
         >
           <ul className="site-nav__list">
             {nav.map((item) => (
@@ -75,8 +75,8 @@ export default function Header({ theme, onToggleTheme, onGuide = false }) {
             type="button"
             className="icon-btn"
             onClick={onToggleTheme}
-            aria-label={`Switch to ${nextTheme} theme`}
-            title={`Switch to ${nextTheme} theme`}
+            aria-label={`Alternar para o tema ${nextTheme === 'dark' ? 'escuro' : 'claro'}`}
+            title={`Alternar para o tema ${nextTheme === 'dark' ? 'escuro' : 'claro'}`}
           >
             {theme === 'dark' ? <SunIcon /> : <MoonIcon />}
           </button>
@@ -86,7 +86,7 @@ export default function Header({ theme, onToggleTheme, onGuide = false }) {
             ref={toggleRef}
             aria-expanded={open}
             aria-controls={NAV_ID}
-            aria-label={open ? 'Close menu' : 'Open menu'}
+            aria-label={open ? 'Fechar menu' : 'Abrir menu'}
             onClick={() => setOpen((value) => !value)}
           >
             {open ? <CloseIcon /> : <MenuIcon />}

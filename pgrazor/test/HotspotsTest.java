@@ -19,6 +19,18 @@ public class HotspotsTest {
         check(state.remaining(now,tokyo.latitude,tokyo.longitude)==3600000);
         check(state.remaining(now,sf.latitude,sf.longitude)==0);
         check(state.rows.size()==1); // Previewing a destination does not record movement.
-        System.out.println("PASS: 14 exact supplied hotspot coordinates, immutable catalog, destination cooldown uses elapsed action history");
+        // Regression: each real IANA zone changes UTC offset with daylight saving;
+        // static labels remain available for old callers, not for the live clock.
+        long nov=1795176000000L, july=1782907200000L;
+        check(sf.local(nov,true).endsWith("UTC-8"));
+        check(sf.local(july,true).endsWith("UTC-7"));
+        check(tokyo.local(nov,true).endsWith("UTC+9"));
+        check(Hotspots.ALL.get(0).local(nov,true).endsWith("UTC-10"));
+        check(Hotspots.ALL.get(13).local(nov,true).endsWith("UTC+13"));
+        check(Hotspots.ALL.get(7).local(nov,true).endsWith("UTC+0"));
+        check(Hotspots.offset(19800000).equals("UTC+5:30"));
+        check(Hotspots.offset(-12600000).equals("UTC-3:30"));
+        check(sf.local(nov,true).contains("nov"));
+        System.out.println("PASS: hotspot coordinates, cooldown, and localized clocks with real DST offsets");
     }
 }

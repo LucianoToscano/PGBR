@@ -26,7 +26,7 @@ import urllib.error
 import urllib.request
 
 BASE = "https://play.livepokemap.com"
-USER_AGENT = "PGRazor-hundo-feed/1.0 (+https://github.com/jpitty03/PGRazor)"
+USER_AGENT = "PGBR-hundo-feed/1.0 (+https://github.com/LucianoToscano/PGBR)"
 TIMEOUT_S = 20
 WORLD = (-85.0, 85.0, -180.0, 180.0)  # min_lat, max_lat, min_lon, max_lon
 MAX_TILE_LON = 90.0  # widest tile below the whole map: LivePokeMap sends nothing for a 180 degree one

@@ -47,6 +47,7 @@ public final class AutoWalkDialog {
      * dialog is shown. Cleared when a route is started or the user returns to Nearby mode.
      */
     private static volatile GpxRoute pendingGpx;
+    private static volatile double lastRouteSpeedKmh = 5.0;
 
     /** Bound to one dialog lifetime; all timers and the snapshot request stop on dismiss/destroy. */
     public static AlertDialog show(Activity activity) {
@@ -213,8 +214,8 @@ public final class AutoWalkDialog {
             Button start = dialog.getButton(AlertDialog.BUTTON_POSITIVE);
             if (start == null) return;
             if (selectedGpx != null) {
-                gpxInfo.setText(dev.pgrazor.PtBr.tr(String.format(Locale.US, "GPX route: %s (%d %s). Start walks it in order.",
-                    selectedGpx.name, selectedCount, selectedCount == 1 ? "stop" : "stops")));
+                gpxInfo.setText(dev.pgrazor.PtBr.tr(String.format(Locale.getDefault(), "Rota GPX: %s (%d %s). Ao iniciar, a caminhada seguirá as paradas na ordem.",
+                    selectedGpx.name, selectedCount, selectedCount == 1 ? "parada" : "paradas")));
                 start.setEnabled(true);
                 return;
             }
@@ -306,12 +307,12 @@ public final class AutoWalkDialog {
             java.util.List<String> labels = new java.util.ArrayList<>();
             java.util.List<Runnable> actions = new java.util.ArrayList<>();
             if (offerNearest) {
-                labels.add("Walk from the closest point\nStop " + (nearest + 1) + " of " + points.length + ", " + RouteStart.distance(toNearest) + " away");
+                labels.add("Caminhar a partir do ponto mais próximo\nParada " + (nearest + 1) + " de " + points.length + " · " + RouteStart.distance(toNearest) + " de distância");
                 actions.add(() -> walkGpx(route, RouteStart.from(points, nearest, looping), looping, nearest));
             }
-            labels.add("Walk from the beginning\n" + RouteStart.distance(toStart) + " away");
+            labels.add("Caminhar desde o início\n" + RouteStart.distance(toStart) + " de distância");
             actions.add(() -> walkGpx(route, points, looping, 0));
-            labels.add("Teleport to the beginning\nThen walk the whole route");
+            labels.add("Teletransportar para o início\nDepois percorrer toda a rota");
             actions.add(() -> TeleportDialog.confirm(activity, points[0][0], points[0][1], (tlat, tlon) -> {
                 if (closed) return false;
                 try { Control.teleport(tlat, tlon); }
@@ -320,7 +321,7 @@ public final class AutoWalkDialog {
                 walkGpx(route, points, looping, 0);
                 return true;
             }));
-            AlertDialog choose = ChoiceList.attach(new AlertDialog.Builder(MapTheme.wrap(activity)).setTitle(dev.pgrazor.PtBr.tr("Start “" + route.name + "”"))
+            AlertDialog choose = ChoiceList.attach(new AlertDialog.Builder(MapTheme.wrap(activity)).setTitle(dev.pgrazor.PtBr.tr("Iniciar “" + route.name + "”"))
                 .setNegativeButton(dev.pgrazor.PtBr.tr("Cancel"), null).create(), labels.toArray(new String[0]), which -> actions.get(which).run());
             DialogLifecycle.bind(activity, choose, null);
             choose.setOnShowListener(d -> MapTheme.styleButtons(choose));
@@ -340,14 +341,39 @@ public final class AutoWalkDialog {
             dialog.dismiss();
         }
 
+        /** Pause preserves the route; stopping is destructive and needs explicit confirmation. */
         private void stop() {
             if (closed) return;
             if (!Control.engine.routeProgress().active) { updateRunning(); return; }
-            Control.engine.stop();
-            Control.saveState();
-            Control.event("autowalk-stopped", "User stopped the active route from Auto-walk");
-            updateRunning();
-            toast("Auto-walk stopped.");
+            final boolean paused = Control.engine.speedKmh == 0;
+            String[] choices = paused
+                ? new String[]{"Retomar rota", "Parar rota definitivamente", "Cancelar"}
+                : new String[]{"Pausar rota", "Parar rota definitivamente", "Cancelar"};
+            AlertDialog confirm = new AlertDialog.Builder(MapTheme.wrap(activity))
+                .setTitle(dev.pgrazor.PtBr.tr("O que deseja fazer com a rota?"))
+                .setItems(choices, (d, which) -> {
+                    if (which == 2) return;
+                    if (which == 0) {
+                        if (paused) {
+                            Control.engine.speed(lastRouteSpeedKmh > 0 ? lastRouteSpeedKmh : 5.0);
+                            Control.event("autowalk-resumed", "User resumed route");
+                            toast("Rota retomada.");
+                        } else {
+                            lastRouteSpeedKmh = Control.engine.speedKmh;
+                            Control.engine.speed(0);
+                            Control.event("autowalk-paused", "User paused route");
+                            toast("Rota pausada. Seu progresso foi mantido.");
+                        }
+                    } else {
+                        Control.engine.stop();
+                        Control.event("autowalk-stopped", "User confirmed stopping the active route");
+                        toast("Rota encerrada.");
+                    }
+                    Control.saveState();
+                    updateRunning();
+                }).create();
+            DialogLifecycle.bind(activity,confirm,()->{});
+            confirm.show();
         }
 
         private void toast(String message) {

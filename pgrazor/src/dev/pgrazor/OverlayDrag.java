@@ -79,14 +79,14 @@ public final class OverlayDrag implements View.OnTouchListener {
         if (dragging || !prefs.contains(key + ".fx")) return;
         int w = visualWidth(view), h = visualHeight(view);
         if (w == 0 || h == 0 || parent.getWidth() == 0 || parent.getHeight() == 0) return;
-        android.graphics.Rect safe=UiViewport.bounds(parent);
+        android.graphics.Rect safe=dragBounds();
         view.setX(clampX(safe.left+Math.max(0,safe.width()-w)*clampUnit(prefs.getFloat(key+".fx",0f))));
         view.setY(clampY(safe.top+Math.max(0,safe.height()-h)*clampUnit(prefs.getFloat(key+".fy",0f))));
         positionFollower();
     }
 
     private void save() {
-        android.graphics.Rect safe=UiViewport.bounds(parent);
+        android.graphics.Rect safe=dragBounds();
         int trackW=safe.width()-visualWidth(view),trackH=safe.height()-visualHeight(view);
         float fx=trackW>0?clampUnit((view.getX()-safe.left)/trackW):0f;
         float fy=trackH>0?clampUnit((view.getY()-safe.top)/trackH):0f;
@@ -105,12 +105,23 @@ public final class OverlayDrag implements View.OnTouchListener {
         follower.setY(UiViewportPolicy.clamp(y,safe.top,safe.bottom,fh));
     }
 
+    /**
+     * The VGP may rest flush against the LEFT and RIGHT screen edges on portrait
+     * game layouts. Vertical limits still avoid system bars/gesture navigation,
+     * so all four corners of the usable gameplay area stay accessible.
+     *
+     * The exact same rectangle must be used for dragging, saving, restoring and
+     * rendering — otherwise a saved right-edge position can jump on relayout.
+     */
+    private android.graphics.Rect dragBounds(){
+        return "vgp".equals(key)?UiViewport.vgpBounds(parent):UiViewport.bounds(parent);
+    }
     private float clampX(float x){
-        android.graphics.Rect safe=UiViewport.bounds(parent);
+        android.graphics.Rect safe=dragBounds();
         return UiViewportPolicy.clamp(x,safe.left,safe.right,visualWidth(view));
     }
     private float clampY(float y){
-        android.graphics.Rect safe=UiViewport.bounds(parent);
+        android.graphics.Rect safe=dragBounds();
         return UiViewportPolicy.clamp(y,safe.top,safe.bottom,visualHeight(view));
     }
     static int visualWidth(View view){return Math.round(view.getWidth()*view.getScaleX());}

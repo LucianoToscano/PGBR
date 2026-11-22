@@ -1,0 +1,232 @@
+{
+  "schema_version": 1,
+  "project": "PGBR",
+  "scope": "Inventário de integração: não implica que SDK, API privada ou binário esteja hoje carregado no aplicativo.",
+  "compatibility_target": {
+    "pokemon_go": "0.437.0",
+    "android_abi": "arm64-v8a",
+    "flavors": [
+      "root",
+      "nonroot"
+    ],
+    "last_published": "v0.00.15-LT"
+  },
+  "evidence_policy": {
+    "owner_statement": "Aquisição e autorização de desenvolvimento informadas pelo responsável do PGBR.",
+    "permission_evidence": "Guardar contratos/recibos em Drive privado; vincular ID interno, escopo de distribuição e versão antes de publicar cada componente.",
+    "public_status": "Inventariado; escopo técnico e documental por fornecedor sujeito a homologação.",
+    "prohibit_public_fields": [
+      "license_key",
+      "oauth_token",
+      "password",
+      "email",
+      "authBearer",
+      "deviceAuthToken",
+      "private_drive_url",
+      "trainer_name",
+      "location_history"
+    ],
+    "required_technical_tests": [
+      "game_version",
+      "abi",
+      "sdk_or_bridge_contract",
+      "root_and_nonroot",
+      "provenance",
+      "regression",
+      "device_smoke"
+    ]
+  },
+  "partners": [
+    {
+      "id": "pgsharp",
+      "product": "PGSharp",
+      "version": "1.277.2",
+      "game_base": "0.435.2",
+      "source_type": "decompiled_apk",
+      "capabilities": [
+        "pokemon_feed",
+        "inventory_filters",
+        "trainer_display_privacy",
+        "iv_display",
+        "vgp"
+      ],
+      "import_state": "inventory_only",
+      "porting_note": "Version-specific binaries not yet matched to PGBR 0.437.0."
+    },
+    {
+      "id": "ipogo_client",
+      "product": "iPogo",
+      "version": "27.3",
+      "game_base": "0.437.0",
+      "source_type": "decompiled_apk",
+      "zip_sha256": "eab82ec5410a36d8280c5409cce9eb3a05bc60aad9df2d47e7409eb3408fba8b",
+      "capabilities": [
+        "unity_class_compatibility",
+        "pokemon_search",
+        "scanner",
+        "privacy"
+      ],
+      "import_state": "inventory_only",
+      "porting_note": "Matching game version does not validate all original hooks."
+    },
+    {
+      "id": "ipogo_launcher",
+      "product": "iPogo Launcher",
+      "version": "27.3",
+      "game_base": null,
+      "source_type": "decompiled_apk",
+      "zip_sha256": "795a18beb1dc20db8d07497b01ce5867df566f7824fd49fe84e1a6483168e557",
+      "capabilities": [
+        "root_preflight",
+        "loader_health"
+      ],
+      "import_state": "inventory_only"
+    },
+    {
+      "id": "pokemod",
+      "product": "Pokemod",
+      "version": "14.2.1",
+      "game_base": null,
+      "source_type": "decompiled_apk",
+      "zip_sha256": "e1697d36bb549fa51e0acda8617987bd11dcc83cfec60e8cbc754a54a52f1af2",
+      "capabilities": [
+        "root_service",
+        "inventory",
+        "encounter_overlay"
+      ],
+      "import_state": "inventory_only"
+    },
+    {
+      "id": "pokemod_atlas",
+      "product": "Pokemod Atlas",
+      "version": "25101101",
+      "game_base": null,
+      "source_type": "decompiled_apk",
+      "zip_sha256": "9176afc7f41a0650d38306811a89557d20c924a89d65f9ee5b7332f925906522",
+      "capabilities": [
+        "mapping",
+        "root_health",
+        "workers"
+      ],
+      "import_state": "inventory_only"
+    },
+    {
+      "id": "pokemod_aegis",
+      "product": "Pokemod Aegis",
+      "version": "26073101",
+      "game_base": null,
+      "source_type": "decompiled_apk",
+      "zip_sha256": "2d09a3413aea2bc7e0258dc89c5d89fcdb8395bee9bd8d581552a3f59fdd6ae5",
+      "capabilities": [
+        "mapping",
+        "worker_monitor",
+        "service_recovery"
+      ],
+      "import_state": "inventory_only"
+    },
+    {
+      "id": "pgtools",
+      "product": "PGTools",
+      "version": "6.1.1",
+      "game_base": null,
+      "source_type": "decompiled_apk",
+      "zip_sha256": "a73117385d42d5479e564c90be1f457dd1ed241234596612059509781e6d2f9d",
+      "capabilities": [
+        "item_rules",
+        "quest_exceptions",
+        "transfer_policy",
+        "event_modes"
+      ],
+      "import_state": "inventory_only"
+    },
+    {
+      "id": "pgtools_test",
+      "product": "PGTools test",
+      "version": "6.1.1",
+      "game_base": null,
+      "source_type": "decompiled_apk",
+      "zip_sha256": "65c7fcd0a62bc8b4a6f54c8048007352ee509744b3e1da1f6c3176ed89d204d2",
+      "capabilities": [
+        "compatibility_regression"
+      ],
+      "import_state": "inventory_only",
+      "porting_note": "Test variant, do not count as independent provider."
+    },
+    {
+      "id": "pokelist",
+      "product": "PokeList",
+      "version": "1.3.18",
+      "game_base": null,
+      "source_type": "decompiled_apk",
+      "zip_sha256": "3218938a5a624490973cdcc93e6b56f5564a3eceee84966e549e5c87f575b24c",
+      "capabilities": [
+        "pokemon_filters",
+        "rocket_catalog",
+        "alerts",
+        "auto_hunt_ui"
+      ],
+      "import_state": "inventory_only",
+      "porting_note": "Catalog holds fewer species than PGBR; do not replace canonical Game Master."
+    },
+    {
+      "id": "shungo",
+      "product": "Shungo",
+      "version": "1.7.2",
+      "game_base": null,
+      "source_type": "decompiled_apk",
+      "zip_sha256": "bc04c5442c34b32b3c5d863301f780ad58874ccd09ecfb36b0fb08036372ea05",
+      "capabilities": [
+        "app_service",
+        "spawn_reference"
+      ],
+      "import_state": "inventory_only"
+    },
+    {
+      "id": "velocity",
+      "product": "Velocity",
+      "version": "8.8.2",
+      "game_base": null,
+      "source_type": "decompiled_apk",
+      "zip_sha256": "45dbee42fdb9d54982b26358112313e12b132e65a2175ce0f405e3df4ae3a452",
+      "capabilities": [
+        "app_selection",
+        "help_navigation"
+      ],
+      "import_state": "inventory_only"
+    }
+  ],
+  "internal_modules": [
+    {
+      "id": "pokesearch",
+      "repository": "LucianoToscano/PokeSearch",
+      "role": "radar, filters, alerts, visual scan",
+      "rule": "reuse via explicit integration; do not mutate independent app"
+    },
+    {
+      "id": "pvppokego",
+      "repository": "LucianoToscano/PvPPokeGo",
+      "role": "battle engine, PvP IV ranks, energy",
+      "rule": "reuse code with adapter and tests; retain independent app"
+    },
+    {
+      "id": "pokegobr",
+      "repository": "LucianoToscano/PokeGoBR",
+      "role": "content/library/portal reference",
+      "rule": "not another replacement for PGBR"
+    }
+  ],
+  "external_provider_boundaries": [
+    {
+      "id": "pogocoordinates",
+      "role": "live Pokémon, raids, quests, Rocket, weather, Power Spots",
+      "status": "existing PGBR integration; audit per endpoint",
+      "rule": "keep user entitlement, TTL and rate limits"
+    },
+    {
+      "id": "livepokemap",
+      "role": "map and feed",
+      "status": "existing PGBR integration; audit per endpoint",
+      "rule": "keep session and data provenance independent"
+    }
+  ]
+}

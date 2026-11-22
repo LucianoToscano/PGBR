@@ -54,6 +54,8 @@
 #include "auto_throw.h"
 #include "map_auto_throw.h"
 #include "research.h"
+#include "session_stats.h"
+#include "route_gift.h"
 #include "storage_iv.h"
 #include "cutscene_skip.h"
 #include "rocket_swap.h"
@@ -787,6 +789,7 @@ static void handle_vgp_transfer_ready(const PgrVgpControllerOut &out, uint64_t t
   tp_in.protect = protect_mask;
   tp_in.known = tf_out.known;
   tp_in.flags = tf_out.flags;
+  tp_in.reserved=static_cast<uint32_t>(g_opts.transfer_protect)>>8;
   tp_in.keep_all = keep_all ? 1 : 0; // VGP/VGP+ use main protection settings; research catches honor Keep All.
   tp_in.keep_count = g_keep_species_count;
   tp_in.keep_ids = g_keep_species_count ? g_keep_species : nullptr;
@@ -1107,8 +1110,17 @@ static void tick_vgp_controller(uint64_t tid, uint64_t now_ms, uint64_t lease_ms
   in.generation = g_vgc->generation();
   in.lat = g_opts.lat;
   in.lon = g_opts.lon;
-  in.mask = (g_opts.vgp_catch_allowed ? 1u : 0u) |
-            (g_opts.vgp_spin_allowed ? 2u : 0u);
+  // IMPORTANT: the user's explicit OFF must reach feature 33 as mask=0.
+  // Previously the saved catch/spin choices were still sent as mask=3
+  // with lease_ms=0, so tickScan() never reached POL->clear_block().
+  // One timed-out/uncertain action could therefore leave VGP permanently
+  // blocked across OFF -> ON. Do NOT clear for a transient allowed=false
+  // or expired lease while the user still has VGP enabled: an uncertain
+  // request must remain quarantined until an explicit restart.
+  in.mask = g_opts.vgp_enabled
+      ? ((g_opts.vgp_catch_allowed ? 1u : 0u) |
+         (g_opts.vgp_spin_allowed ? 2u : 0u))
+      : 0u;
 
   uint32_t flags = 0;
   if (g_opts.vgp_map_visible) flags |= PGR_VGC_TF_MAP_VISIBLE;
@@ -1495,6 +1507,11 @@ static void sync_from_transport(uint64_t tid) {
   bool vgp_en = (g_opts.vgp_allowed && g_opts.vgp_enabled);
   uint32_t mask = (g_opts.vgp_catch_allowed ? 1u : 0u) | (g_opts.vgp_spin_allowed ? 2u : 0u);
   if (vgp_en != g_last_vgp_enabled || mask != g_last_vgp_mask) {
+    // User explicitly stopped VGP: release an old uncertain-result latch
+    // on the proven Unity owner thread, but retain all seen-key quarantine.
+    // Merely losing a readiness/foreground lease must NOT auto-unblock.
+    if (g_last_vgp_enabled && !g_opts.vgp_enabled && g_vp && tid)
+      g_vp->clear_block(tid);
     if (((!vgp_en && g_last_vgp_enabled) || (g_last_vgp_mask & ~mask)) && g_vgc) {
       g_vgc->revoke();
       clear_active_vgp_transfer();
@@ -2473,6 +2490,10 @@ static int api_update_options(const PgrEncounterHostOptions *options, uint64_t p
   bool vgp_en = (options->vgp_allowed && options->vgp_enabled);
   uint32_t mask = (options->vgp_catch_allowed ? 1u : 0u) | (options->vgp_spin_allowed ? 2u : 0u);
   if (vgp_en != g_last_vgp_enabled || mask != g_last_vgp_mask) {
+    // Mirror the typed-snapshot path: a real OFF clears only the blocked
+    // policy latch. Quarantine keys survive, preventing immediate repeats.
+    if (g_last_vgp_enabled && !options->vgp_enabled && g_vp && tid)
+      g_vp->clear_block(tid);
     if (((!vgp_en && g_last_vgp_enabled) || (g_last_vgp_mask & ~mask)) && g_vgc && tid != 0) {
       g_vgc->revoke();
       clear_active_vgp_transfer();
@@ -2547,6 +2568,8 @@ static int api_tick(uint64_t proven_tid) {
   if(!raid_block){
     pgr_gift_batch_tick(os_tid, &g_md);
     pgr_research_tick(os_tid, &g_md);
+    pgr_session_stats_tick(os_tid, &g_md);
+    pgr_route_gift_tick(os_tid, &g_md);
   }
   pgr_storage_iv_tick(os_tid, &g_md);
   pgr_cutscene_skip_tick(os_tid, &g_md);
@@ -2593,6 +2616,7 @@ static int api_stop(uint64_t proven_tid) {
     if (g_vgc && (g_active_caps & PGR_EH_CAP_VGP)) {
       pgr_gift_batch_stop();
       pgr_research_stop();
+      pgr_route_gift_stop();
       pgr_storage_iv_stop();
       pgr_cutscene_skip_stop(tid);
       pgr_rocket_swap_stop();

@@ -1,18 +1,21 @@
 # Compila o MESMO aplicativo completo PGBR em PGBR, sem dividir seus recursos.
-# NUNCA publica GitHub Release. Builds automaticos da branch PT-BR usam a entrada e chave nos Secrets.
+# A branch de distribuição publica o pré-lançamento após verificar os três pacotes.
 name: PGBR - compilar APK completo PT-BR (nuvem)
 on:
   push:
     branches:
       - feature/pt-br-traducao
+      - feature/lt-hud-historico-locais-20261120
+    # Release metadata in README controls expected APK names; do not suppress
+    # builds on README-only corrections. Docs-only changes may be ignored.
     paths-ignore:
-      - '**/*.md'
+      - 'docs/**'
   workflow_dispatch:
     inputs:
       tag:
         description: Versao de teste (exemplo v0.3.4-ptbr.1)
         required: true
-        default: v0.00.01-LT
+        default: v0.00.23-LT
         type: string
 permissions:
   contents: read
@@ -21,7 +24,7 @@ concurrency:
   cancel-in-progress: true
 jobs:
   build:
-    if: github.repository == 'LucianoToscano/PGBR' && github.ref_name == 'feature/pt-br-traducao'
+    if: github.repository == 'LucianoToscano/PGBR' && (github.ref_name == 'feature/pt-br-traducao' || github.ref_name == 'feature/lt-hud-historico-locais-20261120')
     # A entrada original pode ser um draft asset, sem publica-la em releases.
     permissions:
       contents: write
@@ -33,7 +36,7 @@ jobs:
     env:
       PGRAZOR_BUILD_TOOLS: 36.0.0
       PGRAZOR_ANDROID_PLATFORM: android-36
-      PGBR_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || 'v0.00.01-LT' }}
+      PGBR_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || 'v0.00.23-LT' }}
       PGRAZOR_KEY_ALIAS: ${{ secrets.PGRAZOR_KEY_ALIAS }}
       PGRAZOR_STORE_PASSWORD: ${{ secrets.PGRAZOR_STORE_PASSWORD }}
       PGRAZOR_KEY_PASSWORD: ${{ secrets.PGRAZOR_KEY_PASSWORD }}
@@ -103,6 +106,15 @@ jobs:
       - name: Prepare pinned DEX test dependencies
         run: python -c "import sys; sys.path.insert(0, 'pgrazor'); import dex_bridges; dex_bridges.dependencies(download=True)"
       - run: python -B tools/check.py
+      - name: Testar ordenação de versões do atualizador
+        shell: pwsh
+        run: |
+          $out = Join-Path $env:RUNNER_TEMP 'pgbr-version-tests'
+          New-Item -ItemType Directory -Force -Path $out | Out-Null
+          javac -d $out pgrazor/src/dev/pgrazor/UpdateVersion.java pgrazor/test/UpdateVersionTest.java
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          java -cp $out dev.pgrazor.UpdateVersionTest
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Configure temporary signing path
         shell: pwsh
         run: Add-Content -LiteralPath $env:GITHUB_ENV -Value "PGRAZOR_KEYSTORE=$env:RUNNER_TEMP\pgrazor-signing.jks"
@@ -146,6 +158,38 @@ jobs:
             dist/release/build-info.json
           if-no-files-found: error
           retention-days: 14
+      - name: Publicar pre-lancamento validado no GitHub Releases
+        if: github.event_name == 'push' && github.ref_name == 'feature/lt-hud-historico-locais-20261120'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ env.PGBR_TAG }}
+        shell: pwsh
+        run: |
+          # Only publish the six validated outputs, never the original game package or signing secrets.
+          python -B tools/verify_release.py dist/release --tag $env:RELEASE_TAG
+          if ($LASTEXITCODE -ne 0) { throw 'Release bundle did not pass verification' }
+          $names = @(
+            "PGBR-$env:RELEASE_TAG.apk",
+            "PGBR-$env:RELEASE_TAG-Root.apk",
+            "PGBR-$env:RELEASE_TAG-Root-module.zip",
+            'build-info.json',
+            'root-build-info.json',
+            'SHA256SUMS.txt'
+          )
+          $assets = @()
+          foreach ($name in $names) {
+            $file = Join-Path 'dist/release' $name
+            if (!(Test-Path -LiteralPath $file -PathType Leaf)) { throw "Missing validated release asset: $name" }
+            $assets += $file
+          }
+          $notes = "docs/releases/$env:RELEASE_TAG.md"
+          if (!(Test-Path -LiteralPath $notes -PathType Leaf)) { throw "Missing release notes: $notes" }
+          gh release view $env:RELEASE_TAG --repo $env:GITHUB_REPOSITORY --json tagName *> $null
+          if ($LASTEXITCODE -eq 0) { throw "Release tag already exists: $env:RELEASE_TAG (refusing to overwrite)" }
+          gh release create $env:RELEASE_TAG @assets --repo $env:GITHUB_REPOSITORY --target $env:GITHUB_SHA --title "PGBR $env:RELEASE_TAG (pre-lancamento)" --notes-file $notes --prerelease
+          if ($LASTEXITCODE -ne 0) { throw 'GitHub Release publication failed' }
+          gh release view $env:RELEASE_TAG --repo $env:GITHUB_REPOSITORY --json tagName,url,assets
+          if ($LASTEXITCODE -ne 0) { throw 'Published release could not be verified' }
       - name: Remove signing key
         if: always()
         shell: pwsh

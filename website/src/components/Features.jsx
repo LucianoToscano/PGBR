@@ -6,16 +6,16 @@ export default function Features() {
   return (
     <section className="section" id="features" aria-labelledby="features-heading">
       <div className="section__head">
-        <p className="section__num">01 / Features</p>
+        <p className="section__num">01 / Recursos</p>
         <h2 id="features-heading" className="section__title">
-          Features.
+          Recursos.
         </h2>
         <p className="section__lead">
-          Explore the settings guide, then take a closer look at the actual app screens.
+          Explore as configurações e veja como os recursos aparecem no aplicativo.
         </p>
       </div>
 
-      <p className="guide-back"><a className="btn btn--primary" href={indexHref}>Browse all feature guides</a></p>
+      <p className="guide-back"><a className="btn btn--primary" href={indexHref}>Ver todos os guias de recursos</a></p>
       <SettingsGuide />
       <Gallery />
     </section>

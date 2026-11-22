@@ -56,7 +56,7 @@ class CompiledGameplayPackageTests(unittest.TestCase):
         import native_build
         import art_build
         import dex_bridges
-        with tempfile.TemporaryDirectory(dir=ROOT / 'build') as temp:
+        with tempfile.TemporaryDirectory(prefix='pgbr-fixture-') as temp:
             work = Path(temp)
             (work / 'VERSION').write_text('v0.2.5', encoding='utf-8')
             source = work / 'game.apk'; dex = work / 'module.dex'; dex.write_bytes(b'dex\nfixture')

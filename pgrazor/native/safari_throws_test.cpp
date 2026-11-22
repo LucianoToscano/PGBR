@@ -1,5 +1,6 @@
 #include <cassert>
 #include <cstdio>
+#include <initializer_list>
 #include "throws.cpp"
 int pgrazor_hook(void*,void*,void**){return -1;}
 int pgrazor_unhook(void*){return -1;}

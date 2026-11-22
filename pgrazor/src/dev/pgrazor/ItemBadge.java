@@ -1,0 +1,139 @@
+package dev.pgrazor;
+
+import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Paint;
+import android.graphics.Path;
+import android.graphics.RectF;
+import android.view.View;
+
+/** Compact item illustration for inventory rows; decorative only, never changes rules. */
+final class ItemBadge extends View {
+    private final int itemId;
+    private final Paint paint=new Paint(Paint.ANTI_ALIAS_FLAG|Paint.FILTER_BITMAP_FLAG);
+    private final Bitmap itemSprite;
+    // Decode each catalog icon at most once; a live catalog may render dozens of rows.
+    private static final android.util.SparseArray<Bitmap> CACHE=new android.util.SparseArray<>();
+    private static final android.util.SparseBooleanArray MISSED=new android.util.SparseBooleanArray();
+    private static final android.util.SparseBooleanArray WARNED=new android.util.SparseBooleanArray();
+
+    ItemBadge(Context context,int itemId){
+        super(context);
+        this.itemId=itemId;
+        itemSprite=load(context,itemId);
+        setImportantForAccessibility(IMPORTANT_FOR_ACCESSIBILITY_NO);
+    }
+    private static synchronized Bitmap load(Context context,int id){
+        Bitmap cached=CACHE.get(id);
+        if(cached!=null)return cached;
+        if(MISSED.get(id))return null;
+        if(id<=0||id>999999){MISSED.put(id,true);return null;}
+        // Prefer an ID-exact inventory sprite; old map berries are a compatibility fallback.
+        String[] choices=id>=701&&id<=707?
+            new String[]{"pgrazor/item-icons/item-"+id+".png","pgrazor/map-icons/berry-"+id+".png"}:
+            new String[]{"pgrazor/item-icons/item-"+id+".png"};
+        boolean found=false, failed=false;
+        for(String file:choices){
+            try(java.io.InputStream probe=PgAssets.open(context,file)){
+                found=true;
+                BitmapFactory.Options bounds=new BitmapFactory.Options();
+                bounds.inJustDecodeBounds=true;
+                BitmapFactory.decodeStream(probe,null,bounds);
+                if(bounds.outWidth<=0||bounds.outHeight<=0)
+                    throw new java.io.IOException("Invalid image dimensions");
+                BitmapFactory.Options options=new BitmapFactory.Options();
+                // Preserve small source details; reduce only very oversized images.
+                options.inSampleSize=bounds.outWidth>104&&bounds.outHeight>104?2:1;
+                try(java.io.InputStream stream=PgAssets.open(context,file)){
+                    Bitmap bitmap=BitmapFactory.decodeStream(stream,null,options);
+                    if(bitmap==null)throw new java.io.IOException("Image decoder returned null");
+                    CACHE.put(id,bitmap);
+                    WARNED.delete(id);
+                    return bitmap;
+                }
+            }catch(java.io.FileNotFoundException missing){
+                // Only an actually absent file is eligible for negative caching.
+            }catch(Exception error){
+                failed=true;
+                if(!WARNED.get(id)){
+                    Control.event("item-icon-error","id="+id+" asset="+file+" cause="+error.getClass().getSimpleName());
+                    WARNED.put(id,true);
+                }
+            }
+        }
+        if(!found&&!failed){
+            MISSED.put(id,true);
+            // Capture exact missing catalog IDs so an asset can be added without guessing.
+            Control.event("item-icon-missing","id="+id);
+        }
+        return null;
+    }
+    private void fill(int color){paint.setColor(color);paint.setStyle(Paint.Style.FILL);paint.setStrokeWidth(1);}
+    private void stroke(int color,float width){paint.setColor(color);paint.setStyle(Paint.Style.STROKE);paint.setStrokeWidth(width);}
+    protected void onDraw(Canvas c){
+        super.onDraw(c);
+        if(getWidth()==0||getHeight()==0)return;
+        c.save();c.translate(getWidth()/2f,getHeight()/2f);
+        float scale=Math.min(getWidth(),getHeight())/32f;
+        c.scale(scale,scale);
+        if(itemSprite!=null){
+            fill(Color.WHITE);
+            float[] fit=ItemSpriteFit.centeredRect(itemSprite.getWidth(),itemSprite.getHeight(),30f);
+            c.drawBitmap(itemSprite,null,new RectF(fit[0],fit[1],fit[2],fit[3]),paint);
+        }else if(itemId>=1&&itemId<=3){
+            drawBall(c);
+        }else if(itemId>=101&&itemId<=104){
+            drawPotion(c);
+        }else if(itemId==201||itemId==202){
+            drawRevive(c);
+        }else if(itemId==301){
+            drawEgg(c);
+        }else{
+            // Do not draw a wrong Potion/Revive/Egg for a completely different
+            // unknown item merely because its numeric ID falls in that range.
+            // Exact ID artwork always takes priority; missing art shows its ID.
+            drawGeneric(c);
+        }
+        c.restore();
+    }
+    private void drawBall(Canvas c){
+        int top=itemId==1?0xffdf403b:itemId==2?0xff2874ca:0xffd99b29;
+        fill(0xfff9f9f9);c.drawCircle(0,0,13,paint);
+        c.save();c.clipRect(-14,-14,14,0);
+        fill(top);c.drawCircle(0,0,13,paint);c.restore();
+        stroke(0xff17222b,2.1f);c.drawCircle(0,0,13,paint);c.drawLine(-12.5f,0,12.5f,0,paint);
+        fill(0xfffdfdfd);c.drawCircle(0,0,4.3f,paint);
+        stroke(0xff17222b,1.6f);c.drawCircle(0,0,4.3f,paint);
+    }
+    private void drawPotion(Canvas c){
+        int color=itemId==101?0xff7fa8e5:itemId==102?0xff6a8ce8:itemId==103?0xffa85acf:0xffe16ab4;
+        fill(0xff768a94);c.drawRoundRect(-5,-13,5,-8,1,1,paint);
+        fill(0xffe1eef5);c.drawRoundRect(-9,-9,9,13,4,4,paint);
+        fill(color);c.drawRoundRect(-7,-6,7,11,3,3,paint);
+        fill(0xffffffff);c.drawRoundRect(-1.5f,-3.5f,1.5f,8,1,1,paint);
+        c.drawRoundRect(-5.5f,0.5f,5.5f,3.5f,1,1,paint);
+    }
+    private void drawRevive(Canvas c){
+        fill(itemId==201?0xfff4b642:0xffd78be9);
+        Path diamond=new Path();diamond.moveTo(0,-14);diamond.lineTo(13,0);diamond.lineTo(0,14);diamond.lineTo(-13,0);diamond.close();c.drawPath(diamond,paint);
+        stroke(0xffffffff,2);c.drawLine(0,-7,0,7,paint);c.drawLine(-7,0,7,0,paint);
+    }
+    private void drawEgg(Canvas c){
+        fill(0xfff4e8a6);c.drawOval(-10,-14,10,14,paint);
+        fill(0xffffffff);c.drawCircle(-4,-4,3,paint);c.drawCircle(5,5,2,paint);
+        stroke(0xffb8ac6a,1.4f);c.drawOval(-10,-14,10,14,paint);
+    }
+    private void drawGeneric(Canvas c){
+        // Neutral missing-art indicator: never impersonate the wrong Pok\u00e9mon GO item.
+        fill(0xffe7edf0);c.drawRoundRect(-14,-12,14,12,5,5,paint);
+        stroke(0xff81919b,1.2f);c.drawRoundRect(-14,-12,14,12,5,5,paint);
+        paint.setStyle(Paint.Style.FILL);paint.setColor(0xff415765);
+        paint.setTypeface(android.graphics.Typeface.create("sans-serif-medium",android.graphics.Typeface.NORMAL));
+        paint.setTextAlign(Paint.Align.CENTER);
+        paint.setTextSize(itemId<10000?8f:6f);
+        c.drawText(String.valueOf(itemId),0,3f,paint);
+    }
+}

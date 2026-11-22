@@ -1,3 +1,5 @@
+# ARCHIVED UPSTREAM WORKFLOW: reference only, not a PGBR release pipeline.
+# Even if copied into .github/workflows this file refuses to run on PGBR.
 name: Android release (non-root and rooted)
 on:
   workflow_dispatch:
@@ -14,6 +16,7 @@ permissions:
   contents: read
 jobs:
   build:
+    if: github.repository == 'jpitty03/PGRazor'
     # GitHub draft-release assets require push access; the input remains unpublished.
     permissions:
       contents: write
@@ -138,7 +141,7 @@ jobs:
           if (Test-Path -LiteralPath $keyPath) { Remove-Item -LiteralPath $keyPath }
   release:
     needs: build
-    if: inputs.publish == true
+    if: github.repository == 'jpitty03/PGRazor' && inputs.publish == true
     runs-on: ubuntu-latest
     permissions:
       contents: write

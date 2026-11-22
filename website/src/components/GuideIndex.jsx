@@ -31,46 +31,45 @@ export default function GuideIndex() {
   return (
     <section className="section guide-index" aria-labelledby="guide-index-heading">
       <div className="section__head">
-        <p className="section__num">Guides</p>
+        <p className="section__num">Guias</p>
         <h1 id="guide-index-heading" className="section__title">
-          Feature guides
+          Guias de recursos
         </h1>
         <p className="section__lead">
-          Step-by-step how-tos for PGBR’s catching, location, automation, and
-          personalisation features. Open any guide for where to find the option and how to use it.
+          Tutoriais passo a passo sobre captura, localização, automação e personalização do PGBR. Abra um guia para descobrir onde está a opção e como utilizá-la.
         </p>
       </div>
 
 
       {empty ? (
         <p className="guide-empty">
-          The feature guides are being prepared. In the meantime,{' '}
-          <a href={homeHref}>return to the homepage</a>.
+          Os guias estão sendo preparados. Enquanto isso,{' '}
+          <a href={homeHref}>volte à página inicial</a>.
         </p>
       ) : (
         <>
           <form className="guide-search" role="search" onSubmit={(event) => event.preventDefault()}>
-            <label htmlFor="guide-search-input">Search guides</label>
+            <label htmlFor="guide-search-input">Buscar guias</label>
             <input
               id="guide-search-input"
               type="search"
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="Search by name or topic"
+              placeholder="Buscar por nome ou assunto"
               autoComplete="off"
             />
           </form>
 
           <p className="visually-hidden" role="status" aria-live="polite">
-            {filtered.length} {filtered.length === 1 ? 'guide' : 'guides'}
-            {term ? ` matching “${query.trim()}”` : ' available'}.
+            {filtered.length} {filtered.length === 1 ? 'guia' : 'guias'}
+            {term ? ` correspondentes a “${query.trim()}”` : ' disponíveis'}.
           </p>
 
           {filtered.length === 0 ? (
             <p className="guide-empty">
-              No guides match “{query.trim()}”.{' '}
+              Nenhum guia corresponde a “{query.trim()}”.{' '}
               <button type="button" onClick={() => setQuery('')}>
-                Clear search
+                Limpar busca
               </button>
             </p>
           ) : (
@@ -101,7 +100,7 @@ export default function GuideIndex() {
       )}
 
       <p className="guide-back">
-        <a href={homeHref}>← Back to homepage</a>
+        <a href={homeHref}>← Voltar à página inicial</a>
       </p>
     </section>
   );

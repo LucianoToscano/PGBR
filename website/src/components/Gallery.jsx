@@ -36,7 +36,7 @@ export default function Gallery({ shots = screenshots }) {
 
   return (
     <div className="gallery">
-      <p className="gallery__hint">Tap a screenshot for a closer look.</p>
+      <p className="gallery__hint">Toque em uma imagem para ampliá-la.</p>
       <ul className="gallery__grid">
         {shots.map((shot) => (
           <li key={shot.id}>
@@ -55,7 +55,7 @@ export default function Gallery({ shots = screenshots }) {
                   <ExpandIcon />
                 </span>
               </span>
-              <span className="visually-hidden"> — open a larger view</span>
+              <span className="visually-hidden"> — ampliar imagem</span>
             </button>
           </li>
         ))}
@@ -64,14 +64,14 @@ export default function Gallery({ shots = screenshots }) {
       <dialog
         ref={dialogRef}
         className="lightbox"
-        aria-label={active ? `${active.title}, larger view` : 'Screenshot'}
+        aria-label={active ? `${active.title}, imagem ampliada` : 'Captura de tela'}
         onClick={onDialogClick}
       >
         {active && (
           <div className="lightbox__inner">
             <div className="lightbox__bar">
               <p className="lightbox__title">{active.title}</p>
-              <button type="button" className="icon-btn" onClick={close} aria-label="Close">
+              <button type="button" className="icon-btn" onClick={close} aria-label="Fechar">
                 <CloseIcon />
               </button>
             </div>

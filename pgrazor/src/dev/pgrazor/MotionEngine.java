@@ -102,9 +102,9 @@ public final class MotionEngine {
         resetIdle();latitude = lat; longitude = lon;
     }
     public synchronized void speed(double value) {
-        // Exactly 0 pauses travel in place; otherwise the usual 0.5..30 km/h range applies.
-        if (!Double.isFinite(value) || (value != 0 && (value < 0.5 || value > 30)))
-            throw new IllegalArgumentException("Speed must be 0 (paused) or between 0.5 and 30 km/h.");
+        // Exactly 0 pauses travel in place; otherwise the supported range is 0.5..60 km/h.
+        if (!Double.isFinite(value) || (value != 0 && (value < 0.5 || value > 60)))
+            throw new IllegalArgumentException("Speed must be 0 (paused) or between 0.5 and 60 km/h.");
         speedKmh = value;if(value==0)resetIdle();
     }
     /** Explicitly start a shortest-path walk; callers must check adapter readiness. */

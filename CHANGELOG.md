@@ -1,5 +1,19 @@
 # Changelog
 
+## Unreleased
+
+PGBR development QA: cross-platform test portability, mandatory verification checks in PRs and main, pinned CI actions, source safeguards and PT-BR accessibility instrumentation. These changes are **not** an APK release or a claim of on-device validation. The dated v0.3.x notes below are upstream history, not new PGBR releases.
+
+## v0.00.33-LT — pré-release QA (22/11/2026)
+
+- Eventos retornam ao Menu Pokébola com opção para reexibir o atalho; seletor dos eventos Halloween, GO Wild e Rota Doces Eternatus.
+- Corrigida persistência das 14 entradas do menu: o Selector Pokémon passa a aceitar o bit 8192 sem afetar Eventos (512).
+- Incluídas atualizações selecionadas do PGRazor 0.3.5/0.3.6: Mateo nas Rotas, busca nas configurações, limite de IV, filtro de doces, estatísticas de sessão, correções de ginásios, Pesquisa, VGP+ e fusos de Hotspots.
+- Preservadas variantes sem Root, instalador Root e módulo Zygisk com a mesma revisão.
+- **Limitação:** pré-release de QA; PvP real, priorização supereficaz do segundo golpe, feeds privados, VGP+ no jogo, Root+Vector, joystick e privacidade visual ainda não homologados no aparelho.
+
+[Notas da versão](docs/releases/v0.00.33-LT.md)
+
 ## v0.3.4
 
 [Full release notes](docs/releases/v0.3.4.md)

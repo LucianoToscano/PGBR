@@ -98,7 +98,9 @@ public final class SmartCatchSettings {
     private static TextView row(Activity a,LinearLayout body,String title,String[] names,int selected,Choice save){
         TextView button=button(body,title+": "+names[selected]);final int[] current={selected};
         button.setOnClickListener(v->{
-            AlertDialog d=new AlertDialog.Builder(MapTheme.wrap(a)).setTitle(dev.pgrazor.PtBr.tr(title)).setSingleChoiceItems(names,current[0],(dialog,index)->{save.set(index);current[0]=index;button.setText(dev.pgrazor.PtBr.tr(title+": "+names[index]));dialog.dismiss();}).setNegativeButton(dev.pgrazor.PtBr.tr("Cancel"),null).create();
+            String[] localizedNames=new String[names.length];
+            for(int i=0;i<names.length;i++)localizedNames[i]=dev.pgrazor.PtBr.tr(names[i]);
+            AlertDialog d=new AlertDialog.Builder(MapTheme.wrap(a)).setTitle(dev.pgrazor.PtBr.tr(title)).setSingleChoiceItems(localizedNames,current[0],(dialog,index)->{save.set(index);current[0]=index;button.setText(dev.pgrazor.PtBr.tr(title+": "+names[index]));dialog.dismiss();}).setNegativeButton(dev.pgrazor.PtBr.tr("Cancel"),null).create();
             DialogLifecycle.bind(a,d,null);d.setOnShowListener(x->MapTheme.styleButtons(d));d.show();
         });
         return button;

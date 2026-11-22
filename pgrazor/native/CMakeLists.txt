@@ -145,6 +145,8 @@ add_library(pgrazor_core SHARED
   gift_batch.cpp
   auto_raid.cpp
   research.cpp
+  session_stats.cpp
+  route_gift.cpp
   storage_iv.cpp
   iv_panel.cpp
   ar_values.cpp
@@ -165,11 +167,12 @@ add_library(pgrazor_core SHARED
   evolve_transfer.cpp
   gym_runtime.cpp
   gym_repeat.cpp
-  jni_core.cpp)
+  jni_core.cpp
+  trainer_privacy_ui.cpp)
 
 target_sources(pgrazor_core PRIVATE events/event_collector.cpp)
 set_source_files_properties(events/event_collector.cpp evolve_transfer.cpp PROPERTIES COMPILE_OPTIONS "-fexceptions")
-set_source_files_properties(auto_raid.cpp gift_batch.cpp research.cpp storage_iv.cpp iv_panel.cpp ar_values.cpp catch_chance.cpp cutscene_skip.cpp rocket_swap.cpp smart_battle.cpp max_orbs.cpp heal.cpp shundo.cpp shiny_scan.cpp battery.cpp remote_gym.cpp incense_guard.cpp batch_evolution.cpp gym_runtime.cpp gym_repeat.cpp buddy_emotion.cpp PROPERTIES COMPILE_OPTIONS "-fexceptions")
+set_source_files_properties(auto_raid.cpp gift_batch.cpp research.cpp session_stats.cpp route_gift.cpp storage_iv.cpp iv_panel.cpp ar_values.cpp catch_chance.cpp cutscene_skip.cpp rocket_swap.cpp smart_battle.cpp max_orbs.cpp heal.cpp shundo.cpp shiny_scan.cpp battery.cpp remote_gym.cpp incense_guard.cpp batch_evolution.cpp gym_runtime.cpp gym_repeat.cpp buddy_emotion.cpp PROPERTIES COMPILE_OPTIONS "-fexceptions")
 
 target_include_directories(pgrazor_core PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}

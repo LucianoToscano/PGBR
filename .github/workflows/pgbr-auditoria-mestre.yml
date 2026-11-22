@@ -22,13 +22,44 @@ jobs:
     timeout-minutes: 12
     steps:
       - name: Checkout de código (sem credenciais persistidas)
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           persist-credentials: false
       - name: Python para auditoria
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: '3.12'
+      - name: Preparar Java 17 para regressão de Hotspots
+        uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Testar fusos e coordenadas Hotspots (JVM, somente leitura)
+        run: python -B -m unittest discover -s pgrazor/test -p 'test_hotspots_java.py' -v
+      - name: Testar novos motores Java (busca, doces, estatísticas, ginásios)
+        run: |
+          python -B -m unittest discover -s pgrazor/test -p 'test_settings_search_java.py' -v
+          python -B -m unittest discover -s pgrazor/test -p 'test_candy_quest_policy_java.py' -v
+          python -B -m unittest discover -s pgrazor/test -p 'test_session_stats_history_java.py' -v
+          python -B -m unittest discover -s pgrazor/test -p 'test_gym_automation_preferences_java.py' -v
+      - name: Testar a política C++ de IV, sem jogo ou dados privados
+        run: python -B -m unittest discover -s pgrazor/test -p 'test_transfer_cutoff_host.py' -v
+      - name: Verificar sintaxe dos scripts Python novos
+        run: python -B -m compileall -q pgrazor/test
+      - name: Testar trava de joystick por JVM e invariantes dos cinco estilos
+        run: |
+          python -B -m unittest discover -s pgrazor/test -p 'test_joystick_lock_java.py' -v
+          python -B -m unittest discover -s pgrazor/test -p 'test_joystick_lock_integration.py' -v
+      - name: Validar correção ART ARM64 sem afirmar runtime
+        run: python -B -m unittest discover -s pgrazor/test -p 'test_art_hook_chain_source.py' -v
+      - name: Confirmar fixture de sessão compilável
+        run: python -B -m unittest discover -s pgrazor/test -p 'test_control_fixture_contract.py' -v
+      - name: Testar parsing PT-BR e protecoes do repositorio
+        run: |
+          python -B -m unittest discover -s pgrazor/test -p 'test_ptbr_wire.py' -v
+          python -B -m unittest discover -s pgrazor/test -p 'test_repo_safety_contract.py' -v
+      - name: Executar doze fixtures C++ host
+        run: python -B tools/native_host_tests.py
       - name: Verificar Arquivo Mestre e links internos
         run: python -B -m unittest discover -s pgrazor/test -p 'test_master_governance.py' -v
       - name: Testar o inventário somente leitura

@@ -82,7 +82,7 @@ final class RootedLogDialog {
         Handler handler = new Handler(Looper.getMainLooper());
         View.OnClickListener export = v -> {
             File file = Control.currentLog();
-            if (file == null) { Toast.makeText(activity, "No log file to save", Toast.LENGTH_SHORT).show(); return; }
+            if (file == null) { Toast.makeText(activity, dev.pgrazor.PtBr.tr("No log file to save"), Toast.LENGTH_SHORT).show(); return; }
             save.setEnabled(false);
             bundle.setEnabled(false);
             boolean includeSettings=v==bundle;

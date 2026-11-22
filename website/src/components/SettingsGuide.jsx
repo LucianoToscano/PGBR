@@ -36,7 +36,7 @@ export default function SettingsGuide() {
 
   return (
     <div className="guide">
-      <div className="guide__tabs" role="tablist" aria-label="Settings categories">
+      <div className="guide__tabs" role="tablist" aria-label="Categorias de configurações">
         {settingGroups.map((group, index) => {
           const selected = index === active;
           return (

@@ -64,11 +64,36 @@ public final class PogoFeedFiltersTest {
         check(shy.length() == 8 && shy.getInt("min_iv") == 41 && "allowlist".equals(shy.getString("species_filter_mode")),
                 "shinies subset reflects the same filters");
 
+        // --- PGBR-only exact individual IVs (never extend the provider's 21/8-key schema) ---
+        PogoFeedFilters exact = PogoFeedFilters.fromJson(new JSONObject()
+                .put("pgbr_iv_attack", 0).put("pgbr_iv_defense", 15).put("pgbr_iv_stamina", 15));
+        check(exact.hasExactIvFilter(), "exact IV local filter enabled");
+        check(exact.matchesExactIvs(0, 15, 15), "matching 0/15/15 accepted");
+        check(!exact.matchesExactIvs(15, 15, 15), "attack mismatch rejected");
+        check(!exact.matchesExactIvs(0, -1, 15), "unknown data cannot be treated as matching");
+        check(!exact.matchesExactIvs(-1, -1, -1), "all unknown IVs cannot match");
+        check(exact.toViewportJson().length() == 21 && !exact.toViewportJson().has("pgbr_iv_attack"),
+                "provider viewport payload unchanged");
+        check(exact.toShiniesJson().length() == 8 && !exact.toShiniesJson().has("pgbr_iv_attack"),
+                "provider shiny payload unchanged");
+        check(exact.toStoredJson().length() == 24, "local preset has three extra IV settings");
+        PogoFeedFilters restored = PogoFeedFilters.fromJson(exact.toStoredJson());
+        check(restored.matchesExactIvs(0, 15, 15) && !restored.matchesExactIvs(1, 15, 15),
+                "PGBR exact IV preset survives storage roundtrip");
+        PogoFeedFilters wildcard = PogoFeedFilters.fromJson(new JSONObject().put("pgbr_iv_defense", 15));
+        check(wildcard.matchesExactIvs(0, 15, 0) && !wildcard.matchesExactIvs(0, 14, 0),
+                "unspecified attack and stamina match any valid IV");
+        check(new PogoFeedFilters().matchesExactIvs(-1, -1, -1),
+                "default broad filter does not drop rows without IV components");
+
         // --- rejection of malformed input and out-of-range values ---
         expectReject(new JSONObject().put("show_all", "yes"), "boolean given a string");
         expectReject(new JSONObject().put("min_iv", "41"), "number given a string");
         expectReject(new JSONObject().put("min_iv", 150), "min_iv above 100");
         expectReject(new JSONObject().put("max_level", 51), "max_level above 50");
+        expectReject(new JSONObject().put("pgbr_iv_attack", -2), "local attack below wildcard -1");
+        expectReject(new JSONObject().put("pgbr_iv_defense", 16), "local defense exceeds 15");
+        expectReject(new JSONObject().put("pgbr_iv_stamina", 1.5), "local stamina must be integer");
         expectReject(new JSONObject().put("min_iv", 41.5), "fractional IV");
         expectReject(new JSONObject().put("min_iv", 80).put("max_iv", 50), "inverted IV range");
         expectReject(new JSONObject().put("min_level", 40).put("max_level", 30), "inverted level range");
@@ -86,6 +111,6 @@ public final class PogoFeedFiltersTest {
         check(tolerant.toViewportJson().getInt("min_iv") == 50, "unknown keys ignored, known key applied");
         check(PogoFeedFilters.fromJson(null).toViewportJson().length() == 21, "null argument yields defaults");
 
-        System.out.println("PASS: live feed filters defaults, validation, de-duplication and 21/8-key serialisation");
+        System.out.println("PASS: feed filters, individual IV exact matches and provider-safe 21/8-key serialisation");
     }
 }

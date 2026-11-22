@@ -8,8 +8,9 @@ class PGBRBrandingTests(unittest.TestCase):
     def test_main_readme(self):
         readme = (ROOT / "README.md").read_text(encoding="utf-8")
         self.assertIn("<h1 align=\"center\">PGBR</h1>", readme)
-        self.assertIn("PGBR-v0.00.01-LT", readme)
-        self.assertIn("PGBR-v0.00.01-LT.apk", readme)
+        version = (ROOT / "pgrazor/VERSION").read_text(encoding="utf-8").strip().removeprefix("v")
+        self.assertIn(f"PGBR-v{version}", readme)
+        self.assertIn(f"PGBR-v{version}.apk", readme)
         self.assertNotIn('href="https://jpitty03.github.io/PGRazor/"', readme)
         self.assertIn("https://github.com/jpitty03/PGRazor", readme)  # Credits are required.
         self.assertNotIn("website/public/images/main-menu.png", readme)  # Old screenshot.
