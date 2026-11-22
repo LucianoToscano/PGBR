@@ -73,6 +73,9 @@ public final class PvpChargedPreferenceTest {
                 m(types[b],100,40,true),11,5,12,0,60,9,90,true),
                 "ordered efficacy matrix "+a+" / "+b);
         }
+        eq(PvpChargedPreference.SECOND,PvpChargedPreference.select(
+            m(11,80,40,true),m(4,80,55,true),11,5,12,0,60,0,-1,false),
+            "simple tiers never depend on HP or fast-energy telemetry");
         eq(PvpChargedPreference.FIRST,PvpChargedPreference.select(
             m(1,80,40,true),null,11,5,0,0,60,9,90,true),"single equipped charged attack");
         eq(PvpChargedPreference.WAIT,PvpChargedPreference.select(
