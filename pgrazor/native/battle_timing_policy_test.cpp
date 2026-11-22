@@ -23,8 +23,8 @@ int get_string(uint32_t id,char *dest,uint32_t cap,uint32_t *size) {
 }
 int main() {
   using namespace pgr_battle_timing;
-  const uint64_t expected_shield[]={0,1500,3000,UINT64_MAX};
-  const uint64_t expected_swap[]={400,2000,6000,UINT64_MAX};
+  const uint64_t expected_shield[]={0,1500,3000,1500};
+  const uint64_t expected_swap[]={400,2000,6000,2000};
   for(uint32_t i=0;i<4;++i) {
     Preferences p;
     char raw[]="F2|1|0|0";raw[5]=static_cast<char>('0'+i);raw[7]=static_cast<char>('0'+i);
@@ -47,6 +47,6 @@ int main() {
   snap.snapshot_fresh=0;assert(!read(&transport,p));snap.snapshot_fresh=1;
   snap.fault=1;assert(!read(&transport,p));snap.fault=0;
   change_sequence=true;assert(!read(&transport,p));change_sequence=false;
-  encoded="F2|1|3|0";assert(read(&transport,p) && p.shield_choice==3 && p.fainted_choice==0);
+  encoded="F2|1|3|0";assert(read(&transport,p) && p.shield_choice==3 && p.fainted_choice==0 && shield_wait_ms(p.shield_choice)==1500);
   std::puts("PASS: battle timing options and fail-closed snapshots");
 }

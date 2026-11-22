@@ -9,7 +9,9 @@ assert 'const bool pvp_trace_installed=gui_open_original.load(std::memory_order_
 assert 'require(pvp_trace_installed,"no cutscene or PvP screen observer could be hooked");' in setup
 assert '"PvP screen trace installed; cutscene skip hooks unavailable"' in setup
 assert 'require(count>0,"no cutscene could be hooked");' not in setup
-assert 'pvp_requested=(mask&7)!=0;' in tick
+assert 'if(tried||faulted.load(std::memory_order_acquire))return;' in tick
+assert 'pvp_requested=(mask&7)!=0;' not in tick
+assert 'Observe trusted PvP/Training GUI transitions passively' in tick
 assert tick.index("if(!api||api->snapshot(&boot)!=0)return;") < tick.index("tried=true;") < tick.index("install();")
 assert 'require(api&&api->snapshot(&boot)==0,"Runtime unavailable")' not in tick
 assert "pgrazor_pvp_gui_open(ns,name)" in source

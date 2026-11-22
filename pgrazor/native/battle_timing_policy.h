@@ -10,17 +10,17 @@
 namespace pgr_battle_timing {
 struct Preferences {
   bool smart_battle = false;
-  uint32_t shield_choice = 3; // disabled until a valid snapshot is read
-  uint32_t fainted_choice = 3;
+  uint32_t shield_choice = 1; // default; read() still fails closed if snapshot is invalid
+  uint32_t fainted_choice = 1;
 };
 
-// 0 immediate, 1 default 1.5 s, 2 3 s, 3 disabled.
+// 0 immediate, 1 default 1.5 s, 2 3 s; legacy 3 maps to 1.5 s.
 inline uint64_t shield_wait_ms(uint32_t option) {
-  return option == 0 ? 0 : option == 1 ? 1500 : option == 2 ? 3000 : UINT64_MAX;
+  return option == 0 ? 0 : option == 2 ? 3000 : option == 1 || option == 3 ? 1500 : UINT64_MAX;
 }
-// 0 original VNext 400 ms, 1 default 2 s, 2 6 s, 3 disabled.
+// 0 original VNext 400 ms, 1 default 2 s, 2 6 s; legacy 3 maps to 2 s.
 inline uint64_t fainted_wait_ms(uint32_t option) {
-  return option == 0 ? 400 : option == 1 ? 2000 : option == 2 ? 6000 : UINT64_MAX;
+  return option == 0 ? 400 : option == 2 ? 6000 : option == 1 || option == 3 ? 2000 : UINT64_MAX;
 }
 
 inline bool parse(const char *s, uint32_t n, Preferences &out) {

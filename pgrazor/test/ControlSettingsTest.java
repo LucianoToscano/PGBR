@@ -46,7 +46,8 @@ public final class ControlSettingsTest {
         if(Control.smartShieldTiming()!=2||Control.smartFaintedSwapTiming()!=0||
            !"F2|0|2|0".equals(Control.smartBattleConfig()))
             throw new AssertionError("Battle timing options not persisted across process restart");
-        Control.setSmartShieldTiming(-1);Control.setSmartFaintedSwapTiming(4);
+        Control.setSmartShieldTiming(-1);Control.setSmartShieldTiming(3);
+        Control.setSmartFaintedSwapTiming(3);Control.setSmartFaintedSwapTiming(4);
         if(Control.smartShieldTiming()!=2||Control.smartFaintedSwapTiming()!=0)
             throw new AssertionError("Invalid battle timing choice should not be accepted");
         if(!Control.localTimeOverlay())throw new AssertionError("Local clock not persisted across process restart");

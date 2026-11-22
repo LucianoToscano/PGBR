@@ -8,6 +8,7 @@
 #include "rocket_actions.h"
 #include "rocket_combat.h"
 #include "pvp_scene.h"
+#include "shared_auto_battle_gate.h"
 #include "rocket_minigame.h"
 #include "runtime_bootstrap.h"
 #include "runtime_metadata.h"
@@ -139,6 +140,7 @@ PgrPvpScene g_pvp_scene{};
 uintptr_t g_pvp_ui_root=0; // durable GC handle to VNext; never store a movable raw object
 bool g_pvp_was_ready=false;
 bool g_pvp_training_scope=false; // typed mode retained through scope exit telemetry
+const char *g_pvp_last_rejection=nullptr; // owner-thread, log each rejection reason once
 const pgr_battle_api_v1        *g_battles        = nullptr;
 
 std::array<std::atomic<void *>, HK_COUNT> g_originals{};
@@ -637,11 +639,28 @@ void pvp_leave(uint64_t tid,const char *reason) {
   }
   drain_leaf_events(tid);
   g_pvp_training_scope=false;
+  g_pvp_last_rejection=nullptr;
+}
+// Diagnostic-only, rate-limited by reason; never changes action eligibility.
+void pvp_candidate_rejected(uint64_t tid,const char *reason) {
+  if(g_pvp_scene.stage==PgrPvpScene::IDLE || !reason)return;
+  if(g_pvp_last_rejection && std::strcmp(g_pvp_last_rejection,reason)==0)return;
+  g_pvp_last_rejection=reason;
+  std::string json=std::string(R"({"pvpCandidateDenied":")")+reason+R"("})";
+  queue_event(PGR_CBH_EV_BATTLE_ACTION,0,0,tid,json.c_str());
 }
 void pvp_gui_open(const char *ns,const char *name,uint64_t tid) {
   if(!pvp_gate(&tid)||!ns||!name)return;
   const auto before=g_pvp_scene.stage;
   g_pvp_scene.gui(ns,name,now_ms());
+  if(before!=g_pvp_scene.stage && g_pvp_scene.stage!=PgrPvpScene::IDLE){
+    g_pvp_last_rejection=nullptr;
+    const char *phase=g_pvp_scene.stage==PgrPvpScene::HUB?"hub":
+      g_pvp_scene.stage==PgrPvpScene::PREPARATION?"preparation":
+      g_pvp_scene.stage==PgrPvpScene::TRAINING_ENTRY?"training-entry":"candidate";
+    std::string json=std::string(R"({"pvpScene":")")+phase+R"("})";
+    queue_event(PGR_CBH_EV_BATTLE_ACTION,0,0,tid,json.c_str());
+  }
   if(before==PgrPvpScene::COMBAT && g_pvp_scene.stage!=PgrPvpScene::COMBAT)
     pvp_leave(tid,"battle-ended");
 }
@@ -650,11 +669,13 @@ void pvp_vnext_open(void *ui,uint64_t tid) {
   // A VNext GUI alone never grants permission. Existing raid/gym/Max
   // native scopes always win; missing classification also denies.
   if(!pve_exclusion_clear(&tid)){
+    pvp_candidate_rejected(tid,"excluded-pve-or-no-classifier");
     g_pvp_scene.reset();
     if(g_pvp_ui_root)pvp_leave(tid,"excluded-pve-scope");
     return;
   }
   if(!g_pvp_scene.vnext(now_ms()) || !g_pvp_scene.allowlisted()){
+    pvp_candidate_rejected(tid,"no-validated-pvp-or-training-scene");
     if(g_pvp_ui_root)pvp_leave(tid,"scope-expired");
     return;
   }
@@ -669,17 +690,24 @@ void pvp_vnext_open(void *ui,uint64_t tid) {
    if(lease_live)mask=g_opts.rocket_mask;}
   const PgrAutoBattleTarget target=g_pvp_scene.training()
     ? PgrAutoBattleTarget::TRAINER_NPC:PgrAutoBattleTarget::PVP;
-  if(!pgr_allow_shared_battle_actions(target,mask,g_pvp_scene.allowlisted(),lease_live))return;
+  if(!pgr_allow_shared_battle_actions(target,mask,g_pvp_scene.allowlisted(),lease_live)){
+    pvp_candidate_rejected(tid,mask==0?"all-actions-unchecked":"lease-or-scope-unavailable");
+    return;
+  }
   pgr_rocket_combat_sample_v1 sample{};
-  if(g_rocket_combat->sample(&sample)!=PGR_RC_OK || sample.scope_active)return;
+  if(g_rocket_combat->sample(&sample)!=PGR_RC_OK || sample.scope_active){
+    pvp_candidate_rejected(tid,"other-battle-scope-active");
+    return;
+  }
   auto gc_new=reinterpret_cast<uintptr_t(*)(void*,int)>(g_cfg.gchandle_new);
   auto gc_free=reinterpret_cast<void(*)(uintptr_t)>(g_cfg.gchandle_free);
   const uintptr_t root=gc_new(ui,0);
-  if(!root)return;
+  if(!root){pvp_candidate_rejected(tid,"vnext-root-unavailable");return;}
   g_rocket_combat->observe(PGR_RC_OBS_PVP_SCOPE_ENTER,ui,0,tid);
   if(g_rocket_combat->sample(&sample)!=PGR_RC_OK || !sample.scope_active) {
-    gc_free(root);return;
+    gc_free(root);pvp_candidate_rejected(tid,"vnext-engine-not-armed");return;
   }
+  g_pvp_last_rejection=nullptr;
   g_pvp_ui_root=root;g_pvp_was_ready=true;
   g_pvp_training_scope=g_pvp_scene.training();
   queue_event(PGR_CBH_EV_BATTLE_ACTION,1,0,tid,
@@ -1471,7 +1499,13 @@ int finish_setup_locked(uint64_t tid) {
     }
 
     // PvP observation is separate from gameplay; failing the probe never blocks Rocket/PvE.
-    if(want_rocket)configure_pvp_observation();
+    if(want_rocket){
+        const bool type_probe_ready=configure_pvp_observation();
+        queue_event(PGR_CBH_EV_BATTLE_ACTION,0,0,owner,
+            type_probe_ready
+              ? R"({"pvpTypeProbeReady":true})"
+              : R"({"pvpTypeProbeReady":false})");
+    }
 
     const uint32_t caps = g_capabilities.load(std::memory_order_acquire);
     if ((want_rocket || want_battles) &&
@@ -1576,8 +1610,18 @@ void refresh_leaf_gates(){
  const uint64_t battle=active&&(g_opts.flags&PGR_CBH_OPT_BATTLES_ALLOWED)&&now<g_battle_deadline_ms?std::min<uint64_t>(2500,g_battle_deadline_ms-now):0;
  const uint64_t rocket=active&&(g_opts.flags&PGR_CBH_OPT_ROCKET_ALLOWED)&&now<g_rocket_deadline_ms?std::min<uint64_t>(2500,g_rocket_deadline_ms-now):0;
  bool rocket_active=false,rocket_failed=false;
- if((caps&PGR_CBH_CAP_ROCKET_COMBAT)&&g_rocket_combat){g_rocket_combat->update(g_opts.rocket_mask,rocket,owner);pgr_rocket_combat_sample_v1 sample{};
-  if(g_rocket_combat->sample(&sample)==0){rocket_active=sample.scope_active!=0;rocket_failed=sample.failed!=0;}else rocket_failed=true;}
+ if((caps&PGR_CBH_CAP_ROCKET_COMBAT)&&g_rocket_combat){
+  pgr_rocket_combat_sample_v1 sample{};
+  if(g_rocket_combat->sample(&sample)==PGR_RC_OK){
+   rocket_active=sample.scope_active!=0;
+   rocket_failed=sample.failed!=0;
+  }else rocket_failed=true;
+  // Only an engine-owned exact Rocket/PvP/Training scope receives the shared
+  // 1/2/4 mask; this path reads no cross-thread PgrPvpScene or Unity handles.
+  const uint32_t effective=PgrSharedAutoBattleGate::effective(
+    g_opts.rocket_mask,active,rocket!=0,rocket_active,rocket_failed);
+  g_rocket_combat->update(effective,effective?rocket:0,owner);
+ }
  if((caps&PGR_CBH_CAP_BATTLES)&&g_battles)g_battles->update(g_opts.battle_mask,battle,rocket_active?1:0,owner);
  if((caps&PGR_CBH_CAP_ROCKET_MINIGAME)&&g_rocket_mini){bool on=active&&rocket&&!rocket_failed&&rocket_active&&(g_opts.rocket_mask&2);g_rocket_mini->update(on?1:0,on?int64_t(rocket):0);g_mini_active.store(on?1:0);}
 }

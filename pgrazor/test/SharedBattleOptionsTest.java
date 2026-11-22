@@ -17,6 +17,13 @@ public final class SharedBattleOptionsTest {
         expect(0,SharedBattleOptions.actionMask(16),"unrecognized PvP mask rejected");
         assertTrue(!SharedBattleOptions.validActions(8),"Never send PVP-only bit to native Rocket");
         assertTrue(SharedBattleOptions.validActions(7),"all three allowed");
+        for(int actions=0;actions<8;++actions){
+            int pv=SharedBattleOptions.pvpMask(actions,0);
+            int enabled=PvpBattleMode.update(pv,PvpBattleMode.PREFER_SUPER,true);
+            int disabled=PvpBattleMode.update(enabled,PvpBattleMode.PREFER_SUPER,false);
+            expect(actions,SharedBattleOptions.actionMask(enabled),"Smart Attack ON preserves fast/charged/shield");
+            expect(actions,SharedBattleOptions.actionMask(disabled),"Smart Attack OFF preserves fast/charged/shield");
+        }
         assertTrue(!PvpBattleMode.allowed(7,false,true,true),"shared settings cannot bypass PvP scope gate");
         System.out.println("SharedBattleOptionsTest passed");
     }
