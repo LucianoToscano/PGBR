@@ -127,6 +127,8 @@ public final class LiveFeedDialog {
         private boolean pokeListAccessDenied;
         private boolean iFlowGoAccessDenied;
         private boolean rocketMapAccessDenied;
+        /** Memory only: never persisted to SharedPreferences, logs or a URL. */
+        private String rocketReadSecret = "";
         private int refreshSeconds = DEFAULT_REFRESH_SECONDS;
         private String note = "", lastError;
         private int categoryIndex, radiusIndex = 1;
@@ -884,6 +886,7 @@ public final class LiveFeedDialog {
                 }
             }
             final String configuredRocket = prefs.getString("rocketmap_https_url_v1", "");
+            final String secretAtRequest = rocketReadSecret;
             if (provider == 3 && (configuredRocket == null || configuredRocket.trim().isEmpty())) {
                 lastError = "Configure a URL HTTPS de um servidor RocketMap "
                         + "próprio ou autorizado. Não há servidor padrão.";
@@ -959,7 +962,8 @@ public final class LiveFeedDialog {
                               ? iFlowGo.fetchGlobal(remoteDex)
                               : iFlowGo.fetch(lat, lon, radiusKm, raidSearchMode)
                             : selectedProvider == 3
-                            ? rocketMap.fetch(configuredRocket, lat, lon, radiusKm, raidSearchMode)
+                            ? rocketMap.fetch(configuredRocket, lat, lon, radiusKm, raidSearchMode,
+                                    secretAtRequest)
                             : client.fetch(lat, lon, radiusKm, f);
                     if (selectedProvider == 0 && Double.isInfinite(radiusKm))
                         Control.event("feed-global", snap.entries.size() + " results");
@@ -1386,6 +1390,16 @@ public final class LiveFeedDialog {
                     + "ou autorizado. HTTPS obrigatório; não informe usuário "
                     + "ou senha de Pokémon GO.", 13));
             form.addView(address, new LinearLayout.LayoutParams(-1, dp(52)));
+            EditText readToken = new EditText(ui);
+            readToken.setSingleLine(true);
+            readToken.setHint("Chave de leitura do feed (opcional; somente nesta sessão)");
+            readToken.setInputType(InputType.TYPE_CLASS_TEXT
+                    | InputType.TYPE_TEXT_VARIATION_PASSWORD);
+            readToken.setText(rocketReadSecret);
+            form.addView(label("Para um gateway PokeSearch protegido, informe a chave "
+                    + "X-Feed-Secret emitida pelo seu servidor. Não use senha do jogo. "
+                    + "A chave não será salva no aparelho.",12));
+            form.addView(readToken, new LinearLayout.LayoutParams(-1, dp(52)));
             AlertDialog prompt = new AlertDialog.Builder(ui)
                     .setTitle("Servidor RocketMap")
                     .setView(form)
@@ -1407,6 +1421,10 @@ public final class LiveFeedDialog {
                     fetchInFlight = false;
                     main.removeCallbacks(deferredFetch);
                     prefs.edit().putString("rocketmap_https_url_v1", validated).apply();
+                    rocketReadSecret = readToken.getText().toString().trim();
+                    // Never persist the read secret: the operator enters it
+                    // again after this screen is closed.
+                    readToken.setText("");
                     rocketMapAccessDenied = false;
                     lastFetchStartedElapsed = 0;
                     backoffUntilElapsed = 0;
@@ -1498,6 +1516,7 @@ public final class LiveFeedDialog {
             try { pokeList.cancel(); } catch (RuntimeException ignored) {}
             try { iFlowGo.cancel(); } catch (RuntimeException ignored) {}
             try { rocketMap.cancel(); } catch (RuntimeException ignored) {}
+            rocketReadSecret = "";
             net.shutdownNow();
         }
 
