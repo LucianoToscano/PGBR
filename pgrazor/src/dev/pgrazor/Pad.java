@@ -793,7 +793,7 @@ public final class Pad {
         if(hidden){stick.release(true);if(quickMenu!=null&&quickMenu.isShowing())quickMenu.hide();}
         overlays.setVisibility(hidden?View.GONE:View.VISIBLE);
         Control.event("overlays",hidden?"hidden":"shown");
-        if(!hidden){Toast.makeText(activity,"PGBR overlay shown",Toast.LENGTH_SHORT).show();refresh();}
+        if(!hidden){Toast.makeText(activity,dev.pgrazor.PtBr.tr("PGBR overlay shown"),Toast.LENGTH_SHORT).show();refresh();}
     }
     /**
      * Sees every finger that touches down anywhere on screen and never takes the touch, so the game
@@ -848,22 +848,22 @@ public final class Pad {
         stick.release(true);
         Control.event("map-open", "Browsing does not apply a destination; current walk=" + Control.engine.walking);
         WorldMapDialog.show(activity, Control.engine.latitude, Control.engine.longitude, (lat, lon) -> {
-            if (!Control.canEnable()) { Toast.makeText(activity,"Location adapter is not ready",Toast.LENGTH_SHORT).show(); return false; }
+            if (!Control.canEnable()) { Toast.makeText(activity,dev.pgrazor.PtBr.tr("Location adapter is not ready"),Toast.LENGTH_SHORT).show(); return false; }
             try {
                 stick.release(); Control.teleport(lat, lon);
                 Control.event("map-teleport", String.format(Locale.US,"lat=%.7f lon=%.7f",lat,lon));
                 refresh(); return true;
-            } catch (IllegalArgumentException error) { Toast.makeText(activity,"Select valid coordinates",Toast.LENGTH_SHORT).show(); return false; }
+            } catch (IllegalArgumentException error) { Toast.makeText(activity,dev.pgrazor.PtBr.tr("Select valid coordinates"),Toast.LENGTH_SHORT).show(); return false; }
         }, (lat, lon) -> {
-            if (!Control.canEnable()) { Toast.makeText(activity,"Location adapter is not ready",Toast.LENGTH_SHORT).show(); return false; }
+            if (!Control.canEnable()) { Toast.makeText(activity,dev.pgrazor.PtBr.tr("Location adapter is not ready"),Toast.LENGTH_SHORT).show(); return false; }
             try {
                 stick.release(); Control.walkTo(lat, lon);
                 Control.event("walk-started", String.format(Locale.US,"targetLat=%.7f targetLon=%.7f speedKmh=%.2f",lat,lon,Control.engine.speedKmh));
                 if (!Control.engine.walking) Control.event("walk-arrived", "Already at selected destination");
                 refresh(); return true;
-            } catch (IllegalArgumentException error) { Toast.makeText(activity,"Select valid coordinates",Toast.LENGTH_SHORT).show(); return false; }
+            } catch (IllegalArgumentException error) { Toast.makeText(activity,dev.pgrazor.PtBr.tr("Select valid coordinates"),Toast.LENGTH_SHORT).show(); return false; }
         }, (waypoints, loop) -> {
-            if (!Control.canEnable()) { Toast.makeText(activity,"Location adapter is not ready",Toast.LENGTH_SHORT).show(); return false; }
+            if (!Control.canEnable()) { Toast.makeText(activity,dev.pgrazor.PtBr.tr("Location adapter is not ready"),Toast.LENGTH_SHORT).show(); return false; }
             try {
                 stick.release(true); Control.walkRoute(waypoints, loop);
                 MotionEngine.RouteProgress progress=Control.engine.routeProgress();
@@ -882,29 +882,29 @@ public final class Pad {
     }
     /** Shared quick teleport for the Favorites and Teleport modals; validates readiness. */
     private boolean quickTeleport(double latitude, double longitude) {
-        if (!Control.canEnable()) { Toast.makeText(activity,"Location adapter is not ready",Toast.LENGTH_SHORT).show(); return false; }
+        if (!Control.canEnable()) { Toast.makeText(activity,dev.pgrazor.PtBr.tr("Location adapter is not ready"),Toast.LENGTH_SHORT).show(); return false; }
         try {
             stick.release(); Control.teleport(latitude, longitude);
             Control.event("quick-teleport", String.format(Locale.US,"lat=%.7f lon=%.7f",latitude,longitude));
             refresh(); return true;
-        } catch (IllegalArgumentException error) { Toast.makeText(activity,"Enter valid coordinates",Toast.LENGTH_SHORT).show(); return false; }
+        } catch (IllegalArgumentException error) { Toast.makeText(activity,dev.pgrazor.PtBr.tr("Enter valid coordinates"),Toast.LENGTH_SHORT).show(); return false; }
     }
     void confirmMapTeleport(double latitude,double longitude,int mode,int epoch) {
         TeleportDialog.confirm(activity,latitude,longitude,(lat,lon)->{
             if(closed||!Control.mapTapAllowed()||mode!=Control.mapTapMode()||epoch!=Control.mapTapEpoch()||Control.engine.activeRouteToken()!=0) {
-                Toast.makeText(activity,"Map-tap settings changed; tap the map again.",Toast.LENGTH_SHORT).show();return true;
+                Toast.makeText(activity,dev.pgrazor.PtBr.tr("Map-tap settings changed; tap the map again."),Toast.LENGTH_SHORT).show();return true;
             }
             if(!quickTeleport(lat,lon))return false;
             Control.event("map-tap-applied",String.format(Locale.US,"mode=%d lat=%.7f lon=%.7f",mode,lat,lon));return true;
         });
     }
     private boolean quickWalk(double latitude,double longitude) {
-        if(!Control.canEnable()){Toast.makeText(activity,"Location adapter is not ready",Toast.LENGTH_SHORT).show();return false;}
+        if(!Control.canEnable()){Toast.makeText(activity,dev.pgrazor.PtBr.tr("Location adapter is not ready"),Toast.LENGTH_SHORT).show();return false;}
         try {
             stick.release();Control.walkTo(latitude,longitude);
             Control.event("quick-walk",String.format(Locale.US,"lat=%.7f lon=%.7f",latitude,longitude));
             refresh();return true;
-        } catch(IllegalArgumentException error){Toast.makeText(activity,"Select valid coordinates",Toast.LENGTH_SHORT).show();return false;}
+        } catch(IllegalArgumentException error){Toast.makeText(activity,dev.pgrazor.PtBr.tr("Select valid coordinates"),Toast.LENGTH_SHORT).show();return false;}
     }
     public void close() {
         if (closed) return;
@@ -970,7 +970,7 @@ public final class Pad {
             if(gestureCamera){
                 cameraGesture=Control.beginCameraGesture();
                 if(cameraGesture<0){release(false);Toast.makeText(activity,
-                    "Câmera indisponível: movimento não travado.",Toast.LENGTH_SHORT).show();return;}
+                    dev.pgrazor.PtBr.tr("Câmera indisponível: movimento não travado."),Toast.LENGTH_SHORT).show();return;}
             }
             isLocked=true;lockPopped=false;holdingOut=false;lockAngle=angle;pointer=-1;
             x=(float)Math.cos(angle);y=(float)Math.sin(angle);
@@ -978,7 +978,7 @@ public final class Pad {
             getParent().requestDisallowInterceptTouchEvent(false);
             applyMotion(SystemClock.elapsedRealtime());
             Control.event("joystick-locked",String.format(Locale.US,"locked %.1f°",Math.toDegrees(angle)));
-            Toast.makeText(activity,"Joystick travado",Toast.LENGTH_SHORT).show();
+            Toast.makeText(activity,dev.pgrazor.PtBr.tr("Joystick travado"),Toast.LENGTH_SHORT).show();
             invalidate();
         }
         void applyMotion(long now) {
@@ -1175,7 +1175,7 @@ public final class Pad {
                 if(isLocked){
                     release(false);
                     getParent().requestDisallowInterceptTouchEvent(false);
-                    Toast.makeText(activity,"Joystick destravado",Toast.LENGTH_SHORT).show();
+                    Toast.makeText(activity,dev.pgrazor.PtBr.tr("Joystick destravado"),Toast.LENGTH_SHORT).show();
                     return true;
                 }
                 if(EternatusRouteRunner.active())EternatusRouteRunner.stop("Movimento manual pelo joystick.");

@@ -263,7 +263,7 @@ public final class WorldMapDialog {
             if(draft.size()>=LIMIT)return;
             double lat=map.latitude,lon=map.longitude;
             if(!Double.isFinite(lat) || !Double.isFinite(lon) || Math.abs(lat)>90 || Math.abs(lon)>180) {
-                Toast.makeText(activity,"Select valid coordinates for this stop.",Toast.LENGTH_SHORT).show();return;
+                Toast.makeText(activity,dev.pgrazor.PtBr.tr("Select valid coordinates for this stop."),Toast.LENGTH_SHORT).show();return;
             }
             draft.add(new double[]{lat,lon});refresh();
         }
@@ -352,7 +352,7 @@ public final class WorldMapDialog {
                     SavedPlaces.Snapshot snapshot = store().read();
                     main.post(() -> { if (!closed) { opener.setEnabled(true); showLibrary(snapshot); } });
                 } catch (RuntimeException e) {
-                    main.post(() -> { if (!closed) { opener.setEnabled(true); Toast.makeText(activity, "Saved places could not be opened.", Toast.LENGTH_LONG).show(); } });
+                    main.post(() -> { if (!closed) { opener.setEnabled(true); Toast.makeText(activity, dev.pgrazor.PtBr.tr("Saved places could not be opened."), Toast.LENGTH_LONG).show(); } });
                 }
             });
         }
@@ -372,7 +372,7 @@ public final class WorldMapDialog {
             if (holder[0] == null) holder[0] = builder.create();
             holder[0].setOnShowListener(d -> holder[0].getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> showSave(holder[0])));
             show(holder[0]);
-            if (snapshot.damaged && !snapshot.entries.isEmpty()) Toast.makeText(activity, "Some saved places could not be read. Valid entries are shown.", Toast.LENGTH_LONG).show();
+            if (snapshot.damaged && !snapshot.entries.isEmpty()) Toast.makeText(activity, dev.pgrazor.PtBr.tr("Some saved places could not be read. Valid entries are shown."), Toast.LENGTH_LONG).show();
         }
         private void showSave(AlertDialog library) {
             final double latitude = map.latitude, longitude = map.longitude;
@@ -428,7 +428,7 @@ public final class WorldMapDialog {
                         main.post(() -> {
                             if (!closed && confirm.isShowing()) {
                                 confirm.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(true);
-                                Toast.makeText(activity, "Could not delete place. Please retry.", Toast.LENGTH_LONG).show();
+                                Toast.makeText(activity, dev.pgrazor.PtBr.tr("Could not delete place. Please retry."), Toast.LENGTH_LONG).show();
                             }
                         });
                     }

@@ -104,7 +104,7 @@ public final class QuickLocationDialogs {
                 }
                 showFavoriteList(activity,target,snap);
                 if(snap.damaged)Toast.makeText(activity,
-                    "Alguns locais não puderam ser lidos; os válidos foram preservados.",
+                    dev.pgrazor.PtBr.tr("Alguns locais não puderam ser lidos; os válidos foram preservados."),
                     Toast.LENGTH_LONG).show();
             });
         },"pgrazor-favorites-read").start();
