@@ -28,3 +28,9 @@
 - Identificadores de tarefas de pesquisa, códigos de API, IDs, chaves de filtros e nomes de provedores são preservados.
 - Não foi criado APK nem modificado o aplicativo instalado.
 - A integração exige testes de tradução, compilação e revisão de conflitos com outras branches; usar PR sem merge automático.
+
+## Resultado de QA confirmado em 22/11/2026
+- PR de revisão em rascunho: https://github.com/LucianoToscano/PGBR/pull/101.
+- [Workflow isolado #45044210002](https://github.com/LucianoToscano/PGBR/actions/runs/45044210002): **success**, job `translate` concluído; compila os dois tradutores Java e executa `PtBrDynamicTest` e `test_ptbr_glossary`.
+- Verificação local de correspondência: 1.449 chaves no JSON e 1.449 entradas em cada tradutor; 66 cenários de tradução simulados sem divergência.
+- Suíte ampliada de código [#45044210035](https://github.com/LucianoToscano/PGBR/actions/runs/45044210035) estava em execução na verificação. Sem homologação em aparelho ou geração de APK nesta branch.
