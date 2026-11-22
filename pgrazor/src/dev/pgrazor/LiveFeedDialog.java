@@ -127,6 +127,8 @@ public final class LiveFeedDialog {
         private boolean pokeListAccessDenied;
         private boolean iFlowGoAccessDenied;
         private boolean rocketMapAccessDenied;
+        /** Memory only: never persisted to SharedPreferences, logs or a URL. */
+        private String rocketReadSecret = "";
         private int refreshSeconds = DEFAULT_REFRESH_SECONDS;
         private String note = "", lastError;
         private int categoryIndex, radiusIndex = 1;
@@ -428,6 +430,27 @@ public final class LiveFeedDialog {
                 if (raidSearchMode) openRaidFilters();
                 else openFilters();
             });
+            if (pokemonSearchMode) {
+                // Visible recovery action for stale incompatible filter presets.
+                // Does not bypass 401/403 or provider-imposed rate limits.
+                Button clear = button("Limpar filtros e buscar novamente");
+                root.addView(clear, new LinearLayout.LayoutParams(-1, dp(42)));
+                clear.setOnClickListener(v -> {
+                    filters = new LiveFeedFilters();
+                    pokemonQuery = "";
+                    prefs.edit().putString("pokemon_query_v1", "").apply();
+                    saveFilters();
+                    generation++;
+                    client.cancel(); pokeList.cancel(); iFlowGo.cancel(); rocketMap.cancel();
+                    fetchInFlight = false;
+                    entries.clear(); visible.clear(); distCache.clear();
+                    lastUpdated = 0; lastError = null;
+                    main.removeCallbacks(deferredFetch);
+                    // Keep provider refusals/backoffs intact. Render resets
+                    // the visible search field to the blank query.
+                    render();
+                });
+            }
 
             {
                 TextView around = label("Around current location", 13);
@@ -523,6 +546,19 @@ public final class LiveFeedDialog {
                     public void onTextChanged(CharSequence value, int start, int before, int count) {
                         pokemonQuery = value.toString().trim();
                         prefs.edit().putString("pokemon_query_v1", pokemonQuery).apply();
+                        // Global iFlowGo returns only page 1. Local text filtering
+                        // cannot find a species absent from that page; request
+                        // one bounded, server-side species page instead.
+                        if (provider == 2 && Double.isInfinite(RADII[radiusIndex])
+                                && !iFlowGoAccessDenied) {
+                            generation++;
+                            iFlowGo.cancel();
+                            fetchInFlight = false;
+                            main.removeCallbacks(deferredFetch);
+                            entries.clear(); visible.clear(); distCache.clear();
+                            lastUpdated = 0;
+                            main.postDelayed(deferredFetch, 650);
+                        }
                         rebuildVisible();
                         adapter.notifyDataSetChanged();
                         updateStatus();
@@ -827,18 +863,18 @@ public final class LiveFeedDialog {
                             || selected.optBoolean("background_only", false)
                             || selected.optBoolean("filter_xxs", false)
                             || selected.optBoolean("filter_xxl", false)
-                            || filters.pvpOnlyActive()
-                            // RocketMap's public /raw_data pokemon object has
-                            // CP and individual IVs, but no confirmed level.
-                            || provider == 3 && (selected.optInt("min_level", 0) > 0
-                                    || selected.optInt("max_level", 50) < 50);
+                            || filters.pvpOnlyActive();
+                    // A configured Golbat/PokeSearch bridge can add an optional
+                    // exact level to /raw_data. Let the local filter decide;
+                    // missing level must never count as a strict match.
                     if (unsupported) {
                         entries.clear(); visible.clear(); distCache.clear();
                         lastUpdated = 0;
                         lastError = sourceName()
                                 + " não confirma Shiny individual, fundos, tamanhos XXS/XXL "
-                                + "nem rankings PvP; RocketMap também não informa nível. "
-                                + "Desative esses filtros ou escolha outra fonte.";
+                                + "nem rankings PvP. Nível funciona apenas quando "
+                                + "o servidor envia um campo verificado. "
+                                + "Desative os filtros sem suporte ou escolha outra fonte.";
                         adapter.notifyDataSetChanged();
                         updateStatus();
                         return;
@@ -850,6 +886,7 @@ public final class LiveFeedDialog {
                 }
             }
             final String configuredRocket = prefs.getString("rocketmap_https_url_v1", "");
+            final String secretAtRequest = rocketReadSecret;
             if (provider == 3 && (configuredRocket == null || configuredRocket.trim().isEmpty())) {
                 lastError = "Configure a URL HTTPS de um servidor RocketMap "
                         + "próprio ou autorizado. Não há servidor padrão.";
@@ -909,6 +946,17 @@ public final class LiveFeedDialog {
                     // merely because the catalog was still loading on the UI.
                     int remoteDex = selectedProvider == 2 && selectedDex < 1
                             ? sourceDexFilter(queryAtRequest) : selectedDex;
+                    // The Filters modal has a separate species picker.
+                    // Previously it filtered just the FIRST global page on
+                    // device, producing 0 matches even if the chosen species
+                    // exists elsewhere in the provider's covered world.
+                    if (selectedProvider == 2 && pokemonSearchMode
+                            && Double.isInfinite(radiusKm) && remoteDex < 1) {
+                        // A single allowlist species is still a stronger
+                        // server-side constraint when a free-text query is
+                        // ambiguous or not found in the local name catalog.
+                        remoteDex = f.singleAllowedSpecies();
+                    }
                     LiveFeedData.Snapshot snap = selectedProvider == 1
                             ? pokeList.fetch(lat, lon, radiusKm, selectedDex)
                             : selectedProvider == 2
@@ -916,7 +964,8 @@ public final class LiveFeedDialog {
                               ? iFlowGo.fetchGlobal(remoteDex)
                               : iFlowGo.fetch(lat, lon, radiusKm, raidSearchMode)
                             : selectedProvider == 3
-                            ? rocketMap.fetch(configuredRocket, lat, lon, radiusKm, raidSearchMode)
+                            ? rocketMap.fetch(configuredRocket, lat, lon, radiusKm, raidSearchMode,
+                                    secretAtRequest)
                             : client.fetch(lat, lon, radiusKm, f);
                     if (selectedProvider == 0 && Double.isInfinite(radiusKm))
                         Control.event("feed-global", snap.entries.size() + " results");
@@ -1057,8 +1106,9 @@ public final class LiveFeedDialog {
                 if (visible.isEmpty()) {
                     sb.append('\n');
                     if (entries.isEmpty()) {
-                        sb.append("A fonte respondeu, mas não enviou aparições nesta área. ")
-                          .append("Confira cobertura, raio e autenticação da fonte.");
+                        sb.append("A fonte respondeu com 0 aparições. ")
+                          .append("Confira cobertura/raio ou selecione outra fonte autorizada. ")
+                          .append("O filtro não consegue criar registros ausentes.");
                     } else {
                         sb.append("A fonte enviou registros, mas nenhum passou nos filtros ")
                           .append("locais de categoria, espécie, IV, distância ou expiração. ")
@@ -1090,6 +1140,8 @@ public final class LiveFeedDialog {
                     continue;
                 // The server only partly applies the display filters (not the level range), so
                 // re-check Pokémon the way the LivePokeMap website does.
+                if (e.kind == LiveFeedData.Kind.POKEMON && provider == 3
+                        && filters.requiresKnownLevel() && e.level <= 0) continue;
                 if (e.kind == LiveFeedData.Kind.POKEMON && !filters.matches(e.dexId, e.hasStats ? e.iv : -1,
                         e.level, e.attrs.size, e.attrs.pvpGreatRank, e.attrs.pvpUltraRank, e.attrs.pvpLittleRank))
                     continue;
@@ -1342,6 +1394,16 @@ public final class LiveFeedDialog {
                     + "ou autorizado. HTTPS obrigatório; não informe usuário "
                     + "ou senha de Pokémon GO.", 13));
             form.addView(address, new LinearLayout.LayoutParams(-1, dp(52)));
+            EditText readToken = new EditText(ui);
+            readToken.setSingleLine(true);
+            readToken.setHint("Chave de leitura do feed (opcional; somente nesta sessão)");
+            readToken.setInputType(InputType.TYPE_CLASS_TEXT
+                    | InputType.TYPE_TEXT_VARIATION_PASSWORD);
+            readToken.setText(rocketReadSecret);
+            form.addView(label("Para um gateway PokeSearch protegido, informe a chave "
+                    + "X-Feed-Secret emitida pelo seu servidor. Não use senha do jogo. "
+                    + "A chave não será salva no aparelho.",12));
+            form.addView(readToken, new LinearLayout.LayoutParams(-1, dp(52)));
             AlertDialog prompt = new AlertDialog.Builder(ui)
                     .setTitle("Servidor RocketMap")
                     .setView(form)
@@ -1363,6 +1425,10 @@ public final class LiveFeedDialog {
                     fetchInFlight = false;
                     main.removeCallbacks(deferredFetch);
                     prefs.edit().putString("rocketmap_https_url_v1", validated).apply();
+                    rocketReadSecret = readToken.getText().toString().trim();
+                    // Never persist the read secret: the operator enters it
+                    // again after this screen is closed.
+                    readToken.setText("");
                     rocketMapAccessDenied = false;
                     lastFetchStartedElapsed = 0;
                     backoffUntilElapsed = 0;
@@ -1454,6 +1520,7 @@ public final class LiveFeedDialog {
             try { pokeList.cancel(); } catch (RuntimeException ignored) {}
             try { iFlowGo.cancel(); } catch (RuntimeException ignored) {}
             try { rocketMap.cancel(); } catch (RuntimeException ignored) {}
+            rocketReadSecret = "";
             net.shutdownNow();
         }
 

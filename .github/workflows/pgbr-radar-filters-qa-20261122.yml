@@ -1,0 +1,69 @@
+name: PGBR Radar Filters and Authorized Webhook QA
+
+on:
+  push:
+    branches: [fix/radar-source-filter-search-20261122]
+  pull_request:
+    paths:
+      - 'pgrazor/src/dev/pgrazor/LiveFeedFilters.java'
+      - 'pgrazor/src/dev/pgrazor/LiveFeedDialog.java'
+      - 'pgrazor/src/dev/pgrazor/RocketMapFeedClient.java'
+      - 'pgrazor/test/LiveFeedFiltersTest.java'
+      - '.github/workflows/pgbr-radar-filters-qa-20261122.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  live-feed-regressions:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools
+      - name: Install Android JSON sources
+        run: sdkmanager "sources;android-36"
+      - name: Live feed model / filtering / provider behavior
+        run: |
+          python -B -m unittest discover -s pgrazor/test -p 'test_live_feed_java.py' -v
+          python -B -m unittest discover -s pgrazor/test -p 'test_pokemon_feed_search_java.py' -v
+          python -B -m unittest discover -s pgrazor/test -p 'test_iflowgo_wiring.py' -v
+          python -B -m unittest discover -s pgrazor/test -p 'test_rocketmap_wiring.py' -v
+          python -B -m unittest discover -s pgrazor/test -p 'test_pokelist_access_behavior.py' -v
+          python -B -m unittest discover -s pgrazor/test -p 'test_raid_feed_filters_java.py' -v
+
+  android-controls-compile:
+    runs-on: windows-latest
+    timeout-minutes: 35
+    env:
+      PGRAZOR_BUILD_TOOLS: 36.0.0
+      PGRAZOR_ANDROID_PLATFORM: android-36
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools
+      - name: Android SDK and DEX compiler
+        shell: pwsh
+        run: sdkmanager "platforms;android-36" "build-tools;36.0.0" "sources;android-36"
+      - name: Acquire DEX build dependencies
+        run: python -c "import sys;sys.path.insert(0,'pgrazor');import dex_bridges;dex_bridges.dependencies(download=True)"
+      - name: Compile Android PGBR controls (no release publication)
+        run: python -B pgrazor/build.py
