@@ -93,6 +93,16 @@ Após o merge: `MERGEABLE`, e **11/11 checks verdes** (todos os 7 workflows do r
   O patch verificado está em `docs/patches/pokesearch-gateway-viewport-20261122.patch`
   (32 testes node, 0 falha, aplicável em `feat/demo-frontend-live-feed-20261122`).
 
+  **Reexecutado nesta rodada (22/11, 21:53 UTC):** o patch foi aplicado sobre
+  `feat/golbat-reactmap-filters-20261122` (PR #557, onde `functions/authorized-spawn-gateway.js`
+  realmente existe — em `main` o arquivo não está), com +2 casos de teste, e a suíte
+  `functions/` foi executada: **29 testes, 29 passando, 0 falha**. O commit está pronto
+  (`035b83ba4f988f16de1f662820fdffcc9fbac826`) e o patch regenerado a partir dele.
+
+  O push continua **negado**: `git push` → `403 Permission to LucianoToscano/PokeSearch.git denied
+  to LucianoToscano`, confirmado também em `--dry-run`. A API reporta `permissions.push=true`, mas o
+  token desta sessão não escreve no repositório — portanto **não** afirmo PokeSearch integrado.
+
 ## 4. Próximos passos
 
 1. Homologar em aparelho as abas Ginásios/Paradas e a busca global paginada contra um servidor

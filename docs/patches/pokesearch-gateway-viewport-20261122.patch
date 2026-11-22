@@ -1,57 +1,42 @@
-From e2dac1ba26aa8dad59b65e6caa73cd441075a595 Mon Sep 17 00:00:00 2001
+From 035b83ba4f988f16de1f662820fdffcc9fbac826 Mon Sep 17 00:00:00 2001
 From: Arena Agent <agent@arena.ai>
-Date: Sun, 22 Nov 2026 19:37:33 +0000
+Date: Sun, 22 Nov 2026 21:53:44 +0000
 Subject: [PATCH] =?UTF-8?q?fix(gateway):=20viewport=20antimeridiano=20e=20?=
  =?UTF-8?q?p=C3=A1gina=20truncada=20declarada?=
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
 
-Dois defeitos reais no gateway local autorizado (PokeSearch PRs #557/#559):
+Dois defeitos reais no gateway local autorizado:
 
-1. boundsFromUrl recusava `swLng > neLng` como "invalid_viewport". Clientes
+1. boundsFromUrl recusava swLng > neLng como invalid_viewport. Clientes
    ReactMap/iFlowGo mandam os cantos nessa ordem e um mapa que cruza +/-180 é
-   legítimo, então uma área válida recebia 400 e a busca ficava vazia com erro
-   de parâmetro. Agora o par invertido é aceito como travessia do antimeridiano
-   quando a largura real `360 - (swLng - neLng)` cabe em 180 graus; mais que meio
-   planeta continua sendo erro. Latitude invertida continua erro: é hemisfério
-   errado, não convenção. insideBounds() aplica a travessia nas duas pontas.
+   legítimo, então uma área válida recebia 400 e a busca ficava vazia com erro de
+   parâmetro. Agora o par invertido é aceito como travessia do antimeridiano
+   quando a largura real 360-(swLng-neLng) cabe em 180 graus; mais que meio
+   planeta continua erro. Latitude invertida continua erro. insideBounds aplica a
+   travessia nas duas pontas.
 
-2. /raw_data cortava em MAX_RESPONSE sem avisar — o mesmo defeito de "só a
-   primeira página", uma camada abaixo. Quando há mais linhas que o teto, a
-   resposta passa a trazer `X-Result-Truncated: true` e `X-Result-Total`.
+2. /raw_data cortava em MAX_RESPONSE sem avisar — o mesmo defeito de 'só a
+   primeira página', uma camada abaixo. Com mais linhas que o teto, a resposta
+   agora traz X-Result-Truncated: true e X-Result-Total.
 
-Testes: +2 casos (viewport normal, antimeridiano dentro/fora, par invertido largo,
-norte/sul trocado; e 2500 observações -> 2000 linhas + cabeçalhos de truncamento).
-`node --test` em functions/: 32 testes, 0 falha.
+Testes: +2 casos (viewport normal/antimeridiano/par invertido largo/norte-sul
+trocado; 2500 observações -> 2000 linhas + cabeçalhos). functions/: 29 testes,
+29 passando, 0 falha.
 
-Co-Authored-By: Arena Agent <agent@arena.ai>
+Aplicado sobre feat/golbat-reactmap-filters-20261122 (PR #557), onde o gateway
+existe.
 ---
- .github/workflows/pokesearch-node-qa.yml   |  4 ++
  functions/authorized-spawn-gateway.js      | 44 +++++++++++++---
  functions/authorized-spawn-gateway.test.js | 61 ++++++++++++++++++++++
- 3 files changed, 102 insertions(+), 7 deletions(-)
+ 2 files changed, 98 insertions(+), 7 deletions(-)
 
-diff --git a/.github/workflows/pokesearch-node-qa.yml b/.github/workflows/pokesearch-node-qa.yml
-index 82a4759..a5979de 100644
---- a/.github/workflows/pokesearch-node-qa.yml
-+++ b/.github/workflows/pokesearch-node-qa.yml
-@@ -84,6 +84,10 @@ jobs:
-             node "$suite"
-             echo "::endgroup::"
-           done
-+      - name: Validar normalização de webhooks autorizados (funcoes puras, sem rede)
-+        run: |
-+          set -euo pipefail
-+          node functions/spawn-observation-normalizer.test.js
-       - name: Validar histórico da Home LT79–LT83
-         run: node app/tests/lt83-home-release-notes.test.js
-       - name: Validar geometria Java de janela popup isolada sem Gradle
 diff --git a/functions/authorized-spawn-gateway.js b/functions/authorized-spawn-gateway.js
-index 94a518d..23b5a52 100644
+index db21bfc..809062c 100644
 --- a/functions/authorized-spawn-gateway.js
 +++ b/functions/authorized-spawn-gateway.js
-@@ -33,15 +33,40 @@ function checkConfig(o) {
+@@ -32,15 +32,40 @@ function checkConfig(o) {
        || o.ingestSecret === o.readSecret) throw new Error("Two distinct strong secrets required");
    if (o.now !== undefined && typeof o.now !== "function") throw new Error("Invalid clock");
  }
@@ -96,7 +81,7 @@ index 94a518d..23b5a52 100644
  }
  function optionalNumber(params, name, lo, hi) {
    if (!params.has(name)) return null;
-@@ -170,8 +195,7 @@ function makeGateway(options) {
+@@ -142,8 +167,7 @@ function makeGateway(options) {
        const filtered = [];
        if (url.searchParams.get("pokemon") !== "false") {
          for (const row of entries.values()) {
@@ -106,7 +91,7 @@ index 94a518d..23b5a52 100644
            if (pokemonId !== null && row.pokemonId !== pokemonId) continue;
            if (ivMin !== null && (row.ivPercent === null || row.ivPercent < ivMin)) continue;
            if (cpMin !== null && (row.cp === null || row.cp < cpMin)) continue;
-@@ -183,6 +207,12 @@ function makeGateway(options) {
+@@ -155,6 +179,12 @@ function makeGateway(options) {
        const payload = toRocketMapRawData({entries: filtered.slice(0, MAX_RESPONSE)});
        // Existing PGBR RocketMap reader expects gyms:{} for a raid query.
        payload.gyms = {};
@@ -119,18 +104,18 @@ index 94a518d..23b5a52 100644
        respond(res, 200, payload);
        return;
      }
-@@ -202,4 +232,4 @@ function createLocalServer(config) {
+@@ -174,4 +204,4 @@ function createLocalServer(config) {
    }), statistics};
  }
  
 -module.exports = {makeGateway, createLocalServer, boundsFromUrl, safeSecret};
 +module.exports = {makeGateway, createLocalServer, boundsFromUrl, insideBounds, safeSecret};
 diff --git a/functions/authorized-spawn-gateway.test.js b/functions/authorized-spawn-gateway.test.js
-index a6940e9..25b21c8 100644
+index 98331f9..33b78cc 100644
 --- a/functions/authorized-spawn-gateway.test.js
 +++ b/functions/authorized-spawn-gateway.test.js
-@@ -159,3 +159,64 @@ test("dashboard is local, makes no uncredentialed data calls and visibly separat
-       "public dashboard must never make feed data public");
+@@ -115,3 +115,64 @@ test("reject expired and unknown-despawn events, no phantom spawns",async()=>{
+     assert.equal(res.body.cached,0);
    }finally{await new Promise(resolve=>server.close(resolve));}
  });
 +
