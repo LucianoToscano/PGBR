@@ -978,3 +978,6 @@ O workflow [#45024489012](https://github.com/LucianoToscano/PGBR/actions/runs/45
 
 
 **Revisão adicional do carregado LT037:** `rocket_minigame.cpp` opera sobre `Niantic.Holoholo.Combat.InputChallenge.ParticleTapInputChallenge`, com hooks e metadados validados. O uso da "mesma função Rocket" inclui o minijogo depois do primeiro clique de carregado. A lógica de política anterior em LT036 já permitia o minijogo dentro de uma sessão tipada PvP. LT037 preserva isso para Rocket/PvP/treinamento sob escopo ativo, opção carregado e lease válida, sem habilitar em raids/Max fora desse escopo. Sem prova física de acerto nem minijogo completo.
+
+
+**Regressão de interface preservada:** a legenda do assistente mantém o prefixo `Opções Rocket/PvP sincronizadas` esperado pelo contrato `test_pvp_settings_ui.py`, acrescentando o comportamento de ativação por escopo. A preferência única permanece distinta do estado de execução; a correção não liga opções marcadas como desligadas pelo usuário.

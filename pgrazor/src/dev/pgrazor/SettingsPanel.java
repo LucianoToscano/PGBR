@@ -1726,7 +1726,7 @@ final class SettingsPanel {
         if(Control.pvpBattleReady()){
             pvpBattleStatus.setText(Control.pvpBattleStatus());
         }else if((Control.pvpBattleOptions()&PvpBattleMode.ACTIONS)!=0){
-            pvpBattleStatus.setText("Auto Ataque compartilhado: ágil/carregado/escudo ativam apenas em Rocket, treinamento e PvP (inclusive amigos reconhecidos); desativam ao sair. Reides e Batalhas Max não usam este executor. Sem teste físico.");
+            pvpBattleStatus.setText("Opções Rocket/PvP sincronizadas — Auto Ataque ágil/carregado/escudo ativa somente em Rocket, treinamento e PvP/amigos reconhecidos; desativa ao sair. Reides e Batalhas Max ficam fora. Sem teste físico.");
         }else{
             pvpBattleStatus.setText("Você pode configurar as opções, mas a automação PvP ainda não está disponível nesta versão.");
         }
