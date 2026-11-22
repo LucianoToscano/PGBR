@@ -988,6 +988,7 @@ public final class PtBr {
         m.put("Cannot open backup", "Não foi possível abrir o backup");
         m.put("Settings restored. Return to the game to use them. VGP is off.", "Configurações restauradas. Volte ao jogo para utilizá-las. O VGP está desligado.");
         m.put("Backup failed: ", "Falha no backup: ");
+        m.put("Backup failed and rollback was incomplete. Check your settings and storage before retrying.", "Falha no backup e reversão incompleta. Confira suas configurações e o armazenamento antes de tentar novamente.");
         m.put("Invalid file or storage unavailable", "Arquivo inválido ou armazenamento indisponível");
         m.put("PGBR settings", "Configurações do PGBR");
         m.put("Could not save settings", "Não foi possível salvar as configurações");

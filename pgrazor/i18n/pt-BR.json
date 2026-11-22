@@ -991,6 +991,7 @@
     "Cannot open backup": "Não foi possível abrir o backup",
     "Settings restored. Return to the game to use them. VGP is off.": "Configurações restauradas. Volte ao jogo para utilizá-las. O VGP está desligado.",
     "Backup failed: ": "Falha no backup: ",
+    "Backup failed and rollback was incomplete. Check your settings and storage before retrying.": "Falha no backup e reversão incompleta. Confira suas configurações e o armazenamento antes de tentar novamente.",
     "Invalid file or storage unavailable": "Arquivo inválido ou armazenamento indisponível",
     "PGBR settings": "Configurações do PGBR",
     "Could not save settings": "Não foi possível salvar as configurações",

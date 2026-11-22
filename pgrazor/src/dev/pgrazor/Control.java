@@ -1508,6 +1508,11 @@ public final class Control {
     public static void setDarkTheme(boolean value){darkTheme=value;saveSettings();}
     public static void setJoystickVisible(boolean value){joystickVisible=value;saveSettings();}
     private static void loadSettings(Application app) {
+        try { loadSettings(app,false); }
+        catch(IOException impossible) { event("settings-load-error",impossible.toString()); }
+    }
+    // Import must detect partial reloads; normal startup retains its historical best-effort behavior.
+    private static void loadSettings(Application app,boolean strict) throws IOException {
         OneShotAutomation.reset();
         AutoRaid.reset();
         GiftBatchSettings.reset();
@@ -1523,7 +1528,11 @@ public final class Control {
             }
             // A reload must reflect every queued write for this file, never a half-finished one.
             try { settingsWriter.flush(SETTINGS_FLUSH_MS); }
-            catch(IOException pending) { event("settings-load-error","Pending save not flushed: "+pending); return; }
+            catch(IOException pending) {
+                event("settings-load-error","Pending save not flushed: "+pending);
+                if(strict)throw pending;
+                return;
+            }
             StrictMode.ThreadPolicy policy=StrictMode.allowThreadDiskReads();
             localTimeFormat=0;cooldownTextSp=0;cooldownEmphasis=false;
             quickMenuHidden=0;
@@ -1729,8 +1738,12 @@ public final class Control {
                 event("settings-restored","dismiss="+quickSummaryEnabled+" fastBall="+quickBallEnabled+" grade="+throwGrade+" variety="+throwVariety+" curve="+throwCurve+" mapTap="+mapTapMode+" cameraRelative=true heal="+healConfig());
             } catch(FileNotFoundException missing) {
                 // Defaults apply only until the user first saves a choice.
+                if(strict)throw missing;
                 event("settings-defaults","No saved settings for this account profile yet");
-            } catch(IOException | RuntimeException error) { event("settings-load-error",error.toString()); }
+            } catch(IOException | RuntimeException error) {
+                event("settings-load-error",error.toString());
+                if(strict)throw new IOException("Settings reload failed",error);
+            }
             finally { StrictMode.setThreadPolicy(policy); }
         }
     }
@@ -1766,17 +1779,28 @@ public final class Control {
     }
     static void importSettings(Application app,Properties incoming,double speed) throws IOException {
         synchronized(stateLock) {
-            // exportSettings drained every queued write; holding stateLock blocks new submissions, so the
-            // atomic replacement below cannot race the background writer for this destination.
-            Properties merged=exportSettings();merged.putAll(incoming);
+            // Preserve the entire live snapshot, including non-backup keys, before any mutation.
+            Properties previous=exportSettings(), merged=new Properties();merged.putAll(previous);merged.putAll(incoming);
+            double previousSpeed=engine.speedKmh;
             if(incoming.containsKey("autoBerry")&&!incoming.containsKey("berryPriority"))merged.remove("berryPriority");
-            // A backup from before costume had its own option carries it inside "event / costume".
             if(incoming.containsKey("transferProtect")&&!incoming.containsKey("transferProtectSplit"))merged.remove("transferProtectSplit");
-            FileOutputStream out=null;
-            try{out=settingsFile.startWrite();merged.store(out,"PGBR settings");settingsFile.finishWrite(out);out=null;}
-            finally{if(out!=null)settingsFile.failWrite(out);}
-            loadSettings(app); // Restores preferences and explicitly leaves VGP off.
-            engine.stop();engine.speed(speed);mapTapEpoch++;restoreRuntime("settings-import");saveState(); // Keep current coordinates; never resume a route.
+            try {
+                writeSettings(settingsFile,merged);
+                loadSettings(app,true); // Restores preferences and explicitly leaves VGP off.
+                engine.stop();engine.speed(speed);mapTapEpoch++;restoreRuntime("settings-import");saveState();
+                if(stateFile!=null && stateWriteFailed)throw new IOException("Location state could not be saved");
+            } catch(IOException | RuntimeException error) {
+                IOException failure=new IOException("Settings import failed",error);
+                try {
+                    writeSettings(settingsFile,previous);
+                    loadSettings(app,true);
+                    engine.stop();engine.speed(previousSpeed);mapTapEpoch++;restoreRuntime("settings-import-rollback");saveState();
+                    // A failed new checkpoint may have left the last durable checkpoint intact.
+                    if(stateFile!=null && stateWriteFailed && LocationState.capture(engine,desiredEnabled).encode().equals(lastSaved))stateWriteFailed=false;
+                    if(stateFile!=null && stateWriteFailed)throw new IOException("Previous location state could not be saved");
+                } catch(IOException | RuntimeException rollback) { failure.addSuppressed(rollback); }
+                throw failure;
+            }
         }
     }
     // Capture current preferences under stateLock; serialization and AtomicFile IO run off the main thread.
