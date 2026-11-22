@@ -15,9 +15,9 @@ class Lt039ReleaseContract(unittest.TestCase):
             "tools/check.py","pgrazor/nonroot.py","pgrazor/rooted.py",
             "tools/verify_release.py","--prerelease","--latest=false",
             "gh release view","gh release create","workflow_dispatch:",
-            "branches: [main]"):
+            "workflow_dispatch:"):
             with self.subTest(text=text): self.assertIn(text,w)
-        self.assertIn("'.github/workflows/pgbr-lt039-release.yml'",w)
+        self.assertNotIn("  push:",w)  # immutable published LT039
         self.assertIn("github.ref == 'refs/heads/main'",w)
         self.assertNotIn("PGBR-v0.00.38-LT.apk",w)
         for previous in ("pgbr-lt038-release.yml","pgbr-lt037-release.yml"):

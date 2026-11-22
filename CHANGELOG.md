@@ -5,6 +5,8 @@
 - [Workflow LT039](.github/workflows/pgbr-lt039-release.yml) compila os pacotes sem Root, Root e Zygisk, verifica hashes e publica somente a partir da main. [Notas LT039](docs/releases/v0.00.39-LT.md).
 - Não reivindicar homologação física, priorização automática de eficácia ou conserto da tela branca; `device_tested=false`. Não substituir links da LT038.
 
+- **Publicação confirmada:** [pré-release v0.00.39-LT](https://github.com/LucianoToscano/PGBR/releases/tag/v0.00.39-LT) em `2026-11-22T17:01:31Z`, [Actions #45045923119](https://github.com/LucianoToscano/PGBR/actions/runs/45045923119) `completed/success`, 3 pacotes APK/Root/Zygisk e `SHA256SUMS.txt` disponibilizados. Revisão pós-publicação arquivada no Mestre. A LT038 permanece imutável.
+
 ## Não lançado — Escudo Inteligente e Troca após Nocaute configuráveis (22/11/2026)
 - Branch isolada `feat/smart-shield-swap-timings-20261122` sobre `be01d9b59a9e1f31f292b8c562744e5801993d08` (LT038 preservada; sem merge ou nova release automática).
 - Menu PT-BR em Ataque Inteligente: escudo 0 / 1.500 (padrão) / 3.000 ms / desativado; KO VNext 400 / 2.000 (padrão) / 6.000 ms / desativado; escolhas únicas persistentes.

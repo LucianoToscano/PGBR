@@ -1,11 +1,7 @@
 name: PGBR v0.00.39-LT - compilar e publicar pre-release QA
-# First publish is triggered only when this workflow is added to main.
-# Future updates to VERSION/README/master must not republish old signed assets.
+# LT039 QA is published and immutable: future version/doc commits must not trigger a rebuild.
+# Manual dispatch remains available for controlled forensic reproduction only.
 on:
-  push:
-    branches: [main]
-    paths:
-      - '.github/workflows/pgbr-lt039-release.yml'
   workflow_dispatch:
 permissions:
   contents: read
