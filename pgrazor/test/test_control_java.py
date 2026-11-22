@@ -18,14 +18,19 @@ STUBS = {
     "dev/pgrazor/AutoRaid.java": "package dev.pgrazor; public class AutoRaid { public static void travel(long s,long t,double a,double b){} public static void reset(){} public static void read(java.util.Properties p){} public static void write(java.util.Properties p){} public static String config(){return null;} public static void tick(boolean b){} public static boolean running(){return false;} public static void publish(String s){} }",
     "dev/pgrazor/GiftBatchSettings.java": "package dev.pgrazor; public class GiftBatchSettings {public static void reset(){} public static String config(){return null;} public static void publish(String s){} public static boolean running(){return false;}}",
     'dev/pgrazor/events/EventSettings.java': 'package dev.pgrazor.events; public final class EventSettings {public static boolean vgpSafari, autoSafari; public static boolean wildVgpSafari(android.app.Application app){return vgpSafari;} public static boolean wildAutoBallSafari(android.app.Application app){return autoSafari;} public static boolean boxCollectorEnabled(android.app.Application app){return false;} public static void publishBoxCollectorCapability(boolean value){}}',
-    'android/content/Context.java': 'package android.content; public class Context {public static final String NOTIFICATION_SERVICE="notification";}',
+    'android/content/Context.java': 'package android.content; public class Context {public static final String NOTIFICATION_SERVICE="notification"; public Context getApplicationContext(){return this;}}',
+    'android/content/SharedPreferences.java': '''package android.content;
+public interface SharedPreferences {
+ java.util.Map<String,?> getAll(); Editor edit();
+ interface Editor {Editor remove(String k); Editor putBoolean(String k,boolean v); Editor putFloat(String k,float v); Editor putInt(String k,int v); Editor putString(String k,String v); boolean commit();}
+}''',
     'android/app/Activity.java': '''package android.app;
 public class Activity extends android.content.Context {
  public boolean finishing, destroyed;
  public boolean isFinishing(){return finishing;} public boolean isDestroyed(){return destroyed;}
 }''',
     'android/app/Application.java': '''package android.app;
-public class Application {
+public class Application extends android.content.Context {
  public java.io.File getFilesDir(){throw new UnsupportedOperationException("Files not exercised");}
  public java.io.File getExternalFilesDir(String type){return null;}
  public int checkSelfPermission(String permission){return 0;}
@@ -80,8 +85,9 @@ public class Log {
 }''',
     'android/util/AtomicFile.java': '''package android.util;
 public class AtomicFile {
+ public static String failName=""; public static int failWrites=0;
  private final java.io.File file; public AtomicFile(java.io.File file){this.file=file;}
- public java.io.FileOutputStream startWrite() throws java.io.IOException {return new java.io.FileOutputStream(file);}
+ public java.io.FileOutputStream startWrite() throws java.io.IOException {if(file.getName().equals(failName)&&failWrites>0){failWrites--;throw new java.io.IOException("injected write failure");}return new java.io.FileOutputStream(file);}
  public java.io.FileInputStream openRead() throws java.io.IOException {return new java.io.FileInputStream(file);}
  public void finishWrite(java.io.FileOutputStream out){try{out.close();}catch(java.io.IOException e){throw new RuntimeException(e);}} public void failWrite(java.io.FileOutputStream out){}
 }''',
@@ -115,6 +121,18 @@ public class NotificationManager {
     'dev/pgrazor/AccountProfiles.java': """package dev.pgrazor;
 public class AccountProfiles {
  public static void init(android.app.Application app){}
+ public static android.content.SharedPreferences preferences(android.content.Context context,String scope){return stores.computeIfAbsent(scope,k->new MemoryPrefs(k));}
+ private static final java.util.Map<String,MemoryPrefs> stores=new java.util.HashMap<>();
+ public static String failScope=""; public static int failures=0;
+ private static final class MemoryPrefs implements android.content.SharedPreferences,android.content.SharedPreferences.Editor {
+  private final String scope; MemoryPrefs(String scope){this.scope=scope;}
+  private final java.util.Map<String,Object> data=new java.util.HashMap<>();
+  public java.util.Map<String,?> getAll(){return new java.util.HashMap<>(data);} public Editor edit(){return this;}
+  public Editor remove(String k){data.remove(k);return this;} public Editor putBoolean(String k,boolean v){data.put(k,v);return this;}
+  public Editor putFloat(String k,float v){data.put(k,v);return this;} public Editor putInt(String k,int v){data.put(k,v);return this;}
+  public Editor putString(String k,String v){data.put(k,v);return this;}
+  public boolean commit(){if(scope.equals(failScope)&&failures>0){failures--;return false;}return true;}
+ }
  public static boolean allowed(){return true;}
  public static String authenticatedTrainerName(){return "";}
  public static java.io.File file(android.app.Application app,String name){return new java.io.File(app.getFilesDir(),name);}
@@ -174,10 +192,11 @@ public final class ResearchSettings {
     'dev/pgrazor/SessionStats.java': 'package dev.pgrazor; public final class SessionStats { static void publish(String detail){} }',
     'dev/pgrazor/ShinyScanner.java': '''package dev.pgrazor;
 public final class ShinyScanner {
+ public static int failReads=0;
  public static String config(){return "N3|1|0|700|2|8000|0|1|0|";}
  static void setTarget(boolean visible,double x,double y){}
  public static void publish(String detail){}
- public static void read(java.util.Properties p){}
+ public static void read(java.util.Properties p){if(p.containsKey("smartAttack") && failReads>0){failReads--;throw new IllegalStateException("injected partial reload");}}
  public static void write(java.util.Properties p){}
 }''',
     'dev/pgrazor/ShundoSniper.java': '''package dev.pgrazor;
@@ -252,14 +271,14 @@ class ControlJavaTests(unittest.TestCase):
                 source.write_text(text, encoding='utf-8')
                 sources.append(source)
             sources.extend(ROOT / 'src/dev/pgrazor' / name for name in (
-                'Control.java', 'QuickMenuVisibilityPolicy.java', 'PvpBattleMode.java', 'SharedBattleOptions.java', 'TrainerAliasPolicy.java', 'MapCatchStatus.java', 'MotionEngine.java', 'LocationState.java', 'GameRoutesController.java',
+                'Control.java', 'SettingsBackupStore.java', 'SettingsBackupRules.java', 'LiveFeedFilters.java', 'AutoRaidPreferences.java', 'QuickMenuVisibilityPolicy.java', 'PvpBattleMode.java', 'SharedBattleOptions.java', 'TrainerAliasPolicy.java', 'MapCatchStatus.java', 'MotionEngine.java', 'LocationState.java', 'GameRoutesController.java',
                 'CameraHeadingState.java', 'CameraSteering.java',
                 'BerryPriority.java', 'MapTapSequence.java', 'CooldownState.java',
                 'VgpController.java', 'CatchOutcomeController.java', 'SettingsWriter.java', 'SmartCatchPreferences.java', 'GymAutomationPreferences.java', 'BuddyEmotionPreferences.java', 'ResearchPreferences.java'))
             sources.extend([ROOT / 'test/ControlWildEventTest.java', ROOT / 'test/ControlEggInventoryTest.java', ROOT / 'test/ControlAdventureSyncTest.java', ROOT / 'test/ControlLogRetentionTest.java', ROOT / 'test/ControlQuickSummaryTest.java',ROOT / 'test/ControlQuickBallTest.java',
                             ROOT / 'test/ControlQuickBallOutcomeTest.java',ROOT / 'test/ControlSettingsTest.java',
                             ROOT / 'test/VgpControllerTest.java',ROOT / 'test/CooldownTest.java',ROOT / 'test/ControlCooldownTest.java',
-                            ROOT / 'test/ControlSettingsReloadTest.java',ROOT / 'test/ControlItemCatalogTest.java',ROOT / 'test/ControlIdleWalkingTest.java'])
+                            ROOT / 'test/ControlSettingsReloadTest.java', ROOT / 'test/SettingsBackupRoundTripTest.java',ROOT / 'test/ControlItemCatalogTest.java',ROOT / 'test/ControlIdleWalkingTest.java'])
             classes = work / 'classes'
             sdk = Path(os.environ.get('ANDROID_HOME') or os.environ.get('ANDROID_SDK_ROOT') or str(Path(os.environ.get('LOCALAPPDATA', str(Path.home()))) / 'Android/Sdk'))
             json_sources = sorted((sdk / 'sources').glob('android-*/org/json'), reverse=True)
@@ -311,9 +330,11 @@ class ControlJavaTests(unittest.TestCase):
             self.assertEqual(tested.returncode, 0, tested.stdout + tested.stderr)
             tested = subprocess.run([str(runtime), '-cp', str(classes), 'dev.pgrazor.ControlIdleWalkingTest'], capture_output=True, text=True, timeout=15)
             self.assertEqual(tested.returncode, 0, tested.stdout + tested.stderr)
-            for phase in ('save','load'):
+            for phase in ('save','load','load-off'):
                 tested=subprocess.run([str(runtime),'-cp',str(classes),'dev.pgrazor.ControlSettingsTest',phase,str(work)],capture_output=True,text=True,timeout=15)
                 self.assertEqual(tested.returncode,0,tested.stdout+tested.stderr)
+            tested = subprocess.run([str(runtime), '-cp', str(classes), 'dev.pgrazor.SettingsBackupRoundTripTest',str(work)], capture_output=True, text=True, timeout=15)
+            self.assertEqual(tested.returncode,0,tested.stdout+tested.stderr)
             tested = subprocess.run([str(runtime), '-cp', str(classes), 'dev.pgrazor.ControlSettingsReloadTest',str(work)],
                                     capture_output=True, text=True, timeout=15)
             self.assertEqual(tested.returncode, 0, tested.stdout + tested.stderr)

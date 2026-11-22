@@ -14,6 +14,20 @@ public class SettingsBackupRulesTest {
     }
     public static void main(String[] args)throws Exception{
         SettingsBackupRules.validate(valid());
+        for(String flag:new String[]{"true","false"}) for(int timing=0;timing<=2;timing++) {
+            JSONObject battle=valid(); battle.getJSONObject("settings").put("smartAttack",flag)
+                .put("smartShieldTiming",String.valueOf(timing)).put("smartFaintedSwapTiming",String.valueOf(timing));
+            SettingsBackupRules.validate(battle);
+        }
+        for(String[] bad:new String[][]{{"smartAttack","yes"},{"smartShieldTiming","3"},
+            {"smartFaintedSwapTiming","-1"},{"smartFaintedSwapTiming","3"}}) {
+            JSONObject battle=valid();battle.getJSONObject("settings").put(bad[0],bad[1]);rejects(battle);
+        }
+        java.util.Set<String> backupKeys=new java.util.HashSet<>(java.util.Arrays.asList(SettingsBackupRules.SETTINGS));
+        if(!backupKeys.containsAll(java.util.Arrays.asList("smartAttack","smartShieldTiming","smartFaintedSwapTiming")))
+            throw new AssertionError("Battle preferences omitted from backup");
+        JSONObject menu=valid();menu.getJSONObject("settings").put("quickMenuHidden","16383");SettingsBackupRules.validate(menu);
+        menu.getJSONObject("settings").put("quickMenuHidden","16384");rejects(menu);
         JSONObject display=valid();
         display.getJSONObject("settings").put("localTimeFormat","5").put("cooldownEmphasis","true");
         SettingsBackupRules.validate(display);

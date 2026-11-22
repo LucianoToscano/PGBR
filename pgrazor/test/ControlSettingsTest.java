@@ -8,6 +8,12 @@ public final class ControlSettingsTest {
         };
         java.lang.reflect.Method load=Control.class.getDeclaredMethod("loadSettings",android.app.Application.class);
         load.setAccessible(true); load.invoke(null,app);
+        if(args[0].equals("load-off")) {
+            if(Control.smartAttack() || Control.rocketOptions()!=5 || Control.battleOptions()!=981 ||
+               Control.smartShieldTiming()!=2 || Control.smartFaintedSwapTiming()!=0)
+                throw new AssertionError("Smart Attack OFF or independent preferences lost across cold start");
+            System.out.println("PASS: settings load-off"); return;
+        }
         Control.configureQuickBall(true); Control.configureQuickSummary(true); Control.configureCameraSteering(true);
         if(args[0].equals("save")) {
             Control.setGiftOptions(7);
@@ -18,7 +24,7 @@ public final class ControlSettingsTest {
             Control.setSmartShieldTiming(2); Control.setSmartFaintedSwapTiming(0);
             Control.setLocalTimeOverlay(true);
             Control.setVgpTapProtection(false);
-            Control.setRocketOptions(5);
+            Control.setRocketOptions(5); Control.setSmartAttack(true);
             Control.setTrainerPrivacyMode(1);
             Control.setItemCatalog("1|Poke Ball|150\n101|Potion|4");
             Control.saveItemRules(true,"1:100;101:0;","1:100;101:0;2:250;");
@@ -53,6 +59,16 @@ public final class ControlSettingsTest {
         if(!Control.localTimeOverlay())throw new AssertionError("Local clock not persisted across process restart");
         if(Control.vgpTapProtection())throw new AssertionError("VGP tap protection not persisted across cold start");
         if(Control.rocketOptions()!=5||Control.rocketAllowed())throw new AssertionError("Rocket persistence/readiness");
+        if(!Control.smartAttack())throw new AssertionError("Smart Attack ON not persisted");
+        int battleBefore=Control.battleOptions(), rocketBefore=Control.rocketOptions();
+        int actionsBefore=Control.pvpBattleOptions() & 7;
+        Control.setSmartAttack(false);
+        if(Control.smartAttack()||Control.battleOptions()!=battleBefore||Control.rocketOptions()!=rocketBefore||
+           (Control.pvpBattleOptions() & 7)!=actionsBefore||Control.smartShieldTiming()!=2||Control.smartFaintedSwapTiming()!=0)
+            throw new AssertionError("Smart Attack OFF changed independent preferences");
+        Control.setSmartAttack(true);
+        if(!Control.smartAttack()||Control.rocketOptions()!=rocketBefore||(Control.pvpBattleOptions() & 7)!=actionsBefore)
+            throw new AssertionError("Smart Attack ON changed action preferences");
         if(Control.trainerPrivacyMode()!=1||!"*****".equals(Control.visibleTrainerName("RealTrainer")))
             throw new AssertionError("Privacy mask was not restored or leaked original name");
         if(Control.itemAccessAllowed())throw new AssertionError("Item settings bypassed readiness");
@@ -81,6 +97,7 @@ public final class ControlSettingsTest {
                !"0".equals(saved.getProperty("smartFaintedSwapTiming")))
                 throw new AssertionError("Queued settings were not flushed to disk before exit");
         }
+        if(args[0].equals("load")) { Control.setSmartAttack(false); Control.flushSettings(5000); }
         System.out.println("PASS: settings "+args[0]);
     }
 }
