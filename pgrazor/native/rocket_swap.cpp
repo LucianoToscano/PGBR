@@ -35,7 +35,8 @@ std::atomic<Show> original{nullptr};
 void *prompt_list=nullptr,*prompt_is_open=nullptr,*button_field=nullptr,*swap_method=nullptr,*interactable=nullptr;
 void *fainted_field=nullptr,*active_field=nullptr,*active_self=nullptr;  // SwapButtonVNext overlays, GameObject.activeSelf
 uintptr_t pending=0;uint64_t pending_since=0,next_try=0;int presses=0;
-constexpr uint64_t kSettleMs=400,kRetryMs=1000,kGiveUpMs=8000;
+// Let the player make a manual pick before automatically selecting a replacement.
+constexpr uint64_t kSettleMs=2300,kRetryMs=1000,kGiveUpMs=8000;
 
 uint64_t clock_ms(){timespec t{};clock_gettime(CLOCK_BOOTTIME,&t);return uint64_t(t.tv_sec)*1000+t.tv_nsec/1000000;}
 void *exp(const char *name){std::string n="il2cpp_";n+=name;void *p=dlsym(boot.handle,n.c_str());require(p,name);return p;}
