@@ -944,3 +944,29 @@ Manter Quick Snipers I/II, Radar e fonte PGBR como conceitos separados; preserva
 
 
 **Validação CI #45023799721, primeiro teste:** quatro dos cinco checks passaram (host C++, NDK ARM64, website e governança). A suíte Windows falhou em **2 de 284 testes**, ambos documentais: `test_branding.test_main_readme` exigia o nome literal `PGBR-v0.00.36-LT.apk` no README; `test_lt036_release_contract.test_release_version_and_assets` interpretava UTF-8 das notas com encoding implícito Windows, causando falso negativo de “App não instalado”. O patch seguinte explicitou o nome **não publicado** no README e fixou `encoding='utf-8'` na leitura do contrato. **Novo CI e release precisam ser verificados; nenhum problema nativo foi apontado nos quatro jobs aprovados.**
+
+
+## 22/11/2026 — LT036 publicada: confirmação após CI e hashes reais
+
+Após [workflow #45024489012](https://github.com/LucianoToscano/PGBR/actions/runs/45024489012) concluído com `completed/success`, a [pré-release LT036](https://github.com/LucianoToscano/PGBR/releases/tag/v0.00.36-LT) foi confirmada na API GitHub:
+- [APK sem Root LT036](https://github.com/LucianoToscano/PGBR/releases/download/v0.00.36-LT/PGBR-v0.00.36-LT.apk): **188.822.851 bytes**, SHA-256 `453c5e47a00b022750150f3b9bcf6dc2c06032b285976de5b05d2ebc9c3d1ea3`.
+- [APK instalador Root LT036](https://github.com/LucianoToscano/PGBR/releases/download/v0.00.36-LT/PGBR-v0.00.36-LT-Root.apk): **8.348.366 bytes**, SHA-256 `a7ca62a91b4050accc8893fdaad22ec9e499a4405bdce98b1ada491d2d1a4e8a`.
+- [Módulo Zygisk LT036](https://github.com/LucianoToscano/PGBR/releases/download/v0.00.36-LT/PGBR-v0.00.36-LT-Root-module.zip): **8.264.501 bytes**, SHA-256 `a7568c523aee06f45a3059dfa230fe2d41ae6b60180c100df74887f6b0449d3f`.
+- [SHA256SUMS LT036](https://github.com/LucianoToscano/PGBR/releases/download/v0.00.36-LT/SHA256SUMS.txt), hash do arquivo `cddb0e3080276f135ec728f17420f121da080ec75d9da354b425450de9d26ffe`.
+
+Os hashes são os `digest` verificados dos anexos na API de Releases, e **não** validam instalação, funcionamento ou aceitação dos ataques. A LT036 permanece preservada.
+
+## 22/11/2026 — Especificação refinada LT037: Rocket como único motor em batalhas permitidas
+
+**Requisito exato do proprietário:** ativar e desativar automaticamente as três ações já disponíveis no motor Rocket (Ágil, Carregado, Shield) ao identificar **Recrutas/Arlo/Cliff/Sierra/Giovanni**, PvP contra jogadores, desafios privados entre amigos, treinadores NPC e treinamento. Não alterar comportamento de Max, reides ou encontros sem treinador; ginásios só se usassem o mesmo executor, caso contrário manter o seu motor. **Lista permitida, e modo desconhecido = desarmado.** Evitar alternâncias manuais por batalha. As preferências individuais 1/2/4 persistentes continuam sob controle do usuário; a autorização de execução é transitória por escopo.
+
+**Auditoria de código:** `pgrazor/native/rocket_combat.cpp` (motor Rocket, feature 21) executa ações Ágil, Carregado, Escudo, já reutilizado em PvP no hook `PGR_RC_OBS_PVP_SCOPE_ENTER`. `pgrazor/native/battles.cpp` (feature 19) tem executor **separado** para Reide/Ginásio/Max e esquivas; **recomendação: ginásios NÃO entram na allowlist Rocket**, porque seu motor próprio já existe e a batalha pode ser apenas contra Pokémon defensor, sem treinador. O modo Rocket original permanece sob `InvasionCombatState`; não é permitido falsificar tipo de oponente no jogo nem abrir hooks gerais.
+
+**Alteração própria LT037 em branch `feat/lt037-rocket-assist-allowlist-20261122`**, derivada da `main` após merge da LT036 (base `8715c5c584a048f60a606cc47885c08f75c06e78`):
+- Novo `pgrazor/native/battle_target_policy.h`: classificação explícita Rocket/PvP/Treinador NPC = permitido; Raid/Gym/Max/Wild/Unknown = negado. Teste independente `battle_target_policy_test.cpp` prova oito categorias, preferências desligadas, escopo inválido e lease vencida.
+- `pvp_scene.h` mantém Hub→Preparação→VNext para PvP e NPC interstitial→Preparação→VNext para treinamento, mas agora suporta também identificação **tipada** de PvP via `CombatDirectorV2`/`CombatTypeExtensions.IsPvPCombat` (`pvp_probe.inc`) para desafios diretos; candidato dura **15 s** e exige VNext real. Se essa classe/método não estiver validado na versão, não há liberação alternativa.
+- `combat_host.cpp` reutiliza o **mesmo** `g_rocket_combat`, sem modificar o motor Rocket original, usando máscara de ações e lease de **≤2.500 ms** vigentes; nega ou desarma imediatamente ao surgir escopo PvE tipado de `g_battles`, em resultado, fechamento de VNext (inclusive sem executor já armado), Rocket priorizado e parada. Sem classificador independente de PvE, a rota não Rocket também nega. Não há alteração da ABI nativa.
+- Telemetria `pvpExecutorReady`, `pvpAction` e eventos de scope recebem `mode=pvp` ou `mode=training`; os valores são **diagnóstico de chamada**, não confirmação de aceitação pelo servidor.
+- `Control.java` apresenta status distinto dos modos. Workflow e contratos dedicados `v0.00.37-LT`, preservando os anteriores; documentação [notas LT037](docs/releases/v0.00.37-LT.md), README e CHANGELOG aditivos.
+
+**Riscos/limites transparentes:** a função `IsPvPCombat` foi previamente validada estaticamente no código da versão alvo, mas não foi testemunhada no aparelho do usuário para todos os desafios entre amigos. O interstitial NPC é compartilhado com diálogos; sem preparação e VNext nunca ativar. Se alguma rota de NPC usa classes distintas, ficará desligada até evidência. Execução nativa `invoked=true` não prova que o jogo aceitou golpes, carregado, escudo ou causou dano. O segundo ataque por superefetividade permanece pendente. `device_tested=false`; produção do APK LT037, merge e QA somente após CI, e hashes reais apenas após release publicada. Não tocar no PokeSearch, PvPPokeGo ou em releases anteriores.
