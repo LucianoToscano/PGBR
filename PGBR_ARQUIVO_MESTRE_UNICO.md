@@ -1110,3 +1110,21 @@ O novo menu (Batalha Inteligente / Ataque Inteligente / Cura Inteligente), esper
 **Estado funcional e limitações mantidas:** escudo 0/1.500/3.000 ms/OFF e troca após nocaute VNext 400/2.000/6.000 ms/OFF; prioridade manual, persistência F2, 250 ms pós-escudo, 150 ms ágil, 500 ms Legacy / 600 ms VNext carregado, 1.000 ms retry KO, 8.000 ms timeout. A seleção estratégica de 2.300 ms continua preservada. `smartAttack` ainda é preferência sem associação nativa universal dos botões de golpes; tela branca do minijogo continua sem causa confirmada. **Aprovação de CI e build NÃO equivale à homologação física: `device_tested=false`**. Testar no Android os oito modos de configuração, cancelamento manual, PvP/treino com identificadores confirmados, Root/sem Root; preservar backup e releases anteriores.
 
 **Proteção contra recompilação histórica:** após publicar, a configuração da LT039 torna-se de manutenção manual `workflow_dispatch` apenas. Esta proteção é registrada em PR de recibo independente, sem reescrever a tag ou anexos da release.
+
+<!-- PGBR_POKESEARCH_WEBHOOK_PIPELINE_20261122 -->
+## 22/11/2026 — Integração documental e contrato de fonte PokeSearch/Webhooks (branch isolada)
+
+**Pedido:** aplicar pesquisa de spawns, APIs, webhooks e leitura PGSharp do chat sem perder as funcionalidades existentes. [Catálogo Drive](https://docs.google.com/document/d/12-I-rUfnQR0YL_mDExTJfx2zXgfxgB8-Bkp2tyuVPfI/edit), [PDF Ekoparty PGSharp 2021](https://drive.google.com/file/d/1nEf72fUU4hXS2V8alnuc4pv3unUdINV3/view). O PDF documenta Lua, JNI, Unity e localização histórica, não uma API global de coordenadas.
+
+**PGBR estado real nesta tarefa:** conferida `main` em `5087e7486e90f84167017b500cc8c3319e050825`, branch `docs/spawn-webhook-integration-contract-20261122`. O PGBR **já possui** `LiveFeedData.java`, `RocketMapFeedData.java`, `IFlowGoFeedClient.java`, `PokeListFeedData.java`, `FeedChooser.java`, Sniper 100 IV manual e UI PGSharp Free/Standard; o motor de escudo/troca inteligente pertence às releases e PRs anteriores (não refeito aqui). Não foi comprovada a obtenção global diretamente dos servidores Niantic/PGSharp nesta tarefa.
+
+**Entrega em branch:** `docs/PGBR_POKESEARCH_SPAWN_WEBHOOK_CONTRACT_20261122.md`, contrato para uso futuro do normalizador offline da branch PokeSearch `feat/authorized-spawn-webhook-normalizer-20261122`. O código de PokeSearch produz `pokemons[]` compatível com `RocketMapFeedData` e timestamps Unix milissegundos, após validação de sourceId, coordenadas, encounter_id, IV e despawn. A fonte precisa ser autenticada/hospedada por operador com permissão; não existe endpoint novo no PGBR, nem ingestão automática conectada, nem APK novo produzido nesta branch.
+
+**Segurança e evidência:** 13 verificações de lógica foram realizadas para o módulo PokeSearch em interpretador JS isolado; são preliminares, não equivalem à execução Node GitHub Actions nem a testes em Android. Webhook receiver, assinatura de mensagens, configuração de origem, cobertura e funcionamento real permanecem pendentes. Não copiar chaves, cookies ou dados privados de PGSharp, Moonani/iFlowGo/PokeXperience. Não inferir IV100/Shiny, nem teletransportar sem confirmação. `device_tested=false` para novo pipeline.
+
+**Governança:** documentação do PGBR separada da mudança de código do PokeSearch; branch independente, PR sem merge automático, preservar LT039, assinaturas e todo o histórico. Depois do PR, registrar os links e gates somente conforme a evidência concreta.
+
+
+<!-- PGBR_WEBHOOK_PR_RECEIPT_20261122 -->
+### Registro factual pós-abertura da PR documental #104
+[PR #104](https://github.com/LucianoToscano/PGBR/pull/104) aberta sobre a `main` em branch isolada `docs/spawn-webhook-integration-contract-20261122`. A [verificação de Mestre e limpeza segura read-only #45049062955](https://github.com/LucianoToscano/PGBR/actions/runs/45049062955) terminou **completed/success** no commit anterior à inclusão desta nota; checagem ampla de código #45049062947 ainda estava em andamento na consulta. **Nenhuma implementação de UI, network client, build, merge ou release PGBR** neste PR. Resultado Node de PokeSearch [#45049057792](https://github.com/LucianoToscano/PokeSearch/actions/runs/45049057792) completed/success cobre apenas a biblioteca e a CLI daquele repositório.
