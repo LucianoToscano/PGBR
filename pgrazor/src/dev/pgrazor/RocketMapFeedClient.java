@@ -44,7 +44,17 @@ final class RocketMapFeedClient {
 
     LiveFeedData.Snapshot fetch(String baseUrl, double lat, double lon,
                                double radiusKm, boolean raidsOnly) throws Exception {
+        return fetch(baseUrl,lat,lon,radiusKm,raidsOnly,null);
+    }
+
+    /** Optional per-session read token for an operator-controlled HTTPS gateway. */
+    LiveFeedData.Snapshot fetch(String baseUrl, double lat, double lon,
+                               double radiusKm, boolean raidsOnly, String readSecret) throws Exception {
         String base = validateBaseUrl(baseUrl);
+        if (readSecret != null && !readSecret.isEmpty()
+                && (readSecret.length() < 24 || readSecret.length() > 256
+                    || !readSecret.matches("[\\x21-\\x7E]+")))
+            throw new LiveFeedClient.FeedException("Token de leitura inválido.");
         if (!Double.isFinite(lat) || !Double.isFinite(lon) || Math.abs(lat) > 90
                 || Math.abs(lon) > 180)
             throw new LiveFeedClient.FeedException("Localização inválida.");
@@ -67,6 +77,8 @@ final class RocketMapFeedClient {
             conn.setReadTimeout(15000);
             conn.setRequestMethod("GET");
             conn.setRequestProperty("Accept","application/json");
+            if (readSecret != null && !readSecret.isEmpty())
+                conn.setRequestProperty("X-Feed-Secret", readSecret);
             conn.setRequestProperty("User-Agent","PGBR/0.00.26");
             int status = conn.getResponseCode();
             if (status == 401 || status == 403)
