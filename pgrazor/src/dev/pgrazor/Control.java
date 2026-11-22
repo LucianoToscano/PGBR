@@ -900,7 +900,7 @@ public final class Control {
     private static volatile boolean smartBattle;
     // One persistent preference for all battle modes; native selection is not yet wired.
     private static volatile boolean smartAttack;
-    // Independent options; indices 0..3 map to native F2 timing policy, including Disabled.
+    // Independent timing options: only indices 0..2 are selectable; legacy 3 migrates to default.
     // Defaults intentionally replace LT038's fixed 1.7 s shield / 2.3 s fainted choice.
     private static volatile int smartShieldTiming=1, smartFaintedSwapTiming=1;
     private static volatile String smartBattleStatus="";
@@ -909,12 +909,12 @@ public final class Control {
     public static int smartShieldTiming(){return smartShieldTiming;}
     public static int smartFaintedSwapTiming(){return smartFaintedSwapTiming;}
     public static void setSmartShieldTiming(int choice){
-        if(choice<0||choice>3||smartShieldTiming==choice)return;
+        if(choice<0||choice>2||smartShieldTiming==choice)return;
         smartShieldTiming=choice;saveSettings();
         event("smart-shield-timing",String.valueOf(choice));
     }
     public static void setSmartFaintedSwapTiming(int choice){
-        if(choice<0||choice>3||smartFaintedSwapTiming==choice)return;
+        if(choice<0||choice>2||smartFaintedSwapTiming==choice)return;
         smartFaintedSwapTiming=choice;saveSettings();
         event("smart-fainted-swap-timing",String.valueOf(choice));
     }
@@ -1655,8 +1655,8 @@ public final class Control {
                 smartAttack=Boolean.parseBoolean(p.getProperty("smartAttack",
                     String.valueOf((legacyPvP&PvpBattleMode.PREFER_SUPER)!=0)));
                 // Older installs have neither key; use the explicit new defaults.
-                smartShieldTiming=readBoundedVisual(p,"smartShieldTiming",1,0,3);
-                smartFaintedSwapTiming=readBoundedVisual(p,"smartFaintedSwapTiming",1,0,3);
+                smartShieldTiming=readBoundedVisual(p,"smartShieldTiming",1,0,2);
+                smartFaintedSwapTiming=readBoundedVisual(p,"smartFaintedSwapTiming",1,0,2);
                 pvpBattleOptions=PvpBattleMode.update(
                     pvpBattleOptions,PvpBattleMode.PREFER_SUPER,smartAttack);
                 pvpBattleReady=false;
