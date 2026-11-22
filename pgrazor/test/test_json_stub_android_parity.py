@@ -17,16 +17,19 @@ class JsonStubParityTest(unittest.TestCase):
     def read(self, name):
         return (STUB / name).read_text(encoding='utf-8')
 
-    def test_missing_key_returns_null_instead_of_throwing(self):
-        """Android: JSONObject.get() devolve null para chave ausente; getString lança."""
+    def test_missing_key_throws_like_android(self):
+        """Android: get() de chave ausente lança "No value for <chave>".
+
+        O espelho precisa ser RÍGIDO aqui: um get() permissivo esconde o defeito real de
+        SnipeFilters.fromJson, que chamava get("species") sem has() e quebrava todo slot salvo
+        só com {"enabled":true}. Quem quer tolerância usa has()/opt().
+        """
         body = self.read('JSONObject.java')
-        # Só o corpo conta: a assinatura declara `throws JSONException`, o comentário cita o bug.
         get_body = body.split('public Object get(String key)')[1]
         get_body = get_body.split('{', 1)[1].split('}', 1)[0]
         code = '\n'.join(line for line in get_body.splitlines()
                          if not line.strip().startswith('//'))
-        self.assertNotIn('throw', code)
-        self.assertIn('return values.get(key)', code)
+        self.assertIn('throw new JSONException("No value for " + key)', code)
 
     def test_parse_converts_nested_objects_and_arrays(self):
         """Android: o parse devolve instâncias de JSONObject/JSONArray, nunca Map/List crus."""

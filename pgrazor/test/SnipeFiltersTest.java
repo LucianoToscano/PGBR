@@ -151,6 +151,20 @@ public final class SnipeFiltersTest {
             check(failed, "editor must reject " + java.util.Arrays.toString(bad));
         }
 
+        // ------------------------------------------------- absorbed payloads without every key
+        // Regressão do defeito que derrubou o CI: org.json lança "No value for species" quando o
+        // slot salvo traz apenas {"enabled":true}. A leitura precisa absorver a ausência.
+        SnipeFilters enabledOnly = SnipeFilters.fromJson(json("{\"enabled\":true}"));
+        check(enabledOnly.enabled() && enabledOnly.species().isEmpty(),
+                "a stored slot with only \"enabled\" must open without touching species");
+        check(SnipeFilters.fromJson(json("{}")).species().isEmpty(),
+                "an empty stored payload must not throw");
+        SnipeFilters noLevelOrForm = SnipeFilters.fromJson(json(
+                "{\"enabled\":true,\"species\":[25],\"min_iv\":90}"));
+        check(!noLevelOrForm.levelBounded() && noLevelOrForm.form() == SnipeFilters.FORM_ANY
+                        && noLevelOrForm.species().size() == 1,
+                "missing level/form keys keep the broad default and keep the species list");
+
         // ---------------------------------------------------------------- stored payload guards
         reject(json("{\"enabled\":\"yes\"}"), "a non-boolean enabled flag");
         reject(json("{\"min_iv\":\"90\"}"), "a string IV bound");

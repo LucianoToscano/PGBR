@@ -131,7 +131,10 @@ public final class SnipeFilters {
         int form = intField(o, "form", FORM_ANY, FORM_ANY, 9999);
         int remaining = intField(o, "min_remaining_s", 0, 0, 24 * 60 * 60);
 
-        return new SnipeFilters(enabled, speciesField(o.get("species"), o.has("species")),
+        // org.json do Android LANÇA em get() de chave ausente ("No value for species").
+        // Sem o has() antes, um slot salvo só com {"enabled":true} quebrava a leitura inteira.
+        Object speciesValue = o.has("species") ? o.get("species") : null;
+        return new SnipeFilters(enabled, speciesField(speciesValue, o.has("species")),
                 minIv, maxIv, levelBounded, minLevel, maxLevel, form, remaining);
     }
 

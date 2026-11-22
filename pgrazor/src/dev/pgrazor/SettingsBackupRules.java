@@ -16,8 +16,10 @@ public final class SettingsBackupRules {
     public static void validate(JSONObject root)throws JSONException{
         String marker=root.optString("format");
         require("PGBR settings".equals(marker)||"PGRazor settings".equals(marker),"Unsupported settings backup");
-        require(number(root.get("version"),1,1,"backup version")==1,"Unsupported settings backup");
-        double speed=number(root.get("speedKmh"),0,30,"speed");require(speed==0||speed>=0.5,"Invalid speed");
+        // get() do org.json lança em chave ausente; um backup sem "version"/"speedKmh" precisa
+        // cair na mensagem de backup inválido, não estourar "No value for version".
+        require(number(root.has("version")?root.get("version"):null,1,1,"backup version")==1,"Unsupported settings backup");
+        double speed=number(root.has("speedKmh")?root.get("speedKmh"):null,0,30,"speed");require(speed==0||speed>=0.5,"Invalid speed");
         JSONObject settings=root.getJSONObject("settings");Set<String> allowed=new HashSet<>(Arrays.asList(SETTINGS));
         for(Iterator<String> it=settings.keys();it.hasNext();){String key=it.next();require(allowed.contains(key),"Unknown setting: "+key);Object raw=settings.get(key);require(raw instanceof String,"Invalid setting: "+key);String value=(String)raw;
             if(BOOLEANS.contains(key)){require(value.equals("true")||value.equals("false"),"Invalid "+key);continue;}

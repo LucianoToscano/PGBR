@@ -41,10 +41,12 @@ public class JSONObject {
      * precisa existir com a mesma assinatura em android.jar.
      */
     public Object get(String key) throws JSONException {
-        // Contrato do Android: chave ausente devolve null (NÃO lança). O app depende disso em
-        // SnipeFilters.fromJson(o.get("species"), o.has("species")) — lançar aqui quebrava o teste
-        // de filtros com "No value for species" no runner.
-        return values.get(key);
+        // Contrato do Android (comprovado pelo CI): chave ausente LANÇA "No value for <chave>".
+        // Quem precisa de tolerância usa has()/opt(). Um espelho permissivo aqui esconderia
+        // exatamente o defeito que o runner encontrou em SnipeFilters.
+        if (!values.containsKey(key)) throw new JSONException("No value for " + key);
+        Object value = values.get(key);
+        return value == NULL ? null : value;
     }
 
     /** put(String, float) do Android: guarda como Double, que é o que o JSON representa. */
