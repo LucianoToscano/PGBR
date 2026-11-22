@@ -50,3 +50,8 @@ Branch: `audit/20261122-no-downgrade-hardening`, derivada de `b355def7f6693b4d7f
 - Primeira verificação da PR #122: três jobs aprovados (C++ host, NDK ARM64, website); o job Windows falhou **por dois testes estáticos desatualizados** que exigiam expressões literais `provider == 2 ? 3 : 1` e `pokemon_id=`. Esses testes foram corrigidos para validar a nova política extraída, sem devolver o comportamento antigo nem relaxar filtros.
 - Durante a auditoria, a `main` avançou em alterações independentes do PvP até `0e1a42a9dbe94cd726b4f611cb25d1a67f395bcf`. Houve integração explícita da nova `main` na branch com dois pais Git, preservando as alterações PvP e o conteúdo mais recente do Arquivo Mestre (merge auditado `e424d6d85ba67172d69e0e3e54dc7e62602dfbd2`).
 - Repetir a verificação do GitHub Actions para a HEAD final da PR antes de mesclar; o resultado antigo de falha não comprova sucesso nem pode ser ignorado.
+
+## Consolidação após merge auditado
+
+- PR #122 foi mesclada em `main` em `97bc1d6c2ba25b7bbbe8e5953caea73da0a14db1` após checks finais de código e governança **success** nos Actions #45084122904 e #45084122863; não houve nova release por esse merge.
+- Branch candidata LT041 reconciliada com essa `main` preservando o conteúdo concorrente de PvP, o histórico do Mestre e o código corrigido no radar. O workflow de release permanece isolado e bloqueado até os checks completos desta PR. Existe também um experimento de QA LT041 distinto na PR #121, sem integração presumida; não sobrepor a ele nem confundir variantes.
