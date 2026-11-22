@@ -809,11 +809,18 @@ void hook_rk_ui_init(void *self,void *data,void *method){
 }
 void hook_shared_vn_observe(void *self,void *battle_state,void *method){
  auto orig=reinterpret_cast<Fn3Ptr>(load_original(HK_SHARED_VN_OBSERVE));FrameGuard frame;uint64_t tid=0;
- if(!observation_allowed(&tid)){orig(self,battle_state,method);return;}PinnedArgs pins{self,battle_state};
- if(pins.valid&&observation_allowed(&tid)){
-  if(rocket_gate(&tid))g_rocket_combat->observe(PGR_RC_OBS_CHARGE,pins.get(0),0,tid);
-  if(battle_gate(&tid))g_battles->observe(PGR_BATTLE_OBS_CHARGE,pins.get(0),0,tid);drain_leaf_events(tid);
- }orig(pins.get(0),pins.get(1),method);
+ if(!observation_allowed(&tid)){orig(self,battle_state,method);return;}
+ PinnedArgs pins{self,battle_state};
+ // Let the original update the charged-display state before either executor
+ // observes it. Previously the leaves captured pre-update (potentially stale)
+ // values, making a future effectiveness selector unsafe after foe changes.
+ // In particular, never publish a post-update observation if the original throws,
+ // pinning failed or the owner/scheduler gate was revoked during the callback.
+ orig(pins.get(0),pins.get(1),method);
+ if(!pins.valid||!observation_allowed(&tid))return;
+ if(rocket_gate(&tid))g_rocket_combat->observe(PGR_RC_OBS_CHARGE,pins.get(0),0,tid);
+ if(battle_gate(&tid))g_battles->observe(PGR_BATTLE_OBS_CHARGE,pins.get(0),0,tid);
+ drain_leaf_events(tid);
 }
 template<HookSlot SLOT,uint32_t KIND,int DESC> void hook_bt_2arg(void *self,void *method){
  auto orig=reinterpret_cast<Fn2Ptr>(load_original(SLOT));FrameGuard frame;uint64_t tid=0;
