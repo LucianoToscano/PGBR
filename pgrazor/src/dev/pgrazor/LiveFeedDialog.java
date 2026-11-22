@@ -951,8 +951,10 @@ public final class LiveFeedDialog {
                     // device, producing 0 matches even if the chosen species
                     // exists elsewhere in the provider's covered world.
                     if (selectedProvider == 2 && pokemonSearchMode
-                            && Double.isInfinite(radiusKm) && remoteDex < 1
-                            && queryAtRequest.trim().isEmpty()) {
+                            && Double.isInfinite(radiusKm) && remoteDex < 1) {
+                        // A single allowlist species is still a stronger
+                        // server-side constraint when a free-text query is
+                        // ambiguous or not found in the local name catalog.
                         remoteDex = f.singleAllowedSpecies();
                     }
                     LiveFeedData.Snapshot snap = selectedProvider == 1
