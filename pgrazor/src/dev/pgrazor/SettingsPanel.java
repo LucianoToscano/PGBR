@@ -52,6 +52,9 @@ final class SettingsPanel {
     private final java.util.List<MenuIcon> homeIcons=new java.util.ArrayList<>();
     private int current=-1, homeScroll;
     private EditText settingsSearch;
+    private TextView sessionStatsSummary;
+    private Button sessionStatsToggle;
+    private boolean sessionStats24h;
     private LinearLayout settingsSearchResults;
     private SettingsSearch settingsSearchIndex;
     private final java.util.List<View> settingsSearchTargets=new java.util.ArrayList<>();
@@ -337,6 +340,20 @@ final class SettingsPanel {
         // Home screen: the always-visible location status, then one icon row per category.
         home = new LinearLayout(activity); home.setOrientation(LinearLayout.VERTICAL); body.addView(home);
         coords = text("", 16, ink()); coords.setPadding(dp(4), dp(6), dp(4), dp(10)); home.addView(coords);
+        // Session stats from read-only lifetime counters; accounts are kept in separate local histories.
+        LinearLayout sessionCard=new LinearLayout(activity);sessionCard.setOrientation(LinearLayout.VERTICAL);
+        sessionCard.setPadding(dp(12),dp(10),dp(12),dp(10));
+        sessionCard.setBackground(rounded(Control.darkTheme()?Color.rgb(28,39,53):Color.rgb(232,241,247),12));
+        TextView statsLabel=text("Estatísticas de jogo · últimas 1 hora / 24 horas",14,accent());
+        sessionCard.addView(statsLabel);
+        sessionStatsSummary=text("Aguardando primeira leitura da sessão…",12,ink());
+        sessionStatsSummary.setPadding(0,dp(7),0,dp(7));sessionCard.addView(sessionStatsSummary);
+        sessionStatsToggle=button("Ver últimas 24 horas");sessionCard.addView(sessionStatsToggle);
+        sessionStatsToggle.setOnClickListener(v->{
+            sessionStats24h=!sessionStats24h;refreshSessionStats();
+        });
+        LinearLayout.LayoutParams cardParams=new LinearLayout.LayoutParams(-1,-2);
+        cardParams.bottomMargin=dp(10);home.addView(sessionCard,cardParams);
         settingsSearch = new EditText(activity);
         settingsSearch.setSingleLine(true);
         settingsSearch.setTextSize(15);
@@ -1349,8 +1366,29 @@ final class SettingsPanel {
         return out.length()==0?"All off":out.toString();
     }
     private void summary(int index,String value){TextView view=pageSummaries.get(index);if(!value.contentEquals(view.getText()))view.setText(dev.pgrazor.PtBr.tr(value));}
+    private void refreshSessionStats(){
+        if(sessionStatsSummary==null)return;
+        long window=sessionStats24h?SessionStatsHistory.DAY_MS:SessionStatsHistory.HOUR_MS;
+        SessionStatsHistory.Change changes=SessionStats.change(window);
+        sessionStatsToggle.setText(sessionStats24h?"Ver última hora":"Ver últimas 24 horas");
+        if(changes==null){
+            sessionStatsSummary.setText("Aguardando estatísticas do jogo…");
+            return;
+        }
+        java.util.Locale pt=new java.util.Locale("pt","BR");
+        sessionStatsSummary.setText(String.format(pt,
+            "XP +%,d · Poeira +%,d\nCapturas %,d · Encontros %,d\nPoképaradas %,d · Caminhada %.2f km · Ovos %,d",
+            Math.round(changes.get(SessionStatsHistory.XP)),
+            Math.round(changes.get(SessionStatsHistory.DUST)),
+            Math.round(changes.get(SessionStatsHistory.CAUGHT)),
+            Math.round(changes.get(SessionStatsHistory.SEEN)),
+            Math.round(changes.get(SessionStatsHistory.STOPS)),
+            changes.get(SessionStatsHistory.KM),
+            Math.round(changes.get(SessionStatsHistory.HATCHED))));
+    }
     private void refreshHome(){
         if(current>=0)return;
+        refreshSessionStats();
         summary(0,(Control.desiredEnabled()?"Spoofing on":"Spoofing off")+String.format(Locale.US," · %.1f km/h",Control.engine.speedKmh));
         summary(1,"Relógio local, tempo de espera e legendas do mapa");
         summary(2,active("Quick catch",Control.quickSummaryEnabled(),"Auto throw",Control.autoThrow(),"Auto ball",Control.autoBall(),"Curveball",Control.throwCurve(),"Always hit",Control.throwAlwaysHit(),"Berries",Control.encounterBerryEnabled()));
