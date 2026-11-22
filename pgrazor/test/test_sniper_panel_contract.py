@@ -178,6 +178,13 @@ class SniperPanelContractTest(unittest.TestCase):
         self.assertIn('search(false);', panel)
         self.assertIn('main.postDelayed(tick, TICK_MS);', panel)
 
+    def test_results_list_is_not_nested_in_scrollview(self):
+        panel = read('SniperPanel.java')
+        opening = panel.split('void open() {', 1)[1].split('private Button tab(', 1)[0]
+        self.assertIn('root.addView(list, new LinearLayout.LayoutParams(-1, 0, 1));', opening)
+        self.assertIn('.setView(root)', opening)
+        self.assertNotIn('.setView(new ScrollView(ui) {{ addView(root); }})', opening)
+
     def test_expired_rows_cannot_reappear_on_rerender(self):
         panel = read('SniperPanel.java')
         self.assertIn('if (spawn.expired(System.currentTimeMillis())) continue;', panel)
