@@ -6,7 +6,7 @@ export const links = {
   releasesCurrent:
     'https://github.com/LucianoToscano/PGBR/actions/workflows/pgbr-build-full-ptbr-candidate.yml',
   github: 'https://github.com/LucianoToscano/PGBR',
-  discord: 'https://github.com/jpitty03/PGRazor',
+  upstreamSource: 'https://github.com/jpitty03/PGRazor',
   kofi: 'https://github.com/LucianoToscano/PGBR/blob/main/THIRD_PARTY.md',
 };
 

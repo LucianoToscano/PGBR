@@ -15,7 +15,7 @@ export default function Footer({ onGuide = false }) {
             <a href={indexHref}>Feature guides</a>
             <a href={links.github}>GitHub</a>
             <a href={links.releasesLatest}>Releases</a>
-            <a href={links.discord}>Código de origem</a>
+            <a href={links.upstreamSource}>Código de origem</a>
             <a href={links.kofi}>Licenças</a>
             <a href={`${links.github}/blob/main/THIRD_PARTY.md`}>Credits</a>
           </nav>

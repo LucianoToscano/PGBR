@@ -1,5 +1,7 @@
 # Building PGBR
 
+> **Version warning (22/11/2026):** `pgrazor/VERSION` still defaults to `0.00.01-LT` for historical development builds. It is **not** the current LT032 candidate nor proof of a released APK. The release workflow must explicitly supply `PGRAZOR_VERSION`, and its output, certificate and SHA-256 must be verified before distribution. Never rename an APK to pretend it is another version. The preview APK is not a game package.
+
 Local builds read the Settings header version from `pgrazor/VERSION`. Release builds override it with `PGRAZOR_VERSION` from the workflow release tag. This is the PGBR version, independent of the base game version.
 
 For the separate Zygisk module and root installer APK, see [PGBR Root](ROOTED.md). Both products share the Java controls and native gameplay core.
@@ -9,6 +11,10 @@ For the separate Zygisk module and root installer APK, see [PGBR Root](ROOTED.md
 The APK packaging toolchain currently supports Windows. Install Python 3.12+, Node.js 22+, JDK 17+, and the Android SDK. The Python build scripts use the standard library; native compilation also requires Git, CMake 4.4.4 and Ninja 1.13.2.
 
 Default SDK packages are `platforms;android-36.1` and `build-tools;36.1.0`. CI uses API 36 / Build Tools 36.0.0. The gameplay core requires NDK `27.3.13750724`; the ART bridge requires NDK `29.0.14206865`. Install both: they serve different compiler requirements.
+
+## Device-free verification before building
+
+On a clean checkout, `python -B tools/check.py` requires JDK 17+, Node.js 22+, and a configured Android SDK with matching platform and **sources** (for the JVM tests that use `org/json`). The preflight now reports missing prerequisites clearly. `python -B tools/native_host_tests.py` separately runs an allowlisted pure-C++ host fixture with g++; this is not a substitute for NDK or device validation. Every PR targeting `main` runs the code gate on Windows with these toolchains. Full release packaging still requires the input game and private signing credentials; no workflow will invent them.
 
 ## Fresh checkout setup
 

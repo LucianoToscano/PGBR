@@ -26,17 +26,17 @@ export default function GetStarted() {
 
       <div className="cta">
         <a className="btn btn--primary" href={links.releasesLatest}>
-          Baixar a versão de teste
+          Ver compilações de teste
           <ArrowIcon />
         </a>
-        <a className="btn btn--ghost" href={links.discord}>
+        <a className="btn btn--ghost" href={links.upstreamSource}>
           Ver projeto de origem
         </a>
       </div>
 
       <p className="cta__release">
         <span className="cta__badge">Teste</span>
-        A compilação <a href={links.releasesCurrent}>PGBR-v0.00.01-LT</a> é experimental e inclui o instalador Root opcional.
+        Os artefatos de teste dependem de uma execução concluída e verificada; nenhuma versão instalável deve ser presumida pelo nome.
       </p>
 
       <div className="faq">
