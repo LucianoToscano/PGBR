@@ -51,3 +51,10 @@ O PGBR é um projeto experimental independente. O tempo de espera (*cooldown*) �
 ## Créditos e licença
 
 O PGBR é uma adaptação independente do código aberto do projeto original **[PGRazor](https://github.com/jpitty03/PGRazor)**, disponibilizado sob licença MIT. A atribuição ao autor e os avisos de licença de terceiros são preservados conforme os respectivos termos. Pokémon e Pokémon GO pertencem aos seus titulares. O PGBR não é afiliado à Niantic, à The Pokémon Company nem aos publicadores do jogo.
+
+
+### Verificação de código e origem do financiamento
+
+O [CI de código](.github/workflows/pgbr-codigo-ci.yml) executa verificações Python, Java, Node/bridge e fixtures C++ host/NDK. Esses checks não provam execução real de Pokémon GO: instalação, login, PvP, VGP, joystick e Root requerem testes físicos. Um PR verde não constitui release nem APK homologado.
+
+A entrada [`ko_fi: pgrazor`](.github/FUNDING.yml) pertence ao projeto upstream **PGRazor** e não representa arrecadação do PGBR. Créditos e licenças MIT são preservados.
