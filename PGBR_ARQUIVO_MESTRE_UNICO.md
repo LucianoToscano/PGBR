@@ -932,3 +932,12 @@ Manter Quick Snipers I/II, Radar e fonte PGBR como conceitos separados; preserva
 **Código e testes preparados:** `pgrazor/native/pvp_scene.h`, `pgrazor/native/pvp_scene_test.cpp`, `pgrazor/native/combat_host.cpp`, `pgrazor/src/dev/pgrazor/Control.java`, `pgrazor/src/dev/pgrazor/SettingsPanel.java`, `pgrazor/test/test_lt036_training_scope.py`. Preservados os três bits de preferências Rocket/PvP, anti-reentrância, leases, segurança em Rocket e as releases históricas. CI, merge, APK e assinatura **ainda não haviam sido verificados** no momento deste registro inicial.
 
 **Escopo e evidência:** esta correção não demonstra ataque aceito em Pokémon GO nem resolve o impedimento de assinatura para instalar sobre clientes existentes; precisa de testes físicos separados de ágil/carregado/escudo no treinador, desafios/GBL e diagnóstico de ADB. Sem cópia literal de funções PGSharp e sem second-charged supereficaz homologado. `device_tested=false`.
+
+
+### 22/11/2026 — Preparação da pré-release LT036 e preservação dos históricos
+
+**Origem:** fotos de “App não instalado” e do combate Lickilicky/Sneasel no treinamento; motivo documentado em [QA_LT036_TREINAMENTO_INSTALACAO.md](docs/QA_LT036_TREINAMENTO_INSTALACAO.md). A nova `0.00.36-LT` contém candidato explícito de treinamento validado por NPC → preparação → VNext, usando a bitmask fast/charged/shield já compartilhada com Rocket e PvP. A mudança **não** garante ativação de toda espécie de batalha nem corrige o conflito de certificados do mesmo packageId; telas isoladas de NPC/Mateo nunca devem atacar.
+
+**Documentação e QA:** `docs/releases/v0.00.36-LT.md`, `pgrazor/VERSION`, `.github/workflows/pgbr-lt036-release.yml`, `test_lt036_release_contract.py` e `test_lt036_training_scope.py`. Contratos de LT032/33/34/35 passam a tolerar LT036 sem apagar verificações históricas. O workflow LT035 publicado deixa de ter gatilhos automáticos por alteração de VERSION e de seu próprio YAML, conservando o despacho manual e **todos os assets antigos**. README/CHANGELOG atualizados de forma aditiva.
+
+**Evidência/pendências:** alterações em código ainda aguardam verificação CI, branch isolada `fix/lt036-training-shared-battle-20261122`, sem merge automático na main antes da conclusão. A futura tag LT036, hashes e APKs exigem prova real após publicação; **não informar links hipotéticos como downloads válidos**. Status `device_tested=false`, validação de ágil/carregado/escudo e diagnóstico ADB pendentes. Sem cópia de executáveis PGSharp, credenciais ou alterações de outros projetos.

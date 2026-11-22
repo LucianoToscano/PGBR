@@ -1,3 +1,9 @@
+## v0.00.36-LT — candidato QA: treinamento e diagnóstico de instalação (22/11/2026)
+- Candidato NPC de 45 s precisa de preparação e VNext antes de habilitar motor Rocket/PvP de fast/charged/shield.
+- Elimina falso positivo por interstitial isolado de Mateo; status `mode=training`, Rocket prioritário, sem mudança de ABI.
+- O instalador sem Root continua usando o mesmo packageId de Pokémon GO e assinatura PGBR: não pode atualizar sobre assinatura diferente.
+- Testes nativos/Java/Python e workflow LT036 separado; `device_tested=false`, sem comprovação de autoataques aceitos no jogo.
+
 ## v0.00.35-LT — pré-release QA publicada (22/11/2026)
 - Observador PvP validado tolera bootstrap tardio e ausência dos hooks opcionais de animação.
 - A sessão PvP reconhecida renova o prazo somente com callbacks VNext, conservando teto de 20 minutos e bloqueio de NPC/resultados.
