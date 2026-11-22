@@ -40,7 +40,7 @@ final class AccountsDialog {
                 editor.setOnShowListener(d -> editor.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(save -> {
                     String value = name.getText().toString().trim();
                     if (value.isEmpty()) {
-                        name.setError("Digite um nome para salvar.");
+                        name.setError(dev.pgrazor.PtBr.tr("Digite um nome para salvar."));
                         return;
                     }
                     AccountProfiles.rename(profile.id, value, () -> {

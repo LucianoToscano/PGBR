@@ -771,7 +771,7 @@ public final class Pad {
                     Control.event("coordinates-set", latitude + "," + longitude + " speed=" + check.speedKmh);
                     refresh(); dialog.dismiss(); return true;
                 });
-            } catch (IllegalArgumentException error) { speed.setError("Enter valid coordinates and speed (0.5–60)."); }
+            } catch (IllegalArgumentException error) { speed.setError(dev.pgrazor.PtBr.tr("Enter valid coordinates and speed (0.5–60).")); }
         })); dialog.show();styleTree(form);
     }
     /** "Hide overlay": confirm first, naming the three-finger tap that shows the overlays again. */

@@ -514,7 +514,7 @@ public final class WorldMapDialog {
                 public void setOpen(boolean open) { Control.setMapPoiOpen(open); }
                 public String read() { return Control.mapPoiSnapshot(); }
             }, this::invalidate);
-            setContentDescription("World map. Blue dot is your current location; red pin is the destination. Drag to pan, pinch to zoom, tap to select destination.");
+            setContentDescription(dev.pgrazor.PtBr.tr("World map. Blue dot is your current location; red pin is the destination. Drag to pan, pinch to zoom, tap to select destination."));
             // Use the activity hardware renderer; tile I/O stays on the worker.
             pinch=new ScaleGestureDetector(activity,new ScaleGestureDetector.SimpleOnScaleGestureListener(){
                 public boolean onScaleBegin(ScaleGestureDetector detector){multiTouch=true;return true;}
