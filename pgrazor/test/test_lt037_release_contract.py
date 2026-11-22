@@ -4,7 +4,7 @@ import unittest
 ROOT=Path(__file__).resolve().parents[2]
 class Lt037ReleaseContract(unittest.TestCase):
     def test_release_version_and_download_names(self):
-        self.assertIn((ROOT/"pgrazor/VERSION").read_text(encoding="utf-8").strip(),("0.00.37-LT","0.00.38-LT","0.00.39-LT"))
+        self.assertIn((ROOT/"pgrazor/VERSION").read_text(encoding="utf-8").strip(),("0.00.37-LT","0.00.38-LT","0.00.39-LT","0.00.40-LT"))
         w=(ROOT/".github/workflows/pgbr-lt037-release.yml").read_text(encoding="utf-8")
         for item in ("PGRAZOR_VERSION: v0.00.37-LT","--tag v0.00.37-LT",
                      "PGBR-v0.00.37-LT.apk","PGBR-v0.00.37-LT-Root.apk",
