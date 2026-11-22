@@ -598,3 +598,10 @@ O APK não Root de 188,8 MB permanece acessível no artifact GitHub e pelo downl
 ### Diagnóstico de CI do candidato LT033 e correção sem renomear APK
 
 A primeira compilação em [Actions #45005115642](https://github.com/LucianoToscano/PGBR/actions/runs/45005115642) e o primeiro CI de código em [#45005143789](https://github.com/LucianoToscano/PGBR/actions/runs/45005143789) identificaram **uma única falha de assertiva legada**, não um crash ou erro dos binários: `test_lt032_consolidation.py::test_latest_selector_and_ci_requirements` exigia `pgrazor/VERSION == 0.00.32-LT` mesmo após o incremento efetivo para LT033. O workflow histórico LT032 segue intacto. A verificação passa a aceitar explicitamente `0.00.32-LT` ou `0.00.33-LT`, com comprovação adicional de que a LT033 usa seu próprio workflow, etiqueta e gate de integridade. O gate Linux de políticas C++, NDK ARM64 e build do website passaram em #45005143789; a etapa Windows falhou **somente** pela assertiva, impedindo a publicação, como esperado. Novo CI e novos hashes são obrigatórios depois da correção. A confirmação posterior do merge/release permanece pendente.
+
+
+---
+
+## 22/11/2026 — Ajuste idempotente do arquivo upstream após merge LT033
+
+Depois do merge PR #68 em `main` @ `28a365fec1277033a1089cb394aecd6e9cc01115`, a execução de arquivo histórico upstream [#45006532786](https://github.com/LucianoToscano/PGBR/actions/runs/45006532786) falhou porque a release `archive-pgrazor-source-root-20261118` **já existia**. Isso não foi falha dos APKs LT033 e não autoriza substituir esse arquivo histórico. A branch `fix/lt033-archive-idempotency-20261122`, baseada exatamente nessa HEAD da main, acrescenta uma verificação de existência com retorno idempotente e leitura da quantidade de assets, preservando a release original. O workflow continuará limitado a alterações no próprio YAML (`on.push.paths`), sem disparar em atualizações comuns da documentação. **CI/merge desta correção pendentes até verificar o novo PR.**
