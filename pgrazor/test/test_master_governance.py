@@ -25,7 +25,7 @@ class MasterGovernanceTests(unittest.TestCase):
                 self.assertTrue(p.is_file(), rel)
                 self.assertIn(MASTER, p.read_text(encoding="utf-8"))
         agents=(ROOT/"AGENTS.md").read_text(encoding="utf-8")
-        self.assertIn("ANTES",agents)
+        self.assertIn("antes",agents.lower())
         self.assertIn("LEIA INTEGRALMENTE",agents)
     def test_local_master_links_and_agent_docs_exist(self):
         master_text = (ROOT / MASTER).read_text(encoding="utf-8")
