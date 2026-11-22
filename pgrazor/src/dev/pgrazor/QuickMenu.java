@@ -76,7 +76,7 @@ public final class QuickMenu {
         card.addView(row(MAP, "Hotspots", true, listener::onHotspots, 64));
         card.addView(row(TELEPORT, "Teleport", true, listener::onTeleport, 128));
         card.addView(row(ACCOUNTS, "Switch account", true, listener::onAccounts, 256));
-        card.addView(row(EVENTS, "Events", true, () -> dev.pgrazor.events.EventPanel.showSelector(activity, Control.darkTheme()), 512));
+        card.addView(row(EVENTS, "Events", true, () -> dev.pgrazor.events.EventPanel.showSelector(activity, Control.darkTheme()), QuickMenuVisibilityPolicy.EVENTS_BIT));
         card.addView(row(AUTOMATION, "Automation", true, () -> AutomationPanel.show(activity), 1024));
         card.addView(row(RESEARCH, "Research", true, () -> ResearchSettings.show(activity), 2048));
         card.addView(row(HIDE, "Hide overlay", true, listener::onHideOverlays, 4096));

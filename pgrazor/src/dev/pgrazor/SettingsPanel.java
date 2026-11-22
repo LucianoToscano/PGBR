@@ -1176,6 +1176,20 @@ final class SettingsPanel {
     private void buildEventsPage() {
         LinearLayout page = page(MenuIcon.EVENTS, "Events");
         caption(page, "Settings for limited-time events.");
+        Switch eventShortcut=switchRow(page,"Mostrar Eventos no Menu Pokébola");
+        eventShortcut.setChecked(Control.quickMenuVisible(QuickMenuVisibilityPolicy.EVENTS_BIT));
+        eventShortcut.setOnCheckedChangeListener((button,checked)->{
+            if(checked==Control.quickMenuVisible(QuickMenuVisibilityPolicy.EVENTS_BIT))return;
+            Control.setQuickMenuVisible(QuickMenuVisibilityPolicy.EVENTS_BIT,checked);
+            // Keep the Display > Quick menu entries checkbox synchronized, if built.
+            if(quickMenuChoices[9]!=null)quickMenuChoices[9].setChecked(checked);
+            host.refresh();
+        });
+        launch(page,"Abrir seletor de Eventos",()->
+            dev.pgrazor.events.EventPanel.showSelector(activity,Control.darkTheme()));
+        caption(page,"Halloween: coletor só ativa quando o runtime informa disponibilidade; "
+            +"GO Wild: Safari Balls apenas para Mighty, com VGP+ ou Auto Ball ativado. "
+            +"Rota Eternatus: exige GPX e confirmação real das pesquisas.");
         launch(page, "Halloween 2026", () -> dev.pgrazor.events.EventPanel.showHalloween(activity, Control.darkTheme()));
         launch(page, "Go Wild November 2026", () -> dev.pgrazor.events.EventPanel.showGoWild(activity, Control.darkTheme()));
         launch(page, "Evento Rota Doces Eternatus", () -> dev.pgrazor.events.EventPanel.showEternatus(activity, Control.darkTheme()));
