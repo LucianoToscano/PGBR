@@ -72,8 +72,9 @@ final class PvpChargedPreference {
         if(firstReady&&!secondReady)return FIRST;
         if(secondReady&&!firstReady)return SECOND;
         if(!firstReady)return WAIT; // Neither ready: normal quick-attack policy continues.
+        // HP and fast-energy gain are intentionally irrelevant to this tier-only choice.
         if(!typeValid(opponent1)||opponent2!=0&&!typeValid(opponent2)||
-           opponent1==opponent2||hpPercent<0||hpPercent>100)return UNKNOWN;
+           opponent1==opponent2)return UNKNOWN;
         final int tier1=effectivenessTier(effectiveness(first.type,opponent1,opponent2));
         final int tier2=effectivenessTier(effectiveness(second.type,opponent1,opponent2));
         if(tier1<0||tier2<0)return UNKNOWN;
