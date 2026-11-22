@@ -1,12 +1,12 @@
-name: PGBR LT032 - APK consolidado de teste (sem Root)
+name: PGBR LT032 - compilação APK completo QA (inclui port PGR 036)
 on:
   push:
-    branches: [integracao/lt032-recuperacao-20261121]
+    branches: [integracao/lt032-recuperacao-20261121, integracao/lt032-pgrazor-035-036-20261122]
   workflow_dispatch:
 permissions:
   contents: read
 concurrency:
-  group: pgbr-lt032-apk
+  group: pgbr-lt032-apk-${{ github.ref }}
   cancel-in-progress: true
 jobs:
   native-pvp-fixture:
@@ -140,7 +140,7 @@ jobs:
           Write-Host "SHA256: $((Get-FileHash $apk -Algorithm SHA256).Hash)"
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: PGBR-v0.00.32-LT-APK-completo-teste
+          name: PGBR-LT032-PGR036-APK-completo-QA
           path: |
             dist/pgbr-lt032/PGBR-v0.00.32-LT.apk
             dist/pgbr-lt032/build-info.json
