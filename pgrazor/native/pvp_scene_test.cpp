@@ -8,6 +8,16 @@ static void npc(PgrPvpScene &s,uint64_t t){s.gui("Niantic.Holoholo.Combat.NpcTra
 int main(){
     PgrPvpScene s;
     assert(!s.vnext(100));
+    s.verified_pvp_type(110);
+    assert(!s.allowlisted()); // typed PvP proof does not press attack
+    assert(s.vnext(111)&&s.pvp()&&s.allowlisted()); // actual VNext is required
+    s.reset();
+    s.verified_pvp_type(200);
+    assert(!s.vnext(15200)); // stale typed proof is not actionable
+    s.verified_pvp_type(40000);
+    npc(s,40001);
+    assert(!s.vnext(40002)); // NPC candidate supersedes typed proof
+    s.reset();
     prep(s,100);assert(!s.vnext(101)); // preparation without hub
     hub(s,100);assert(!s.vnext(101)); // hub without preparation
     prep(s,102);assert(s.vnext(103));assert(s.vnext(104));
@@ -46,5 +56,16 @@ int main(){
     prep(s,5000102);assert(s.vnext(5000103)); // separate encounter
     hub(s,std::numeric_limits<uint64_t>::max()-100);
     assert(!s.vnext(std::numeric_limits<uint64_t>::max()));
+    s.reset();
+    s.verified_pvp_type(7000000);
+    assert(s.vnext(7000001)); // private challenge typed + VNext
+    s.reset(); assert(!s.vnext(7000002)); // VNext close tears down mode
+    s.verified_pvp_type(8000000);
+    s.gui("Niantic.Holoholo.Combat.Resolution","CombatResolveGuiController",8000001);
+    assert(!s.vnext(8000002)); // results disarm before VNext
+    s.verified_pvp_type(9000000);
+    assert(s.vnext(9000001)&&s.pvp());
+    s.reset();
+    assert(!s.vnext(9000002)); // unknown battle type defaults off
     std::puts("PgrPvpSceneTest passed");
 }
