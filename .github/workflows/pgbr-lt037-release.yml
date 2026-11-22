@@ -1,14 +1,8 @@
 name: PGBR v0.00.37-LT - compilar e publicar pre-release QA
 # LT037 is a new immutable QA tag for allowlisted Rocket/PvP/training modes; no physical validation inferred.
+# The LT037 tag has been published and is immutable. Run manually only,
+# for forensic reproduction; never rebuild from documentation or VERSION bumps.
 on:
-  push:
-    branches: [main]
-    # Only an LT037 version/build definition change should trigger a
-    # new build. The immutable tag is never overwritten. Docs/maintenance-only merges must not restart a 75m build.
-    paths:
-      - 'pgrazor/VERSION'
-      - '.github/workflows/pgbr-lt037-release.yml'
-      - 'docs/releases/v0.00.37-LT.md'
   workflow_dispatch:
 permissions:
   contents: read
