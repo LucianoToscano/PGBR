@@ -18,10 +18,10 @@ int main(){
     npc(s,40001);
     assert(!s.vnext(40002)); // NPC candidate supersedes typed proof
     s.reset();
-    // Verified type is stronger proof than a partial PvP GUI sequence.
-    // A missing/reordered preparation GUI must not permanently block PvP.
+    // An independently validated type is stronger proof than a partial PvP
+    // GUI sequence, but it must not shorten the 10-minute Hub candidate lease.
     hub(s,100);s.verified_pvp_type(101);
-    assert(s.stage==PgrPvpScene::VERIFIED_PVP_ENTRY && !s.allowlisted());
+    assert(s.stage==PgrPvpScene::HUB && !s.allowlisted());
     assert(s.vnext(102)&&s.pvp()&&s.allowlisted());
     s.reset();
     hub(s,110);prep(s,111);s.verified_pvp_type(112);
@@ -29,11 +29,13 @@ int main(){
     assert(s.vnext(170112)&&s.pvp()&&s.allowlisted());
     s.reset();
     hub(s,113);s.verified_pvp_type(114);prep(s,115);
-    assert(s.stage==PgrPvpScene::PREPARATION); // late preparation extends typed proof
+    assert(s.stage==PgrPvpScene::PREPARATION); // normal preparation still applies
     assert(s.vnext(170115)&&s.pvp()&&s.allowlisted());
     s.reset();
     hub(s,120);s.verified_pvp_type(121);
     assert(!s.vnext(15121)); // typed proof still expires after 15 seconds
+    assert(s.stage==PgrPvpScene::HUB); // proof expiry does not erase Hub
+    prep(s,30000);assert(s.vnext(30001)&&s.pvp()); // normal route remains valid
     s.reset();
     npc(s,130);s.verified_pvp_type(131);
     assert(s.stage==PgrPvpScene::TRAINING_ENTRY); // never relabel NPC
