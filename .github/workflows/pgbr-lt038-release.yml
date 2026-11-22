@@ -1,12 +1,7 @@
 name: PGBR v0.00.38-LT - compilar e publicar pre-release QA
-# New LT038 QA candidate packages the merged smart menus and manual choice grace,
-# retaining the LT037 battle executor and its stable charged-attack timing.
-# Only the new VERSION change triggers a build. Freeze this workflow after publication.
+# LT038 QA tag is published and immutable: never automatically rebuild its assets.
+# Manual dispatch remains for forensic reproduction; existing release is not overwritten.
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'pgrazor/VERSION'
   workflow_dispatch:
 permissions:
   contents: read

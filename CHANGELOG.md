@@ -1,9 +1,11 @@
-## v0.00.38-LT — candidato QA: menu único, atrasos manuais e priorização ainda não conectada (22/11/2026)
+## v0.00.38-LT — pré-release QA publicada: menu único, atrasos manuais e priorização ainda não conectada (22/11/2026)
 - Batalha Inteligente → Ataque Inteligente → Cura Inteligente, com apenas uma preferência persistente.
 - Espera de 2,3 segundos para troca manual e 1,7 segundo para escudo, sem adiar ataque carregado.
 - Motor Ágil/Carregado/Escudo LT037 preservado; ao usuário já funcionou nesse build anterior.
 - **Ainda pendente**: a escolha do carregado Super eficaz > Neutro > Pouco eficaz no botão real; mesmo sendo política Java testada, não há adaptador nativo válido. Tela branca do minijogo segue sob auditoria, sem risco introduzido pela alteração.
 - QA/CI e publicação pendentes; `device_tested=false` para menus e timers desta revisão.
+
+- [LT038 publicada](https://github.com/LucianoToscano/PGBR/releases/tag/v0.00.38-LT) em 2026-11-22T15:46:48Z; CI [#45039119340](https://github.com/LucianoToscano/PGBR/actions/runs/45039119340) `completed/success`. Artefatos sem Root, Root e Zygisk com digests registrados no Mestre; **não** houve homologação física dos recursos LT038.
 
 ## v0.00.37-LT — pré-release QA publicada: Rocket compartilhado por allowlist (22/11/2026)
 - O mesmo motor Rocket de ágil, carregado e escudo é autorizado automaticamente em Rocket, PvP tipado/desafios privados confirmados e treinamento/NPC reconhecido, mantendo as preferências do usuário.
