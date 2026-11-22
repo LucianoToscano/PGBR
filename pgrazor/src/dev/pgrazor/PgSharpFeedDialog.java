@@ -148,7 +148,11 @@ public final class PgSharpFeedDialog {
                         char[] chars = new char[entered.length()];
                         for (int i = 0; i < chars.length; i++) chars[i] = entered.charAt(i);
                         keyInput.setText("");
-                        worker.execute(() -> {
+                        if (closed) {
+                            Arrays.fill(chars, '\0');
+                            return;
+                        }
+                        try { worker.execute(() -> {
                             boolean saved = false;
                             try { vault.save(chars); saved = true; }
                             catch (IOException e) { /* no key content in exception/report */ }
@@ -161,7 +165,10 @@ public final class PgSharpFeedDialog {
                                         ? "Key protegida localmente; ainda não autenticada."
                                         : "Não foi possível guardar a key.", Toast.LENGTH_SHORT).show();
                             });
-                        });
+                        }); }
+                        catch (java.util.concurrent.RejectedExecutionException ignore) {
+                            Arrays.fill(chars, '\0');
+                        }
                     }).create();
             DialogLifecycle.bind(activity, prompt, () -> keyInput.setText(""));
             prompt.setOnShowListener(d -> {
@@ -179,7 +186,9 @@ public final class PgSharpFeedDialog {
                     .setMessage("Apaga apenas a key opcional salva no PGBR. "
                             + "Não afeta sua licença nem sua conta oficial do PGSharp.")
                     .setNegativeButton("Cancelar", null)
-                    .setPositiveButton("Apagar", (d, which) -> worker.execute(() -> {
+                    .setPositiveButton("Apagar", (d, which) -> {
+                        if (closed) return;
+                        try { worker.execute(() -> {
                         boolean removed = false;
                         try { vault.remove(); removed = true; }
                         catch (IOException e) { /* no credential information */ }
@@ -191,7 +200,8 @@ public final class PgSharpFeedDialog {
                                     : "Não foi possível apagar a key local.",
                                     Toast.LENGTH_SHORT).show();
                         });
-                    })).show();
+                        }); } catch (java.util.concurrent.RejectedExecutionException ignore) { }
+                    }).show();
         }
 
         private void close() {
