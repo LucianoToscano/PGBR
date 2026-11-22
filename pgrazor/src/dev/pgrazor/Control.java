@@ -1935,6 +1935,17 @@ public final class Control {
                 }else if(b.has("pvpAction")){
                     String mode="training".equals(b.optString("mode","pvp"))?"Treinamento":"PvP";
                     pvpBattleStatus=mode+" VNext: comando "+b.optString("pvpAction")+" invocado (sem confirmação de acerto).";
+                }else if(b.has("pvpScene")){
+                    String phase=b.optString("pvpScene","candidate");
+                    pvpBattleStatus="Assistente: tela "+phase+" reconhecida; aguardando escopo VNext validado.";
+                }else if(b.has("pvpCandidateDenied")){
+                    pvpBattleReady=false;
+                    pvpBattleStatus="Assistente PvP/Treino: bloqueado por "+b.optString("pvpCandidateDenied","motivo não informado");
+                }else if(b.has("pvpTypeProbeReady")){
+                    if(!b.optBoolean("pvpTypeProbeReady",false))
+                        pvpBattleStatus="PvP: identificador tipado indisponível nesta versão; necessário fluxo Hub + Preparação.";
+                }else if(b.optBoolean("pvpObserved",false)){
+                    pvpBattleStatus="PvP reconhecido por tipo validado; aguardando ativação VNext.";
                 }
             }catch(Exception ignored){}
         }
