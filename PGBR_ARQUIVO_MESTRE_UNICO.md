@@ -256,3 +256,46 @@ Conversa forneceu `SpawnFeedKit.kt`, pesquisa HTML, `pesquisa-pokemon-go-android
 No kit v2, **37 verificações Kotlin/JVM** foram executadas e aprovadas no ambiente da conversa em 22/11/2026 (`bash testar.sh`); isso verifica somente o núcleo neutro, **não** Room, Compose, interface, backend, fonte live, Gradle, APK, instalação física nem compatibilidade com PGSharp. O kit anterior tinha fluxo simulado e foi corrigido quanto à validação de coordenadas, XML GPX, duplicatas e distinção temporal. `despawnsAt=null` significa desconhecido; `isFresh` não pode considerar um registro eternamente ativo por esse motivo.
 
 **Pendências antes de qualquer alteração funcional:** inventariar branch candidata LT032 e integrações de feed existentes; verificar contratos, permissões e direitos de fontes; escolher fonte realmente disponível; implementar adaptador em componente separado; validar filtros em testes repetíveis e no Android; inspecionar colisões com PRs abertas; abrir PR própria sem apagar nem redefinir versões. **Nenhum APK foi gerado nesta ação documental.**
+
+
+<!-- REGISTRO-DRIVE-20261122 -->
+## 22/11/2026 — Registro transversal da organização do Google Drive e biblioteca Pokémon GO
+
+> **Natureza:** histórico documental das operações realizadas na conversa "Banco de Dados Pokemon Go", verificado por listagens e metadados do Google Drive. **Não é alteração de código, integração de recursos, teste de APK ou homologação.** Mantêm-se integralmente os registros anteriores; divergências entre snapshots devem ser resolvidas consultando GitHub/Drive atuais, não sobrescrevendo o histórico.
+
+### Estrutura central e migração de pastas
+
+Pasta-pai: [Pokemon Go, em Projetos](https://drive.google.com/drive/folders/180wu9mqDYttMwYFP3XxXEUmOShLyvTJv). Foram realocadas as seis pastas de origem dentro dessa pasta-pai; depois a raiz foi consolidada e verificada com **exatamente cinco projetos**: [PGBR](https://drive.google.com/drive/folders/1RJ2NuBv-tnEDf9Pcxgn1I7-9CTdPGAHX), [PokeSearch](https://drive.google.com/drive/folders/1pHnwNFYlDxxt9g5PtdYWWFAylBkvVyRU), [PvPPokeGo](https://drive.google.com/drive/folders/1ybogVRRnaOe0KtWjlovxS56bJOi_JewI), [PGSharp](https://drive.google.com/drive/folders/1WAEmEpZmvUw9dDiapNcygtmZQq6XIB_j) e [Banco de Dados Pokemon Go](https://drive.google.com/drive/folders/1TPgVIGAWkY2Ez1VS3bHAitv9Y_NpczbK).
+
+As pastas legadas **PGSharpLOT**, **PgSharp Publico**, **PokeGoBR** e **PokeLOT** deixaram de existir como áreas paralelas; os conteúdos identificados foram redistribuídos antes de excluir os contêineres vazios. Material legado de PokeGoBR foi incorporado à área PGBR; PvPPokeGo e PGSharp foram retirados de PokeLOT; builds PGBRLOT que estavam no PokeSearch foram para PGBR. Arquivos de terceiros, dossiês, referências e arquivos soltos identificados foram movidos às áreas correspondentes. Essas mudanças no Drive não significam merge entre repositórios GitHub nem validam novas versões.
+
+### Biblioteca única de imagens, dados, referências e APKs
+
+O [Banco de Dados Pokemon Go](https://drive.google.com/drive/folders/1TPgVIGAWkY2Ez1VS3bHAitv9Y_NpczbK) permaneceu a referência compartilhada, organizada em catálogos; sprites/imagens/sons/modelos; dados, rankings e inventários; mapas/radar/eventos; APKs de referência; links/guias/ferramentas; arquivo ZIP original; backups e históricos; e quarentena de duplicatas.
+
+[Acervo visual](https://drive.google.com/drive/folders/1MnVVAsDOvam1laU6Ahv-whIPpBF0gz68): 01 Pokémon completos (normal, Shiny, formas e trajes); 02 recortes/partes/sprite sheets; 03 ícones e símbolos; 04 itens/acessórios/roupas; 05 efeitos/animações; 06 layouts/menus/interface; 07 fundos/cenários/telas; 08 modelos 3D; 09 sons/áudio; 10 eventos/banners/figurinhas; 11 avatares/personagens; 90 acervos de origem e materiais técnicos. **Shiny e formas** pertencem ao acervo de Pokémon, e os recortes de olhos/peças, ícones de interface e itens permanecem separados por finalidade. Acervos de origens distintas são preservados sem mesclar arbitrariamente arquivos de mesmo nome.
+
+Os [catálogos](https://drive.google.com/drive/folders/1rH8aNhTP6HFy4VevrXlkGBPT75w5qXdl) foram divididos em manifestos/catálogos, inventários/índices, auditorias/validações e guias de aproveitamento. Há [quarentena separada para duplicatas](https://drive.google.com/drive/folders/1Z-DQuYIhsu-kgBg8nEXPJKEk8jumPUuM), inclusive itens apenas suspeitos de repetição: **não apagar por igualdade de nomes nem por aparência**. O ZIP original foi preservado. Pacotes ZIP não foram todos extraídos/classificados individualmente.
+
+No [acervo de APKs](https://drive.google.com/drive/folders/1ghacTFCc7LpRnvP9GqmcjBpfN9joAobt), a pasta de ferramentas externas foi verificada com **74 itens** distribuídos em 64 instaladores/pacotes, 6 arquivos descompilados, 2 projetos externos e 2 bancos de configuração; o acervo PokeSearch de releases tem área separada. São **referências**, não código oficialmente licenciado ou APK funcional verificado apenas por estar armazenado.
+
+### Privacidade, integridade e tarefas pendentes
+
+**Permissões constatadas durante a organização:** a biblioteca Banco de Dados Pokemon Go permite leitura por link; a pasta PokeSearch tinha compartilhamento com permissão de edição por link (situação que exige revisão); PGBR, PvPPokeGo e PGSharp são pastas privadas. **Não transportar chaves, PGSData/PGSStats pessoais, configurações de conta, capturas privadas ou APKs internos à biblioteca pública sem rever permissões e classificar cada item.** Não expor links de material privado ou secretos em repositórios públicos. O backup marcado como privado do PokeSearch permaneceu separado.
+
+Movimentos de arquivos do Drive **não atualizam automaticamente** caminhos em builds, GitHub Actions, scripts, Gradle, referências em documentos ou permissões herdadas. Verificar os consumidores antes de corrigir caminhos. Não declarar conclusão total da consolidação privada, equivalência de conteúdo por hash, compatibilidade dos APKs, autorização de uso de código de terceiros ou funcionamento de automação sem auditoria técnica. Os arquivos originais de código, histórico, versões, backups e licenças devem ser preservados.
+
+### Protocolo global — desenvolvimento paralelo sem perdas
+
+1. Ler integralmente o mestre canônico e sua documentação vinculada, depois conferir HEAD, PRs e estado atualizado do repositório oficial.
+2. Nunca editar a partir de cópia antiga nem sobrescrever mudanças realizadas em outros chats.
+3. Usar **branch independente por tarefa**, registrar commit-base/arquivos afetados/mudanças/testes e preparar Pull Request, **sem publicar diretamente na `main`**.
+4. Preservar funcionalidades, arquivos de referência, assets, backups, histórico e direitos de terceiros; enriquecer o conteúdo, nunca reduzi-lo.
+5. Distinguir **pedido, documentação, arquivo presente, implementação, teste local, CI, teste em aparelho e release publicada**. Documentar limitações e pendências sem promover intenção a fato.
+
+### Registro específico — PGBR
+
+Estrutura Drive verificada: `00_Arquivo_Mestre/`, `01_APKs_QA/`, `02_Codigo_Fonte/`, `03_Relatorios/`, `04_Builds_e_Modulos_PGBR/` e `99_Privado_Restrito/`. O arquivo mestre e pacotes de fontes do antigo PokeGoBR foram preservados; builds e módulos PGBR que estavam indevidamente em PokeSearch foram realocados. Materiais de assinatura/inputs privados ficaram segregados. Nenhuma chave ou credencial é reproduzida neste documento.
+
+A biblioteca geral contém recursos gráficos e APKs **de referência**, mas os arquivos de produção do PGBR não foram massivamente transferidos para local de leitura pública. Este registro **não prova** revisão de código, restauração da VGP, validação de teleporte, escudos/PvP, funcionamento de scanner, nem build Android. Continuam obrigatórios o próprio Arquivo Mestre Único, o inventário de manutenção, a verificação da branch candidata e das PRs paralelas antes de qualquer modificação funcional.
+
