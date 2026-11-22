@@ -36,7 +36,7 @@ public final class HotspotsDialog {
             long now=System.currentTimeMillis();
             for(int j=0;j<labels.size();j++){
                 Hotspots.Spot spot=Hotspots.ALL.get(j);
-                labels.get(j).setText(spot.name+"\\n"+spot.city+", "+spot.country+"\\n"+spot.local(now,hours24));
+                labels.get(j).setText(spot.name+"\n"+spot.city+", "+spot.country+"\n"+spot.local(now,hours24));
             }
             if(dialog.isShowing())root.postDelayed(tick[0],30000L);
         };
