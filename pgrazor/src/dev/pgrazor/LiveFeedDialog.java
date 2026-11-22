@@ -428,6 +428,27 @@ public final class LiveFeedDialog {
                 if (raidSearchMode) openRaidFilters();
                 else openFilters();
             });
+            if (pokemonSearchMode) {
+                // Visible recovery action for stale incompatible filter presets.
+                // Does not bypass 401/403 or provider-imposed rate limits.
+                Button clear = button("Limpar filtros e buscar novamente");
+                root.addView(clear, new LinearLayout.LayoutParams(-1, dp(42)));
+                clear.setOnClickListener(v -> {
+                    filters = new LiveFeedFilters();
+                    pokemonQuery = "";
+                    prefs.edit().putString("pokemon_query_v1", "").apply();
+                    saveFilters();
+                    generation++;
+                    client.cancel(); pokeList.cancel(); iFlowGo.cancel(); rocketMap.cancel();
+                    fetchInFlight = false;
+                    entries.clear(); visible.clear(); distCache.clear();
+                    lastUpdated = 0; lastError = null;
+                    main.removeCallbacks(deferredFetch);
+                    // Keep provider refusals/backoffs intact. Render resets
+                    // the visible search field to the blank query.
+                    render();
+                });
+            }
 
             {
                 TextView around = label("Around current location", 13);
@@ -523,6 +544,19 @@ public final class LiveFeedDialog {
                     public void onTextChanged(CharSequence value, int start, int before, int count) {
                         pokemonQuery = value.toString().trim();
                         prefs.edit().putString("pokemon_query_v1", pokemonQuery).apply();
+                        // Global iFlowGo returns only page 1. Local text filtering
+                        // cannot find a species absent from that page; request
+                        // one bounded, server-side species page instead.
+                        if (provider == 2 && Double.isInfinite(RADII[radiusIndex])
+                                && !iFlowGoAccessDenied) {
+                            generation++;
+                            iFlowGo.cancel();
+                            fetchInFlight = false;
+                            main.removeCallbacks(deferredFetch);
+                            entries.clear(); visible.clear(); distCache.clear();
+                            lastUpdated = 0;
+                            main.postDelayed(deferredFetch, 650);
+                        }
                         rebuildVisible();
                         adapter.notifyDataSetChanged();
                         updateStatus();
@@ -909,6 +943,15 @@ public final class LiveFeedDialog {
                     // merely because the catalog was still loading on the UI.
                     int remoteDex = selectedProvider == 2 && selectedDex < 1
                             ? sourceDexFilter(queryAtRequest) : selectedDex;
+                    // The Filters modal has a separate species picker.
+                    // Previously it filtered just the FIRST global page on
+                    // device, producing 0 matches even if the chosen species
+                    // exists elsewhere in the provider's covered world.
+                    if (selectedProvider == 2 && pokemonSearchMode
+                            && Double.isInfinite(radiusKm) && remoteDex < 1
+                            && queryAtRequest.trim().isEmpty()) {
+                        remoteDex = f.singleAllowedSpecies();
+                    }
                     LiveFeedData.Snapshot snap = selectedProvider == 1
                             ? pokeList.fetch(lat, lon, radiusKm, selectedDex)
                             : selectedProvider == 2
@@ -1057,8 +1100,9 @@ public final class LiveFeedDialog {
                 if (visible.isEmpty()) {
                     sb.append('\n');
                     if (entries.isEmpty()) {
-                        sb.append("A fonte respondeu, mas não enviou aparições nesta área. ")
-                          .append("Confira cobertura, raio e autenticação da fonte.");
+                        sb.append("A fonte respondeu com 0 aparições. ")
+                          .append("Confira cobertura/raio ou selecione outra fonte autorizada. ")
+                          .append("O filtro não consegue criar registros ausentes.");
                     } else {
                         sb.append("A fonte enviou registros, mas nenhum passou nos filtros ")
                           .append("locais de categoria, espécie, IV, distância ou expiração. ")
