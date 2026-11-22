@@ -1,0 +1,44 @@
+name: PGBR - Exportar assets originais LT032 para biblioteca
+on:
+  push:
+    branches:
+      - artefatos/pgbr-menu-spg-joystick-originais-lt032-20261122
+    paths:
+      - .github/workflows/pgbr-export-assets-originals.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  package-assets:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout do snapshot sem modificar assets
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Conferir quantidade, formatos e hashes no manifesto
+        shell: bash
+        run: |
+          test -f PGBR_ORIGINAIS_LT032/MANIFESTO_SHA_ORIGEM.json
+          python3 - <<'PY'
+          from pathlib import Path
+          import json,subprocess
+          root=Path("PGBR_ORIGINAIS_LT032")
+          manifest=json.loads((root/"MANIFESTO_SHA_ORIGEM.json").read_text())
+          for f in manifest["files"]:
+              p=Path(f["arquivo_zip"])
+              if not p.is_file():
+                  raise SystemExit(f"Faltando: {p}")
+              actual=subprocess.check_output(["git","hash-object",str(p)],text=True).strip()
+              if actual!=f["git_blob_sha"]:
+                  raise SystemExit(f"Hash incorreta: {p}")
+          print("Validado:",len(manifest["files"]),"blobs originais")
+          PY
+      - name: Publicar arquivos originais do PGBR LT032
+        uses: actions/upload-artifact@v4
+        with:
+          name: PGBR_LT032_ORIGINAIS_MENU_POKEBOLA_JOYSTICK_FX
+          path: PGBR_ORIGINAIS_LT032/
+          compression-level: 6
+          retention-days: 14
+          if-no-files-found: error
