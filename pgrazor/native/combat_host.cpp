@@ -688,7 +688,13 @@ void pvp_vnext_open(void *ui,uint64_t tid) {
       : R"({"pvpExecutorReady":true,"mode":"pvp","scope":"CombatVNextGuiController","experimental":true})");
 }
 void pvp_vnext_close(void *ui,uint64_t tid) {
-  if(!g_pvp_ui_root||!pvp_gate(&tid))return;
+  if(!pvp_gate(&tid))return;
+  if(!g_pvp_ui_root){
+    // A valid scene may exist with all action toggles off. Its VNext close
+    // must still revoke the candidate before a later unrelated battle.
+    if(g_pvp_scene.stage==PgrPvpScene::COMBAT)g_pvp_scene.reset();
+    return;
+  }
   auto target=reinterpret_cast<void*(*)(uintptr_t)>(g_cfg.gchandle_get_target);
   if(target(g_pvp_ui_root)==ui){
     // A later VNext controller must be reclassified; do not inherit this
