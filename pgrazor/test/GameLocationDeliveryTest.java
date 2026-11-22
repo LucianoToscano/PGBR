@@ -97,6 +97,7 @@ public final class GameLocationDeliveryTest {
         manager.delivered.clear();
         manager.deliveredProvider.clear();
         NianticLocationProvider.ProviderListener proxy = provider.getListener();
+        int eventsBeforeFault = Control.events.size();
 
         Control.lat = Double.NaN;
         proxy.onProviderLocation(new Location("gps"));
@@ -133,7 +134,8 @@ public final class GameLocationDeliveryTest {
         proxy.onProviderLocation(new Location("gps"));
         check(manager.delivered.isEmpty() && original.location == 8, "bearing outside 0..360 forwards callback");
 
-        check(Control.events.size() == 1, "invalid fix fault is logged once without coordinates");
+        check(Control.events.size() == eventsBeforeFault + 1,
+            "invalid fix fault is logged once without coordinates");
         Control.brg = 180f;
         proxy.onProviderLocation(new Location("gps"));
         check(manager.delivered.size() == 1 && original.location == 8,
