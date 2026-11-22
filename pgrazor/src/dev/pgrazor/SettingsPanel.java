@@ -722,21 +722,58 @@ final class SettingsPanel {
         autoTransferSwitch.setOnCheckedChangeListener((v,checked) -> { if(checked==Control.autoTransferEnabled())return; Control.setAutoTransferEnabled(autoTransferSwitch.isChecked()); host.refresh(); });
         transferIvLimit=button("");txC.addView(transferIvLimit);
         transferIvLimit.setOnClickListener(v->{
-            int[] values=Control.TRANSFER_IV_CHOICES;
-            String[] labels={"Manter IV 90% ou mais","Manter IV 95% ou mais","Manter IV 97% ou mais",
-                "Manter IV 98% ou mais","Manter IV 99% ou mais","Manter somente IV 100%",
-                "Manter apenas os Pokémon protegidos / marcados"};
-            new AlertDialog.Builder(dialogContext()).setTitle(dev.pgrazor.PtBr.tr("Transferência por IV"))
-                .setSingleChoiceItems(labels,java.util.Arrays.binarySearch(values,Control.transferIvKeepPercent()),(dlg,i)->{
-                    dlg.dismiss();
-                    if(values[i]==101){
-                        new AlertDialog.Builder(dialogContext()).setTitle(dev.pgrazor.PtBr.tr("Confirmar regra irreversível"))
-                            .setMessage(dev.pgrazor.PtBr.tr("Este modo poderá transferir até Pokémon com IV 100%! Apenas favoritos, espécies marcadas, Pokémon protegidos por categorias e pelas regras PvP serão preservados. Transferências não podem ser desfeitas."))
-                            .setNegativeButton(dev.pgrazor.PtBr.tr("Cancelar"),null)
-                            .setPositiveButton(dev.pgrazor.PtBr.tr("Confirmar"),(d,w)->{Control.setTransferIvKeepPercent(101);host.refresh();})
-                            .show();
-                    }else{Control.setTransferIvKeepPercent(values[i]);host.refresh();}
-                }).setNegativeButton(dev.pgrazor.PtBr.tr("Cancelar"),null).show();
+            // Compatibility: the previously selected 101 ("protect only") remains opt-in.
+            // New choices 0..100 are used by the existing packed native transfer contract.
+            LinearLayout box=new LinearLayout(activity);box.setOrientation(LinearLayout.VERTICAL);
+            int pad=dp(16);box.setPadding(pad,pad,pad,pad);
+            TextView help=text("Limite de IV para manter as novas capturas (0–100%). 0% mantém todos; 100% mantém somente IV 100%. Favoritos e proteções continuam valendo.",13,muted());
+            box.addView(help);
+            android.widget.SeekBar slider=new android.widget.SeekBar(activity);
+            slider.setMax(100);slider.setProgress(Math.min(100,Control.transferIvKeepPercent()));
+            box.addView(slider,new LinearLayout.LayoutParams(-1,dp(52)));
+            EditText typed=new EditText(activity);
+            typed.setSingleLine(true);typed.setInputType(InputType.TYPE_CLASS_NUMBER);
+            typed.setText(String.valueOf(slider.getProgress()));
+            typed.setSelectAllOnFocus(true);typed.setContentDescription("Limite de IV de 0 a 100 por cento");
+            box.addView(typed);
+            slider.setOnSeekBarChangeListener(new android.widget.SeekBar.OnSeekBarChangeListener(){
+                public void onProgressChanged(android.widget.SeekBar bar,int value,boolean byUser){
+                    if(byUser&&!typed.getText().toString().equals(String.valueOf(value)))typed.setText(String.valueOf(value));
+                }
+                public void onStartTrackingTouch(android.widget.SeekBar bar){}
+                public void onStopTrackingTouch(android.widget.SeekBar bar){}
+            });
+            typed.addTextChangedListener(new android.text.TextWatcher(){
+                public void beforeTextChanged(CharSequence s,int start,int count,int after){}
+                public void onTextChanged(CharSequence s,int start,int before,int count){
+                    try{int value=Integer.parseInt(s.toString());
+                        if(value>=0&&value<=100&&value!=slider.getProgress())slider.setProgress(value);
+                    }catch(NumberFormatException ignored){}
+                }
+                public void afterTextChanged(android.text.Editable s){}
+            });
+            AlertDialog chooser=new AlertDialog.Builder(dialogContext())
+                .setTitle(dev.pgrazor.PtBr.tr("Manter Pokémon a partir deste IV"))
+                .setView(box).setNegativeButton(dev.pgrazor.PtBr.tr("Cancelar"),null)
+                .setNeutralButton(dev.pgrazor.PtBr.tr("Somente protegidos"),null)
+                .setPositiveButton(dev.pgrazor.PtBr.tr("Aplicar"),null).create();
+            chooser.setOnShowListener(d->{
+                chooser.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v2->{
+                    int value;
+                    try{value=Integer.parseInt(typed.getText().toString());}
+                    catch(NumberFormatException bad){typed.setError("Digite um valor de 0 a 100");return;}
+                    if(value<0||value>100){typed.setError("Digite um valor de 0 a 100");return;}
+                    Control.setTransferIvKeepPercent(value);host.refresh();chooser.dismiss();
+                });
+                chooser.getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener(v2->
+                    new AlertDialog.Builder(dialogContext()).setTitle("Confirmar regra irreversível")
+                        .setMessage("Este modo poderá transferir até Pokémon com IV 100%! Somente favoritos, espécies selecionadas e Pokémon protegidos serão preservados. Não é possível desfazer transferências.")
+                        .setNegativeButton("Cancelar",null)
+                        .setPositiveButton("Confirmar",(prompt,which)->{
+                            Control.setTransferIvKeepPercent(101);host.refresh();chooser.dismiss();
+                        }).show());
+            });
+            chooser.show();
         });
         caption(txC,"As transferências são permanentes e só se aplicam a novas capturas. Favoritos e Pokémon com dados desconhecidos são preservados.");
         transferStatus = caption(txC, "");
