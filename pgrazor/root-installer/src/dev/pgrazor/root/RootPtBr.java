@@ -1381,6 +1381,20 @@ public final class RootPtBr {
         m.put("Gym battle", "Batalha de Ginásio");
         m.put("Accessory action", "Ação de acessório");
         m.put("Select valid coordinates", "Selecione coordenadas válidas");
+        m.put("Catch it", "Capturar");
+        m.put("Dismiss", "Dispensar");
+        m.put("Enter valid coordinates and speed (0.5–60).", "Informe coordenadas válidas e velocidade entre 0,5 e 60.");
+        m.put("PGBR overlay shown", "Sobreposição do PGBR exibida");
+        m.put("Enter valid coordinates", "Informe coordenadas válidas");
+        m.put("Map-tap settings changed; tap the map again.", "Configurações de toque no mapa alteradas; toque novamente no mapa.");
+        m.put("PGBR · control preview", "PGBR · prévia dos controles");
+        m.put("Joystick and coordinate controls.\nThis preview does not change device GPS or connect to Pokémon GO.\nMovement pauses when you leave the app.", "Controles de joystick e coordenadas.\nEsta prévia não altera o GPS do dispositivo nem se conecta ao Pokémon GO.\nO movimento pausa ao sair do aplicativo.");
+        m.put("Export this run's log (.txt)", "Exportar o log desta execução (.txt)");
+        m.put("Log exported", "Log exportado");
+        m.put("No log file to save", "Nenhum arquivo de log disponível para salvar");
+        m.put("Stop Auto-Raid first.", "Interrompa as Reides automáticas primeiro.");
+        m.put("Galarian bird found — walking and VGP stopped", "Ave de Galar encontrada — caminhada e VGP interrompidos");
+        m.put("Max", "Máximo");
         LABELS = Collections.unmodifiableMap(m);
     }
     private RootPtBr() {}

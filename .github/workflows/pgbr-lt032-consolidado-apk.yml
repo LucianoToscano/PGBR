@@ -1,7 +1,7 @@
 name: PGBR LT032 - compilação APK completo QA (inclui port PGR 036)
 on:
   push:
-    branches: [integracao/lt032-recuperacao-20261121, integracao/lt032-pgrazor-035-036-20261122, integracao/lt032-qa-consolidada-20261122, integracao/lt032-qa-quality-stage-20261122, integracao/lt032-root-nonroot-qa-20261122, integracao/lt032-root-ptbr-final-qa-20261122]
+    branches: [integracao/lt032-recuperacao-20261121, integracao/lt032-pgrazor-035-036-20261122, integracao/lt032-qa-consolidada-20261122, integracao/lt032-qa-quality-stage-20261122, integracao/lt032-root-nonroot-qa-20261122, integracao/lt032-root-ptbr-final-qa-20261122, fix/lt032-ptbr-textos-interface-20261122]
   workflow_dispatch:
 permissions:
   contents: read
