@@ -232,14 +232,15 @@ public final class AutoWalkDialog {
                 } else {
                     int unique = AutoWalkPlanner.filter(points).length;
                     int maximum = Math.min(unique, NEARBY_LIMIT);
-                    countLabel.setText(dev.pgrazor.PtBr.tr(maximum == 0 ? "Stops (none nearby):" : "Stops (1–" + maximum + "; blank = all):"));
+                    countLabel.setText(maximum == 0 ? dev.pgrazor.PtBr.tr("Stops (none nearby):")
+                        : dev.pgrazor.PtBr.tr("Stops (1–") + maximum + dev.pgrazor.PtBr.tr("; blank = all):"));
                     if (unique == 0) {
                         message = "No nearby locations loaded yet. Move around in-game to load some.";
                     } else {
                         int requested=maximum;
                         try{requested=Integer.parseInt(countField.getText().toString().trim());}catch(NumberFormatException ignored){}
                         int selected=Math.min(Math.max(1,requested),maximum);
-                        message = selected+" stops in route ("+unique+" nearby).";
+                        message = selected + dev.pgrazor.PtBr.tr(" stops in route (") + unique + dev.pgrazor.PtBr.tr(" nearby).");
                         canStart = true;
                     }
                 }
@@ -251,7 +252,8 @@ public final class AutoWalkDialog {
         private void updateRunning() {
             MotionEngine.RouteProgress progress = Control.engine.routeProgress();
             running.setText(dev.pgrazor.PtBr.tr(Control.engine.speedKmh==0 ? "Speed is 0 km/h. Use the walking icon to resume travel." : progress.active
-                ? String.format(Locale.US, "A route is running: %d of %d stops done.", progress.visited, progress.total)
+                ? dev.pgrazor.PtBr.tr("A route is running: ") + progress.visited + dev.pgrazor.PtBr.tr(" of ")
+                    + progress.total + dev.pgrazor.PtBr.tr(" stops done.")
                 : ""));
             dialog.getButton(AlertDialog.BUTTON_NEUTRAL).setEnabled(progress.active);
         }
