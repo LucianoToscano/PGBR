@@ -1,3 +1,10 @@
+## v0.00.40-LT — QA candidata: recuperar PvP/duelos e escopo do assistente (22/11/2026)
+- [PR #107](https://github.com/LucianoToscano/PGBR/pull/107) integrada na main no commit `f873c8652bac5dc4cded154e49fbab82bf778445` após 5 checks `success` (C++ host, NDK ARM64, Java/Root, site e governança). Correção condicional para observação de Hub/Preparação e confirmação PvP, em treino NPC, GBL e duelos com escopo nativo válido.
+- Publicação da máscara Ágil/Carregado/Escudo do usuário apenas em escopo reconhecido; desarmada em mapa, resultado, opção desligada, falha, lease expirada e alvos desconhecidos. Raid/Ginásio/Max continuam com seus motores próprios.
+- Escudo 0/1.500/3.000 ms e Troca KO 400/2.000/6.000 ms, opção `Desativado` retirada; valor legado 3 migra ao padrão. Sem alterar a cadência ágil/carregada e janelas manuais.
+- Diagnósticos de probe, GUI/escopo e motivo de bloqueio para a investigação no aparelho. **Não reivindicar funcionalidade comprovada em Android: `device_tested=false`.** Ataque Inteligente por eficácia real e tela branca ainda não resolvidos.
+- [Workflow LT040](.github/workflows/pgbr-lt040-release.yml) e [notas LT040](docs/releases/v0.00.40-LT.md) são **preparação de nova pré-release**; não declarar pacote disponível antes da build assinada e dos links reais. Preservar LT037/LT038/LT039.
+
 ## v0.00.39-LT — candidata QA: escudo/troca ajustáveis (22/11/2026)
 - Integração da PR #100 em `848127b8582ce665a3ce9c4c41f00dadd3324e1c`; sete checks aprovados e [build experimental](https://github.com/LucianoToscano/PGBR/actions/runs/45043935988) `success`.
 - Escudo: 0 ms, 1.500 ms (padrão), 3.000 ms, desativado; nocaute VNext: 400 ms, 2.000 ms (padrão), 6.000 ms, desativado. Prioridade manual e preferências persistentes, transporte F2 no slot 21.
