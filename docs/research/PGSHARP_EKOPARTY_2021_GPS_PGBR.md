@@ -46,3 +46,16 @@ Alteração deliberadamente limitada ao adaptador de GPS. **Não** há novo recu
 5. somente então planejar integração/release, observando o protocolo de PR sem merge automático.
 
 **Fora do escopo:** portar `JNIEnv` proxifier, bypass de assinatura e endereços de 2021. Qualquer proposta adicional exige escopo funcional e validação do binário atual; pesquisa histórica sozinha não comprova compatibilidade.
+
+
+## Comparação de JNI e Unity com o PGBR atual (continuação de 22/11/2026)
+
+O diagrama do PDF (páginas 31–36) apresenta um **JNIEnv proxifier** de 2021: interceptação seletiva de entradas em `JNIEnv` e observação de `RegisterNatives` para identificar pontos de acesso de funções nativas. Essa é uma técnica de análise do APK antigo, não uma exigência do adaptador compilado atual.
+
+O PGBR já dispõe de duas abordagens distintas:
+
+- **Sem Root:** as pontes compiladas e as reescritas seletivas do DEX chamam `GameBridgeDispatch`; `GameLocationDelivery` invoca a assinatura original de `nativeLocationUpdate` por reflexão.
+- **Root:** `RootedHooks.java` instala hooks ART para os mesmos limites de integração; `NativeLocationGetters.java` valida métodos de `android.location.Location`; `pgrazor/art/java_hooks.cpp` usa LSPlant e Dobby conforme os avisos em `THIRD_PARTY.md`.
+- **Unity/IL2CPP:** `pgrazor/native/runtime_bootstrap.cpp` resolve vínculos nativos verificados por contrato e versão; o exemplo de `OpenURL` na página 48 do PDF demonstra um redirecionamento de loja antiga e **não** acrescenta uma função útil de GPS ao PGBR.
+
+**Decisão de engenharia:** não adicionar um segundo interceptador global `JNIEnv`, nem importar offsets ou redirecionamentos do PGSharp 1.33.0. Isso duplicaria a camada ART/DEX atual e introduziria risco de concorrência de hooks sem evidência de benefício para o Pokémon GO 0.437.0. A melhoria de fronteira de valores do GPS está isolada e verificável. A análise adicional é documental: nenhum hook JNI novo foi instalado.

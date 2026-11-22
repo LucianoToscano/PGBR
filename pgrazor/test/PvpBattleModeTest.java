@@ -8,6 +8,7 @@ public final class PvpBattleModeTest {
         check(PvpBattleMode.sanitize(7)==7,"three valid PvP action bits");
         check(PvpBattleMode.sanitize(15)==15,"priority bit accepted");
         check(PvpBattleMode.update(7,8,true)==15,"enable super-effective priority");
+        check((PvpBattleMode.update(15,8,false)&7)==7,"disabling Smart Attack must not disable quick/charged/shield");
         check(!PvpBattleMode.allowed(8,true,true,true),"preference alone is not automation");
         check(PvpBattleMode.update(0,PvpBattleMode.QUICK,true)==1,"enable quick");
         check(PvpBattleMode.update(1,PvpBattleMode.CHARGED,true)==3,"enable charged without overwriting quick");

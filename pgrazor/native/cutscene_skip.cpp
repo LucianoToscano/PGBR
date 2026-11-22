@@ -1237,16 +1237,12 @@ void pgr_cutscene_skip_tick(uint64_t tid,const PgrSharedMetadataOutput *){
  if(pending_raid)advance_raid(on&&!faulted.load(std::memory_order_acquire));
  if(pending_popup_count)advance_popups();
  if(pending_inventory)advance_inventory();
- // The PvP VNext session detector needs GuiController.Open even if Skip cutscenes is off.
- // Install once when any shared combat action is configured; all cutscene replacements
- // remain inert unless the user has enabled their corresponding setting.
- bool pvp_requested=false;
- if(const auto *tr=transport()){
-  PgrRuntimeTransportSample snap{};int32_t mask=0;
-  if(tr->sample(&snap)==0&&snap.snapshot_fresh&&
-     tr->get_int&&tr->get_int(6,&mask)==0)pvp_requested=(mask&7)!=0;
- }
- if((!on&&!policy.inventory&&!pvp_requested)||tried||faulted.load(std::memory_order_acquire))return;
+ // Observe trusted PvP/Training GUI transitions passively once native
+ // bootstrap is ready. Do not delay installation until action toggles are
+ // enabled: that loses Hub/Preparation Open events when toggled in the lobby.
+ // No actions are emitted by this observer; cutscene hooks retain their
+ // independent switches and combat_host still requires an allowlisted target.
+ if(tried||faulted.load(std::memory_order_acquire))return;
  try{
   if(!ready){
    auto api=static_cast<const PgrBootApi*>(pgrazor_runtime_bootstrap_api(1));

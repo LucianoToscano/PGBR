@@ -20,6 +20,10 @@ class BattleAllowlistTest(unittest.TestCase):
         self.assertIn("VERIFIED_PVP_ENTRY_MS=15000",scene)
         self.assertIn("TRAINING_ENTRY_MS=45000",scene)
         self.assertIn("now_ms()>=g_rocket_deadline_ms",host)
+        self.assertIn("PgrSharedAutoBattleGate::effective(",host)
+        self.assertIn("pvpCandidateDenied",host)
+        self.assertIn("pvpTypeProbeReady",host)
+        self.assertIn("pvpScene",host)
         self.assertIn("g_pvp_training_scope=false;",host)
     def test_existing_battles_engine_untouched(self):
         battles=(ROOT/"pgrazor/native/battles.cpp").read_text(encoding="utf-8")

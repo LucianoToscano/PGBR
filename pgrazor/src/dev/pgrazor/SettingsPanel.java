@@ -78,10 +78,10 @@ final class SettingsPanel {
     private Switch healSwitch, healReviveSwitch, smartBattleSwitch, smartAttackSwitch, gymRepeatSwitch;
     private Button healWhen, healThreshold, healItems, shieldWaitButton, faintedSwapWaitButton;
     private static final String[] SHIELD_WAIT_LABELS={
-        "Imediato — 0 ms","1,5 segundo (padrão)","3 segundos","Desativado"
+        "Imediato — 0 ms","1,5 segundo (padrão)","3 segundos"
     };
     private static final String[] FAINTED_SWAP_LABELS={
-        "Original VNext — 400 ms","2 segundos (padrão)","6 segundos","Desativado"
+        "Original VNext — 400 ms","2 segundos (padrão)","6 segundos"
     };
     private final CheckBox[] vgpChoices=new CheckBox[3];
     // Status / caption lines (muted, readiness driven).
@@ -1110,7 +1110,7 @@ final class SettingsPanel {
                 .setSingleChoiceItems(FAINTED_SWAP_LABELS,Control.smartFaintedSwapTiming(),(dialog,index)->{
                     Control.setSmartFaintedSwapTiming(index);dialog.dismiss();refreshBattleTimings();
                 }).setNegativeButton("Cancelar",null).show());
-        caption(owner,"Escolhas manuais têm prioridade. Desativado mantém o seletor do jogo. "+
+        caption(owner,"Escolhas manuais têm prioridade. Para desligar o uso automático, desmarque Ágil, Carregado e/ou Escudo nas opções de batalha. "+
             "Escudo: 250 ms de intervalo técnico após usar; troca: até 8 s com 1 s entre tentativas. "+
             "As preferências só atuam em fluxos nativos reconhecidos, sem atrasar golpes carregados.");
         refreshBattleTimings();
