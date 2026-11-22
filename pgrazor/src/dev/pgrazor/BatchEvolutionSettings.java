@@ -243,9 +243,13 @@ public final class BatchEvolutionSettings {
         }
     }
     private static String summary() {
-        String shownPhase=phase.substring(0,1).toUpperCase(Locale.US)+phase.substring(1);
+        String shownPhase=dev.pgrazor.PtBr.tr(phase.substring(0,1).toUpperCase(Locale.US)+phase.substring(1));
         long seconds=elapsedMs/1000;
-        return shownPhase+": "+message+"\nEligible: "+total+"   Completed: "+completed
-            +"   Skipped: "+skipped+"\nXP: "+xp+"   Time: "+String.format(Locale.US,"%d:%02d",seconds/60,seconds%60);
+        return shownPhase+": "+dev.pgrazor.PtBr.tr(message)+"\n"
+            +dev.pgrazor.PtBr.tr("Eligible: ")+total
+            +"   "+dev.pgrazor.PtBr.tr("Completed: ")+completed
+            +"   "+dev.pgrazor.PtBr.tr("Skipped: ")+skipped
+            +"\nXP: "+xp+"   "+dev.pgrazor.PtBr.tr("Time: ")
+            +String.format(Locale.US,"%d:%02d",seconds/60,seconds%60);
     }
 }
