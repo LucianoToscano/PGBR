@@ -134,8 +134,8 @@ public final class NativeRuntimeTransportTest {
         at += 4 + "S1|7|123456789|0|1".length(); // Shundo Sniper slot 19.
         require(readString(snap, at).equals("B2|1|0|1|0"));
         at += 4 + "B2|1|0|1|0".length(); // Battery usage slot 20.
-        require(readString(snap, at).equals("F1|1"));
-        at += 4 + "F1|1".length(); // Smart battling slot 21.
+        require(readString(snap, at).equals("F2|1|1|1"));
+        at += 4 + "F2|1|1|1".length(); // Smart battling + timing choices slot 21.
         require(readString(snap, at).equals("1|1|1|2|10,13"));
         at += 4 + "1|1|1|2|10,13".length(); // Evolve/transfer slot 22.
         require(readString(snap, at).equals("N3|5|1|700|2|8000|1|1|0|25,129"));

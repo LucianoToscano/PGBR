@@ -22,6 +22,7 @@
 //     frames) stays nonzero while any frame runs.
 
 #include "rocket_combat.h"
+#include "battle_timing_policy.h"
 #include "rocket_actions.h"  // feature 20 policy table, reused internally (never its JS controller)
 
 #include <atomic>
@@ -50,7 +51,20 @@ static_assert(offsetof(pgr_rocket_combat_sample_v1, owned_roots) == 56, "sample 
 namespace {
 
 constexpr uint64_t kMaxLeaseMs = 2500;  // feature 20 lease cap (clamp here too for the top gate)
-constexpr uint64_t kShieldChoiceGraceMs = 1700;  // manual No/Yes shield priority
+
+// Only queried while the shield modal is open. A malformed/stale settings
+// snapshot must not press a shield. Direct host fixtures deliberately exercise
+// the default policy without requiring the separate runtime transport to link.
+uint64_t shield_choice_wait_ms() {
+#if defined(PGR_RC_DIRECT_TEST)
+  return 1500;
+#else
+  const auto *tr=static_cast<const PgrRuntimeTransportApi*>(pgrazor_runtime_transport_api(1));
+  pgr_battle_timing::Preferences p{};
+  return pgr_battle_timing::read(tr,p) ?
+      pgr_battle_timing::shield_wait_ms(p.shield_choice) : UINT64_MAX;
+#endif
+}
 
 // --- lifetime / publication ---------------------------------------------------------
 std::mutex                    g_install_mutex;
@@ -635,8 +649,10 @@ void tick_body(uint64_t tid, uint64_t now) {
         // Allow the user to choose No shield before touching the shield button.
         // This delay applies ONLY to shields, not charged attacks.
         const uint64_t shield_now=boottime_ms();
-        if(!g_shield_opened_ms || shield_now<g_shield_opened_ms ||
-           shield_now-g_shield_opened_ms<kShieldChoiceGraceMs)return;
+        const uint64_t wait_ms=shield_choice_wait_ms();
+        if(wait_ms==UINT64_MAX || !g_shield_opened_ms ||
+           shield_now<g_shield_opened_ms ||
+           shield_now-g_shield_opened_ms<wait_ms)return;
         void *button = read_ref(gui, g_cfg.f_button);
         if (button) {
           Root b; b.acquire(button, &err); if (err) { if(!stale(epoch))fault(tid); return; }

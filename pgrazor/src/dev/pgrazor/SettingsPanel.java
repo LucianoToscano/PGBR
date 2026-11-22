@@ -76,7 +76,13 @@ final class SettingsPanel {
     private BerryPriorityPicker berryPicker;
     private TextView quickSummaryLabel, vgpStatus, cutsceneStatus, healStatus, smartBattleStatus;
     private Switch healSwitch, healReviveSwitch, smartBattleSwitch, smartAttackSwitch, gymRepeatSwitch;
-    private Button healWhen, healThreshold, healItems;
+    private Button healWhen, healThreshold, healItems, shieldWaitButton, faintedSwapWaitButton;
+    private static final String[] SHIELD_WAIT_LABELS={
+        "Imediato — 0 ms","1,5 segundo (padrão)","3 segundos","Desativado"
+    };
+    private static final String[] FAINTED_SWAP_LABELS={
+        "Original VNext — 400 ms","2 segundos (padrão)","6 segundos","Desativado"
+    };
     private final CheckBox[] vgpChoices=new CheckBox[3];
     // Status / caption lines (muted, readiness driven).
     private TextView state, steeringStatus, spawnStatus, quickSummaryStatus, transferStatus, quickSpinStatus,
@@ -1092,6 +1098,29 @@ final class SettingsPanel {
         caption(owner,"Um único controle para todos os modos: Super eficaz > Neutro > Pouco eficaz. "+
             "A preferência é salva, mas a seleção nativa dos botões ainda não está integrada "+
             "nem validada para todos os modos. Ataques carregados continuam instantâneos.");
+        shieldWaitButton=launch(owner,"Espera do Escudo",()->
+            new AlertDialog.Builder(dialogContext())
+                .setTitle("Espera do Escudo Inteligente")
+                .setSingleChoiceItems(SHIELD_WAIT_LABELS,Control.smartShieldTiming(),(dialog,index)->{
+                    Control.setSmartShieldTiming(index);dialog.dismiss();refreshBattleTimings();
+                }).setNegativeButton("Cancelar",null).show());
+        faintedSwapWaitButton=launch(owner,"Troca após Nocaute",()->
+            new AlertDialog.Builder(dialogContext())
+                .setTitle("Troca Inteligente após Nocaute")
+                .setSingleChoiceItems(FAINTED_SWAP_LABELS,Control.smartFaintedSwapTiming(),(dialog,index)->{
+                    Control.setSmartFaintedSwapTiming(index);dialog.dismiss();refreshBattleTimings();
+                }).setNegativeButton("Cancelar",null).show());
+        caption(owner,"Escolhas manuais têm prioridade. Desativado mantém o seletor do jogo. "+
+            "Escudo: 250 ms de intervalo técnico após usar; troca: até 8 s com 1 s entre tentativas. "+
+            "As preferências só atuam em fluxos nativos reconhecidos, sem atrasar golpes carregados.");
+        refreshBattleTimings();
+    }
+
+    private void refreshBattleTimings(){
+        if(shieldWaitButton!=null)shieldWaitButton.setText(dev.pgrazor.PtBr.tr(
+            "Espera do Escudo: "+SHIELD_WAIT_LABELS[Control.smartShieldTiming()]));
+        if(faintedSwapWaitButton!=null)faintedSwapWaitButton.setText(dev.pgrazor.PtBr.tr(
+            "Troca após Nocaute: "+FAINTED_SWAP_LABELS[Control.smartFaintedSwapTiming()]));
     }
 
     private void buildHealing(LinearLayout owner) {
@@ -1537,6 +1566,7 @@ final class SettingsPanel {
         refreshHealing();
         refreshSmartBattle();
         if(smartAttackSwitch!=null)smartAttackSwitch.setChecked(Control.smartAttack());
+        refreshBattleTimings();
         refreshDependencies();
     }
 
