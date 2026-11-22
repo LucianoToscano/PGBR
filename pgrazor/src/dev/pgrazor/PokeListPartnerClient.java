@@ -157,6 +157,11 @@ final class PokeListPartnerClient {
         for (int i = 0; i < items.length(); i++) {
             JSONObject item = items.optJSONObject(i);
             if (item == null || !"pokemon".equals(item.optString("kind", ""))) continue;
+            String provenance = item.optString("source", "")
+                    .toLowerCase(java.util.Locale.ROOT);
+            if (item.optBoolean("demo", false) || provenance.contains("fixture")
+                    || provenance.contains("synthetic") || provenance.contains("sintet")
+                    || provenance.contains("demo")) continue;
             int dex = bounded(item, "pokemon_id", 1, 1025);
             long expires = timestamp(item.optString("expires_at", ""));
             long observed = timestamp(item.optString("observed_at", ""));
@@ -191,7 +196,7 @@ final class PokeListPartnerClient {
             if (great > 0 && ultra < 0) b.pvp(SpawnFilters.LEAGUE_GREAT, great, false);
             if (ultra > 0 && great < 0) b.pvp(SpawnFilters.LEAGUE_ULTRA, ultra, false);
             b.shiny(false, "eligible".equals(item.optString("shiny_status", "")));
-            if ("exact".equals(item.optString("coordinate_precision", ""))) {
+            if (measured && "exact".equals(item.optString("coordinate_precision", ""))) {
                 b.location(number(item, "latitude", -90, 90),
                         number(item, "longitude", -180, 180));
             } else {
