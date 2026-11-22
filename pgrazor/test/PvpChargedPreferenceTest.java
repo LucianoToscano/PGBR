@@ -47,8 +47,11 @@ public final class PvpChargedPreferenceTest {
             m(11,80,55,true),11,5,11,0,60,9,90,true),
             "neutral first outranks resisted second");
         eq(PvpChargedPreference.SECOND,PvpChargedPreference.select(m(13,80,40,true),
-            m(4,80,55,true),11,5,5,0,60,9,90,true),
+            m(1,80,55,true),11,5,5,0,60,9,90,true),
             "neutral outranks doubly resisted");
+        eq(PvpChargedPreference.SECOND,PvpChargedPreference.select(m(13,80,40,true),
+            m(4,80,55,true),11,5,5,0,60,9,90,true),
+            "single resistance outranks double resistance");
         eq(PvpChargedPreference.WAIT,PvpChargedPreference.select(m(11,80,40,true),
             m(4,80,55,false),11,5,11,0,47,9,90,true),
             "bounded wait for neutral while resisted is ready");
