@@ -1,0 +1,199 @@
+From e2dac1ba26aa8dad59b65e6caa73cd441075a595 Mon Sep 17 00:00:00 2001
+From: Arena Agent <agent@arena.ai>
+Date: Sun, 22 Nov 2026 19:37:33 +0000
+Subject: [PATCH] =?UTF-8?q?fix(gateway):=20viewport=20antimeridiano=20e=20?=
+ =?UTF-8?q?p=C3=A1gina=20truncada=20declarada?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Dois defeitos reais no gateway local autorizado (PokeSearch PRs #557/#559):
+
+1. boundsFromUrl recusava `swLng > neLng` como "invalid_viewport". Clientes
+   ReactMap/iFlowGo mandam os cantos nessa ordem e um mapa que cruza +/-180 é
+   legítimo, então uma área válida recebia 400 e a busca ficava vazia com erro
+   de parâmetro. Agora o par invertido é aceito como travessia do antimeridiano
+   quando a largura real `360 - (swLng - neLng)` cabe em 180 graus; mais que meio
+   planeta continua sendo erro. Latitude invertida continua erro: é hemisfério
+   errado, não convenção. insideBounds() aplica a travessia nas duas pontas.
+
+2. /raw_data cortava em MAX_RESPONSE sem avisar — o mesmo defeito de "só a
+   primeira página", uma camada abaixo. Quando há mais linhas que o teto, a
+   resposta passa a trazer `X-Result-Truncated: true` e `X-Result-Total`.
+
+Testes: +2 casos (viewport normal, antimeridiano dentro/fora, par invertido largo,
+norte/sul trocado; e 2500 observações -> 2000 linhas + cabeçalhos de truncamento).
+`node --test` em functions/: 32 testes, 0 falha.
+
+Co-Authored-By: Arena Agent <agent@arena.ai>
+---
+ .github/workflows/pokesearch-node-qa.yml   |  4 ++
+ functions/authorized-spawn-gateway.js      | 44 +++++++++++++---
+ functions/authorized-spawn-gateway.test.js | 61 ++++++++++++++++++++++
+ 3 files changed, 102 insertions(+), 7 deletions(-)
+
+diff --git a/.github/workflows/pokesearch-node-qa.yml b/.github/workflows/pokesearch-node-qa.yml
+index 82a4759..a5979de 100644
+--- a/.github/workflows/pokesearch-node-qa.yml
++++ b/.github/workflows/pokesearch-node-qa.yml
+@@ -84,6 +84,10 @@ jobs:
+             node "$suite"
+             echo "::endgroup::"
+           done
++      - name: Validar normalização de webhooks autorizados (funcoes puras, sem rede)
++        run: |
++          set -euo pipefail
++          node functions/spawn-observation-normalizer.test.js
+       - name: Validar histórico da Home LT79–LT83
+         run: node app/tests/lt83-home-release-notes.test.js
+       - name: Validar geometria Java de janela popup isolada sem Gradle
+diff --git a/functions/authorized-spawn-gateway.js b/functions/authorized-spawn-gateway.js
+index 94a518d..23b5a52 100644
+--- a/functions/authorized-spawn-gateway.js
++++ b/functions/authorized-spawn-gateway.js
+@@ -33,15 +33,40 @@ function checkConfig(o) {
+       || o.ingestSecret === o.readSecret) throw new Error("Two distinct strong secrets required");
+   if (o.now !== undefined && typeof o.now !== "function") throw new Error("Invalid clock");
+ }
++/**
++ * Validates a viewport in either convention: sw..ne (RocketMap) or ne..sw (ReactMap/iFlowGo clients send
++ * the corners in this order). Longitude may also arrive wrapped across the antimeridian, which legitimate
++ * clients do when the map spans +/-180.
++ *
++ * <p>Before this, `swLng > neLng` rejected a correct whole-world or antimeridian viewport as "invalid",
++ * so the reader got 400 for a perfectly valid area. An inverted latitude is still refused: swapping the
++ * north and south corner is an error, not a convention, and would silently return the wrong hemisphere.
++ */
+ function boundsFromUrl(url) {
+   const p = url.searchParams;
+   const keys = ["swLat", "swLng", "neLat", "neLng"];
+   if (keys.some(k => !p.has(k) || !/^-?(?:\d+)(?:\.\d+)?$/.test(p.get(k)))) return null;
+-  const [swLat, swLng, neLat, neLng] = keys.map(k => Number(p.get(k)));
++  let [swLat, swLng, neLat, neLng] = keys.map(k => Number(p.get(k)));
+   if (![swLat, swLng, neLat, neLng].every(Number.isFinite) ||
+-      swLat < -90 || neLat > 90 || swLng < -180 || neLng > 180 ||
+-      swLat > neLat || swLng > neLng) return null;
+-  return {swLat, swLng, neLat, neLng};
++      Math.abs(swLat) > 90 || Math.abs(neLat) > 90 ||
++      Math.abs(swLng) > 180 || Math.abs(neLng) > 180) return null;
++  if (swLat > neLat) return null;
++  let wrapped = false;
++  if (swLng > neLng) {
++    // swLng > neLng only makes sense as an antimeridian crossing, whose real width is
++    // 360 - (swLng - neLng). More than half the planet is an inverted pair, not a crossing.
++    const span = 360 - (swLng - neLng);
++    if (span > 180) return null;
++    wrapped = true;
++  }
++  return {swLat, swLng, neLat, neLng, wrapped};
++}
++
++/** Whether a coordinate is inside the viewport, honouring an antimeridian crossing. */
++function insideBounds(bounds, latitude, longitude) {
++  if (latitude < bounds.swLat || latitude > bounds.neLat) return false;
++  if (!bounds.wrapped) return longitude >= bounds.swLng && longitude <= bounds.neLng;
++  return longitude >= bounds.swLng || longitude <= bounds.neLng;
+ }
+ function optionalNumber(params, name, lo, hi) {
+   if (!params.has(name)) return null;
+@@ -170,8 +195,7 @@ function makeGateway(options) {
+       const filtered = [];
+       if (url.searchParams.get("pokemon") !== "false") {
+         for (const row of entries.values()) {
+-          if (row.latitude < bounds.swLat || row.latitude > bounds.neLat ||
+-              row.longitude < bounds.swLng || row.longitude > bounds.neLng) continue;
++          if (!insideBounds(bounds, row.latitude, row.longitude)) continue;
+           if (pokemonId !== null && row.pokemonId !== pokemonId) continue;
+           if (ivMin !== null && (row.ivPercent === null || row.ivPercent < ivMin)) continue;
+           if (cpMin !== null && (row.cp === null || row.cp < cpMin)) continue;
+@@ -183,6 +207,12 @@ function makeGateway(options) {
+       const payload = toRocketMapRawData({entries: filtered.slice(0, MAX_RESPONSE)});
+       // Existing PGBR RocketMap reader expects gyms:{} for a raid query.
+       payload.gyms = {};
++      // A capped page is disclosed in a header: silently returning the first N rows of a bigger
++      // result set is exactly the "first page only" defect, one layer down.
++      if (filtered.length > MAX_RESPONSE) {
++        res.setHeader("X-Result-Truncated", "true");
++        res.setHeader("X-Result-Total", String(filtered.length));
++      }
+       respond(res, 200, payload);
+       return;
+     }
+@@ -202,4 +232,4 @@ function createLocalServer(config) {
+   }), statistics};
+ }
+ 
+-module.exports = {makeGateway, createLocalServer, boundsFromUrl, safeSecret};
++module.exports = {makeGateway, createLocalServer, boundsFromUrl, insideBounds, safeSecret};
+diff --git a/functions/authorized-spawn-gateway.test.js b/functions/authorized-spawn-gateway.test.js
+index a6940e9..25b21c8 100644
+--- a/functions/authorized-spawn-gateway.test.js
++++ b/functions/authorized-spawn-gateway.test.js
+@@ -159,3 +159,64 @@ test("dashboard is local, makes no uncredentialed data calls and visibly separat
+       "public dashboard must never make feed data public");
+   }finally{await new Promise(resolve=>server.close(resolve));}
+ });
++
++test("viewport válido não é recusado como inválido (antimeridiano e ordem invertida)", () => {
++  const {insideBounds} = require("./authorized-spawn-gateway");
++  // Regressão: swLng > neLng recusava um viewport legítimo cruzando +/-180.
++  const wrapped = boundsFromUrl(new URL(
++    "http://localhost/raw_data?swLat=-10&swLng=170&neLat=10&neLng=-170"));
++  assert.notEqual(wrapped, null);
++  assert.equal(wrapped.wrapped, true);
++  assert.equal(insideBounds(wrapped, 0, 175), true, "dentro, lado leste de 180");
++  assert.equal(insideBounds(wrapped, 0, -175), true, "dentro, lado oeste de 180");
++  assert.equal(insideBounds(wrapped, 0, 0), false, "fora do outro lado do mundo");
++  // Par invertido que cobre mais de meio planeta é erro, não travessia.
++  assert.equal(boundsFromUrl(new URL(
++    "http://localhost/raw_data?swLat=-10&swLng=100&neLat=10&neLng=20")), null,
++    "spans > 180 km de longitude não são aceitos como antimeridiano");
++  // Norte/sul trocados continuam sendo erro: não é convenção, é hemisfério errado.
++  assert.equal(boundsFromUrl(new URL("http://localhost/raw_data?swLat=20&swLng=1&neLat=-20&neLng=3")), null);
++  // Ordem normal continua validando os limites.
++  const normal = boundsFromUrl(new URL("http://localhost/raw_data?swLat=-6&swLng=-35.4&neLat=-5.8&neLng=-35.1"));
++  assert.equal(normal.wrapped, false);
++  assert.equal(insideBounds(normal, -5.9, -35.2), true);
++  assert.equal(insideBounds(normal, -5.9, -34), false);
++});
++
++test("página truncada do /raw_data é declarada, não silenciosa", async () => {
++  const {makeGateway} = require("./authorized-spawn-gateway");
++  const nowMs = Date.parse("2026-11-22T16:00:00.000Z");
++  const gateway = makeGateway({
++    authorized: true, sourceId: "authorized_scanner",
++    ingestSecret: "s".repeat(32), readSecret: "r".repeat(32), now: () => nowMs
++  });
++  const call = (path, headers) => new Promise((resolve, reject) => {
++    const req = {url: path, method: "GET", headers, on() {},};
++    const res = {
++      statusCode: 0, headers: {}, body: "", headersSent: false,
++      setHeader(k, v) { this.headers[k] = v; },
++      writeHead(code, h) { this.statusCode = code; Object.assign(this.headers, h || {}); this.headersSent = true; return this; },
++      end(body) { this.body = body; resolve(this); }
++    };
++    gateway.handler(req, res).catch(reject);
++  });
++  // 2500 observações dentro do viewport, acima do teto de 2000 por resposta.
++  for (let i = 0; i < 2500; i++) {
++    const row = {
++      pokemon_id: 25, encounter_id: `enc${i}`, latitude: -6.1, longitude: -35.2,
++      disappear_time: Math.floor((nowMs + 600000) / 1000)
++    };
++    const body = Buffer.from(JSON.stringify({pokemons: [row]}));
++    const req = {url: "/webhook/golbat", method: "POST", headers: {
++      "x-source-secret": "s".repeat(32), "content-type": "application/json"},
++      [Symbol.asyncIterator]: async function* () { yield body; }};
++    const res = {statusCode: 0, headers: {}, headersSent: false, writeHead(c, h) { this.statusCode = c; this.headersSent = true; return this; }, end() {} };
++    await gateway.handler(req, res);
++  }
++  const res = await call("/raw_data?swLat=-6.2&swLng=-35.3&neLat=-6&neLng=-35.1&pokemon=true",
++    {"x-feed-secret": "r".repeat(32)});
++  assert.equal(res.statusCode, 200);
++  assert.equal(JSON.parse(res.body).pokemons.length, 2000, "teto por resposta respeitado");
++  assert.equal(res.headers["X-Result-Truncated"], "true", "truncamento declarado");
++  assert.equal(res.headers["X-Result-Total"], "2500", "total real informado");
++});
+-- 
+2.39.5
+
