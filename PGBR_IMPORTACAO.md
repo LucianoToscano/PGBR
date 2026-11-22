@@ -1,4 +1,4 @@
-# PGBR - replica de pesquisa do PGBR
+# PGBR — proveniência e importação histórica de PGRazor
 
 Origem: https://github.com/jpitty03/PGRazor
 Referencia da main: `f758746f4e1479f4b3105209bdd1d80958605f37`

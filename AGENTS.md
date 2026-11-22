@@ -4,7 +4,7 @@
 
 # PGBR — Instruções para desenvolvimento e auditoria
 
-Leia `README.md`, `docs/BUILDING.md`, `docs/ARCHITECTURE.md`, `docs/ROOTED.md`, `docs/releases/v0.00.13-LT.md` e `AUDITORIA_IA_COMECE_AQUI_LT013.md`.
+Leia `README.md`, `docs/BUILDING.md`, `docs/ARCHITECTURE.md`, `docs/ROOTED.md`, `docs/GAME_UPDATES.md` e `THIRD_PARTY.md`. Documentos históricos LT013 não existem na `main`: consultar [release notes LT013](https://github.com/LucianoToscano/PGBR/blob/integracao/lt032-recuperacao-20261121/docs/releases/v0.00.13-LT.md) e [auditoria LT013](https://github.com/LucianoToscano/PGBR/blob/integracao/lt032-recuperacao-20261121/AUDITORIA_IA_COMECE_AQUI_LT013.md) apenas na branch indicada.
 
 **Enriquecer, nunca empobrecer.** Preserve funções e permissões, sem alterar o PokeSearch. Não invente hooks Unity, IDs de itens, resultados de pesquisas ou testes. Separe implementação, testes em stub/JVM, compilação Android, homologação física e release publicada.
 

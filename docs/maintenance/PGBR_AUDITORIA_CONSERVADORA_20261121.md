@@ -67,3 +67,12 @@ A `main` contém **1 grupo de arquivos idênticos**, uma cópia SVG compartilhad
 - O status de validação do script e teste deve ser conferido no CI da branch antes de merge; criação de código-fonte não é execução comprovada.
 - A promoção da LT032 e dos PRs #40/#41/#42 para `main` é tarefa de integração separada. Não concluir por esta auditoria que os recursos avançados existem na `main`.
 - O documento complementa o Arquivo Mestre, sem reivindicar status canônico alternativo.
+
+## 7. Complemento — navegação, documentação e Drive (21/11/2026)
+
+- **Dois links locais obsoletos na `main` identificados:** `AGENTS.md` exigia `docs/releases/v0.00.13-LT.md` e `AUDITORIA_IA_COMECE_AQUI_LT013.md`, presentes na branch LT032 mas **inexistentes na `main`**. Nesta revisão, a leitura obrigatória continua, mas os documentos históricos são associados explicitamente à branch que os contém.
+- **Um mestre, múltiplos pontos de entrada:** índice navegável e mapa de armazenamento incorporados ao próprio `PGBR_ARQUIVO_MESTRE_UNICO.md`; `CONTRIBUTING.md` e modelo de PR passam a exigir consulta. Não foi criado um segundo documento de autoridade.
+- **Scanner de links e governança:** ampliado `test_master_governance.py` para testar destinos relativos do mestre e documentação local do `AGENTS.md`. Um workflow isolado, sem secrets e só com `contents: read`, executa o inventário e testes em GitHub Actions. Deve-se consultar o resultado real da execução antes de declarar CI aprovado.
+- **Revisão de pastas do Drive:** `Projetos/PGBR` contém áreas separadas para Mestre, APKs QA, Código Fonte, Relatórios, Builds/Módulos e material restrito. O mestre mantém um **apontamento**, não uma cópia documental concorrente; fontes históricas PokeGoBR existentes na pasta Mestre foram mantidas intactas.
+- **Candidatos de limpeza:** nenhum arquivo rastreado com extensões típicas de APK, chaves ou resíduos (`.tmp`, `.pyc`, `.log`) encontrado nas árvores revisadas; a análise por nomes **não descarta segredos embutidos em outros arquivos**. As sete famílias de conteúdo idêntico em LT032 continuam intocadas.
+- **Critério de conclusão:** a manutenção será pronta para integração documental somente quando o CI do PR #43 estiver verde e o diff registrar **zero exclusões**. CI de governança não substitui `tools/check.py` integral nem verificação física de APK Root/sem Root.
