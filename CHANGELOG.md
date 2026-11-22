@@ -1,13 +1,19 @@
-## Não lançado — Ataque Inteligente simples VNext (22/11/2026)
-- Implementação experimental condicionada a runtime tipado: chamar o original de `ObserveBattleState` antes da observação, resolver indicação Super/Normal/Pouco e slot `Charge/Charge2` diretamente do display, comparar somente dois carregados VNext prontos, com correspondência de atualização e frescor. Sem espera de energia nem alteração de cadências.
-- Mantém o primeiro carregado tradicional quando OFF, dados ausentes, apenas um botão pronto, atualização antiga, metadata incompatível ou sessão ambígua. Escudos, trocas, Cura e executores Legacy/PvE não foram alterados.
-- Acrescentadas fixtures de classificação, escolha de slot e executor Rocket com objetos simulados. **Não confirmado em aparelho**; testes e compilação não são homologação de gameplay. Documento: [Integração VNext](docs/ATAQUE_INTELIGENTE_SIMPLES_VNEXT_2026-11-22.md). Preservar PR #117 até revisão da integração.
+## v0.00.41-LT — candidata de pré-release QA (22/11/2026)
+- Corrige iFlowGo ao impedir requisições com raio inválido ou #Dex fora do intervalo; Reides não são rotuladas como globais quando o conector é apenas por área.
+- Documentação de instalação/compilação atualizada; master e auditoria de regressões preservados.
+- Inclui a PR #116 já mesclada à main: recomendação experimental de ataque (não conectada ao executor) e backup de preferências.
+- **Candidata em validação:** nenhuma nova release nem APK confirmado até o GitHub Actions compilar, assinar e publicar. `device_tested=false`. Histórico LT040 preservado.
 
 ## Não lançado — correção de política Ataque Inteligente simples e auditoria (22/11/2026)
 - [PR #120](https://github.com/LucianoToscano/PGBR/pull/120): remove espera deliberada de até 5,5 s para farmar um carregado mais eficaz na política Java PvP; quando existe golpe pronto, prioriza categorias **super eficaz > neutro > resistido** e usa o primeiro em empates. Aceita só um carregado conhecido; preserva preferência OFF, confirmação de prontidão, máscaras de ataque/escudo e as cadências dos executores.
 - Estendidos testes de política para matriz 3×3, prontidão exclusiva, empate e adversário desconhecido sem inferir eficácia. Comparação LT040→main mostrou histórico linear e nenhum arquivo removido, não homologação física.
 - **Limitação de escopo:** política PvP Java não se encontra ligada ao executor nativo de combate; PR #117 contém regra C++ isolada e transporte F3 ainda sem adaptação runtime. Não afirmar que o segundo golpe é acionado por eficácia real nem publicar APK como solução da issue #90. [Relatório](docs/AUDITORIA_PGBR_ATAQUE_SIMPLES_2026-11-22.md). `device_tested=false`.
 - Sem alteração de versão, sem merge da PR #117 e sem sobrescrever as releases QA v0.00.39/v0.00.40.
+
+## Não lançado — Ataque Inteligente simples VNext (22/11/2026)
+- Implementação experimental condicionada a runtime tipado: chamar o original de `ObserveBattleState` antes da observação, resolver indicação Super/Normal/Pouco e slot `Charge/Charge2` diretamente do display, comparar somente dois carregados VNext prontos, com correspondência de atualização e frescor. Sem espera de energia nem alteração de cadências.
+- Mantém o primeiro carregado tradicional quando OFF, dados ausentes, apenas um botão pronto, atualização antiga, metadata incompatível ou sessão ambígua. Escudos, trocas, Cura e executores Legacy/PvE não foram alterados.
+- Acrescentadas fixtures de classificação, escolha de slot e executor Rocket com objetos simulados. **Não confirmado em aparelho**; testes e compilação não são homologação de gameplay. Documento: [Integração VNext](docs/ATAQUE_INTELIGENTE_SIMPLES_VNEXT_2026-11-22.md). Preservar PR #117 até revisão da integração.
 
 ## Não lançado — prioridade simples de eficácia (22/11/2026)
 - Nova política pura compara categorias de eficácia e reutiliza a tabela de tipos. Testes usam objetos simulados; ela ainda não está ligada aos executores nem altera a escolha no jogo. A investigação identificou um indicador candidato no display VNext, mas não comprovou sua atualização para a sessão/adversário atual. Sem release.

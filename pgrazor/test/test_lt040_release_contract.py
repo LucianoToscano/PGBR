@@ -7,7 +7,7 @@ ROOT=Path(__file__).resolve().parents[2]
 class Lt040ReleaseContract(unittest.TestCase):
     def test_version_workflow_and_assets(self):
         version=(ROOT/"pgrazor/VERSION").read_text(encoding="utf-8").strip()
-        self.assertEqual(version,"0.00.40-LT")
+        self.assertIn(version,("0.00.40-LT","0.00.41-LT"))
         new=(ROOT/".github/workflows/pgbr-lt040-release.yml").read_text(encoding="utf-8")
         for term in (
             "PGRAZOR_VERSION: v0.00.40-LT","--tag v0.00.40-LT",
