@@ -157,7 +157,7 @@ public final class LiveFeedDialog {
             // Existing explicit provider selections remain saved independently per search.
             categoryIndex = pokemonSearchMode ? 1 : raidSearchMode ? 4
                     : clamp(prefs.getInt("category", 0), 0, CATEGORIES.length - 1);
-            radiusIndex = clamp(prefs.getInt(radiusPreferenceKey(), provider == 2 ? 3 : 1),
+            radiusIndex = clamp(prefs.getInt(radiusPreferenceKey(), provider == 2 && pokemonSearchMode ? 3 : 1),
                      0, RADII.length - 1);
             filters = loadFilters();
             // The session constructor must not touch the keystore on the main thread; token use is
@@ -570,7 +570,7 @@ public final class LiveFeedDialog {
             client.cancel(); pokeList.cancel(); iFlowGo.cancel(); rocketMap.cancel();
             provider = selected;
             main.removeCallbacks(deferredFetch);
-            radiusIndex = clamp(prefs.getInt(radiusPreferenceKey(), selected == 2 ? 3 : 1),
+            radiusIndex = clamp(prefs.getInt(radiusPreferenceKey(), selected == 2 && pokemonSearchMode ? 3 : 1),
                     0, RADII.length - 1);
             prefs.edit().putInt(pokemonSearchMode ? "pokemon_provider_v1" : "raid_provider_v1", selected).apply();
             showingLogin = selected == 0 && !client.signedIn();
@@ -858,6 +858,22 @@ public final class LiveFeedDialog {
             }
             final int selectedDex = sourceDexFilter();
             final String queryAtRequest = pokemonQuery;
+            // Nearby raids are limited to the selected local area. The Infinity
+            // radius is a UI sentinel for Pokémon global search only; never
+            // pretend that the nearby endpoint covers global raids.
+            if (provider == 2 && raidSearchMode && radiusIndex == 3) {
+                lastError = "iFlowGo não oferece busca Global de Reides neste conector. "
+                        + "Escolha 1 km, 3 km ou 5 km.";
+                updateStatus(); return;
+            }
+            // Numeric #Dex outside the local catalog previously triggered an
+            // unfiltered first global page, which looked like a failed filter.
+            if (provider == 2 && pokemonSearchMode && radiusIndex == 3
+                    && selectedDex < 1 && queryAtRequest != null
+                    && queryAtRequest.trim().matches("#?[0-9]+")) {
+                lastError = "Número da Pokédex inválido para a busca global.";
+                updateStatus(); return;
+            }
             if (pokemonSearchMode && provider == 1 && radiusIndex == 3 && selectedDex < 1) {
                 lastError = "Informe uma espécie específica ou #Dex antes de consultar Global na PokeList.";
                 updateStatus(); return;
