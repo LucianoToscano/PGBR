@@ -17,8 +17,8 @@ actions=(ROOT/"pgrazor/native/rocket_actions.cpp").read_text(encoding="utf-8")
 assert 'smartShieldTiming=1, smartFaintedSwapTiming=1' in control
 assert '"smartShieldTiming",String.valueOf(smartShieldTiming)' in control
 assert '"smartFaintedSwapTiming",String.valueOf(smartFaintedSwapTiming)' in control
-assert 'smartShieldTiming=readBoundedVisual(p,"smartShieldTiming",1,0,3)' in control
-assert 'smartFaintedSwapTiming=readBoundedVisual(p,"smartFaintedSwapTiming",1,0,3)' in control
+assert 'smartShieldTiming=readBoundedVisual(p,"smartShieldTiming",1,0,2)' in control
+assert 'smartFaintedSwapTiming=readBoundedVisual(p,"smartFaintedSwapTiming",1,0,2)' in control
 assert '"F2|"+(smartBattle?1:0)+"|"+smartShieldTiming+"|"+smartFaintedSwapTiming' in control
 assert '.setSingleChoiceItems(SHIELD_WAIT_LABELS,Control.smartShieldTiming()' in panel
 assert '.setSingleChoiceItems(FAINTED_SWAP_LABELS,Control.smartFaintedSwapTiming()' in panel
@@ -39,6 +39,6 @@ assert 'invoke(g_cfg.vm_charge, target, nullptr, &err);' in combat
 assert 'action==PGR_ROCKET_QUICK?150' in actions
 assert 'action==PGR_ROCKET_LEGACY_CHARGE?500' in actions
 assert 'action==PGR_ROCKET_VNEXT_CHARGE?600:250' in actions
-assert 'return option == 0 ? 0 : option == 1 ? 1500 : option == 2 ? 3000' in policy
-assert 'return option == 0 ? 400 : option == 1 ? 2000 : option == 2 ? 6000' in policy
+assert 'return option == 0 ? 0 : option == 2 ? 3000 : option == 1 || option == 3 ? 1500' in policy
+assert 'return option == 0 ? 400 : option == 2 ? 6000 : option == 1 || option == 3 ? 2000' in policy
 print("PASS: PT-BR timing UI, persistence, manual safety and unchanged attack cadence source contract")
