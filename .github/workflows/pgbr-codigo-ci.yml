@@ -54,6 +54,24 @@ jobs:
           export ANDROID_NDK_HOME="$SDK_ROOT/ndk/27.3.13750724"
           python -B pgrazor/native_harness.py --abi arm64-v8a             auto_raid_policy batch_evolution_policy buddy_emotion_policy             incense_guard_policy remote_gym_policy research_policy shiny_scan_policy
 
+  website-build:
+    name: Build do website com lockfile
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '22'
+      - name: Instalar dependencias exatamente como o lockfile
+        working-directory: website
+        run: npm ci
+      - name: Compilar frontend (sem deploy)
+        working-directory: website
+        run: npm run build
+
   project-check:
     name: Suite real check.py + compilacao Java + Root
     runs-on: windows-2022
