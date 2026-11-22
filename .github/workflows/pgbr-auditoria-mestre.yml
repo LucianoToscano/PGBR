@@ -36,6 +36,16 @@ jobs:
           java-version: '17'
       - name: Testar fusos e coordenadas Hotspots (JVM, somente leitura)
         run: python -B -m unittest discover -s pgrazor/test -p 'test_hotspots_java.py' -v
+      - name: Testar novos motores Java (busca, doces, estatísticas, ginásios)
+        run: |
+          python -B -m unittest discover -s pgrazor/test -p 'test_settings_search_java.py' -v
+          python -B -m unittest discover -s pgrazor/test -p 'test_candy_quest_policy_java.py' -v
+          python -B -m unittest discover -s pgrazor/test -p 'test_session_stats_history_java.py' -v
+          python -B -m unittest discover -s pgrazor/test -p 'test_gym_automation_preferences_java.py' -v
+      - name: Testar a política C++ de IV, sem jogo ou dados privados
+        run: python -B -m unittest discover -s pgrazor/test -p 'test_transfer_cutoff_host.py' -v
+      - name: Verificar sintaxe dos scripts Python novos
+        run: python -B -m compileall -q pgrazor/test
       - name: Verificar Arquivo Mestre e links internos
         run: python -B -m unittest discover -s pgrazor/test -p 'test_master_governance.py' -v
       - name: Testar o inventário somente leitura
