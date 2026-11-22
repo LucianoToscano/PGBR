@@ -83,5 +83,38 @@ int main() {
   assert(from_types(11, unknown)==Effect::UNKNOWN);
   assert(from_types(11, duplicate)==Effect::UNKNOWN);
   assert(from_types(11, nullptr)==Effect::UNKNOWN);
+  // New VNext path: only two equally fresh, correctly labelled display
+  // instances may override the legacy first-ready order.
+  using pgr_charge_effect_ui::Slot;
+  using pgr_charge_effect_ui::Tier;
+  DisplayCandidate pair[2] = {
+      {{Slot::SECOND,Tier::SUPER,91},1000,true},
+      {{Slot::FIRST,Tier::NEUTRAL,91},1001,true}
+  };
+  assert(choose_display(true,1020,pair,2)==0); // never trust capture order
+  pair[0].sample.tier=Tier::RESISTED;
+  assert(choose_display(true,1020,pair,2)==1);
+  pair[0].sample.tier=Tier::NEUTRAL;
+  assert(choose_display(true,1020,pair,2)==1); // first-slot tie
+  pair[1].sample.tier=Tier::SUPER;
+  assert(choose_display(true,1020,pair,2)==1);
+  assert(choose_display(false,1020,pair,2)==-1);
+  assert(choose_display(true,1020,pair,1)==-1);
+  pair[1].ready=false;
+  assert(choose_display(true,1020,pair,2)==-1); // only one ready -> legacy
+  pair[1].ready=true;
+  pair[1].sample.batch_token=92;
+  assert(choose_display(true,1020,pair,2)==-1); // unequal battle-state observations
+  pair[1].sample.batch_token=91;
+  pair[1].observed_ms=700;
+  assert(choose_display(true,1020,pair,2)==-1); // stale target/label
+  pair[1].observed_ms=1001;
+  pair[1].sample.slot=Slot::SECOND;
+  assert(choose_display(true,1020,pair,2)==-1); // duplicate button identity
+  pair[1].sample.slot=Slot::FIRST;
+  pair[0].sample.tier=Tier::UNKNOWN;
+  assert(choose_display(true,1020,pair,2)==-1);
+  pair[0].sample.tier=Tier::RESISTED;
+  assert(choose_display(true,900,pair,2)==-1); // clock inversion
   std::puts("smart attack priority: PASS (pure synthetic policy; no game action)");
 }
