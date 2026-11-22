@@ -459,3 +459,15 @@ Após o reparo, o workflow foi tornado **somente leitura** (`permissions.content
 **Compilação:** [PR #64 / run #44999399025](https://github.com/LucianoToscano/PGBR/actions/runs/44999399025) concluiu **success** nos dois jobs, produzindo os pacotes com 14 traduções, **sem** o reparo do fallback. A compilação nova, incluindo traduções + PNG reparado, foi iniciada em [#45000567415](https://github.com/LucianoToscano/PGBR/actions/runs/45000567415), e a suite de CI completa em [#45000567442](https://github.com/LucianoToscano/PGBR/actions/runs/45000567442). As conclusões e os novos hashes dessas duas execuções **não** estavam confirmados no instante deste registro. Nunca reutilizar os hashes da execução #44991558398 ou #44999399025 para artefatos dessa branch.
 
 **Pendências externas não removíveis por código:** instalar e reproduzir VGP+, PvP em batalha real, bloquear/desbloquear joystick em cinco estilos no aparelho, Root + Vector e verificar feeds de localização com credenciais/autorizações legítimas. Sem log Android, conta de QA e comprovação de autorização, marcar como não homologado; não anunciar como teste físico passado.
+
+---
+
+## 22/11/2026 — Regressões C++ host ampliadas para 12 suítes
+
+Para enfrentar a cobertura insuficiente dos 134 fixtures nativos, a branch de manutenção do [PR #58](https://github.com/LucianoToscano/PGBR/pull/58) recebeu o commit `ba49e7a1699e700291caf6c5289b2f5136e0614e`, que ampliou de 7 para **12 testes C++ executáveis em host Linux**, mantendo a execução NDK ARM64 como gate separado. Foram incluídos:
+- `battle_counter_test.cpp` e `smart_battle_party_test.cpp`: escolha de contragolpes e equipe antes da batalha;
+- `pvp_rank_test.cpp`: classificação e limites de ligas PvP;
+- `rocket_combat_test.cpp` ligado a `rocket_combat.cpp`/`rocket_actions.cpp` com `PGR_RC_DIRECT_TEST`: **27 cenários** de ataques rápidos/carregados, escudos, turno, reentrância e liberação de objetos;
+- `battles_test.cpp` ligado a `battles.cpp` com `PGR_BATTLE_DIRECT_TEST`: reides/ginásios/Max, troca, desvio, recuperação de estado e orbes Max.
+
+O [job Linux da execução #45000885337](https://github.com/LucianoToscano/PGBR/actions/runs/45000885337) passou os 12 testes; os logs registraram explicitamente **296/296 checks Auto-Raid, 53/53 verificações Shiny e 27 casos Rocket**, além dos outros testes de cenário. O website e a compilação de políticas NDK da mesma execução também passaram, mas o gate Java/Windows ainda estava em andamento no momento deste registro. **Não afirmar 134/134 executados**: os 122 fixtures restantes requerem avaliação de dependências e uma matriz de testes adicional. Nenhum desses resultados comprova ataque ou escudo funcionando no jogo real sem Android.
