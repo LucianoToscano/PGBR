@@ -1,9 +1,11 @@
-## v0.00.37-LT — candidato QA: Rocket compartilhado por allowlist (22/11/2026)
+## v0.00.37-LT — pré-release QA publicada: Rocket compartilhado por allowlist (22/11/2026)
 - O mesmo motor Rocket de ágil, carregado e escudo é autorizado automaticamente em Rocket, PvP tipado/desafios privados confirmados e treinamento/NPC reconhecido, mantendo as preferências do usuário.
 - Bloqueio explícito `RAID / GYM / MAX / WILD / UNKNOWN` no motor Rocket; `battles.cpp` permanece íntegro e independente.
 - Identificação `CombatTypeExtensions.IsPvPCombat` validada + VNext; interstitial NPC precisa de preparação e VNext, sem falsos positivos por Mateo.
 - Revogação na saída de VNext, resultados, escopo PvE, prioridade Rocket, perda de lease, parada; sem herança de um combate para outro.
 - Testes C++ e contratos Windows/Android; nova versão/release separada da LT036, `device_tested=false` e sem prova de ações aceitas.
+
+- [Release QA LT037](https://github.com/LucianoToscano/PGBR/releases/tag/v0.00.37-LT) publicada, build [Actions #45028477340](https://github.com/LucianoToscano/PGBR/actions/runs/45028477340) aprovado. **Teste em aparelho segue pendente.**
 
 ## v0.00.36-LT — candidato QA: treinamento e diagnóstico de instalação (22/11/2026)
 - Candidato NPC de 45 s precisa de preparação e VNext antes de habilitar motor Rocket/PvP de fast/charged/shield.
