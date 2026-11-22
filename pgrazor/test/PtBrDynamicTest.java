@@ -74,6 +74,14 @@ public final class PtBrDynamicTest {
         eq(" stops in route (", " paradas na rota (");
         eq(" nearby).", " locais próximos).");
         eq("A route is running: ", "Uma rota está em andamento: ");
+        eq("Quests", "Pesquisas");
+        eq("Primal", "Primitivo");
+        eq("5-star / Legendary", "5 estrelas / Lendário");
+        eq("Only raids within 10 km of where you press Start", "Somente reides em um raio de 10 km de onde você tocar em Iniciar");
+        eq("Shiny Scanner (Experimental)", "Scanner de Brilhantes (experimental)");
+        eq("My Shinies", "Meus Brilhantes");
+        eq("Shiny or IV ≥90%: Ultra Ball + Golden Razz", "Brilhante ou IV ≥90%: Ultra Bola + Fruta Frambo Dourada");
+        eq("then battles using your raid auto-attack settings and catches the boss. Stops at the raid limit, after a shiny ", "depois batalha usando suas configurações de ataques automáticos em Reides e tenta capturar o chefe. Para ao atingir o limite de Reides ou após capturar um Brilhante ");
         System.out.println("PGBR: testes de textos dinamicos aprovados.");
     }
 }
