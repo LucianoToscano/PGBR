@@ -65,12 +65,15 @@ final class PvpChargedPreference {
         final boolean firstReady=first.ready&&energy>=first.cost;
         // A single known move needs no type comparison; never assume there is a second button.
         if(second==null)return firstReady?FIRST:WAIT;
-        if(!second.valid()||!typeValid(opponent1)||opponent2!=0&&!typeValid(opponent2)||
-           opponent1==opponent2||hpPercent<0||hpPercent>100)return UNKNOWN;
+        if(!second.valid())return UNKNOWN;
         final boolean secondReady=second.ready&&energy>=second.cost;
+        // When only one verified charged move is ready, no effectiveness comparison
+        // or opponent-type inference is needed. Never wait for the unavailable move.
         if(firstReady&&!secondReady)return FIRST;
         if(secondReady&&!firstReady)return SECOND;
         if(!firstReady)return WAIT; // Neither ready: normal quick-attack policy continues.
+        if(!typeValid(opponent1)||opponent2!=0&&!typeValid(opponent2)||
+           opponent1==opponent2||hpPercent<0||hpPercent>100)return UNKNOWN;
         final int tier1=effectivenessTier(effectiveness(first.type,opponent1,opponent2));
         final int tier2=effectivenessTier(effectiveness(second.type,opponent1,opponent2));
         if(tier1<0||tier2<0)return UNKNOWN;
