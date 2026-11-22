@@ -13,7 +13,42 @@
 - **Operação:** [privacidade/terceiros](#mestre-seguranca), [backups](#mestre-backups), [prioridades](#mestre-prioridades), [protocolo de execução](#mestre-protocolo), [fontes](#mestre-fontes).
 - **Auditoria:** [histórico de alterações](#mestre-historico), [inventário conservador](#mestre-auditoria), [mapa de armazenamento e limpeza](#mestre-arquivos).
 
-**Estado resumido auditado em 21/11/2026:** última release pública identificada **LT023**; candidato **LT032** compilado em CI (Root, sem Root e módulo), **não homologado em aparelho**; `main` ainda usa código histórico. A manutenção [PR #43](https://github.com/LucianoToscano/PGBR/pull/43), já integrada à `main`, foi documental e conservadora: **nenhum recurso ou arquivo rastreado foi removido**.
+**Estado atual confirmado em 22/11/2026:** **`v0.00.33-LT` publicada como pré-release QA** em [GitHub Releases](https://github.com/LucianoToscano/PGBR/releases/tag/v0.00.33-LT), com as três variantes e recibos; `main` e a tag do release em `28a365fec1277033a1089cb394aecd6e9cc01115`. [PR #68](https://github.com/LucianoToscano/PGBR/pull/68) **merged**; CI principal [#45006532866](https://github.com/LucianoToscano/PGBR/actions/runs/45006532866) aprovado e publicação [#45006532739](https://github.com/LucianoToscano/PGBR/actions/runs/45006532739) aprovada. **Ainda não homologada em dispositivo**. O relatório anterior de 21/11 (LT023 e candidato LT032) permanece **abaixo apenas como histórico**, não descreve o status atual.
+
+## REGISTRO PÓS-PUBLICAÇÃO — v0.00.33-LT (22/11/2026)
+
+**Este registro prevalece sobre os snapshots e estados de preparação anteriores nesta página.** Foi realizada verificação factual em GitHub **depois** da publicação, conforme a regra permanente do usuário. **Não confundir merge histórico de commits com PRs individuais ainda abertos**.
+
+| Evidência | Estado confirmado |
+| --- | --- |
+| Repositório oficial | `LucianoToscano/PGBR`, branch `main`, HEAD `28a365fec1277033a1089cb394aecd6e9cc01115` |
+| Integração QA principal | [PR #68](https://github.com/LucianoToscano/PGBR/pull/68) **merged** em 22/11/2026, merge commit `28a365fec1277033a1089cb394aecd6e9cc01115` |
+| Infraestrutura e documentação | [PR #58](https://github.com/LucianoToscano/PGBR/pull/58) e [PR #52](https://github.com/LucianoToscano/PGBR/pull/52) constam **merged**; histórico conservado, sem apagar branches |
+| Versão do app | `pgrazor/VERSION = 0.00.33-LT`; versão de base do jogo `0.437.0` (code `2026110902`) |
+| Tag | [`v0.00.33-LT`](https://github.com/LucianoToscano/PGBR/releases/tag/v0.00.33-LT), objeto Git `refs/tags/v0.00.33-LT` apontando para a mesma HEAD da `main` |
+| Release | [PGBR v0.00.33-LT (QA)](https://github.com/LucianoToscano/PGBR/releases/tag/v0.00.33-LT), id `454333149`, **publicada como pré-release (não homologada)** em 22/11/2026 às 09:26 UTC |
+| Testes do código `main` | [Actions #45006532866](https://github.com/LucianoToscano/PGBR/actions/runs/45006532866) — `completed/success` |
+| Build, integridade e publicação | [Actions #45006532739](https://github.com/LucianoToscano/PGBR/actions/runs/45006532739) — `completed/success` |
+| Build recente anterior | PR #66 Eventos / PR #67 Halloween+Safari têm código já **ancestral** da `main`, apesar de PRs históricos permanecerem `open/draft`; não mesclar de novo ou duplicar alterações |
+| Arquivamento upstream | Workflow da `main` [#45006532786](https://github.com/LucianoToscano/PGBR/actions/runs/45006532786) falhou por questão de arquivamento, **não do build APK LT033**; correção isolada [PR #69](https://github.com/LucianoToscano/PGBR/pull/69) com CI separado. Não marcar #69 integrado antes do merge |
+
+### Três arquivos publicados, sem reutilizar hashes da LT032
+
+Estes são os hashes **reportados pelos metadados de assets do release oficial GitHub**, não os hashes dos APKs LT032. Links apontam **diretamente** aos arquivos existentes. Para distribuição, manter `SHA256SUMS.txt`, `build-info.json` e `root-build-info.json` da **mesma** publicação.
+
+| Artefato release LT033 | Tamanho publicado | SHA-256 do asset |
+| --- | ---: | --- |
+| [PGBR-v0.00.33-LT.apk](https://github.com/LucianoToscano/PGBR/releases/download/v0.00.33-LT/PGBR-v0.00.33-LT.apk) — sem Root | 188810563 bytes | `484ae6ff6eee4f7d72b1bc8bec9dae8d9c4baa22d154561776baebd0c8ac4b09` |
+| [PGBR-v0.00.33-LT-Root.apk](https://github.com/LucianoToscano/PGBR/releases/download/v0.00.33-LT/PGBR-v0.00.33-LT-Root.apk) — instalador | 8336078 bytes | `6116a4f482d23c3e0b0cae8fcac3152bed84da14cc58e844672d788221a835d6` |
+| [PGBR-v0.00.33-LT-Root-module.zip](https://github.com/LucianoToscano/PGBR/releases/download/v0.00.33-LT/PGBR-v0.00.33-LT-Root-module.zip) — Zygisk | 8251868 bytes | `66a5523c3589286af42116bcc674278596f3bc2de72b20bc0794f3a70137ed62` |
+
+Comprovantes: [SHA256SUMS.txt](https://github.com/LucianoToscano/PGBR/releases/download/v0.00.33-LT/SHA256SUMS.txt) · [build-info.json](https://github.com/LucianoToscano/PGBR/releases/download/v0.00.33-LT/build-info.json) · [root-build-info.json](https://github.com/LucianoToscano/PGBR/releases/download/v0.00.33-LT/root-build-info.json).
+
+**Pendências que permanecem abertas:** prova de instalação/upgrade e rollback em dispositivo; gameplay PvP, golpes supereficazes e escudos; VGP+ capturas e giros; Root com Vector; joystick em cinco estilos; máscara de nome no mapa e perfil; eventos Halloween, GO Wild/Safari e Eternatus; busca em feeds autorizados e revisão visual das sprites. A preferência de priorizar segundo golpe supereficaz **não tem executor nativo comprovado**. O estado de publicação é `QA / device_tested=false`.
+
+**Protocolo permanente de fechamento:** cada nova alteração deve consultar a HEAD e este Mestre antes do trabalho, abrir branch/PR independente, passar CI e **atualizar o Mestre no mesmo PR**; após merge, versão, build ou release, registrar novamente o estado efetivo na `main` com SHA, resultados, URL e pendências. Não renumerar artefatos já publicados, não sobrescrever tags e não apagar snapshots históricos.
+
+---
 
 <a id="mestre-leitura"></a>
 ## 0. REGRA MÁXIMA — LEITURA OBRIGATÓRIA
@@ -58,7 +93,7 @@ Use os termos com precisão:
 **Regra de produto:** sucesso do GitHub Actions não comprova VGP capturando, PvP atacando, privacidade ocultando nome na Unity, scanner recebendo dados nem ausência de crash. Não divulgar uma função como corrigida quando apenas seu botão ou teste foi ajustado.
 
 <a id="mestre-versoes"></a>
-## 3. Linha do tempo e estado de versões — fotografia de 21/11/2026
+## 3. Linha do tempo histórica de versões — fotografia de 21/11/2026 (superada pela LT033)
 | Assunto | Situação confirmada | Evidência |
 | --- | --- | --- |
 | Última release pública do PGBR identificada | **`v0.00.23-LT`**, com seis assets; não confundir com compilação LT032 | [Release LT023](https://github.com/LucianoToscano/PGBR/releases/tag/v0.00.23-LT) |
