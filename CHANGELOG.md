@@ -1,4 +1,4 @@
-## v0.00.35-LT — candidato a pré-release QA (22/11/2026)
+## v0.00.35-LT — pré-release QA publicada (22/11/2026)
 - Observador PvP validado tolera bootstrap tardio e ausência dos hooks opcionais de animação.
 - A sessão PvP reconhecida renova o prazo somente com callbacks VNext, conservando teto de 20 minutos e bloqueio de NPC/resultados.
 - Regressões de código, teste de C++ do classificador e workflow de QA independente da LT034.
