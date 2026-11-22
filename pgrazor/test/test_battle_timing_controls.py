@@ -25,6 +25,10 @@ assert '.setSingleChoiceItems(FAINTED_SWAP_LABELS,Control.smartFaintedSwapTiming
 assert '"Imediato — 0 ms"' in panel and '"1,5 segundo (padrão)"' in panel
 assert '"3 segundos"' in panel and '"Original VNext — 400 ms"' in panel
 assert '"2 segundos (padrão)"' in panel and '"6 segundos"' in panel
+assert '"3 segundos","Desativado"' not in panel
+assert '"6 segundos","Desativado"' not in panel
+assert 'if(choice<0||choice>2||smartShieldTiming==choice)return;' in control
+assert 'if(choice<0||choice>2||smartFaintedSwapTiming==choice)return;' in control
 assert 'fainted_wait_ms(prefs.fainted_choice)' in swap
 assert 'if(!unbox<bool>(invoke(prompt_is_open,widget))){release();return;}' in swap
 assert 'kRetryMs=1000,kGiveUpMs=8000' in swap
