@@ -4,6 +4,15 @@
 
 PGBR development QA: cross-platform test portability, mandatory verification checks in PRs and main, pinned CI actions, source safeguards and PT-BR accessibility instrumentation. These changes are **not** an APK release or a claim of on-device validation. The dated v0.3.x notes below are upstream history, not new PGBR releases.
 
+## v0.00.34-LT — pré-release QA (22/11/2026)
+
+- Sniper 100 IV manual do PGBR com validação de validade, coordenadas, espécies, duplicatas, sprites, filtro de Pokédex e confirmação antes de teleporte.
+- Origem PGSharp separada com indicação Free/Standard e cofre criptografado opt-in para key Standard; key guardada não equivale a licença verificada.
+- **Limite:** sem consulta direta aos servidores PGSharp nem login remoto de key nesta versão; origem 100 IV atual continua sendo o feed herdado do PGBR, sujeito à disponibilidade real.
+- Menus e funcionalidades de LT033 preservados. Compilação e entrega em QA; sem homologação Android físico.
+
+[Notas da versão](docs/releases/v0.00.34-LT.md)
+
 ## v0.00.33-LT — pré-release QA (22/11/2026)
 
 - Eventos retornam ao Menu Pokébola com opção para reexibir o atalho; seletor dos eventos Halloween, GO Wild e Rota Doces Eternatus.
