@@ -3,7 +3,7 @@
 <h1 align="center">PGBR</h1>
 > **Arquivo Mestre Único do PGBR (leitura obrigatória):** [PGBR_ARQUIVO_MESTRE_UNICO.md](PGBR_ARQUIVO_MESTRE_UNICO.md). Fonte documental canônica na `main`; esta branch pode ter código mais avançado do que a `main`. Consulte os dois estados antes de afirmar qual versão está pronta.
 
-<p align="center"><strong>PGBR-v0.00.39-LT (pré-release QA publicada; device_tested=false) · Edição brasileira para Android</strong></p>
+<p align="center"><strong>PGBR-v0.00.40-LT (candidato QA; publicação pendente; device_tested=false) · Edição brasileira para Android</strong></p>
 <p align="center">Controles de localização, joystick, captura, rotas e recursos opcionais de automação para Pokémon GO.</p>
 
 > **Status (22/11/2026):** a pré-release LT034 acrescenta Sniper 100 IV manual ao PGBR e painel PGSharp Free/Standard com key criptografada; **a consulta direta a PGSharp e a verificação de licença ainda não estão operacionais**. LT033 consolida a linhagem LT032, Eventos no menu Pokébola, correções de visibilidade, testes nativos sazonais, manutenção e rastreabilidade. A publicação é **pré-lançamento de QA**: PvP, VGP+, Root+Vector, joystick, feeds e privacidade visual ainda exigem ensaio real. Não há integração autenticada a dados privados do PGSharp/Pokémod.
@@ -19,6 +19,8 @@
 > **LT038 candidata (menu e temporizadores):** [notas e limitações](docs/releases/v0.00.38-LT.md) · [workflow de compilação](https://github.com/LucianoToscano/PGBR/actions/workflows/pgbr-lt038-release.yml). Instalador `PGBR-v0.00.38-LT.apk` **publicado e verificado** na [release LT038](https://github.com/LucianoToscano/PGBR/releases/tag/v0.00.38-LT), após [CI #45039119340](https://github.com/LucianoToscano/PGBR/actions/runs/45039119340) com sucesso. Inclui uma opção Ataque Inteligente persistente, troca 2,3 s e escudo 1,7 s, sem atrasar carregados. **A priorização por eficácia ainda NÃO opera no executor nativo de batalha**; não anunciar como habilitada no jogo. Tela branca ainda sob investigação. Preserva o APK LT037 aprovado pelo usuário para Ágil/Carregado/Escudo.
 
 > **LT039 publicada como QA:** [notas técnicas](docs/releases/v0.00.39-LT.md) · [release GitHub](https://github.com/LucianoToscano/PGBR/releases/tag/v0.00.39-LT) · [build verificado #45045923119](https://github.com/LucianoToscano/PGBR/actions/runs/45045923119). PRs #100 e #102 integradas; escudo 0/1.500 (padrão)/3.000 ms/desativado e troca VNext após KO 400/2.000 (padrão)/6.000 ms/desativado. Mantidos 250 ms pós-escudo e ataques imediatos. APK sem Root, Root e ZIP Zygisk assinados e verificados. `device_tested=false` até homologação física. Seleção universal de golpes por eficácia ainda não implementada.
+
+> **LT040 preparada para QA, ainda não publicada (nome reservado `PGBR-v0.00.40-LT.apk`, não é link de download):** [notas de versão](docs/releases/v0.00.40-LT.md) · [PR de recuperação de batalhas #107](https://github.com/LucianoToscano/PGBR/pull/107). O assistente compartilhado reutiliza o motor Rocket em sessões comprovadas de Treinamento/PvP/duelo; observa Hub antes das preferências, recupera prova de tipo validada, bloqueia modos desconhecidos/Raid/Max. Escudo 0/1.500/3.000 ms e Troca Nocaute 400/2.000/6.000 ms, **sem opção Desativado**; Ágil/Carregado/Escudo seguem independentes. Cinco checks de PR #107 aprovados; **sem teste físico, sem APK LT040 até release verificada**. Ataque Inteligente por eficácia e tela branca continuam pendentes.
 
 ## Baixar e validar
 
