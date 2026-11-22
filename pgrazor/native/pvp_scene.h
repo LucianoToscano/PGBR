@@ -6,11 +6,12 @@
 // Only verified 0.437.0 GUI sequences can arm a vNext combat session.
 // NPC interstitial is also used by Mateo gifts: it alone NEVER attacks.
 struct PgrPvpScene {
-    enum Stage { IDLE=0, HUB=1, PREPARATION=2, COMBAT=3, TRAINING_ENTRY=4 };
+    enum Stage { IDLE=0, HUB=1, PREPARATION=2, COMBAT=3, TRAINING_ENTRY=4,
+                 VERIFIED_PVP_ENTRY=5, UNCLASSIFIED_PREP=6 };
     enum Mode { NONE=0, PVP=1, TRAINING=2 };
     static constexpr uint64_t HUB_MS=600000, PREP_MS=180000;
     static constexpr uint64_t COMBAT_IDLE_MS=300000, MAX_COMBAT_MS=1200000;
-    static constexpr uint64_t TRAINING_ENTRY_MS=45000;
+    static constexpr uint64_t TRAINING_ENTRY_MS=45000, VERIFIED_PVP_MS=45000;
     Stage stage=IDLE;
     Mode mode=NONE;
     uint64_t expires_ms=0, started_ms=0, last_vnext_ms=0;
@@ -21,6 +22,19 @@ struct PgrPvpScene {
     void reset(){stage=IDLE;mode=NONE;expires_ms=started_ms=last_vnext_ms=0;}
     bool training() const {return stage==COMBAT && mode==TRAINING;}
     bool pvp() const {return stage==COMBAT && mode==PVP;}
+    // Positive, validated CombatDirectorV2.IsPvPCombat signal lets a private
+    // friend challenge skip the GBL hub, but alone cannot arm the executor.
+    void positive_pvp(uint64_t now) {
+        if(!now)return;
+        live(now);
+        if(stage==UNCLASSIFIED_PREP && live(now)){
+            mode=PVP;stage=PREPARATION;expires_ms=until(now,PREP_MS);
+            return;
+        }
+        if(stage!=IDLE)return;
+        mode=PVP;stage=VERIFIED_PVP_ENTRY;
+        expires_ms=until(now,VERIFIED_PVP_MS);
+    }
     bool live(uint64_t now) {
         if(!now||!expires_ms||now>=expires_ms){reset();return false;}
         return stage!=IDLE;
@@ -47,8 +61,16 @@ struct PgrPvpScene {
         }
         if(std::strcmp(ns,"Niantic.Holoholo.Combat.Preparation")==0 &&
            std::strcmp(name,"CombatPreparationRootGuiController")==0 &&
-           (stage==HUB || stage==TRAINING_ENTRY) && live(now)){
+           (stage==HUB || stage==TRAINING_ENTRY || stage==VERIFIED_PVP_ENTRY)
+           && live(now)){
             stage=PREPARATION;expires_ms=until(now,PREP_MS);
+        } else if(std::strcmp(ns,"Niantic.Holoholo.Combat.Preparation")==0 &&
+                  std::strcmp(name,"CombatPreparationRootGuiController")==0 &&
+                  stage==IDLE){
+            // Generic preparation is inert until a separately validated
+            // IsPvPCombat result; ordinary raid/max VNext never arms.
+            stage=UNCLASSIFIED_PREP;mode=NONE;
+            expires_ms=until(now,VERIFIED_PVP_MS);
         }
     }
     bool vnext(uint64_t now) {
