@@ -41,6 +41,12 @@ ENGINE = [
     'pgrazor/src/dev/pgrazor/SpawnProfiles.java',
     'pgrazor/src/dev/pgrazor/SpawnSourceRegistry.java',
     'pgrazor/src/dev/pgrazor/SpeciesGroups.java',
+    # Contrato de URL/erro do servidor RocketMap: a matriz 401/403/429 e a recusa de
+    # credencial-na-URL são verificadas aqui, não em revisão manual.
+    # LiveFeedClient/Control stubs come from the stubs dir already; only the transport
+    # and its parser are added, so the error contract is compiled for real.
+    'pgrazor/src/dev/pgrazor/RocketMapFeedData.java',
+    'pgrazor/src/dev/pgrazor/RocketMapFeedClient.java',
 ]
 
 UI = [
@@ -49,7 +55,10 @@ UI = [
     'pgrazor/src/dev/pgrazor/SnipeAdvancedFilterDialog.java',
 ]
 
-TESTS = ['pgrazor/test/SnipeEngineTest.java']
+TESTS = [
+    'pgrazor/test/SnipeEngineTest.java',
+    'pgrazor/test/HttpErrorMatrixTest.java',
+]
 
 
 def java_launcher():
@@ -73,8 +82,13 @@ def ecj_jar():
     return str(bundled) if bundled.exists() else None
 
 
+# Stubs that must be replaced by the real implementation when that class is compiled for real.
+# Otherwise ECJ sees two definitions of the same type and the whole run fails.
+STUB_SUPERSEDED = {'RocketMapFeedClient.java'}
+
+
 def stubs():
-    return sorted(p for p in STUBS.rglob('*.java'))
+    return sorted(p for p in STUBS.rglob('*.java') if p.name not in STUB_SUPERSEDED)
 
 
 def compile_with(java, jar, sources, out):
@@ -125,6 +139,16 @@ def main():
             print('FAIL: a suíte do motor reportou falhas.')
             return 1
 
+        # Matriz HTTP/URL: roda aqui também, para que "compilou" nunca seja confundido com "passou".
+        run = subprocess.run([java, '-Dstdout.encoding=UTF-8', '-cp', str(engine_out),
+                              'dev.pgrazor.HttpErrorMatrixTest'],
+                             capture_output=True, text=True, timeout=120)
+        output = (run.stdout or '') + (run.stderr or '')
+        print(output.strip())
+        if run.returncode != 0 or 'PASS:' not in output:
+            print('FAIL: a matriz de erro HTTP não passou.')
+            return 1
+
         ui_sources = stubs() + [ROOT / p for p in ENGINE] + [ROOT / p for p in UI]
         result = compile_with(java, jar, ui_sources, ui_out)
         print('== painel (Sniper 1 / Sniper 2)')
@@ -133,7 +157,7 @@ def main():
             print('FAIL: o painel não compilou.')
             return 1
 
-        print('OK: motor compilado, suíte verde e painel compilado contra os stubs.')
+        print('OK: motor + matriz HTTP + painel compilados e suíte verde contra os stubs.')
         print('Lembrete: isto não é uma build Android nem uma execução em aparelho.')
         return 0
     finally:
