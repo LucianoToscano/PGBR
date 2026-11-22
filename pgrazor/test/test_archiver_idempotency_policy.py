@@ -14,8 +14,11 @@ class ArchiveIdempotencyTest(unittest.TestCase):
         self.assertIn('gh release create "archive-pgrazor-source-root-20261118"',workflow)
     def test_lt033_release_build_is_not_restarted_by_documentation_only_merge(self):
         workflow=(ROOT/'.github/workflows/pgbr-lt033-release.yml').read_text(encoding='utf-8')
-        self.assertIn("- 'pgrazor/VERSION'",workflow)
-        self.assertIn("- '.github/workflows/pgbr-lt033-release.yml'",workflow)
+        # LT033 is published and immutable. A VERSION increment for later
+        # releases must NOT rebuild the old tag or its historical assets.
+        self.assertNotIn("- 'pgrazor/VERSION'",workflow)
+        self.assertNotIn("- '.github/workflows/pgbr-lt033-release.yml'",workflow)
+        self.assertIn("- 'docs/releases/v0.00.33-LT.md'",workflow)
         self.assertIn('  workflow_dispatch:',workflow)
         self.assertIn("github.ref == 'refs/heads/main'",workflow)
 if __name__=='__main__':unittest.main()
