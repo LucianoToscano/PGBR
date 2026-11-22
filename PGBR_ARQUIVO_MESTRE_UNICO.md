@@ -673,3 +673,13 @@ O responsável reiterou sua autorização previamente declarada e documentada no
 **Backlog paralelo preservado:** controles de Sniper I/II horizontal/vertical inspirados nas mídias, ícones/vetores de menu e efeitos de toque do PGSharp como referência (não importar sem direito de distribuição), PvP de ataques/esquivas/escudos e compatibilidade de joystick. Nenhum desses itens foi homologado ou anunciado como corrigido por esta PR.
 
 **Estado:** FONTE ALTERADA, QA PENDENTE, `device_tested=false`. Integrar somente com PR revisada e comparar de novo com a HEAD vigente antes do merge. Sem criar nova release automaticamente.
+
+
+### Atualização de QA da PR #72 — 22/11/2026
+O módulo Sniper 100% IV foi implementado em fonte e submetido como [PR #72](https://github.com/LucianoToscano/PGBR/pull/72) em draft. No commit `fbdd819966608e9a9b148e75aaa8bdf7282e06b3` (última alteração de código após corrigir a exceção checked do fixture), foram verificados:
+- **CI específico Sniper 100% IV**: [Actions #45009944092](https://github.com/LucianoToscano/PGBR/actions/runs/45009944092), status **SUCCESS**: testes estruturais de UI e parser Java/suite de feed com `org.json` Android.
+- **CI geral de código**: [Actions #45009944093](https://github.com/LucianoToscano/PGBR/actions/runs/45009944093), status **SUCCESS**: testes C++ host, ARM64 NDK, frontend, suíte `tools/check.py`, compilação do código Java do aplicativo e validação de compilação do instalador Root.
+- **Auditoria conservadora do Mestre**: [Actions #45009944127](https://github.com/LucianoToscano/PGBR/actions/runs/45009944127), status **SUCCESS**, sem limpeza/descarte.
+- O CI inicial [#45009872068](https://github.com/LucianoToscano/PGBR/actions/runs/45009872068) falhou na declaração da exceção de um **teste Java**, foi corrigido na branch e o novo CI passou. **Não ocultar o histórico da correção.**
+
+**Status atualizado:** IMPLEMENTADO EM FONTE + QA/COMPILAÇÃO DE CÓDIGO APROVADOS; APK de jogo completo **não gerado**, assinatura de instalador **não testada**, nenhuma instalação física, nenhum acesso ao feed ao vivo confirmado, nenhum servidor implantado. Estes testes não homologam o Sniper 100% IV em dispositivo. Modificações posteriores somente documentais devem ser verificadas em um diff antes da integração na `main`. **Preservar a branch e a PR para revisão.**
