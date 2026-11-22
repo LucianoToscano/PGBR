@@ -322,11 +322,25 @@ public final class GameLocationDelivery {
         synchronized (lock) {
             if (!valid(current, epoch, record) || !Control.active()) return false;
             if (nativePointerIsZero(getFieldValue(nativePointerField, current))) return false;
+            // The delivery bridge is the last boundary before the game's native location callback.
+            // Reject malformed live values even if an upstream movement/input path fails validation.
+            // A rejected synthetic fix must not suppress the original provider callback.
+            double latitude = Control.latitude();
+            double longitude = Control.longitude();
+            float speed = Control.speed();
+            float bearing = Control.bearing();
+            if (!Double.isFinite(latitude) || latitude < -90 || latitude > 90
+                    || !Double.isFinite(longitude) || longitude < -180 || longitude > 180
+                    || !Float.isFinite(speed) || speed < 0
+                    || !Float.isFinite(bearing) || bearing < 0 || bearing >= 360) {
+                logFaultBounded("invalid-fix", new IllegalArgumentException("Malformed synthetic location"));
+                return false;
+            }
             Location fix = new Location(providerName);
-            fix.setLatitude(Control.latitude());
-            fix.setLongitude(Control.longitude());
-            fix.setSpeed(Control.speed());
-            fix.setBearing(Control.bearing());
+            fix.setLatitude(latitude);
+            fix.setLongitude(longitude);
+            fix.setSpeed(speed);
+            fix.setBearing(bearing);
             fix.setAltitude(10);
             fix.setAccuracy(5);
             fix.setTime(System.currentTimeMillis());
