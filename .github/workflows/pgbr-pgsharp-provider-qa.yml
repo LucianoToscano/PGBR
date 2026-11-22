@@ -37,5 +37,12 @@ jobs:
       - uses: android-actions/setup-android@v3
         with:
           packages: platform-tools
-      - name: Android app Java compile (no game APK, no credentials)
-        run: python -B pgrazor/build.py --test-only
+      - name: Install Android API 36
+        run: sdkmanager "platforms;android-36"
+      - name: Compile every PGBR Android Java source, including PGSharp key vault
+        run: |
+          mkdir -p /tmp/pgsharp-java-classes /tmp/pgsharp-generated/dev/pgrazor
+          printf 'package dev.pgrazor; final class BuildVersion { static final String NAME = "v0.00.33-LT"; }\\n' > /tmp/pgsharp-generated/dev/pgrazor/BuildVersion.java
+          find pgrazor/src -name '*.java' -print0 | xargs -0 javac -encoding UTF-8 -source 8 -target 8 \\
+            -classpath "$ANDROID_HOME/platforms/android-36/android.jar" \\
+            -d /tmp/pgsharp-java-classes /tmp/pgsharp-generated/dev/pgrazor/BuildVersion.java
