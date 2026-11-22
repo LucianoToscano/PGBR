@@ -772,3 +772,15 @@ O módulo Sniper 100% IV foi implementado em fonte e submetido como [PR #72](htt
 **Escopo realmente entregue:** painel manual do feed 100% IV existente, origem PGSharp identificada separadamente e armazenamento de key opt-in local. **Não foi implementado** acesso ao servidor de resultados 100% do PGSharp nem validação de key Standard. Guardar uma key não ativa licença; resultados do feed FaustusFoundry não podem ser rotulados como PGSharp. Ausência de conexão/erro retorna estado explícito, sem fabricar spawns. Sem captura automática decorrente de tocar resultado. Teleporte depende de confirmação.
 
 **Estado físico:** `device_tested=false`; nenhum teste de instalação/upgrade/rollback, servidor de feeds ao vivo, Root+Vector, VGP+ girando/capturando, uso real de ataque carregado/escudo PvP, joystick/cooldown ou ocultação visual no mapa/perfil foi homologado neste trabalho. Não afirmar conclusão funcional dessas pendências a partir de CI. Preservar backup do aparelho antes de testar.
+
+
+### Fechamento pós-publicação — CI da documentação LT034 integralmente verde
+
+A documentação final foi incorporada na [PR #75](https://github.com/LucianoToscano/PGBR/pull/75), merge `1e68fcd3a18e37b26a93a801b2eadd60b5166512`. A revisão de integridade posterior confirmou que a HEAD da `main` permaneceu nesse SHA, enquanto a tag `v0.00.34-LT` continua apontando para o commit do build `156a34d72f3f969a5b5bda878dcb548a7fed52e4`.
+
+**Resultados finais verificados dos três workflows pós-merge documental:**
+- [#45014540350](https://github.com/LucianoToscano/PGBR/actions/runs/45014540350): **SUCCESS, 4/4 jobs**, incluindo `tools/check.py`, compilação Java/Root, C++ host, NDK ARM64 e website.
+- [#45014540417](https://github.com/LucianoToscano/PGBR/actions/runs/45014540417): **SUCCESS**, validação de branding/README.
+- [#45014540433](https://github.com/LucianoToscano/PGBR/actions/runs/45014540433): **SUCCESS**, governança, integridade do Mestre e auditoria conservadora.
+
+A API Releases segue retornando `prerelease=true` e seis assets com os **mesmos bytes e digests SHA-256** já registrados na tabela de publicação acima. A nota é apenas documental: **nenhuma nova compilação, alteração de assinatura, reconstrução ou substituição do APK LT034 ocorreu**. Os links de download direto e os três hashes da publicação anterior continuam canônicos. O status `device_tested=false` permanece; o feed diretamente originado no PGSharp e o login Standard seguem não implementados, conforme registro anterior.
