@@ -723,7 +723,7 @@ public final class Pad {
             stick.applyMotion(now);
             boolean wasWalking = Control.engine.walking;
             MotionEngine.RouteProgress before=Control.engine.routeProgress();
-            Control.stepMotion((now-lastTick)/1000.0,stick.pointer>=0); lastTick = now;
+            Control.stepMotion((now-lastTick)/1000.0,stick.pointer>=0||stick.isLocked); lastTick = now;
             Control.tickGameRoutes();
             MotionEngine.RouteProgress after=Control.engine.routeProgress();
             if (before.total>1 && after.total==before.total && after.visited>before.visited)
@@ -943,21 +943,93 @@ public final class Pad {
         int pointer = -1;
         long cameraGesture=-1;
         boolean gestureCamera;
-        Stick(Context c) { super(c); setContentDescription("Joystick: arraste para mover e solte para parar."); }
+        // Joystick Lock (upstream PR #10) keeps the existing PGBR artwork/styles untouched.
+        boolean isLocked, lockPopped, holdingOut;
+        double lockAngle;
+        final Runnable popLockRunnable = () -> {
+            if(pointer>=0 && holdingOut && !isLocked && Control.engine.enabled && Control.canEnable()){
+                lockPopped=true;invalidate();
+            }
+        };
+        Stick(Context c) { super(c); updateLockDescription(); }
+        private void updateLockDescription(){
+            setContentDescription(isLocked ? "Joystick travado: toque para parar." :
+                "Joystick: arraste para mover; mantenha para fora por 250 ms para travar.");
+        }
         void release() { release(false); }
-        void release(boolean preserveWalk) { x=y=0; pointer=-1; cameraGesture=-1; if (!preserveWalk || !Control.engine.walking) Control.engine.stop(); Control.saveState(); invalidate(); }
+        void release(boolean preserveWalk) {
+            removeCallbacks(popLockRunnable);
+            isLocked=false;lockPopped=false;holdingOut=false;lockAngle=0;
+            x=y=0;pointer=-1;cameraGesture=-1;
+            if (!preserveWalk || !Control.engine.walking) Control.engine.stop();
+            Control.saveState();updateLockDescription();invalidate();
+        }
+        private void lockTo(double angle){
+            removeCallbacks(popLockRunnable);
+            if(!Control.engine.enabled || !Control.canEnable()){release(false);return;}
+            if(gestureCamera){
+                cameraGesture=Control.beginCameraGesture();
+                if(cameraGesture<0){release(false);Toast.makeText(activity,
+                    "Câmera indisponível: movimento não travado.",Toast.LENGTH_SHORT).show();return;}
+            }
+            isLocked=true;lockPopped=false;holdingOut=false;lockAngle=angle;pointer=-1;
+            x=(float)Math.cos(angle);y=(float)Math.sin(angle);
+            updateLockDescription();
+            getParent().requestDisallowInterceptTouchEvent(false);
+            applyMotion(SystemClock.elapsedRealtime());
+            Control.event("joystick-locked",String.format(Locale.US,"locked %.1f°",Math.toDegrees(angle)));
+            Toast.makeText(activity,"Joystick travado",Toast.LENGTH_SHORT).show();
+            invalidate();
+        }
         void applyMotion(long now) {
-            if (pointer<0) return;
-            if (!Control.engine.enabled || !Control.canEnable() || gestureCamera!=Control.cameraRelative()) { release(true); return; }
+            if (pointer<0 && !isLocked) return;
+            if (!Control.engine.enabled || !Control.canEnable() || gestureCamera!=Control.cameraRelative()) {
+                release(true);return;
+            }
             boolean wasWalking=Control.engine.walking;
             if (gestureCamera) {
                 if (!Control.applyCameraInput(cameraGesture,x,-y,now)) {
-                    release(true);
-                    Control.event("joystick-released", "Camera unavailable or changed; a new drag is required");
-                    return;
+                    if(isLocked){
+                        // A new camera heading may be needed after the 1.5 s lease expires.
+                        cameraGesture=Control.beginCameraGesture();
+                        if(cameraGesture<0 || !Control.applyCameraInput(cameraGesture,x,-y,now)){
+                            Control.engine.input(0,0);return;
+                        }
+                    }else{
+                        release(true);
+                        Control.event("joystick-released","Camera unavailable or changed; a new drag is required");
+                        return;
+                    }
                 }
             } else Control.engine.input(x,-y);
             if (wasWalking) Control.event("walk-cancelled", "Manual joystick input");
+        }
+        private float[] lockPosition(double angle,float cx,float cy,float radius){
+            float dist=radius-dp(2);
+            return new float[]{cx+(float)Math.cos(angle)*dist,cy+(float)Math.sin(angle)*dist};
+        }
+        private void drawLockIcon(Canvas canvas,float px,float py,float size,int color){
+            paint.setStyle(Paint.Style.STROKE);paint.setColor(color);paint.setStrokeWidth(dp(1.8f));
+            float width=size*.48f;
+            canvas.drawArc(new RectF(px-width/2,py-size*.46f,px+width/2,py-size*.02f),
+                180,180,false,paint);
+            paint.setStyle(Paint.Style.FILL);
+            canvas.drawRoundRect(new RectF(px-size*.32f,py-size*.05f,
+                px+size*.32f,py+size*.39f),dp(2),dp(2),paint);
+        }
+        private void drawLockBadge(Canvas canvas,float cx,float cy,float radius,float knobX,float knobY){
+            if(!isLocked&&!lockPopped)return;
+            final boolean dark=Control.darkTheme();
+            float px,py,size;
+            if(isLocked){px=knobX;py=knobY;size=dp(15);}
+            else{
+                float[] point=lockPosition(lockAngle,cx,cy,radius);
+                px=point[0];py=point[1];size=dp(16);
+            }
+            paint.setAlpha(255);paint.setStyle(Paint.Style.FILL);
+            paint.setColor(dark?0xfff5f7ff:0xff172438);
+            canvas.drawCircle(px,py,size,paint);
+            drawLockIcon(canvas,px,py,dp(15),dark?0xff13213a:0xffffffff);
         }
         private Bitmap art(String name){
             try(java.io.InputStream in=PgAssets.open(getContext(),"pgrazor/map-icons/"+name)){
@@ -1068,6 +1140,7 @@ public final class Pad {
                 // Only the circular hub moves; the arrows, shield and outer artwork remain fixed.
                 canvas.drawBitmap(builtinThumb,null,
                     new RectF(knobX-thumbR,knobY-thumbR,knobX+thumbR,knobY+thumbR),paint);
+                drawLockBadge(canvas,cx,cy,outer,knobX,knobY);
                 if(stormOn&&isShown()&&!closed){
                     if(morphReady)postInvalidateDelayed(
                         EternatusFxTiming.frameDelayMs(Control.eternatusFxIntensity())); // 20-30 FPS
@@ -1091,33 +1164,71 @@ public final class Pad {
             canvas.drawLine(cx-radius,cy,cx+radius,cy,paint);
             canvas.drawLine(cx,cy-radius,cx,cy+radius,paint);
             paint.setColor(Control.engine.enabled?accent():muted());
-            canvas.drawCircle(cx+x*radius*.65f,cy+y*radius*.65f,dp(22),paint);
+            float knobX=cx+x*radius*.65f,knobY=cy+y*radius*.65f;
+            canvas.drawCircle(knobX,knobY,dp(22),paint);
+            drawLockBadge(canvas,cx,cy,radius,knobX,knobY);
         }
         public boolean onTouchEvent(MotionEvent e) {
             int action=e.getActionMasked();
-            if (action==MotionEvent.ACTION_DOWN) {
-                if(EternatusRouteRunner.active())EternatusRouteRunner.stop("Movimento manual pelo joystick.");
+            if(action==MotionEvent.ACTION_DOWN){
                 getParent().requestDisallowInterceptTouchEvent(true);
-                // A deliberate manual takeover cancels even when a fresh camera
-                // heading is unavailable. Passive camera loss preserves a walk.
-                if (Control.engine.walking) {
-                    Control.engine.stop(); Control.saveState();
-                    Control.event("walk-cancelled", "Manual joystick touch");
+                if(isLocked){
+                    release(false);
+                    getParent().requestDisallowInterceptTouchEvent(false);
+                    Toast.makeText(activity,"Joystick destravado",Toast.LENGTH_SHORT).show();
+                    return true;
                 }
-                pointer=e.getPointerId(0); gestureCamera=Control.cameraRelative();
-                cameraGesture=gestureCamera ? Control.beginCameraGesture() : -1;
+                if(EternatusRouteRunner.active())EternatusRouteRunner.stop("Movimento manual pelo joystick.");
+                if(Control.engine.walking){
+                    Control.engine.stop();Control.saveState();
+                    Control.event("walk-cancelled","Manual joystick touch");
+                }
+                pointer=e.getPointerId(0);
+                gestureCamera=Control.cameraRelative();
+                cameraGesture=gestureCamera?Control.beginCameraGesture():-1;
+                lockPopped=false;holdingOut=false;
             }
-            if (action==MotionEvent.ACTION_UP || action==MotionEvent.ACTION_CANCEL ||
-                (action==MotionEvent.ACTION_POINTER_UP && e.getPointerId(e.getActionIndex())==pointer)) {
+            if(action==MotionEvent.ACTION_CANCEL){
                 getParent().requestDisallowInterceptTouchEvent(false);
-                release(pointer<0); Control.event("joystick", "released"); return true;
+                release(false);Control.event("joystick","canceled");return true;
             }
-            int index=e.findPointerIndex(pointer); if(index<0) return true;
-            float radius=Math.min(getWidth(),getHeight())/2f-dp(12);
-            x=(e.getX(index)-getWidth()/2f)/radius; y=(e.getY(index)-getHeight()/2f)/radius;
-            float length=(float)Math.max(1,Math.hypot(x,y)); x/=length; y/=length;
-            if(Math.hypot(x,y)<0.08) x=y=0;
-            applyMotion(SystemClock.elapsedRealtime()); invalidate(); return true;
+            if(action==MotionEvent.ACTION_UP||
+                (action==MotionEvent.ACTION_POINTER_UP&&e.getPointerId(e.getActionIndex())==pointer)){
+                getParent().requestDisallowInterceptTouchEvent(false);
+                removeCallbacks(popLockRunnable);
+                if(lockPopped){lockTo(lockAngle);return true;}
+                release(pointer<0);Control.event("joystick","released");return true;
+            }
+            int index=e.findPointerIndex(pointer);
+            if(index<0)return true;
+            float cx=getWidth()/2f,cy=getHeight()/2f;
+            float radius=Math.max(dp(8),Math.min(cx,cy)-dp(12));
+            float rawX=(e.getX(index)-cx)/radius,rawY=(e.getY(index)-cy)/radius;
+            float dist=(float)Math.hypot(rawX,rawY);
+            float length=Math.max(1f,dist);
+            x=rawX/length;y=rawY/length;
+            if(dist<0.08f)x=y=0;
+            if(JoystickLock.popsOut(dist)){
+                lockAngle=Math.atan2(y,x);
+                if(!holdingOut){
+                    holdingOut=true;postDelayed(popLockRunnable,JoystickLock.POP_DELAY_MS);
+                }
+                if(lockPopped){
+                    float[] lp=lockPosition(lockAngle,cx,cy,radius);
+                    if(Math.hypot(e.getX(index)-lp[0],e.getY(index)-lp[1])<=dp(24)){
+                        lockTo(lockAngle);return true;
+                    }
+                }
+            }else if(JoystickLock.resetsHold(dist)){
+                holdingOut=false;removeCallbacks(popLockRunnable);
+                if(lockPopped){lockPopped=false;invalidate();}
+            }
+            applyMotion(SystemClock.elapsedRealtime());invalidate();return true;
+        }
+        @Override protected void onDetachedFromWindow(){
+            removeCallbacks(popLockRunnable);
+            if(isLocked||pointer>=0)release(false);
+            super.onDetachedFromWindow();
         }
     }
 }
