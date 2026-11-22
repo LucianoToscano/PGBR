@@ -34,3 +34,11 @@
 - [Workflow isolado #45044210002](https://github.com/LucianoToscano/PGBR/actions/runs/45044210002): **success**, job `translate` concluído; compila os dois tradutores Java e executa `PtBrDynamicTest` e `test_ptbr_glossary`.
 - Verificação local de correspondência: 1.449 chaves no JSON e 1.449 entradas em cada tradutor; 66 cenários de tradução simulados sem divergência.
 - Suíte ampliada de código [#45044210035](https://github.com/LucianoToscano/PGBR/actions/runs/45044210035) estava em execução na verificação. Sem homologação em aparelho ou geração de APK nesta branch.
+
+## Reavaliação de classificação das capturas — 22/11/2026
+- Oito imagens estavam em **Ajustes Corrigidos** apesar de ainda conterem textos em inglês. Foram devolvidas à pasta original de pendências. Capturas são evidências do APK antigo e não podem ser consideradas telas já traduzidas apenas porque o dicionário foi atualizado.
+- Traduções complementares: `Quests` → `Pesquisas`, `Primal` → `Primitivo`, além de padronização de `Shiny` nas frases de apresentação (`Brilhante`/`Brilhantes`). Não se alteram nomes de propriedades, payloads, IDs, APIs nem o conteúdo nativo da batalha.
+- Glossário PT-BR agora possui **1.451** entradas e permanece sincronizado entre aplicação padrão e Root.
+- O diálogo de distância foi contemplado com tradução de segmentos variáveis `Only raids within X km of where you press Start`; os testes regressivos incluem 10 km.
+- Critério atualizado: só mover imagens para **Ajustes Corrigidos** após build que contém o PR e validação visual no Android, sem texto visível em inglês não justificado (marcas/termos oficiais).
+- Nenhuma imagem foi alterada, recriada ou excluída, e nenhum APK foi publicado nesta rodada.
