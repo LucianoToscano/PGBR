@@ -308,3 +308,34 @@ No kit v2, **37 verificações Kotlin/JVM** foram executadas e aprovadas no ambi
 **Compilação Android:** a branch ativou o workflow existente `pgbr-lt032-consolidado-apk.yml` com artefato de QA de nome distinto `PGBR-LT032-PGR036-APK-completo-QA`; [execução #44987764532](https://github.com/LucianoToscano/PGBR/actions/runs/44987764532) iniciada, conclusão ainda não confirmada no instante deste registro. Não afirmar que APK existe até verificar conclusão e asset. O workflow testa apenas a variante sem Root. O candidato de integração permanece separado da versão pública LT023 e do histórico da LT032.
 
 **Pendências prioritárias:** revisar eventuais falhas no build, fixture PvP/VGP, ABI e versão de transporte, cruzar diferenças remanescentes (UI nativa de tema, priorização de defensor de ginásio), compilar variantes Root/sem Root e testar instalação, VGP capturando/girando, Quick Catch, Mateo, missões, transferência reversível em conta de QA, PvP e autenticação. Registrar hashes, certificados e rollback antes de promover. Não usar status de código em PR como selo de funcionamento real.
+---
+
+## 22/11/2026 — Portabilidades PGRazor PR #10 (joystick) e PR #11 (ART Root)
+
+**Fonte externa ainda em revisão (upstream, 22/11/2026):**
+- https://github.com/jpitty03/PGRazor/pull/10 — `feat(joystick): add directional lock badge and continuous steering`, PR aberta no upstream, commit `5ca36cbec9f13817ecc332ac0bf911d80b1fea6c`.
+- https://github.com/jpitty03/PGRazor/pull/11 — `Fix ARM64 ART hook backups overwritten by Vector`, PR aberta no upstream, commit `b9d0d2ce445024b143894484f69ccbc2aaefb6c9`.
+
+**Base PGBR:** branch candidata `integracao/lt032-pgrazor-035-036-20261122`, commit `f9047481f53252eb3a299c181f351e063678511c`, [PR #54](https://github.com/LucianoToscano/PGBR/pull/54), sem merge. Regras de branches separadas, sem exclusão de funcionalidades e sem alteração da `main` aplicadas.
+
+### PR #55 — trava de joystick
+
+[PR PGBR #55](https://github.com/LucianoToscano/PGBR/pull/55), branch `feat/lt032-joystick-lock-pr10-20261122`, commit de integração inicial `98e1b554a9bb0ec302b0447fc801217f3435850a`, draft. Adaptado o `JoystickLock.java` do upstream com limiares `POP_DISTANCE=0.45`, `RESET_DISTANCE=0.35` e atraso `POP_DELAY_MS=250`; acrescentada a trava de movimento contínuo a `Pad.java`. **Diferença PGBR intencional:** os desenhos/efeitos dos cinco estilos, inclusive o Eternatus, não foram substituídos pelo joystick monocromático upstream. Desenhado cadeado em ambos os caminhos do renderizador; soltura, cancelamento, desanexação, mudança de conta/atividade e perda das permissões removem o estado travado. O loop `Control.stepMotion` reconhece `stick.isLocked` como comando manual para impedir que automações de caminhada assumam a direção. O modo relativo à câmera reobtém a orientação quando necessário.
+
+**Testes incluídos:** `pgrazor/test/JoystickLockTest.java`, `test_joystick_lock_java.py`, `test_joystick_lock_integration.py`; CI de auditoria por PR. Android e experiência visual dos cinco estilos ainda precisam de homologação. Não significa APK publicado.
+
+### PR #56 — encadeamento privado dos hooks ARM64 ART
+
+[PR PGBR #56](https://github.com/LucianoToscano/PGBR/pull/56), branch `fix/lt032-art-hook-chain-pr11-20261122`, commit de integração inicial `d0c38b6bf3aa2f5a261ed2aeb9d11b4c406c6d7e`, draft. Port seletivo **exato** de `pgrazor/art/CMakeLists.txt` para realocar pelo menos 16 bytes do trampolim ARM64 da Dobby **privada do ART** antes do retorno; bloqueio CMake caso a assinatura do vendor pinado mude. Arquivo de origem do vendor e motor de hooks do gameplay permanecem intactos. Inclui `pgrazor/art/tests/hook_chain_test.cpp` com fixture opcional somente em build de diagnóstico ARM64, fora de APK e módulo, documentação Root e teste de fonte `test_art_hook_chain_source.py`.
+
+**Validação upstream relatada:** OnePlus 15 Android 17, KernelSU/Zygisk Next/Vector 2.2 e Pokémon GO `0.437.0` ao iniciar. **Isso não é homologação PGBR.** Teste de compilação ART em ARM64, fixture em aparelho separado e instalação real do módulo Root ainda pendentes. Não declarar compatibilidade universal entre módulos.
+
+### Estado da compilação PGBR e registros de falha
+
+A execução [`44987764532`](https://github.com/LucianoToscano/PGBR/actions/runs/44987764532) de APK completo sem Root da base PR #54 **falhou** em `tools/check.py` antes da etapa de compilar o aplicativo, embora a preparação SDK/NDK/DEX e testes PvP tenham passado. O log mostra duas falhas específicas:
+1. `test_control_java.py` compila `Control.java` sem stub ou inclusão da classe recém-acrescentada `SessionStats` (símbolo `SessionStats.publish` ausente no fixture).
+2. `test_master_governance.py` exige que `.github/PULL_REQUEST_TEMPLATE.md` mencione `PGBR_ARQUIVO_MESTRE_UNICO.md`, mas ainda contém o template upstream original.
+
+Esses problemas preexistem aos PRs #55/#56. Exigem correção de fixtures/documentação por branch própria antes da próxima tentativa de APK; falha na suíte **não prova falha de execução do módulo Root ou do joystick**. Nenhuma build do PR #55 ou PR #56 deve ser anunciada antes de CI e teste físico; a `main` e a LT032 anterior devem ficar preservadas.
+
+**Pendências:** conferir CI específico dos PRs #55/#56, corrigir fixture e template em manutenção isolada, compilar pacote completo PGBR e ART Root, testar joystick em 5 estilos e em modo câmera, iniciar Pokémon GO com/sem Vector, comparar comportamento, preservar artefatos de rollback.
