@@ -1412,10 +1412,12 @@ public final class Control {
     // Visibility only. Bits are stable menu-entry IDs, independent of feature settings.
     private static volatile int quickMenuHidden;
     public static int quickMenuHidden(){return quickMenuHidden;}
-    public static boolean quickMenuVisible(int bit){return (quickMenuHidden&bit)==0;}
+    public static boolean quickMenuVisible(int bit){return QuickMenuVisibilityPolicy.visible(quickMenuHidden,bit);}
     public static void setQuickMenuVisible(int bit,boolean visible){
-        if(bit<=0||bit>4096||(bit&(bit-1))!=0)return;
-        quickMenuHidden=visible?quickMenuHidden&~bit:quickMenuHidden|bit;
+        if(!QuickMenuVisibilityPolicy.validBit(bit))return;
+        int updated=QuickMenuVisibilityPolicy.withVisibility(quickMenuHidden,bit,visible);
+        if(updated==quickMenuHidden)return;
+        quickMenuHidden=updated;
         saveSettings();
     }
     private static volatile int uiScalePercent=100;
@@ -1533,7 +1535,7 @@ public final class Control {
                 trainerAliasEnabled=trainerPrivacyMode==2;
                 if(trainerAliasEnabled&&trainerAlias.isEmpty())
                     trainerAlias=TrainerAliasPolicy.generate(trainerAliasRandom);
-                quickMenuHidden=boundedSetting(p,"quickMenuHidden",8191);
+                quickMenuHidden=boundedSetting(p,"quickMenuHidden",QuickMenuVisibilityPolicy.MASK);
                 try{uiScalePercent=Integer.parseInt(p.getProperty("uiScalePercent","100"));}catch(NumberFormatException invalid){uiScalePercent=100;}
                 if(uiScalePercent!=25&&uiScalePercent!=50&&uiScalePercent!=75&&uiScalePercent!=100)uiScalePercent=100;
                 joystickVisible=Boolean.parseBoolean(p.getProperty("joystickVisible","true"));
