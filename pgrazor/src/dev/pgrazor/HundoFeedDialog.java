@@ -80,6 +80,13 @@ public final class HundoFeedDialog {
             t.setDaemon(true);
             return t;
         });
+        private final Runnable expiryTick = new Runnable() {
+            @Override public void run() {
+                if (closed) return;
+                filter(); // Refresh expiration/countdown without another HTTP request.
+                main.postDelayed(this, 10_000L);
+            }
+        };
         private HundoFeedData.Snapshot snapshot;
         private volatile boolean closed;
         private boolean fetching;
@@ -146,7 +153,10 @@ public final class HundoFeedDialog {
             list.setOnItemClickListener((parent, view, position, id) -> {
                 if (position >= 0 && position < visible.size()) details(visible.get(position));
             });
-            root.addView(list, new LinearLayout.LayoutParams(-1, MapTheme.dp(ui, 360)));
+            int height = Math.min(MapTheme.dp(ui, 360),
+                    activity.getResources().getDisplayMetrics().heightPixels * 40 / 100);
+            root.addView(list, new LinearLayout.LayoutParams(-1, height));
+            main.postDelayed(expiryTick, 10_000L);
             search.addTextChangedListener(new TextWatcher() {
                 public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
                 public void onTextChanged(CharSequence s, int start, int before, int count) { filter(); }
