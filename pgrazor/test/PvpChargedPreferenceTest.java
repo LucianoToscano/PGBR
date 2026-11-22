@@ -28,8 +28,8 @@ public final class PvpChargedPreferenceTest {
             "electric vs ground double resistance");
         yes(Double.isNaN(PvpChargedPreference.effectiveness(13,0,0)),
             "unknown opponent must not invent advantage");
-        eq(PvpChargedPreference.WAIT,PvpChargedPreference.select(m(11,80,40,true),
-            m(4,80,55,false),11,5,12,0,45,9,95,true),"save ready first to farm for super move");
+        eq(PvpChargedPreference.FIRST,PvpChargedPreference.select(m(11,80,40,true),
+            m(4,80,55,false),11,5,12,0,45,9,95,true),"use ready first without waiting for super second");
         eq(PvpChargedPreference.SECOND,PvpChargedPreference.select(m(11,80,40,true),
             m(4,80,55,true),11,5,12,0,60,9,95,true),"choose super second");
         eq(PvpChargedPreference.FIRST,PvpChargedPreference.select(m(11,80,40,true),
@@ -49,23 +49,41 @@ public final class PvpChargedPreferenceTest {
         eq(PvpChargedPreference.SECOND,PvpChargedPreference.select(m(13,80,40,true),
             m(1,80,55,true),11,5,5,0,60,9,90,true),
             "neutral outranks doubly resisted");
-        eq(PvpChargedPreference.SECOND,PvpChargedPreference.select(m(13,80,40,true),
+        eq(PvpChargedPreference.FIRST,PvpChargedPreference.select(m(13,80,40,true),
             m(4,80,55,true),11,5,5,0,60,9,90,true),
-            "single resistance outranks double resistance");
-        eq(PvpChargedPreference.WAIT,PvpChargedPreference.select(m(11,80,40,true),
+            "same resisted tier keeps first verified button");
+        eq(PvpChargedPreference.FIRST,PvpChargedPreference.select(m(11,80,40,true),
             m(4,80,55,false),11,5,11,0,47,9,90,true),
-            "bounded wait for neutral while resisted is ready");
+            "use ready resisted rather than waiting for neutral");
         eq(PvpChargedPreference.FIRST,PvpChargedPreference.select(m(11,80,40,true),
             m(4,80,55,false),11,5,11,0,47,9,20,true),
             "critical hp uses available resisted move");
         eq(PvpChargedPreference.FIRST,PvpChargedPreference.select(m(4,80,40,true),
             m(11,80,55,true),11,5,12,0,60,9,90,true),
             "super effective outranks resisted even if button two is ready");
+        // Full simple-policy matrix: super > neutral > resisted, tied tiers use slot 1.
+        final int[] types={11,1,4}; // Against grass: water=resisted, normal=neutral, poison=super.
+        for(int a=0;a<3;a++)for(int b=0;b<3;b++){
+            final int expected=b>a?PvpChargedPreference.SECOND:PvpChargedPreference.FIRST;
+            eq(expected,PvpChargedPreference.select(m(types[a],40,40,true),
+                m(types[b],100,40,true),11,5,12,0,60,9,90,true),
+                "ordered efficacy matrix "+a+" / "+b);
+        }
+        eq(PvpChargedPreference.FIRST,PvpChargedPreference.select(
+            m(1,80,40,true),null,11,5,0,0,60,9,90,true),"single equipped charged attack");
+        eq(PvpChargedPreference.WAIT,PvpChargedPreference.select(
+            m(1,80,40,false),null,11,5,0,0,60,9,90,true),"single charged not ready");
+        eq(PvpChargedPreference.WAIT,PvpChargedPreference.select(
+            m(1,80,40,false),m(4,80,55,false),11,5,12,0,60,9,90,true),
+            "neither ready continues quick attack");
+        eq(PvpChargedPreference.FIRST,PvpChargedPreference.select(
+            m(11,80,40,true),m(4,80,55,false),11,5,12,0,45,9,90,true),
+            "no charged attack delay for higher tier");
         PvpBattleController c=new PvpBattleController();
-        eq(PvpBattleController.QUICK,decide(c,sample(100,1000,45,90,true,false,12)),
-            "hold charged first and use quick");
+        eq(PvpBattleController.CHARGED,decide(c,sample(100,1000,45,90,true,false,12)),
+            "fire ready first without farming for second");
         eq(PvpBattleController.QUICK,decide(c,sample(100,1300,54,90,true,false,12)),
-            "keep farming");
+            "do not repeat consumed first while still ready");
         eq(PvpBattleController.CHARGED_SECOND,decide(c,sample(100,1600,63,90,true,true,12)),
             "fire second charged when super effective");
         yes(decide(c,sample(100,1700,63,90,true,true,12))!=PvpBattleController.CHARGED_SECOND,
@@ -74,10 +92,10 @@ public final class PvpChargedPreferenceTest {
         eq(PvpBattleController.CHARGED,decide(c,sample(101,1000,45,20,true,false,12)),
             "low HP triggers ready first");
         c.reset();
-        eq(PvpBattleController.QUICK,decide(c,sample(102,1000,45,90,true,false,12)),
-            "begin preference wait");
-        eq(PvpBattleController.CHARGED,decide(c,sample(102,7000,45,90,true,false,12)),
-            "timeout falls back to ready first");
+        eq(PvpBattleController.CHARGED,decide(c,sample(102,1000,45,90,true,false,12)),
+            "no preference wait when a charged attack is already ready");
+        eq(PvpBattleController.QUICK,decide(c,sample(102,7000,45,90,true,false,12)),
+            "repeated ready observation cannot dispatch duplicate charged attack");
         c.reset();
         eq(PvpBattleController.CHARGED_SECOND,
             decide(c,new PvpBattleController.Observation(
