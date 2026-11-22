@@ -41,5 +41,28 @@ jobs:
           packages: platform-tools
       - name: Install Android JSON SDK sources
         run: sdkmanager "sources;android-36"
+      - name: Ambiente Java/Android visível no resumo
+        run: |
+          set -euo pipefail
+          {
+            echo "### Ambiente do teste JVM"
+            echo "- java: $(java -version 2>&1 | head -1)"
+            echo "- javac: $(javac -version 2>&1 | head -1)"
+            echo "- ANDROID_HOME=${ANDROID_HOME:-<vazio>}"
+            echo "- platforms: $(ls "${ANDROID_HOME:-/nonexistent}/platforms" 2>/dev/null | tr '\n' ' ')"
+            echo "- sources: $(ls "${ANDROID_HOME:-/nonexistent}/sources" 2>/dev/null | tr '\n' ' ')"
+            echo "- android.jar: $(ls "${ANDROID_HOME:-/nonexistent}"/platforms/*/android.jar 2>/dev/null | head -3 | tr '\n' ' ')"
+          } >> "$GITHUB_STEP_SUMMARY"
       - name: Run feed parsers and the new slot fixtures on the JVM
-        run: python -B -m unittest discover -s pgrazor/test -p 'test_live_feed_java.py' -v
+        run: |
+          set -o pipefail
+          python -B -m unittest discover -s pgrazor/test -p 'test_live_feed_java.py' -v 2>&1 | tee /tmp/feed-qa.log || {
+            {
+              echo "### Falha no parser do feed (rc=$?)"
+              echo '```'
+              grep -E "DIAG |Error|FAIL|Traceback|falhou|ERROR in|rc=" /tmp/feed-qa.log | head -80
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+            echo "::error title=Feed QA::$(grep -m1 -E 'DIAG .*ERROR in|AssertionError|FAIL' /tmp/feed-qa.log | cut -c1-900)"
+            exit 1
+          }
