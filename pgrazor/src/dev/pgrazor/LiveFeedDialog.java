@@ -137,6 +137,10 @@ public final class LiveFeedDialog {
         private Button raidFilterButton;
         private TextView feedStatus;
         private TextView emptyView;
+        // Quantos registros cada etapa descartou na última montagem da lista; a UI usa isso para
+        // dizer POR QUE a lista está vazia, em vez de um texto genérico.
+        private int droppedExpired, droppedCategory, droppedSpecies, droppedFilters,
+                droppedRadius, droppedCoordinates, droppedRaid;
 
         Controller(Activity activity, Context ui, AlertDialog dialog, LinearLayout root,
                    boolean pokemonSearchMode, boolean raidSearchMode) {
@@ -1147,8 +1151,9 @@ public final class LiveFeedDialog {
                           .append("Confira cobertura/raio ou selecione outra fonte autorizada. ")
                           .append("O filtro não consegue criar registros ausentes.");
                     } else {
-                        sb.append("A fonte enviou registros, mas nenhum passou nos filtros ")
-                          .append("locais de categoria, espécie, IV, distância ou expiração. ")
+                        sb.append("A fonte enviou ").append(entries.size())
+                          .append(" registros, mas nenhum passou nos filtros locais.\n")
+                          .append(droppedSummary())
                           .append("Confira os filtros e tente ampliar o raio.");
                     }
                 }
@@ -1168,30 +1173,35 @@ public final class LiveFeedDialog {
 
         private void rebuildVisible() {
             long now = System.currentTimeMillis();
+            droppedExpired = droppedCategory = droppedSpecies = droppedFilters = 0;
+            droppedRadius = droppedCoordinates = droppedRaid = 0;
             final double elat = Control.engine.latitude, elon = Control.engine.longitude;
             final HashMap<LiveFeedData.Entry, Double> dist = new HashMap<>();
             List<LiveFeedData.Entry> list = new ArrayList<>();
             for (LiveFeedData.Entry e : entries) {
-                if (e == null || e.expired(now)) continue;               // hide expired every pass
-                if (!categoryMatches(e)) continue;
+                if (e == null || e.expired(now)) { droppedExpired++; continue; }  // hide expired every pass
+                if (!categoryMatches(e)) { droppedCategory++; continue; }
                 // Only RAID rows are subject to the raid filter. Gym/Stop/Power Spot rows used to be
                 // dropped here before the category switch ran, which made those tabs permanently empty.
                 if (raidSearchMode && e.kind == LiveFeedData.Kind.RAID
                         && !raidFilters.matches(e.dexId, e.level, e.team,
                             e.raidHatchAt, e.expiresAt, e.raidBossLive, now))
-                    continue;
-                if (pokemonSearchMode && e.kind != LiveFeedData.Kind.POKEMON) continue;
-                if (pokemonSearchMode && !matchesQuery(e)) continue;
+                    { droppedRaid++; continue; }
+                if (pokemonSearchMode && e.kind != LiveFeedData.Kind.POKEMON)
+                    { droppedCategory++; continue; }
+                if (pokemonSearchMode && !matchesQuery(e)) { droppedSpecies++; continue; }
                 // The server only partly applies the display filters (not the level range), so
                 // re-check Pokémon the way the LivePokeMap website does.
                 if (e.kind == LiveFeedData.Kind.POKEMON && provider == 3
-                        && filters.requiresKnownLevel() && e.level <= 0) continue;
+                        && filters.requiresKnownLevel() && e.level <= 0)
+                    { droppedFilters++; continue; }
                 if (e.kind == LiveFeedData.Kind.POKEMON && !filters.matches(e.dexId, e.hasStats ? e.iv : -1,
                         e.level, e.attrs.size, e.attrs.pvpGreatRank, e.attrs.pvpUltraRank, e.attrs.pvpLittleRank))
-                    continue;
-                if (!Double.isFinite(e.lat) || !Double.isFinite(e.lon)) continue;
+                    { droppedFilters++; continue; }
+                if (!Double.isFinite(e.lat) || !Double.isFinite(e.lon))
+                    { droppedCoordinates++; continue; }
                 double meters = distanceMeters(elat, elon, e.lat, e.lon);
-                if (meters > RADII[radiusIndex] * 1000) continue;
+                if (meters > RADII[radiusIndex] * 1000) { droppedRadius++; continue; }
                 dist.put(e, meters);
                 list.add(e);
             }
@@ -1524,6 +1534,21 @@ public final class LiveFeedDialog {
             if (provider == 2) return raidSearchMode
                     ? "iflowgo_raid_radius_v1" : "iflowgo_pokemon_radius_v1";
             return "radius";
+        }
+
+        /** Human explanation of the local drops, in descending relevance. Never invents a count. */
+        private String droppedSummary() {
+            StringBuilder sb = new StringBuilder("Descartados: ");
+            boolean any = false;
+            if (droppedExpired > 0) { sb.append(droppedExpired).append(" expirados"); any = true; }
+            if (droppedCategory > 0) { sb.append(any ? " · " : "").append(droppedCategory).append(" de outra categoria"); any = true; }
+            if (droppedSpecies > 0) { sb.append(any ? " · " : "").append(droppedSpecies).append(" de outra espécie"); any = true; }
+            if (droppedFilters > 0) { sb.append(any ? " · " : "").append(droppedFilters).append(" fora dos filtros IV/nível/PvP"); any = true; }
+            if (droppedRaid > 0) { sb.append(any ? " · " : "").append(droppedRaid).append(" fora do filtro de reide"); any = true; }
+            if (droppedRadius > 0) { sb.append(any ? " · " : "").append(droppedRadius).append(" além do raio"); any = true; }
+            if (droppedCoordinates > 0) { sb.append(any ? " · " : "").append(droppedCoordinates).append(" sem coordenada válida"); any = true; }
+            if (!any) return "Nenhum registro foi descartado; a fonte não enviou linhas utilizáveis.\n";
+            return sb.append('.').append('\n').toString();
         }
 
         /**

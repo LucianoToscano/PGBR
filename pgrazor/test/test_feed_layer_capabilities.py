@@ -76,6 +76,18 @@ class FeedLayerCapabilityTests(unittest.TestCase):
         self.assertIn("nenhum passou nos filtros", self.dialog)
         self.assertIn("emptyView.setText", self.dialog)
 
+    def test_each_drop_reason_is_counted_separately(self):
+        """Um único "Nenhum Pokémon encontrado" é proibido: cada causa tem seu contador."""
+        for counter in ("droppedExpired", "droppedCategory", "droppedSpecies",
+                        "droppedFilters", "droppedRadius", "droppedCoordinates", "droppedRaid"):
+            self.assertIn(f"{counter}++", self.dialog, f"{counter} precisa ser contado")
+            self.assertIn(f"{counter} > 0", self.dialog, f"{counter} precisa ser exibido")
+        self.assertIn("private String droppedSummary()", self.dialog)
+        self.assertIn("Descartados: ", self.dialog)
+        # As contagens são zeradas a cada montagem, senão acumulariam entre atualizações.
+        self.assertIn("droppedExpired = droppedCategory = droppedSpecies = droppedFilters = 0;",
+                      self.dialog)
+
     def test_every_category_tab_maps_to_a_layer(self):
         # Toda aba precisa de um Kind; "All" é o único null.
         body = self.dialog[self.dialog.index("private LiveFeedData.Kind requestedLayer"):]
