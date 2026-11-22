@@ -61,6 +61,20 @@ Commits: `a1e0af4` (camadas+busca+vazio), `844b59f` (paginação), `677a82e` (ma
 Nenhum resultado de commit anterior foi usado como comprovação do commit novo: a tabela acima é
 do run disparado por `09eb28e`.
 
+### 2.2 Reconciliação com `main` (PR #116) — commit `3506cba`
+
+A `main` recebeu o PR #116 (motor de ataque, merge `b355def`) enquanto esta branch estava aberta,
+e o PR #115 passou a `CONFLICTING`. A sincronização preservou os dois trabalhos, sem reset e sem
+sobrescrever código alheio:
+
+| Arquivo | Resolução |
+|---|---|
+| `PGBR_ARQUIVO_MESTRE_UNICO.md` | os dois lados só **acrescentaram** seções datadas e independentes; mantidas as duas, sem remover histórico |
+| `pgrazor/test/test_live_feed_java.py` | mantida a correção de classpath desta branch **e** a fonte `QuickMenuVisibilityPolicy.java` do #116 |
+| `pgrazor/src/dev/pgrazor/SettingsBackupRules.java` | auto-merge: o `has()`/`get()` desta branch convive com `smartAttack`/`smartShieldTiming`/`smartFaintedSwapTiming` do #116 |
+
+Após o merge: `MERGEABLE`, e **11/11 checks verdes** (todos os 7 workflows do run do `3506cba`).
+
 ## 3. Bloqueios e limites honestos
 
 - **Nenhuma consulta real a provedor**: rede de saída do sandbox bloqueada. "Fonte retorna dados
