@@ -13,7 +13,7 @@
 - **Operação:** [privacidade/terceiros](#mestre-seguranca), [backups](#mestre-backups), [prioridades](#mestre-prioridades), [protocolo de execução](#mestre-protocolo), [fontes](#mestre-fontes).
 - **Auditoria:** [histórico de alterações](#mestre-historico), [inventário conservador](#mestre-auditoria), [mapa de armazenamento e limpeza](#mestre-arquivos).
 
-**Estado resumido auditado em 21/11/2026:** última release pública identificada **LT023**; candidato **LT032** compilado em CI (Root, sem Root e módulo), **não homologado em aparelho**; `main` ainda usa código histórico. A manutenção [PR #43](https://github.com/LucianoToscano/PGBR/pull/43), já integrada à `main`, foi documental e conservadora: **nenhum recurso ou arquivo rastreado foi removido**.
+**Estado resumido auditado em 22/11/2026:** a `main` já incorporou a linhagem LT032, os recursos de Eventos e a versão **v0.00.33-LT** pelo [merge PR #68](https://github.com/LucianoToscano/PGBR/pull/68) no commit `28a365fec1277033a1089cb394aecd6e9cc01115`. A [pré-release LT033](https://github.com/LucianoToscano/PGBR/releases/tag/v0.00.33-LT) foi publicada com os três pacotes assinados e hashes verificados; **ainda não houve homologação no Android físico**. LT023 e os pacotes LT032 permanecem preservados; LT033 é a publicação mais recente, marcada **QA**. A manutenção [PR #43](https://github.com/LucianoToscano/PGBR/pull/43) preservou o inventário histórico.
 
 <a id="mestre-leitura"></a>
 ## 0. REGRA MÁXIMA — LEITURA OBRIGATÓRIA
@@ -61,8 +61,8 @@ Use os termos com precisão:
 ## 3. Linha do tempo e estado de versões — fotografia de 21/11/2026
 | Assunto | Situação confirmada | Evidência |
 | --- | --- | --- |
-| Última release pública do PGBR identificada | **`v0.00.23-LT`**, com seis assets; não confundir com compilação LT032 | [Release LT023](https://github.com/LucianoToscano/PGBR/releases/tag/v0.00.23-LT) |
-| Candidato de desenvolvimento mais avançado | **`v0.00.32-LT`**, integrando LT031 e correções posteriores LT027; **não está publicado como release nem homologado em celular** | [PR #40 (draft)](https://github.com/LucianoToscano/PGBR/pull/40) |
+| Release pública mais recente (pré-release de QA) | **`v0.00.33-LT`**; três pacotes assinados e checksum publicado; **sem teste físico homologado** | [Pré-release LT033](https://github.com/LucianoToscano/PGBR/releases/tag/v0.00.33-LT) |
+| Última versão anterior preservada | **`v0.00.23-LT`**, release histórica, e pacotes QA LT032 preservados separadamente | [Release LT023](https://github.com/LucianoToscano/PGBR/releases/tag/v0.00.23-LT) |
 | APK LT032 sem Root | **CI completo concluído com sucesso**, com teste PvP, `tools/check.py`, compilação e empacotamento; artifact temporário de 30 dias | [Actions 44958257380](https://github.com/LucianoToscano/PGBR/actions/runs/44958257380) |
 | APK LT032 Root, módulo Zygisk e sem Root | **CI completo concluído com sucesso**, três produtos verificados; ainda sem homologação de instalação real | [Actions 44958259611](https://github.com/LucianoToscano/PGBR/actions/runs/44958259611), [PR #41 (draft)](https://github.com/LucianoToscano/PGBR/pull/41) |
 | Relatório local de diagnóstico VGP resgatado de LT017 | **Teste de Java/CI aprovado; em PR separado, ainda não integrado aos APKs LT032 acima** | [Actions 44958652466](https://github.com/LucianoToscano/PGBR/actions/runs/44958652466), [PR #42 (draft)](https://github.com/LucianoToscano/PGBR/pull/42) |
@@ -609,3 +609,28 @@ Depois do merge PR #68 em `main` @ `28a365fec1277033a1089cb394aecd6e9cc01115`, a
 
 ### Ajuste complementar no PR #69 (sem cancelar build da release)
 O workflow `.github/workflows/pgbr-lt033-release.yml` também passa a ter filtro `push.paths` restrito à versão, à própria definição da build e às notas versionadas. O motivo é evitar que a documentação/merge corretivo do arquivo histórico dispare de novo o pipeline de 75 minutos para a **mesma tag imutável**. A execução manual `workflow_dispatch` permanece disponível. O build oficial já iniciado em `main` @ `28a365fec1277033a1089cb394aecd6e9cc01115` não sofre alteração retroativa.
+
+
+---
+
+## 22/11/2026 — FECHAMENTO factual do merge e publicação GitHub PGBR v0.00.33-LT
+
+**Identificação e integridade:** versão real PGBR `0.00.33-LT`, jogo base Pokémon GO `0.437.0` / code `2026110902`; `pgrazor/VERSION` e `PGRAZOR_VERSION=v0.00.33-LT` confirmados. Tag `v0.00.33-LT` publicada em **22/11/2026 09:26:15 UTC** como **pré-release** GitHub ID `454333149`, `draft=false`, direcionada ao commit de merge da `main` `28a365fec1277033a1089cb394aecd6e9cc01115` ([PR #68, merged](https://github.com/LucianoToscano/PGBR/pull/68)). O arquivo `build-info.json` da execução oficial comprova `source_commit=28a365fec1277033a1089cb394aecd6e9cc01115` e **`device_tested=false`**; `root-build-info.json` declara `version=v0.00.33-LT` e targets `arm64-v8a` / `x86_64`.
+
+**Evidência CI antes do merge:** [código PR #68 #45005415348](https://github.com/LucianoToscano/PGBR/actions/runs/45005415348) **success 4/4** (Windows Java/Python/Node/Root, 12 C++ host, NDK ARM64, website); [governança #45005415414](https://github.com/LucianoToscano/PGBR/actions/runs/45005415414) **success**; [triplet PR #68 #45005410258](https://github.com/LucianoToscano/PGBR/actions/runs/45005410258) **success**; [cinco fixtures sazonais #45003782779](https://github.com/LucianoToscano/PGBR/actions/runs/45003782779) **success**.
+
+**Evidência CI depois do merge:** [código `main` #45006532866](https://github.com/LucianoToscano/PGBR/actions/runs/45006532866) **success 4/4**, [governança #45006532740](https://github.com/LucianoToscano/PGBR/actions/runs/45006532740) **success**, [branding #45006532753](https://github.com/LucianoToscano/PGBR/actions/runs/45006532753) **success**, e [build/release oficial da `main` #45006532739](https://github.com/LucianoToscano/PGBR/actions/runs/45006532739) **success**. Artefato GitHub Actions `PGBR-LT033-PGR036-Root-e-SemRoot-QA` ID `14748332530`; ZIP do artefato foi baixado, validado pelo CRC e os três SHA-256 conferidos pela leitura completa de cada arquivo contra `SHA256SUMS.txt` e `build-info.json`/ `root-build-info.json`.
+
+| Artefato oficial LT033 (real, não renomeado) | Bytes | SHA-256 SHA256SUMS.txt |
+| --- | ---: | --- |
+| [APK completo sem Root](https://github.com/LucianoToscano/PGBR/releases/download/v0.00.33-LT/PGBR-v0.00.33-LT.apk) | 188810563 | `484ae6ff6eee4f7d72b1bc8bec9dae8d9c4baa22d154561776baebd0c8ac4b09` |
+| [Instalador Root](https://github.com/LucianoToscano/PGBR/releases/download/v0.00.33-LT/PGBR-v0.00.33-LT-Root.apk) | 8336078 | `6116a4f482d23c3e0b0cae8fcac3152bed84da14cc58e844672d788221a835d6` |
+| [Módulo Zygisk](https://github.com/LucianoToscano/PGBR/releases/download/v0.00.33-LT/PGBR-v0.00.33-LT-Root-module.zip) | 8251868 | `66a5523c3589286af42116bcc674278596f3bc2de72b20bc0794f3a70137ed62` |
+
+[SHA256SUMS oficial](https://github.com/LucianoToscano/PGBR/releases/download/v0.00.33-LT/SHA256SUMS.txt), [build-info.json](https://github.com/LucianoToscano/PGBR/releases/download/v0.00.33-LT/build-info.json), [root-build-info.json](https://github.com/LucianoToscano/PGBR/releases/download/v0.00.33-LT/root-build-info.json), [página da pré-release](https://github.com/LucianoToscano/PGBR/releases/tag/v0.00.33-LT). A release pública tem **exatamente seis assets**, incluindo os três instaláveis, sem substituir a `v0.00.23-LT` ou quaisquer pacotes LT032 anteriores.
+
+**O que está publicado vs. comprovado:** a `main` contém as correções para Eventos no Menu Pokébola (bit 512), Seletor Pokémon (bit 8192), testes VGP/Safari/Halloween e ports do PGRazor 0.3.5/0.3.6. Build e testes automatizados estão comprovados. **Não são homologados em dispositivo**: abertura do jogo, PvP real, escolha de segundo carregado supereficaz (ainda não implementado), uso de escudos, VGP+ capturando/girando, joystick, Root/Vector ARM64, ocultação do nome nas duas telas, scanner/feeds externos e Halloween/GO Wild/Eternatus reais. Preservar `device_tested=false`, não anunciar estabilidade nem segurança de contas.
+
+**Pendência de limpeza de CI independente da release:** `#45006532786` falhou apenas porque o workflow `pgbr-archive-root-assets.yml` tentou recriar um tag de arquivo upstream existente. [PR #69](https://github.com/LucianoToscano/PGBR/pull/69) corrige a idempotência e impede que merges só documentais disparem novamente o workflow da tag LT033. A cadeia de CI de #69 deve ser confirmada, integrada à `main` e ter merge SHA final registrado neste mesmo Mestre.
+
+**REGRA PERMANENTE REAFIRMADA:** para cada tarefa e merge, registrar neste único Mestre fonte, HEAD, alterações, testes, APK, tag, hashes, URLs e pendências; atualizar novamente após merge quando necessário. Nenhum ChatGPT, branch ou workflow substitui essa obrigação.
