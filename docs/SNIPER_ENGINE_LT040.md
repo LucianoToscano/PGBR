@@ -51,7 +51,7 @@ trocar de fornecedor sem tocar na interface.
 
 | id | Situação | O que entrega |
 | --- | --- | --- |
-| `iflowgo` | pronto | coordenadas, IV completo, nível, PC, gênero, expiração; `pokemon_id` no servidor; global = **primeira página** |
+| `iflowgo` | pronto | coordenadas, IV completo, nível, PC, gênero, expiração; `pokemon_id` no servidor; global = **até duas páginas (cobertura parcial quando há mais)** |
 | `pgbr-hundo` | pronto | feed próprio 100% IV (baixado na hora, cache 30 s) |
 | `pokelist` | pronto | exige espécie para busca global; raio 1–5 km |
 | `rocketmap` | precisa configuração | servidor HTTPS autorizado pelo operador; só área |
@@ -83,5 +83,5 @@ nenhum resultado deve ser alegado.
 
 - Build Android/APK e homologação em aparelho: **não executados**.
 - Consulta real a fornecedor: **não executada** (egress bloqueado no ambiente de desenvolvimento).
-- Busca global do iFlowGo limitada à primeira página do endpoint observado.
+- Busca global do iFlowGo limitada a até duas páginas por consulta; mais páginas identificadas não são apresentadas como cobertura completa. Total ausente permanece desconhecido.
 - Regionais/raros/evento aguardando lista verificável.
