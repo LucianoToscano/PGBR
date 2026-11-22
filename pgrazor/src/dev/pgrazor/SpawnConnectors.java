@@ -42,8 +42,9 @@ final class SpawnConnectors {
     }
 
     /**
-     * iFlowGo. {@code global} uses the paged search endpoint, which PGBR reads a single page of — hence
-     * {@link SpawnSearch.Coverage#FIRST_PAGE}. A nearby query is an area, never "the world".
+     * iFlowGo. {@code global} uses a bounded, at-most-two-page query and reports PARTIAL_PAGES
+     * whenever another page is known to exist; unknown totals remain FIRST_PAGE. A nearby query
+     * covers an area, never the world.
      */
     static final class IFlowGo extends Connector {
         private final IFlowGoFeedClient client = new IFlowGoFeedClient();
