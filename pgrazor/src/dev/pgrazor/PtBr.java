@@ -1464,6 +1464,31 @@ public final class PtBr {
         m.put("Too many requests. Please wait before refreshing.", "Muitas solicitações. Aguarde antes de atualizar.");
         m.put("Quests", "Pesquisas");
         m.put("Primal", "Primitivo");
+        m.put("Sends your available gifts to eligible friends, then opens the gifts you have received. Each friend is handled once. The game's own daily limits for sending and opening still apply, so some may be skipped. A single pass runs now — there is no recurring schedule.", "Envia seus presentes disponíveis para amigos elegíveis e depois abre os presentes recebidos. Cada amigo é processado uma vez. Os limites diários do jogo para envio e abertura continuam valendo, então alguns podem ser ignorados. Uma única execução começa agora, sem agendamento recorrente.");
+        m.put("Feeds the gyms you currently defend once, using surplus berries. Nanab is fed down to its reserve, then surplus Razz. Pinap is optional and off by default. A single batch runs now — there is no recurring schedule. The game's own server limits still apply, so some feeds may be declined. No dust or candy payout is promised.", "Alimenta uma vez os Ginásios que você defende com frutas excedentes. A Fruta Caxí é usada até atingir sua reserva; depois, a Fruta Frambo excedente. A Fruta Abacaxi é opcional e vem desativada. O lote é executado uma única vez, sem agendamento recorrente. Os limites do servidor do jogo continuam valendo e algumas alimentações podem ser recusadas. Não há garantia de Poeira Estelar nem de doces.");
+        m.put("Skipped ", "Ignorados ");
+        m.put("Scanning", "Verificando");
+        m.put("Running", "Em execução");
+        m.put("Stopping", "Interrompendo");
+        m.put("Team: ", "Equipe: ");
+        m.put("Defenders: ", "Defensores: ");
+        m.put(" slots open)", " vagas livres)");
+        m.put("Zoom ", "Zoom ");
+        m.put(" · Tap map to select", " · toque no mapa para selecionar");
+        m.put("Destination: ", "Destino: ");
+        m.put("Cooldown when you arrive: ", "Tempo de espera ao chegar: ");
+        m.put("Blue", "Azul");
+        m.put("Red", "Vermelho");
+        m.put("Yellow", "Amarelo");
+        m.put("Raid tier: ", "Nível da reide: ");
+        m.put("Boss: ", "Chefe: ");
+        m.put("Ends in ", "Termina em ");
+        m.put("Egg — boss not yet revealed", "Ovo — chefe ainda não revelado");
+        m.put("; hatches in ", "; eclode em ");
+        m.put("Raid ended.", "Reide encerrada.");
+        m.put("unavailable", "indisponível");
+        m.put(" (reversible)", " (reversível)");
+        m.put("Not caught - broke free", "Não capturado — escapou da Pokébola");
         LABELS = Collections.unmodifiableMap(m);
     }
     private PtBr() {}
