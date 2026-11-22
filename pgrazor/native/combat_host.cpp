@@ -8,6 +8,7 @@
 #include "rocket_actions.h"
 #include "rocket_combat.h"
 #include "pvp_scene.h"
+#include "shared_auto_battle_gate.h"
 #include "rocket_minigame.h"
 #include "runtime_bootstrap.h"
 #include "runtime_metadata.h"
@@ -1609,8 +1610,18 @@ void refresh_leaf_gates(){
  const uint64_t battle=active&&(g_opts.flags&PGR_CBH_OPT_BATTLES_ALLOWED)&&now<g_battle_deadline_ms?std::min<uint64_t>(2500,g_battle_deadline_ms-now):0;
  const uint64_t rocket=active&&(g_opts.flags&PGR_CBH_OPT_ROCKET_ALLOWED)&&now<g_rocket_deadline_ms?std::min<uint64_t>(2500,g_rocket_deadline_ms-now):0;
  bool rocket_active=false,rocket_failed=false;
- if((caps&PGR_CBH_CAP_ROCKET_COMBAT)&&g_rocket_combat){g_rocket_combat->update(g_opts.rocket_mask,rocket,owner);pgr_rocket_combat_sample_v1 sample{};
-  if(g_rocket_combat->sample(&sample)==0){rocket_active=sample.scope_active!=0;rocket_failed=sample.failed!=0;}else rocket_failed=true;}
+ if((caps&PGR_CBH_CAP_ROCKET_COMBAT)&&g_rocket_combat){
+  pgr_rocket_combat_sample_v1 sample{};
+  if(g_rocket_combat->sample(&sample)==PGR_RC_OK){
+   rocket_active=sample.scope_active!=0;
+   rocket_failed=sample.failed!=0;
+  }else rocket_failed=true;
+  // Only an engine-owned exact Rocket/PvP/Training scope receives the shared
+  // 1/2/4 mask; this path reads no cross-thread PgrPvpScene or Unity handles.
+  const uint32_t effective=PgrSharedAutoBattleGate::effective(
+    g_opts.rocket_mask,active,rocket!=0,rocket_active,rocket_failed);
+  g_rocket_combat->update(effective,effective?rocket:0,owner);
+ }
  if((caps&PGR_CBH_CAP_BATTLES)&&g_battles)g_battles->update(g_opts.battle_mask,battle,rocket_active?1:0,owner);
  if((caps&PGR_CBH_CAP_ROCKET_MINIGAME)&&g_rocket_mini){bool on=active&&rocket&&!rocket_failed&&rocket_active&&(g_opts.rocket_mask&2);g_rocket_mini->update(on?1:0,on?int64_t(rocket):0);g_mini_active.store(on?1:0);}
 }
