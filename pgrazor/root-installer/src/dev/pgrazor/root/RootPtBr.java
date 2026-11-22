@@ -1526,7 +1526,7 @@ public final class RootPtBr {
         String suffix = null;
         for (String source : LABELS.keySet()) {
             if (source.length() < 2 || source.length() >= line.length()) continue;
-            if ((source.endsWith(" ") || source.endsWith("~")) && line.startsWith(source)
+            if ((source.endsWith(" ") || source.endsWith("~") || source.endsWith("(") || source.endsWith("–")) && line.startsWith(source)
                     && (prefix == null || source.length() > prefix.length())) {
                 prefix = source;
             }
