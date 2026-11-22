@@ -50,7 +50,8 @@ jobs:
               failed=1
               echo "- FALHOU: $pattern" >> "$GITHUB_STEP_SUMMARY"
               { echo '```'; tail -40 "/tmp/$pattern.log"; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
-              echo "::error title=$pattern::$(grep -m1 -E 'FAIL|Error' "/tmp/$pattern.log" | cut -c1-900)"
+              msg=$(tail -30 "/tmp/$pattern.log" | sed 's/%/%25/g' | sed ':a;N;$!ba;s/\n/%0A/g' | cut -c1-6000)
+              echo "::error title=$pattern::$msg"
             fi
           done
           exit $failed
