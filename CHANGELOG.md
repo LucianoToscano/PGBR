@@ -1,3 +1,8 @@
+## Não lançado — Ataque Inteligente simples VNext (22/11/2026)
+- Implementação experimental condicionada a runtime tipado: chamar o original de `ObserveBattleState` antes da observação, resolver indicação Super/Normal/Pouco e slot `Charge/Charge2` diretamente do display, comparar somente dois carregados VNext prontos, com correspondência de atualização e frescor. Sem espera de energia nem alteração de cadências.
+- Mantém o primeiro carregado tradicional quando OFF, dados ausentes, apenas um botão pronto, atualização antiga, metadata incompatível ou sessão ambígua. Escudos, trocas, Cura e executores Legacy/PvE não foram alterados.
+- Acrescentadas fixtures de classificação, escolha de slot e executor Rocket com objetos simulados. **Não confirmado em aparelho**; testes e compilação não são homologação de gameplay. Documento: [Integração VNext](docs/ATAQUE_INTELIGENTE_SIMPLES_VNEXT_2026-11-22.md). Preservar PR #117 até revisão da integração.
+
 ## Não lançado — correção de política Ataque Inteligente simples e auditoria (22/11/2026)
 - [PR #120](https://github.com/LucianoToscano/PGBR/pull/120): remove espera deliberada de até 5,5 s para farmar um carregado mais eficaz na política Java PvP; quando existe golpe pronto, prioriza categorias **super eficaz > neutro > resistido** e usa o primeiro em empates. Aceita só um carregado conhecido; preserva preferência OFF, confirmação de prontidão, máscaras de ataque/escudo e as cadências dos executores.
 - Estendidos testes de política para matriz 3×3, prontidão exclusiva, empate e adversário desconhecido sem inferir eficácia. Comparação LT040→main mostrou histórico linear e nenhum arquivo removido, não homologação física.
