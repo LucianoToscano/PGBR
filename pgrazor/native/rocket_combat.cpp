@@ -907,3 +907,9 @@ const void *pgrazor_rocket_combat_api(uint32_t version) {
   if (version != PGR_RC_API_VERSION) return nullptr;
   return &g_api;
 }
+#if defined(PGR_RC_DIRECT_TEST)
+extern "C" void pgrazor_rc_direct_smart_attack(int on) {
+  g_smart_attack_test_enabled.store(on != 0, std::memory_order_release);
+}
+#endif
+
