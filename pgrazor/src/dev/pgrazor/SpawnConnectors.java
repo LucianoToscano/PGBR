@@ -263,8 +263,36 @@ final class SpawnConnectors {
         }
     }
 
+    /** Separate authenticated contract: never send a Partner key to api.v2.php. */
+    static final class Partner extends Connector {
+        private final PokeListPartnerClient client;
+        Partner(String baseUrl, String key) {
+            client = new PokeListPartnerClient(baseUrl, key);
+        }
+        @Override public String id() { return SpawnSourceRegistry.ID_POKELIST_PARTNER; }
+        @Override public SpawnContract.Capabilities capabilities() {
+            return SpawnContract.Capabilities.POKELIST_PARTNER;
+        }
+        @Override public List<SpawnContract.Spawn> fetch(SpawnSearch.Request request) throws Exception {
+            markRequested();
+            markNone();
+            List<SpawnContract.Spawn> rows = client.fetch(request);
+            markCoverage(client.coverage());
+            return rows;
+        }
+        @Override public void cancel() { client.cancel(); }
+    }
+
     /** Builds the connector for a source id, or null when the source cannot be queried yet. */
     static SpawnSearch.Source create(String sourceId, String rocketMapBaseUrl) {
+        return create(sourceId, rocketMapBaseUrl, "", "");
+    }
+
+    /** Optional partner credentials are supplied by the caller and never persisted here. */
+    static SpawnSearch.Source create(String sourceId, String rocketMapBaseUrl,
+                                    String partnerUrl, String partnerKey) {
+        if (SpawnSourceRegistry.ID_POKELIST_PARTNER.equals(sourceId))
+            return new Partner(partnerUrl, partnerKey);
         if (SpawnSourceRegistry.ID_IFLOWGO.equals(sourceId)) return new IFlowGo();
         if (SpawnSourceRegistry.ID_ROCKETMAP.equals(sourceId)) return new RocketMap(rocketMapBaseUrl);
         if (SpawnSourceRegistry.ID_POKELIST.equals(sourceId)) return new PokeList();

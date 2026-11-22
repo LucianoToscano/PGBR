@@ -90,6 +90,12 @@ public final class SpawnContract {
         /** PokeList/Moonani: requires one species even for a global request. */
         public static final Capabilities POKELIST = new Capabilities("PokeList", true, true, true,
                 true, true, true, true, false, true, false, false, false, true, true);
+    /** Licensed Partner API: live status and each field are checked against /v1/capabilities.
+     * Shiny is only eligibility and server-side PvP ranks are conditional, never guaranteed. */
+    public static final Capabilities POKELIST_PARTNER = new Capabilities(
+            "PokeList Partner API", true, true, true, true, true, true, false,
+            true, true, true, false, true, true, true);
+
     }
 
     /** One normalised observation. Immutable; every optional field uses its own "unknown" marker. */

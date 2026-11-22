@@ -40,6 +40,7 @@ ENGINE = [
     'pgrazor/src/dev/pgrazor/SpawnFilters.java',
     'pgrazor/src/dev/pgrazor/SpawnProfiles.java',
     'pgrazor/src/dev/pgrazor/SpawnSourceRegistry.java',
+    'pgrazor/src/dev/pgrazor/PokeListPartnerClient.java',
     'pgrazor/src/dev/pgrazor/SpeciesGroups.java',
     # Contrato de URL/erro do servidor RocketMap: a matriz 401/403/429 e a recusa de
     # credencial-na-URL são verificadas aqui, não em revisão manual.
@@ -58,6 +59,7 @@ UI = [
 TESTS = [
     'pgrazor/test/SnipeEngineTest.java',
     'pgrazor/test/HttpErrorMatrixTest.java',
+    'pgrazor/test/PokeListPartnerClientTest.java',
 ]
 
 
@@ -147,6 +149,15 @@ def main():
         print(output.strip())
         if run.returncode != 0 or 'PASS:' not in output:
             print('FAIL: a matriz de erro HTTP não passou.')
+            return 1
+
+        partner = subprocess.run([java, '-Dstdout.encoding=UTF-8', '-cp', str(engine_out),
+                                  'dev.pgrazor.PokeListPartnerClientTest'],
+                                 capture_output=True, text=True, timeout=120)
+        partner_output = (partner.stdout or '') + (partner.stderr or '')
+        print(partner_output.strip())
+        if partner.returncode != 0 or 'PASS:' not in partner_output:
+            print('FAIL: contrato PokeList Partner API.')
             return 1
 
         ui_sources = stubs() + [ROOT / p for p in ENGINE] + [ROOT / p for p in UI]

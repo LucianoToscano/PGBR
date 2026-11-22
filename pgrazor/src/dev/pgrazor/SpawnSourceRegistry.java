@@ -63,6 +63,7 @@ public final class SpawnSourceRegistry {
     public static final String ID_POGOCOORDINATES = "pogocoordinates";
     public static final String ID_PGBR_HUNDO = "pgbr-hundo";
     public static final String ID_POKELIST = "pokelist";
+    public static final String ID_POKELIST_PARTNER = "pokelist-partner";
 
     private static final List<SourceInfo> CATALOGUE;
 
@@ -92,6 +93,13 @@ public final class SpawnSourceRegistry {
                 "Para busca global exige uma espécie escolhida. Distância em passos de 1 a 5 km. "
                         + "O fornecedor pode restringir o acesso a qualquer momento.",
                 SpawnContract.Capabilities.POKELIST));
+        list.add(new SourceInfo(ID_POKELIST_PARTNER, "PokeList Partner API v1",
+                Status.NEEDS_CONFIGURATION,
+                "Requer origem HTTPS do titular, chave própria e licença aprovada. "
+                        + "Antes de mostrar aparições exige live_provider_feed=configured; "
+                        + "resultados sintéticos ou de qualidade estimada não viram IV confirmado. "
+                        + "Sem feed autorizado não há coordenadas reais.",
+                SpawnContract.Capabilities.POKELIST_PARTNER));
         list.add(new SourceInfo("pgsharp", "PGSharp", Status.NOT_INTEGRATED,
                 "Cliente proprietário; o feed não é API pública. O PGBR não usa endpoints, chaves "
                         + "nem protocolos dele.", null));
