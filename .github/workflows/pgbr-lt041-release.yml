@@ -149,8 +149,9 @@ jobs:
         run: python -B pgrazor/test/test_lt032_consolidation.py
       - name: Testar codigo PGBR apos preparar ferramentas DEX
         run: python -B tools/check.py
-      - name: Testar menu inteligente e janelas de escolha manual
+      - name: Testar menu, busca iFlowGo segura e janelas de escolha manual
         run: |
+          python -B pgrazor/test/test_iflowgo_request_policy_java.py
           python -B pgrazor/test/test_pvp_settings_ui.py
           python -B pgrazor/test/test_manual_battle_choice_grace.py
           python -B pgrazor/test/test_battle_timing_controls.py
