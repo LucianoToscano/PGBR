@@ -1,5 +1,7 @@
 # Contributing
 
+> **Obrigatório:** leia integralmente [PGBR_ARQUIVO_MESTRE_UNICO.md](PGBR_ARQUIVO_MESTRE_UNICO.md) antes de propor mudanças. Confirme também o estado real da branch e do CI. A regra é **enriquecer, nunca empobrecer**: preservar recursos, imagens, assinaturas, Root/sem Root, testes, backups e versões anteriores.
+
 For the React showcase and its independent GitHub Pages workflow, see [website development](website/README.md). Website pushes publish the site, not an APK release.
 
 ## Pull-request expectations
