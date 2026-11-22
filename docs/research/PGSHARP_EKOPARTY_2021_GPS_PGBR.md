@@ -26,7 +26,7 @@ O adaptador atual já tratava inicialização, restauração de listeners, callb
 
 - Latitude e longitude devem ser finitas e estar dentro de seus intervalos geográficos;
 - velocidade deve ser finita e não negativa;
-- direção deve ser finita e estar no intervalo de 0 inclusive a 360 exclusivo;
+- direção deve ser finita e representar 0°–360°; `360f` é normalizado para `0f` porque a conversão de `double` para `float` pode arredondar uma direção válida muito próxima de 360°; ângulos acima de 360° são rejeitados;
 - se a localização sintética for inválida, o adaptador **não chama** `nativeLocationUpdate` e deixa o callback real seguir normalmente;
 - a falha registra um evento limitado, sem registrar coordenadas pessoais;
 - o próximo valor válido volta a funcionar normalmente, sem reiniciar, alterar configurações ou introduzir atraso nos ataques.

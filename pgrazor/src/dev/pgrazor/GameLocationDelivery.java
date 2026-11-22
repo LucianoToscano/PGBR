@@ -332,10 +332,13 @@ public final class GameLocationDelivery {
             if (!Double.isFinite(latitude) || latitude < -90 || latitude > 90
                     || !Double.isFinite(longitude) || longitude < -180 || longitude > 180
                     || !Float.isFinite(speed) || speed < 0
-                    || !Float.isFinite(bearing) || bearing < 0 || bearing >= 360) {
+                    || !Float.isFinite(bearing) || bearing < 0 || bearing > 360) {
                 logFaultBounded("invalid-fix", new IllegalArgumentException("Malformed synthetic location"));
                 return false;
             }
+            // MotionEngine has [0,360) double bearings; casting to float can round
+            // 359.99999... to exactly 360.0. Preserve that valid northward direction.
+            if (bearing == 360f) bearing = 0f;
             Location fix = new Location(providerName);
             fix.setLatitude(latitude);
             fix.setLongitude(longitude);

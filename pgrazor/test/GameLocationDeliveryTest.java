@@ -132,7 +132,14 @@ public final class GameLocationDeliveryTest {
 
         Control.brg = 360f;
         proxy.onProviderLocation(new Location("gps"));
-        check(manager.delivered.isEmpty() && original.location == 8, "bearing outside 0..360 forwards callback");
+        check(manager.delivered.size() == 1 && manager.delivered.get(0).bearing == 0f
+            && original.location == 7, "rounded 360-degree bearing is normalized to north");
+        manager.delivered.clear();
+
+        Control.brg = 361f;
+        proxy.onProviderLocation(new Location("gps"));
+        check(manager.delivered.isEmpty() && original.location == 8,
+            "bearing above 360 degrees forwards original callback");
 
         check(Control.events.size() == eventsBeforeFault + 1,
             "invalid fix fault is logged once without coordinates");
