@@ -67,8 +67,22 @@ public final class RocketMapFeedDataTest {
         ok(!notHatched.raidBossLive && notHatched.dexId == -1,
                 "egg must not expose future boss as confirmed");
         ok(notHatched.details.contains("Ovo"), "egg label");
-        ok(RocketMapFeedData.unixMillis(1800000000L) == 0,
-                "seconds are not assumed to be rocketmap milliseconds");
+        // Epoch em segundos (alguns forks e pontes enviam assim) vira milissegundos; antes virava 0
+        // e toda a linha era descartada como expirada, esvaziando a lista sem aviso.
+        ok(RocketMapFeedData.unixMillis(1800000000L) == 1800000000000L,
+                "epoch seconds are converted, not dropped");
+        ok(RocketMapFeedData.unixMillis("1800000000") == 1800000000000L,
+                "numeric string in seconds is converted");
+        ok(RocketMapFeedData.unixMillis(1800000000000L) == 1800000000000L,
+                "milliseconds stay milliseconds");
+        ok(RocketMapFeedData.unixMillis("1800000000000") == 1800000000000L,
+                "numeric string in milliseconds is accepted");
+        ok(RocketMapFeedData.unixMillis(0) == 0, "zero is unknown, not 1970");
+        ok(RocketMapFeedData.unixMillis(-1) == 0, "negative is rejected");
+        ok(RocketMapFeedData.unixMillis(1.5) == 0, "fractional is rejected");
+        ok(RocketMapFeedData.unixMillis("amanha") == 0, "text is rejected");
+        ok(RocketMapFeedData.unixMillis(null) == 0, "null is rejected");
+        ok(RocketMapFeedData.unixMillis(true) == 0, "boolean is rejected");
         try {
             RocketMapFeedData.parse(new JSONObject().put("gyms", new JSONObject()), now, false);
             throw new AssertionError("missing pokemon field must not silently succeed");

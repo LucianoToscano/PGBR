@@ -168,11 +168,26 @@ final class RocketMapFeedData {
     }
 
     /** RocketMap's CustomJSONEncoder writes UTC datetimes in Unix milliseconds. */
+    /**
+     * Epoch in milliseconds, from either the milliseconds RocketMap normally sends or the seconds some
+     * forks and bridges send.
+     *
+     * <p>Seconds used to return 0, and every row with a numeric `disappear_time` was then discarded as
+     * expired — a silent empty list. The ranges cannot overlap (10^10..10^11 is neither a plausible
+     * millisecond date nor a plausible second date before the year 2286), so the conversion is exact
+     * rather than a guess. Anything else still returns 0: unknown, never "now".
+     */
     static long unixMillis(Object value) {
-        if (!(value instanceof Number)) return 0;
-        double raw = ((Number) value).doubleValue();
+        double raw;
+        if (value instanceof Number && !(value instanceof Boolean)) raw = ((Number) value).doubleValue();
+        else if (value instanceof String) {
+            String text = ((String) value).trim();
+            if (!text.matches("\\d{1,14}")) return 0;
+            raw = Double.parseDouble(text);
+        } else return 0;
         if (!Double.isFinite(raw) || Math.floor(raw) != raw) return 0;
-        if (raw >= 1_000_000_000_000d && raw < 10_000_000_000_000d) return (long)raw;
+        if (raw >= 1_000_000_000_000d && raw < 10_000_000_000_000d) return (long) raw;  // ms
+        if (raw >= 1_000_000_000d && raw < 10_000_000_000d) return (long) raw * 1000L;   // s
         return 0;
     }
 
