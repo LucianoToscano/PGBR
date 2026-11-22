@@ -659,10 +659,17 @@ void pvp_vnext_open(void *ui,uint64_t tid) {
     return;
   }
   if(g_pvp_ui_root)return; // same anchored scope, never replay scope-enter each frame
-  uint32_t mask=0;
+  uint32_t mask=0;bool lease_live=false;
   {std::lock_guard<std::mutex> lock(g_options_mutex);
-   if(g_opts.flags&PGR_CBH_OPT_ROCKET_ALLOWED)mask=g_opts.rocket_mask;}
-  if(!(mask&7u))return;
+   const uint64_t now=now_ms();
+   lease_live=now!=0 && now<g_rocket_deadline_ms &&
+              (g_opts.flags&(PGR_CBH_OPT_ACTIVE|PGR_CBH_OPT_ROCKET_ALLOWED))==
+              (PGR_CBH_OPT_ACTIVE|PGR_CBH_OPT_ROCKET_ALLOWED) &&
+              (g_opts.flags&PGR_CBH_OPT_STOPPING)==0;
+   if(lease_live)mask=g_opts.rocket_mask;}
+  const PgrAutoBattleTarget target=g_pvp_scene.training()
+    ? PgrAutoBattleTarget::TRAINER_NPC:PgrAutoBattleTarget::PVP;
+  if(!pgr_allow_shared_battle_actions(target,mask,g_pvp_scene.allowlisted(),lease_live))return;
   pgr_rocket_combat_sample_v1 sample{};
   if(g_rocket_combat->sample(&sample)!=PGR_RC_OK || sample.scope_active)return;
   auto gc_new=reinterpret_cast<uintptr_t(*)(void*,int)>(g_cfg.gchandle_new);
@@ -1721,7 +1728,9 @@ int api_tick(uint64_t proven_tid) {
     {std::lock_guard<std::mutex> lock(g_options_mutex);
      pvp_disarm=pvp_disarm||(g_opts.flags&PGR_CBH_OPT_ACTIVE)==0||
                 (g_opts.flags&PGR_CBH_OPT_ROCKET_ALLOWED)==0||
-                (g_opts.rocket_mask&7u)==0;}
+                (g_opts.flags&PGR_CBH_OPT_STOPPING)!=0||
+                (g_opts.rocket_mask&7u)==0||
+                (now_ms()>=g_rocket_deadline_ms);}
     if(pvp_disarm&&g_pvp_ui_root)pvp_leave(proven_tid,terminal()?"host-stopped":"scope-ended");
     // Re-read and serialize gate publication after each managed leaf pass. A revoke
     // during Rocket work cannot be overwritten by a stale pre-tick Battle snapshot.
