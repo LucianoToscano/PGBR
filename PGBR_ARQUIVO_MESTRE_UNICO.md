@@ -4,6 +4,18 @@
 > Criado em: **21/11/2026** · Última auditoria factual deste registro: **21/11/2026**  
 > Estado: **documento vivo e obrigatório; não é um selo de homologação do aplicativo.**
 
+## Como navegar pelo Arquivo Mestre
+
+> **A consulta começa pela leitura integral, não apenas por este índice.** Esta página é a referência documental única; snapshots não substituem verificações atuais no GitHub.
+
+- **Governança:** [leitura obrigatória](#mestre-leitura), [identidade e escopo](#mestre-escopo), [níveis de evidência](#mestre-evidencias).
+- **Produto:** [versões e estado](#mestre-versoes), [branches](#mestre-branches), [arquitetura/build](#mestre-arquitetura), [registro de recursos](#mestre-recursos), [UX e requisitos](#mestre-ux).
+- **Operação:** [privacidade/terceiros](#mestre-seguranca), [backups](#mestre-backups), [prioridades](#mestre-prioridades), [protocolo de execução](#mestre-protocolo), [fontes](#mestre-fontes).
+- **Auditoria:** [histórico de alterações](#mestre-historico), [inventário conservador](#mestre-auditoria), [mapa de armazenamento e limpeza](#mestre-arquivos).
+
+**Estado resumido auditado em 21/11/2026:** última release pública identificada **LT023**; candidato **LT032** compilado em CI (Root, sem Root e módulo), **não homologado em aparelho**; `main` ainda usa código histórico. A proposta de manutenção [PR #43](https://github.com/LucianoToscano/PGBR/pull/43) é documental e conservadora: **nenhum recurso ou arquivo rastreado foi removido**.
+
+<a id="mestre-leitura"></a>
 ## 0. REGRA MÁXIMA — LEITURA OBRIGATÓRIA
 **ANTES de analisar, alterar, compilar, corrigir, integrar, criar APK, responder sobre status ou publicar qualquer versão do PGBR:**
 1. **Ler este Arquivo Mestre integralmente**, depois `AGENTS.md` e os documentos de arquitetura, build, Root e release relevantes.
@@ -15,6 +27,7 @@
 
 Este protocolo é espelhado nas instruções `AGENTS.md`, `.github/copilot-instructions.md` e no teste `pgrazor/test/test_master_governance.py`. Estes pontos de entrada orientam agentes e CI que os consultam; não garantem leitura por qualquer ferramenta externa ou novo chat sem acesso ao repositório.
 
+<a id="mestre-escopo"></a>
 ## 1. Identidade, limites e missão do produto
 - Nome: **PGBR** — edição brasileira independente para Android, derivada do código aberto [PGRazor](https://github.com/jpitty03/PGRazor) com atribuição MIT e avisos de terceiros preservados.
 - Repositório central: [LucianoToscano/PGBR](https://github.com/LucianoToscano/PGBR).
@@ -25,6 +38,7 @@ Este protocolo é espelhado nas instruções `AGENTS.md`, `.github/copilot-instr
 - Português brasileiro como idioma prioritário; preservar funcionalidade antes de decisões estéticas.
 - Projeto experimental independente; não se apresentar como afiliado à Niantic, Pokémon Company, PGSharp, Pokémod, iPogo ou outros fornecedores. Créditos e licenças são obrigatórios.
 
+<a id="mestre-evidencias"></a>
 ## 2. Hierarquia de evidências e estados
 Use os termos com precisão:
 1. **Planejado** — requisito/decisão, sem código integrado.
@@ -37,6 +51,7 @@ Use os termos com precisão:
 
 **Regra de produto:** sucesso do GitHub Actions não comprova VGP capturando, PvP atacando, privacidade ocultando nome na Unity, scanner recebendo dados nem ausência de crash. Não divulgar uma função como corrigida quando apenas seu botão ou teste foi ajustado.
 
+<a id="mestre-versoes"></a>
 ## 3. Linha do tempo e estado de versões — fotografia de 21/11/2026
 | Assunto | Situação confirmada | Evidência |
 | --- | --- | --- |
@@ -53,6 +68,7 @@ Use os termos com precisão:
 **Artifacts GitHub registrados:** sem Root ID `14728995791` (expira 21/12/2026); Root QA ID `14728653721` (expira 21/12/2026). É obrigatório verificar nova expiração e integridade antes de divulgar links.  
 **Registro de transição:** LT031 integrou PvP experimental; LT027 recebeu correções posteriores de recuperação/CI. LT032 foi criada com commit de dois pais para **não perder o histórico de nenhuma ponta**. O merge de código para `main` não foi realizado.
 
+<a id="mestre-branches"></a>
 ## 4. Branches e política de integração
 - `main`: documentação mestre canônica, código histórico; **não forçar reset, merge ou release sem revisar**.
 - `integracao/lt032-recuperacao-20261121`: núcleo consolidado LT032 + separação de visibilidade/início VGP; PR #40.
@@ -64,6 +80,7 @@ Use os termos com precisão:
 
 **Diretriz:** desenvolvimento em branch/PR próprio; revisar diffs e conflitos, manter código/artefatos antigos, executar testes e empacotar antes de considerar merge. Não publicar release automaticamente só porque o workflow deu verde.
 
+<a id="mestre-arquitetura"></a>
 ## 5. Arquitetura e requisitos de compilação
 Fontes complementares obrigatórias: [BUILDING](docs/BUILDING.md), [ARCHITECTURE](docs/ARCHITECTURE.md), [ROOTED](docs/ROOTED.md), [GAME_UPDATES](docs/GAME_UPDATES.md), [THIRD_PARTY](THIRD_PARTY.md).
 - `pgrazor/src/dev/pgrazor/Control.java`: regras, estado e bridge pública estável. `SettingsPanel.java` e `Pad.java`: UI/overlays; preservar APIs, keys persistidas, lifecycle e posições.
@@ -74,6 +91,7 @@ Fontes complementares obrigatórias: [BUILDING](docs/BUILDING.md), [ARCHITECTURE
 - Compilação/release via GitHub Actions e Secrets existentes; não expor keystore, tokens, credenciais, URLs assinadas, dados de sessão nem payloads de terceiros. Verificar NDK/SDK/toolchain fixados antes de trocar a versão do jogo.
 - Não remover suporte Root ou sem Root. Testar assinaturas, ABI, upgrades, `build-info.json`, `root-build-info.json`, `SHA256SUMS.txt` e hash dos binários, sem presumir compatibilidade com versões novas do jogo.
 
+<a id="mestre-recursos"></a>
 ## 6. Registro de recursos por situação
 | Recurso | Fonte/política registrada | O que NÃO está comprovado |
 | --- | --- | --- |
@@ -89,6 +107,7 @@ Fontes complementares obrigatórias: [BUILDING](docs/BUILDING.md), [ARCHITECTURE
 
 A disponibilidade de serviço externo é variável. Falhas `401/403`, `429 Retry-After`, filtros sem resultados e spawns expirados devem aparecer como **indisponibilidade legítima**, sem inventar coordenadas nem contornar controles de acesso.
 
+<a id="mestre-ux"></a>
 ## 7. Requisitos imutáveis de UX e recursos
 - Manter todos os recursos existentes: **enriquecer, nunca empobrecer**. Não sacrificar automações, autorização, opções ou menu ao redesenhar a UI.
 - Botão e joystick **Eternatus** como preferência de apresentação inicial; efeito visual opcional, evitando poluição. Não alterar identidade de jogo nem cobrir áreas críticas sem opção do usuário.
@@ -98,6 +117,7 @@ A disponibilidade de serviço externo é variável. Falhas `401/403`, `429 Retry
 - Interface em PT-BR natural, agrupamento claro de recursos, estados de execução e erro visíveis. Testar em Android real, escalas de fontes, orientações e sobreposição nas bordas.
 - O app deve funcionar sem computador local para receber uma versão: CI prepara artefatos completos, **mas somente depois de verificar**.
 
+<a id="mestre-seguranca"></a>
 ## 8. Privacidade, segurança e integração de terceiros
 - Proteção de streamer: **somente apresentação local**. Ocultar visualmente o nome do próprio treinador como `*****` onde verificado; restaurar ao desligar. Não modificar ID, conta, login, `PlayerService.get_PlayerName`, dados de servidor, pacotes, RPC nem nomes de outros jogadores.
 - Se não houver metadata/hook de tela validado, dizer **“não homologado para lives”**.
@@ -105,6 +125,7 @@ A disponibilidade de serviço externo é variável. Falhas `401/403`, `429 Retry
 - Preservar créditos/licenças de software e direitos de imagens, fontes e assets.
 - Não anexar logs brutos públicos com nick, e-mail, tokens, latitude/longitude privada, encounter ID ou credenciais. Registrar estado técnico mínimo sanitizado.
 
+<a id="mestre-backups"></a>
 ## 9. Backups, retenção e recuperação
 - Bibliotecas pessoais e conversas têm APKs ZIP LT027/LT031 recuperados, na Biblioteca ChatGPT: `/PGBR/Backups-2026-11-21/`. A existência na Biblioteca **não prova cópia no Google Drive**.
 - Registro do backup: Google Drive `Projetos/PokeGoBR/03_Relatorios/PGBR_BACKUP_VERIFICADO_2026-11-21.md`; é manifesto, **não backup de 180 MB**.
@@ -112,6 +133,7 @@ A disponibilidade de serviço externo é variável. Falhas `401/403`, `429 Retry
 - Releases anteriores não devem ser deletadas, nem ZIP original de entrada ou backup sobrescrito. Manter opção de retorno previamente instalada e chave de assinatura correspondente.
 - O arquivo antigo `POKEGOBR_ARQUIVO_MESTRE_COMPLETO_v1.0_2026-11-01.zip` em `Projetos/PokeGoBR/00_Arquivo_Mestre` pertence ao contexto histórico **PokeGoBR**, não substitui este mestre do PGBR nem deve ser misturado automaticamente.
 
+<a id="mestre-prioridades"></a>
 ## 10. Fila de correções — prioridade real
 **P0 — integridade e funcionalidade**
 1. Preservar LT023 (release de retorno) e LT027/LT031/LT032, com checksums, certificados e evidência.
@@ -129,6 +151,7 @@ A disponibilidade de serviço externo é variável. Falhas `401/403`, `429 Retry
 **P2 — evolução controlada**
 10. Consolidar tradução PT-BR remanescente, acessibilidade, limpeza de arquivos descartáveis com inventário e verificação de referências; documentação, testes, logs e experiência de usuário.
 
+<a id="mestre-protocolo"></a>
 ## 11. Protocolo obrigatório para qualquer tarefa futura
 1. Abrir **este documento inteiro**; depois `AGENTS.md`, `README.md`, `docs/ARCHITECTURE.md`, `docs/BUILDING.md` e `docs/ROOTED.md`. Consultar release/arquivos relacionados à tarefa.
 2. Identificar a branch real, a versão do jogo e o commit; comparar com PRs #40/#41/#42 e o último CI. Não presumir que `main` contém LT032.
@@ -140,6 +163,7 @@ A disponibilidade de serviço externo é variável. Falhas `401/403`, `429 Retry
 8. Atualizar **somente este arquivo** como fonte de status geral (data, evidência, versão e pendências) em PR; notas técnicas detalhadas podem existir, mas não podem concorrer como mestres.
 9. Se a tarefa não puder ser completada, registrar **exatamente** o que foi feito, o erro observado e o que depende de aparelho, acesso, contrato ou ferramenta.
 
+<a id="mestre-fontes"></a>
 ## 12. Índice de evidências e documentos
 - [GitHub Actions](https://github.com/LucianoToscano/PGBR/actions), [Releases](https://github.com/LucianoToscano/PGBR/releases), [Pull requests](https://github.com/LucianoToscano/PGBR/pulls).
 - [LT032 — release notes de desenvolvimento](https://github.com/LucianoToscano/PGBR/blob/integracao/lt032-recuperacao-20261121/docs/releases/v0.00.32-LT.md).
@@ -150,10 +174,49 @@ A disponibilidade de serviço externo é variável. Falhas `401/403`, `429 Retry
 - [Árvore histórica do PGBR](https://github.com/LucianoToscano/PGBR/tree/main).
 - [Biblioteca Pokémon GO no Drive](https://drive.google.com/drive/folders/1TPgVIGAWkY2Ez1VS3bHAitv9Y_NpczbK) — patrimônio de pesquisa e sprites; **não é prova de licença nem código-fonte oficial**.
 
+<a id="mestre-historico"></a>
 ## 13. Registro de atualizações deste mestre
 | Data | Evento | Estado |
 | --- | --- | --- |
 | 21/11/2026 | Criado um **Arquivo Mestre Único** e definida hierarquia de evidências, estado LT032, backups, riscos e prioridades. | Fonte canônica no `main`; outras branches podem conter espelhos idênticos necessários à leitura local, sempre subordinados à versão da `main`. |
 | 21/11/2026 | Verificado sucesso de CI LT032 sem Root, Root+Zygisk e teste isolado VGP. | **CI verde; dispositivo não homologado; PRs #40/#41/#42 ainda drafts.** |
+| 21/11/2026 | Inventário conservador de `main` e três variantes LT032; proposta de higiene documental no [PR #43](https://github.com/LucianoToscano/PGBR/pull/43), sem excluir arquivos nem promover código de LT032. | **1.966 arquivos na `main`; 2.176 no candidato LT032; 7 grupos idênticos preservados. CI documental aprovado nos Actions 44972179155 e 44972174481; merge pendente nesta fotografia.** |
+| 21/11/2026 | Organização navegável do Mestre, reparo de referências LT013, inclusão de guia de PR e CI documental read-only. | [CI #44972179155](https://github.com/LucianoToscano/PGBR/actions/runs/44972179155) e [CI #44972174481](https://github.com/LucianoToscano/PGBR/actions/runs/44972174481) aprovados; nenhuma exclusão, APK ou homologação nesta auditoria. |
 
 **Regra de atualização:** acrescente uma linha com data, novo estado e evidência para cada conclusão relevante. Preserve histórico em Git; nunca apague status antigo sem explicar a substituição.
+
+<a id="mestre-auditoria"></a>
+## 14. Auditoria conservadora e organização — proposta PR #43 (21/11/2026)
+
+**Referência detalhada (não é mestre concorrente):** [docs/maintenance/PGBR_AUDITORIA_CONSERVADORA_20261121.md](docs/maintenance/PGBR_AUDITORIA_CONSERVADORA_20261121.md). Este arquivo registra evidência e só passa a ser a referência canônica quando o PR correspondente for revisado e integrado à `main`.
+
+- **Inventário GitHub completo (árvore não truncada):** `main` no commit `284e5a583e6de9fcb256ae5b213bb4b352a09819` possui **1.966 arquivos rastreados**, com 34.782.810 bytes de blobs. O candidato LT032 no commit `15252c491d0c823ceb924516ae950abd685e931a` possui **2.176 arquivos**, com 38.012.286 bytes. Diferença de caminhos: 210 adições, 123 modificações e **nenhuma remoção** do inventário da `main`.
+- **Outras árvores examinadas:** PR #41, commit `fb42bbf37783cd458772dd9bf3896ee020d4854c` (2.177 arquivos); PR #42, commit `a24aa693aefb858ff0f350e1e13257bc5b01de22` (2.181 arquivos). As branches não foram fundidas entre si nem promovidas à `main`.
+- **Duplicidades byte a byte:** um grupo em `main` (logo SVG) e sete grupos no LT032 (cópias de logos e cinco sprites de bagas para pontos de consumo diferentes). **Preservados integralmente**: mesma hash não prova que links, pacotes Android ou caminhos sejam intercambiáveis.
+- **Higiene não destrutiva proposta:** corrigir a referência quebrada do arquivo de recuperação em `PGBR_IMPORTACAO.md`, manter `AGENTS.md` rastreável removendo sua entrada do `.gitignore`, acrescentar apenas ignores de resíduos gerados, tornar o README mais preciso sobre LT001/LT023/LT032 e fornecer links diretos dos assets oficiais LT023 já confirmados.
+- **Controle repetível proposto:** `tools/repo_inventory.py` realiza **somente leitura** do checkout (`git ls-files`, SHA-256, classificação e alertas); `pgrazor/test/test_repo_inventory.py` exercita preservação de arquivos. O script não apaga, move nem reescreve nada. A execução do CI documental foi verificada: [PR #43 — Actions 44972179155](https://github.com/LucianoToscano/PGBR/actions/runs/44972179155) e [push 44972174481](https://github.com/LucianoToscano/PGBR/actions/runs/44972174481) terminaram com sucesso. Este CI não compila APK, não testa runtime e não faz validação física.
+- **Situação da mudança:** [PR #43](https://github.com/LucianoToscano/PGBR/pull/43) **rascunho com CI documental aprovado**, aguardando integração. Não foi criada release/APK nesta manutenção. Compilação, instalação física, VGP, PvP e homologação da LT032 permanecem com o estado descrito nas seções anteriores, sem nova alegação de funcionamento.
+
+**Critério permanente de limpeza:** primeiro consultar este mestre, depois inventariar, provar uso/ausência de uso por referências, comparar hashes, preservar licenças e rollback, e testar Root/sem Root. Somente excluir em mudança específica revisada, com preservação verificada. **Tamanho, nome antigo ou conteúdo duplicado não autorizam exclusão.**
+
+<a id="mestre-arquivos"></a>
+## 15. Organização de armazenamento e limpeza segura
+
+**Regra de separação:** o código controlado por Git, os binários distribuídos, o patrimônio histórico e o acervo de referência são categorias diferentes. **Não mover nem apagar** somente porque dois arquivos têm o mesmo hash, um nome antigo ou tamanho grande.
+
+| Camada | Local de referência | O que manter separado |
+| --- | --- | --- |
+| Arquivo Mestre oficial | [GitHub `main/PGBR_ARQUIVO_MESTRE_UNICO.md`](https://github.com/LucianoToscano/PGBR/blob/main/PGBR_ARQUIVO_MESTRE_UNICO.md) | Governança e estado único; o Drive mantém apenas apontamentos para esta cópia |
+| Ponto de entrada do Drive | [PGBR/00_Arquivo_Mestre](https://drive.google.com/drive/folders/1aAXywzA-wjYhsk9ya4O_4-rgDeLT-DU8) | `LEIA_PRIMEIRO_PGBR.txt` aponta para o mestre; pacotes históricos PokeGoBR não mudam a identidade deste projeto |
+| APKs e QA | [PGBR/01_APKs_QA](https://drive.google.com/drive/folders/1MT7O1yRzRbIMHxGpWI_HfW351I77EwGD) | Não equivale a release publicada ou homologação |
+| Fontes | [PGBR/02_Codigo_Fonte](https://drive.google.com/drive/folders/1KfEIB-dNU2MIqIo_inSWepe8L-MrxVFb) | GitHub define revisão de fonte; cópias no Drive são auxiliares |
+| Relatórios | [PGBR/03_Relatorios](https://drive.google.com/drive/folders/1gTfmZKCcJbnsYnKBt6KXfAmgIGYQYKkk) | Evidências e manifestos, não senhas nem dados pessoais |
+| Builds/módulos | [PGBR/04_Builds_e_Modulos_PGBR](https://drive.google.com/drive/folders/1YfJOjth-WEb453gg4pyvtjQNRk1ReOXB) | Identificar versão, assinatura, checksums, origem e prazo de retenção |
+| Área restrita | Pasta privada separada no Drive (não expor caminho/credenciais em repositório público) | Assinatura, inputs privados e dados sensíveis; preservar acesso restrito |
+| Backups históricos | Biblioteca ChatGPT `/PGBR/Backups-2026-11-21/` | Cópias LT027/LT031; não afirmar que existem no Drive sem transferência verificada |
+
+**Resultado da inspeção do Drive nesta revisão:** a pasta do mestre também abriga documentos de referência intitulados **PokeGoBR**. Foram preservados sem renomear, apagar ou mover, para não quebrar vínculos; devem ser tratados como contexto histórico, **não como um segundo mestre do PGBR**. A verificação da pasta não é inventário exaustivo de toda a Biblioteca Pokémon GO nem dos segredos privados.
+
+**Higiene técnica proposta:** a verificação de documentação e inventário usa somente código-fonte de repositório com permissões `contents: read`, sem executar scripts de exclusão, sem downloads de input privado e sem publicações. A promoção das alterações depende de CI e revisão do [PR #43](https://github.com/LucianoToscano/PGBR/pull/43). A inspeção do GitHub identificou **zero arquivos rastreados com extensões típicas de chaves, APKs privados ou logs gerados**; isso **não equivale a auditoria de segredos no conteúdo**, nem autoriza exclusões.
+
+**Governança de cada limpeza posterior:** preservar a versão atual, mapear consumidores e direitos, demonstrar que o item não é usado no Android Root/sem Root ou em automações, propor lista exata em PR separado, validar testes e rollback, e somente então considerar apagar. Não usar tamanho ou igualdade byte a byte como critério único.
