@@ -91,7 +91,16 @@ final class PokeListPartnerClient {
                         .put("lng", request.longitude));
                 query.put("radius_km", request.radiusKm);
             }
-            if (request.species > 0) query.put("pokemon_ids", new JSONArray().put(request.species));
+            if (request.species > 0) {
+                query.put("pokemon_ids", new JSONArray().put(request.species));
+            } else {
+                String name = request.nameQuery == null ? "" : request.nameQuery.trim();
+                // The Partner contract documents a 2..40 character case-insensitive name prefix.
+                // Do not turn "#25" or numeric Dex searches into a misleading name prefix.
+                if (name.length() >= 2 && name.length() <= 40
+                        && !name.startsWith("#") && !name.matches("[0-9]+"))
+                    query.put("name_query", name);
+            }
             query.put("active_only", true);
             query.put("sort", "expires_at");
             query.put("limit", pageLimit);
