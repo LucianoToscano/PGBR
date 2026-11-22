@@ -256,3 +256,13 @@ Conversa forneceu `SpawnFeedKit.kt`, pesquisa HTML, `pesquisa-pokemon-go-android
 No kit v2, **37 verificações Kotlin/JVM** foram executadas e aprovadas no ambiente da conversa em 22/11/2026 (`bash testar.sh`); isso verifica somente o núcleo neutro, **não** Room, Compose, interface, backend, fonte live, Gradle, APK, instalação física nem compatibilidade com PGSharp. O kit anterior tinha fluxo simulado e foi corrigido quanto à validação de coordenadas, XML GPX, duplicatas e distinção temporal. `despawnsAt=null` significa desconhecido; `isFresh` não pode considerar um registro eternamente ativo por esse motivo.
 
 **Pendências antes de qualquer alteração funcional:** inventariar branch candidata LT032 e integrações de feed existentes; verificar contratos, permissões e direitos de fontes; escolher fonte realmente disponível; implementar adaptador em componente separado; validar filtros em testes repetíveis e no Android; inspecionar colisões com PRs abertas; abrir PR própria sem apagar nem redefinir versões. **Nenhum APK foi gerado nesta ação documental.**
+
+
+<!-- PGBR-CHAT-VISUAL-20261122 -->
+## Adendo documental de 22/11/2026 — biblioteca visual e reconciliador Pokémon
+
+O registro completo e aditivo deste chat está em [CONSOLIDACAO_CHAT_BIBLIOTECA_VISUAL_DADOS_20261122.md](docs/CONSOLIDACAO_CHAT_BIBLIOTECA_VISUAL_DADOS_20261122.md), com fontes, ZIPs recebidos, Game Master, política de hashes, compatibilidade PGSharp/Pokemod e limitações de direitos. Este mestre continua canônico; o documento vinculado **não é outro arquivo mestre**.
+
+A revisão de `pogo_pkm.json` fornecido registrou 1.755 linhas, 1.451 chaves `(id,form)`, 303 grupos repetidos e **24 grupos divergentes** (não 25); 1.427 chaves sem conflito. `latest.json` do pacote tem 18.812 templates e referência temporal de 28/08/2026 — não equivale à versão atual do jogo. O importador offline do chat preservou ambas as fontes e isolou as variantes conflitantes, sem escolher valores silenciosamente. O material de sprites/3D/ZIPs e GIFs é referência de estudo sujeita à verificação de licença. Priorização compartilhada: catálogo de assets, detecção visual de telas e PokéStops, Pokémon/variantes, animações e diagnóstico, com testes reais de PGSharp/Pokemod.
+
+**Estado:** pesquisa, inventário e teste local do reconciliador; sem build, integração Android, CI físico ou release PGBR. Não alterar o PokeSearch por efeito colateral; preservar todos os registros deste mestre.
