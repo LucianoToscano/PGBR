@@ -506,3 +506,31 @@ Requisitos de conclusão inequívoca: o GitHub aprovar o build final de código 
 O APK não Root completo de 188,8 MB **não** entrou no Drive: a integração rejeitou o upload como `file_too_large` (limite não contornável por nova tentativa). A cópia binária do APK íntegro foi baixada do GitHub na conversa e o artefato GitHub id 14745906741 permanece como fonte de backup; não confundir com os arquivos de build anterior existentes no Drive.
 
 **Critérios ainda externos ao código:** instalar em Android real e provar PvP carregado/ágil/escudos, VGP giro/captura, joystick, Root+Vector, privacidade do nome, pesquisa ao vivo e validade das credenciais/termos dos feeds. A matriz para preencher os testes físicos está em [`docs/QA_LT032_ANDROID_FINAL.md`](docs/QA_LT032_ANDROID_FINAL.md). Sem essas evidências não é legítimo declarar "sem pendências" ou promover para `main`.
+
+---
+
+## 22/11/2026 — PR #66: botão Eventos, visibilidade do seletor e paridade PGRazor
+
+**Origem e branch de QA:** a pedido do usuário, foi consultada a documentação mestra antes de alterar a branch atual `fix/lt032-vgp-fallback-icon-20261122` @ `954e4c0c53e32cf853b261cdceb5da83f94a8bf9`, preservando a linha principal `main` @ `072bd0b38a105612114057b2f946528582ae2d61`. [PR #66](https://github.com/LucianoToscano/PGBR/pull/66) foi aberto em `fix/lt032-eventos-menu-visibilidade-20261122` com base no PR #65; commits `7c13c13c46917e51162f78d392a86b10ee09fbe8` (código e testes), `5f9544a9b66c26e77c3f581b28979096f571bac1` (CI) e `adf3b5c4b0dbe1eb7736669256b1cc5d85d622a8` (matriz de paridade).
+
+### Correções aplicadas ao código (sem publicação automática)
+
+- O botão **Events/“Eventos”** já existia no menu rápido e usa bit **512**, com ação `EventPanel.showSelector`. O menu das configurações também inclui Halloween, GO Wild e Rota Doces Eternatus. O problema era de **visibilidade/personalização**, não ausência de código.
+- A página **Configurações → Eventos** ganhou opção `Mostrar Eventos no Menu Pokébola`, sincronizada com o controle da página de personalização, e botão `Abrir seletor de Eventos` para acesso direto.
+- **Defeito concreto corrigido:** Selector Pokémon usa bit 8192 no menu e na lista de 14 itens, mas `Control.setQuickMenuVisible` aceitava apenas 1–4096 e `loadSettings` limitava máscara a 8191. A nova `QuickMenuVisibilityPolicy` usa **16383** e mantém os bits 512 e 8192 independentes, sem alterar preferências do gameplay.
+- Novos testes `QuickMenuVisibilityPolicyTest.java` + `test_quick_menu_events_java.py`, rodados em JVM e verificações de roteamento no código da interface. O runner Control JVM agora compila a política real.
+- Registrei a matriz funcional recurso a recurso de PGRazor 0.3.5/0.3.6 em `docs/PGR036_PARIDADE_EVENTOS_LT032.md` (na branch do PR #66), distinguindo ports nativos idênticos, adaptações de interface PGBR, recursos não portados de site e testes pendentes no jogo.
+
+### Constatação importante sobre Eventos e PvP
+
+O PGRazor upstream `v0.3.6` de 21/11/2026 continua como último release observado; os PRs upstream #10 (joystick) e #11 (ART/Vector) permanecem abertos, mas com portabilidade isolada em PGBR #55/#56. A área de Eventos **não é novidade exclusiva do v0.3.6**: Halloween e GO Wild já constavam da linha anterior do upstream; PGBR acrescentou a opção de missão Rota Doces Eternatus. `EventSettings.java`, `native/events/event_collector.cpp/h` e os testes correspondentes têm SHA idêntico ao upstream. `EventPanel.java` é diferente devido ao terceiro evento personalizado.
+
+**A preferência PvP “priorizar ataque carregado supereficaz” ainda não tem executor nativo correspondente**. O código `rocket_combat.cpp` seleciona o primeiro carregado pronto e o UI já traz nota de recurso experimental. Não declarar corrigido ou testado até disponibilidade de tipo/energia do oponente, identidade dos dois golpes, regras e cenário Android comprovados. As fontes de scanner/feeds privados, a máscara visual de nome na Unity, o VGP e o Root com Vector continuam pendências de validação real.
+
+### Testes e gates deste PR
+
+- [Suíte completa de código #45003323966](https://github.com/LucianoToscano/PGBR/actions/runs/45003323966) — CI host/NDK ARM64/Windows Java+Python+Node+Root, incluindo novos casos JVM do menu.
+- [Build Root + sem Root + Zygisk #45003323939](https://github.com/LucianoToscano/PGBR/actions/runs/45003323939) — assinar, empacotar e verificar hashes cruzados dos três artefatos.
+- [Governança #45003328261](https://github.com/LucianoToscano/PGBR/actions/runs/45003328261) — garantir inventário e Mestre sem perdas.
+
+**Estado dos dois primeiros gates ao escrever:** execução em andamento, ainda sem atestado de sucesso nem novo link de APK verificado. A PR permanece draft e `main` intocada. Testes de Android físico e links de feed autorizados seguem bloqueados por ambiente/credenciais/consentimento.
