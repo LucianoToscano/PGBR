@@ -809,3 +809,5 @@ O versionamento 0.00.35-LT exigiu atualizar os contratos de testes anteriores (L
 
 ### LT035 — evitar reexecução das releases históricas
 O bump do `pgrazor/VERSION` acionaria acidentalmente os antigos workflows LT033 e LT034, que usam nomes e tags imutáveis próprios. Foram removidos **somente os filtros de push sobre `pgrazor/VERSION`** dos dois workflows antigos. Seus steps, tags, documentação, gatilhos manuais `workflow_dispatch` e os gatilhos para mudanças em seus próprios arquivos/notas continuam preservados. O workflow LT035 é o único acionado automaticamente por incremento do VERSION atual. Teste novo protege essa regra. Nenhuma release antiga é alterada.
+
+**Ajuste de acionamento do mesmo candidato LT035:** também removidos os gatilhos automáticos por alteração dos próprios YAMLs das releases antigas 033/034, para impedir que o mero ajuste de trigger desse PR provoque seus builds históricos. Permanecem os gatilhos `workflow_dispatch` manuais e os de notas de release, sem exclusão de steps antigos.
