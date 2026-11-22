@@ -1171,3 +1171,40 @@ O novo menu (Batalha Inteligente / Ataque Inteligente / Cura Inteligente), esper
 **Não verificado nesta sessão:** compilação Java completa do app, `tools/check.py`, `test_live_feed_java.py` (exige JDK e fontes `org/json` do SDK, ausentes no sandbox), build Android, assinatura, APK, instalação e uso real. **`device_tested=false`.**
 
 **Limitações honestas:** o filtro de IV só tem efeito quando a fonte declara IV; para linhas sem IV, restam espécie, nível, forma e tempo restante. "Sniper 1/2" aqui são dois conjuntos de filtros sobre a mesma fonte — não são o motor de captura automática do cliente comercial. Nenhum resultado é capturado, teleportado ou repetido automaticamente.
+
+## 22/11/2026 — Sniper 1 e Sniper 2 nativos: motor compartilhado, filtros completos, teleporte integrado (branch `arena/75dcdb70-pgbr`)
+
+**Pedido do proprietário (PROMPT MESTRE):** implementar **dentro do PGBR** o Sniper 1 e o Sniper 2 — busca real por fonte autorizada, filtros funcionais, coordenadas verdadeiras, confirmação e teleporte nativo — preservando joystick, mapa, cooldown, feeds e automações. Proibido: outro aplicativo, fluxo web, simulação de tela, dado inventado, extração de credencial, contorno de autenticação/pagamento/limite.
+
+**O que mudou nesta etapa (continuação do bloco LT040 acima, mesmo branch):**
+
+| Arquivo | Papel |
+| --- | --- |
+| `pgrazor/src/dev/pgrazor/SpawnContract.java` | Contrato único `Spawn` (fonte, encontro, espécie, forma, lat/lon, IVs, %, PC, nível, gênero, tamanho, PvP + marca de cálculo local, observado/expira, capacidades da fonte). `UNKNOWN=-1`, nível `NaN`, tempo `0`; `validCoordinates` recusa NaN/fora de faixa/`0,0`; `dedupe` por id de encontro ou lat/lon; `alive`; `sort` com desconhecidos no fim; `fromLiveFeed`. |
+| `pgrazor/src/dev/pgrazor/SpawnSearch.java` | Motor de busca compartilhado: `Source` (conector), `Request`, `Result` com **recebidos / removidos por filtro / duplicados / expirados / exibidos** separados, `State` (OK, SOURCE_EMPTY, ALL_FILTERED_OUT, ACCESS_DENIED, AUTH_REQUIRED, RATE_LIMITED, SOURCE_ERROR, NETWORK_ERROR, CANCELLED, COORDINATES_BLOCKED, STALE, INVALID_REQUEST) e `Coverage` (FULL_RESPONSE, **FIRST_PAGE**, AREA, NONE). Nenhuma página única é chamada de busca mundial. |
+| `pgrazor/src/dev/pgrazor/SpawnFilters.java` | Filtros completos por slot: espécies 1–1025, 100%/0%, IV mín–máx e ataque/defesa/stamina 0–15, PC, nível 1–50, gênero, forma, XXS/XXL, liga PvP + rank máximo, distância máxima de teleporte, shiny **possível** × **confirmado**, lendários/míticos. Limite definido nunca é satisfeito por valor desconhecido. Regionais/raros/evento são **recusados** com mensagem (sem lista validada no repositório). |
+| `pgrazor/src/dev/pgrazor/SpeciesGroups.java` | Tabela curada de lendários/míticos (Geração 1–9), explicitamente marcada como curadoria PGBR, não dado do fornecedor. |
+| `pgrazor/src/dev/pgrazor/SpawnProfiles.java` | Estado persistido **por slot** (`slot1`/`slot2`, arquivo `pgrazor-snipe-v2`): filtros ativos, perfis nomeados (até 20), fonte, ordenação, escopo mundial/raio, raio, atualização automática (desligada/30/60/120/300/600 s). Um JSON corrompido derruba só aquele slot; um perfil ruim é ignorado sem apagar os outros. |
+| `pgrazor/src/dev/pgrazor/SpawnSourceRegistry.java` | Catálogo honesto: iFlowGo (`READY`), RocketMap/PokeSearch (`NEEDS_CONFIGURATION`), PGBR 100% IV (`READY`), PoGoCoordinates (`REVEAL_REQUIRED` — só via painel próprio, respeitando cotas), PokeList (`READY`), PGSharp/iPogo/Pokémod (`NOT_INTEGRATED`, sem endpoint/chave/protocolo). |
+| `pgrazor/src/dev/pgrazor/SpawnConnectors.java` | Adaptadores finos sobre os clientes existentes; marcam a cobertura real (iFlowGo global = primeira página, raio = área), cancelam o socket, e o feed 100% IV é **baixado de verdade** de `ShundoSniper.FEED_URL` (8 MB, sem redirecionar, cache de 30 s, 401/403/429 com `Retry-After`). Nenhum conector revela coordenada que o fornecedor retém. |
+| `pgrazor/src/dev/pgrazor/SniperPanel.java` | Painel nativo: abas Sniper 1/Sniper 2, campo de busca por nome/`#dex` com debounce, botões Filtros/Atualizar/Fonte/Ordem, contadores e mensagem de estado, lista com sprite/Copiar/Mapa/Favoritar, detalhe com valores reais, confirmação e `Control.teleport`; cancelamento de consulta antiga por contador de geração; bloqueio após 401/403/429; tick local de 5 s sem rede. |
+| `pgrazor/src/dev/pgrazor/SnipeAdvancedFilterDialog.java` | Editor completo dos filtros acima, com a linha de capacidades da fonte escolhida e grupos sem base validada desabilitados. |
+| `pgrazor/src/dev/pgrazor/FeedChooser.java` | Índices **7 = Sniper 1** e **8 = Sniper 2** em "Busca de Pokémon"; índices 0–6 preservados. |
+| `pgrazor/test/SnipeEngineTest.java` | 148 verificações JVM só com **dados de teste escritos à mão** (nenhuma chamada de rede). |
+| `pgrazor/test/test_sniper_panel_contract.py` | 24 testes estáticos de contrato (desconhecido ≠ zero, 100% exige prova, teleporte só após confirmação e revalidação, debounce, descarte de resposta fora de ordem, bloqueio de coordenada não revelada, fonte única para filtro remoto, rótulo de PvP calculado). |
+| `tools/sniper_jvm/compile_engine.py` + `tools/sniper_jvm/stubs/` | Verificador reprodutível: compila o motor **e o painel** com ECJ/`javac` contra stubs mínimos de Android/org.json, roda a suíte e falha em qualquer erro. |
+
+**Verificado nesta sessão (executado):**
+- `python3 tools/sniper_jvm/compile_engine.py` (com `ECJ_JAR`) → motor compilado, **`SnipeEngineTest: 148 verificações, 0 falha(s)`** e painel compilado sem erros (115 classes geradas). ECJ 3.39.0 + OpenJDK 25.
+- `python3 -m unittest test_sniper_panel_contract` → 24/24 OK; `test_snipe_slots_contract` 7/7; `test_hundo_manual_ui_contract` 5/5; `test_lt034_release_contract` 2/2; `test_pgsharp_provider_contract` 5/5; `test_ptbr_glossary` 2/2.
+- Suíte completa `pgrazor/test` → 307 testes; as duas falhas restantes (`test_eternatus_route_java`, `test_pgsharp_policy_java`) são **pré-existentes neste sandbox** (dependem de compilador/`java_tools`), confirmadas com `git stash` das alterações desta entrega.
+- `javalang` parse OK em todos os arquivos Java novos.
+
+**Não verificado nesta sessão:** build Android/Gradle, `tools/check.py`, instalação, execução em aparelho e **consulta real a qualquer fornecedor** — o egress do sandbox bloqueia os provedores (`curl` → `http=000`). Os stubs Android provam tipos/assinaturas, não comportamento de tela. **`device_tested=false`; nenhuma APK; nenhuma tag; nenhuma release; PR desta etapa ainda não aberta.**
+
+**Limitações honestas:**
+- A busca global do iFlowGo continua sendo **só a primeira página** do endpoint observado; a interface diz isso em cada resultado, e não afirma cobertura mundial.
+- Span nativo de PvP: rank exibido é o do fornecedor; quando o PGBR calcular localmente a linha é marcada "(calculado)". A tabela PvP existente (`tools/pvp_data.py`) é C++ apenas.
+- Regionais, raros e evento ficam bloqueados até existir lista verificável.
+- Shiny é exibido como **possibilidade** da espécie ou **confirmação** do fornecedor, nunca como garantia.
+- PoGoCoordinates continua exigindo o fluxo de revelação do próprio fornecedor (cotas dele) e não é oferecida como fonte direta do Sniper.

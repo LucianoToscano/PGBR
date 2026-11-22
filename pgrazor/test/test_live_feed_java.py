@@ -45,7 +45,16 @@ class LiveFeedJavaTests(unittest.TestCase):
             sources.extend([ROOT / 'src/dev/pgrazor/HundoFeedData.java',
                             ROOT / 'test/HundoFeedDataTest.java',
                             ROOT / 'src/dev/pgrazor/SnipeFilters.java',
-                            ROOT / 'test/SnipeFiltersTest.java'])
+                            ROOT / 'test/SnipeFiltersTest.java',
+                            ROOT / 'src/dev/pgrazor/SpawnContract.java',
+                            ROOT / 'src/dev/pgrazor/SpawnSearch.java',
+                            ROOT / 'src/dev/pgrazor/SpawnFilters.java',
+                            ROOT / 'src/dev/pgrazor/SpawnProfiles.java',
+                            ROOT / 'src/dev/pgrazor/SpawnSourceRegistry.java',
+                            ROOT / 'src/dev/pgrazor/SpeciesGroups.java',
+                            ROOT / 'src/dev/pgrazor/LiveFeedClient.java',
+                            ROOT / 'src/dev/pgrazor/PokemonFeedSearch.java',
+                            ROOT / 'test/SnipeEngineTest.java'])
             if (ROOT / 'test/LiveFeedFiltersTest.java').exists(): sources.append(ROOT / 'test/LiveFeedFiltersTest.java')
             result = subprocess.run([str(compiler), '-encoding', 'UTF-8', '-d', str(work), *map(str, sources)], capture_output=True, text=True, timeout=30)
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
@@ -67,6 +76,10 @@ class LiveFeedJavaTests(unittest.TestCase):
             result = subprocess.run([str(runtime), '-cp', str(work), 'dev.pgrazor.RocketMapFeedDataTest'],
                                     capture_output=True, text=True, timeout=30)
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            result = subprocess.run([str(runtime), '-cp', str(work), 'SnipeEngineTest'],
+                                    capture_output=True, text=True, timeout=30)
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            self.assertIn('0 falha', result.stdout, result.stdout)
             result = subprocess.run([str(runtime), '-cp', str(work), 'dev.pgrazor.PokemonSelectorPolicyTest'],
                                     capture_output=True, text=True, timeout=30)
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)

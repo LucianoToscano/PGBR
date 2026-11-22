@@ -53,3 +53,6 @@ coverage/
 *.rej
 *.swp
 *.swo
+
+# Compilador ECJ usado apenas pelo verificador JVM do Sniper (baixado sob demanda).
+tools/sniper_jvm/ecj.jar
