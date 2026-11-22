@@ -3,7 +3,7 @@
 .local/
 hermes-swarm/
 frida-monitor/
-AGENTS.md
+# AGENTS.md é versionado e obrigatório; não ignorar.
 *_HANDOFF.*
 PGRazor_NEXT_LLM.txt
 NEXT_LLM_PROMPT.txt
@@ -43,3 +43,15 @@ Thumbs.db
 *.gpx
 !/pgrazor/research/README.txt
 /user-reports
+
+# Resíduos locais gerados por ferramentas (não apagar backups rastreados).
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+coverage/
+*.tmp
+*.orig
+*.rej
+*.swp
+*.swo
