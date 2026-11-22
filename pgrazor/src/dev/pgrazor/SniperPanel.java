@@ -222,7 +222,9 @@ public final class SniperPanel {
 
             dialog = new AlertDialog.Builder(ui)
                     .setTitle("Busca de Pokémon · " + title())
-                    .setView(new ScrollView(ui) {{ addView(root); }})
+                    // The weighted results ListView needs the dialog's constrained height.
+                    // Nested ScrollView measurement could collapse the results area.
+                    .setView(root)
                     .setNegativeButton("Fechar", null)
                     .create();
             DialogLifecycle.bind(activity, dialog, this::close);
