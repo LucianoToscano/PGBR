@@ -131,7 +131,7 @@ public final class SnipeFiltersTest {
 
         // Each row: {species, minIv, maxIv, minLevel, maxLevel, form, remainingSeconds}.
         for (String[] bad : new String[][]{
-                {null, "99", "100", null, null, null, null},     // min_iv > max_iv
+                {null, "100", "99", null, null, null, null},     // min_iv > max_iv
                 {"0", null, null, null, null, null, null},        // species out of range
                 {"1026", null, null, null, null, null, null},     // species out of range
                 {"abc", null, null, null, null, null, null},      // species not a number

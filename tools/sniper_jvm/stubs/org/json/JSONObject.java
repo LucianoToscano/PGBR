@@ -6,15 +6,19 @@ import java.util.Map;
 
 /** Minimal org.json object used only to compile/run the PGBR engine tests on a JVM. */
 public class JSONObject {
+    /** Marcador de nulo do org.json real. O Android expõe exatamente este campo. */
+    public static final Object NULL = new Object() {
+        @Override public String toString() { return "null"; }
+    };
+
     private final Map<String, Object> values = new LinkedHashMap<>();
 
     public JSONObject() {}
 
     public JSONObject(String text) throws JSONException {
-        Object parsed = new Json(text).parseValue();
-        if (!(parsed instanceof Map)) throw new JSONException("objeto esperado");
-        @SuppressWarnings("unchecked") Map<String, Object> map = (Map<String, Object>) parsed;
-        values.putAll(map);
+        Object parsed = Json.convert(new Json(text).parseValue());
+        if (!(parsed instanceof JSONObject)) throw new JSONException("objeto esperado");
+        values.putAll(((JSONObject) parsed).values);
     }
 
     public JSONObject put(String key, Object value) throws JSONException {
@@ -37,7 +41,9 @@ public class JSONObject {
      * precisa existir com a mesma assinatura em android.jar.
      */
     public Object get(String key) throws JSONException {
-        if (!values.containsKey(key)) throw new JSONException("chave ausente: " + key);
+        // Contrato do Android: chave ausente devolve null (NÃO lança). O app depende disso em
+        // SnipeFilters.fromJson(o.get("species"), o.has("species")) — lançar aqui quebrava o teste
+        // de filtros com "No value for species" no runner.
         return values.get(key);
     }
 
@@ -58,7 +64,6 @@ public class JSONObject {
     public java.util.Iterator<String> keysInInsertionOrder() {
         return new ArrayList<>(values.keySet()).iterator();
     }
-    public boolean isNull(String key) { return !values.containsKey(key) || values.get(key) == null; }
 
     public JSONObject getJSONObject(String key) throws JSONException {
         Object value = values.get(key);
@@ -99,7 +104,14 @@ public class JSONObject {
 
     public Object remove(String key) { return values.remove(key); }
     public int length() { return values.size(); }
-    public Object opt(String key) { return values.get(key); }
+    public Object opt(String key) {
+        Object value = values.get(key);
+        return value == NULL ? null : value;
+    }
+    /** Como no Android: um campo NULL explícito conta como nulo. */
+    public boolean isNull(String key) {
+        return !values.containsKey(key) || values.get(key) == NULL || values.get(key) == null;
+    }
     public int optInt(String key) { return optInt(key, 0); }
     public long optLong(String key) { return optLong(key, 0L); }
     public long optLong(String key, long fallback) {

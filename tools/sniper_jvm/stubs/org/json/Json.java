@@ -24,6 +24,25 @@ final class Json {
         return parseNumber();
     }
 
+    /** Converte o resultado cru do parse nos tipos org.json, como a implementação real faz. */
+    static Object convert(Object raw) {
+        if (raw instanceof Map) {
+            JSONObject object = new JSONObject();
+            @SuppressWarnings("unchecked") Map<String, Object> map = (Map<String, Object>) raw;
+            for (Map.Entry<String, Object> entry : map.entrySet()) {
+                try { object.put(entry.getKey(), convert(entry.getValue())); }
+                catch (JSONException impossible) { throw new IllegalStateException(impossible); }
+            }
+            return object;
+        }
+        if (raw instanceof List) {
+            JSONArray array = new JSONArray();
+            for (Object item : (List<?>) raw) array.put(convert(item));
+            return array;
+        }
+        return raw;
+    }
+
     private Map<String, Object> parseObject() throws JSONException {
         expect('{');
         Map<String, Object> map = new LinkedHashMap<>();
