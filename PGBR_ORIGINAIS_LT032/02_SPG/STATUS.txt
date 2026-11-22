@@ -1,0 +1,5 @@
+SPG - NAO IDENTIFICADO COM SEGURANCA
+
+Neste snapshot nao foi localizado um grupo de assets cujo nome/identificador seja SPG.
+Nenhum arquivo foi inventado, renomeado como SPG ou deslocado erroneamente para esta pasta.
+Os recursos originais de VGP estao em 05_VGP, separados.

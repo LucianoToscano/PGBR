@@ -1,0 +1,315 @@
+{
+  "projeto": "PGBR",
+  "data": "2026-11-22",
+  "source_repo": "LucianoToscano/PGBR",
+  "source_commit": "5c0f306f86cf65c938dc6183e7ba879fc571af96",
+  "source_branch": "integracao/lt032-qa-consolidada-20261122",
+  "sem_imagens_novas": true,
+  "files": [
+    {
+      "arquivo_zip": "PGBR_ORIGINAIS_LT032/01_MENU_POKEBOLA_PGBR/01_IMAGENS/eternatus-ball.webp",
+      "origem": "pgrazor/assets/map-icons/eternatus-ball.webp",
+      "git_blob_sha": "619bc913c20266f17c57114cb1d6799b819a78c8",
+      "bytes": 32758
+    },
+    {
+      "arquivo_zip": "PGBR_ORIGINAIS_LT032/01_MENU_POKEBOLA_PGBR/01_IMAGENS/eternatus-ball-aura.webp",
+      "origem": "pgrazor/assets/map-icons/eternatus-ball-aura.webp",
+      "git_blob_sha": "167f17b829ea8853fc075ffafab020bec41efd10",
+      "bytes": 53416
+    },
+    {
+      "arquivo_zip": "PGBR_ORIGINAIS_LT032/01_MENU_POKEBOLA_PGBR/01_IMAGENS/eternatus-ball-morph-clean.webp",
+      "origem": "pgrazor/assets/map-icons/eternatus-ball-morph-clean.webp",
+      "git_blob_sha": "5f74523e8224e291476269ee8bbcac0187340737",
+      "bytes": 39520
+    },
+    {
+      "arquivo_zip": "PGBR_ORIGINAIS_LT032/01_MENU_POKEBOLA_PGBR/01_IMAGENS/eternatus-ball-morph-storm.webp",
+      "origem": "pgrazor/assets/map-icons/eternatus-ball-morph-storm.webp",
+      "git_blob_sha": "0b6ce2e095448f3e239d325972208eb94dc39938",
+      "bytes": 60452
+    },
+    {
+      "arquivo_zip": "PGBR_ORIGINAIS_LT032/01_MENU_POKEBOLA_PGBR/02_EFEITOS/eternatus-fx-vortex.png",
+      "origem": "pgrazor/assets/map-icons/eternatus-fx-vortex.png",
+      "git_blob_sha": "6c3a6f28c3eb2eb6d775c1fff57ad951d86842df",
+      "bytes": 28838
+    },
+    {
+      "arquivo_zip": "PGBR_ORIGINAIS_LT032/01_MENU_POKEBOLA_PGBR/02_EFEITOS/eternatus-fx-smoke-wispy.png",
+      "origem": "pgrazor/assets/map-icons/eternatus-fx-smoke-wispy.png",
+      "git_blob_sha": "d9a4edd723555503a7d8f8c785b8eb7e8c3e3d06",
+      "bytes": 77484
+    },
+    {
+      "arquivo_zip": "PGBR_ORIGINAIS_LT032/01_MENU_POKEBOLA_PGBR/02_EFEITOS/eternatus-fx-soft-smoke.png",
+      "origem": "pgrazor/assets/map-icons/eternatus-fx-soft-smoke.png",
+      "git_blob_sha": "a0676fa3151275de3125a4f83998ebfae55db737",
+      "bytes": 17460
+    },
+    {
+      "arquivo_zip": "PGBR_ORIGINAIS_LT032/01_MENU_POKEBOLA_PGBR/03_FUNCOES/EternatusVisualEffects.java",
+      "origem": "pgrazor/src/dev/pgrazor/EternatusVisualEffects.java",
+      "git_blob_sha": "d9d739ca230a70b3d9987d3da41806984a628c4e",
+      "bytes": 12375
+    },
+    {
+      "arquivo_zip": "PGBR_ORIGINAIS_LT032/01_MENU_POKEBOLA_PGBR/03_FUNCOES/EternatusFxTiming.java",
+      "origem": "pgrazor/src/dev/pgrazor/EternatusFxTiming.java",
+      "git_blob_sha": "ecd85e45a5e636d522867e495e84aac6b316b425",
+      "bytes": 3233
+    },
+    {
+      "arquivo_zip": "PGBR_ORIGINAIS_LT032/01_MENU_POKEBOLA_PGBR/03_FUNCOES/EternatusMorph.java",
+      "origem": "pgrazor/src/dev/pgrazor/EternatusMorph.java",
+      "git_blob_sha": "899a9025c2b6288f8e7087a9c4c42419b4763913",
+      "bytes": 885
+    },
+    {
+      "arquivo_zip": "PGBR_ORIGINAIS_LT032/01_MENU_POKEBOLA_PGBR/03_FUNCOES/EternatusStorm.java",
+      "origem": "pgrazor/src/dev/pgrazor/EternatusStorm.java",
+      "git_blob_sha": "e136d5f0a1323372d7bc17c4678e8bccb21059f1",
+      "bytes": 2496
+    },
+    {
+      "arquivo_zip": "PGBR_ORIGINAIS_LT032/01_MENU_POKEBOLA_PGBR/03_FUNCOES/OverlayArtwork.java",
+      "origem": "pgrazor/src/dev/pgrazor/OverlayArtwork.java",
+      "git_blob_sha": "d22610c945f956e83cf127d0a83a43e1bf8670fc",
+      "bytes": 5383
+    },
+    {
+      "arquivo_zip": "PGBR_ORIGINAIS_LT032/01_MENU_POKEBOLA_PGBR/03_FUNCOES/OverlayIconImage.java",
+      "origem": "pgrazor/src/dev/pgrazor/OverlayIconImage.java",
+      "git_blob_sha": "e6b41f686522e0ed2b2e31c20edb2b2899d547b0",
+      "bytes": 5288
+    },
+    {
+      "arquivo_zip": "PGBR_ORIGINAIS_LT032/03_JOYSTICK/01_IMAGENS/joystick-eternatus-base.webp",
+      "origem": "pgrazor/assets/map-icons/joystick-eternatus-base.webp",
+      "git_blob_sha": "8a07df45a47916a3e215927f10f92469a19e7ebf",
+      "bytes": 99850
+    },
+    {
+      "arquivo_zip": "PGBR_ORIGINAIS_LT032/03_JOYSTICK/01_IMAGENS/joystick-eternatus-rim.webp",
+      "origem": "pgrazor/assets/map-icons/joystick-eternatus-rim.webp",
+      "git_blob_sha": "024fd108287a247c3e42a7c30aad6dcf26e97975",
+      "bytes": 92820
+    },
+    {
+      "arquivo_zip": "PGBR_ORIGINAIS_LT032/03_JOYSTICK/01_IMAGENS/joystick-eternatus-thumb.webp",
+      "origem": "pgrazor/assets/map-icons/joystick-eternatus-thumb.webp",
+      "git_blob_sha": "7cbbd74bdccf8d6b06eb8d96dacaa409819f3757",
+      "bytes": 38162
+    },
+    {
+      "arquivo_zip": "PGBR_ORIGINAIS_LT032/03_JOYSTICK/01_IMAGENS/joystick-eternatus-vortex.webp",
+      "origem": "pgrazor/assets/map-icons/joystick-eternatus-vortex.webp",
+      "git_blob_sha": "b447bde34c20d4a48940380ae922e1e3a7bd7891",
+      "bytes": 41570
+    },
+    {
+      "arquivo_zip": "PGBR_ORIGINAIS_LT032/03_JOYSTICK/01_IMAGENS/joystick-eternatus-morph-clean.webp",
+      "origem": "pgrazor/assets/map-icons/joystick-eternatus-morph-clean.webp",
+      "git_blob_sha": "b2191a964bb2064a808dc7b77100b53d5a933ea6",
+      "bytes": 64450
+    },
+    {
+      "arquivo_zip": "PGBR_ORIGINAIS_LT032/03_JOYSTICK/01_IMAGENS/joystick-eternatus-morph-storm.webp",
+      "origem": "pgrazor/assets/map-icons/joystick-eternatus-morph-storm.webp",
+      "git_blob_sha": "bc388769e34de60b4bc0d4bc5092b864af945937",
+      "bytes": 80826
+    },
+    {
+      "arquivo_zip": "PGBR_ORIGINAIS_LT032/03_JOYSTICK/01_IMAGENS/joystick-eternatus-morph-thumb.webp",
+      "origem": "pgrazor/assets/map-icons/joystick-eternatus-morph-thumb.webp",
+      "git_blob_sha": "6f14720a788a496543dd60c7a43b67de0c57c1e3",
+      "bytes": 13358
+    },
+    {
+      "arquivo_zip": "PGBR_ORIGINAIS_LT032/03_JOYSTICK/01_IMAGENS/joystick-hud-base.webp",
+      "origem": "pgrazor/assets/map-icons/joystick-hud-base.webp",
+      "git_blob_sha": "e8bb89f924c5470a52ffc87b4ea7f9b616772919",
+      "bytes": 58438
+    },
+    {
+      "arquivo_zip": "PGBR_ORIGINAIS_LT032/03_JOYSTICK/01_IMAGENS/joystick-hud-thumb.webp",
+      "origem": "pgrazor/assets/map-icons/joystick-hud-thumb.webp",
+      "git_blob_sha": "a16a24215814cf9d599e320d92468345b3c5fe0a",
+      "bytes": 25358
+    },
+    {
+      "arquivo_zip": "PGBR_ORIGINAIS_LT032/03_JOYSTICK/02_FUNCOES/JoystickImage.java",
+      "origem": "pgrazor/src/dev/pgrazor/JoystickImage.java",
+      "git_blob_sha": "21452480565a13bb0f6c1be857c5866fea82aded",
+      "bytes": 5311
+    },
+    {
+      "arquivo_zip": "PGBR_ORIGINAIS_LT032/03_JOYSTICK/02_FUNCOES/JoystickLock.java",
+      "origem": "pgrazor/src/dev/pgrazor/JoystickLock.java",
+      "git_blob_sha": "d7971cba3ebd1dd33a215c15b2fb073605f904c3",
+      "bytes": 445
+    },
+    {
+      "arquivo_zip": "PGBR_ORIGINAIS_LT032/03_JOYSTICK/02_FUNCOES/MotionEngine.java",
+      "origem": "pgrazor/src/dev/pgrazor/MotionEngine.java",
+      "git_blob_sha": "c3ec7d22d7660ac2ec77e409c185ff2500da4adb",
+      "bytes": 14399
+    },
+    {
+      "arquivo_zip": "PGBR_ORIGINAIS_LT032/04_MENU_RAPIDO/01_IMAGENS/routes.png",
+      "origem": "pgrazor/assets/map-icons/routes.png",
+      "git_blob_sha": "4e25715524b170d5d02f7c9d9b93cd3ff2ca4ab6",
+      "bytes": 3442
+    },
+    {
+      "arquivo_zip": "PGBR_ORIGINAIS_LT032/04_MENU_RAPIDO/02_FUNCOES/MenuIcon.java",
+      "origem": "pgrazor/src/dev/pgrazor/MenuIcon.java",
+      "git_blob_sha": "f0828972910570dde7629003193830d32737789d",
+      "bytes": 11255
+    },
+    {
+      "arquivo_zip": "PGBR_ORIGINAIS_LT032/04_MENU_RAPIDO/02_FUNCOES/QuickMenu.java",
+      "origem": "pgrazor/src/dev/pgrazor/QuickMenu.java",
+      "git_blob_sha": "ab31891716ff5ca5a08a93d3949d2c0d8b36d7bf",
+      "bytes": 10590
+    },
+    {
+      "arquivo_zip": "PGBR_ORIGINAIS_LT032/04_MENU_RAPIDO/03_REFERENCIA/main-menu.png",
+      "origem": "website/public/images/main-menu.png",
+      "git_blob_sha": "07300132fcc219318dcb9b8597fec42d232aeaa3",
+      "bytes": 106058
+    },
+    {
+      "arquivo_zip": "PGBR_ORIGINAIS_LT032/05_VGP/01_IMAGENS/vgp-connected.png",
+      "origem": "pgrazor/assets/map-icons/vgp-connected.png",
+      "git_blob_sha": "7a46d82a8a6bff0af854088f3063181434be70ed",
+      "bytes": 10965
+    },
+    {
+      "arquivo_zip": "PGBR_ORIGINAIS_LT032/05_VGP/01_IMAGENS/vgp-disconnected.png",
+      "origem": "pgrazor/assets/map-icons/vgp-disconnected.png",
+      "git_blob_sha": "3f614667a4067ebc15ea09ab9e7fa7615746446b",
+      "bytes": 6207
+    },
+    {
+      "arquivo_zip": "PGBR_ORIGINAIS_LT032/05_VGP/01_IMAGENS/vgp-device-on.png",
+      "origem": "pgrazor/assets/map-icons/vgp-device-on.png",
+      "git_blob_sha": "fc7c0460d19e9c894c58e5d4b3631049a9c5c74e",
+      "bytes": 879
+    },
+    {
+      "arquivo_zip": "PGBR_ORIGINAIS_LT032/05_VGP/01_IMAGENS/vgp-device-off.png",
+      "origem": "pgrazor/assets/map-icons/vgp-device-off.png",
+      "git_blob_sha": "a17c4faf180da126022118a203ef00657d5276d1",
+      "bytes": 717
+    },
+    {
+      "arquivo_zip": "PGBR_ORIGINAIS_LT032/05_VGP/01_IMAGENS/vgp-device-error.png",
+      "origem": "pgrazor/assets/map-icons/vgp-device-error.png",
+      "git_blob_sha": "05f8a1b3940cd6045eb650fedf426564ed580887",
+      "bytes": 883
+    },
+    {
+      "arquivo_zip": "PGBR_ORIGINAIS_LT032/05_VGP/01_IMAGENS/vgp-hd-states.webp",
+      "origem": "pgrazor/assets/map-icons/vgp-hd-states.webp",
+      "git_blob_sha": "18672068986ede6bfa4148f90486676806371d5f",
+      "bytes": 21242
+    },
+    {
+      "arquivo_zip": "PGBR_ORIGINAIS_LT032/05_VGP/01_IMAGENS/vgp-ring.png",
+      "origem": "pgrazor/assets/map-icons/vgp-ring.png",
+      "git_blob_sha": "3bdc890180543fdef7ecc1f43950cea9b635f2a8",
+      "bytes": 857
+    },
+    {
+      "arquivo_zip": "PGBR_ORIGINAIS_LT032/05_VGP/01_IMAGENS/vgp-led-off.png",
+      "origem": "pgrazor/assets/map-icons/vgp-led-off.png",
+      "git_blob_sha": "a6cb3cb82e680861bdb582b12b77cef35e21c934",
+      "bytes": 743
+    },
+    {
+      "arquivo_zip": "PGBR_ORIGINAIS_LT032/05_VGP/01_IMAGENS/vgp-custom-glossy.png",
+      "origem": "pgrazor/assets/map-icons/vgp-custom-glossy.png",
+      "git_blob_sha": "cebcc460fe384102edda3c55ff3d0ea7cb87b0c5",
+      "bytes": 2513
+    },
+    {
+      "arquivo_zip": "PGBR_ORIGINAIS_LT032/05_VGP/01_IMAGENS/vgp-custom-minimal.png",
+      "origem": "pgrazor/assets/map-icons/vgp-custom-minimal.png",
+      "git_blob_sha": "dfa80b070b40a90a920c362e5235642498bea813",
+      "bytes": 910
+    },
+    {
+      "arquivo_zip": "PGBR_ORIGINAIS_LT032/05_VGP/01_IMAGENS/vgp-custom-plus.png",
+      "origem": "pgrazor/assets/map-icons/vgp-custom-plus.png",
+      "git_blob_sha": "99b13a51e8d6fb1a27420a402610f749832bfc90",
+      "bytes": 936
+    },
+    {
+      "arquivo_zip": "PGBR_ORIGINAIS_LT032/06_FUNCOES_COMPARTILHADAS/Pad.java",
+      "origem": "pgrazor/src/dev/pgrazor/Pad.java",
+      "git_blob_sha": "5eb60ad2c432e8d8d23e2b6c0e698e4e69fbac5b",
+      "bytes": 88828
+    },
+    {
+      "arquivo_zip": "PGBR_ORIGINAIS_LT032/06_FUNCOES_COMPARTILHADAS/Control.java",
+      "origem": "pgrazor/src/dev/pgrazor/Control.java",
+      "git_blob_sha": "34bff693d2d3fbe6112333f12e8ab9a59f88552c",
+      "bytes": 148190
+    },
+    {
+      "arquivo_zip": "PGBR_ORIGINAIS_LT032/06_FUNCOES_COMPARTILHADAS/SettingsPanel.java",
+      "origem": "pgrazor/src/dev/pgrazor/SettingsPanel.java",
+      "git_blob_sha": "fef9918b2723eb539149f0779e0b36b878ccd1b9",
+      "bytes": 131532
+    },
+    {
+      "arquivo_zip": "PGBR_ORIGINAIS_LT032/06_FUNCOES_COMPARTILHADAS/SettingsUi.java",
+      "origem": "pgrazor/src/dev/pgrazor/SettingsUi.java",
+      "git_blob_sha": "38add4e987a35d0945c06baff9cdea14cb195e53",
+      "bytes": 4056
+    },
+    {
+      "arquivo_zip": "PGBR_ORIGINAIS_LT032/06_FUNCOES_COMPARTILHADAS/FeedTheme.java",
+      "origem": "pgrazor/src/dev/pgrazor/FeedTheme.java",
+      "git_blob_sha": "8849c33427c664913492c592ddea27e39cbc1ed5",
+      "bytes": 49189
+    },
+    {
+      "arquivo_zip": "PGBR_ORIGINAIS_LT032/06_FUNCOES_COMPARTILHADAS/OverlayDrag.java",
+      "origem": "pgrazor/src/dev/pgrazor/OverlayDrag.java",
+      "git_blob_sha": "526a9e9ed046c7892d118a502bb41373b5a7a00f",
+      "bytes": 8041
+    },
+    {
+      "arquivo_zip": "PGBR_ORIGINAIS_LT032/06_FUNCOES_COMPARTILHADAS/PgAssets.java",
+      "origem": "pgrazor/src/dev/pgrazor/PgAssets.java",
+      "git_blob_sha": "6afa4aeae0889066ecef853c9215d5626471772e",
+      "bytes": 2327
+    },
+    {
+      "arquivo_zip": "PGBR_ORIGINAIS_LT032/06_FUNCOES_COMPARTILHADAS/pgbr-logo.webp",
+      "origem": "pgrazor/branding/pgbr-logo.webp",
+      "git_blob_sha": "4d5dc96fccf86e67ad30749535077f9671fbb166",
+      "bytes": 4894
+    },
+    {
+      "arquivo_zip": "PGBR_ORIGINAIS_LT032/07_PROVENIENCIA/NOTICE.txt",
+      "origem": "pgrazor/assets/map-icons/NOTICE.txt",
+      "git_blob_sha": "449ded0c360596c2b59ec09028641501b0b82569",
+      "bytes": 691
+    },
+    {
+      "arquivo_zip": "PGBR_ORIGINAIS_LT032/07_PROVENIENCIA/provenance.json",
+      "origem": "pgrazor/assets/map-icons/provenance.json",
+      "git_blob_sha": "23d5ea875bd6ab2894c1ea2dad013ea3c2b0643b",
+      "bytes": 13006
+    }
+  ],
+  "notes": [
+    "SPG nao identificado no repositorio consultado",
+    "Imagens personalizadas existentes apenas no dispositivo",
+    "Sprites WebP mantidos no formato original"
+  ]
+}
