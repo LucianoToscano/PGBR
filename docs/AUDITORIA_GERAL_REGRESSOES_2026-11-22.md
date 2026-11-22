@@ -51,3 +51,20 @@ Comparação `main...PR #115`: avanço de 37 commits, sem atraso em relação à
 - Atualizar Mestre após **cada** merge e release efetivamente concluídos, com SHA-256 e URLs verificadas.
 
 Estado desta auditoria: mudanças de código e testes registradas na branch; **não** confundir CI com homologação do jogo. Resultados de novos workflows e qualquer novo APK/release devem ser anexados como evidência posterior, nunca presumidos.
+
+
+## Resultado verificado da compilação, assinatura e pré-release LT041-QA
+
+- **Execução final de build:** [GitHub Actions #45083864583](https://github.com/LucianoToscano/PGBR/actions/runs/45083864583), SHA exato `f758bc282205e24e434a48f382a581681bcabf4d`, `completed/success` em 22/11/2026 23:45 UTC. Os jobs `native-pvp-fixture` e `apk-test` foram aprovados. Passaram `tools/check.py`, compilação do aplicativo completo, montagem do APK, módulo Root/instalador, verificação cruzada de SHA-256 e publicação de pré-release.
+- **Artefato Actions:** `PGBR-LT041-QA-AUDIT-Root-e-SemRoot`, ID `14777829836`, disponível na mesma execução.
+- **Release pública QA efetivamente publicada:** [v0.00.41-LT-QA](https://github.com/LucianoToscano/PGBR/releases/tag/v0.00.41-LT-QA), ID `454837355`, `prerelease=true`, `draft=false`, publicada em 22/11/2026 23:45:37 UTC, apontando para o commit de código `f758bc28` **na branch isolada**, não na main.
+- **APK completo sem Root:** [PGBR-v0.00.41-LT-QA.apk](https://github.com/LucianoToscano/PGBR/releases/download/v0.00.41-LT-QA/PGBR-v0.00.41-LT-QA.apk), 188.884.291 bytes, SHA-256 `6cf44a477f092c8eff1d3ff60f814975342584ca462e3694ac8f58ec7129ff58`.
+- **Instalador Root:** [PGBR-v0.00.41-LT-QA-Root.apk](https://github.com/LucianoToscano/PGBR/releases/download/v0.00.41-LT-QA/PGBR-v0.00.41-LT-QA-Root.apk), 8.409.809 bytes, SHA-256 `1a38b7cf8d4e93b87dd318282159fb555a1d398af7ddac286d187e85e25189ea`.
+- **Módulo Zygisk:** [PGBR-v0.00.41-LT-QA-Root-module.zip](https://github.com/LucianoToscano/PGBR/releases/download/v0.00.41-LT-QA/PGBR-v0.00.41-LT-QA-Root-module.zip), 8.327.408 bytes, SHA-256 `423031f6ffcc79812c73e872e328dbc26d287ae52e9115fd115188ec573dc834`.
+- **Manifest de hashes:** [SHA256SUMS.txt](https://github.com/LucianoToscano/PGBR/releases/download/v0.00.41-LT-QA/SHA256SUMS.txt), verificado no workflow.
+
+**Falha diagnosticada e removida, sem mascarar testes:** o primeiro run completo [#45083400679](https://github.com/LucianoToscano/PGBR/actions/runs/45083400679) falhou no `tools/check.py`, ao identificar um arquivo `rooted_installer.py` corrompido por edição de string e uma asserção obsoleta de paginação. O arquivo foi restaurado da main e a mudança de `versionCode` reaplicada corretamente (commit `01e3ca7`); teste de paginação atualizado (commit `f758bc2`). A suíte final passou sem ignorar regressões.
+
+**Outras correções comprovadas na branch:** `SniperPanel.java` não aninha mais `ListView` com altura ponderada em `ScrollView`; seis regressões de contrato de painel, quatro testes da lógica de código de versão Root; `pgrazor/test/test_iflowgo_wiring.py` ajustado à política correta. O compilador Android do `tools/check.py` foi executado no CI com SDK real.
+
+**Limites remanescentes:** `device_tested=false`; nenhuma execução no Android físico, nenhum feed em tempo real validado, nenhuma ação de combate/teleporte comprovada no Pokémon GO. O teste passou apenas para o SHA do código incluído na pré-release. PR #121 permanece sem merge, PR #115 e PR #118 continuam dependências. Este documento registra a nova QA experimental sem converter a versão histórica LT040 nem alterar o conteúdo dela.
