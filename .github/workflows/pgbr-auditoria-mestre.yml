@@ -29,6 +29,13 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      - name: Preparar JDK 17 para regressão de ginásios
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Testar opção segura de overlay Ginásios (JVM)
+        run: python -B -m unittest discover -s pgrazor/test -p 'test_gym_automation_preferences_java.py' -v
       - name: Verificar Arquivo Mestre e links internos
         run: python -B -m unittest discover -s pgrazor/test -p 'test_master_governance.py' -v
       - name: Testar o inventário somente leitura
