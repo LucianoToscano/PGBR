@@ -19,6 +19,15 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          # This archive is append-only. Re-running on a later main push must
+          # NOT fail, clobber, or re-upload an existing immutable release.
+          tag="archive-pgrazor-source-root-20261118"
+          if gh release view "$tag" --repo "$GITHUB_REPOSITORY" --json tagName >/dev/null 2>&1; then
+            echo "Upstream archive $tag already exists; preserving all published assets."
+            gh release view "$tag" --repo "$GITHUB_REPOSITORY" --json url,assets |
+              python3 -c 'import json,sys; d=json.load(sys.stdin); print("Archive:",d["url"],"Assets:",len(d["assets"]))'
+            exit 0
+          fi
           test -s upstream-history/PGRazor-upstream-full.bundle
           test -s docs/PGBR_RELEASES_UPSTREAM_CATALOGO_20261118.json
           mkdir -p archive
