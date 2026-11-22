@@ -38,8 +38,12 @@ public final class PvpChargedPreferenceTest {
             m(4,80,90,false),11,5,12,0,45,5,95,true),"far-away move fallback");
         eq(PvpChargedPreference.FIRST,PvpChargedPreference.select(m(11,80,40,true),
             m(4,80,55,false),11,5,12,0,45,9,95,false),"no quick attack fallback");
+        eq(PvpChargedPreference.FIRST,PvpChargedPreference.select(m(11,80,40,true),
+            m(4,80,55,false),11,5,0,0,45,9,95,true),
+            "no comparison needed with one ready move");
         eq(PvpChargedPreference.UNKNOWN,PvpChargedPreference.select(m(11,80,40,true),
-            m(4,80,55,false),11,5,0,0,45,9,95,true),"unknown target type fail closed");
+            m(4,80,55,true),11,5,0,0,60,9,95,true),
+            "unknown opponent denies comparison between two ready moves");
         eq(PvpChargedPreference.SECOND,PvpChargedPreference.select(m(11,80,40,true),
             m(4,80,55,true),11,5,11,0,60,9,90,true),
             "neutral second outranks resisted first");
