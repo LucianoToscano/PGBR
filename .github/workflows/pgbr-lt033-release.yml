@@ -5,7 +5,6 @@ on:
     # Only an actual LT033 version/build definition change should republish the
     # immutable tag. Docs/maintenance-only merges must not restart a 75m build.
     paths:
-      - 'pgrazor/VERSION'
       - '.github/workflows/pgbr-lt033-release.yml'
       - 'docs/releases/v0.00.33-LT.md'
   workflow_dispatch:

@@ -19,6 +19,9 @@ class Lt035ReleaseContract(unittest.TestCase):
         for old in ('33','34'):
             previous=(ROOT/f'.github/workflows/pgbr-lt0{old}-release.yml').read_text(encoding='utf-8')
             self.assertIn(f'PGRAZOR_VERSION: v0.00.{old}-LT',previous)
+            # Published historical workflows stay dispatchable, but a later
+            # VERSION bump must not rebuild an immutable old tag.
+            self.assertNotIn("'pgrazor/VERSION'",previous)
         notes=(ROOT/'docs/releases/v0.00.35-LT.md').read_text(encoding='utf-8')
         self.assertIn('pré-release',notes)
         self.assertIn('device_tested=false',notes)

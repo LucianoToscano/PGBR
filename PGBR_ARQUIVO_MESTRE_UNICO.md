@@ -805,3 +805,7 @@ No momento desta integração, a main já havia avançado até `19a42fd564e77e2f
 
 ### LT035 — contrato de versões e branding (preparação QA)
 O versionamento 0.00.35-LT exigiu atualizar os contratos de testes anteriores (LT032, LT033, LT034) para **aceitar a nova versão sem remover a validação histórica**. Adicionado `test_lt035_release_contract.py` que verifica workflow/nomes, preservação de workflows 33/34, estado `device_tested=false` e guardas de escopo PvP. README e CHANGELOG foram atualizados para mostrar LT035 como **candidato ainda não publicado**, mantendo o download LT034 existente como versão verificadamente publicada. CI e nova release não são presumidos.
+
+
+### LT035 — evitar reexecução das releases históricas
+O bump do `pgrazor/VERSION` acionaria acidentalmente os antigos workflows LT033 e LT034, que usam nomes e tags imutáveis próprios. Foram removidos **somente os filtros de push sobre `pgrazor/VERSION`** dos dois workflows antigos. Seus steps, tags, documentação, gatilhos manuais `workflow_dispatch` e os gatilhos para mudanças em seus próprios arquivos/notas continuam preservados. O workflow LT035 é o único acionado automaticamente por incremento do VERSION atual. Teste novo protege essa regra. Nenhuma release antiga é alterada.
