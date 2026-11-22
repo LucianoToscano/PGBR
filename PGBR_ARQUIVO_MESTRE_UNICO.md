@@ -960,3 +960,15 @@ Manter Quick Snipers I/II, Radar e fonte PGBR como conceitos separados; preserva
 
 
 **Ajuste de contrato histórico LT036 durante a revisão LT037:** o teste `test_lt036_training_scope.py` preserva a exigência de Hub ou interstitial de treinador para preparação e passa a aceitar a terceira entrada validada `VERIFIED_PVP_ENTRY`, exigindo ainda `live(now)`. Não altera o motor nem exclui o teste da LT036: é evolução aditiva de asserções de fonte, com o comportamento antigo mantido nos cenários nativos. O CI subsequente precisará ser verificado.
+
+
+### 22/11/2026 — Release intermediária LT036 publicada e comprovada
+
+O workflow [#45024489012](https://github.com/LucianoToscano/PGBR/actions/runs/45024489012) encerrou **completed/success**; a pré-release [v0.00.36-LT](https://github.com/LucianoToscano/PGBR/releases/tag/v0.00.36-LT) publicou estes arquivos, verificados por GitHub Releases API:
+
+- [PGBR-v0.00.36-LT.apk](https://github.com/LucianoToscano/PGBR/releases/download/v0.00.36-LT/PGBR-v0.00.36-LT.apk): 188.822.851 bytes, SHA-256 `453c5e47a00b022750150f3b9bcf6dc2c06032b285976de5b05d2ebc9c3d1ea3`.
+- [PGBR-v0.00.36-LT-Root.apk](https://github.com/LucianoToscano/PGBR/releases/download/v0.00.36-LT/PGBR-v0.00.36-LT-Root.apk): 8.348.366 bytes, SHA-256 `a7ca62a91b4050accc8893fdaad22ec9e499a4405bdce98b1ada491d2d1a4e8a`.
+- [PGBR-v0.00.36-LT-Root-module.zip](https://github.com/LucianoToscano/PGBR/releases/download/v0.00.36-LT/PGBR-v0.00.36-LT-Root-module.zip): 8.264.501 bytes, SHA-256 `a7568c523aee06f45a3059dfa230fe2d41ae6b60180c100df74887f6b0449d3f`.
+- [SHA256SUMS.txt](https://github.com/LucianoToscano/PGBR/releases/download/v0.00.36-LT/SHA256SUMS.txt): 281 bytes, SHA-256 `cddb0e3080276f135ec728f17420f121da080ec75d9da354b425450de9d26ffe`.
+
+**Separação de versões:** LT036 contém o reconhecimento experimental de treinador NPC sem a nova política de ativação global por escopo. Esta última integra a proposta LT037, ainda em PR/QA. Nenhuma dessas versões tem validação física de combate (`device_tested=false`), e APK sem Root ainda conflita com instalação assinada por outra chave. LT035 e demais tags mantidas. O registro da futura LT037 deve ocorrer apenas depois do resultado CI/tag/arquivos verificados.
