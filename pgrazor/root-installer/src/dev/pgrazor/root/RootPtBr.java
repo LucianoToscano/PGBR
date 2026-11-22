@@ -183,8 +183,9 @@ public final class RootPtBr {
         m.put("Auto-Raid", "Reide automática");
         m.put("Dynamax", "Dynamax");
         m.put("Auto Max attack", "Ataque Max automático");
-        m.put("Smart battling", "Batalha inteligente");
-        m.put("Smart healing", "Cura inteligente");
+        m.put("Smart battling", "Batalha Inteligente");
+        m.put("Smart attacking", "Ataque Inteligente");
+        m.put("Smart healing", "Cura Inteligente");
         m.put("Revive fainted Pokémon", "Reviver Pokémon desmaiados");
         m.put("Settings saved", "Configurações salvas");
         m.put("Dark theme", "Tema escuro");
