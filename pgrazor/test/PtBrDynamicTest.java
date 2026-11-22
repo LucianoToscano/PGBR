@@ -82,6 +82,30 @@ public final class PtBrDynamicTest {
         eq("My Shinies", "Meus Brilhantes");
         eq("Shiny or IV ≥90%: Ultra Ball + Golden Razz", "Brilhante ou IV ≥90%: Ultra Bola + Fruta Frambo Dourada");
         eq("then battles using your raid auto-attack settings and catches the boss. Stops at the raid limit, after a shiny ", "depois batalha usando suas configurações de ataques automáticos em Reides e tenta capturar o chefe. Para ao atingir o limite de Reides ou após capturar um Brilhante ");
+        eq("Team: Blue", "Equipe: Azul");
+        eq("Defenders: 6/6 (0 slots open)", "Defensores: 6/6 (0 vagas livres)");
+        eq("Nearby locations loaded by the game (158)", "Locais próximos carregados pelo jogo (158)");
+        eq("Zoom 14 · Tap map to select", "Zoom 14 · toque no mapa para selecionar");
+        eq("Destination: -23.583990, -46.657180\n\nCooldown when you arrive: 0h 00m 00s", "Destino: -23.583990, -46.657180\n\nTempo de espera ao chegar: 0h 00m 00s");
+        eq("Raid tier: Shadow Tier 1", "Nível da reide: Sombrio nível 1");
+        eq("Saved routes (1)", "Rotas salvas (1)");
+        eq("Max completions (1–50):", "Máximo de conclusões (1–50):");
+        eq("Gym (Red)", "Ginásio (vermelho)");
+        eq("Not caught - fled", "Não capturado — fugiu");
+        eq("Not caught - broke free", "Não capturado — escapou da Pokébola");
+        eq("Scanning", "Verificando");
+        eq("Running", "Em execução");
+        eq("Stopping", "Interrompendo");
+        eq("Event", "Evento");
+        eq("Encounter", "Encontro");
+        eq("Sent ", "Enviados ");
+        eq("Opened ", "Abertos ");
+        eq("Skipped ", "Ignorados ");
+        eq("VGP ball throw", "Arremesso de bola pelo VGP");
+        eq(" (reversible)", " (reversível)");
+        eq("Sends your available gifts, then opens received gifts.", "Envia os presentes disponíveis e depois abre os recebidos.");
+        eq("Sends your available gifts to eligible friends, then opens the gifts you have received. Each friend is handled once. The game's own daily limits for sending and opening still apply, so some may be skipped. A single pass runs now — there is no recurring schedule.", "Envia seus presentes disponíveis para amigos elegíveis e depois abre os presentes recebidos. Cada amigo é processado uma vez. Os limites diários do jogo para envio e abertura continuam valendo, então alguns podem ser ignorados. Uma única execução começa agora, sem agendamento recorrente.");
+        eq("Feeds the gyms you currently defend once, using surplus berries. Nanab is fed down to its reserve, then surplus Razz. Pinap is optional and off by default. A single batch runs now — there is no recurring schedule. The game's own server limits still apply, so some feeds may be declined. No dust or candy payout is promised.", "Alimenta uma vez os Ginásios que você defende com frutas excedentes. A Fruta Caxí é usada até atingir sua reserva; depois, a Fruta Frambo excedente. A Fruta Abacaxi é opcional e vem desativada. O lote é executado uma única vez, sem agendamento recorrente. Os limites do servidor do jogo continuam valendo e algumas alimentações podem ser recusadas. Não há garantia de Poeira Estelar nem de doces.");
         System.out.println("PGBR: testes de textos dinamicos aprovados.");
     }
 }
