@@ -14,10 +14,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           fetch-depth: 0
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: '3.12'
       - name: Aplicar traducao somente nos limites da interface
@@ -45,6 +45,26 @@ jobs:
           for k,v in data['translations'].items(): assert k and v
           print('PT-BR:',len(data['translations']),'glossary entries verified.')
           PY
+      - name: Preparar ferramentas Java, Node e Android para validação integral
+        uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '22'
+      - uses: android-actions/setup-android@9fc6c4e9069bf8d3d10b2204b1fb8f6ef7065407 # v3
+        with:
+          packages: platform-tools
+          log-accepted-android-sdk-licenses: false
+      - name: Instalar Android SDK e fontes
+        run: sdkmanager "platforms;android-36" "build-tools;36.0.0" "sources;android-36"
+      - name: Validar artefato real antes de autorizar push automatizado
+        run: |
+          python -c "import sys; sys.path.insert(0, 'pgrazor'); import dex_bridges; dex_bridges.dependencies(download=True)"
+          python -B tools/check.py
+          python -B pgrazor/build.py
+          python -B pgrazor/rooted_installer.py --check
       - name: Registrar apenas a branch isolada (sem APK)
         run: |
           git config user.name "PGBR Translation Bot"
