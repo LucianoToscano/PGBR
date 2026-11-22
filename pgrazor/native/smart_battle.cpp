@@ -473,7 +473,9 @@ void step_gym(uint64_t now){
  if(unbox<bool>(call(player,"get_IsSwapping")))return;
  gym_watch.due=0;
  const int target=choose_swap(scores,active);
- if(target>=0&&ids[size_t(target)])begin_press(ui,false,ids[size_t(target)],now);
+ // Human-opened picker wins; do not override a manual choice.
+ if(target>=0&&ids[size_t(target)]&&!unbox<bool>(call(ui,"get_IsOpen")))
+   begin_press(ui,false,ids[size_t(target)],now);
 }
 
 // The BattleState reachable from a VNext swap control, through its battle director.
@@ -529,7 +531,9 @@ void step_rocket(uint64_t now){
  std::vector<double> scores;std::vector<uint64_t> ids;int active=-1;
  each_entry(roster,[&](uint64_t id,void *pokemon_state){if(id==active_id)active=int(ids.size());scores.push_back(vnext_score(bag,pokemon_state,id,foe));ids.push_back(id);});
  const int target=choose_swap(scores,active);
- if(target>=0)begin_press(ui,true,ids[size_t(target)],now);
+ // Human-opened picker wins in VNext too.
+ if(target>=0&&!unbox<bool>(call(ui,"get_IsOpen")))
+   begin_press(ui,true,ids[size_t(target)],now);
 }
 
 bool gym_battle(){
