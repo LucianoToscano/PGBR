@@ -12,6 +12,7 @@
 
 ## Baixar e validar
 
+- **Candidata LT034:** [PGBR-v0.00.34-LT.apk](https://github.com/LucianoToscano/PGBR/releases/download/v0.00.34-LT/PGBR-v0.00.34-LT.apk) — link futuro, **não disponível até o workflow publicar e verificar**. Instalador Root e módulo Zygisk constarão da mesma pré-release QA.
 - **APK sem Root LT033:** [download da pré-release de QA](https://github.com/LucianoToscano/PGBR/releases/download/v0.00.33-LT/PGBR-v0.00.33-LT.apk) (somente após publicação confirmada). As variantes Root e Zygisk estão no [mesmo lançamento](https://github.com/LucianoToscano/PGBR/releases/tag/v0.00.33-LT). [Workflow de build LT033](https://github.com/LucianoToscano/PGBR/actions/workflows/pgbr-lt033-release.yml).
 - **Versão pública histórica preservada:** [LT023](https://github.com/LucianoToscano/PGBR/releases/tag/v0.00.23-LT). A LT033 não a substitui como versão fisicamente homologada.
 - **Pontos de teste para homologação:** [matriz Android Root e não Root](docs/QA_LT032_ANDROID_FINAL.md) (aplicável à LT033, sem aprovação física presumida).
