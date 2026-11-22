@@ -2,15 +2,17 @@
 #include <cstdint>
 #include <cstring>
 #include <limits>
+#include "battle_target_policy.h"
 
 // Only verified 0.437.0 GUI sequences can arm a vNext combat session.
 // NPC interstitial is also used by Mateo gifts: it alone NEVER attacks.
 struct PgrPvpScene {
-    enum Stage { IDLE=0, HUB=1, PREPARATION=2, COMBAT=3, TRAINING_ENTRY=4 };
+    enum Stage { IDLE=0, HUB=1, PREPARATION=2, COMBAT=3, TRAINING_ENTRY=4, VERIFIED_PVP_ENTRY=5 };
     enum Mode { NONE=0, PVP=1, TRAINING=2 };
     static constexpr uint64_t HUB_MS=600000, PREP_MS=180000;
     static constexpr uint64_t COMBAT_IDLE_MS=300000, MAX_COMBAT_MS=1200000;
     static constexpr uint64_t TRAINING_ENTRY_MS=45000;
+    static constexpr uint64_t VERIFIED_PVP_ENTRY_MS=15000;
     Stage stage=IDLE;
     Mode mode=NONE;
     uint64_t expires_ms=0, started_ms=0, last_vnext_ms=0;
@@ -21,6 +23,24 @@ struct PgrPvpScene {
     void reset(){stage=IDLE;mode=NONE;expires_ms=started_ms=last_vnext_ms=0;}
     bool training() const {return stage==COMBAT && mode==TRAINING;}
     bool pvp() const {return stage==COMBAT && mode==PVP;}
+    // Called only after the 0.437.0 CombatTypeExtensions.IsPvPCombat
+    // validated method returned true for a live CombatDirectorV2. This
+    // covers direct friend challenges without a combat-hub GUI; a genuine
+    // VNext controller is still required before opening any action scope.
+    void verified_pvp_type(uint64_t now) {
+        if(!now)return;
+        live(now);
+        if(stage!=IDLE || mode!=NONE)return; // never override Rocket/training
+        stage=VERIFIED_PVP_ENTRY;mode=PVP;
+        expires_ms=until(now,VERIFIED_PVP_ENTRY_MS);
+    }
+    bool allowlisted() const {
+        const PgrAutoBattleTarget kind =
+            mode==PVP?PgrAutoBattleTarget::PVP:
+            mode==TRAINING?PgrAutoBattleTarget::TRAINER_NPC:
+            PgrAutoBattleTarget::UNKNOWN;
+        return stage==COMBAT && pgr_rocket_assist_target(kind);
+    }
     bool live(uint64_t now) {
         if(!now||!expires_ms||now>=expires_ms){reset();return false;}
         return stage!=IDLE;
@@ -53,7 +73,7 @@ struct PgrPvpScene {
     }
     bool vnext(uint64_t now) {
         if(!live(now))return false;
-        if(stage==PREPARATION){
+        if(stage==PREPARATION || (stage==VERIFIED_PVP_ENTRY && mode==PVP)){
             stage=COMBAT;started_ms=last_vnext_ms=now;
             expires_ms=until(now,COMBAT_IDLE_MS);
         }else if(stage==COMBAT){

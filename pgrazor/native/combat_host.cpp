@@ -138,6 +138,7 @@ const pgr_rocket_combat_api_v1 *g_rocket_combat  = nullptr;
 PgrPvpScene g_pvp_scene{};
 uintptr_t g_pvp_ui_root=0; // durable GC handle to VNext; never store a movable raw object
 bool g_pvp_was_ready=false;
+bool g_pvp_training_scope=false; // typed mode retained through scope exit telemetry
 const pgr_battle_api_v1        *g_battles        = nullptr;
 
 std::array<std::atomic<void *>, HK_COUNT> g_originals{};
@@ -384,9 +385,10 @@ void drain_leaf_events(uint64_t tid) {
                 case PGR_RC_EVT_SCOPE:
                     if(rev.aux==2||rev.aux==3){
                         const bool opened=rev.aux==2;
-                        queue_event(PGR_CBH_EV_BATTLE_SCOPE, 0x505650, opened?1:0, tid,
-                            opened?R"({"mode":"pvp","active":true,"ui":"vnext"})":
-                                   R"({"mode":"pvp","active":false,"ui":"vnext"})");
+                        std::snprintf(buf,sizeof(buf),
+                          "{\"mode\":\"%s\",\"active\":%s,\"ui\":\"vnext\"}",
+                          g_pvp_training_scope?"training":"pvp",opened?"true":"false");
+                        queue_event(PGR_CBH_EV_BATTLE_SCOPE, 0x505650, opened?1:0, tid,buf);
                     }else{
                         std::snprintf(buf, sizeof(buf), "{\"active\":%s}", rev.aux ? "true" : "false");
                         queue_event(PGR_CBH_EV_ROCKET_SCOPE, rev.aux ? 1 : 0, 0, tid, buf);
@@ -396,7 +398,9 @@ void drain_leaf_events(uint64_t tid) {
                 case PGR_RC_EVT_UI:
                     if(g_pvp_ui_root){
                         queue_event(PGR_CBH_EV_BATTLE_ACTION,1,0,tid,
-                          R"({"pvpUI":"vnext","received":true})");
+                          g_pvp_training_scope
+                            ? R"({"mode":"training","pvpUI":"vnext","received":true})"
+                            : R"({"mode":"pvp","pvpUI":"vnext","received":true})");
                         break;
                     }
                     std::snprintf(buf, sizeof(buf), "{\"source\":\"%s\"}",
@@ -408,7 +412,8 @@ void drain_leaf_events(uint64_t tid) {
                         const char *act=rev.id==PGR_RC_ACT_SHIELD?"shield":
                                         rev.id==PGR_RC_ACT_CHARGED?"charged":"quick";
                         std::snprintf(buf,sizeof(buf),
-                          "{\"pvpAction\":\"%s\",\"path\":\"vnext\",\"invoked\":true}",act);
+                          "{\"mode\":\"%s\",\"pvpAction\":\"%s\",\"path\":\"vnext\",\"invoked\":true}",
+                          g_pvp_training_scope?"training":"pvp",act);
                         queue_event(PGR_CBH_EV_BATTLE_ACTION,rev.id,rev.aux,tid,buf);
                         break;
                     }
@@ -606,6 +611,13 @@ bool pvp_gate(uint64_t *tid) {
   return rocket_gate(tid) && g_cfg.gchandle_new && g_cfg.gchandle_get_target &&
       g_cfg.gchandle_free;
 }
+// Feature 19 tracks raid, gym and Max via exact state classes, separately
+// from Rocket. Unknown mode or missing classifier fails closed.
+bool pve_exclusion_clear(uint64_t *tid) {
+  if(!battle_gate(tid))return false;
+  pgr_battle_sample_v1 pve{};
+  return g_battles->sample(&pve)==PGR_BATTLE_OK && !pve.scope_active;
+}
 void pvp_leave(uint64_t tid,const char *reason) {
   uintptr_t old=g_pvp_ui_root;
   g_pvp_ui_root=0; // disarm before managed callbacks
@@ -618,11 +630,13 @@ void pvp_leave(uint64_t tid,const char *reason) {
     reinterpret_cast<void(*)(uintptr_t)>(g_cfg.gchandle_free)(old);
   if(old||g_pvp_was_ready) {
     g_pvp_was_ready=false;
-    std::string json=std::string(R"({"pvpExecutorReady":false,"reason":")")+
-                     (reason?reason:"closed")+R"("})";
+    std::string json=std::string(R"({"pvpExecutorReady":false,"mode":")")+
+                     (g_pvp_training_scope?"training":"pvp")+
+                     R"(","reason":")"+(reason?reason:"closed")+R"("})";
     queue_event(PGR_CBH_EV_BATTLE_ACTION,0,0,tid,json.c_str());
   }
   drain_leaf_events(tid);
+  g_pvp_training_scope=false;
 }
 void pvp_gui_open(const char *ns,const char *name,uint64_t tid) {
   if(!pvp_gate(&tid)||!ns||!name)return;
@@ -633,15 +647,29 @@ void pvp_gui_open(const char *ns,const char *name,uint64_t tid) {
 }
 void pvp_vnext_open(void *ui,uint64_t tid) {
   if(!ui||!pvp_gate(&tid))return;
-  if(!g_pvp_scene.vnext(now_ms())){
+  // A VNext GUI alone never grants permission. Existing raid/gym/Max
+  // native scopes always win; missing classification also denies.
+  if(!pve_exclusion_clear(&tid)){
+    g_pvp_scene.reset();
+    if(g_pvp_ui_root)pvp_leave(tid,"excluded-pve-scope");
+    return;
+  }
+  if(!g_pvp_scene.vnext(now_ms()) || !g_pvp_scene.allowlisted()){
     if(g_pvp_ui_root)pvp_leave(tid,"scope-expired");
     return;
   }
   if(g_pvp_ui_root)return; // same anchored scope, never replay scope-enter each frame
-  uint32_t mask=0;
+  uint32_t mask=0;bool lease_live=false;
   {std::lock_guard<std::mutex> lock(g_options_mutex);
-   if(g_opts.flags&PGR_CBH_OPT_ROCKET_ALLOWED)mask=g_opts.rocket_mask;}
-  if(!(mask&7u))return;
+   const uint64_t now=now_ms();
+   lease_live=now!=0 && now<g_rocket_deadline_ms &&
+              (g_opts.flags&(PGR_CBH_OPT_ACTIVE|PGR_CBH_OPT_ROCKET_ALLOWED))==
+              (PGR_CBH_OPT_ACTIVE|PGR_CBH_OPT_ROCKET_ALLOWED) &&
+              (g_opts.flags&PGR_CBH_OPT_STOPPING)==0;
+   if(lease_live)mask=g_opts.rocket_mask;}
+  const PgrAutoBattleTarget target=g_pvp_scene.training()
+    ? PgrAutoBattleTarget::TRAINER_NPC:PgrAutoBattleTarget::PVP;
+  if(!pgr_allow_shared_battle_actions(target,mask,g_pvp_scene.allowlisted(),lease_live))return;
   pgr_rocket_combat_sample_v1 sample{};
   if(g_rocket_combat->sample(&sample)!=PGR_RC_OK || sample.scope_active)return;
   auto gc_new=reinterpret_cast<uintptr_t(*)(void*,int)>(g_cfg.gchandle_new);
@@ -653,15 +681,27 @@ void pvp_vnext_open(void *ui,uint64_t tid) {
     gc_free(root);return;
   }
   g_pvp_ui_root=root;g_pvp_was_ready=true;
+  g_pvp_training_scope=g_pvp_scene.training();
   queue_event(PGR_CBH_EV_BATTLE_ACTION,1,0,tid,
     g_pvp_scene.training()
       ? R"({"pvpExecutorReady":true,"mode":"training","scope":"CombatVNextGuiController","experimental":true})"
       : R"({"pvpExecutorReady":true,"mode":"pvp","scope":"CombatVNextGuiController","experimental":true})");
 }
 void pvp_vnext_close(void *ui,uint64_t tid) {
-  if(!g_pvp_ui_root||!pvp_gate(&tid))return;
+  if(!pvp_gate(&tid))return;
+  if(!g_pvp_ui_root){
+    // A valid scene may exist with all action toggles off. Its VNext close
+    // must still revoke the candidate before a later unrelated battle.
+    if(g_pvp_scene.stage==PgrPvpScene::COMBAT)g_pvp_scene.reset();
+    return;
+  }
   auto target=reinterpret_cast<void*(*)(uintptr_t)>(g_cfg.gchandle_get_target);
-  if(target(g_pvp_ui_root)==ui)pvp_leave(tid,"vnext-closed");
+  if(target(g_pvp_ui_root)==ui){
+    // A later VNext controller must be reclassified; do not inherit this
+    // battle's allowlisted flag after its GUI was destroyed.
+    g_pvp_scene.reset();
+    pvp_leave(tid,"vnext-closed");
+  }
 }
 
 void hook_rk_enter(void *self,void *a1, void *a2, void *method){
@@ -750,7 +790,12 @@ void hook_shared_vn_observe(void *self,void *battle_state,void *method){
 template<HookSlot SLOT,uint32_t KIND,int DESC> void hook_bt_2arg(void *self,void *method){
  auto orig=reinterpret_cast<Fn2Ptr>(load_original(SLOT));FrameGuard frame;uint64_t tid=0;
  if(!battle_gate(&tid)){orig(self,method);return;}PinnedArgs pins{self};
- if(pins.valid&&battle_gate(&tid)){g_battles->observe(KIND,pins.get(0),DESC,tid);drain_leaf_events(tid);
+ if(pins.valid&&battle_gate(&tid)){
+  if constexpr(KIND==PGR_BATTLE_OBS_SCOPE_ENTER){
+    g_pvp_scene.reset();
+    if(g_pvp_ui_root)pvp_leave(tid,"pve-scope-enter");
+  }
+  g_battles->observe(KIND,pins.get(0),DESC,tid);drain_leaf_events(tid);
   // Forward the GymBattleState scope lifecycle to the gym-repeat leaf (owner thread).
   if constexpr(SLOT==HK_BT_SC1_ENTER)gym_repeat_scope(1,tid);
   else if constexpr(SLOT==HK_BT_SC1_EXIT)gym_repeat_scope(0,tid);
@@ -764,7 +809,13 @@ template<HookSlot SLOT,uint32_t KIND,int DESC> void hook_bt_3arg(void *self,void
 template<HookSlot SLOT,uint32_t KIND,int DESC> void hook_bt_4arg(void *self,void *a1,void *a2,void *method){
  auto orig=reinterpret_cast<Fn4Ptr>(load_original(SLOT));FrameGuard frame;uint64_t tid=0;
  if(!battle_gate(&tid)){orig(self,a1,a2,method);return;}PinnedArgs pins{self,a1,a2};
- if(pins.valid&&battle_gate(&tid)){g_battles->observe(KIND,pins.get(0),DESC,tid);drain_leaf_events(tid);}orig(pins.get(0),pins.get(1),pins.get(2),method);
+ if(pins.valid&&battle_gate(&tid)){
+  if constexpr(KIND==PGR_BATTLE_OBS_SCOPE_ENTER){
+    g_pvp_scene.reset();
+    if(g_pvp_ui_root)pvp_leave(tid,"pve-scope-enter");
+  }
+  g_battles->observe(KIND,pins.get(0),DESC,tid);drain_leaf_events(tid);
+ }orig(pins.get(0),pins.get(1),pins.get(2),method);
 }
 void hook_bt_leg_init(void *self,void *p1,void *p2,PgrVec3Val pos,void *method){
  auto orig=reinterpret_cast<FnLegInitPtr>(load_original(HK_BT_LEG_INIT));FrameGuard frame;uint64_t tid=0;
@@ -1678,11 +1729,14 @@ int api_tick(uint64_t proven_tid) {
 
     const uint32_t caps=g_capabilities.load();
     auto terminal=[](){return g_stopping.load()||g_failed.load();};
-    bool pvp_disarm=terminal()||!g_pvp_scene.live(now_ms());
+    bool pvp_disarm=terminal()||!g_pvp_scene.live(now_ms())||
+                     !pve_exclusion_clear(&proven_tid);
     {std::lock_guard<std::mutex> lock(g_options_mutex);
      pvp_disarm=pvp_disarm||(g_opts.flags&PGR_CBH_OPT_ACTIVE)==0||
                 (g_opts.flags&PGR_CBH_OPT_ROCKET_ALLOWED)==0||
-                (g_opts.rocket_mask&7u)==0;}
+                (g_opts.flags&PGR_CBH_OPT_STOPPING)!=0||
+                (g_opts.rocket_mask&7u)==0||
+                (now_ms()>=g_rocket_deadline_ms);}
     if(pvp_disarm&&g_pvp_ui_root)pvp_leave(proven_tid,terminal()?"host-stopped":"scope-ended");
     // Re-read and serialize gate publication after each managed leaf pass. A revoke
     // during Rocket work cannot be overwritten by a stale pre-tick Battle snapshot.
