@@ -93,6 +93,8 @@ public final class SniperPanel {
         private String search = "";
         private boolean fetching;
         private long lastRequestElapsed;
+        /** Limits automatic retries even when pre-flight validation rejects a request. */
+        private long lastAutoAttemptElapsed;
         private long blockedUntilElapsed;
         private String lastAttemptSource = "";
         private boolean closed;
@@ -327,6 +329,8 @@ public final class SniperPanel {
             if (result == null) return Collections.emptyList();
             List<SpawnContract.Spawn> out = new ArrayList<>();
             for (SpawnContract.Spawn spawn : result.visible) {
+                // Re-rendering must never resurrect an encounter already removed by the timer.
+                if (spawn.expired(System.currentTimeMillis())) continue;
                 if (PokemonFeedSearch.matches(search, spawn.pokemonId, spawn.sourceId,
                         spawn.pokemonName)) out.add(spawn);
             }
@@ -434,21 +438,32 @@ public final class SniperPanel {
 
         private void tickOnce() {
             if (closed) return;
-            if (result != null) {
-                // Drop rows that expired while the panel is open; the counters always say so.
-                boolean changed = false;
-                long now = System.currentTimeMillis();
-                for (SpawnContract.Spawn spawn : new ArrayList<>(visible)) {
-                    if (spawn.expired(now)) {
-                        visible.remove(spawn);
-                        changed = true;
-                    }
+            // The result snapshot is immutable. Recompute visible rows instead of mutating only
+            // the adapter, which would make expired rows reappear on the next render().
+            long now = System.currentTimeMillis();
+            boolean expiredOnScreen = false;
+            for (SpawnContract.Spawn spawn : visible) {
+                if (spawn.expired(now)) {
+                    expiredOnScreen = true;
+                    break;
                 }
-                if (changed) {
-                    adapter.notifyDataSetChanged();
-                    counters.setText("Recebidos " + result.received + " · removidos por filtro "
-                            + result.droppedByFilter + " · exibidos " + visible.size()
-                            + " (linhas expiradas foram retiradas)");
+            }
+            if (expiredOnScreen && !fetching) render();
+
+            // Periodic refresh is opt-in and exists only while this dialog is open. Observe
+            // both the configured cadence and the vendor's minimum request gap. A rejected
+            // pre-flight attempt is also paced, avoiding a retry on every five-second tick.
+            int cadenceSeconds = state.autoRefreshSeconds();
+            if (cadenceSeconds > SpawnProfiles.AUTO_OFF && !fetching) {
+                long elapsed = SystemClock.elapsedRealtime();
+                long periodMs = Math.max(MIN_REQUEST_GAP_MS, cadenceSeconds * 1000L);
+                boolean dueSinceRequest = lastRequestElapsed == 0
+                        || elapsed - lastRequestElapsed >= periodMs;
+                boolean dueSinceAttempt = lastAutoAttemptElapsed == 0
+                        || elapsed - lastAutoAttemptElapsed >= periodMs;
+                if (dueSinceRequest && dueSinceAttempt) {
+                    lastAutoAttemptElapsed = elapsed;
+                    search(false);
                 }
             }
             main.postDelayed(tick, TICK_MS);
@@ -494,6 +509,9 @@ public final class SniperPanel {
                 return;
             }
             source = connector;
+            // Never display rows from the previous query while a new provider is loading.
+            result = null;
+            visible.clear();
             fetching = true;
             loadToken = token;
             lastRequestElapsed = elapsed;
@@ -602,7 +620,7 @@ public final class SniperPanel {
                 boolean requestChanged = !state.sourceId().equals(previousSource)
                         || previousFilters.remoteSpecies() != state.filters().remoteSpecies()
                         || previousFilters.radiusKm() != state.filters().radiusKm();
-                if (result != null && requestChanged) {
+                if (requestChanged) {
                     search(false);   // mudou o que a fonte precisa saber: nova consulta
                     return;
                 }
@@ -639,6 +657,16 @@ public final class SniperPanel {
                     explained.show();
                     return;
                 }
+                // Invalidate in-flight work *before* changing the source label: a late answer
+                // from the old source must not be published under the new source name.
+                generation.incrementAndGet();
+                if (source != null) {
+                    try { source.cancel(); } catch (RuntimeException ignored) { }
+                }
+                source = null;
+                fetching = false;
+                result = null;
+                visible.clear();
                 state = state.withSource(info.id);
                 save();
                 if (info.status == SpawnSourceRegistry.Status.NEEDS_CONFIGURATION) {
@@ -661,6 +689,14 @@ public final class SniperPanel {
                     .setItems(labels, (d, which) -> {
                         state = state.withOrder(orders[which]);
                         save();
+                        // Ordering is local: re-sort the original received rows without HTTP.
+                        if (result != null && !result.receivedRows.isEmpty()) {
+                            result = SpawnSearch.refilter(result,
+                                    (spawn, at) -> state.filters().accepts(spawn, at,
+                                            Control.currentLatitude(), Control.currentLongitude()),
+                                    state.order(), Control.currentLatitude(), Control.currentLongitude(),
+                                    System.currentTimeMillis());
+                        }
                         render();
                     }).setNegativeButton("Cancelar", null).create();
             DialogLifecycle.bind(activity, sorter, null);
