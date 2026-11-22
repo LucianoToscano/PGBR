@@ -6,8 +6,6 @@ on:
     # Only an LT036 version/build definition change should trigger a
     # new build. The immutable tag is never overwritten. Docs/maintenance-only merges must not restart a 75m build.
     paths:
-      - 'pgrazor/VERSION'
-      - '.github/workflows/pgbr-lt036-release.yml'
       - 'docs/releases/v0.00.36-LT.md'
   workflow_dispatch:
 permissions:
