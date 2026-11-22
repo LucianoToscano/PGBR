@@ -391,3 +391,23 @@ Preview `pgrazor/AndroidManifest.xml` com `android:debuggable=false`, mantendo `
 **Build simultâneo Root/sem Root:** a execução [#44990744862](https://github.com/LucianoToscano/PGBR/actions/runs/44990744862) do PR #61 ainda estava em andamento no instante deste registro. Deve publicar duas APKs e um módulo ZIP verificados por `verify_release.py` apenas se concluir com sucesso. Não confundir com o APK único que já passou.
 
 **Homologação de produto:** testes de instalação/upgrade/rollback físico, PvP automático em batalha real, VGP+ com giro/captura, feeds autorizados com localização em tempo real, privacidade de streaming em ambas as telas, joystick nos cinco visuais e Root+Vector ainda não realizados. Esses itens são explicitamente **pendências que só podem ser concluídas após evidência em aparelho e/ou credenciais/permissões legítimas**, apesar de código/CI verdes.
+
+---
+
+## 22/11/2026 — Artefatos Root/sem Root QA aprovados e integração PT-BR final
+
+O [workflow #44990744862](https://github.com/LucianoToscano/PGBR/actions/runs/44990744862) do [PR #61](https://github.com/LucianoToscano/PGBR/pull/61) finalizou com **success** nos jobs PvP de host e APK Windows. O artefato **`PGBR-LT032-PGR036-Root-e-SemRoot-QA`**, id GitHub **14740934383**, foi gerado e baixado; o ZIP foi inspecionado e os hashes das **três** variantes conferidos de forma independente com SHA256SUMS.txt, `build-info.json` e `root-build-info.json`. Também foi verificado que o único módulo ZIP embutido no APK instalador Root tem SHA idêntico ao módulo distribuído e contém `zygisk/arm64-v8a.so` e `zygisk/x86_64.so`; correspondência de versão `0.437.0` e destino `com.nianticlabs.pokemongo`. Todos **device_tested=false**, sem instalação física.
+
+| Artefato | Bytes | SHA-256 verificado |
+| --- | ---: | --- |
+| APK completo sem Root `PGBR-v0.00.32-LT.apk` | 188761411 | `f7d14f26a8d83315e696fed264715996db8780e45a789300d09bccb29eca8902` |
+| Instalador Root `PGBR-v0.00.32-LT-Root.apk` | 8286926 | `a55098a140745a6d7ad57b67bb9fc6be378c55c4e6af29cff95ce0a9431bab4d` |
+| Módulo Zygisk `PGBR-v0.00.32-LT-Root-module.zip` | 8204282 | `dfa4dcfa21e02fae192f0e4c6fe25589413a93fb77e699ab9c6abefbfa186404` |
+
+A versão prévia do APK único, cujo SHA era `ffe4f1e...c1b0`, continua rastreável via #44990411941, mas **não é byte-a-byte a mesma assinatura/saída** da nova execução. Não misturar checksums entre os workflows.
+
+O [PR #62](https://github.com/LucianoToscano/PGBR/pull/62) mudou 16 arquivos Java de textos e acessibilidade. O CI inicial [#44991114603](https://github.com/LucianoToscano/PGBR/actions/runs/44991114603) identificou **um erro de fixture Java isolado:** `test_one_shot_automation_java.py` não tinha stub `PtBr` depois que um Toast literal passou a ser traduzido. O fixture foi corrigido por uma classe inerte sem alterar `PtBr` do aplicativo, e o novo teste foi iniciado [#44991466213](https://github.com/LucianoToscano/PGBR/actions/runs/44991466213). Resultados ainda não consolidados.
+
+[PR #63](https://github.com/LucianoToscano/PGBR/pull/63) — branch `integracao/lt032-root-ptbr-final-qa-20261122`, sobre PR #61 — reúne os 16 arquivos Java traduzidos e o fixture do PR #62 com todos os módulos Root e sem Root anteriormente testados. A execução [#44991558398](https://github.com/LucianoToscano/PGBR/actions/runs/44991558398) foi iniciada para compilar **novamente** todos os artefatos já com as traduções. **Ainda não confundir as APKs do #61 com resultados do #63** até inspecionar novos hashes e recibos.
+
+**Não encerrar homologação de produto** sem instalação real, PvP GBL, escudos/ataques, VGP com capturas/giro, acessórios/sprites, joystick no jogo, privacidade streaming, comparação do Root+Vector e disponibilização autorizada de feeds de observações.
