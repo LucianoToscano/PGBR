@@ -46,6 +46,8 @@ jobs:
         run: python -B -m unittest discover -s pgrazor/test -p 'test_transfer_cutoff_host.py' -v
       - name: Verificar sintaxe dos scripts Python novos
         run: python -B -m compileall -q pgrazor/test
+      - name: Validar fonte do patch ART ARM64 (sem Android)
+        run: python -B -m unittest discover -s pgrazor/test -p 'test_art_hook_chain_source.py' -v
       - name: Verificar Arquivo Mestre e links internos
         run: python -B -m unittest discover -s pgrazor/test -p 'test_master_governance.py' -v
       - name: Testar o inventário somente leitura

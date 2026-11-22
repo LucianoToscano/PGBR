@@ -61,3 +61,11 @@ O backup das configurações também usa a pasta de arquivos externos, no arquiv
 As trocas de conta ficam enfileiradas de modo persistente e são aplicadas antes de o Unity iniciar no próximo processo. O instalador oferece um auxiliar de reinício em primeiro plano que reabre o jogo depois de encerrar o processo antigo. Instalações somente do módulo exigem fechar e reabrir o jogo manualmente. O auxiliar aceita apenas solicitações originadas do pacote oficial do jogo e não executa operações Root nem manipula dados da conta. O APK oficial não precisa incluir atividades do PGBR no manifesto.
 
 A API Zygisk utilizada é a v5, cuja [tabela oficial de compatibilidade](https://github.com/topjohnwu/zygisk-module-sample#api) exige Magisk 27 ou mais recente. Versões anteriores do Magisk são rejeitadas pelo instalador. KernelSU/APatch exigem um provedor compatível com a API v5.
+
+## Atualização PGBR LT032 — cadeia de hooks ARM64 (PR upstream #11, 22/11/2026)
+
+Fonte: https://github.com/jpitty03/PGRazor/pull/11. O runtime Root ARM64 pode falhar com SIGILL no ART quando outro motor (por exemplo Vector) sobrescreve um desvio de entrada de 12 bytes por um de 16 bytes. A compilação *privada do ART*, em `pgrazor/art/CMakeLists.txt`, agora preserva uma janela mínima de 16 bytes antes de retornar à função original. O checkout fixado do Dobby **não** é alterado, nem os hooks do motor de gameplay. Se o código fixado do Dobby não tiver mais a assinatura esperada, o CMake falha explicitamente, em vez de compilar uma correção não validada.
+
+Para validar em um Android ARM64 de laboratório, construa a biblioteca ART e habilite a fixture `-DPGRAZOR_ART_CHAIN_TEST=ON` no diretório CMake gerado; execute o binário `pgrazor_art_chain_test` como processo independente, fora do jogo. Essa fixture é somente de teste e não integra o APK/ZIP de produção.
+
+**Limites:** port adaptado em fonte no PGBR, ainda sem CI de compilação ART, sem aparelho validado; não garante compatibilidade com todas as ordens de carregamento, ROMs, mecanismos de hook ou x86_64. Não publicar como crash resolvido até aferição de startup do módulo Root e versão exata de Pokémon GO.
