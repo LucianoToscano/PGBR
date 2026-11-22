@@ -41,7 +41,9 @@ void require(bool ok,const char *where){if(!ok)throw Failure{where};}
 PgrBootBinding boot{};const PgrSharedMetadataOutput *md=nullptr;
 bool busy=false,initialized=false,hooks_tried=false;
 std::atomic<bool> enabled{false},hooks_ready{false};std::atomic<uint64_t> owner{0};
-constexpr uint64_t kStepMs=250,kSettleMs=1200,kOpenMs=350,kPressRetryMs=500,kPressGiveUpMs=4500,kTableRetryMs=5000;
+// Avoid racing manual Pokémon selection in both Rocket and Gym smart swaps.
+// Rocket's fainted-prompt auto-swap waits 2300 ms as well.
+constexpr uint64_t kStepMs=250,kSettleMs=2300,kOpenMs=350,kPressRetryMs=500,kPressGiveUpMs=4500,kTableRetryMs=5000;
 constexpr int kMaxCandidates=60;
 
 uint64_t clock_ms(){timespec t{};clock_gettime(CLOCK_BOOTTIME,&t);return uint64_t(t.tv_sec)*1000+t.tv_nsec/1000000;}
@@ -471,7 +473,9 @@ void step_gym(uint64_t now){
  if(unbox<bool>(call(player,"get_IsSwapping")))return;
  gym_watch.due=0;
  const int target=choose_swap(scores,active);
- if(target>=0&&ids[size_t(target)])begin_press(ui,false,ids[size_t(target)],now);
+ // Human-opened picker wins; do not override a manual choice.
+ if(target>=0&&ids[size_t(target)]&&!unbox<bool>(call(ui,"get_IsOpen")))
+   begin_press(ui,false,ids[size_t(target)],now);
 }
 
 // The BattleState reachable from a VNext swap control, through its battle director.
@@ -527,7 +531,9 @@ void step_rocket(uint64_t now){
  std::vector<double> scores;std::vector<uint64_t> ids;int active=-1;
  each_entry(roster,[&](uint64_t id,void *pokemon_state){if(id==active_id)active=int(ids.size());scores.push_back(vnext_score(bag,pokemon_state,id,foe));ids.push_back(id);});
  const int target=choose_swap(scores,active);
- if(target>=0)begin_press(ui,true,ids[size_t(target)],now);
+ // Human-opened picker wins in VNext too.
+ if(target>=0&&!unbox<bool>(call(ui,"get_IsOpen")))
+   begin_press(ui,true,ids[size_t(target)],now);
 }
 
 bool gym_battle(){
