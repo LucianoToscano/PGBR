@@ -44,3 +44,9 @@
 
 ## Estado desta auditoria
 Branch: `audit/20261122-no-downgrade-hardening`, derivada de `b355def7f6693b4d7f88c802b6ea40df018f0490`. Correções isoladas, reversíveis e sem mudanças em tempos de combate, executores nativos ou arquivos externos. Resultados de CI/PR devem ser registrados após os respectivos runs; não antecipar sucesso.
+
+## CI e sincronização revisados
+
+- Primeira verificação da PR #122: três jobs aprovados (C++ host, NDK ARM64, website); o job Windows falhou **por dois testes estáticos desatualizados** que exigiam expressões literais `provider == 2 ? 3 : 1` e `pokemon_id=`. Esses testes foram corrigidos para validar a nova política extraída, sem devolver o comportamento antigo nem relaxar filtros.
+- Durante a auditoria, a `main` avançou em alterações independentes do PvP até `0e1a42a9dbe94cd726b4f611cb25d1a67f395bcf`. Houve integração explícita da nova `main` na branch com dois pais Git, preservando as alterações PvP e o conteúdo mais recente do Arquivo Mestre (merge auditado `e424d6d85ba67172d69e0e3e54dc7e62602dfbd2`).
+- Repetir a verificação do GitHub Actions para a HEAD final da PR antes de mesclar; o resultado antigo de falha não comprova sucesso nem pode ser ignorado.
