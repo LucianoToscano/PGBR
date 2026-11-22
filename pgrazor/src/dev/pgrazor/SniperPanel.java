@@ -568,7 +568,7 @@ public final class SniperPanel {
             // "Pikachu" só filtrava o que já estava carregado e a espécie nunca era pedida à fonte.
             if (species < 0) species = PokemonFeedSearch.resolveDex(search, speciesCatalog());
             return new SpawnSearch.Request(state.sourceId(), species, state.global(),
-                    Control.currentLatitude(), Control.currentLongitude(), state.radiusKm(), false);
+                    Control.currentLatitude(), Control.currentLongitude(), state.radiusKm(), false, filters);
         }
 
         /**
@@ -612,7 +612,11 @@ public final class SniperPanel {
                 // que já está em memória: sem HTTP desnecessário, sem consumir cota do fornecedor.
                 boolean requestChanged = !state.sourceId().equals(previousSource)
                         || previousFilters.remoteSpecies() != state.filters().remoteSpecies()
-                        || previousFilters.radiusKm() != state.filters().radiusKm();
+                        || previousFilters.radiusKm() != state.filters().radiusKm()
+                        // Partner API can apply filters remotely, unlike the other sources.
+                        || (SpawnSourceRegistry.ID_POKELIST_PARTNER.equals(state.sourceId())
+                            && !previousFilters.toJson().toString()
+                                    .equals(state.filters().toJson().toString()));
                 if (result != null && requestChanged) {
                     search(false);   // mudou o que a fonte precisa saber: nova consulta
                     return;
