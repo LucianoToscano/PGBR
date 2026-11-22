@@ -1,5 +1,6 @@
 #include <cassert>
 #include <cstdio>
+#include <initializer_list>
 #include "always_hit.cpp"
 // No hooks are installed: exercise the real eligibility/throw replacement.
 int pgrazor_hook(void*,void*,void**){return -1;}

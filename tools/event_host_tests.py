@@ -34,7 +34,8 @@ def main():
             output = Path(scratch) / ("fixture_" + str(index))
             command = [
                 compiler, "-std=c++17", "-O0", "-pthread",
-                "-I", str(NATIVE), "-I", str(ROOT / "pgrazor/test/stubs"),
+                "-I", str(NATIVE), "-I", str(ROOT / "pgrazor/test/seasonal-stubs"),
+                "-I", str(ROOT / "pgrazor/test/stubs"),
                 str(source), "-o", str(output), "-ldl",
             ]
             subprocess.run(command, cwd=ROOT, check=True, timeout=120)
