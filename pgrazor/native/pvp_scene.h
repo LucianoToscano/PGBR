@@ -25,12 +25,20 @@ struct PgrPvpScene {
     bool pvp() const {return stage==COMBAT && mode==PVP;}
     // Called only after the 0.437.0 CombatTypeExtensions.IsPvPCombat
     // validated method returned true for a live CombatDirectorV2. This
-    // covers direct friend challenges without a combat-hub GUI; a genuine
-    // VNext controller is still required before opening any action scope.
+    // covers direct friend challenges and an already-observed PvP hub whose
+    // preparation GUI was omitted/reordered; a genuine VNext controller is
+    // still required before opening any action scope.
     void verified_pvp_type(uint64_t now) {
         if(!now)return;
         live(now);
-        if(stage!=IDLE || mode!=NONE)return; // never override Rocket/training
+        // A validated game combat type may upgrade a pending PvP hub/preparation
+        // to a short-lived typed candidate. Previously, the HUB/PREPARATION
+        // stages rejected this proof, so a missing GUI event permanently
+        // prevented a live PvP/duel from arming.
+        // Do not override any NPC/training scope or an ongoing combat session.
+        if(mode==TRAINING || stage==COMBAT ||
+           (stage!=IDLE && stage!=HUB && stage!=PREPARATION))return;
+        if(mode!=NONE && mode!=PVP)return;
         stage=VERIFIED_PVP_ENTRY;mode=PVP;
         expires_ms=until(now,VERIFIED_PVP_ENTRY_MS);
     }
