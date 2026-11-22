@@ -683,3 +683,23 @@ O módulo Sniper 100% IV foi implementado em fonte e submetido como [PR #72](htt
 - O CI inicial [#45009872068](https://github.com/LucianoToscano/PGBR/actions/runs/45009872068) falhou na declaração da exceção de um **teste Java**, foi corrigido na branch e o novo CI passou. **Não ocultar o histórico da correção.**
 
 **Status atualizado:** IMPLEMENTADO EM FONTE + QA/COMPILAÇÃO DE CÓDIGO APROVADOS; APK de jogo completo **não gerado**, assinatura de instalador **não testada**, nenhuma instalação física, nenhum acesso ao feed ao vivo confirmado, nenhum servidor implantado. Estes testes não homologam o Sniper 100% IV em dispositivo. Modificações posteriores somente documentais devem ser verificadas em um diff antes da integração na `main`. **Preservar a branch e a PR para revisão.**
+
+---
+
+## 22/11/2026 — Provedor PGSharp Free e armazenamento opcional de key (PR #73)
+
+**Pedido:** manter o Sniper 100% IV atual do PGBR e acrescentar **fonte distinta PGSharp**, com feed de 100% IV gratuito para qualquer usuário e possibilidade futura de filtros extras mediante login com a key Standard, sem repetir solicitação de autorização já documentada no Guia Mestre do PokeSearch LT364/LT365.
+
+**Produtos oficialmente declarados pelo PGSharp (consultados em 22/11/2026):** versão Free inclui *100 IV Feed*; Standard inclui *All Coordinates Feed*. Fontes: https://www.pgsharp.com/ e https://www.pgsharp.com/features/. Do APK plugin 1.278.0 foram identificadas strings e pontes `https://f.pgsharp.com/peanuts`, `q4.d(k5/b)`, `q4.e(k5/b)`, `FASTSNIPE/FASTSNIPE2` e `post.auth.lic`; **não** foi comprovado contrato completo para integração HTTP externa, login de key ou equivalência de dados. Não confundir gratuidade do recurso no aplicativo PGSharp com API já operacional no PGBR.
+
+**Governança:** branch `feat/pgsharp-free-key-tier-20261122`, criada do commit `c3430532a363ca0704e713c6a4a2c7e492c301d6` (PR #72), PR dependente **[#73](https://github.com/LucianoToscano/PGBR/pull/73)**, draft, base `feat/sniper100iv-manual-feed-20261122`. Não fazer merge direto em `main`, nem sobrescrever trabalhos paralelos. A PR #72 permanece base para a consulta manual do feed PGBR.
+
+**Código novo nesta PR:**
+- `PgSharpFeedPolicy.java`: política Free/Standard, conector não verificado por padrão, key guardada localmente não libera funções pagas. Com conector verificado, o Free não exige key, mas o Standard exige verificação de licença pelo provedor.
+- `PgSharpFeedDialog.java`: nova opção PGSharp no menu de buscas (índice 5, preservando 0–4), com informações honestas de disponibilidade e botão para abrir o Sniper PGBR atual, sem atribuir-lhe origem PGSharp.
+- `PgSharpLicenseVault.java`: armazenamento local opcional de key, AES-256/GCM com AndroidKeyStore, arquivo exclusivo sob `getNoBackupFilesDir()`, escrita atômica, sem logs de chave, entrada mascarada com `FLAG_SECURE`, botão de exclusão. Não usar o cofre de sessões de Pokémon GO.
+- `PgSharpFeedPolicyTest.java`, `test_pgsharp_policy_java.py`, `test_pgsharp_provider_contract.py`, `.github/workflows/pgbr-pgsharp-provider-qa.yml`, `docs/PGSHARP_FREE_FEED_KEY_DESIGN_2026-11-22.md`: testes e contrato de integração.
+
+**Limites preservados:** nenhum request HTTP ao PGSharp, nenhuma key transmitida/verificada, nenhum feed proprietário consumido, nenhuma captura ou teleporte PGSharp validado; configuração de key **não** é login. API, autenticação, lat/lng/IV/despawn e permissões do serviço deverão ser confirmados em nova etapa. Não gerar keygen, não copiar credenciais de Pokémon GO, não inventar resultados, não usar automaticamente backend alternativo sob o nome PGSharp.
+
+**Estado desta revisão:** IMPLEMENTADO EM FONTE (UI, política, cofre); QA automático sendo verificado em [workflow da PR #73](https://github.com/LucianoToscano/PGBR/pull/73/checks); compilação e teste Android físico não equivalentes; nenhum APK novo/publicação/merge. Atualizar este registro com resultados efetivos após os jobs terminarem. **A linha LT033 publicada permanece imutável, `device_tested=false`.**
