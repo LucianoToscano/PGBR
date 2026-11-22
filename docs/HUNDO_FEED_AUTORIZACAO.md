@@ -16,8 +16,7 @@
 
 O responsável pelo projeto já declarou em conversas anteriores autorização para uso de
 APKs/APIs de referência PGSharp, Pokemod, PGTools, PokeList e Data Hub; essa
-declaração está registrada no [Guia Mestre do PokeSearch, LT364 e LT365]
-(https://github.com/LucianoToscano/PokeSearch/blob/main/docs/GUIA_MESTRE.md).
+declaração está registrada no [Guia Mestre do PokeSearch, LT364 e LT365](https://github.com/LucianoToscano/PokeSearch/blob/main/docs/GUIA_MESTRE.md).
 **Não solicitar ao usuário que repita a mesma declaração de autorização.**
 Isso não acrescenta credenciais, autorização contratual a novas origens nem
 elimina a necessidade de validar a disponibilidade e o comportamento de cada
