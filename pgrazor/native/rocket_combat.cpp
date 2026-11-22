@@ -23,6 +23,7 @@
 
 #include "rocket_combat.h"
 #include "battle_timing_policy.h"
+#include "smart_attack_priority.h"
 #include "rocket_actions.h"  // feature 20 policy table, reused internally (never its JS controller)
 
 #include <atomic>
@@ -63,6 +64,19 @@ uint64_t shield_choice_wait_ms() {
   pgr_battle_timing::Preferences p{};
   return pgr_battle_timing::read(tr,p) ?
       pgr_battle_timing::shield_wait_ms(p.shield_choice) : UINT64_MAX;
+#endif
+}
+
+#if defined(PGR_RC_DIRECT_TEST)
+std::atomic<bool> g_smart_attack_test_enabled{false};
+#endif
+bool simple_attack_enabled() {
+#if defined(PGR_RC_DIRECT_TEST)
+  return g_smart_attack_test_enabled.load(std::memory_order_acquire);
+#else
+  const auto *tr=static_cast<const PgrRuntimeTransportApi*>(pgrazor_runtime_transport_api(1));
+  pgr_battle_timing::Preferences p{};
+  return pgr_battle_timing::read(tr,p)&&p.smart_attack;
 #endif
 }
 
@@ -118,6 +132,11 @@ void    *g_ui_handle = nullptr;      // legacy CombatUI
 void    *g_vui_handle = nullptr;     // vNext gui
 void    *g_shield_handle = nullptr;  // shield modal
 void    *g_charges[PGR_RC_MAX_CHARGES] = {nullptr};
+struct ChargeObservation {
+  pgr_charge_effect_ui::Sample sample{};
+  uint64_t observed_ms=0;
+};
+ChargeObservation g_charge_observations[PGR_RC_MAX_CHARGES]{};
 uint32_t g_charge_count = 0;
 bool     g_shield_used = false;
 uint64_t g_shield_opened_ms = 0; // per-prompt epoch, cleared on close
@@ -262,7 +281,9 @@ inline bool stale(uint64_t epoch) { return g_epoch != epoch || g_stop_requested.
 
 // --- root teardown helpers (detach BEFORE gc_free) ----------------------------------
 void drop_ui()  { void *h = g_ui_handle;  g_ui_handle = nullptr;  refresh(); gc_free(h); }
-void drop_vui() { void *h = g_vui_handle; g_vui_handle = nullptr; refresh(); gc_free(h); }
+void drop_vui() { void *h = g_vui_handle; g_vui_handle = nullptr;
+  std::memset(g_charge_observations,0,sizeof(g_charge_observations));
+  refresh(); gc_free(h); }
 // rocketDrop('shield'): notify feature 20 PROMPT_CLOSE first, then detach + free.
 void drop_shield(uint64_t tid) {
   g_shield_opened_ms = 0;
@@ -285,6 +306,7 @@ void rocket_clear(uint64_t tid) {
   g_state_handle = g_ui_handle = g_vui_handle = g_shield_handle = g_pending_ui = nullptr;
   g_pvp_scope = false;
   std::memset(g_charges, 0, sizeof(g_charges)); g_charge_count = 0;
+  std::memset(g_charge_observations,0,sizeof(g_charge_observations));
   g_pending_ui_token = 0; g_shield_used = false; g_shield_opened_ms = 0; g_failed = false; g_gate = -1; g_last_fast_ms = 0;
   ++g_epoch;
   refresh();
@@ -300,7 +322,7 @@ void fault(uint64_t tid) {
 
 // --- charge-candidate list (owner thread) -------------------------------------------
 // vm.observe: prune dead entries, dedupe by live identity, append if under the cap (<= 4).
-void charge_capture(void *obj, uint64_t epoch) {
+void charge_capture(void *obj, int32_t observation, uint64_t epoch) {
   bool err=false; Root incoming; incoming.acquire(obj,&err);
   if(err||stale(epoch))return;
   for(int i=int(g_charge_count)-1;i>=0;--i){
@@ -309,16 +331,25 @@ void charge_capture(void *obj, uint64_t epoch) {
     bool live=m_is_alive(current,&err);if(stale(epoch))return;
     if(err){fault(g_unity_tid.load());return;}
     if(!live){
-      for(uint32_t j=i;j+1<g_charge_count;++j)g_charges[j]=g_charges[j+1];
-      g_charges[--g_charge_count]=nullptr;refresh();gc_free(h);if(stale(epoch))return;
+      for(uint32_t j=i;j+1<g_charge_count;++j){g_charges[j]=g_charges[j+1];g_charge_observations[j]=g_charge_observations[j+1];}
+      g_charges[--g_charge_count]=nullptr;g_charge_observations[g_charge_count]={};
+      refresh();gc_free(h);if(stale(epoch))return;
     }
   }
   for(uint32_t i=0;i<g_charge_count;++i){
     void *candidate=gc_target(g_charges[i]);if(stale(epoch))return;
     void *in=incoming.target();if(stale(epoch))return;
-    if(candidate==in)return;
+    if(candidate==in){
+      const auto sample=pgr_charge_effect_ui::unpack(observation);
+      g_charge_observations[i]={sample,pgr_charge_effect_ui::pack(sample)?boottime_ms():0};
+      return;
+    }
   }
-  if(g_charge_count<PGR_RC_MAX_CHARGES)g_charges[g_charge_count++]=incoming.release();
+  if(g_charge_count<PGR_RC_MAX_CHARGES){
+    const auto sample=pgr_charge_effect_ui::unpack(observation);
+    g_charge_observations[g_charge_count]={sample,pgr_charge_effect_ui::pack(sample)?boottime_ms():0};
+    g_charges[g_charge_count++]=incoming.release();
+  }
 }
 
 // --- frame guard --------------------------------------------------------------------
@@ -468,12 +499,13 @@ int api_observe(uint32_t kind,void *obj,int32_t aux,uint64_t tid){
       if(cur&&cur==obj){
         void *old[1+PGR_RC_MAX_CHARGES];uint32_t n=0;old[n++]=g_vui_handle;g_vui_handle=nullptr;
         for(uint32_t i=0;i<g_charge_count;++i)old[n++]=g_charges[i];
-        std::memset(g_charges,0,sizeof(g_charges));g_charge_count=0;refresh();
+        std::memset(g_charges,0,sizeof(g_charges));g_charge_count=0;
+        std::memset(g_charge_observations,0,sizeof(g_charge_observations));refresh();
         for(uint32_t i=0;i<n;++i)gc_free(old[i]);
       }break;
     }
     case PGR_RC_OBS_CHARGE:
-      if(g_state_handle&&exact(obj,g_cfg.class_rvcharge)&&!stale(epoch))charge_capture(obj,epoch);
+      if(g_state_handle&&exact(obj,g_cfg.class_rvcharge)&&!stale(epoch))charge_capture(obj,aux,epoch);
       refresh();break;
     case PGR_RC_OBS_SHIELD_PROMPT:
       drop_shield(tid);if(stale(epoch))break;g_shield_used=false;
