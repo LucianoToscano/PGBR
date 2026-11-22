@@ -52,3 +52,10 @@
 - `PtBrDynamicTest.java` ampliado para **98 casos**; comparação estática dos 98 testes com a lógica dos tradutores **sem divergências** e 1.476 entradas correspondentes nos três arquivos de glossário/código. `test_ptbr_glossary.py` ampliado com requisitos de chamadas de exibição e prefixos. **Não se atribui aprovação de CI/JVM desta rodada sem execução confirmada; não houve teste em aparelho, APK gerado ou merge automático.**
 - Preservados nomes próprios, nomes de rotas criadas pelo usuário, `GitHub Releases`, códigos internos de pesquisa (ex.: `CHALLENGE_GOWA2026_...`) e IDs do jogo: não é correto traduzi-los como texto comum, nem alterar seu significado.
 - PR existente: https://github.com/LucianoToscano/PGBR/pull/101, branch isolada `fix/ptbr-drive-capturas-20261122`; atualizar a base divergente da `main` antes da integração, sem sobrescrever a implementação paralela de batalhas.
+
+## Padronização de nomenclatura: Teleporte — 22/11/2026
+- O usuário pediu substituir o texto visível **Teletransportar** por **Teleporte**.
+- Oito valores de tradução foram ajustados, incluindo botão `Teleport`, descrições de mapa, modo toque duplo, teleporte ao início da rota e entrada de reides; `Teleport cooldown` foi refinado para `Tempo de espera do teleporte`.
+- Textos de UI fora do tradutor também foram corrigidos em `AutoWalkDialog.java` (opção de deslocamento inicial) e `Cooldown.java` (orientação e acessibilidade), respeitando a gramática da frase.
+- Nenhuma chave em inglês/ID foi renomeada: somente o **texto apresentado em PT-BR**; mantidas as 1.476 entradas sincronizadas para Root e sem Root.
+- Oito novos cenários em `PtBrDynamicTest.java` e checagens de terminologia em `test_ptbr_glossary.py`; sem merge, sem APK e sem afirmar homologação em dispositivo.
