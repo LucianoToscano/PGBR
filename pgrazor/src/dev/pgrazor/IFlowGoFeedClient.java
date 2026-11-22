@@ -31,8 +31,11 @@ final class IFlowGoFeedClient {
                 || lon < -180 || lon > 180)
             throw new LiveFeedClient.FeedException("Coordenadas inválidas para iFlowGo.");
         cancelled = false;
-        double radius = Double.isInfinite(radiusKm) && radiusKm > 0
-                ? 25.0 : Math.max(1.0, Math.min(radiusKm, 25.0));
+        final double radius;
+        try { radius = IFlowGoRequestPolicy.nearbyRadiusKm(radiusKm); }
+        catch (IllegalArgumentException invalid) {
+            throw new LiveFeedClient.FeedException("Raio inválido para busca iFlowGo.");
+        }
         String query = "?lat=" + enc(String.format(Locale.US, "%.6f", lat))
                 + "&lon=" + enc(String.format(Locale.US, "%.6f", lon))
                 + "&radius_km=" + enc(String.format(Locale.US, "%.1f", radius))
@@ -48,8 +51,13 @@ final class IFlowGoFeedClient {
      */
     LiveFeedData.Snapshot fetchGlobal(int dexId) throws Exception {
         cancelled = false;
-        String endpoint = "https://pokecoords.iflowgo.com/iflowgopokecoords/api/v1/pokemon-search?page=1";
-        if (dexId >= 1 && dexId <= 1025) endpoint += "&pokemon_id=" + dexId;
+        final String dexQuery;
+        try { dexQuery = IFlowGoRequestPolicy.globalSpeciesQuery(dexId); }
+        catch (IllegalArgumentException invalid) {
+            throw new LiveFeedClient.FeedException("Espécie inválida para busca global iFlowGo.");
+        }
+        String endpoint = "https://pokecoords.iflowgo.com/iflowgopokecoords/api/v1/pokemon-search?page=1"
+                + dexQuery;
         return doFetch(endpoint, false, true);
     }
 
