@@ -669,7 +669,7 @@ public final class Control {
     public static final int[] TRANSFER_IV_CHOICES={90,95,97,98,99,100,101};
     public static int transferIvKeepPercent(){return transferIvKeepPercent;}
     public static void setTransferIvKeepPercent(int value){
-        boolean valid=false;for(int choice:TRANSFER_IV_CHOICES)if(choice==value)valid=true;
+        boolean valid=value>=0&&value<=101;
         if(!valid||value==transferIvKeepPercent)return;
         transferIvKeepPercent=value;invalidateQuickBallOutcome();saveSettings();
         event("transfer-iv-limit",value==101?"Keep only protected or selected Pokemon":"Keep IV >= "+value+"%");
@@ -1625,7 +1625,7 @@ public final class Control {
                 autoTransferEnabled=Boolean.parseBoolean(p.getProperty("autoTransfer","false"));
                 try{
                     int value=Integer.parseInt(p.getProperty("transferIvKeepPercent","90"));
-                    boolean valid=false;for(int choice:TRANSFER_IV_CHOICES)if(choice==value)valid=true;
+                    boolean valid=value>=0&&value<=101;
                     if(!valid){autoTransferEnabled=false;transferIvKeepPercent=90;event("transfer-safety","Invalid threshold: transfer disabled");}
                     else transferIvKeepPercent=value;
                 }catch(NumberFormatException error){autoTransferEnabled=false;transferIvKeepPercent=90;}
