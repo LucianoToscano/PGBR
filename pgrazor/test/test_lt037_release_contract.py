@@ -11,6 +11,7 @@ class Lt037ReleaseContract(unittest.TestCase):
                      "PGBR-v0.00.37-LT.apk","PGBR-v0.00.37-LT-Root.apk",
                      "PGBR-v0.00.37-LT-Root-module.zip","SHA256SUMS.txt",
                      "shared_auto_battle_gate_test.cpp","pgrazor/native/pvp_scene_test.cpp",
+                     "PGBR-LT037-PGR037-Root-e-SemRoot-QA",
                      "pgrazor/nonroot.py","pgrazor/rooted.py","tools/check.py",
                      "tools/verify_release.py","--prerelease"):
             with self.subTest(item=item):self.assertIn(item,workflow)

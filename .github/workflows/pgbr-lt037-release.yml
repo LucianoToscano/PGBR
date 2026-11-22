@@ -164,7 +164,7 @@ jobs:
           }
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: PGBR-LT037-PGR036-Root-e-SemRoot-QA
+          name: PGBR-LT037-PGR037-Root-e-SemRoot-QA
           path: |
             dist/pgbr-lt037/PGBR-v0.00.37-LT.apk
             dist/pgbr-lt037/PGBR-v0.00.37-LT-Root.apk
