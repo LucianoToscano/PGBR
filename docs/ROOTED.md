@@ -1,6 +1,8 @@
 # PGBR Root — instalação e funcionamento
 
-PGBR Root é um instalador separado (`dev.pgrazor.root`) para o Pokémon GO oficial, assinado pela Niantic. Ele inclui um módulo Zygisk e o instala por Magisk 27+, KernelSU ou APatch. KernelSU e APatch também exigem um provedor Zygisk. O APK modificado `PGBR-v0.00.34-LT.apk` continua sendo a versão sem Root.
+> **Referência atual:** LT040 é uma pré-release de QA publicada e assinada, **não homologada em Android físico** (`device_tested=false`). A instalação exige a versão exata de Pokémon GO e configurações compatíveis. Não substitua sua instalação estável antes de validar. Consulte também `docs/releases/v0.00.40-LT.md`.
+
+PGBR Root é um instalador separado (`dev.pgrazor.root`) para o Pokémon GO oficial, assinado pela Niantic. Ele inclui um módulo Zygisk e o instala por Magisk 27+, KernelSU ou APatch. KernelSU e APatch também exigem um provedor Zygisk. O APK modificado `PGBR-v0.00.40-LT.apk` continua sendo a versão sem Root.
 
 As versões com e sem Root são mantidas juntas na `main` e produzidas pelo mesmo fluxo de lançamento. O suporte Root ainda é experimental: a instalação de interceptações nativas pode falhar em alguns aparelhos Samsung. Instalar o módulo não altera o APK do jogo nem seu certificado de assinatura.
 
@@ -8,7 +10,7 @@ Se a sobreposição funcionar, mas os recursos nativos continuarem indisponívei
 
 ## Instalação
 
-1. Instale e abra `PGBR-v0.00.34-LT-Root.apk`.
+1. Instale e abra `PGBR-v0.00.40-LT-Root.apk`.
 2. Confira o estado e conceda acesso Root ao instalador no gerenciador Root.
 3. Confirme que a versão do jogo oficial corresponde à versão compatível indicada pelo instalador.
 4. Toque em **Instalar**, confira o resultado e reinicie quando solicitado.
@@ -16,7 +18,7 @@ Se a sobreposição funcionar, mas os recursos nativos continuarem indisponívei
 
 Para desligar, desative o módulo `pgrazor` no gerenciador Root e reinicie. Desinstalar apenas o APK do instalador não remove o módulo.
 
-Para instalar manualmente, instale `PGBR-v0.00.34-LT-Root-module.zip` pelo gerenciador de módulos Root e reinicie. Use a versão oficial do jogo compatível com o lançamento. Você pode também instalar `PGBR-v0.00.34-LT-Root.apk` para consultar o estado e reiniciar automaticamente nas trocas de conta; não é necessário reinstalar o módulo pelo APK. Sem o instalador, as trocas de conta exigem fechar e reabrir manualmente o jogo. `PGBR-v0.00.34-LT.apk` é o jogo modificado sem Root, não o aplicativo auxiliar Root.
+Para instalar manualmente, instale `PGBR-v0.00.40-LT-Root-module.zip` pelo gerenciador de módulos Root e reinicie. Use a versão oficial do jogo compatível com o lançamento. Você pode também instalar `PGBR-v0.00.40-LT-Root.apk` para consultar o estado e reiniciar automaticamente nas trocas de conta; não é necessário reinstalar o módulo pelo APK. Sem o instalador, as trocas de conta exigem fechar e reabrir manualmente o jogo. `PGBR-v0.00.40-LT.apk` é o jogo modificado sem Root, não o aplicativo auxiliar Root.
 
 O ambiente exige a versão exata do jogo e o certificado oficial de assinatura. Uma versão mais nova não é aceita automaticamente só porque as classes Java ainda coincidem: os recursos nativos também dependem da compilação compatível. Estado Root e configuração Zygisk não comprovam, isoladamente, que a injeção funcionou; o Registro de execução dentro do jogo detalha a inicialização.
 
@@ -30,7 +32,7 @@ py -3.12 -B pgrazor/rooted.py pgrazor/input/game.apkm --download --output dist/r
 
 `--skip-build` reutiliza o DEX somente após validar as assinaturas das fontes. `--module-only` produz apenas o ZIP do módulo para desenvolvimento, sem instalador. O APK/APKM original precisa ter o certificado confiável do jogo; as integrações são verificadas antes do empacotamento.
 
-Cada execução fica em `pgrazor/build/rooted/<run>/` e registra em `report.json` os hashes do módulo, conteúdo, DEX e instalador, a versão do jogo e as arquiteturas. O lançamento inclui `PGBR-v0.00.34-LT-Root.apk`, `PGBR-v0.00.34-LT-Root-module.zip`, `root-build-info.json` e as verificações correspondentes em `SHA256SUMS.txt`. O fluxo envia os dois APKs e o módulo ZIP como artefatos e, quando solicitado, como arquivos de lançamento. A publicação é uma opção separada.
+Cada execução fica em `pgrazor/build/rooted/<run>/` e registra em `report.json` os hashes do módulo, conteúdo, DEX e instalador, a versão do jogo e as arquiteturas. O lançamento inclui `PGBR-v0.00.40-LT-Root.apk`, `PGBR-v0.00.40-LT-Root-module.zip`, `root-build-info.json` e as verificações correspondentes em `SHA256SUMS.txt`. O fluxo envia os dois APKs e o módulo ZIP como artefatos e, quando solicitado, como arquivos de lançamento. A publicação é uma opção separada.
 
 `cleanup.ps1 -RootedOnly` mostra uma prévia da limpeza Root; acrescente `-Apply` para executar. O empacotamento chama essa limpeza após gerar o relatório. Arquivos temporários `input-*.apk` podem ser descartados depois de validar um módulo completo. As três pastas de execução mais recentes e as entradas `pinnedRootedRuns` em `build-retention.json` protegem as saídas do módulo e instalador. Mantenha fixados o candidato instalado e uma opção de retorno já testada. A limpeza preserva relatórios, entradas originais, código e chaves, criando um comprovante em `build/cleanup/`.
 
