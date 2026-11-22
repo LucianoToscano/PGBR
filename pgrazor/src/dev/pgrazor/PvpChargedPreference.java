@@ -53,50 +53,28 @@ final class PvpChargedPreference {
     static boolean superEffective(Move move,int opponent1,int opponent2){
         return move!=null&&move.valid()&&effectiveness(move.type,opponent1,opponent2)>1.00001;
     }
-    private static double value(Move move,int attacker1,int attacker2,int opponent1,int opponent2){
-        double stab=move.type==attacker1||move.type==attacker2?1.2:1.0;
-        return move.power*stab*effectiveness(move.type,opponent1,opponent2)/move.cost;
-    }
-    /** WAIT means continue charging; UNKNOWN means insufficient trustworthy observations. */
+    /** The simplified setting compares only confirmed effectiveness tiers.
+     *  A ready charged move is never delayed to farm energy for a stronger tier.
+     *  The UI-ready bit remains authoritative; equal tiers preserve button 1.
+     *  Data and slot identity must still be verified by the caller.
+     */
     static int select(Move first,Move second,int attacker1,int attacker2,
                       int opponent1,int opponent2,int energy,int fastEnergyGain,int hpPercent,
                       boolean canFarm){
-        if(first==null||second==null||!first.valid()||!second.valid()||
-           !typeValid(opponent1)||opponent2!=0&&!typeValid(opponent2)||
-           energy<0||energy>100||hpPercent<0||hpPercent>100)return UNKNOWN;
-        // The observed UI-ready state is authoritative; energy alone cannot force a charge tap.
-        boolean oneReady=first.ready&&energy>=first.cost;
-        boolean twoReady=second.ready&&energy>=second.cost;
-        // Effectiveness is primary: super effective > neutral > resisted.
-        // A neutral SECOND move must beat a resisted FIRST move.
-        final double effect1=effectiveness(first.type,opponent1,opponent2);
-        final double effect2=effectiveness(second.type,opponent1,opponent2);
-        final int tier1=effectivenessTier(effect1);
-        final int tier2=effectivenessTier(effect2);
-        if(tier1==tier2){
-            if(oneReady&&twoReady){
-                if(tier1==RESISTED&&effect2>effect1+0.00001)return SECOND;
-                if(tier1==SUPER_EFFECTIVE&&
-                   value(second,attacker1,attacker2,opponent1,opponent2)>
-                   value(first,attacker1,attacker2,opponent1,opponent2))return SECOND;
-                return FIRST; // Preserve neutral tie behavior.
-            }
-            if(oneReady)return FIRST;
-            if(twoReady)return SECOND;
-            return WAIT;
-        }
-        final boolean preferFirst=tier1>tier2;
-        final Move preferred=preferFirst?first:second;
-        final boolean preferredReady=preferFirst?oneReady:twoReady;
-        final boolean alternativeReady=preferFirst?twoReady:oneReady;
-        if(preferredReady)return preferFirst?FIRST:SECOND;
-        if(alternativeReady){
-            final int gap=preferred.cost-energy;
-            // Bounded farming: the controller also enforces a 5500 ms timeout.
-            if(canFarm&&hpPercent>=MIN_SAFE_HP&&fastEnergyGain>0&&gap>0&&
-               (gap+fastEnergyGain-1)/fastEnergyGain<=MAX_EXTRA_FAST)return WAIT;
-            return preferFirst?SECOND:FIRST;
-        }
-        return WAIT;
+        if(first==null||!first.valid()||energy<0||energy>100)return UNKNOWN;
+        final boolean firstReady=first.ready&&energy>=first.cost;
+        // A single known move needs no type comparison; never assume there is a second button.
+        if(second==null)return firstReady?FIRST:WAIT;
+        if(!second.valid()||!typeValid(opponent1)||opponent2!=0&&!typeValid(opponent2)||
+           opponent1==opponent2||hpPercent<0||hpPercent>100)return UNKNOWN;
+        final boolean secondReady=second.ready&&energy>=second.cost;
+        if(firstReady&&!secondReady)return FIRST;
+        if(secondReady&&!firstReady)return SECOND;
+        if(!firstReady)return WAIT; // Neither ready: normal quick-attack policy continues.
+        final int tier1=effectivenessTier(effectiveness(first.type,opponent1,opponent2));
+        final int tier2=effectivenessTier(effectiveness(second.type,opponent1,opponent2));
+        if(tier1<0||tier2<0)return UNKNOWN;
+        // SUPER > NEUTRAL > RESISTED; equal tiers use the verified first slot.
+        return tier2>tier1?SECOND:FIRST;
     }
 }
