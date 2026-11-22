@@ -1,7 +1,7 @@
 #pragma once
 // PGBR battle timing preferences: one validated, coherent snapshot. No ABI changes.
-// Slot 21 was already allocated to smartBattleConfig. F2 keeps the original flag
-// and adds a shield-choice digit and a fainted-swap-choice digit.
+// Slot 21 carries smartBattleConfig. F3 adds the independent Smart Attack flag;
+// legacy F2 remains accepted, with Smart Attack defaulting to off.
 // Reject stale/malformed settings instead of issuing unverified game actions.
 #include "runtime_transport.h"
 #include <cstdint>
@@ -10,6 +10,7 @@
 namespace pgr_battle_timing {
 struct Preferences {
   bool smart_battle = false;
+  bool smart_attack = false; // transport only; not evidence that the selector is integrated
   uint32_t shield_choice = 1; // default; read() still fails closed if snapshot is invalid
   uint32_t fainted_choice = 1;
 };
@@ -24,11 +25,14 @@ inline uint64_t fainted_wait_ms(uint32_t option) {
 }
 
 inline bool parse(const char *s, uint32_t n, Preferences &out) {
-  if (!s || n != 8 || std::memcmp(s, "F2|", 3) != 0 ||
+  if (!s || !((n == 8 && std::memcmp(s, "F2|", 3) == 0) ||
+              (n == 10 && std::memcmp(s, "F3|", 3) == 0)) ||
       (s[3] != '0' && s[3] != '1') || s[4] != '|' ||
       s[5] < '0' || s[5] > '3' || s[6] != '|' ||
-      s[7] < '0' || s[7] > '3') return false;
+      s[7] < '0' || s[7] > '3' ||
+      (n == 10 && (s[8] != '|' || (s[9] != '0' && s[9] != '1')))) return false;
   out.smart_battle = s[3] == '1';
+  out.smart_attack = n == 10 && s[9] == '1';
   out.shield_choice = static_cast<uint32_t>(s[5] - '0');
   out.fainted_choice = static_cast<uint32_t>(s[7] - '0');
   return true;

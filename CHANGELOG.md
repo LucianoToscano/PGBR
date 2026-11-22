@@ -1,3 +1,7 @@
+## Não lançado — Ataque Inteligente: transporte da preferência (22/11/2026)
+- A preferência independente é incluída no snapshot nativo F3, preservando leitura legada F2 e tempos existentes. IDs de instância no motor não são mais truncados para 32 bits. Testes de compatibilidade e backup ampliados.
+- **Ainda não seleciona golpes no jogo**: não há associação comprovada dos IDs de golpes aos botões, leitura completa de energia e homologação. Nenhuma release nova.
+
 ## Não lançado — proteção de cura e auditoria de batalha (22/11/2026)
 - Cura no mapa revalida configuração e permissão após consultas gerenciadas e antes do uso de item; a fixture host do runtime inclui revogação durante consultas. Não é garantia de atomicidade nem teste em aparelho.
 - Interface não promete classificação por tipo nem integração ainda inexistente. Motor de ataque, estado dinâmico, ligação a botões e homologação por modalidade continuam pendentes; tela branca sem causa comprovada. [Relatório](docs/AUDITORIA_BATALHA_CURA_2026-11-22.md). Nenhuma versão ou artefato novo.

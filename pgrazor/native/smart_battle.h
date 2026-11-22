@@ -5,7 +5,7 @@ struct PgrSharedMetadataOutput;
 // grunt battle the game's recommended party is replaced with the best counters from storage. During
 // gym and Team GO Rocket battles the team member best suited to the current opponent is swapped in,
 // when a new opponent appears or yours faints. One setting, off by default, on transport string slot
-// 21 ("F1|enabled"). Unity owner thread only.
+// 21 (F2 legacy or F3 battle preferences). Unity owner thread only.
 void pgr_smart_battle_tick(uint64_t tid,const PgrSharedMetadataOutput *metadata);
 void pgr_smart_battle_stop(uint64_t tid);
 bool pgr_smart_battle_enabled();

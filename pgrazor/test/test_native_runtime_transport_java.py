@@ -74,7 +74,7 @@ def control_shell():
         elif name == 'evolveTransferConfig':
             body = 'reads++;return "1|1|1|2|10,13";'
         elif name == 'smartBattleConfig':
-            body = 'reads++;return "F2|1|1|1";'
+            body = 'reads++;return "F3|1|1|1|1";'
         elif name == 'storageIvConfig':
             body = 'reads++;return "S2|2|2|3";'
         elif name == 'researchConfig':

@@ -10,7 +10,8 @@ public final class ControlSettingsTest {
         load.setAccessible(true); load.invoke(null,app);
         if(args[0].equals("load-off")) {
             if(Control.smartAttack() || Control.rocketOptions()!=5 || Control.battleOptions()!=981 ||
-               Control.smartShieldTiming()!=2 || Control.smartFaintedSwapTiming()!=0)
+               Control.smartShieldTiming()!=2 || Control.smartFaintedSwapTiming()!=0 ||
+               !"F3|0|2|0|0".equals(Control.smartBattleConfig()))
                 throw new AssertionError("Smart Attack OFF or independent preferences lost across cold start");
             System.out.println("PASS: settings load-off"); return;
         }
@@ -50,7 +51,7 @@ public final class ControlSettingsTest {
         if(Control.battleOptions()!=981||Control.battlesAllowed())throw new AssertionError("Other battle persistence/readiness");
         if(!Control.gymRepeatEnabled())throw new AssertionError("Gym repeat not persisted across process restart");
         if(Control.smartShieldTiming()!=2||Control.smartFaintedSwapTiming()!=0||
-           !"F2|0|2|0".equals(Control.smartBattleConfig()))
+           !"F3|0|2|0|1".equals(Control.smartBattleConfig()))
             throw new AssertionError("Battle timing options not persisted across process restart");
         Control.setSmartShieldTiming(-1);Control.setSmartShieldTiming(3);
         Control.setSmartFaintedSwapTiming(3);Control.setSmartFaintedSwapTiming(4);
@@ -63,11 +64,13 @@ public final class ControlSettingsTest {
         int battleBefore=Control.battleOptions(), rocketBefore=Control.rocketOptions();
         int actionsBefore=Control.pvpBattleOptions() & 7;
         Control.setSmartAttack(false);
-        if(Control.smartAttack()||Control.battleOptions()!=battleBefore||Control.rocketOptions()!=rocketBefore||
+        if(Control.smartAttack()||!"F3|0|2|0|0".equals(Control.smartBattleConfig())||
+           Control.battleOptions()!=battleBefore||Control.rocketOptions()!=rocketBefore||
            (Control.pvpBattleOptions() & 7)!=actionsBefore||Control.smartShieldTiming()!=2||Control.smartFaintedSwapTiming()!=0)
             throw new AssertionError("Smart Attack OFF changed independent preferences");
         Control.setSmartAttack(true);
-        if(!Control.smartAttack()||Control.rocketOptions()!=rocketBefore||(Control.pvpBattleOptions() & 7)!=actionsBefore)
+        if(!Control.smartAttack()||!"F3|0|2|0|1".equals(Control.smartBattleConfig())||
+           Control.rocketOptions()!=rocketBefore||(Control.pvpBattleOptions() & 7)!=actionsBefore)
             throw new AssertionError("Smart Attack ON changed action preferences");
         if(Control.trainerPrivacyMode()!=1||!"*****".equals(Control.visibleTrainerName("RealTrainer")))
             throw new AssertionError("Privacy mask was not restored or leaked original name");
