@@ -70,8 +70,8 @@ public final class SpawnSourceRegistry {
         List<SourceInfo> list = new ArrayList<>();
         list.add(new SourceInfo(ID_IFLOWGO, "iFlowGo", Status.READY,
                 "Coordenadas reais, IV completo (percentual e componentes), nível, PC, gênero e "
-                        + "expiração. Aceita pokemon_id no servidor. A busca global lê apenas a "
-                        + "primeira página da fonte: não é uma varredura mundial completa.",
+                        + "expiração. Aceita pokemon_id no servidor. A busca global lê até "
+                        + "duas páginas, respeitando paginação parcial: não é varredura mundial completa.",
                 SpawnContract.Capabilities.IFLOWGO));
         list.add(new SourceInfo(ID_ROCKETMAP, "RocketMap / gateway PokeSearch",
                 Status.NEEDS_CONFIGURATION,
