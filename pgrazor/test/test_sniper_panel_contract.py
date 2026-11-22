@@ -101,7 +101,11 @@ class SniperPanelContractTest(unittest.TestCase):
 
     def test_teleport_needs_confirmation_and_revalidates(self):
         panel = read('SniperPanel.java')
-        self.assertIn('TeleportDialog.confirm(activity, spawn.latitude, spawn.longitude', panel)
+        # O alvo é validado e passado explicitamente (o mapa pode devolver outra coordenada).
+        self.assertIn('TeleportDialog.confirm(activity, targetLat, targetLon', panel)
+        self.assertIn('confirmTeleportAt(spawn, spawn.latitude, spawn.longitude)', panel)
+        # Do mapa também passa pela mesma confirmação, com o ponto devolvido pelo mapa.
+        self.assertIn('confirmTeleportAt(spawn, latitude, longitude)', panel)
         self.assertIn('Control.canEnable()', panel)
         self.assertIn('Control.teleport(lat, lon)', panel)
         # the confirmation callback must re-check expiry/freshness and coordinate validity
@@ -115,8 +119,21 @@ class SniperPanelContractTest(unittest.TestCase):
     def test_stale_queries_are_cancelled_and_discarded(self):
         panel = read('SniperPanel.java')
         self.assertIn('generation.incrementAndGet()', panel)
-        self.assertIn('if (source != null) source.cancel();', panel)
+        self.assertIn('source.cancel()', panel)
         self.assertIn('token != generation.get()', panel)
+
+    def test_a_running_search_can_be_replaced(self):
+        """`if (closed || fetching) return;` impedia trocar de fonte ou repetir a busca durante
+        uma consulta: o toque simplesmente não fazia nada. O pedido novo agora substitui o antigo,
+        cancela a conexão e a resposta velha é descartada pelo token."""
+        panel = read('SniperPanel.java')
+        self.assertNotIn('if (closed || fetching) return;', panel,
+                         'busca em andamento não pode bloquear um pedido novo')
+        self.assertIn('if (closed) return;', panel)
+        # Cancelamento tolerante: um conector que falhe ao cancelar não pode derrubar a UI.
+        self.assertRegex(panel, r'try\s*\{\s*source\.cancel\(\);\s*\}\s*catch \(RuntimeException ignored\)')
+        # Ainda existe o guarda de ordem e o estado de carregamento é liberado só pelo token atual.
+        self.assertIn('if (token != generation.get() || token != loadToken) return;', panel)
 
     def test_rate_limit_blocks_the_source(self):
         panel = read('SniperPanel.java')
@@ -138,7 +155,19 @@ class SniperPanelContractTest(unittest.TestCase):
         filters = read('SpawnFilters.java')
         self.assertIn('return species.size() == 1 ? species.get(0) : -1;', filters)
         connectors = read('SpawnConnectors.java')
-        self.assertIn('client.fetchGlobal(request.species)', connectors)
+        # Mesma paginação limitada do radar: o Sniper não pode ficar preso na primeira página.
+        self.assertIn('client.fetchGlobal(request.species, IFlowGoFeedClient.GLOBAL_PAGES)', connectors)
+        self.assertNotIn('client.fetchGlobal(request.species);', connectors)
+
+    def test_sniper_pagination_reports_partial_coverage(self):
+        connectors = read('SpawnConnectors.java')
+        search = read('SpawnSearch.java')
+        # A cobertura é derivada da nota real ("páginas N de M"), nunca fixada em "completa".
+        self.assertIn('coverageFor(snapshot)', connectors)
+        self.assertIn('PARTIAL_PAGES', search)
+        self.assertIn('parcial', search)
+        # Sem total do servidor, assume primeira página em vez de afirmar cobertura total.
+        self.assertIn('return SpawnSearch.Coverage.FIRST_PAGE;', connectors)
 
     def test_hundo_source_is_fetched_not_faked(self):
         text = read('SpawnConnectors.java')

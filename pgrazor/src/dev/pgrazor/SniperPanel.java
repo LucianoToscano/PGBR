@@ -98,6 +98,7 @@ public final class SniperPanel {
         private boolean closed;
         private int loadToken;
         private Runnable loadMore;
+        private org.json.JSONObject catalog;   // nomes empacotados; lido uma vez
 
         private EditText searchField;
         private TextView status, counters, filterSummary, sourceLabel;
@@ -460,7 +461,10 @@ public final class SniperPanel {
         // -------------------------------------------------------------- search
 
         private void search(boolean manual) {
-            if (closed || fetching) return;
+            if (closed) return;
+            // Uma consulta em andamento NÃO bloqueia uma nova: o pedido do usuário substitui o
+            // anterior. A conexão antiga é cancelada abaixo e a geração nova faz a resposta velha
+            // ser descartada ao chegar (ordem garantida por token).
             long elapsed = SystemClock.elapsedRealtime();
             if (elapsed < blockedUntilElapsed && lastAttemptSource.equals(state.sourceId())) {
                 status.setText("Esta fonte recusou ou limitou a última consulta. Aguarde antes de tentar de novo.");
@@ -480,7 +484,9 @@ public final class SniperPanel {
                         + (info == null ? "fonte desconhecida." : info.detail));
                 return;
             }
-            if (source != null) source.cancel();
+            if (source != null) {
+                try { source.cancel(); } catch (RuntimeException ignored) { }
+            }
             final int token = generation.incrementAndGet();
             final SpawnSearch.Source connector = SpawnConnectors.create(state.sourceId(), rocketBaseUrl());
             if (connector == null) {
@@ -546,19 +552,70 @@ public final class SniperPanel {
          */
         private SpawnSearch.Request request() {
             SpawnFilters filters = state.filters();
-            return new SpawnSearch.Request(state.sourceId(), filters.remoteSpecies(), state.global(),
+            int species = filters.remoteSpecies();
+            // A busca digitada no painel também vira filtro remoto, igual ao radar: sem isto, digitar
+            // "Pikachu" só filtrava o que já estava carregado e a espécie nunca era pedida à fonte.
+            if (species < 0) species = PokemonFeedSearch.resolveDex(search, speciesCatalog());
+            return new SpawnSearch.Request(state.sourceId(), species, state.global(),
                     Control.currentLatitude(), Control.currentLongitude(), state.radiusKm(), false);
+        }
+
+        /**
+         * Catálogo de nomes empacotado no APK (mesmo arquivo que o radar lê). Ausente significa
+         * "não sei resolver nomes": a busca cai para o filtro local e isso é dito na tela.
+         */
+        private org.json.JSONObject speciesCatalog() {
+            org.json.JSONObject cached = catalog;
+            if (cached != null) return cached;
+            try (java.io.InputStream in = PgAssets.open(activity, "pgrazor/map-icons/pokemon-names.json")) {
+                java.io.ByteArrayOutputStream bytes = new java.io.ByteArrayOutputStream();
+                byte[] buffer = new byte[4096];
+                int count;
+                while ((count = in.read(buffer)) != -1) {
+                    if (bytes.size() + count > 2 * 1024 * 1024) return null;
+                    bytes.write(buffer, 0, count);
+                }
+                cached = new org.json.JSONObject(bytes.toString("UTF-8"));
+                catalog = cached;
+                return cached;
+            } catch (Exception unavailable) {
+                return null;
+            }
+        }
+
+        /** True when the typed query resolves to one species and is therefore sent to the source. */
+        private boolean queryIsRemote() {
+            return PokemonFeedSearch.resolveDex(search, speciesCatalog()) > 0;
         }
 
         // -------------------------------------------------------------- dialogs
 
         private void openFilters() {
             SnipeAdvancedFilterDialog.show(activity, title(), state.filters(), state.sourceId(), updated -> {
+                String previousSource = state.sourceId();
+                SpawnFilters previousFilters = state.filters();
                 state = state.withFilters(updated);
                 save();
+                // Só uma característica que muda o PEDIDO remoto justifica nova consulta. Filtro que o
+                // aparelho aplica sozinho (IV, CP, PvP, shiny, tamanho…) é reaplicado sobre o snapshot
+                // que já está em memória: sem HTTP desnecessário, sem consumir cota do fornecedor.
+                boolean requestChanged = !state.sourceId().equals(previousSource)
+                        || previousFilters.remoteSpecies() != state.filters().remoteSpecies()
+                        || previousFilters.radiusKm() != state.filters().radiusKm();
+                if (result != null && requestChanged) {
+                    search(false);   // mudou o que a fonte precisa saber: nova consulta
+                    return;
+                }
+                if (result != null && !result.receivedRows.isEmpty()) {
+                    // Filtro que o aparelho aplica sozinho: reaplica sobre o snapshot em memória,
+                    // sem HTTP e sem consumir cota do fornecedor.
+                    result = SpawnSearch.refilter(result,
+                            (spawn, at) -> state.filters().accepts(spawn, at,
+                                    Control.currentLatitude(), Control.currentLongitude()),
+                            state.order(), Control.currentLatitude(), Control.currentLongitude(),
+                            System.currentTimeMillis());
+                }
                 render();
-                // Re-run with the new filters so the counters show the new split immediately.
-                if (result != null) search(false);
             });
         }
 
@@ -805,8 +862,12 @@ public final class SniperPanel {
                                     Toast.LENGTH_SHORT).show();
                             return;
                         }
+                        // O contrato de DestinationListener exige boolean: true só quando a ação foi
+                        // realmente aplicada, false mantém o seletor aberto. O teleporte daqui é apenas
+                        // SOLICITADO (abre a confirmação), portanto nunca pode reportar sucesso.
                         WorldMapDialog.show(activity, spawn.latitude, spawn.longitude,
-                                (lat, lon) -> confirmTeleport(spawn), (lat, lon) -> { });
+                                (lat, lon) -> requestTeleportFromMap(spawn, lat, lon),
+                                (lat, lon) -> false);
                     })
                     .setPositiveButton("Teleporte", (d, w) -> {
                         if (!usable) {
@@ -824,7 +885,36 @@ public final class SniperPanel {
         }
 
         private void confirmTeleport(final SpawnContract.Spawn spawn) {
-            if (!spawn.hasLocation() || !SpawnContract.validCoordinates(spawn.latitude, spawn.longitude)) {
+            confirmTeleportAt(spawn, spawn.latitude, spawn.longitude);
+        }
+
+        /**
+         * Destination chosen on the map: the point the map returned can differ from the spawn after a
+         * drag, so it is validated on its own and then goes through the same manual confirmation.
+         *
+         * <p>Returns false on purpose: the teleport is requested, not executed, so the map must not close
+         * as if it had succeeded. The confirmation dialog is the only path to Control.teleport.
+         */
+        private boolean requestTeleportFromMap(final SpawnContract.Spawn spawn,
+                                               double latitude, double longitude) {
+            if (closed || activity.isFinishing() || activity.isDestroyed()) return false;
+            if (!SpawnContract.validCoordinates(latitude, longitude)) {
+                Toast.makeText(activity, "Coordenada do mapa inválida: teleporte bloqueado.",
+                        Toast.LENGTH_LONG).show();
+                return false;
+            }
+            if (spawn.expired(System.currentTimeMillis()) || isStale()) {
+                Toast.makeText(activity, "Aparição expirada ou dados antigos: atualize antes.",
+                        Toast.LENGTH_LONG).show();
+                return false;
+            }
+            confirmTeleportAt(spawn, latitude, longitude);
+            return false;   // solicitado, não executado
+        }
+
+        private void confirmTeleportAt(final SpawnContract.Spawn spawn,
+                                       final double targetLat, final double targetLon) {
+            if (!spawn.hasLocation() || !SpawnContract.validCoordinates(targetLat, targetLon)) {
                 Toast.makeText(activity, "Coordenadas inválidas: teleporte bloqueado.", Toast.LENGTH_LONG).show();
                 return;
             }
@@ -833,7 +923,7 @@ public final class SniperPanel {
                         Toast.LENGTH_LONG).show();
                 return;
             }
-            TeleportDialog.confirm(activity, spawn.latitude, spawn.longitude, (lat, lon) -> {
+            TeleportDialog.confirm(activity, targetLat, targetLon, (lat, lon) -> {
                 // Re-validate at the moment of the click: the dialog may have stayed open for a while.
                 if (closed || activity.isFinishing() || activity.isDestroyed()
                         || spawn.expired(System.currentTimeMillis()) || isStale()

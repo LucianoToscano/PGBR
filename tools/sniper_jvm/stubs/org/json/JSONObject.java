@@ -28,6 +28,36 @@ public class JSONObject {
     public JSONObject put(String key, boolean value) throws JSONException { return put(key, (Object) Boolean.valueOf(value)); }
 
     public boolean has(String key) { return values.containsKey(key); }
+
+    /**
+     * Valor cru da chave, como na implementação do Android.
+     *
+     * <p>Este stub é o dublê de compilação de quem não tem android.jar. Ele já divergiu da API real
+     * (faltava get(), por exemplo) e por isso gerava erro só no build de verdade. Toda adição aqui
+     * precisa existir com a mesma assinatura em android.jar.
+     */
+    public Object get(String key) throws JSONException {
+        if (!values.containsKey(key)) throw new JSONException("chave ausente: " + key);
+        return values.get(key);
+    }
+
+    /** put(String, float) do Android: guarda como Double, que é o que o JSON representa. */
+    public JSONObject put(String key, float value) throws JSONException {
+        return put(key, (Object) Double.valueOf(value));
+    }
+
+    /** putOpt ignora valor nulo, exatamente como no Android. */
+    public JSONObject putOpt(String key, Object value) throws JSONException {
+        return value == null ? this : put(key, value);
+    }
+
+    public int getInt(String key, int fallback) { return optInt(key, fallback); }
+    public long getLong(String key, long fallback) { return optLong(key, fallback); }
+
+    /** Iterator sobre os valores (API antiga do Android, ainda usada por algum código). */
+    public java.util.Iterator<String> keysInInsertionOrder() {
+        return new ArrayList<>(values.keySet()).iterator();
+    }
     public boolean isNull(String key) { return !values.containsKey(key) || values.get(key) == null; }
 
     public JSONObject getJSONObject(String key) throws JSONException {

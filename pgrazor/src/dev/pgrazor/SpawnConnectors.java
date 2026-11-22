@@ -59,12 +59,13 @@ final class SpawnConnectors {
             if (request == null) throw new LiveFeedClient.FeedException("Consulta inválida para iFlowGo.");
             LiveFeedData.Snapshot snapshot;
             if (request.global) {
-                // The endpoint itself only exposes page 1; asking for more would be a sweep.
                 if (request.raidsOnly)
                     throw new LiveFeedClient.FeedException(
                             "iFlowGo: a busca global cobre apenas aparições, não raids.");
-                snapshot = client.fetchGlobal(request.species);
-                markCoverage(SpawnSearch.Coverage.FIRST_PAGE);
+                // Same bounded pagination the radar uses (GLOBAL_PAGES), never a world sweep. A species
+                // that is not on the first page is reachable here, which is the whole point of paging.
+                snapshot = client.fetchGlobal(request.species, IFlowGoFeedClient.GLOBAL_PAGES);
+                markCoverage(coverageFor(snapshot));
             } else {
                 if (!request.hasOrigin())
                     throw new LiveFeedClient.FeedException(
@@ -74,6 +75,24 @@ final class SpawnConnectors {
                 markCoverage(SpawnSearch.Coverage.AREA);
             }
             return rows(snapshot, id(), capabilities());
+        }
+
+        /**
+         * Coverage read from the note the client itself produced, so the label cannot contradict the
+         * data. "páginas N de M" with N < M is partial; otherwise the pages read were the whole answer.
+         */
+        private static SpawnSearch.Coverage coverageFor(LiveFeedData.Snapshot snapshot) {
+            String note = snapshot == null || snapshot.note == null ? "" : snapshot.note;
+            java.util.regex.Matcher pages = java.util.regex.Pattern
+                    .compile("p(?:á|a)ginas (\\d+) de (\\d+)").matcher(note);
+            if (pages.find()) {
+                int shown = Integer.parseInt(pages.group(1));
+                int available = Integer.parseInt(pages.group(2));
+                if (available > shown) return SpawnSearch.Coverage.PARTIAL_PAGES;
+                return SpawnSearch.Coverage.FULL_RESPONSE;
+            }
+            // Sem total informado pelo servidor: nunca afirmar cobertura completa.
+            return SpawnSearch.Coverage.FIRST_PAGE;
         }
 
         @Override public void cancel() { client.cancel(); }

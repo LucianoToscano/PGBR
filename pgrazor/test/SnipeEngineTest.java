@@ -377,6 +377,44 @@ public final class SnipeEngineTest {
                 ok.message.contains("não é uma busca mundial completa")
                         && ok.message.contains("primeira página"));
 
+        // Cobertura parcial por paginação: nunca dizer "2 de 2" quando a fonte informa mais páginas.
+        SpawnSearch.Result partial = SpawnSearch.run(
+                new FixtureSource(rows, null, SpawnSearch.Coverage.PARTIAL_PAGES),
+                request(true), null, SpawnContract.Order.DISTANCE, ORIGIN_LAT, ORIGIN_LON, now);
+        check("páginas parciais marcam cobertura parcial", partial.partialCoverage());
+        check("mensagem de páginas parciais avisa que há mais resultados",
+                partial.message.contains("parcial") && partial.message.contains("mais"));
+        check("páginas parciais não afirmam cobertura completa",
+                !partial.message.contains("todos os registros enviados"));
+        // Refiltragem local: mudar IV/CP/PvP NÃO pode gerar nova requisição nem perder linhas.
+        SpawnSearch.Result initial = SpawnSearch.run(
+                new FixtureSource(rows, null, SpawnSearch.Coverage.FULL_RESPONSE),
+                request(false), null, SpawnContract.Order.DISTANCE, ORIGIN_LAT, ORIGIN_LON, now);
+        check("consulta inicial guarda as linhas recebidas", initial.receivedRows.size() == 2);
+        SpawnFilters onlyPerfect = new SpawnFilters.Builder().iv(100, 100).build();
+        SpawnSearch.Result refiltered = SpawnSearch.refilter(initial,
+                (spawn, at) -> onlyPerfect.accepts(spawn, at, ORIGIN_LAT, ORIGIN_LON),
+                SpawnContract.Order.DISTANCE, ORIGIN_LAT, ORIGIN_LON, now);
+        check("refiltro mantém o total recebido", refiltered.received == initial.received);
+        check("refiltro aplica o filtro novo", refiltered.count() == 1);
+        check("refiltro informa que não houve nova requisição",
+                refiltered.message.contains("sem nova requisição"));
+        // Refiltrar de novo (3ª vez) não pode acumular perdas: parte sempre do que a fonte mandou.
+        SpawnSearch.Result again = SpawnSearch.refilter(refiltered, null,
+                SpawnContract.Order.DISTANCE, ORIGIN_LAT, ORIGIN_LON, now);
+        check("refiltro sucessivo não perde linhas", again.received == initial.received);
+        check("remover o filtro traz as linhas de volta", again.count() == 2);
+        check("refiltro sem consulta anterior falha explicitamente",
+                SpawnSearch.refilter(null, null, SpawnContract.Order.DISTANCE,
+                        ORIGIN_LAT, ORIGIN_LON, now).state == SpawnSearch.State.INVALID_REQUEST);
+
+        SpawnSearch.Result full = SpawnSearch.run(
+                new FixtureSource(rows, null, SpawnSearch.Coverage.FULL_RESPONSE),
+                request(true), null, SpawnContract.Order.DISTANCE, ORIGIN_LAT, ORIGIN_LON, now);
+        check("cobertura completa não é marcada como parcial", !full.partialCoverage());
+        check("cobertura completa descreve todos os registros",
+                full.message.contains("todos os registros"));
+
         SpawnSearch.Result empty = SpawnSearch.run(
                 new FixtureSource(Collections.<SpawnContract.Spawn>emptyList(), null,
                         SpawnSearch.Coverage.FIRST_PAGE),

@@ -53,12 +53,35 @@ class LiveFeedJavaTests(unittest.TestCase):
                             ROOT / 'src/dev/pgrazor/SpawnProfiles.java',
                             ROOT / 'src/dev/pgrazor/SpawnSourceRegistry.java',
                             ROOT / 'src/dev/pgrazor/SpeciesGroups.java',
+                            # LiveFeedClient depende de LiveFeedSession (Keystore/GCM). O arquivo REAL é
+                            # compilado: ele só usa APIs do android.jar, então compila sem Android e não
+                            # há dublê de segurança. Antes ele faltava e o CI quebrava com
+                            # LiveFeedSession cannot be resolved (falha A).
+                            ROOT / 'src/dev/pgrazor/LiveFeedSession.java',
                             ROOT / 'src/dev/pgrazor/LiveFeedClient.java',
                             ROOT / 'src/dev/pgrazor/PokemonFeedSearch.java',
                             ROOT / 'test/PokemonFeedSearchTest.java',
                             ROOT / 'test/SnipeEngineTest.java'])
             if (ROOT / 'test/LiveFeedFiltersTest.java').exists(): sources.append(ROOT / 'test/LiveFeedFiltersTest.java')
-            result = subprocess.run([str(compiler), '-encoding', 'UTF-8', '-d', str(work), *map(str, sources)], capture_output=True, text=True, timeout=30)
+            # android.jar (SDK) fornece Context/SharedPreferences/Keystore/Base64 usados por
+            # LiveFeedSession. Sem ele, compilar a sessão real é impossível — e dublê de segurança
+            # não é opção. Ausente => teste inconclusivo, nunca verde.
+            android_jar = None
+            for platform in ('android-36', 'android-36.1', 'android-35', 'android-34'):
+                candidate = sdk / 'platforms' / platform / 'android.jar'
+                if candidate.is_file():
+                    android_jar = candidate
+                    break
+            compile_args = [str(compiler), '-encoding', 'UTF-8']
+            if android_jar is not None:
+                compile_args += ['-classpath', str(android_jar)]
+            compile_args += ['-d', str(work), *map(str, sources)]
+            if android_jar is None:
+                self.assertTrue(any(p.name == 'LiveFeedSession.java' for p in sources),
+                                'a sessão real precisa estar na lista de fontes')
+                self.skipTest('android.jar não encontrado: a sessão real (Keystore) não pode ser '
+                              'compilada aqui. Instale o SDK para rodar este teste de verdade.')
+            result = subprocess.run(compile_args, capture_output=True, text=True, timeout=60)
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
             for main in ['LiveFeedDataTest','SettingsBackupRulesTest','PogoFeedDataTest','PogoFeedFiltersTest'] + (['LiveFeedFiltersTest'] if (ROOT / 'test/LiveFeedFiltersTest.java').exists() else []):
                 result = subprocess.run([str(runtime), '-cp', str(work), main], capture_output=True, text=True, timeout=30)

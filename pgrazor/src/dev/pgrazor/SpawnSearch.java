@@ -32,6 +32,8 @@ public final class SpawnSearch {
         FULL_RESPONSE,
         /** Only the first page of a paged endpoint was read. */
         FIRST_PAGE,
+        /** Several consecutive pages were read, but the provider reported more results beyond them. */
+        PARTIAL_PAGES,
         /** One area around a point (radius query). */
         AREA,
         /** Nothing was consulted (error, cancel, empty request). */
@@ -127,10 +129,24 @@ public final class SpawnSearch {
         /** When the provider answer was produced; 0 for results that never reached a source. */
         public final long fetchedAt;
         public final String message;
+        /**
+         * Rows the source delivered, after de-duplication and before filters. Never empty when
+         * {@link #received} &gt; 0, and reused by {@link #refilter} so local filter changes do not
+         * depend on a mutable copy held by the UI.
+         */
+        public final List<SpawnContract.Spawn> receivedRows;
 
         Result(State state, Coverage coverage, String sourceId, int received, int droppedByFilter,
                int duplicates, int expired, List<SpawnContract.Spawn> visible, long retryAfterMs,
                long fetchedAt, String message) {
+            this(state, coverage, sourceId, received, droppedByFilter, duplicates, expired, visible,
+                    retryAfterMs, fetchedAt, message, visible);
+        }
+
+        /** Full constructor, including the unfiltered rows a later {@link #refilter} needs. */
+        Result(State state, Coverage coverage, String sourceId, int received, int droppedByFilter,
+               int duplicates, int expired, List<SpawnContract.Spawn> visible, long retryAfterMs,
+               long fetchedAt, String message, List<SpawnContract.Spawn> receivedRows) {
             this.state = state;
             this.coverage = coverage;
             this.sourceId = sourceId == null ? "" : sourceId;
@@ -142,6 +158,8 @@ public final class SpawnSearch {
             this.retryAfterMs = retryAfterMs;
             this.fetchedAt = fetchedAt;
             this.message = message == null ? "" : message;
+            this.receivedRows = Collections.unmodifiableList(new ArrayList<>(
+                    receivedRows == null ? visible : receivedRows));
         }
 
         public boolean hasResults() {
@@ -150,7 +168,8 @@ public final class SpawnSearch {
 
         /** True when the provider was asked for less than the whole source. */
         public boolean partialCoverage() {
-            return coverage == Coverage.FIRST_PAGE || coverage == Coverage.AREA;
+            return coverage == Coverage.FIRST_PAGE || coverage == Coverage.AREA
+                    || coverage == Coverage.PARTIAL_PAGES;
         }
 
         /** Number of result rows shown, i.e. after every filter. */
@@ -168,6 +187,47 @@ public final class SpawnSearch {
      * Runs the whole chain and never throws: every failure is classified into a {@link State} so the
      * UI can distinguish access denial, rate limiting, empty source and "all filtered locally".
      */
+    /**
+     * Re-applies filters, expiry and ordering to a list already received, WITHOUT touching the network.
+     *
+     * <p>This is what a local-only filter change must use: the snapshot is still valid, so calling the
+     * provider again would burn quota and could even return less than the first answer. Coverage and the
+     * received/duplicate counters are carried over from the original result, so the UI never claims a new
+     * consultation happened.
+     */
+    public static Result refilter(Result previous, Filter filter, SpawnContract.Order order,
+                                  double originLat, double originLon, long now) {
+        if (previous == null)
+            return empty(State.INVALID_REQUEST, Coverage.NONE, "", 0L,
+                    "Nenhuma consulta anterior para refiltrar.");
+        // Sempre a partir das linhas recebidas guardadas no resultado: refiltrar de novo (ou três
+        // vezes) não acumula perdas como aconteceria sobre a lista já filtrada.
+        List<SpawnContract.Spawn> rows = previous.receivedRows;
+        int received = previous.received;
+        List<SpawnContract.Spawn> unique = SpawnContract.dedupe(rows);
+        int duplicates = previous.duplicates;
+        List<SpawnContract.Spawn> alive = SpawnContract.alive(unique, now);
+        int expired = unique.size() - alive.size();
+        List<SpawnContract.Spawn> visible = new ArrayList<>();
+        boolean blocked = false;
+        for (SpawnContract.Spawn row : alive) {
+            if (row.coordinatesStatus == SpawnContract.Coordinates.BLOCKED) blocked = true;
+            if (filter == null || filter.accepts(row, now)) visible.add(row);
+        }
+        int dropped = alive.size() - visible.size();
+        visible = new ArrayList<>(SpawnContract.sort(visible, order, originLat, originLon, now));
+        State state;
+        if (!visible.isEmpty()) state = State.OK;
+        else if (received == 0) state = State.SOURCE_EMPTY;
+        else if (dropped > 0 || expired > 0) state = State.ALL_FILTERED_OUT;
+        else if (blocked) state = State.COORDINATES_BLOCKED;
+        else state = State.SOURCE_EMPTY;
+        String message = describe(state, received, dropped, previous.coverage)
+                + " Filtros reaplicados sobre a consulta já recebida (sem nova requisição).";
+        return new Result(state, previous.coverage, previous.sourceId, received, dropped, duplicates,
+                expired, visible, previous.retryAfterMs, previous.fetchedAt, message, unique);
+    }
+
     public static Result run(Source source, Request request, Filter filter,
                              SpawnContract.Order order, double originLat, double originLon, long now) {
         if (source == null || request == null)
@@ -214,7 +274,7 @@ public final class SpawnSearch {
             state = State.SOURCE_EMPTY;
         }
         return new Result(state, coverage, sourceId, received, dropped, duplicates, expired, visible,
-                0L, now, describe(state, received, dropped, coverage));
+                0L, now, describe(state, received, dropped, coverage), unique);
     }
 
     /** Maps a connector failure to a user-visible state without leaking raw provider content. */
@@ -304,6 +364,9 @@ public final class SpawnSearch {
         switch (coverage) {
             case FIRST_PAGE:
                 return "cobertura: apenas a primeira página da fonte (não é uma busca mundial completa)";
+            case PARTIAL_PAGES:
+                return "cobertura: parcial — várias páginas consultadas, mas a fonte informa mais "
+                        + "resultados além delas";
             case AREA:
                 return "cobertura: área consultada ao redor do ponto escolhido";
             case FULL_RESPONSE:
