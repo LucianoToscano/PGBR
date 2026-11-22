@@ -1208,8 +1208,15 @@ void install(){
   else gui_open_original.store(o,std::memory_order_release);
  }catch(...){status("warning","Screen trace unavailable");}
 
- require(count>0,"no cutscene could be hooked");
- status("ready",std::to_string(count)+" of "+std::to_string(int(K_COUNT))+" cutscene types"+(missing.empty()?std::string():"; not skipped: "+missing));
+ // Keep the validated PvP GuiController.Open observer even when no optional
+ // cutscene replacement hook is compatible with this game build.
+ const bool pvp_trace_installed=gui_open_original.load(std::memory_order_acquire)!=nullptr;
+ if(count==0){
+  require(pvp_trace_installed,"no cutscene or PvP screen observer could be hooked");
+  status("warning","PvP screen trace installed; cutscene skip hooks unavailable");
+ }else{
+  status("ready",std::to_string(count)+" of "+std::to_string(int(K_COUNT))+" cutscene types"+(missing.empty()?std::string():"; not skipped: "+missing));
+ }
 }
 
 }  // namespace
@@ -1240,9 +1247,17 @@ void pgr_cutscene_skip_tick(uint64_t tid,const PgrSharedMetadataOutput *){
      tr->get_int&&tr->get_int(6,&mask)==0)pvp_requested=(mask&7)!=0;
  }
  if((!on&&!policy.inventory&&!pvp_requested)||tried||faulted.load(std::memory_order_acquire))return;
- tried=true;
  try{
-  if(!ready){auto api=static_cast<const PgrBootApi*>(pgrazor_runtime_bootstrap_api(1));boot.version=1;boot.size=sizeof(boot);require(api&&api->snapshot(&boot)==0,"Runtime unavailable");ready=true;}
+  if(!ready){
+   auto api=static_cast<const PgrBootApi*>(pgrazor_runtime_bootstrap_api(1));
+   boot.version=1;boot.size=sizeof(boot);
+   // Bootstrap can be late: retry on the next proven Unity owner-thread tick.
+   // Do not permanently latch tried/faulted on a transient unready runtime.
+   if(!api||api->snapshot(&boot)!=0)return;
+   ready=true;
+  }
+  // Installation is single-shot: a partially installed hook must not replay.
+  tried=true;
   install();
  }catch(const Failure &f){faulted.store(true,std::memory_order_release);status("error",std::string("Skip cutscenes unavailable: ")+f.where);}
  catch(...){faulted.store(true,std::memory_order_release);status("error","Skip cutscenes unavailable: native failure");}
