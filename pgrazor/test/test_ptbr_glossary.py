@@ -34,6 +34,12 @@ class PtBrGlossaryTests(unittest.TestCase):
             "Galarian bird found — walking and VGP stopped",
             "No log file to save",
             "Stop Auto-Raid first.",
+            "Not running",
+            "Any tier",
+            "Weather filters",
+            "All Pokemon",
+            "Gym (Blue)",
+            "Your account doesn't have access to this feature.",
         ):
             with self.subTest(key=key):
                 self.assertIn(key, entries)
