@@ -19,7 +19,7 @@ public final class PtBr {
         m.put("Feeds", "Fontes de dados");
         m.put("Favorites", "Favoritos");
         m.put("Hotspots", "Pontos de interesse");
-        m.put("Teleport", "Teletransportar");
+        m.put("Teleport", "Teleporte");
         m.put("Switch account", "Trocar conta");
         m.put("Events", "Eventos");
         m.put("Automation", "Automação");
@@ -515,7 +515,7 @@ public final class PtBr {
         m.put("Auto-transfer items: ", "Transferência automática de itens: ");
         m.put("Faster catch summary", "Resumo de captura mais rápido");
         m.put("Game map tap: ", "Toque no mapa do jogo: ");
-        m.put("Walk / double tap teleport", "Caminhar / toque duplo para teletransportar");
+        m.put("Walk / double tap teleport", "Caminhar / toque duplo: Teleporte");
         m.put("Throw rating: ", "Precisão do arremesso: ");
         m.put("Nice", "Bom");
         m.put("Great", "Ótimo");
@@ -553,7 +553,7 @@ public final class PtBr {
         m.put("No nearby locations are loaded yet. Move around in-game, then try again.", "Nenhum local próximo foi carregado. Mova-se no jogo e tente novamente.");
         m.put("Walk from the closest point\nStop ", "Caminhar do ponto mais próximo\nParada ");
         m.put("Walk from the beginning\n", "Caminhar desde o início\n");
-        m.put("Teleport to the beginning\nThen walk the whole route", "Teletransportar para o início\nDepois percorrer toda a rota");
+        m.put("Teleport to the beginning\nThen walk the whole route", "Teleporte para o início\nDepois percorrer toda a rota");
         m.put("Start “", "Iniciar “");
         m.put("Walking “", "Caminhando por “");
         m.put("User stopped the active route from Auto-walk", "O usuário interrompeu a rota ativa na caminhada automática");
@@ -583,7 +583,7 @@ public final class PtBr {
         m.put("Build route", "Criar rota");
         m.put("Start route", "Iniciar rota");
         m.put("Start route in numbered stop order", "Iniciar rota na ordem numérica das paradas");
-        m.put("Teleport to selected destination", "Teletransportar para o destino selecionado");
+        m.put("Teleport to selected destination", "Teleporte para o destino selecionado");
         m.put("Select valid coordinates for this stop.", "Selecione coordenadas válidas para esta parada.");
         m.put("Route stops (", "Paradas da rota (");
         m.put("Select a destination on the map and tap Add stop. Add at least two stops before starting.", "Selecione um destino no mapa e toque em Adicionar parada. Adicione pelo menos duas paradas antes de iniciar.");
@@ -610,7 +610,7 @@ public final class PtBr {
         m.put("Find a place", "Encontrar um local");
         m.put("Place search is unavailable right now.", "A busca por locais não está disponível no momento.");
         m.put("Type a place or coordinates and tap Search.", "Digite um local ou coordenadas e toque em Buscar.");
-        m.put("Select to place the destination pin here, then choose Teleport or Walk here.", "Selecione para colocar o pino de destino aqui e escolha Teletransportar ou Caminhar até aqui.");
+        m.put("Select to place the destination pin here, then choose Teleport or Walk here.", "Selecione para colocar o pino de destino aqui e escolha Teleporte ou Caminhar até aqui.");
         m.put("Enter at least two characters to search.", "Digite pelo menos dois caracteres para buscar.");
         m.put("Searching…", "Buscando…");
         m.put("Search is unavailable or busy. Wait a moment, check your connection, and try again.", "A busca está indisponível ou ocupada. Verifique a conexão e tente novamente.");
@@ -877,7 +877,7 @@ public final class PtBr {
         m.put("Reserve", "Reserva");
         m.put("Local time at spoofed location: ", "Hora no local simulado: ");
         m.put(". Drag to move.", ". Arraste para mover.");
-        m.put("Teleport cooldown", "Tempo de espera do teletransporte");
+        m.put("Teleport cooldown", "Tempo de espera do teleporte");
         m.put("Invalid teleport coordinates", "Coordenadas inválidas para teletransporte");
         m.put("Open even when item bag is full", "Abrir mesmo com a bolsa cheia");
         m.put("Uses the game's full-bag reward setting. Full-bag opening may award fewer rewards.", "Usa a configuração do jogo para recompensas com a bolsa cheia. Abrir assim pode conceder menos recompensas.");
@@ -892,7 +892,7 @@ public final class PtBr {
         m.put("Select the raid tiers to join. Select none to join any tier.", "Selecione os níveis das Reides. Não selecione nenhum para participar de todos.");
         m.put("Raid tiers", "Níveis das Reides");
         m.put("Travel to raids", "Deslocar-se até Reides");
-        m.put("Teleport\nJump straight to the raid", "Teletransportar\nIr diretamente até a Reide");
+        m.put("Teleport\nJump straight to the raid", "Teleporte\nIr diretamente até a Reide");
         m.put("Walk\nMove there at walking speed", "Caminhar\nIr até lá na velocidade de caminhada");
         m.put("Stay within", "Permanecer dentro de");
         m.put("No limit\nJoin the nearest raid wherever it is", "Sem limite\nEntrar na Reide mais próxima, independentemente da distância");
@@ -1301,7 +1301,7 @@ public final class PtBr {
         m.put("Incubator ready", "Incubadora pronta");
         m.put("Search places or coordinates", "Buscar lugares ou coordenadas");
         m.put("List", "Lista");
-        m.put("Select shows this destination on the map. Choose Teleport or Walk here there to apply it.", "Selecionar mostra este destino no mapa. Depois, escolha Teletransportar ou Caminhar até lá.");
+        m.put("Select shows this destination on the map. Choose Teleport or Walk here there to apply it.", "Selecionar mostra este destino no mapa. Depois, escolha Teleporte ou Caminhar até lá.");
         m.put("recyclable item types", "tipos de itens recicláveis");
         m.put("Choose a tag to preview eligible Pokemon. Each is evolved once, without the animation. Favorites, your buddy, deployed Pokemon, eggs, Shadow and purified Pokemon, and evolutions needing a branch choice or special condition are skipped. Candy and items are checked before each evolution. Start your Lucky Egg yourself if wanted.", "Escolha uma etiqueta para visualizar os Pokémon que podem evoluir. Cada um será evoluído uma vez, sem animação. Favoritos, companheiro, Pokémon em Ginásios, ovos, Sombrios, Purificados e evoluções que exijam escolha de forma ou condições especiais são ignorados. Doces e itens são verificados antes de cada evolução. Ative o Ovo da Sorte manualmente, se desejar.");
         m.put("Acts only within 80 m of a Gym while the game is on the map screen. It slots eligible #Gym-tagged Pokémon first; the lowest-CP fallback is used only when enabled and no eligible #Gym defender is available, and it never picks favorite, buddy, or protected Pokémon. Feeding uses Nanab before Razz and only above the reserves you set. It obeys the game's own server limits, so some actions may be declined. No dust or coin payout is promised.", "Funciona somente a até 80 m de um Ginásio enquanto o jogo está na tela do mapa. Dá prioridade aos Pokémon elegíveis com a etiqueta #Gym; usa o Pokémon de menor PC apenas quando essa alternativa estiver ativada e não houver defensor elegível com a etiqueta. Nunca escolhe favoritos, companheiro ou Pokémon protegidos. A alimentação prioriza Caxí antes de Frambo e respeita as reservas configuradas. Os limites do servidor continuam valendo, portanto algumas ações podem ser recusadas. Não há garantia de Poeira Estelar nem Pokémoedas.");
