@@ -580,9 +580,10 @@ void sync_minigame_policy(uint64_t now) {
         }
     }
 
-    // Rocket-specific minigame must never run inside PvP/training.
-    const bool mini_allowed = active_ok && !g_pvp_ui_root && !combat_failed &&
-                              scope_active && ((rocket_mask & 2u) != 0) && (rem_ms > 0);
+    // ParticleTapInputChallenge is shared across typed Rocket/PvP/training.
+    // Only live combat scope + user's charged preference + lease may run it.
+    const bool mini_allowed = active_ok && !combat_failed && scope_active &&
+                              ((rocket_mask & 2u) != 0) && (rem_ms > 0);
     g_rocket_mini->update(mini_allowed ? 1 : 0,
                           mini_allowed ? static_cast<int64_t>(rem_ms) : 0);
     g_mini_active.store(mini_allowed ? 1u : 0u, std::memory_order_release);
@@ -1545,7 +1546,7 @@ void refresh_leaf_gates(){
  }
  if((caps&PGR_CBH_CAP_BATTLES)&&g_battles)g_battles->update(g_opts.battle_mask,battle,rocket_active?1:0,owner);
  if((caps&PGR_CBH_CAP_ROCKET_MINIGAME)&&g_rocket_mini){
-  const bool on=active&&rocket&&!g_pvp_ui_root&&!rocket_failed&&rocket_active&&(auto_mask&2u);
+  const bool on=active&&rocket&&!rocket_failed&&rocket_active&&(auto_mask&2u);
   g_rocket_mini->update(on?1:0,on?int64_t(rocket):0);g_mini_active.store(on?1:0);
  }
 }

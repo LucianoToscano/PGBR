@@ -28,6 +28,7 @@ class Lt037ReleaseContract(unittest.TestCase):
         probe=(ROOT/"pgrazor/native/pvp_probe.inc").read_text(encoding="utf-8")
         self.assertIn("PgrSharedAutoBattleGate::effective",host)
         self.assertIn("auto_mask?rocket:0",host)
+        self.assertIn("const bool on=active&&rocket&&!rocket_failed&&rocket_active&&(auto_mask&2u)",host)
         self.assertIn("!g_pvp_ui_root",host)
         self.assertIn("g_pvp_scene.positive_pvp(now_ms())",probe)
         self.assertIn("CombatDirectorV2.IsPvPCombat",probe)
