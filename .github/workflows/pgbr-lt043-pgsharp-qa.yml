@@ -2,14 +2,7 @@ name: PGBR LT043 PGSharp - compilar APKs QA sem publicar
 # LT043 candidate on isolated branch. No release publication from this QA workflow.
 # Existing tags/assets are immutable. The user-supplied PGSharp JSON is NOT bundled.
 on:
-  pull_request:
-    branches: [main]
-    paths:
-      - '.github/workflows/pgbr-lt043-pgsharp-qa.yml'
-      - 'pgrazor/VERSION'
-      - 'pgrazor/src/**'
-      - 'pgrazor/test/**'
-      - 'PGBR_ARQUIVO_MESTRE_UNICO.md'
+  # Versão histórica LT043 publicada; execução apenas manual.
   workflow_dispatch:
 permissions:
   contents: read
