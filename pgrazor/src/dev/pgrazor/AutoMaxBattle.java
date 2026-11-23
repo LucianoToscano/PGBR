@@ -19,7 +19,16 @@ public final class AutoMaxBattle {
 
     public static boolean running(){return sessionOptions!=0;}
     /** Os controles permanentes de batalha nunca sao alterados por esta sessao. */
-    public static int optionMask(){return sessionOptions;}
+    /**
+     * Fail closed: the current host exposes battle readiness but does not
+     * attest the active battle kind. Do not inject Max bits into the global
+     * battle options until a trustworthy, scene-scoped Max signal exists.
+     * The selected mask remains session-only for UI/diagnostics.
+     */
+    public static int optionMask(){return 0;}
+    public static int selectedMask(){return sessionOptions;}
+    public static boolean actionsBlocked(){return running();}
+
     public static String status(){return message;}
 
     public static synchronized void start(int requestedOptions){
@@ -36,7 +45,7 @@ public final class AutoMaxBattle {
         if(Control.engine.walking||Control.gameRoutesRunning()||Control.automationPlanning())
             throw new IllegalStateException("Pare a caminhada ou rota antes de iniciar a Batalha Max.");
         sessionOptions=selected;
-        message="Ativada: entre manualmente em uma Batalha Max.";
+        message="Sessão preparada, mas ataques automáticos Max bloqueados: contexto Max não verificado.";
         Control.event("max-battle-session","Iniciada, entrada/captura manuais");
     }
 
