@@ -12,10 +12,10 @@ import org.json.*;
 
 /** User-selected, bounded backups. Never enumerates account or game storage. */
 final class SettingsBackup {
-    private static final int EXPORT=71, IMPORT=72, LIMIT=512*1024;
+    private static final int EXPORT=71, IMPORT=72, PGSHARP=73, LIMIT=512*1024;
     private final Activity activity;
     private TextView status;
-    private Button export,restore,back;
+    private Button export,restore,back,pgsharpImport,pgsharpView;
     private boolean busy;
     private android.app.AlertDialog dialog;
     SettingsBackup(Activity activity){this.activity=activity;}
@@ -26,9 +26,16 @@ final class SettingsBackup {
         TextView detail=new TextView(activity);detail.setText(dev.pgrazor.PtBr.tr("Save a backup outside the app to keep settings through reinstalls. Includes favorites and their coordinates. Login tokens, current location, cooldown history and active routes are excluded.\n\nImport replaces the included settings and favorites. VGP stays off."));detail.setPadding(0,p,0,p);root.addView(detail);
         export=new Button(activity);export.setText(dev.pgrazor.PtBr.tr("Export settings"));root.addView(export);
         restore=new Button(activity);restore.setText(dev.pgrazor.PtBr.tr("Import settings"));root.addView(restore);
+        pgsharpImport=new Button(activity);pgsharpImport.setText("Importar dados PGSharp (JSON convertido)");root.addView(pgsharpImport);
+        pgsharpView=new Button(activity);pgsharpView.setText("Ver dados PGSharp importados");root.addView(pgsharpView);
         status=new TextView(activity);status.setPadding(0,p,0,p);root.addView(status);
         back=new Button(activity);back.setText(dev.pgrazor.PtBr.tr("Back to game"));back.setOnClickListener(v->{if(dialog!=null)dialog.dismiss();else activity.finish();});root.addView(back);
         export.setOnClickListener(v->pick(EXPORT));restore.setOnClickListener(v->pick(IMPORT));
+        pgsharpImport.setOnClickListener(v->pick(PGSHARP));
+        pgsharpView.setOnClickListener(v->new android.app.AlertDialog.Builder(MapTheme.wrap(activity))
+            .setTitle("Dados PGSharp neste perfil")
+            .setMessage(PgSharpDataImport.storedSummary(activity))
+            .setPositiveButton("OK",null).show());
         ScrollView scroll=new ScrollView(activity);scroll.addView(root);MapTheme.style(scroll);
         if(PgAssets.rooted()){
             detail.append("\n\nA versão Root usa um arquivo fixo na pasta de arquivos externos do jogo. Copie-o para outro local antes de desinstalar. Para importar, coloque o backup neste caminho:\n"+rootedFile());
@@ -38,7 +45,7 @@ final class SettingsBackup {
     }
     private File rootedFile(){File dir=activity.getExternalFilesDir(null);return dir==null?null:new File(dir,"PGBR-settings.json");}
     private void pick(int code){
-        if(PgAssets.rooted()){
+        if(PgAssets.rooted() && code!=PGSHARP){
             File file=rootedFile();
             if(file==null){status.setText(dev.pgrazor.PtBr.tr("External storage is unavailable."));return;}
             new android.app.AlertDialog.Builder(MapTheme.wrap(activity))
@@ -51,9 +58,9 @@ final class SettingsBackup {
         try{activity.startActivityForResult(i,code);}catch(android.content.ActivityNotFoundException e){status.setText(dev.pgrazor.PtBr.tr("No file picker is available."));}
     }
     void result(int request,int result,Intent data){
-        if((request!=EXPORT&&request!=IMPORT)||result!=Activity.RESULT_OK||data==null||data.getData()==null)return;
+        if((request!=EXPORT&&request!=IMPORT&&request!=PGSHARP)||result!=Activity.RESULT_OK||data==null||data.getData()==null)return;
         if(busy)return;busy=true;
-        Uri uri=data.getData();export.setEnabled(false);restore.setEnabled(false);back.setEnabled(false);status.setText(dev.pgrazor.PtBr.tr(request==EXPORT?"Saving backup...":"Restoring backup..."));
+        Uri uri=data.getData();export.setEnabled(false);restore.setEnabled(false);pgsharpImport.setEnabled(false);pgsharpView.setEnabled(false);back.setEnabled(false);status.setText(request==PGSHARP?"Importando dados PGSharp...":dev.pgrazor.PtBr.tr(request==EXPORT?"Saving backup...":"Restoring backup..."));
         new Thread(()->{
             String message;
             try{
@@ -70,14 +77,19 @@ final class SettingsBackup {
                         while((n=in.read(buf))!=-1){if(out.size()+n>LIMIT)throw new IOException("Backup is too large");out.write(buf,0,n);}
                         document=new JSONObject(new String(out.toByteArray(),StandardCharsets.UTF_8));
                     }
-                    SettingsBackupStore.restore(activity,document);message="Settings restored. Return to the game to use them. VGP is off.";
+                    if(request==IMPORT){
+                        SettingsBackupStore.restore(activity,document);message="Settings restored. Return to the game to use them. VGP is off.";
+                    } else {
+                        PgSharpDataImport.Report report=PgSharpDataImport.importData(activity,document);
+                        message=report.summary();
+                    }
                 }
             }catch(Exception e){
                 message=SettingsBackupStore.rollbackFailed(e)
                     ?"Backup failed and rollback was incomplete. Check your settings and storage before retrying."
                     :"Backup failed: "+(e.getMessage()==null?"Invalid file or storage unavailable":e.getMessage());
             }
-            final String text=message;activity.runOnUiThread(()->{busy=false;if(activity.isFinishing()||activity.isDestroyed())return;status.setText(dev.pgrazor.PtBr.tr(text));export.setEnabled(true);restore.setEnabled(true);back.setEnabled(true);});
+            final String text=message;activity.runOnUiThread(()->{busy=false;if(activity.isFinishing()||activity.isDestroyed())return;status.setText(dev.pgrazor.PtBr.tr(text));export.setEnabled(true);restore.setEnabled(true);pgsharpImport.setEnabled(true);pgsharpView.setEnabled(true);back.setEnabled(true);});
         },"pgrazor-settings-backup").start();
     }
     boolean isBusy(){return busy;}
