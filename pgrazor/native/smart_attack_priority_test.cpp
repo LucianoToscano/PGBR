@@ -113,8 +113,115 @@ int main() {
   assert(choose_display(true,1020,pair,2)==-1); // duplicate button identity
   pair[1].sample.slot=Slot::FIRST;
   pair[0].sample.tier=Tier::UNKNOWN;
-  assert(choose_display(true,1020,pair,2)==-1);
+  assert(choose_display(true,1020,pair,2)==1); // other has verified SUPER
   pair[0].sample.tier=Tier::RESISTED;
   assert(choose_display(true,900,pair,2)==-1); // clock inversion
+  // Diagnostic reason must explain why the original first-ready choice won.
+  DisplayCandidate diag[2] = {
+      {{Slot::FIRST,Tier::NEUTRAL,14},1000,true},
+      {{Slot::SECOND,Tier::SUPER,14},1000,true}
+  };
+  assert(inspect_display(true,1020,diag,2).reason==DisplayReason::EFFECTIVENESS);
+  assert(inspect_display(true,1020,diag,2).index==1);
+  assert(inspect_display(false,1020,diag,2).reason==DisplayReason::OFF);
+  assert(inspect_display(true,1020,diag,1).reason==DisplayReason::UNAVAILABLE_PAIR);
+  diag[1].ready=false;
+  assert(inspect_display(true,1020,diag,2).reason==DisplayReason::ONLY_ONE_READY);
+  diag[1].ready=true;diag[1].sample.tier=Tier::UNKNOWN;
+  assert(inspect_display(true,1020,diag,2).reason==DisplayReason::UNKNOWN_EFFECT);
+  diag[1].sample.tier=Tier::SUPER;diag[1].observed_ms=100;
+  assert(inspect_display(true,1020,diag,2).reason==DisplayReason::STALE_EFFECT);
+  diag[1].observed_ms=1000;diag[1].sample.batch_token=15;
+  assert(inspect_display(true,1020,diag,2).reason==DisplayReason::UNVERIFIED_SLOTS);
+  // Rocket alone decides whether to keep charging a stronger, not-yet-ready
+  // move; shared PvP/NPC scopes must never have their own move selector.
+  DisplayCandidate energy[2] = {
+      {{Slot::FIRST,Tier::RESISTED,99},2000,true},
+      {{Slot::SECOND,Tier::SUPER,99},2001,false}
+  };
+  assert(better_unready(true,2030,energy,2));
+  assert(!better_unready(false,2030,energy,2));
+  energy[1].sample.tier=Tier::NEUTRAL;
+  assert(better_unready(true,2030,energy,2));
+  energy[0].sample.tier=Tier::SUPER;
+  assert(!better_unready(true,2030,energy,2));
+  energy[0].sample.tier=Tier::NEUTRAL;
+  assert(!better_unready(true,2030,energy,2)); // tied move: first-ready immediate
+  energy[1].sample.tier=Tier::SUPER;
+  energy[0].sample.tier=Tier::RESISTED;
+  energy[1].ready=true;
+  assert(!better_unready(true,2030,energy,2)); // both charged -> direct best tap
+  energy[0].ready=false;
+  assert(!better_unready(true,2030,energy,2)); // only better move ready -> no wait
+  energy[0].ready=true;
+  energy[1].ready=false;
+  energy[1].observed_ms=1000;
+  assert(!better_unready(true,2030,energy,2)); // stale => original immediate
+  energy[1].observed_ms=2001;
+  energy[1].sample.batch_token=100;
+  assert(!better_unready(true,2030,energy,2)); // opponent display mismatch
+  energy[1].sample.batch_token=99;
+  energy[1].sample.slot=Slot::FIRST;
+  assert(!better_unready(true,2030,energy,2)); // unverified mapping
+  // Reproduction: the first charged button has no displayed effectiveness
+  // subtitle, while Charge2 shows SuperEffective. Never manufacture Normal.
+  DisplayCandidate hidden[2] = {
+      {{Slot::FIRST,Tier::UNKNOWN,55},4000,true},
+      {{Slot::SECOND,Tier::SUPER,55},4001,true}
+  };
+  assert(inspect_display(true,4020,hidden,2).reason==DisplayReason::KNOWN_SUPER);
+  assert(choose_display(true,4020,hidden,2)==1);
+  hidden[1].ready=false;
+  assert(better_unready(true,4020,hidden,2)); // keep doing quick until Charge2
+  hidden[1].ready=true;hidden[0].ready=false;
+  assert(!better_unready(true,4020,hidden,2));
+  hidden[0].ready=true;hidden[0].sample.batch_token=56;
+  assert(choose_display(true,4020,hidden,2)==-1); // mismatch never preferred
+  hidden[0].sample.batch_token=55;
+  hidden[0].observed_ms=3700;
+  assert(choose_display(true,4020,hidden,2)==-1); // stale never preferred
+  hidden[0].observed_ms=4000;
+  hidden[1].sample.tier=Tier::UNKNOWN;
+  assert(choose_display(true,4020,hidden,2)==-1); // no verified SUPER
+  hidden[0].sample.tier=Tier::NEUTRAL;
+  assert(choose_display(true,4020,hidden,2)==-1); // Normal vs hidden != ranked
+  // Final authorization is distinct from candidate ordering. The old
+  // behavior used the first-ready button when labels aged past 200 ms,
+  // when just one charged attack was ready or when metadata was incomplete.
+  DisplayCandidate guarded[2] = {
+      {{Slot::FIRST,Tier::NEUTRAL,77},5000,true},
+      {{Slot::SECOND,Tier::SUPER,77},5000,true}
+  };
+  auto allowed=admit_display(true,5050,guarded,2);
+  assert(!allowed.hold&&allowed.index==1);
+  guarded[1].ready=false;
+  allowed=admit_display(true,5050,guarded,2);
+  assert(allowed.hold&&allowed.index==-1); // deny loaded inferior, continue fast
+  guarded[1].ready=true;
+  allowed=admit_display(true,5300,guarded,2);
+  assert(allowed.hold&&allowed.index==-1&&allowed.reason==DisplayReason::STALE_EFFECT);
+  guarded[1].observed_ms=5300;guarded[0].observed_ms=5300;
+  guarded[1].sample.batch_token=78;
+  allowed=admit_display(true,5320,guarded,2);
+  assert(allowed.hold&&allowed.reason==DisplayReason::UNVERIFIED_SLOTS);
+  guarded[1].sample.batch_token=77;
+  guarded[0].sample.tier=Tier::UNKNOWN;
+  allowed=admit_display(true,5320,guarded,2);
+  assert(!allowed.hold&&allowed.index==1&&allowed.reason==DisplayReason::KNOWN_SUPER);
+  guarded[1].ready=false;
+  allowed=admit_display(true,5320,guarded,2);
+  assert(allowed.hold&&allowed.index==-1);
+  guarded[1].ready=true;
+  guarded[1].sample.tier=Tier::UNKNOWN;
+  assert(admit_display(true,5320,guarded,2).hold); // no fabricated neutral
+  guarded[0].sample.tier=Tier::NEUTRAL;
+  assert(admit_display(true,5320,guarded,2).hold); // Normal vs unknown not ranked
+  guarded[1].sample.tier=Tier::NEUTRAL;
+  guarded[0].ready=false;
+  allowed=admit_display(true,5320,guarded,2);
+  assert(!allowed.hold&&allowed.index==1); // equal tier: use ready one
+  guarded[0].ready=true;
+  assert(!admit_display(false,5320,guarded,2).hold); // OFF: original order
+  assert(admit_display(true,5320,guarded,1).hold); // engine handles actual single-display separately
   std::puts("smart attack priority: PASS (pure synthetic policy; no game action)");
 }
