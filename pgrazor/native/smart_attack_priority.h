@@ -59,10 +59,9 @@ inline Result choose(bool enabled, uint64_t session, uint64_t opponent,
 // Optional VNext display-only selector. Each candidate refers to a rooted
 // ChargeAttackDisplayVNext already observed AFTER its original state update.
 // A batch token is only an update-coherence hint, not an opponent ID.
-// A strict hold is allowed with only one ready button when the OTHER button
-// is verified as strictly more effective, and fast attacks can keep charging.
-// A direct effectiveness selection still requires BOTH buttons ready. Never
-// treat the capture order or a batch pointer as proof of opponent identity.
+// Compare effectiveness only among charged buttons that are actually ready:
+// a verified but unready SUPER attack does not postpone a ready NEUTRAL attack.
+// Require a fresh typed pair before action; never infer a target from capture order.
 struct DisplayCandidate {
   pgr_charge_effect_ui::Sample sample{};
   uint64_t observed_ms = 0;
@@ -165,12 +164,13 @@ inline DisplayAdmission admit_display(bool enabled,uint64_t now,
   if(ranking.index<0)return {-1,true,ranking.reason};
   const int best=ranking.index,other=1-best;
   if(items[best].ready)return {best,false,ranking.reason};
-  const auto best_tier=items[best].sample.tier;
-  const auto other_tier=items[other].sample.tier;
-  // Equal-effect moves may use whichever is already ready. UNKNOWN never
-  // becomes Normal; a confirmed SUPER still wins over an UNKNOWN alternative.
-  if(items[other].ready&&best_tier==other_tier)
-    return {other,false,ranking.reason};
+  // Immediate charged-action policy: use the only READY classified move
+  // without waiting for a higher-ranked move to gain energy. Preserve the
+  // verified slot binding, per-tick action gates, and user-configured cadence.
+  // An UNKNOWN/hidden classification does not become NEUTRAL by fallback.
+  if(items[other].ready &&
+     items[other].sample.tier!=pgr_charge_effect_ui::Tier::UNKNOWN)
+    return {other,false,DisplayReason::ONLY_ONE_READY};
   return {-1,true,DisplayReason::ONLY_ONE_READY};
 }
 inline int choose_display(bool enabled,uint64_t now,const DisplayCandidate *items,
