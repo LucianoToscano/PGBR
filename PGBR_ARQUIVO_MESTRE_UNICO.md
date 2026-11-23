@@ -1341,3 +1341,10 @@ Foram executadas 18 fixtures C++ host, contratos de tempos/UI e verificação do
 - **Arquivos:** `pgrazor/src/dev/pgrazor/{AutoMaxBattle,AutoMaxBattleDialog,Control,AutoRaid,SettingsPanel}.java`; `pgrazor/test/AutoMaxBattleSessionTest.java`, `pgrazor/test/test_control_java.py`, `CHANGELOG.md` e este Mestre.
 - **Testes:** uma fixture da política no Control real foi adicionada e conectada à suíte JVM; **resultado do CI e teste no Android ainda pendentes no momento deste registro**. `device_tested=false`; funcionamento do Max no jogo depende dos hooks existentes e não está homologado. Não criar release/merge sem validar CI e PR.
 - **Preservar:** todas as funções LT042, incluindo Ataque Inteligente simples, Escudo/Troca/Cura, PvP, Root, Snipers e parceiros externos. A branch do lote 01 [PR #130](https://github.com/LucianoToscano/PGBR/pull/130) permanece isolada, não substituída por este port.
+
+
+### CI inicial e correção de fixture — PR #131
+
+- [PR #131](https://github.com/LucianoToscano/PGBR/pull/131), draft. [Workflow #45107072775](https://github.com/LucianoToscano/PGBR/actions/runs/45107072775): **4/5 jobs success**, com falha no job Java/Root por fixture `test_auto_raid_controller_java.py`, que compila `AutoRaid.java` real com stubs e não tinha o novo símbolo `AutoMaxBattle`. A auditoria de governança [#45107073010](https://github.com/LucianoToscano/PGBR/actions/runs/45107073010) passou.
+- **Correção:** adicionado stub de teste `pgrazor/test/auto_raid_stubs/dev/pgrazor/AutoMaxBattle.java` somente na fixture de Auto-Raid. O código de produção `AutoMaxBattle.java` continua compilado e exercitado no runner JVM `test_control_java.py`. CI da revisão corrigida deverá rodar novamente e os resultados serão checados; não confundir falha de stub com confirmação de funcionamento real.
+- **Estado:** `device_tested=false`, sem merge, tag, release ou APK desta branch.
