@@ -151,6 +151,7 @@ uint32_t g_charge_count = 0;
 bool     g_smart_seen_pair = false;  // never misread a disappearing second as a 1-move team
 bool     g_actor_pair_observed = false; // exact live VNext actor-pair identity provider was invoked
 int32_t  g_actor_pair_stamp = 0; // ephemeral hashed active+opponent IDs, not telemetry
+int32_t  g_actor_probe_stage = 0; // anonymous failure code (no actor/Pokemon ID)
 uint32_t g_smart_last_diag = 0xFFFFFFFFu;
 uint64_t g_smart_last_diag_ms = 0;
 bool     g_shield_used = false;
@@ -340,7 +341,7 @@ void rocket_clear(uint64_t tid) {
   for(auto &sample:g_charge_observations)sample={};
   g_pending_ui_token = 0; g_shield_used = false; g_shield_opened_ms = 0; g_failed = false; g_gate = -1; g_last_fast_ms = 0;
   g_smart_seen_pair=false;g_smart_last_diag=0xFFFFFFFFu;g_smart_last_diag_ms=0;
-  g_actor_pair_observed=false;g_actor_pair_stamp=0;
+  g_actor_pair_observed=false;g_actor_pair_stamp=0;g_actor_probe_stage=0;
   ++g_epoch;
   refresh();
   for (uint32_t i = 0; i < n; ++i) gc_free(old[i]);
@@ -544,6 +545,11 @@ int api_observe(uint32_t kind,void *obj,int32_t aux,uint64_t tid){
         for(uint32_t i=0;i<n;++i)gc_free(old[i]);
       }break;
     }
+    case PGR_RC_OBS_ACTOR_PROBE: {
+      if(g_state_handle&&g_vui_handle&&aux>=0&&aux<=10)
+        g_actor_probe_stage=aux;
+      break;
+    }
     case PGR_RC_OBS_ACTOR_PAIR: {
       if(!g_state_handle||!g_vui_handle)break;
       // The host publishes a read-only actor stamp from the same VNext
@@ -682,10 +688,16 @@ void vnext_tick(uint64_t tid, uint64_t epoch, uint32_t mask, uint64_t ticket) {
               ? pgr_smart_priority::DisplayReason::ACTOR_REFRESH
               : pgr_smart_priority::DisplayReason::ACTOR_UNKNOWN;
         }
-        // Never consume a charge based on a vanished/unknown opponent. The
-        // actor stamp need not be published in telemetry or passed to UI.
-        if((!g_actor_pair_observed||g_actor_pair_stamp>0)&&
-           indices[0]<g_charge_count&&indices[1]<g_charge_count) {
+        // Inspect read-only charged getters even when the actor identity is
+        // unknown. The old guard skipped this entire block, so the visible
+        // diagnostic always falsely claimed both moves were "unknown" and
+        // uncharged, hiding the class of fault the user needs to report.
+        // Admission still fail-closes when actor identity is explicitly unknown.
+        const bool actor_can_select=!g_actor_pair_observed||g_actor_pair_stamp>0;
+        const unsigned slot_mask=(indices[0]<g_charge_count?1u:0u)|
+                                  (indices[1]<g_charge_count?2u:0u);
+        diagnostic_aux|=static_cast<int32_t>(slot_mask<<20);
+        if(slot_mask==3u) {
           pgr_smart_priority::DisplayCandidate samples[2]{};
           for(uint32_t k=0;k<2;++k) {
             const uint32_t i=indices[k];
@@ -713,12 +725,14 @@ void vnext_tick(uint64_t tid, uint64_t epoch, uint32_t mask, uint64_t ticket) {
           }
           const auto admission=pgr_smart_priority::admit_display(
               true,boottime_ms(),samples,2);
-          decision_reason=admission.reason;
-          wait_for_better=admission.hold;
-          if(admission.index>=0) {
-            preferred=indices[admission.index];
-            selected_only=true; // NEVER try the inferior as a backup
-          }
+          if(actor_can_select) {
+            decision_reason=admission.reason;
+            wait_for_better=admission.hold;
+            if(admission.index>=0) {
+              preferred=indices[admission.index];
+              selected_only=true; // NEVER try the inferior as a backup
+            }
+          } // Unknown actor: report observed slot tiers but never invoke charge.
           diagnostic_aux|=static_cast<int32_t>(
               (static_cast<unsigned>(samples[0].sample.tier)&3u)<<8|
               (static_cast<unsigned>(samples[1].sample.tier)&3u)<<10|
@@ -731,7 +745,8 @@ void vnext_tick(uint64_t tid, uint64_t epoch, uint32_t mask, uint64_t ticket) {
     // native coherent F3 snapshot. Without this, a real device with Smart
     // OFF looked identical to a selector that authorized Charge incorrectly.
     diagnostic_aux|=(wait_for_better?8:0)|(selected_only?16:0)|
-       (g_actor_pair_observed?16384:0)|(g_actor_pair_stamp>0?32768:0);
+       (g_actor_pair_observed?16384:0)|(g_actor_pair_stamp>0?32768:0)|
+       ((g_actor_probe_stage&15)<<16);
     const uint64_t report_ms=boottime_ms();
       const uint32_t signature=
           (static_cast<uint32_t>(decision_reason)<<24)|
