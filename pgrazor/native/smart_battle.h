@@ -12,3 +12,10 @@ bool pgr_smart_battle_enabled();
 // Rocket "choose your next Pokemon" prompt: of these SwapButtonVNext buttons (all usable), the index
 // of the best counter to the current opponent, or -1 when that cannot be worked out.
 int pgr_smart_battle_pick_prompt(void *const *buttons,int count);
+
+// Read-only VNext actor-pair identity for the shared Rocket charged selector.
+// 0 means unknown: the caller must not reuse a former opponent's effectiveness.
+// Positive value is a process-local, non-reversible 31-bit change stamp, not a
+// Pokemon ID. Works independently of the Smart Battling (swap) toggle.
+// Invoke only on the attached Unity owner thread with an already rooted state.
+int32_t pgr_smart_battle_vnext_actor_stamp(void *battle_state);
