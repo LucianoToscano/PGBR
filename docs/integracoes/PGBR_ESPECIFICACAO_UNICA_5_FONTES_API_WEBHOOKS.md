@@ -1,5 +1,8 @@
 # PGBR — Especificação unificada de integração de 5 fontes, API, scrapers e webhooks
 
+> **ESCOPO ATUALIZADO — cinco integrações, exatamente:** (1) PokeList; (2) iFlowGo; (3) PoGoCoordinates + PokeSearch (uma única integração); (4) PGSharp; (5) iPogo. Menções antigas a Pokémod e PGTools são apenas referências históricas fora do escopo de implementação; não criar adaptadores, branches nem módulos adicionais para esses produtos. O gateway é infraestrutura compartilhada, não uma sexta fonte.
+
+
 > **Versão:** 2026-11-23  |  **Estado:** instruções de implementação; não significa que APIs ou feeds estejam ativos.  
 > **Projeto:** https://github.com/LucianoToscano/PGBR  
 > **Arquivo mestre canônico:** https://github.com/LucianoToscano/PGBR/blob/main/PGBR_ARQUIVO_MESTRE_UNICO.md  
