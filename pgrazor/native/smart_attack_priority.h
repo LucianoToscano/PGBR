@@ -73,7 +73,7 @@ struct DisplayCandidate {
 enum class DisplayReason : uint8_t {
   OFF=0, EFFECTIVENESS=1, UNAVAILABLE_PAIR=2, ONLY_ONE_READY=3,
   UNKNOWN_EFFECT=4, STALE_EFFECT=5, UNVERIFIED_SLOTS=6,
-  KNOWN_SUPER=7
+  KNOWN_SUPER=7, ACTOR_UNKNOWN=8, ACTOR_REFRESH=9
 };
 struct DisplayDecision {
   int index=-1;
