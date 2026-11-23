@@ -1429,3 +1429,9 @@ Foram executadas 18 fixtures C++ host, contratos de tempos/UI e verificação do
 
 - Novo plano de implementação em `docs/validation/MAX_SESSION_NATIVE_SCOPE_PLAN_2026-11-23.md`: modo nativo `MAX=2`, escopo validado pela feature 19, lease/epoch/serial, autorização temporária independente das preferências globais, revogação e matriz de testes negativos.
 - **Somente documentação nesta etapa:** a ponte Java ↔ coordenador ↔ executor PvE não foi criada; `AutoMaxBattle` permanece sem automação, `device_tested=false`, sem merge/release. Issue #137 segue aberta.
+
+### 23/11/2026 — Gate puro de sessão Max para testes (sem integração em runtime)
+
+- `pgrazor/native/max_session_gate.h`: política pura `PgrMaxSessionGate::effective` que exige consentimento, host pronto, escopo ativo `MAX=2`, ausência de falha, serial de escopo correspondente e lease fresco até 2500 ms. Qualquer inconsistência retorna zero; máscara lógica de seleção limitada a quatro ações.
+- `pgrazor/native/max_session_gate_test.cpp`: casos positivos e negativos para modo errado, escopo ausente, falha, geração antiga, lease expirado e máscara inválida. Incluído em `tools/native_host_tests.py` para CI.
+- **Ainda não conectado ao runtime Java/JS/native**: nenhum ataque Max novo é habilitado por estes arquivos. A máscara lógica não é o ABI real de bits do executor; tradução só após comprovação de contexto e revisão de ABI. Issue #137 permanece aberta. `device_tested=false`; não fazer merge/release como funcional.
