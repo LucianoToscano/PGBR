@@ -133,5 +133,35 @@ int main() {
   assert(inspect_display(true,1020,diag,2).reason==DisplayReason::STALE_EFFECT);
   diag[1].observed_ms=1000;diag[1].sample.batch_token=15;
   assert(inspect_display(true,1020,diag,2).reason==DisplayReason::UNVERIFIED_SLOTS);
+  // Rocket alone decides whether to keep charging a stronger, not-yet-ready
+  // move; shared PvP/NPC scopes must never have their own move selector.
+  DisplayCandidate energy[2] = {
+      {{Slot::FIRST,Tier::RESISTED,99},2000,true},
+      {{Slot::SECOND,Tier::SUPER,99},2001,false}
+  };
+  assert(better_unready(true,2030,energy,2));
+  assert(!better_unready(false,2030,energy,2));
+  energy[1].sample.tier=Tier::NEUTRAL;
+  assert(better_unready(true,2030,energy,2));
+  energy[0].sample.tier=Tier::SUPER;
+  assert(!better_unready(true,2030,energy,2));
+  energy[0].sample.tier=Tier::NEUTRAL;
+  assert(!better_unready(true,2030,energy,2)); // tied move: first-ready immediate
+  energy[1].sample.tier=Tier::SUPER;
+  energy[0].sample.tier=Tier::RESISTED;
+  energy[1].ready=true;
+  assert(!better_unready(true,2030,energy,2)); // both charged -> direct best tap
+  energy[0].ready=false;
+  assert(!better_unready(true,2030,energy,2)); // only better move ready -> no wait
+  energy[0].ready=true;
+  energy[1].ready=false;
+  energy[1].observed_ms=1000;
+  assert(!better_unready(true,2030,energy,2)); // stale => original immediate
+  energy[1].observed_ms=2001;
+  energy[1].sample.batch_token=100;
+  assert(!better_unready(true,2030,energy,2)); // opponent display mismatch
+  energy[1].sample.batch_token=99;
+  energy[1].sample.slot=Slot::FIRST;
+  assert(!better_unready(true,2030,energy,2)); // unverified mapping
   std::puts("smart attack priority: PASS (pure synthetic policy; no game action)");
 }
