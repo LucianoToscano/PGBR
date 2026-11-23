@@ -141,6 +141,37 @@ inline bool better_unready(bool enabled,uint64_t now,
     static_cast<int>(items[rank.index].sample.tier)>
     static_cast<int>(items[ready].sample.tier);
 }
+// Final VNext charged-action authorization. Merely ordering the candidates
+// is not sufficient: a fallback-to-first loop can issue a weaker charge even
+// after the classifier rejected or lost its evidence. With Smart Attack ON,
+// never automatically issue an unranked charge when a pair was observed.
+// The quick gesture and manual input remain independent of this decision.
+struct DisplayAdmission {
+  int index=-1;                 // 0 / 1 only when this exact candidate may fire
+  bool hold=false;              // true: do not invoke ANY charged button
+  DisplayReason reason=DisplayReason::OFF;
+};
+inline DisplayAdmission admit_display(bool enabled,uint64_t now,
+                                      const DisplayCandidate *items,
+                                      std::size_t count) {
+  if(!enabled)return {-1,false,DisplayReason::OFF}; // original-order mode
+  if(!items||count!=2)return {-1,true,DisplayReason::UNAVAILABLE_PAIR};
+  DisplayCandidate hypothetical[2]={items[0],items[1]};
+  hypothetical[0].ready=hypothetical[1].ready=true;
+  const auto ranking=inspect_display(true,now,hypothetical,2);
+  // Old behavior fell back to first ready here; the new Smart Attack mode
+  // fail-closes charged automation rather than undoing its own policy.
+  if(ranking.index<0)return {-1,true,ranking.reason};
+  const int best=ranking.index,other=1-best;
+  if(items[best].ready)return {best,false,ranking.reason};
+  const auto best_tier=items[best].sample.tier;
+  const auto other_tier=items[other].sample.tier;
+  // Equal-effect moves may use whichever is already ready. UNKNOWN never
+  // becomes Normal; a confirmed SUPER still wins over an UNKNOWN alternative.
+  if(items[other].ready&&best_tier==other_tier)
+    return {other,false,ranking.reason};
+  return {-1,true,DisplayReason::ONLY_ONE_READY};
+}
 inline int choose_display(bool enabled,uint64_t now,const DisplayCandidate *items,
                           std::size_t count) {
   return inspect_display(enabled,now,items,count).index;
