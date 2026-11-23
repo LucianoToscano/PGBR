@@ -43,7 +43,7 @@ A. Inventariar classes e testes antes de propor novos arquivos. Procurar, se exi
 B. Separar o que JÁ FUNCIONA e foi testado, o que existe mas está desconectado, o que é apenas mock/fixture e o que depende de servidor externo. Marcar por commit, arquivo, teste ou endpoint verificado.
 C. Conferir os arquivos locais/Drive e seus hashes, versões e formatos; não assumir que um .dat proprietário é JSON nem desserializar Java de entrada não confiável.
 D. Verificar autorização/licença específica antes de copiar código/arte/recursos de terceiros. Interfaces e conceitos de UX podem servir de referência para implementação independente.
-E. Checar que os cinco provedores principais NÃO sejam anunciados como conectados sem resposta legítima comprovada: PokeList, iFlowGo, PoGoCoordinates, PGSharp e iPogo. Pokemod/PGTools entram como referências adicionais.
+E. Checar que os cinco provedores principais NÃO sejam anunciados como conectados sem resposta legítima comprovada: PokeList, iFlowGo, PoGoCoordinates + PokeSearch, PGSharp e iPogo. São exatamente cinco integrações; PokeSearch compõe o módulo PoGoCoordinates e não deve ser contado separadamente. Não adicionar outros fornecedores ao escopo.
 F. Acompanhar PRs já abertas para Sniper 1/2, Hundo, Radar, PokeSearch/PoGoCoordinates e feeds. Conservar as alterações paralelas, sem regredir.
 
 PLANO DE TRABALHO EXECUTÁVEL
