@@ -21,7 +21,7 @@ int main(){
     s.reset();
     hub(s,2000);assert(s.verified_vs_seeker(2001));
     assert(!s.vnext(17001)); // witness has 15-second lease
-    prep(s,3000);assert(s.vnext(3001)); // normal preparation remains valid
+    prep(s,18000);assert(s.vnext(18001)); // normal preparation remains valid
     s.reset();
     npc(s,4000);assert(!s.verified_vs_seeker(4001));
     assert(!s.vnext(4002)); // never reclassify training
