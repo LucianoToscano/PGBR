@@ -61,6 +61,13 @@ def main():
             subprocess.run(command,check=True)
             subprocess.run([str(target)],check=True)
             print('PASS host C++:',name,flush=True)
+        # Root coexistence policy is header-only, host-runnable and has 64 states.
+        peer=ROOT/'pgrazor/zygisk/peer_guard_test.cpp'
+        peer_target=Path(tmp)/'peer_guard_test'
+        subprocess.run([args.compiler,'-std=c++17','-O2','-Wall','-Wextra',
+                        '-I',str(peer.parent),str(peer),'-o',str(peer_target)],check=True)
+        subprocess.run([str(peer_target)],check=True)
+        print('PASS host C++: peer_guard_test.cpp',flush=True)
         for name, cfg in LINKED_FIXTURES.items():
             target = Path(tmp) / name
             native = ROOT / 'pgrazor/native'
@@ -71,7 +78,7 @@ def main():
             subprocess.run(command, check=True, timeout=120)
             subprocess.run([str(target)], check=True, timeout=150)
             print('PASS linked host C++:', name, flush=True)
-    count = len(FIXTURES) + len(LINKED_FIXTURES)
+    count = len(FIXTURES) + len(LINKED_FIXTURES) + 1
     print(f'Validated {count} host C++ fixtures (including PvP/Rocket and battle controllers); '
           'Android device and full NDK suite not covered.')
 
