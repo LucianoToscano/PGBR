@@ -500,13 +500,26 @@ void drain_leaf_events(uint64_t tid) {
                     const bool on=rev.id!=0; // OFF enum is emitted only when F3 is effectively OFF
                     const char *actor=(flags&32768u)?"known":
                                       (flags&16384u)?"unknown":"not-observed";
+                    const char *const actor_probes[]={
+                        "not-observed","resolved","no-battle-state","busy",
+                        "bootstrap-unavailable","local-actor-missing",
+                        "local-pokemon-missing","opponents-missing",
+                        "opponent-actor-missing","opponent-pokemon-missing",
+                        "metadata-exception"
+                    };
+                    const unsigned stage=(flags>>16)&15u;
+                    const char *probe=stage<11u?actor_probes[stage]:"invalid-stage";
+                    const unsigned slot_mask=(flags>>20)&3u;
                     std::snprintf(buf,sizeof(buf),
                         "{\"smartAttackMode\":\"%s\",\"smartAttackEnabled\":%s,"
                         "\"classifierBound\":%s,\"actorIdentity\":\"%s\","
+                        "\"actorProbe\":\"%s\",\"chargeSeen\":%s,\"charge2Seen\":%s,"
                         "\"chargeCount\":%u,\"decision\":\"%s\",\"reason\":\"%s\","
                         "\"chargeTier\":\"%s\",\"charge2Tier\":\"%s\","
                         "\"chargeReady\":%s,\"charge2Ready\":%s}",
                         mode,on?"true":"false",g_charge_ui.valid?"true":"false",actor,
+                        probe,(slot_mask&1u)?"true":"false",
+                        (slot_mask&2u)?"true":"false",
                         count,held?"hold":picked?"selected":"original",
                         reason,tier1,tier2,(flags&4096u)?"true":"false",
                         (flags&8192u)?"true":"false");
