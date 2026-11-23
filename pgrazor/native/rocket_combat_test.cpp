@@ -668,7 +668,7 @@ int scenario(int n) {
       if(sc.vcharge.tapped||sc.vc2.tapped)return 77;
       break;
     }
-    case 36: { // First ready inferior, Super pending: deny the inferior even with Ágil OFF.
+    case 36: { // Only ready Neutral fires immediately; Super charging does not delay it.
       arm(&sc.scope,2,tid);
       api->observe(PGR_RC_OBS_VNEXT_UPDATE,&sc.vui,0,tid);
       sc.vc2.button=&sc.vbutton;sc.vc2.vcharged=0;
@@ -677,7 +677,7 @@ int scenario(int n) {
       api->observe(PGR_RC_OBS_CHARGE,&sc.vc2,pack({Slot::SECOND,Tier::SUPER,41}),tid);
       pgrazor_rc_direct_smart_attack(1);
       api->tick(tid,0);
-      if(sc.vcharge.tapped||sc.vc2.tapped)return 78;
+      if(sc.vcharge.tapped!=1||sc.vc2.tapped)return 78;
       break;
     }
     case 37: { // Capture order reversed: verified slot FIRST wins tie, not capture order.
