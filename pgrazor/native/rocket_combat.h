@@ -58,7 +58,8 @@ enum PgrRocketCombatInfo {
   PGR_RC_CLOSED_STATE = 3     // GuiController.currentState closed scalar (literal, source: ===3)
 };
 
-// observe() kinds. aux carries the shield-prompt bool for SHIELD_PROMPT, else ignored.
+// observe() kinds. aux carries shield prompt bool or packed typed charge metadata
+// for OBS_CHARGE; the original action executor remains rooted inside Rocket.
 enum PgrRocketCombatObserve {
   PGR_RC_OBS_SCOPE_EXIT    = 0,  // obj=scope; rocketClear when it is the live scope
   PGR_RC_OBS_SCOPE_ENTER   = 1,  // obj=scope (InvasionCombatState); rocketClear + set + arm 20
