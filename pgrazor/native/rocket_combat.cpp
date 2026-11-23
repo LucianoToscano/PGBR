@@ -598,8 +598,10 @@ void vnext_tick(uint64_t tid, uint64_t epoch, uint32_t mask, uint64_t ticket) {
   if (mask & 2u) {
     // Keep the original first-ready order unless the user enabled Smart Attack
     // and exactly two up-to-date, typed Charge/Charge2 displays are observed.
-    // This is an optional VNext-only path; Legacy, PvE and shield/swap timers
-    // remain untouched. A lone ready attack is never delayed.
+    // This Rocket-owned VNext path is shared by strictly classified battle
+    // variants. A sole ready charged move is immediate unless the other move
+    // is verified stronger: then keep attacking quickly for at most 2.6 s.
+    // Legacy, PvE and shield/swap cadences remain untouched.
     uint32_t preferred=g_charge_count;
     bool wait_for_better=false;
     const bool intelligent_enabled=simple_attack_enabled();
