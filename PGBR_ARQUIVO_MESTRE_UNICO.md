@@ -1331,3 +1331,27 @@ Foram executadas 18 fixtures C++ host, contratos de tempos/UI e verificação do
 - **SHA-256 Zygisk** (8277459 bytes): `8e4555623b7a4f0c177417673e6b0fa140edc4ee8a708537d0521c5ec6ff382a`.
 - **SHA do manifesto** `SHA256SUMS.txt` (281 bytes): `4ae341815207b8f76d9a36effa319ec17349b6b6f933295528c7e4c781429ce7`. Digests dos três pacotes confrontados com o GitHub Release API, conforme publicação do workflow.
 - **Limites inalterados:** `device_tested=false`. A seleção VNext depende de dois carregados prontos, metadados e eficácia reconhecidos; troca de oponente, KO, Root/sem Root e eventos PvP ainda precisam de ensaio real. Não afirmar eficácia universal nem correção da tela branca. Issues [#90](https://github.com/LucianoToscano/PGBR/issues/90) e [#105](https://github.com/LucianoToscano/PGBR/issues/105) permanecem abertas.
+
+
+## 23/11/2026 — Port seletivo de Batalha Max por sessão (fork belalsalah74)
+
+- **Origem:** [belalsalah74/PGRazor](https://github.com/belalsalah74/PGRazor), com implementação de referência em `AutoMaxBattle.java` e `AutoMaxBattleDialog.java`, adaptada ao PT-BR e às garantias do PGBR. **Branch isolada:** `feat/fork-max-session-20261123`, **base main:** `f78d0e2544cdb55a31bdf1dd5cf5b813e2376622`.
+- **Implementação de fonte:** interface de sessão voluntária para habilitar temporariamente Ágil, Carregado, Max e Esquiva nos **executores nativos já existentes**, reutilizando `Control.battleOptions()` como união do bitmask salvo e do mask de sessão (sem alterar `setBattleOptions()` nem o snapshot de persistência). Seleção manual do Power Spot, entrada, equipe, Partículas Max, recompensa e captura **não automatizadas**.
+- **Segurança:** bloquear simultaneidade com Auto-Raid, VGP+ e automações incompatíveis; resetar sessão em segundo plano, troca de conta, leitura de configurações e perda de prontidão do combate. Caminhada ociosa suspensa enquanto sessão está ativa; estado da sessão não é salvo em backup.
+- **Arquivos:** `pgrazor/src/dev/pgrazor/{AutoMaxBattle,AutoMaxBattleDialog,Control,AutoRaid,SettingsPanel}.java`; `pgrazor/test/AutoMaxBattleSessionTest.java`, `pgrazor/test/test_control_java.py`, `CHANGELOG.md` e este Mestre.
+- **Testes:** uma fixture da política no Control real foi adicionada e conectada à suíte JVM; **resultado do CI e teste no Android ainda pendentes no momento deste registro**. `device_tested=false`; funcionamento do Max no jogo depende dos hooks existentes e não está homologado. Não criar release/merge sem validar CI e PR.
+- **Preservar:** todas as funções LT042, incluindo Ataque Inteligente simples, Escudo/Troca/Cura, PvP, Root, Snipers e parceiros externos. A branch do lote 01 [PR #130](https://github.com/LucianoToscano/PGBR/pull/130) permanece isolada, não substituída por este port.
+
+
+### CI inicial e correção de fixture — PR #131
+
+- [PR #131](https://github.com/LucianoToscano/PGBR/pull/131), draft. [Workflow #45107072775](https://github.com/LucianoToscano/PGBR/actions/runs/45107072775): **4/5 jobs success**, com falha no job Java/Root por fixture `test_auto_raid_controller_java.py`, que compila `AutoRaid.java` real com stubs e não tinha o novo símbolo `AutoMaxBattle`. A auditoria de governança [#45107073010](https://github.com/LucianoToscano/PGBR/actions/runs/45107073010) passou.
+- **Correção:** adicionado stub de teste `pgrazor/test/auto_raid_stubs/dev/pgrazor/AutoMaxBattle.java` somente na fixture de Auto-Raid. O código de produção `AutoMaxBattle.java` continua compilado e exercitado no runner JVM `test_control_java.py`. CI da revisão corrigida deverá rodar novamente e os resultados serão checados; não confundir falha de stub com confirmação de funcionamento real.
+- **Estado:** `device_tested=false`, sem merge, tag, release ou APK desta branch.
+
+
+### Rerun corrigido de Batalha Max — PR #131
+
+- [GitHub Actions #45107375898](https://github.com/LucianoToscano/PGBR/actions/runs/45107375898): **5/5 success** para commit `b2fa5066bd9da575ac643b8fda63a45d1f479574`. Passaram C++ host, Java/Python/Node + compilação do aplicativo e instalador Root, política selecionada ARM64, host/executor VNext e website. A falha original de stub `AutoMaxBattle` ficou corrigida na fixture independente Auto-Raid.
+- **Evidência limitada:** CI não comprova ação efetiva dentro da batalha Max, nem captura, Power Spot, versões de aparelho ou aceitação de hooks. `device_tested=false`; PR segue em draft; nenhum merge ou novo APK. Este adendo documental provoca uma execução adicional na nova HEAD e exige leitura dos resultados para concluir o gate documental.
+- **Dependências de outros forks:** VGP+ por etiquetas e IV real [issue #133](https://github.com/LucianoToscano/PGBR/issues/133), atalhos MT [issue #134](https://github.com/LucianoToscano/PGBR/issues/134); não foram portados neste PR.
