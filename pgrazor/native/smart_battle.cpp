@@ -619,6 +619,19 @@ int32_t pgr_smart_battle_vnext_actor_stamp(void *state) {
  }catch(...){return 0;} // optional provider: unknown must fail closed
 }
 
+int32_t pgr_smart_battle_vnext_gui_actor_stamp(void *ui){
+ if(!ui||busy)return 0;
+ try {
+  if(!initialized){
+   auto api=static_cast<const PgrBootApi*>(pgrazor_runtime_bootstrap_api(1));
+   boot.version=1;boot.size=sizeof(boot);
+   if(!api||!api->snapshot||api->snapshot(&boot)!=PGR_BOOT_OK)return 0;
+   initialized=true;
+  }
+  return pgr_smart_battle_vnext_actor_stamp(battle_state_of(ui));
+ }catch(...){return 0;}
+}
+
 bool pgr_smart_battle_enabled(){return enabled.load(std::memory_order_acquire);}
 
 int pgr_smart_battle_pick_prompt(void *const *buttons,int count){
