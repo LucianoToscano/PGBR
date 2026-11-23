@@ -70,7 +70,7 @@ struct DisplayCandidate {
 // Packed into optional action telemetry only; never governs a new timing gate.
 enum class DisplayReason : uint8_t {
   OFF=0, EFFECTIVENESS=1, UNAVAILABLE_PAIR=2, ONLY_ONE_READY=3,
-  UNKNOWN_EFFECT=4, STALE_EFFECT=5, UNVERIFIED_SLOTS=6
+  UNKNOWN_EFFECT=4, STALE_EFFECT=5, UNVERIFIED_SLOTS=6, HOLD_EXPIRED=7
 };
 struct DisplayDecision {
   int index=-1;
@@ -102,6 +102,25 @@ inline DisplayDecision inspect_display(bool enabled,uint64_t now,
   const auto tier2=items[second].sample.tier;
   return {static_cast<int>(tier2)>static_cast<int>(tier1)?second:first,
           DisplayReason::EFFECTIVENESS};
+}
+// Rocket VNext can continue its normal quick attacks briefly if an observed,
+// strictly stronger loaded move is still building energy. This policy is the
+// SAME for typed Rocket-derived sessions (League GO, friends, training); no
+// separate PvP executor or tap location is inferred. Requires fresh, matching
+// effectiveness readings for BOTH buttons, and exactly one ready button.
+// The caller owns the bounded waiting clock and must revalidate on each tick.
+inline bool better_unready(bool enabled,uint64_t now,
+                           const DisplayCandidate *items,std::size_t count) {
+  if(!enabled||!items||count!=2||items[0].ready==items[1].ready)return false;
+  DisplayCandidate hypothetical[2]={items[0],items[1]};
+  hypothetical[0].ready=hypothetical[1].ready=true;
+  const auto rank=inspect_display(true,now,hypothetical,2);
+  if(rank.reason!=DisplayReason::EFFECTIVENESS||rank.index<0)return false;
+  const int ready=items[0].ready?0:1;
+  // Strictly better: ties never justify withholding a ready charge.
+  return rank.index!=ready &&
+    static_cast<int>(items[rank.index].sample.tier)>
+    static_cast<int>(items[ready].sample.tier);
 }
 inline int choose_display(bool enabled,uint64_t now,const DisplayCandidate *items,
                           std::size_t count) {
