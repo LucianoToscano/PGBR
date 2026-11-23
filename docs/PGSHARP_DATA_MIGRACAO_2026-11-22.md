@@ -13,7 +13,7 @@ Importação **local e explícita** a partir de um arquivo JSON convertido em am
 
 `PgSharpDataImport.java` valida o JSON antes de persistir:
 
-1. Usa `SavedPlaces` para unir os favoritos existentes com os importados, sem apagar os já salvos e sem repetir nome ou coordenada exata. O teto é ampliado de 50 para 200; nomes aceitam até 100 unidades de código, suficientes para os nomes analisados.
+1. Usa `SavedPlaces` para unir os favoritos existentes com os importados, sem apagar os já salvos e sem repetir nomes; nomes diferentes podem referir-se à mesma coordenada. O teto é ampliado de 50 para 200; nomes aceitam até 100 unidades de código, suficientes para os nomes analisados.
 2. Converte pontos de rotas `[latitude, longitude, elevação]` para `GpxRoute` (elevação zero da origem não é relevante ao motor 2D) e salva via `GpxStore` por perfil, preservando a ordem. Rota já salva com o mesmo nome é ignorada.
 3. Preserva os filtros originais e suas opções legadas em preferências privadas `pgrazor-pgsharp-data-v1/migration_json`, sem alterar filtros ativos, escudos, ataques, teleporte ou decisões de batalha.
 4. O arquivo importado é incluído na exportação de backups da conta por `SettingsBackupStore`. A validação de backup permite as novas quantidades sem remover os formatos antigos.
@@ -40,7 +40,7 @@ A tela **Ver dados PGSharp importados** mostra o total preservado por categoria.
 |---|---|
 | JSON original convertido, perfil vazio | +80 favoritos, +18 rotas, filtros preservados |
 | Segunda importação do mesmo arquivo | Sem duplicatas nem perda de configurações |
-| Perfil com favoritos e rotas já existentes | Mescla sem substituir existentes |
+| Perfil com favoritos e rotas já existentes | Mescla sem substituir existentes, inclusive se dois nomes apontarem à mesma coordenada |
 | JSON inválido / latitude fora dos limites / versão errada | Rejeita sem gravar |
 | Excesso de capacidade de favoritos ou rotas | Rejeita antes de iniciar |
 | Falha ao gravar rota ou perfil | Rollback das mudanças geradas pela importação, com falha sinalizada se rollback incompleto |
