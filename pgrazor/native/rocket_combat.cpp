@@ -69,6 +69,12 @@ uint64_t shield_choice_wait_ms() {
 
 #if defined(PGR_RC_DIRECT_TEST)
 std::atomic<bool> g_smart_attack_test_enabled{false};
+#else
+// A transient invalid/stale transport snapshot is NOT a user-initiated OFF.
+// Keep the most recent coherent preference; only a valid OFF revokes Smart
+// Attack. Without any valid snapshot, legacy behavior remains unchanged.
+bool g_smart_preference_known=false;
+bool g_smart_preference_cached=false;
 #endif
 bool simple_attack_enabled() {
 #if defined(PGR_RC_DIRECT_TEST)
@@ -76,7 +82,11 @@ bool simple_attack_enabled() {
 #else
   const auto *tr=static_cast<const PgrRuntimeTransportApi*>(pgrazor_runtime_transport_api(1));
   pgr_battle_timing::Preferences p{};
-  return pgr_battle_timing::read(tr,p)&&p.smart_attack;
+  if(pgr_battle_timing::read(tr,p)) {
+    g_smart_preference_known=true;
+    g_smart_preference_cached=p.smart_attack;
+  }
+  return g_smart_preference_known&&g_smart_preference_cached;
 #endif
 }
 
@@ -138,6 +148,12 @@ struct ChargeObservation {
 };
 ChargeObservation g_charge_observations[PGR_RC_MAX_CHARGES]{};
 uint32_t g_charge_count = 0;
+bool     g_smart_seen_pair = false;  // never misread a disappearing second as a 1-move team
+bool     g_actor_pair_observed = false; // exact live VNext actor-pair identity provider was invoked
+int32_t  g_actor_pair_stamp = 0; // ephemeral hashed active+opponent IDs, not telemetry
+int32_t  g_actor_probe_stage = 0; // anonymous failure code (no actor/Pokemon ID)
+uint32_t g_smart_last_diag = 0xFFFFFFFFu;
+uint64_t g_smart_last_diag_ms = 0;
 bool     g_shield_used = false;
 uint64_t g_shield_opened_ms = 0; // per-prompt epoch, cleared on close
 bool     g_failed = false;
@@ -281,9 +297,25 @@ inline bool stale(uint64_t epoch) { return g_epoch != epoch || g_stop_requested.
 
 // --- root teardown helpers (detach BEFORE gc_free) ----------------------------------
 void drop_ui()  { void *h = g_ui_handle;  g_ui_handle = nullptr;  refresh(); gc_free(h); }
-void drop_vui() { void *h = g_vui_handle; g_vui_handle = nullptr;
+void drop_vui() {
+  // A new VNext GUI can replace the old one without HandleDismiss. The
+  // previous code reset only effect readings, leaving up to four rooted
+  // ChargeAttackDisplayVNext objects from the previous GUI in the list.
+  // With >=3 entries Smart Attack silently reverted to first-ready.
+  // Detach all roots BEFORE the first callback-capable GC free.
+  void *old[1+PGR_RC_MAX_CHARGES]{};uint32_t n=0;
+  if(g_vui_handle)old[n++]=g_vui_handle;
+  for(uint32_t i=0;i<g_charge_count;++i)old[n++]=g_charges[i];
+  g_vui_handle=nullptr;
+  std::memset(g_charges,0,sizeof(g_charges));g_charge_count=0;
   for(auto &sample:g_charge_observations)sample={};
-  refresh(); gc_free(h); }
+  // Preserve known two-charge topology across a VNext GUI replacement within
+  // the same combat scope. A fresh actor stamp decides when the foe changed.
+  if(!g_actor_pair_observed)g_smart_seen_pair=false;
+  g_smart_last_diag=0xFFFFFFFFu;g_smart_last_diag_ms=0;
+  refresh();
+  for(uint32_t i=0;i<n;++i)gc_free(old[i]);
+}
 // rocketDrop('shield'): notify feature 20 PROMPT_CLOSE first, then detach + free.
 void drop_shield(uint64_t tid) {
   g_shield_opened_ms = 0;
@@ -308,6 +340,8 @@ void rocket_clear(uint64_t tid) {
   std::memset(g_charges, 0, sizeof(g_charges)); g_charge_count = 0;
   for(auto &sample:g_charge_observations)sample={};
   g_pending_ui_token = 0; g_shield_used = false; g_shield_opened_ms = 0; g_failed = false; g_gate = -1; g_last_fast_ms = 0;
+  g_smart_seen_pair=false;g_smart_last_diag=0xFFFFFFFFu;g_smart_last_diag_ms=0;
+  g_actor_pair_observed=false;g_actor_pair_stamp=0;g_actor_probe_stage=0;
   ++g_epoch;
   refresh();
   for (uint32_t i = 0; i < n; ++i) gc_free(old[i]);
@@ -340,15 +374,19 @@ void charge_capture(void *obj, int32_t observation, uint64_t epoch) {
     void *candidate=gc_target(g_charges[i]);if(stale(epoch))return;
     void *in=incoming.target();if(stale(epoch))return;
     if(candidate==in){
-      const auto sample=pgr_charge_effect_ui::unpack(observation);
-      g_charge_observations[i]={sample,pgr_charge_effect_ui::pack(sample)?boottime_ms():0};
+      const auto sample=pgr_charge_effect_ui::unpack_observation(observation);
+      g_charge_observations[i]={sample,pgr_charge_effect_ui::pack_observation(sample)?boottime_ms():0};
       return;
     }
   }
   if(g_charge_count<PGR_RC_MAX_CHARGES){
-    const auto sample=pgr_charge_effect_ui::unpack(observation);
-    g_charge_observations[g_charge_count]={sample,pgr_charge_effect_ui::pack(sample)?boottime_ms():0};
+    const auto sample=pgr_charge_effect_ui::unpack_observation(observation);
+    g_charge_observations[g_charge_count]={sample,pgr_charge_effect_ui::pack_observation(sample)?boottime_ms():0};
     g_charges[g_charge_count++]=incoming.release();
+    // Record that this GUI exposed multiple charged objects at observation
+    // time. They may disappear before the first heartbeat/tick: never treat
+    // that later single candidate as proof that the Pokémon has one move.
+    if(g_charge_count>=2)g_smart_seen_pair=true;
   }
 }
 
@@ -500,9 +538,34 @@ int api_observe(uint32_t kind,void *obj,int32_t aux,uint64_t tid){
         void *old[1+PGR_RC_MAX_CHARGES];uint32_t n=0;old[n++]=g_vui_handle;g_vui_handle=nullptr;
         for(uint32_t i=0;i<g_charge_count;++i)old[n++]=g_charges[i];
         std::memset(g_charges,0,sizeof(g_charges));g_charge_count=0;
-        for(auto &sample:g_charge_observations)sample={};refresh();
+        for(auto &sample:g_charge_observations)sample={};
+        if(!g_actor_pair_observed)g_smart_seen_pair=false;
+        g_smart_last_diag=0xFFFFFFFFu;g_smart_last_diag_ms=0;
+        refresh();
         for(uint32_t i=0;i<n;++i)gc_free(old[i]);
       }break;
+    }
+    case PGR_RC_OBS_ACTOR_PROBE: {
+      if(g_state_handle&&g_vui_handle&&aux>=0&&aux<=10)
+        g_actor_probe_stage=aux;
+      break;
+    }
+    case PGR_RC_OBS_ACTOR_PAIR: {
+      if(!g_state_handle||!g_vui_handle)break;
+      // The host publishes a read-only actor stamp from the same VNext
+      // BattleState used by Smart Battling, before Charge observations.
+      // A changed/unknown pair INVALIDATES all prior effectiveness readings;
+      // the retained handles may be refreshed only by future callbacks.
+      if(!g_actor_pair_observed||aux!=g_actor_pair_stamp){
+        g_actor_pair_observed=true;
+        g_actor_pair_stamp=aux>0?aux:0;
+        for(auto &sample:g_charge_observations)sample={};
+        // Even if only one display has been seen after a foe switch, a
+        // first-ready fallback is not safe. Wait for two fresh typed slots.
+        g_smart_seen_pair=true;
+        g_smart_last_diag=0xFFFFFFFFu;g_smart_last_diag_ms=0;
+      }
+      break;
     }
     case PGR_RC_OBS_CHARGE:
       if(g_state_handle&&exact(obj,g_cfg.class_rvcharge)&&!stale(epoch))charge_capture(obj,aux,epoch);
@@ -584,49 +647,124 @@ void vnext_tick(uint64_t tid, uint64_t epoch, uint32_t mask, uint64_t ticket) {
   if (blocked) { gate(PGR_RC_GATE_VN_BLOCKED); return; }
 
   if (mask & 2u) {
-    // Keep the original first-ready order unless the user enabled Smart Attack
-    // and exactly two up-to-date, typed Charge/Charge2 displays are observed.
-    // This is an optional VNext-only path; Legacy, PvE and shield/swap timers
-    // remain untouched. A lone ready attack is never delayed.
+    // Rocket owns this gate for real Rocket and verified training/friend/GBL
+    // variants. A preference to use the best move is NOT an authorization to
+    // fall back to an inferior charge if a classifier sample is stale, missing,
+    // duplicated or incompatible. Continue unchanged fast attacks instead.
     uint32_t preferred=g_charge_count;
-    if(g_charge_count==2&&simple_attack_enabled()) {
-      pgr_smart_priority::DisplayCandidate samples[2]{};
-      const uint64_t observed_now=boottime_ms();
-      bool complete=true;
-      for(uint32_t i=0;i<2;++i) {
-        if(stale(epoch))return;
-        samples[i].sample=g_charge_observations[i].sample;
-        samples[i].observed_ms=g_charge_observations[i].observed_ms;
-        if(!pgr_charge_effect_ui::pack(samples[i].sample)){complete=false;break;}
-        void *candidate=gc_target(g_charges[i]);if(stale(epoch))return;
-        Root c;c.acquire(candidate,&err);if(stale(epoch))return;
-        if(err){fault(tid);return;}
-        const bool calive=m_is_alive(c.target(),&err);
-        const bool charged=!err&&calive&&invoke_bool(g_cfg.vm_charged,c.target(),nullptr,&err);
-        const bool visible=!err&&charged&&invoke_bool(g_cfg.vm_visible,c.target(),nullptr,&err);
-        if(err){if(!stale(epoch))fault(tid);return;}
-        if(stale(epoch))return;
-        if(!calive||!charged||!visible)continue;
-        void *button=read_ref(c.target(),g_cfg.vf_button);
-        if(!button)continue;
-        Root b;b.acquire(button,&err);if(stale(epoch))return;
-        if(err){fault(tid);return;}
-        const bool balive=m_is_alive(b.target(),&err);
-        const bool interactable=!err&&balive&&invoke_bool(g_cfg.m_interactable,b.target(),nullptr,&err);
-        if(err){if(!stale(epoch))fault(tid);return;}
-        if(stale(epoch))return;
-        samples[i].ready=balive&&interactable;
-      }
-      if(complete) {
-        const int selected=pgr_smart_priority::choose_display(
-            true,observed_now,samples,2);
-        if(selected>=0)preferred=static_cast<uint32_t>(selected);
+    bool wait_for_better=false;
+    bool selected_only=false;
+    const bool intelligent_enabled=simple_attack_enabled();
+    auto decision_reason=intelligent_enabled
+        ? pgr_smart_priority::DisplayReason::UNAVAILABLE_PAIR
+        : pgr_smart_priority::DisplayReason::OFF;
+    int32_t diagnostic_aux=static_cast<int32_t>(g_charge_count&7u);
+    if(intelligent_enabled) {
+      // A single first-ready Charge is not proof the pokemon has just one
+      // charged move. Do NOT silently auto-tap it with Smart Attack ON.
+      // Wait for BOTH typed slots, even before the first actor-pair event.
+      wait_for_better=true;
+      // The old equality check (count==2) was a silent escape hatch: a
+      // replaced UI could leave old live displays among 3-4 rooted objects.
+      // Group by the verified game slot, using the newest observation for
+      // each. Never infer slots from visual order or from list insertion.
+      if(g_charge_count>=2)g_smart_seen_pair=true;
+      if(g_charge_count>=2||g_smart_seen_pair||g_actor_pair_observed) {
+        uint32_t indices[2]={g_charge_count,g_charge_count};
+        for(uint32_t i=0;i<g_charge_count;++i) {
+          const auto &obs=g_charge_observations[i];
+          if(!obs.observed_ms||
+             !pgr_charge_effect_ui::pack_observation(obs.sample))continue;
+          const int slot=obs.sample.slot==pgr_charge_effect_ui::Slot::FIRST?0:
+                         obs.sample.slot==pgr_charge_effect_ui::Slot::SECOND?1:-1;
+          if(slot<0)continue;
+          if(indices[slot]>=g_charge_count||
+             obs.observed_ms>=g_charge_observations[indices[slot]].observed_ms)
+            indices[slot]=i;
+        }
+        wait_for_better=true; // strict Smart Attack ON: no unclassified tap
+        if(g_actor_pair_observed) {
+          decision_reason=g_actor_pair_stamp>0
+              ? pgr_smart_priority::DisplayReason::ACTOR_REFRESH
+              : pgr_smart_priority::DisplayReason::ACTOR_UNKNOWN;
+        }
+        // Inspect read-only charged getters even when the actor identity is
+        // unknown. The old guard skipped this entire block, so the visible
+        // diagnostic always falsely claimed both moves were "unknown" and
+        // uncharged, hiding the class of fault the user needs to report.
+        // Admission still fail-closes when actor identity is explicitly unknown.
+        const bool actor_can_select=!g_actor_pair_observed||g_actor_pair_stamp>0;
+        const unsigned slot_mask=(indices[0]<g_charge_count?1u:0u)|
+                                  (indices[1]<g_charge_count?2u:0u);
+        diagnostic_aux|=static_cast<int32_t>(slot_mask<<20);
+        if(slot_mask==3u) {
+          pgr_smart_priority::DisplayCandidate samples[2]{};
+          for(uint32_t k=0;k<2;++k) {
+            const uint32_t i=indices[k];
+            samples[k].sample=g_charge_observations[i].sample;
+            samples[k].observed_ms=g_charge_observations[i].observed_ms;
+            void *candidate=gc_target(g_charges[i]);if(stale(epoch))return;
+            Root c;c.acquire(candidate,&err);if(stale(epoch))return;
+            if(err){fault(tid);return;}
+            const bool calive=m_is_alive(c.target(),&err);
+            const bool charged=!err&&calive&&invoke_bool(g_cfg.vm_charged,c.target(),nullptr,&err);
+            const bool visible=!err&&charged&&invoke_bool(g_cfg.vm_visible,c.target(),nullptr,&err);
+            if(err){if(!stale(epoch))fault(tid);return;}
+            if(stale(epoch))return;
+            if(!calive||!charged||!visible)continue;
+            void *button=read_ref(c.target(),g_cfg.vf_button);
+            if(!button)continue;
+            Root b;b.acquire(button,&err);if(stale(epoch))return;
+            if(err){fault(tid);return;}
+            const bool balive=m_is_alive(b.target(),&err);
+            const bool interactable=!err&&balive&&
+                invoke_bool(g_cfg.m_interactable,b.target(),nullptr,&err);
+            if(err){if(!stale(epoch))fault(tid);return;}
+            if(stale(epoch))return;
+            samples[k].ready=balive&&interactable;
+          }
+          const auto admission=pgr_smart_priority::admit_display(
+              true,boottime_ms(),samples,2);
+          if(actor_can_select) {
+            decision_reason=admission.reason;
+            wait_for_better=admission.hold;
+            if(admission.index>=0) {
+              preferred=indices[admission.index];
+              selected_only=true; // NEVER try the inferior as a backup
+            }
+          } // Unknown actor: report observed slot tiers but never invoke charge.
+          diagnostic_aux|=static_cast<int32_t>(
+              (static_cast<unsigned>(samples[0].sample.tier)&3u)<<8|
+              (static_cast<unsigned>(samples[1].sample.tier)&3u)<<10|
+              (samples[0].ready?1u:0u)<<12|
+              (samples[1].ready?1u:0u)<<13);
+        }
       }
     }
-    for (uint32_t pos = 0; pos < g_charge_count; ++pos) {
-      // A verified second button may be tried first, but all action/liveness
-      // gates and the original loop's fallback remain authoritative.
-      const uint32_t i=preferred<g_charge_count&&pos==0?preferred:
+    // Report effective mode even when the Java toggle failed to reach the
+    // native coherent F3 snapshot. Without this, a real device with Smart
+    // OFF looked identical to a selector that authorized Charge incorrectly.
+    diagnostic_aux|=(wait_for_better?8:0)|(selected_only?16:0)|
+       (g_actor_pair_observed?16384:0)|(g_actor_pair_stamp>0?32768:0)|
+       ((g_actor_probe_stage&15)<<16);
+    const uint64_t report_ms=boottime_ms();
+      const uint32_t signature=
+          (static_cast<uint32_t>(decision_reason)<<24)|
+          static_cast<uint32_t>(diagnostic_aux);
+      if(signature!=g_smart_last_diag||
+         (report_ms&&report_ms>=g_smart_last_diag_ms&&
+          report_ms-g_smart_last_diag_ms>=5000)) {
+        g_smart_last_diag=signature;g_smart_last_diag_ms=report_ms;
+        push_event(PGR_RC_EVT_SMART_DIAG,
+                   static_cast<int32_t>(decision_reason),diagnostic_aux);
+      }
+    // While holding, run the existing quick-attack method instead.
+    if(!wait_for_better) for (uint32_t pos = 0;
+                               pos < (selected_only?1u:g_charge_count); ++pos) {
+      // A validated Smart selection is an ALLOWLIST of one exact display.
+      // Only Smart OFF (or a genuine single-button GUI) can try original order.
+      const uint32_t i=selected_only?preferred:
+          preferred<g_charge_count&&pos==0?preferred:
           preferred<g_charge_count&&pos==preferred?0:pos;
       if (stale(epoch)) return;
       if (i >= g_charge_count) break;
@@ -648,10 +786,26 @@ void vnext_tick(uint64_t tid, uint64_t epoch, uint32_t mask, uint64_t ticket) {
       if (!balive || !binter) continue;
       void *target = c.target();  // final lookup (c is rooted -> current)
       if (!target || !final_ok(epoch)) return;
+      // Snapshot the verified slot BEFORE the managed click: invoking the game
+      // can reenter hooks and replace battle observations. Unknown stays unknown.
+      // This affects diagnostics only, never timing or charged-button selection.
+      // Bits 4..7 report why the original or effectiveness order was used.
+      // Reading this reason cannot delay or change the actual charged attack.
+      int32_t action_flags=2 |
+          (static_cast<int32_t>(decision_reason)<<4);  // bit1: VNext
+      const auto &observation=g_charge_observations[i];
+      const uint64_t action_now=boottime_ms();
+      if(observation.observed_ms&&action_now>=observation.observed_ms&&
+         action_now-observation.observed_ms<=200&&
+         pgr_charge_effect_ui::pack_observation(observation.sample)!=0) {
+        if(observation.sample.slot==pgr_charge_effect_ui::Slot::FIRST)action_flags|=4;
+        else if(observation.sample.slot==pgr_charge_effect_ui::Slot::SECOND)action_flags|=8;
+      }
       if (!pol_claim(ticket, PGR_ROCKET_VNEXT_CHARGE, tid)) return;
       invoke(g_cfg.vm_charge, target, nullptr, &err);
       if (err) { if(!stale(epoch))fault(tid); return; }
-      emit_action(PGR_RC_ACT_CHARGED, 2);  // bit1: vNext path
+      if(stale(epoch))return; // do not publish an action under a replaced battle scope
+      emit_action(PGR_RC_ACT_CHARGED,action_flags);  // optional verified Charge/Charge2
       return;
     }
   }
