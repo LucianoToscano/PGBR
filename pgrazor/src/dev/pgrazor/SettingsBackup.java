@@ -35,6 +35,7 @@ final class SettingsBackup {
         pgsharpView.setOnClickListener(v->new android.app.AlertDialog.Builder(MapTheme.wrap(activity))
             .setTitle("Dados PGSharp neste perfil")
             .setMessage(PgSharpDataImport.storedSummary(activity))
+            .setNeutralButton("Explorar dados",(d,w)->showImportedCategories())
             .setPositiveButton("OK",null).show());
         ScrollView scroll=new ScrollView(activity);scroll.addView(root);MapTheme.style(scroll);
         if(PgAssets.rooted()){
@@ -43,6 +44,40 @@ final class SettingsBackup {
             dialog.setCancelable(false);dialog.show();
         }else activity.setContentView(scroll);
     }
+    private void showImportedCategories() {
+        JSONObject imported=PgSharpDataImport.stored(activity);
+        if(imported==null) {
+            Toast.makeText(activity,"Nenhuma importação PGSharp para esta conta.",Toast.LENGTH_LONG).show();
+            return;
+        }
+        final String[] keys={"favorites","routes","pokemonFilters","questFilters","raidFilters"};
+        final String[] labels={"Favoritos","Rotas","Filtros Pokémon","Filtros de pesquisas","Filtros de reides"};
+        new android.app.AlertDialog.Builder(MapTheme.wrap(activity))
+            .setTitle("Categorias PGSharp importadas")
+            .setItems(labels,(dialog,selected)->showImportedList(imported,keys[selected],labels[selected]))
+            .setNegativeButton("Fechar",null).show();
+    }
+
+    private void showImportedList(JSONObject imported,String key,String title) {
+        JSONArray rows=imported.optJSONArray(key);
+        if(rows==null)return;
+        String[] names=new String[rows.length()];
+        for(int i=0;i<rows.length();i++){
+            JSONObject item=rows.optJSONObject(i);
+            names[i]=(i+1)+". "+(item==null?"Registro inválido":item.optString("name","Sem nome"));
+        }
+        new android.app.AlertDialog.Builder(MapTheme.wrap(activity))
+            .setTitle(title+" ("+names.length+")")
+            .setItems(names,(d,index)->{
+                JSONObject item=rows.optJSONObject(index);
+                if(item==null)return;
+                new android.app.AlertDialog.Builder(MapTheme.wrap(activity))
+                    .setTitle(item.optString("name","Dados originais"))
+                    .setMessage(item.toString())
+                    .setPositiveButton("Fechar",null).show();
+            }).setNegativeButton("Voltar",(d,w)->showImportedCategories()).show();
+    }
+
     private File rootedFile(){File dir=activity.getExternalFilesDir(null);return dir==null?null:new File(dir,"PGBR-settings.json");}
     private File rootedPgSharpFile(){File dir=activity.getExternalFilesDir(null);return dir==null?null:new File(dir,"PGBR_PGSharp_Importacao.json");}
     private void pick(int code){
