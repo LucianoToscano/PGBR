@@ -1,5 +1,7 @@
 ## PGBR 0.00.43-LT — integração QA consolidada (23/11/2026)
 
+- **Publicação oficial validada:** [release LT043](https://github.com/LucianoToscano/PGBR/releases/tag/v0.00.43-LT), [APK sem Root](https://github.com/LucianoToscano/PGBR/releases/download/v0.00.43-LT/PGBR-v0.00.43-LT.apk), Root e Zygisk com hashes SHA-256 no [Mestre](PGBR_ARQUIVO_MESTRE_UNICO.md); [CI #45280739464](https://github.com/LucianoToscano/PGBR/actions/runs/45280739464) aprovado, `device_tested=false`.
+
 - Merge [PR #141](https://github.com/LucianoToscano/PGBR/pull/141) preservando duas linhagens sem perda de commits: Rocket QA6 corrigindo a omissão do APK PR136; mapas/HUD/Pokédex IV; sessão Max preparatória; importação PGSharp local de favoritos/rotas/filtros arquivados.
 - Conservada a prioridade conservadora Charge/Charge2 quando metadados ou identidade do alvo não são válidos; **não homologado em dispositivo**. Batalha Max não dispara ações sem validação nativa confiável.
 - Merge [PR #142](https://github.com/LucianoToscano/PGBR/pull/142) prepara release imutável com variantes sem Root, Root e módulo Zygisk; [CI #45277310216](https://github.com/LucianoToscano/PGBR/actions/runs/45277310216) aprovou três pacotes QA com SHA-256; publicação depende da conclusão do workflow oficial.
