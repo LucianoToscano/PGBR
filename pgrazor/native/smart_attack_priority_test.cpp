@@ -113,7 +113,7 @@ int main() {
   assert(choose_display(true,1020,pair,2)==-1); // duplicate button identity
   pair[1].sample.slot=Slot::FIRST;
   pair[0].sample.tier=Tier::UNKNOWN;
-  assert(choose_display(true,1020,pair,2)==-1);
+  assert(choose_display(true,1020,pair,2)==1); // other has verified SUPER
   pair[0].sample.tier=Tier::RESISTED;
   assert(choose_display(true,900,pair,2)==-1); // clock inversion
   // Diagnostic reason must explain why the original first-ready choice won.
