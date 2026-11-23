@@ -1013,7 +1013,7 @@ int scenario(int n) {
       if(sc.vcharge.tapped||sc.vc2.tapped!=1||sc.vgest.tapped)return 118;
       break;
     }
-    case 62: { // New opponent between Charge and Charge2 observations must block first.
+    case 62: { // New opponent invalidates old display evidence; newly ready charge needs new observations.
       arm(&sc.scope,3,tid);api->observe(PGR_RC_OBS_VNEXT_UPDATE,&sc.vui,0,tid);
       sc.vc2.button=&sc.vbutton;sc.vc2.vcharged=0;
       using namespace pgr_charge_effect_ui;
@@ -1022,19 +1022,19 @@ int scenario(int n) {
       api->observe(PGR_RC_OBS_CHARGE,&sc.vcharge,pack({Slot::FIRST,Tier::RESISTED,41}),tid);
       api->observe(PGR_RC_OBS_CHARGE,&sc.vc2,pack({Slot::SECOND,Tier::SUPER,41}),tid);
       api->tick(tid,0);
-      if(sc.vcharge.tapped||sc.vc2.tapped||sc.vgest.tapped!=1)return 119;
+      if(sc.vcharge.tapped!=1||sc.vc2.tapped||sc.vgest.tapped)return 119;
       // Opponent Sneasel was replaced by Sealeo; a single refreshed button
       // must NOT be mistaken for a genuine one-charge Pokemon.
       api->observe(PGR_RC_OBS_ACTOR_PAIR,nullptr,56789,tid);
       api->observe(PGR_RC_OBS_CHARGE,&sc.vcharge,pack({Slot::FIRST,Tier::RESISTED,42}),tid);
       usleep(180000);api->tick(tid,0);
-      if(sc.vcharge.tapped||sc.vc2.tapped||sc.vgest.tapped<2)return 120;
+      if(sc.vcharge.tapped!=1||sc.vc2.tapped)return 120;
       sc.vc2.vcharged=1;
-      usleep(180000); // unchanged quick-action cadence
+      usleep(650000); // preserve the original charged-action cadence
       api->observe(PGR_RC_OBS_CHARGE,&sc.vcharge,pack({Slot::FIRST,Tier::RESISTED,42}),tid);
       api->observe(PGR_RC_OBS_CHARGE,&sc.vc2,pack({Slot::SECOND,Tier::SUPER,42}),tid);
       api->tick(tid,0);
-      if(sc.vcharge.tapped||sc.vc2.tapped!=1)return 121;
+      if(sc.vcharge.tapped!=1||sc.vc2.tapped!=1)return 121;
       break;
     }
     case 63: { // Unknown opponent must revoke all charged actions despite valid labels.
