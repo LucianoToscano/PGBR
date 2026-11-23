@@ -30,6 +30,9 @@ public final class AutoMaxBattleDialog {
             +"não inicia batalhas nem realiza a captura das recompensas nesta função.");
         body.addView(description);
         TextView status=new TextView(ui);body.addView(status);
+        TextView safety=new TextView(ui);
+        safety.setText("SEGURANÇA: ataques automáticos Max temporariamente indisponíveis. O motor ainda não confirma o tipo da batalha. A sessão não altera os ataques globais.");
+        body.addView(safety);
 
         CheckBox quick=new CheckBox(ui);quick.setText("Ataque Ágil automático");body.addView(quick);
         CheckBox charged=new CheckBox(ui);charged.setText("Ataque Carregado automático");body.addView(charged);
@@ -42,7 +45,7 @@ public final class AutoMaxBattleDialog {
         maxAttack.setChecked((saved&AutoMaxBattle.MAX_ATTACK)!=0);
         dodge.setChecked((saved&AutoMaxBattle.DODGE)!=0);
 
-        Button start=new Button(ui);start.setAllCaps(false);start.setText("Iniciar sessão");body.addView(start);
+        Button start=new Button(ui);start.setAllCaps(false);start.setText("Preparar sessão (sem automação)");body.addView(start);
         Button stop=new Button(ui);stop.setAllCaps(false);stop.setText("Encerrar sessão");body.addView(stop);
         View[] options={quick,charged,maxAttack,dodge};
         Runnable update=()->{
