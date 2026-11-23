@@ -873,6 +873,51 @@ int scenario(int n) {
       if(sc.vcharge.tapped!=1||sc.vc2.tapped||sc.vgest.tapped)return 98;
       break;
     }
+    case 50: { // Video reproduction: no subtitle on Charge; SUPER on Charge2, both ready.
+      arm(&sc.scope,3,tid);api->observe(PGR_RC_OBS_VNEXT_UPDATE,&sc.vui,0,tid);
+      sc.vc2.button=&sc.vbutton;
+      using namespace pgr_charge_effect_ui;
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vcharge,pack_observation({Slot::FIRST,Tier::UNKNOWN,41}),tid);
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vc2,pack({Slot::SECOND,Tier::SUPER,41}),tid);
+      pgrazor_rc_direct_smart_attack(1);api->tick(tid,0);
+      if(sc.vcharge.tapped||sc.vc2.tapped!=1||sc.vgest.tapped)return 100;
+      break;
+    }
+    case 51: { // The unlabeled first is ready, stronger confirmed Charge2 is not.
+      arm(&sc.scope,3,tid);api->observe(PGR_RC_OBS_VNEXT_UPDATE,&sc.vui,0,tid);
+      sc.vc2.button=&sc.vbutton;sc.vc2.vcharged=0;
+      using namespace pgr_charge_effect_ui;
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vcharge,pack_observation({Slot::FIRST,Tier::UNKNOWN,41}),tid);
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vc2,pack({Slot::SECOND,Tier::SUPER,41}),tid);
+      pgrazor_rc_direct_smart_attack(1);api->tick(tid,0);
+      if(sc.vcharge.tapped||sc.vc2.tapped||sc.vgest.tapped!=1)return 101;
+      sc.vc2.vcharged=1;usleep(180000);
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vcharge,pack_observation({Slot::FIRST,Tier::UNKNOWN,41}),tid);
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vc2,pack({Slot::SECOND,Tier::SUPER,41}),tid);
+      api->tick(tid,0);
+      if(sc.vcharge.tapped||sc.vc2.tapped!=1)return 102;
+      break;
+    }
+    case 52: { // Neither button has confirmed effectiveness; keep original behavior.
+      arm(&sc.scope,3,tid);api->observe(PGR_RC_OBS_VNEXT_UPDATE,&sc.vui,0,tid);
+      sc.vc2.button=&sc.vbutton;
+      using namespace pgr_charge_effect_ui;
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vcharge,pack_observation({Slot::FIRST,Tier::UNKNOWN,41}),tid);
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vc2,pack_observation({Slot::SECOND,Tier::UNKNOWN,41}),tid);
+      pgrazor_rc_direct_smart_attack(1);api->tick(tid,0);
+      if(sc.vcharge.tapped!=1||sc.vc2.tapped)return 103;
+      break;
+    }
+    case 53: { // Capture order reverse: known SUPER identified by real slot, not index.
+      arm(&sc.scope,3,tid);api->observe(PGR_RC_OBS_VNEXT_UPDATE,&sc.vui,0,tid);
+      sc.vc2.button=&sc.vbutton;
+      using namespace pgr_charge_effect_ui;
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vcharge,pack({Slot::SECOND,Tier::SUPER,41}),tid);
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vc2,pack_observation({Slot::FIRST,Tier::UNKNOWN,41}),tid);
+      pgrazor_rc_direct_smart_attack(1);api->tick(tid,0);
+      if(sc.vcharge.tapped!=1||sc.vc2.tapped)return 104;
+      break;
+    }
 #endif
   }
   g_cb=nullptr;api->tick(tid,1);
@@ -881,7 +926,7 @@ int scenario(int n) {
 }
 
 #if defined(PGR_RC_DIRECT_TEST)
-constexpr int kScenarios = 50;
+constexpr int kScenarios = 54;
 #else
 constexpr int kScenarios = 33;
 #endif
