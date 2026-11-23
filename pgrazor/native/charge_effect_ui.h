@@ -23,8 +23,10 @@ struct Binding {
 };
 
 // This compact payload reuses the previously ignored aux of PGR_RC_OBS_CHARGE.
-// 0 == unavailable; all other payloads must contain nonzero slot, tier and batch.
-// No pointer or Pokemon/account identifier crosses the leaf boundary.
+// 0 == unavailable. Exact effect payloads contain slot, tier and batch.
+ // Slot-only payloads preserve the game-verified Charge / Charge2 identity
+ // when showEffectiveness is false: tier UNKNOWN is NOT silently made Normal.
+ // No pointer or Pokemon/account identifier crosses the leaf boundary.
 inline int32_t pack(Sample s) {
   const unsigned slot=static_cast<unsigned>(s.slot),tier=static_cast<unsigned>(s.tier);
   if(!s.batch_token||s.batch_token>0x1FFFFFu||slot<1||slot>2||tier<1||tier>3)return 0;
@@ -35,6 +37,20 @@ inline Sample unpack(int32_t aux) {
   uint32_t v=static_cast<uint32_t>(aux);
   Sample s{static_cast<Slot>(v&3),static_cast<Tier>((v>>2)&3),v>>4};
   return pack(s)==aux?s:Sample{};
+}
+// Transmit a verified display slot even when the game's efficacy label is
+// hidden. Existing pack/unpack remain strict for confirmed classifications.
+inline int32_t pack_observation(Sample s) {
+  if(s.tier!=Tier::UNKNOWN)return pack(s);
+  const auto slot=static_cast<unsigned>(s.slot);
+  if(slot<1||slot>2||!s.batch_token||s.batch_token>0x1FFFFFu)return 0;
+  return static_cast<int32_t>((s.batch_token<<4)|slot);
+}
+inline Sample unpack_observation(int32_t aux) {
+  if(aux<=0)return {};
+  const uint32_t v=static_cast<uint32_t>(aux);
+  Sample s{static_cast<Slot>(v&3),static_cast<Tier>((v>>2)&3),v>>4};
+  return pack_observation(s)==aux?s:Sample{};
 }
 inline uint32_t state_batch_token(const void *state) {
   if(!state)return 0;
@@ -106,20 +122,23 @@ inline bool resolve(const PgrBootBinding &boot,const void *display_class,Binding
 inline Sample observe(const Binding &binding,void *display,void *state,
                      void (*field_get_value)(void *,void *,void *)) {
   if(!binding.valid||!display||!state||!field_get_value)return {};
-  uint8_t show=0;
-  field_get_value(display,const_cast<void *>(binding.show_field),&show);
-  // False/ambiguous can be a stale hidden default, NOT confirmed neutral.
-  if(show!=1)return {};
-  int32_t slot=0,effect=0;
+  int32_t slot=0;
   field_get_value(display,const_cast<void *>(binding.slot_field),&slot);
-  field_get_value(display,const_cast<void *>(binding.tier_field),&effect);
   Sample s{};
   s.slot=slot==binding.slot_first?Slot::FIRST:
          slot==binding.slot_second?Slot::SECOND:Slot::UNKNOWN;
+  if(s.slot==Slot::UNKNOWN)return {};
+  s.batch_token=state_batch_token(state);
+  uint8_t show=0;
+  field_get_value(display,const_cast<void *>(binding.show_field),&show);
+  // The game may hide the text for a neutral attack. We preserve the verified
+  // slot identity, but do NOT infer Normal when the label is not shown.
+  if(show!=1)return s;
+  int32_t effect=0;
+  field_get_value(display,const_cast<void *>(binding.tier_field),&effect);
   s.tier=effect==binding.tier_super?Tier::SUPER:
          effect==binding.tier_neutral?Tier::NEUTRAL:
          effect==binding.tier_resisted?Tier::RESISTED:Tier::UNKNOWN;
-  s.batch_token=state_batch_token(state);
   return s;
 }
 }  // namespace pgr_charge_effect_ui
