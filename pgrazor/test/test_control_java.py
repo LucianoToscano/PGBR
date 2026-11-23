@@ -14,7 +14,7 @@ import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
 STUBS = {
-    'dev/pgrazor/PtBr.java': 'package dev.pgrazor; public final class PtBr { public static String tr(String value){return value;} }', // Narrow JVM harness; real app compiles the full i18n class.
+    'dev/pgrazor/PtBr.java': 'package dev.pgrazor; public final class PtBr { public static String tr(String value){return value;} }', # Narrow JVM harness; real app compiles the full i18n class.
     "dev/pgrazor/EternatusRouteRunner.java": "package dev.pgrazor; public final class EternatusRouteRunner { public static void tick(){} public static void stop(String reason){} }",
     "dev/pgrazor/AutoRaid.java": "package dev.pgrazor; public class AutoRaid { public static void travel(long s,long t,double a,double b){} public static void reset(){} public static void read(java.util.Properties p){} public static void write(java.util.Properties p){} public static String config(){return null;} public static void tick(boolean b){} public static boolean running(){return false;} public static void publish(String s){} }",
     "dev/pgrazor/GiftBatchSettings.java": "package dev.pgrazor; public class GiftBatchSettings {public static void reset(){} public static String config(){return null;} public static void publish(String s){} public static boolean running(){return false;}}",
