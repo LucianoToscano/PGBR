@@ -416,9 +416,12 @@ void drain_leaf_events(uint64_t tid) {
                     if(g_pvp_ui_root){
                         const char *act=rev.id==PGR_RC_ACT_SHIELD?"shield":
                                         rev.id==PGR_RC_ACT_CHARGED?"charged":"quick";
+                        const char *slot_detail=rev.id==PGR_RC_ACT_CHARGED?
+                            ((rev.aux&8)?R"(,"chargedSlot":"Charge2")":
+                             (rev.aux&4)?R"(,"chargedSlot":"Charge")":""):"";
                         std::snprintf(buf,sizeof(buf),
-                          "{\"mode\":\"%s\",\"pvpAction\":\"%s\",\"path\":\"vnext\",\"invoked\":true}",
-                          g_pvp_training_scope?"training":"pvp",act);
+                          "{\"mode\":\"%s\",\"pvpAction\":\"%s\",\"path\":\"vnext\",\"invoked\":true%s}",
+                          g_pvp_training_scope?"training":"pvp",act,slot_detail);
                         queue_event(PGR_CBH_EV_BATTLE_ACTION,rev.id,rev.aux,tid,buf);
                         break;
                     }
@@ -429,7 +432,9 @@ void drain_leaf_events(uint64_t tid) {
                     } else if (rev.id == PGR_RC_ACT_CHARGED) {
                         if (rev.aux & 2) {
                             queue_event(PGR_CBH_EV_ROCKET_ACTION, rev.id, rev.aux, tid,
-                                        "{\"action\":\"charged\",\"path\":\"vnext\"}");
+                              (rev.aux&8)?R"({"action":"charged","path":"vnext","chargedSlot":"Charge2"})":
+                              (rev.aux&4)?R"({"action":"charged","path":"vnext","chargedSlot":"Charge"})":
+                                           R"({"action":"charged","path":"vnext"})");
                         } else {
                             queue_event(PGR_CBH_EV_ROCKET_ACTION, rev.id, rev.aux, tid,
                                         "{\"action\":\"charged\"}");
