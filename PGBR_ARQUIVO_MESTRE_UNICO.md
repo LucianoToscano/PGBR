@@ -1348,3 +1348,10 @@ Foram executadas 18 fixtures C++ host, contratos de tempos/UI e verificação do
 - [PR #131](https://github.com/LucianoToscano/PGBR/pull/131), draft. [Workflow #45107072775](https://github.com/LucianoToscano/PGBR/actions/runs/45107072775): **4/5 jobs success**, com falha no job Java/Root por fixture `test_auto_raid_controller_java.py`, que compila `AutoRaid.java` real com stubs e não tinha o novo símbolo `AutoMaxBattle`. A auditoria de governança [#45107073010](https://github.com/LucianoToscano/PGBR/actions/runs/45107073010) passou.
 - **Correção:** adicionado stub de teste `pgrazor/test/auto_raid_stubs/dev/pgrazor/AutoMaxBattle.java` somente na fixture de Auto-Raid. O código de produção `AutoMaxBattle.java` continua compilado e exercitado no runner JVM `test_control_java.py`. CI da revisão corrigida deverá rodar novamente e os resultados serão checados; não confundir falha de stub com confirmação de funcionamento real.
 - **Estado:** `device_tested=false`, sem merge, tag, release ou APK desta branch.
+
+
+### Rerun corrigido de Batalha Max — PR #131
+
+- [GitHub Actions #45107375898](https://github.com/LucianoToscano/PGBR/actions/runs/45107375898): **5/5 success** para commit `b2fa5066bd9da575ac643b8fda63a45d1f479574`. Passaram C++ host, Java/Python/Node + compilação do aplicativo e instalador Root, política selecionada ARM64, host/executor VNext e website. A falha original de stub `AutoMaxBattle` ficou corrigida na fixture independente Auto-Raid.
+- **Evidência limitada:** CI não comprova ação efetiva dentro da batalha Max, nem captura, Power Spot, versões de aparelho ou aceitação de hooks. `device_tested=false`; PR segue em draft; nenhum merge ou novo APK. Este adendo documental provoca uma execução adicional na nova HEAD e exige leitura dos resultados para concluir o gate documental.
+- **Dependências de outros forks:** VGP+ por etiquetas e IV real [issue #133](https://github.com/LucianoToscano/PGBR/issues/133), atalhos MT [issue #134](https://github.com/LucianoToscano/PGBR/issues/134); não foram portados neste PR.
