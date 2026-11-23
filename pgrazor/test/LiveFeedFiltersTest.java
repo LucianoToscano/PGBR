@@ -59,6 +59,22 @@ public final class LiveFeedFiltersTest {
         check(!vp.getBoolean("show_my_shinies") && vp.getBoolean("show_my_backgrounds"),
                 "a saved show_my_shinies is dropped (My Shinies was removed); backgrounds survive");
 
+        // --- first-page global searches must honor an exact picked species ---
+        check(new LiveFeedFilters().singleAllowedSpecies() == -1,
+                "default filters do not select a global species");
+        LiveFeedFilters oneSpecies = LiveFeedFilters.fromJson(new JSONObject()
+                .put("species_filter_mode", "allowlist")
+                .put("species_filter_list", new JSONArray().put(25)));
+        check(oneSpecies.singleAllowedSpecies() == 25,
+                "single selected species can narrow the server's first page");
+        check(f.singleAllowedSpecies() == -1,
+                "multi-species allowlists must not silently pick one species");
+        LiveFeedFilters inactiveList = LiveFeedFilters.fromJson(new JSONObject()
+                .put("species_filter_mode", "off")
+                .put("species_filter_list", new JSONArray().put(25)));
+        check(inactiveList.singleAllowedSpecies() == -1,
+                "disabled species picker never changes the network request");
+
         // --- rejection of malformed input and out-of-range values ---
         expectReject(new JSONObject().put("show_all", "yes"), "boolean given a string");
         expectReject(new JSONObject().put("min_iv", "41"), "number given a string");

@@ -40,7 +40,27 @@ public final class IFlowGoFeedDataTest {
             new JSONObject().put("items", new JSONArray().put(pokemon)), now);
         check(global.entries.size() == 1 && global.entries.get(0).dexId == 25,
             "world page reuses real spawn fields");
-        check(global.note.contains("primeira página"), "world limit described truthfully");
+        check(global.note.contains("busca global"), "world search labelled");
+        check(global.note.contains("total desconhecido"),
+            "no server total means the app must not claim more pages");
+        // Pagination contract: two pages requested, three available -> the note must say so and
+        // point to the way of narrowing the search instead of pretending this is worldwide.
+        LiveFeedData.Snapshot paged = IFlowGoFeedData.parseGlobal(
+            new JSONObject().put("items", new JSONArray().put(pokemon)), now, 2, 2, 3);
+        check(paged.note.contains("páginas 2 de 3"), "pages shown/available stated");
+        check(paged.note.contains("mais resultados"), "hidden pages are disclosed");
+        check(paged.note.contains("estreite a busca"), "the user is told how to reach them");
+        LiveFeedData.Snapshot complete = IFlowGoFeedData.parseGlobal(
+            new JSONObject().put("items", new JSONArray().put(pokemon)), now, 1, 1, 1);
+        check(!complete.note.contains("mais resultados"),
+            "a complete search must not warn about missing pages");
+        // hasNextPage uses the server's own total, never a guess.
+        check(IFlowGoFeedData.hasNextPage(new JSONObject().put("total", 450), 2, 200),
+            "450 items, 2 pages of 200 -> page 3 exists");
+        check(!IFlowGoFeedData.hasNextPage(new JSONObject().put("total", 400), 2, 200),
+            "400 items -> exactly two pages");
+        check(!IFlowGoFeedData.hasNextPage(new JSONObject().put("items", new JSONArray()), 1, 200),
+            "no total is not evidence of a next page");
         JSONObject raid = new JSONObject().put("id", "raid-live").put("gym_name", "Ginásio Teste")
             .put("lat", 35.65).put("lon", 139.70).put("raid_pokemon_id", 150)
             .put("raid_level", 5)

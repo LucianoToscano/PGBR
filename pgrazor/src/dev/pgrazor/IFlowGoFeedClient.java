@@ -44,24 +44,101 @@ final class IFlowGoFeedClient {
         return doFetch(ENDPOINT + query, raids, false);
     }
 
+    /** Pages requested per search; each page is one HTTP request, never a background sweep. */
+    static final int GLOBAL_PAGES = 2;
+
     /**
-     * One page of the global search. Server-side pokemon_id is an observed
-     * filter: a limited #25 query returned exclusively Pikachu spawns.
-     * No pagination sweep or unknown query flags.
+     * The global search for a client that asked for a single page (the species preview list). One HTTP
+     * request. Server-side pokemon_id is an observed filter (a limited #25 query returned exclusively
+     * Pikachu spawns), and no unknown query flags are invented.
      */
     LiveFeedData.Snapshot fetchGlobal(int dexId) throws Exception {
+        return fetchGlobal(dexId, 1);
+    }
+
+    /**
+     * Up to {@code maxPages} consecutive pages of the global search, stopping at the first empty or
+     * failed page.
+     *
+     * <p>Paging stops rather than guesses: page N+1 is requested only when the server's own {@code total}
+     * proves it exists. A failure after the first page keeps the rows already received and says that the
+     * search is partial — it never discards a valid first response. Rate limits and refusals are rethrown so
+     * the caller can keep its 401/403/429 handling.
+     */
+    LiveFeedData.Snapshot fetchGlobal(int dexId, int maxPages) throws Exception {
         cancelled = false;
         final String dexQuery;
         try { dexQuery = IFlowGoRequestPolicy.globalSpeciesQuery(dexId); }
         catch (IllegalArgumentException invalid) {
             throw new LiveFeedClient.FeedException("Espécie inválida para busca global iFlowGo.");
         }
-        String endpoint = "https://pokecoords.iflowgo.com/iflowgopokecoords/api/v1/pokemon-search?page=1"
-                + dexQuery;
-        return doFetch(endpoint, false, true);
+        int pages = Math.max(1, Math.min(maxPages, GLOBAL_PAGES));
+        java.util.List<LiveFeedData.Entry> entries = new java.util.ArrayList<>();
+        java.util.Set<String> ids = new java.util.HashSet<>();
+        int pagesShown = 0, pagesAvailable = 0;
+        String tone = "";
+        Exception pageFailure = null;
+        for (int page = 1; page <= pages; page++) {
+            String endpoint = "https://pokecoords.iflowgo.com/iflowgopokecoords/api/v1/pokemon-search?page=" + page
+                    + dexQuery;
+            JSONObject payload;
+            try {
+                payload = getJson(endpoint);
+            } catch (LiveFeedClient.FeedException fe) {
+                if (fe.status == 401 || fe.status == 403 || fe.status == 429) throw fe;
+                pageFailure = fe;
+                break;                       // partial result is better than none
+            } catch (IOException ioe) {
+                if (cancelled) throw ioe;
+                pageFailure = ioe;
+                break;
+            }
+            pagesShown = page;
+            for (LiveFeedData.Entry entry : IFlowGoFeedData.parseGlobal(payload, System.currentTimeMillis())
+                    .entries) {
+                if (ids.add(entry.id)) entries.add(entry);
+            }
+            // A missing/invalid total is not evidence of full coverage, even if no further
+            // page can be requested. Always keep the note honest about unknown pagination.
+            int reportedTotal = payload.optInt("total", -1);
+            boolean totalKnown = payload.has("total") && !payload.isNull("total")
+                    && reportedTotal >= 0;
+            boolean morePages = IFlowGoFeedData.hasNextPage(payload, page, 200);
+            if (!morePages) {
+                pagesAvailable = totalKnown ? page : 0;
+                break;
+            }
+            // Report a *known next page* even when our local safety cap stops here.
+            // In particular, page 2 of 5 must never be presented as "2 de 2".
+            pagesAvailable = page + 1;
+        }
+        if (pagesShown == 0) throw pageFailure != null ? pageFailure
+                : new LiveFeedClient.FeedException("iFlowGo global não retornou nenhuma página.");
+        String note = IFlowGoFeedData.parseGlobal(
+                new JSONObject().put("items", new org.json.JSONArray()), System.currentTimeMillis(),
+                pagesShown, pagesShown, pagesAvailable).note;
+        if (pageFailure != null)
+            note = note + " Busca parcial: a página seguinte falhou (" + pageFailure.getMessage() + ").";
+        return new LiveFeedData.Snapshot(entries, System.currentTimeMillis(), 60, note);
     }
 
     private LiveFeedData.Snapshot doFetch(String target, boolean raids, boolean global) throws Exception {
+        JSONObject payload = getJson(target);
+        try {
+            return global
+                    ? IFlowGoFeedData.parseGlobal(payload, System.currentTimeMillis())
+                    : IFlowGoFeedData.parse(payload, System.currentTimeMillis(), raids);
+        } catch (Exception e) {
+            throw new LiveFeedClient.FeedException("iFlowGo retornou campos desconhecidos nesta versão.");
+        }
+    }
+
+    /**
+     * One GET with the full safety contract: no redirects, bounded body, cancellation, explicit
+     * 401/403/429 handling and a typed exception for every other status. Shared by the area and global
+     * searches so a new call site cannot accidentally skip a check.
+     */
+    private JSONObject getJson(String target) throws Exception {
         HttpURLConnection conn = (HttpURLConnection) new URL(target).openConnection();
         active = conn;
         try {
@@ -95,15 +172,8 @@ final class IFlowGoFeedClient {
                     out.write(buf, 0, n);
                 }
             }
-            JSONObject payload;
-            try { payload = new JSONObject(new String(out.toByteArray(), StandardCharsets.UTF_8)); }
+            try { return new JSONObject(new String(out.toByteArray(), StandardCharsets.UTF_8)); }
             catch (Exception e) { throw new LiveFeedClient.FeedException("iFlowGo retornou JSON inválido."); }
-            try { return global
-                    ? IFlowGoFeedData.parseGlobal(payload, System.currentTimeMillis())
-                    : IFlowGoFeedData.parse(payload, System.currentTimeMillis(), raids); }
-            catch (Exception e) {
-                throw new LiveFeedClient.FeedException("iFlowGo retornou campos desconhecidos nesta versão.");
-            }
         } catch (IOException e) {
             if (cancelled) throw new LiveFeedClient.FeedException("Busca iFlowGo cancelada.");
             throw new LiveFeedClient.FeedException("Não foi possível acessar iFlowGo. Verifique a rede.");

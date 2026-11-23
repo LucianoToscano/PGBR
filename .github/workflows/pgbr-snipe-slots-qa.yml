@@ -1,0 +1,68 @@
+name: PGBR - QA Sniper 1 e 2 (filtros separados)
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'pgrazor/src/dev/pgrazor/SnipeFilters.java'
+      - 'pgrazor/src/dev/pgrazor/SnipeFilterDialog.java'
+      - 'pgrazor/src/dev/pgrazor/SnipeSlotsDialog.java'
+      - 'pgrazor/src/dev/pgrazor/HundoFeedData.java'
+      - 'pgrazor/src/dev/pgrazor/FeedChooser.java'
+      - 'pgrazor/test/SnipeFiltersTest.java'
+      - 'pgrazor/test/test_snipe_slots_contract.py'
+      - 'pgrazor/test/test_live_feed_java.py'
+      - 'docs/SNIPE_SLOTS_LT040.md'
+      - '.github/workflows/pgbr-snipe-slots-qa.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  offline-slots-and-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify two independent slots and confirmed teleport contract
+        run: python -B -m unittest discover -s pgrazor/test -p 'test_snipe_slots_contract.py' -v
+      - name: Keep the manual 100% IV contract green
+        run: python -B -m unittest discover -s pgrazor/test -p 'test_hundo_manual_ui_contract.py' -v
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools
+      - name: Install Android JSON SDK sources
+        run: sdkmanager "sources;android-36"
+      - name: Ambiente Java/Android visível no resumo
+        run: |
+          set -euo pipefail
+          {
+            echo "### Ambiente do teste JVM"
+            echo "- java: $(java -version 2>&1 | head -1)"
+            echo "- javac: $(javac -version 2>&1 | head -1)"
+            echo "- ANDROID_HOME=${ANDROID_HOME:-<vazio>}"
+            echo "- platforms: $(ls "${ANDROID_HOME:-/nonexistent}/platforms" 2>/dev/null | tr '\n' ' ')"
+            echo "- sources: $(ls "${ANDROID_HOME:-/nonexistent}/sources" 2>/dev/null | tr '\n' ' ')"
+            echo "- android.jar: $(ls "${ANDROID_HOME:-/nonexistent}"/platforms/*/android.jar 2>/dev/null | head -3 | tr '\n' ' ')"
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Run feed parsers and the new slot fixtures on the JVM
+        run: |
+          set -o pipefail
+          python -B -m unittest discover -s pgrazor/test -p 'test_live_feed_java.py' -v 2>&1 | tee /tmp/feed-qa.log || {
+            {
+              echo "### Falha no parser do feed (rc=$?)"
+              echo '```'
+              grep -E "DIAG |Error|FAIL|Traceback|falhou|ERROR in|rc=" /tmp/feed-qa.log | head -80
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+            echo "::error title=Feed QA::$(grep -m1 -E 'DIAG .*ERROR in|AssertionError|FAIL' /tmp/feed-qa.log | cut -c1-900)"
+            exit 1
+          }
