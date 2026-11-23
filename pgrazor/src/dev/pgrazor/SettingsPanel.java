@@ -1103,7 +1103,7 @@ final class SettingsPanel {
             refreshSmartAttackNativeStatus();
         });
         caption(owner,"O motor da Equipe GO Rocket decide qual carregado usar: Super eficaz > Normal > Pouco eficaz. Liga GO, duelos e treinamento reconhecidos reutilizam o mesmo motor, sem outro executor de ataques. "+
-            "Se um golpe comprovadamente melhor ainda não carregou, o Rocket continua usando Ágil. Quando o outro botão não mostra a eficácia, um Super eficaz confirmado ganha prioridade, sem assumir que o golpe oculto seja Normal. "+
+            "Quando ambos estão prontos e identificados, escolhe Super eficaz > Normal > Pouco eficaz. Se apenas um carregado classificado está pronto, utiliza-o sem esperar o mais forte carregar. Um rótulo oculto não é tratado como Normal. "+
             "Com Ataque Inteligente ligado, se dois carregados existem mas os dados estiverem incompletos ou vencidos, nenhum carregado automático será acionado até uma classificação válida; o Ágil pode continuar normalmente. "+
             "Para voltar à ordem original do primeiro carregado pronto, desligue Ataque Inteligente. "+
             "O Ágil não pertence a um lado da tela. Experimental: requer teste real em aparelho.");
