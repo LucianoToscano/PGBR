@@ -1,8 +1,10 @@
-## PGBR LT044 (v0.00.44-LT) — candidata QA pós-LT043 (23/11/2026)
+## PGBR LT044 (v0.00.44-LT) — pré-release QA publicada (23/11/2026)
 
 - PT-BR das telas dos chats paralelos e terminologia Teleporte (#101), preservando novas mensagens de rollback de backup da LT043.
 - GPS defensivo: valores sintéticos fora da faixa e não finitos rejeitados sem bloquear o callback original; teste com retorno 360° para 0° (#109).
-- **Ataque Inteligente Rocket/VNext (PR #150):** o carregado classificado já pronto é acionado sem esperar outro; se ambos estão prontos, usa Super eficaz > Normal > Pouco eficaz. Mantidos os bloqueios para metadata e ator desconhecidos, os tempos, o Max preparatório, a assinatura e o PokeSearch. QA `device_tested=false`, aguardando a validação de build; Snipers, radar e Savant continuam pendentes.
+- **Ataque Inteligente Rocket/VNext (PR #150):** o carregado classificado já pronto é acionado sem esperar outro; se ambos estão prontos, usa Super eficaz > Normal > Pouco eficaz. Mantidos os bloqueios para metadata e ator desconhecidos, os tempos, o Max preparatório, a assinatura e o PokeSearch. QA `device_tested=false`, CI e verificação cruzada aprovados; Snipers, radar e Savant continuam pendentes.
+
+- **Publicação:** [Release LT044](https://github.com/LucianoToscano/PGBR/releases/tag/v0.00.44-LT) com [APK sem Root](https://github.com/LucianoToscano/PGBR/releases/download/v0.00.44-LT/PGBR-v0.00.44-LT.apk), [Root](https://github.com/LucianoToscano/PGBR/releases/download/v0.00.44-LT/PGBR-v0.00.44-LT-Root.apk), [Zygisk](https://github.com/LucianoToscano/PGBR/releases/download/v0.00.44-LT/PGBR-v0.00.44-LT-Root-module.zip) e [SHA256SUMS](https://github.com/LucianoToscano/PGBR/releases/download/v0.00.44-LT/SHA256SUMS.txt); origem `cbd4c69d`, [CI #45289777425](https://github.com/LucianoToscano/PGBR/actions/runs/45289777425) aprovado. Verificar SHA no Mestre.
 
 ## PGBR 0.00.43-LT — integração QA consolidada (23/11/2026)
 
