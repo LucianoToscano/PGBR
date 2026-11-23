@@ -92,7 +92,7 @@ enum PgrRocketCombatEventCode {
   PGR_RC_EVT_READY  = 1,  // native-rocket-combat-ready (aux=1)
   PGR_RC_EVT_SCOPE  = 2,  // rocket-scope        (aux=active 1/0)
   PGR_RC_EVT_UI     = 3,  // rocket-ui           (aux=PgrRocketCombatUiSource)
-  PGR_RC_EVT_ACTION = 4,  // action: aux bit0=accepted, bit1=vnext; charged-only bit2=verified Charge, bit3=verified Charge2
+  PGR_RC_EVT_ACTION = 4,  // action aux bit0=accepted bit1=vnext; charged-only bit2=Charge bit3=Charge2, bits4..7=DisplayReason
   PGR_RC_EVT_GATE   = 5,  // rocket-attack-gate  (id=PgrRocketCombatGate)
   PGR_RC_EVT_ERROR  = 6   // rocket-error        (managed-invoke fault)
 };
