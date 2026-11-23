@@ -138,6 +138,9 @@ struct ChargeObservation {
 };
 ChargeObservation g_charge_observations[PGR_RC_MAX_CHARGES]{};
 uint32_t g_charge_count = 0;
+bool     g_smart_seen_pair = false;  // never misread a disappearing second as a 1-move team
+uint32_t g_smart_last_diag = 0xFFFFFFFFu;
+uint64_t g_smart_last_diag_ms = 0;
 bool     g_shield_used = false;
 uint64_t g_shield_opened_ms = 0; // per-prompt epoch, cleared on close
 bool     g_failed = false;
@@ -281,9 +284,22 @@ inline bool stale(uint64_t epoch) { return g_epoch != epoch || g_stop_requested.
 
 // --- root teardown helpers (detach BEFORE gc_free) ----------------------------------
 void drop_ui()  { void *h = g_ui_handle;  g_ui_handle = nullptr;  refresh(); gc_free(h); }
-void drop_vui() { void *h = g_vui_handle; g_vui_handle = nullptr;
+void drop_vui() {
+  // A new VNext GUI can replace the old one without HandleDismiss. The
+  // previous code reset only effect readings, leaving up to four rooted
+  // ChargeAttackDisplayVNext objects from the previous GUI in the list.
+  // With >=3 entries Smart Attack silently reverted to first-ready.
+  // Detach all roots BEFORE the first callback-capable GC free.
+  void *old[1+PGR_RC_MAX_CHARGES]{};uint32_t n=0;
+  if(g_vui_handle)old[n++]=g_vui_handle;
+  for(uint32_t i=0;i<g_charge_count;++i)old[n++]=g_charges[i];
+  g_vui_handle=nullptr;
+  std::memset(g_charges,0,sizeof(g_charges));g_charge_count=0;
   for(auto &sample:g_charge_observations)sample={};
-  refresh(); gc_free(h); }
+  g_smart_seen_pair=false;g_smart_last_diag=0xFFFFFFFFu;g_smart_last_diag_ms=0;
+  refresh();
+  for(uint32_t i=0;i<n;++i)gc_free(old[i]);
+}
 // rocketDrop('shield'): notify feature 20 PROMPT_CLOSE first, then detach + free.
 void drop_shield(uint64_t tid) {
   g_shield_opened_ms = 0;
@@ -308,6 +324,7 @@ void rocket_clear(uint64_t tid) {
   std::memset(g_charges, 0, sizeof(g_charges)); g_charge_count = 0;
   for(auto &sample:g_charge_observations)sample={};
   g_pending_ui_token = 0; g_shield_used = false; g_shield_opened_ms = 0; g_failed = false; g_gate = -1; g_last_fast_ms = 0;
+  g_smart_seen_pair=false;g_smart_last_diag=0xFFFFFFFFu;g_smart_last_diag_ms=0;
   ++g_epoch;
   refresh();
   for (uint32_t i = 0; i < n; ++i) gc_free(old[i]);
@@ -500,7 +517,9 @@ int api_observe(uint32_t kind,void *obj,int32_t aux,uint64_t tid){
         void *old[1+PGR_RC_MAX_CHARGES];uint32_t n=0;old[n++]=g_vui_handle;g_vui_handle=nullptr;
         for(uint32_t i=0;i<g_charge_count;++i)old[n++]=g_charges[i];
         std::memset(g_charges,0,sizeof(g_charges));g_charge_count=0;
-        for(auto &sample:g_charge_observations)sample={};refresh();
+        for(auto &sample:g_charge_observations)sample={};
+        g_smart_seen_pair=false;g_smart_last_diag=0xFFFFFFFFu;g_smart_last_diag_ms=0;
+        refresh();
         for(uint32_t i=0;i<n;++i)gc_free(old[i]);
       }break;
     }
