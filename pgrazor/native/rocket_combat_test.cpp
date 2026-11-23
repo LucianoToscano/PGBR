@@ -707,7 +707,9 @@ int scenario(int n) {
       pgr_rocket_combat_event_v1 ev{};
       while(api->next_event(&ev)==1){
         if(ev.code==PGR_RC_EVT_ACTION&&ev.id==PGR_RC_ACT_CHARGED){
-          if((ev.aux&10)!=10||(ev.aux&4))return 81; // VNext + confirmed Charge2
+          if((ev.aux&10)!=10||(ev.aux&4)||
+             ((static_cast<uint32_t>(ev.aux)>>4)&15u)!=1u)return 81;
+          // VNext + verified Charge2 + reason=effectiveness, not first-ready
           reported=true;
         }
       }
