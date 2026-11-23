@@ -25,16 +25,16 @@ final class PgSharpDataImport {
     private PgSharpDataImport() {}
 
     static final class Report {
-        final int favoritesAdded, favoritesSkipped, routesAdded, routesSkipped;
+        final int favoritesAdded, favoritesSkipped, legendsPreserved, routesAdded, routesSkipped;
         final int pokemonFilters, questFilters, raidFilters;
-        Report(int fa, int fs, int ra, int rs, int pf, int qf, int rf) {
-            favoritesAdded=fa; favoritesSkipped=fs; routesAdded=ra; routesSkipped=rs;
+        Report(int fa, int fs, int lg, int ra, int rs, int pf, int qf, int rf) {
+            favoritesAdded=fa; favoritesSkipped=fs; legendsPreserved=lg; routesAdded=ra; routesSkipped=rs;
             pokemonFilters=pf; questFilters=qf; raidFilters=rf;
         }
         String summary() {
             return "Importação concluída. " + favoritesAdded + " favoritos e "
                 + routesAdded + " rotas adicionados; " + favoritesSkipped
-                + " favoritos e " + routesSkipped + " rotas já existentes. "
+                + " favoritos e " + routesSkipped + " rotas já existentes; " + legendsPreserved\n                + " legendas/notas sem localização preservadas somente no arquivo. "
                 + pokemonFilters + " filtros Pokémon, " + questFilters
                 + " filtros de pesquisas e " + raidFilters
                 + " filtros de reides preservados para compatibilização. "
@@ -119,10 +119,16 @@ final class PgSharpDataImport {
         }
         JSONArray sourceFavorites=root.getJSONArray("favorites");
         List<SavedPlaces.Entry> toAdd=new ArrayList<>();
-        int skippedFavorites=0;
+        int skippedFavorites=0,legendsPreserved=0;
         for(int i=0;i<sourceFavorites.length();i++){
             JSONObject f=sourceFavorites.getJSONObject(i);
             String name=f.getString("name").trim();
+            // PGSharp stores legend/title rows with the sentinel (0,0).
+            // Keep all of them in the private original archive but never offer them for teleport.
+            if(f.getDouble("lat")==0.0 && f.getDouble("lng")==0.0) {
+                legendsPreserved++;
+                continue;
+            }
             SavedPlaces.Entry entry=new SavedPlaces.Entry(name,f.getDouble("lat"),f.getDouble("lng"),"Geral");
             String key=name.toLowerCase(Locale.ROOT);
             if(names.contains(key)){skippedFavorites++;continue;}
@@ -179,7 +185,7 @@ final class PgSharpDataImport {
                 catch(Exception rollback){error.addSuppressed(rollback);}
             throw error;
         }
-        return new Report(toAdd.size(),skippedFavorites,toSave.size(),skippedRoutes,
+        return new Report(toAdd.size(),skippedFavorites,legendsPreserved,toSave.size(),skippedRoutes,
             root.getJSONArray("pokemonFilters").length(),
             root.getJSONArray("questFilters").length(),
             root.getJSONArray("raidFilters").length());
