@@ -10,7 +10,7 @@ import java.util.List;
 /** Removes only an inactive profile's PGBR data, never game or shared feed credentials. */
 final class AccountProfileData {
     private static final String[] FILES={"pgrazor-location-state-v1.txt","pgrazor-settings-v1.properties","cooldown-history.txt","pgrazor-gpx-routes-v1"};
-    private static final String[] PREFS={"pgrazor-map","pgrazor-overlays","pgrazor-saved-places-v1","pgrazor-livefeed"};
+    private static final String[] PREFS={"pgrazor-map","pgrazor-overlays","pgrazor-saved-places-v1","pgrazor-livefeed","pgrazor-pgsharp-data-v1"};
     static void delete(AccountProfileStore store,File files,File sharedPrefs,String id) throws IOException {
         store.requireRemovable(id);
         File fileRoot=files.getCanonicalFile(),prefRoot=sharedPrefs.getCanonicalFile();
