@@ -589,7 +589,11 @@ void vnext_tick(uint64_t tid, uint64_t epoch, uint32_t mask, uint64_t ticket) {
     // This is an optional VNext-only path; Legacy, PvE and shield/swap timers
     // remain untouched. A lone ready attack is never delayed.
     uint32_t preferred=g_charge_count;
-    if(g_charge_count==2&&simple_attack_enabled()) {
+    const bool intelligent_enabled=simple_attack_enabled();
+    auto decision_reason=intelligent_enabled
+        ? pgr_smart_priority::DisplayReason::UNAVAILABLE_PAIR
+        : pgr_smart_priority::DisplayReason::OFF;
+    if(g_charge_count==2&&intelligent_enabled) {
       pgr_smart_priority::DisplayCandidate samples[2]{};
       const uint64_t observed_now=boottime_ms();
       bool complete=true;
@@ -618,9 +622,12 @@ void vnext_tick(uint64_t tid, uint64_t epoch, uint32_t mask, uint64_t ticket) {
         samples[i].ready=balive&&interactable;
       }
       if(complete) {
-        const int selected=pgr_smart_priority::choose_display(
+        const auto decision=pgr_smart_priority::inspect_display(
             true,observed_now,samples,2);
-        if(selected>=0)preferred=static_cast<uint32_t>(selected);
+        decision_reason=decision.reason;
+        if(decision.index>=0)preferred=static_cast<uint32_t>(decision.index);
+      } else {
+        decision_reason=pgr_smart_priority::DisplayReason::UNKNOWN_EFFECT;
       }
     }
     for (uint32_t pos = 0; pos < g_charge_count; ++pos) {
@@ -651,7 +658,10 @@ void vnext_tick(uint64_t tid, uint64_t epoch, uint32_t mask, uint64_t ticket) {
       // Snapshot the verified slot BEFORE the managed click: invoking the game
       // can reenter hooks and replace battle observations. Unknown stays unknown.
       // This affects diagnostics only, never timing or charged-button selection.
-      int32_t action_flags=2;  // bit1: vNext path
+      // Bits 4..7 report why the original or effectiveness order was used.
+      // Reading this reason cannot delay or change the actual charged attack.
+      int32_t action_flags=2 |
+          (static_cast<int32_t>(decision_reason)<<4);  // bit1: VNext
       const auto &observation=g_charge_observations[i];
       const uint64_t action_now=boottime_ms();
       if(observation.observed_ms&&action_now>=observation.observed_ms&&
