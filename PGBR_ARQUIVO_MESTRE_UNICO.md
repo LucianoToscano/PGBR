@@ -1424,3 +1424,8 @@ Foram executadas 18 fixtures C++ host, contratos de tempos/UI e verificação do
 - **Não considerar issue #137 resolvida funcionalmente**: ainda falta atestação nativa confiável do tipo de batalha, ciclo de vida de cena e testes físicos. Não afirmar que a automação Max funciona. Sem APK/release, sem merge e `device_tested=false`. O CI da HEAD após esta alteração é obrigatório.
 
 - Reforço posterior: `Control.battleOptions()` foi desacoplado explicitamente de `AutoMaxBattle.optionMask()`; retorna apenas `battleOptions` persistente. Assim, a proteção não depende de o método da sessão continuar retornando zero no futuro. A retomada da automação exige nova integração com escopo Max comprovado, nunca reintrodução do OR global.
+
+### 23/11/2026 — Contrato de integração nativa Max documentado
+
+- Novo plano de implementação em `docs/validation/MAX_SESSION_NATIVE_SCOPE_PLAN_2026-11-23.md`: modo nativo `MAX=2`, escopo validado pela feature 19, lease/epoch/serial, autorização temporária independente das preferências globais, revogação e matriz de testes negativos.
+- **Somente documentação nesta etapa:** a ponte Java ↔ coordenador ↔ executor PvE não foi criada; `AutoMaxBattle` permanece sem automação, `device_tested=false`, sem merge/release. Issue #137 segue aberta.
