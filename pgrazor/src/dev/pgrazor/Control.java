@@ -898,7 +898,7 @@ public final class Control {
     public static String healStatus(){return healEnabled?healStatus:"";}
     // Smart battling: one switch, off by default. Native smart_battle.cpp owns all of the behaviour.
     private static volatile boolean smartBattle;
-    // One persistent preference for all battle modes; native selection is not yet wired.
+    // One persistent preference consumed by the shared native Rocket charged selector.
     private static volatile boolean smartAttack;
     // Independent timing options: only indices 0..2 are selectable; legacy 3 migrates to default.
     // Defaults intentionally replace LT038's fixed 1.7 s shield / 2.3 s fainted choice.
