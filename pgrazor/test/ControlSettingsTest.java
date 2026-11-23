@@ -38,7 +38,11 @@ public final class ControlSettingsTest {
             Control.setIvCatchEnabled(false); Control.setIvOwnedEnabled(true); Control.setStorageIvMode(3); Control.setStorageIvFormat(2); Control.setStorageIvEnabled(false); Control.setIvOwnedMode(3); Control.setIvCatchMode(1); Control.setIvCatchMode(0); Control.setCatchChanceShown(false); Control.setAutoBall(true); Control.setAutoThrow(true); Control.setAutoThrowOnMap(true); Control.setAutoBallTarget(85); Control.setPvpKeep(0,true); Control.setPvpKeep(2,true); Control.setPvpRank(0,1); Control.setPvpRank(1,25);
             Control.setHudLabelVisible(Control.HUD_BUDDY,false);
             Control.setHudLabelVisible(Control.HUD_SHINY,false);
-            Control.setThrowGrade(3); Control.setThrowCurve(true); Control.setMapTapMode(2);
+            Control.setThrowGrade(3); Control.setThrowCurve(true);
+            Control.setMapTapMode(3);
+            if(Control.mapTapTeleportNoAsk())throw new AssertionError("Double-tap consent must default OFF");
+            Control.setMapTapTeleportNoAsk(true);
+            if(!Control.mapTapTeleportNoAsk())throw new AssertionError("Explicit double-tap consent not saved");
             Control.setQuickBallReady(false,"Loading"); Control.setQuickSummaryReady(false,"Loading");
         }
         if(!Control.itemTransferEnabled()||!Control.itemRules().equals("1:100;101:0;")||!Control.itemLimits().equals("1:100;101:0;2:250;")||!Control.itemCatalog().contains("Poke Ball"))throw new AssertionError("Item limits not persisted");
@@ -76,8 +80,15 @@ public final class ControlSettingsTest {
             throw new AssertionError("Privacy mask was not restored or leaked original name");
         if(Control.itemAccessAllowed())throw new AssertionError("Item settings bypassed readiness");
         if(!Control.quickSpinEnabled()||!Control.autoTransferEnabled()||Control.transferProtect()!=13||!Control.quickBallEnabled()||!Control.quickSummaryEnabled()||Control.throwGrade()!=3||
-           !Control.throwCurve()||Control.mapTapMode()!=2||!Control.cameraRelative())
+           !Control.throwCurve()||Control.mapTapMode()!=3||!Control.mapTapTeleportNoAsk()||!Control.cameraRelative())
             throw new AssertionError("Saved settings lost across readiness/configuration/process restart");
+        // Switching out of double-tap mode revokes the remembered teleport consent.
+        Control.setMapTapMode(2);
+        if(Control.mapTapTeleportNoAsk())throw new AssertionError("Map mode change retained teleport consent");
+        Control.setMapTapTeleportNoAsk(true);
+        if(Control.mapTapTeleportNoAsk())throw new AssertionError("Consent enabled outside double-tap mode");
+        Control.setMapTapMode(3);
+        Control.setMapTapTeleportNoAsk(true);
         if(Control.quickSpinAllowed()||Control.autoTransferAllowed()||Control.quickBallAllowed()||Control.quickSummaryAllowed()||Control.mapTapAllowed()||Control.throwAllowed())
             throw new AssertionError("Saved preferences bypassed runtime readiness");
         if(!Control.evolveTransferEnabled()||Control.evolveTransferMode()!=1||Control.evolveTransferStages()!=2||!Control.evolveTransferSpecies().equals("1,4,25")||!Control.evolveTransferConfig().equals("1|1|1|2|1,4,25"))
@@ -97,7 +108,8 @@ public final class ControlSettingsTest {
             try(java.io.FileInputStream in=new java.io.FileInputStream(new java.io.File(args[1],"pgrazor-settings-v1.properties"))){saved.load(in);}
             if(!"981".equals(saved.getProperty("battleOptions"))||!"705".equals(saved.getProperty("berryPriority"))||!"5".equals(saved.getProperty("rocketOptions"))||!"true".equals(saved.getProperty("gymRepeatEnabled"))||
                !"2".equals(saved.getProperty("smartShieldTiming"))||
-               !"0".equals(saved.getProperty("smartFaintedSwapTiming")))
+               !"0".equals(saved.getProperty("smartFaintedSwapTiming"))||
+               !"true".equals(saved.getProperty("mapTapTeleportNoAsk"))||!"3".equals(saved.getProperty("mapTap")))
                 throw new AssertionError("Queued settings were not flushed to disk before exit");
         }
         if(args[0].equals("load")) { Control.setSmartAttack(false); Control.flushSettings(5000); }
