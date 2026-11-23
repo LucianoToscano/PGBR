@@ -497,12 +497,17 @@ void drain_leaf_events(uint64_t tid) {
                     const char *tier1=tier_names[(flags>>8)&3u];
                     const char *tier2=tier_names[(flags>>10)&3u];
                     const char *reason=smart_charge_reason(rev.id<<4);
+                    const bool on=rev.id!=0; // OFF enum is emitted only when F3 is effectively OFF
+                    const char *actor=(flags&32768u)?"known":
+                                      (flags&16384u)?"unknown":"not-observed";
                     std::snprintf(buf,sizeof(buf),
-                        "{\"smartAttackMode\":\"%s\",\"chargeCount\":%u,"
-                        "\"decision\":\"%s\",\"reason\":\"%s\","
+                        "{\"smartAttackMode\":\"%s\",\"smartAttackEnabled\":%s,"
+                        "\"classifierBound\":%s,\"actorIdentity\":\"%s\","
+                        "\"chargeCount\":%u,\"decision\":\"%s\",\"reason\":\"%s\","
                         "\"chargeTier\":\"%s\",\"charge2Tier\":\"%s\","
                         "\"chargeReady\":%s,\"charge2Ready\":%s}",
-                        mode,count,held?"hold":picked?"selected":"original",
+                        mode,on?"true":"false",g_charge_ui.valid?"true":"false",actor,
+                        count,held?"hold":picked?"selected":"original",
                         reason,tier1,tier2,(flags&4096u)?"true":"false",
                         (flags&8192u)?"true":"false");
                     queue_event(PGR_CBH_EV_BATTLE_ACTION,rev.id,rev.aux,tid,buf);
