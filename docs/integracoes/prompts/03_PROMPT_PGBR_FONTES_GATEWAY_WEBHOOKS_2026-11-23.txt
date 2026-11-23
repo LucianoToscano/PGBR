@@ -1,4 +1,6 @@
-PROMPT 03/03 — CINCO FONTES, RADAR REMOTO E GATEWAY API/WEBHOOKS | PGBR
+PROMPT 03/03 — CINCO INTEGRAÇÕES, RADAR REMOTO E GATEWAY API/WEBHOOKS | PGBR
+
+ESCOPO EXATO (5): 1. PokeList; 2. iFlowGo; 3. PoGoCoordinates + PokeSearch (um só módulo); 4. PGSharp; 5. iPogo. Não acrescentar outros provedores como módulos adicionais.
 Data de referência: 23/11/2026
 Objetivo: expandir o PGBR preservando o core do PROMPT 02, aproveitar referências do Drive, construir adaptadores honestos e uma API/webhooks próprios.
 
@@ -58,12 +60,11 @@ Branch sugerida: feat/pgbr-pgsharp-import-filtros-snipers-20261123.
 - Reaproveitar somente código próprio compatível de LucianoToscano/PGSharp; Sniper I/II do PGBR devem operar sobre o modelo canônico. Não anunciar Sniper III/IV sem backend real.
 - PGSharpFeedAdapter remoto fica unverified/disabled até acesso permitido; menu com estados distintos: “importação local PGSharp”, “feed PGBR”, “conector PGSharp não verificado”. Guardar key não significa autenticada.
 
-MÓDULO E — IPOGO, POKEMOD E PGTOOLS
+MÓDULO E — IPOGO
 Branch sugerida: feat/pgbr-ipogo-radar-listas-perfis-20261123.
 - Criar FeatureMatrix com status ux_reference | offline_local | via_fonte_permitida | connector_unverified.
 - Implementar UserImportAdapter genérico com JSON/CSV/GPX legitimamente entregues pelo usuário, perfis, presets, Radar, listas locais e alertas sobre nosso banco canônico.
 - iPogo APK 27.3/IPA 4.7.4 são referências de UX/compatibilidade; não são uma API de spawns. Não injetar libmain.so, framework iOS, código do loader nem usar o processo do app para obter credenciais.
-- Para Pokemod/PGTools, mesma regra: referência funcional, não fonte remota conectada até contrato explícito.
 - Nunca rotular como live 'ipogo' um evento importado que veio de outro serviço; conservar source_id real e provenance do arquivo.
 
 MÓDULO F — GATEWAY PRÓPRIO OPENAPI 3.1 + WEBHOOKS
