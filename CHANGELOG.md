@@ -1,3 +1,14 @@
+## Não lançado — correção de ordenação da linha de IV (fork Pokematrix)
+- Painel de IV reaplica a ordem de desenho do canvas a cada exibição para evitar sobreposição pelo modelo quando aberto pelo Pokédex.
+- Um arquivo C++ isolado; testes de compilação e Android necessários, `device_tested=false`.
+- Branch `fix/pokematrix-iv-canvas-20261123`; sem alteração de LT042 publicada.
+
+## Não lançado — Batalha Max por sessão (fork belalsalah74; QA 23/11/2026)
+- Opção de sessão manual para habilitar provisoriamente Ágil, Carregado, Max e Esquiva, com painel PT-BR. Usa executor de combate existente; não inicia Power Spots nem captura.
+- Para automações conflitantes, impede execução conjunta com Auto-Raid e VGP+, cessa caminhada ociosa e cancela sessão no segundo plano, troca de conta e perda de prontidão.
+- Preferências permanentes, cadências, Ataque Inteligente, Root e branches paralelas preservadas. Teste JVM incluído; CI e teste em aparelho pendentes, `device_tested=false`.
+- Branch de QA: `feat/fork-max-session-20261123`; sem merge/release automático. Consultar Arquivo Mestre.
+
 ## Não lançado — integração seletiva Pokematrix (branch QA 23/11/2026)
 - Duplo toque do mapa oferece Caminhar ou Teleporte; «Não perguntar novamente» exige escolha explícita e é revogado quando o modo muda.
 - Badge compacto do companheiro com EP, estrela e manutenção, sem retirar o status completo de acessibilidade.
