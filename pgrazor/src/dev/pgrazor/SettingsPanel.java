@@ -1078,7 +1078,7 @@ final class SettingsPanel {
     private void buildSmartBattle(LinearLayout owner) {
         smartBattleSwitch = switchRow(owner, "Smart battling"); smartBattleSwitch.setChecked(Control.smartBattle());
         smartBattleSwitch.setOnCheckedChangeListener((v,checked) -> { if(checked==Control.smartBattle())return; Control.setSmartBattle(checked); refreshSmartBattle(); });
-        caption(owner, "Escolhe a equipe para Ginásios, Raides e Rocket e troca automaticamente em Ginásios e Rocket. Os demais modos exigem suporte próprio validado.");
+        caption(owner, "Escolhe equipes para Ginásios, Reides e Rocket. Faz trocas estratégicas em Ginásios e Rocket; em PvP, duelos e treinamento VNext reconhecidos, a mesma análise de troca é experimental e requer testes em aparelho.");
         smartBattleStatus = caption(owner, "");
         refreshSmartBattle();
     }
@@ -1095,8 +1095,8 @@ final class SettingsPanel {
         smartAttackSwitch.setOnCheckedChangeListener((v,on)->{
             if(on!=Control.smartAttack())Control.setSmartAttack(on);
         });
-        caption(owner,"A preferência é salva, mas a seleção inteligente dos botões ainda não está integrada "+
-            "nem validada nos modos de batalha. A automação existente continua usando seus próprios critérios.");
+        caption(owner,"Em Rocket e em PvP, duelos ou treinamento VNext com sessão reconhecida, compara Charge e Charge2 quando os dois estão prontos: Super eficaz > Normal > Pouco eficaz. "+
+            "Se houver só um golpe pronto ou dados sem validação, mantém o carregado imediato original. O ataque ágil é independente dos dois lados da tela. Função experimental: ainda requer teste em aparelho.");
         shieldWaitButton=launch(owner,"Espera do Escudo",()->
             new AlertDialog.Builder(dialogContext())
                 .setTitle("Espera do Escudo Inteligente")
