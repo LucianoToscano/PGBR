@@ -94,7 +94,8 @@ enum PgrRocketCombatEventCode {
   PGR_RC_EVT_UI     = 3,  // rocket-ui           (aux=PgrRocketCombatUiSource)
   PGR_RC_EVT_ACTION = 4,  // action aux bit0=accepted bit1=vnext; charged-only bit2=Charge bit3=Charge2, bits4..7=DisplayReason
   PGR_RC_EVT_GATE   = 5,  // rocket-attack-gate  (id=PgrRocketCombatGate)
-  PGR_RC_EVT_ERROR  = 6   // rocket-error        (managed-invoke fault)
+  PGR_RC_EVT_ERROR  = 6,  // rocket-error        (managed-invoke fault)
+  PGR_RC_EVT_SMART_DIAG = 7 // bounded decision diagnostic, without account data
 };
 
 // rocket-ui "source" values carried in the event aux.
