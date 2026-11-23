@@ -6,7 +6,7 @@ ROOT=Path(__file__).resolve().parents[2]
 class Lt035ReleaseContract(unittest.TestCase):
     def test_version_workflow_and_notes(self):
         version=(ROOT/'pgrazor/VERSION').read_text(encoding='utf-8').strip()
-        self.assertIn(version,('0.00.35-LT','0.00.36-LT','0.00.37-LT','0.00.38-LT','0.00.39-LT','0.00.40-LT','0.00.41-LT'))
+        self.assertIn(version,('0.00.35-LT','0.00.36-LT','0.00.37-LT','0.00.38-LT','0.00.39-LT','0.00.40-LT','0.00.41-LT','0.00.42-LT'))
         workflow=(ROOT/'.github/workflows/pgbr-lt035-release.yml').read_text(encoding='utf-8')
         for item in ('PGRAZOR_VERSION: v0.00.35-LT','--tag v0.00.35-LT',
                      'tools/check.py','pgrazor/nonroot.py','pgrazor/rooted.py',
