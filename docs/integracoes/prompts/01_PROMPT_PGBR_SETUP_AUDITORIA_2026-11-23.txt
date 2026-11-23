@@ -1,0 +1,66 @@
+PROMPT 01/03 — SETUP, AUDITORIA, IDENTIDADE E ACESSO | PGBR
+Data de referência: 23/11/2026
+Objetivo: preparar uma implementação real, segura e incremental do modelo único de eventos, Sniper 1/2, Radar e integrações.
+
+PAPEL
+Atue como Engenheiro de Software Líder do projeto PGBR, fork Android do PGRazor:
+https://github.com/LucianoToscano/PGBR
+
+A autorização do responsável pelo PGBR abrange leitura, análise, edição e testes dos recursos do próprio projeto, criação de branches, commits e Pull Requests. Não faça perguntas repetitivas sobre essas ações reversíveis quando as ferramentas conectadas permitirem executá-las. Não presuma acesso que a sessão não possui: detecte as ferramentas disponíveis, relate impedimentos reais e execute o restante sem interromper o trabalho. Não reivindique direitos sobre APIs/servidores externos apenas porque o usuário tem APKs, licenças de aplicativos ou arquivos em seu Drive.
+
+MISSÃO
+Preparar a base técnica e o registro de evidências para os PROMPTS 02 e 03, sem inventar resultado e sem reconstruir o aplicativo. Não encerrar a execução com uma simples declaração de que assumiu a identidade; produzir resultados de auditoria concretos e verificáveis.
+
+FONTES OBRIGATÓRIAS
+1. Arquivo Mestre canônico: https://github.com/LucianoToscano/PGBR/blob/main/PGBR_ARQUIVO_MESTRE_UNICO.md
+2. Arquitetura: https://github.com/LucianoToscano/PGBR/blob/main/docs/ARCHITECTURE.md
+3. Documentos AGENTS.md, THIRD_PARTY.md, docs/BUILDING.md, docs/ROOTED.md, docs de feeds, tests e CI, verificando se existem na branch/HEAD atuais.
+4. Especificação anterior centralizada (branch documental): https://github.com/LucianoToscano/PGBR/blob/docs/especificacao-unica-5-fontes-20261123/docs/integracoes/PGBR_ESPECIFICACAO_UNICA_5_FONTES_API_WEBHOOKS.md
+5. PokeSearch (somente consultar): https://github.com/LucianoToscano/PokeSearch
+6. Código próprio de referência PGSharp: https://github.com/LucianoToscano/PGSharp
+7. PGRazor upstream (referência): https://github.com/jpitty03/PGRazor
+8. Arquivos entregues pelo usuário: PROMPT_PGBR_AGENTE_UNICO.md e json-2017.json. Atenção: json-2017.json é um JSON de instruções de engenharia; NÃO é uma fonte de spawns nem Game Master de 2017.
+9. Drive do Mestre: https://drive.google.com/drive/folders/1aAXywzA-wjYhsk9ya4O_4-rgDeLT-DU8
+10. Biblioteca geral: https://drive.google.com/drive/folders/1TPgVIGAWkY2Ez1VS3bHAitv9Y_NpczbK
+11. PGSharp: https://drive.google.com/drive/folders/1WAEmEpZmvUw9dDiapNcygtmZQq6XIB_j
+12. iPogo: https://drive.google.com/drive/folders/1PwL9ZF_qTJNYTzJXJxH9UzNlqmtecS7x
+13. Extrações iPogo: https://drive.google.com/drive/folders/1xEX8fWvIVPT4Y2ehVIBYjKdbYooHIxI_
+14. PokeList: https://drive.google.com/drive/folders/1faW_VXpB2-5jotgbdFeQagF-vmQyn8gZ
+15. iFlowGo: https://drive.google.com/drive/folders/1ysfYNt8JfEy3OkM_YE-BuRiiAzBbBuGm
+16. PoGoCoordinates: https://drive.google.com/drive/folders/19SDhX8DZrUTjMFlinIREi17Z9rItjQ4c
+
+PROTOCOLO GLOBAL — DESENVOLVIMENTO PARALELO SEM PERDAS
+- Antes de modificar, verificar o HEAD atualizado de main, histórico recente, PRs abertas, branches, CI, releases e estado do Mestre. Registrar SHA-base.
+- A documentação pode estar defasada. A versão LT044 foi registrada como candidata, não como APK publicado; revalidar estado atual. Não considerar merge/PR automaticamente equivalente a funcionalidade instalada.
+- Nunca resetar, forçar push, sobrescrever trabalho de outros chats ou substituir versões completas do Mestre por resumos.
+- Uma branch por tarefa/módulo a partir de uma base conciliada; PRs revisáveis sem merge automático em main. Se houver branch/PR em curso para a mesma função, investigar conflitos antes de criar duplicatas.
+- Preservar funcionalidades existentes: ataques ágeis/carregados, Ataque Inteligente, Rocket, PvP, Max, GPS, joystick, teleporte e cooldown, VGP+, configurações, inventário, Root, sem Root, Zygisk e traduções PT-BR.
+- Usar “Teleporte” na interface; não renomear para “Teletransportar”.
+- Não alterar diretamente o repositório PokeSearch.
+
+AUDITORIA OBRIGATÓRIA
+A. Inventariar classes e testes antes de propor novos arquivos. Procurar, se existentes: FeedChooser, LiveFeedDialog, LiveFeedClient, LiveFeedData, LiveFeedFilters, LiveFeedFilterDialog, LiveFeedSession, PogoFeedDialog, PogoFeedClient, PogoFeedData, PogoFeedModes, IFlowGoFeedClient, IFlowGoFeedData, IFlowGoRequestPolicy, PokeListFeedClient, PokeListFeedData, HundoFeedDialog, ShundoSniper, PokemonSelectorDialog, CoordinateClipboard, PgSharpFeedPolicy, PgSharpFeedDialog, PgSharpLicenseVault, PgSharpDataImport, AccountProfiles, SettingsBackup, Control e SettingsPanel.
+B. Separar o que JÁ FUNCIONA e foi testado, o que existe mas está desconectado, o que é apenas mock/fixture e o que depende de servidor externo. Marcar por commit, arquivo, teste ou endpoint verificado.
+C. Conferir os arquivos locais/Drive e seus hashes, versões e formatos; não assumir que um .dat proprietário é JSON nem desserializar Java de entrada não confiável.
+D. Verificar autorização/licença específica antes de copiar código/arte/recursos de terceiros. Interfaces e conceitos de UX podem servir de referência para implementação independente.
+E. Checar que os cinco provedores principais NÃO sejam anunciados como conectados sem resposta legítima comprovada: PokeList, iFlowGo, PoGoCoordinates, PGSharp e iPogo. Pokemod/PGTools entram como referências adicionais.
+F. Acompanhar PRs já abertas para Sniper 1/2, Hundo, Radar, PokeSearch/PoGoCoordinates e feeds. Conservar as alterações paralelas, sem regredir.
+
+PLANO DE TRABALHO EXECUTÁVEL
+1. Registrar matriz: FUNÇÃO | ARQUIVO ATUAL | BRANCH/PR | IMPLEMENTADO | TESTE | TESTADO EM APARELHO | FONTE DE DADO | PRÓXIMA AÇÃO.
+2. Definir ordem de integração em duas fases:
+   - Fase core local: SourceAdapter + normalização, Sniper 1 e 2, importação manual, filtros/presets, Radar/listas, rotas/alertas. Não requer chave externa.
+   - Fase fontes/gateway: adaptadores por provedor, API OpenAPI 3.1, webhooks próprios, incluindo estados desabilitados honestos.
+3. Identificar o menor patch possível na arquitetura existente, sem duplicar controles nem criar uma segunda engine de GPS.
+4. Levantar comandos exatos de teste/compilação (incluindo tools/check.py se existir) e estratégia de rollback.
+5. Se já houver infraestrutura de CI/PR pronta, preparar os pré-requisitos de branch e testes de baseline, sem fazer merge nem publicar release por conta própria.
+
+REGRAS DE INTEGRIDADE E SEGURANÇA
+- Não contornar 401, 403, 429, captcha, login, VIP, assinatura, TLS, reveal, Firebase nem controles antiabuso.
+- Não extrair nem divulgar tokens, chaves, cookies, credenciais ou endpoints privados extraídos de APK/IPA.
+- Não apresentar catálogo estático, hotspot, importação do usuário ou fixture como spawn ao vivo.
+- Não inventar coordenadas, IV, CP, rank PvP, espécie, shiny ou tempo de desaparecimento.
+- A confirmação de Teleporte e o cooldown atuais são obrigatórios.
+
+ENTREGA DO PROMPT 01
+Produzir: (1) SHA da main e data de consulta; (2) tabela de componentes existentes e pendências; (3) mapa das PRs/branches relevantes; (4) matriz de provedores e direito de uso; (5) sequência mínima de patches e testes; (6) bloqueios reais. Não pedir confirmação para continuar a fase local. A próxima instrução a executar é o PROMPT 02/03.
