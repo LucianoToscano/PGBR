@@ -1,3 +1,9 @@
+## PGBR LT044 (v0.00.44-LT) — candidata QA pós-LT043 (23/11/2026)
+
+- PT-BR das telas dos chats paralelos e terminologia Teleporte (#101), preservando novas mensagens de rollback de backup da LT043.
+- GPS defensivo: valores sintéticos fora da faixa e não finitos rejeitados sem bloquear o callback original; teste com retorno 360° para 0° (#109).
+- Sem alteração de Rocket QA6, Max preparatório, assinatura ou interfaces PokeSearch. **Ainda não publicada**; `device_tested=false`, aguardando CI, build e verificação dos três instaladores. Os Snipers (#115/#118/#121), radar (#114) e Savant (#135) não estão neste candidato.
+
 ## PGBR 0.00.43-LT — integração QA consolidada (23/11/2026)
 
 - **Publicação oficial validada:** [release LT043](https://github.com/LucianoToscano/PGBR/releases/tag/v0.00.43-LT), [APK sem Root](https://github.com/LucianoToscano/PGBR/releases/download/v0.00.43-LT/PGBR-v0.00.43-LT.apk), Root e Zygisk com hashes SHA-256 no [Mestre](PGBR_ARQUIVO_MESTRE_UNICO.md); [CI #45280739464](https://github.com/LucianoToscano/PGBR/actions/runs/45280739464) aprovado, `device_tested=false`.
