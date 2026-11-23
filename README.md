@@ -5,7 +5,7 @@
 
 <p align="center"><strong>PGBR-v0.00.42-LT — candidato QA do Ataque Inteligente VNext · device_tested=false. LT041 publicada e preservada.</strong></p>
 
-> **LT042 em validação:** [notas e limites](docs/releases/v0.00.42-LT.md). A seleção simples está integrada ao executor Rocket VNext, mas não foi homologada em Android. Só anunciar APK LT042 após assinatura e verificação dos artefatos.
+> **LT042 em validação:** [notas e limites](docs/releases/v0.00.42-LT.md). A seleção simples está integrada ao executor Rocket VNext, mas não foi homologada em Android. Só anunciar APK LT042 após assinatura e verificação dos artefatos. Arquivo previsto, **ainda não publicado**: `PGBR-v0.00.42-LT.apk`.
 > **LT041 publicada e preservada:** [APK sem Root](https://github.com/LucianoToscano/PGBR/releases/download/v0.00.41-LT/PGBR-v0.00.41-LT.apk), [Root](https://github.com/LucianoToscano/PGBR/releases/download/v0.00.41-LT/PGBR-v0.00.41-LT-Root.apk) e [módulo Zygisk](https://github.com/LucianoToscano/PGBR/releases/download/v0.00.41-LT/PGBR-v0.00.41-LT-Root-module.zip). Releases anteriores continuam disponíveis abaixo.
 <p align="center">Controles de localização, joystick, captura, rotas e recursos opcionais de automação para Pokémon GO.</p>
 
