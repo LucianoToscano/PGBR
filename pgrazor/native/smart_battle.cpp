@@ -588,6 +588,37 @@ void install(){
 }
 }  // namespace
 
+// Side-effect-free combat identity bridge: reuses the same typed VNext
+// BattleState/ActorProto fields that Smart Battling already reads when scoring
+// counters. It does not install hooks, make swaps or require Smart Battle ON.
+int32_t pgr_smart_battle_vnext_actor_stamp(void *state) {
+ if(!state||busy)return 0;
+ try{
+  if(!initialized){
+   auto api=static_cast<const PgrBootApi*>(pgrazor_runtime_bootstrap_api(1));
+   boot.version=1;boot.size=sizeof(boot);
+   if(!api||!api->snapshot||api->snapshot(&boot)!=PGR_BOOT_OK)return 0;
+   initialized=true;
+  }
+  void *actor=call(state,"get_LocalActor");
+  if(!actor)return 0;
+  const uint64_t active_id=active_pokemon_of(actor);
+  void *opponents=at<void*>(state,off(klass(state),"ActiveOpponents"));
+  if(!opponents)return 0;
+  void *enemy=dict_first(opponents);
+  const uint64_t enemy_id=enemy?active_pokemon_of(enemy):0;
+  if(!active_id||!enemy_id)return 0;
+  // Only the equality of actor pairs matters. This stamp is never emitted.
+  // Hash the full two 64-bit instance IDs, not species IDs or UI pointers.
+  uint64_t h=active_id^0x9E3779B97F4A7C15ULL;
+  h^=(enemy_id+0xBF58476D1CE4E5B9ULL+(h<<6)+(h>>2));
+  h^=h>>30;h*=0xBF58476D1CE4E5B9ULL;
+  h^=h>>27;h*=0x94D049BB133111EBULL;h^=h>>31;
+  const uint32_t token=static_cast<uint32_t>(h&0x7FFFFFFFu);
+  return static_cast<int32_t>(token?token:1u);
+ }catch(...){return 0;} // optional provider: unknown must fail closed
+}
+
 bool pgr_smart_battle_enabled(){return enabled.load(std::memory_order_acquire);}
 
 int pgr_smart_battle_pick_prompt(void *const *buttons,int count){
