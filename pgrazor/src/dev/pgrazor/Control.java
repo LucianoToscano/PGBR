@@ -477,8 +477,8 @@ public final class Control {
     private static volatile int battleOptions;
     private static volatile boolean battlesReady;
     private static volatile String battleStatus="Waiting for battle support";
-    /** Temporary Max session only augments runtime options; saved settings stay unchanged. */
-    public static int battleOptions(){return battleOptions|AutoMaxBattle.optionMask();}
+    /** Battle actions are the persisted global policy; no Max session bits are injected. */
+    public static int battleOptions(){return battleOptions;}
     public static String battleStatus(){return battleStatus;}
     public static void setBattleOptions(int value){if(value<0||value>1023)return;battleOptions=value;saveSettings();event("battle-options",String.valueOf(value));}
     public static void setBattlesReady(boolean ready,String status){battlesReady=ready;battleStatus=status;if(!ready)AutoMaxBattle.reset();}
