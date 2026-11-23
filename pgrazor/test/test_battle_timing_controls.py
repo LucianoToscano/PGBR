@@ -1,4 +1,4 @@
-"""Source-level contract: F2 controls and native manual-choice safety.
+"""Source-level contract: F3 controls and native manual-choice safety.
 
 These checks do not certify Android gameplay. Native policy and JVM cold-start
 fixtures exercise execution separately.
@@ -19,7 +19,7 @@ assert '"smartShieldTiming",String.valueOf(smartShieldTiming)' in control
 assert '"smartFaintedSwapTiming",String.valueOf(smartFaintedSwapTiming)' in control
 assert 'smartShieldTiming=readBoundedVisual(p,"smartShieldTiming",1,0,2)' in control
 assert 'smartFaintedSwapTiming=readBoundedVisual(p,"smartFaintedSwapTiming",1,0,2)' in control
-assert '"F2|"+(smartBattle?1:0)+"|"+smartShieldTiming+"|"+smartFaintedSwapTiming' in control
+assert '"F3|"+(smartBattle?1:0)+"|"+smartShieldTiming+"|"+smartFaintedSwapTiming+"|"+(smartAttack?1:0)' in control
 assert '.setSingleChoiceItems(SHIELD_WAIT_LABELS,Control.smartShieldTiming()' in panel
 assert '.setSingleChoiceItems(FAINTED_SWAP_LABELS,Control.smartFaintedSwapTiming()' in panel
 assert '"Imediato — 0 ms"' in panel and '"1,5 segundo (padrão)"' in panel

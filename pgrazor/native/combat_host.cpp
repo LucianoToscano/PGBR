@@ -9,6 +9,7 @@
 #include "rocket_combat.h"
 #include "pvp_scene.h"
 #include "shared_auto_battle_gate.h"
+#include "charge_effect_ui.h"
 #include "rocket_minigame.h"
 #include "runtime_bootstrap.h"
 #include "runtime_metadata.h"
@@ -130,6 +131,8 @@ PgrCombatHostConfig g_accepted_cfg{};
 bool g_has_accepted_cfg = false;
 bool g_default_bind_mode = false;
 PgrSharedMetadataOutput g_md{};
+// Optional typed VNext display fields; absence leaves all original executors unchanged.
+pgr_charge_effect_ui::Binding g_charge_ui{};
 
 const PgrRocketMiniApi         *g_rocket_mini    = nullptr;
 const pgr_rocket_actions_api_v1 *g_rocket_actions = nullptr;
@@ -809,11 +812,30 @@ void hook_rk_ui_init(void *self,void *data,void *method){
 }
 void hook_shared_vn_observe(void *self,void *battle_state,void *method){
  auto orig=reinterpret_cast<Fn3Ptr>(load_original(HK_SHARED_VN_OBSERVE));FrameGuard frame;uint64_t tid=0;
- if(!observation_allowed(&tid)){orig(self,battle_state,method);return;}PinnedArgs pins{self,battle_state};
- if(pins.valid&&observation_allowed(&tid)){
-  if(rocket_gate(&tid))g_rocket_combat->observe(PGR_RC_OBS_CHARGE,pins.get(0),0,tid);
-  if(battle_gate(&tid))g_battles->observe(PGR_BATTLE_OBS_CHARGE,pins.get(0),0,tid);drain_leaf_events(tid);
- }orig(pins.get(0),pins.get(1),method);
+ if(!observation_allowed(&tid)){orig(self,battle_state,method);return;}
+ PinnedArgs pins{self,battle_state};
+ // Let the original update the charged-display state before either executor
+ // observes it. Previously the leaves captured pre-update (potentially stale)
+ // values, making a future effectiveness selector unsafe after foe changes.
+ // In particular, never publish a post-update observation if the original throws,
+ // pinning failed or the owner/scheduler gate was revoked during the callback.
+ orig(pins.get(0),pins.get(1),method);
+ if(!pins.valid||!observation_allowed(&tid))return;
+ // The original has now populated its own display effectiveness category.
+ // Read the category + Charge/Charge2 slot from this exact display, not from
+ // post-damage messages or localized text. Unknown/hidden fields remain aux=0.
+ if(rocket_gate(&tid)) {
+   int32_t aux=0;
+   auto obj=pins.get(0),state=pins.get(1);
+   if(g_charge_ui.valid&&obj&&state&&
+      reinterpret_cast<void *(*)(void *)>(g_cfg.object_get_class)(obj)==md_k(OC_RVCHARGE)) {
+     const auto read=reinterpret_cast<void (*)(void *,void *,void *)>(g_cfg.field_get_value);
+     aux=pgr_charge_effect_ui::pack(pgr_charge_effect_ui::observe(g_charge_ui,obj,state,read));
+   }
+   if(rocket_gate(&tid))g_rocket_combat->observe(PGR_RC_OBS_CHARGE,pins.get(0),aux,tid);
+ }
+ if(battle_gate(&tid))g_battles->observe(PGR_BATTLE_OBS_CHARGE,pins.get(0),0,tid);
+ drain_leaf_events(tid);
 }
 template<HookSlot SLOT,uint32_t KIND,int DESC> void hook_bt_2arg(void *self,void *method){
  auto orig=reinterpret_cast<Fn2Ptr>(load_original(SLOT));FrameGuard frame;uint64_t tid=0;
@@ -1454,6 +1476,18 @@ int finish_setup_locked(uint64_t tid) {
     }
 
     g_owner_tid.store(owner, std::memory_order_release);
+
+    // Optional metadata for the simple charged-button selector (0.437.0).
+    // The runtime bootstrap exposes field/type queries and literal values.
+    // Resolve by exact names/types; if any member or enum is unexpected,
+    // leave the feature disabled without affecting the original battle gates.
+    g_charge_ui={};
+    const auto *boot_ui=api_table<PgrBootApi>(pgrazor_runtime_bootstrap_api(1));
+    if(boot_ui&&boot_ui->version==1&&boot_ui->size>=sizeof(PgrBootApi)&&boot_ui->snapshot) {
+        PgrBootBinding binding{};
+        if(boot_ui->snapshot(&binding)==PGR_BOOT_OK)
+            pgr_charge_effect_ui::resolve(binding,md_k(OC_RVCHARGE),g_charge_ui);
+    }
 
     // 4. Configure & install Rocket (Features 6, 20, 21 + 11 hooks) and Battles (Feature 19 + 31 hooks).
     const bool want_rocket  = (g_md.optional[OPT_ROCKET] == PGR_SHARED_OPT_AVAILABLE);

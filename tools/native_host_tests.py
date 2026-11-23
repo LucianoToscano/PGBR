@@ -13,6 +13,8 @@ ROOT=Path(__file__).resolve().parents[1]
 FIXTURES=(
     'battle_timing_policy_test.cpp',
     'smart_attack_decision_test.cpp',
+    'smart_attack_priority_test.cpp',
+    'charge_effect_ui_test.cpp',  # simple effectiveness policy; not connected to game actions
     'auto_raid_policy_test.cpp',
     'batch_evolution_policy_test.cpp',
     'buddy_emotion_policy_test.cpp',
@@ -38,6 +40,11 @@ LINKED_FIXTURES = {
     'battles_test': {
         'source': ('battles_test.cpp', 'battles.cpp'),
         'flags': ('-DPGR_BATTLE_DIRECT_TEST', '-pthread'),
+    },
+    # Includes the runtime itself and replaces its clock/managed boundary with fixtures.
+    'heal_runtime_test': {
+        'source': ('heal_runtime_test.cpp',),
+        'flags': ('-pthread',),
     },
 }
 

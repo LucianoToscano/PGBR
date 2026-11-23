@@ -10,6 +10,25 @@
 - **Limitação de escopo:** política PvP Java não se encontra ligada ao executor nativo de combate; PR #117 contém regra C++ isolada e transporte F3 ainda sem adaptação runtime. Não afirmar que o segundo golpe é acionado por eficácia real nem publicar APK como solução da issue #90. [Relatório](docs/AUDITORIA_PGBR_ATAQUE_SIMPLES_2026-11-22.md). `device_tested=false`.
 - Sem alteração de versão, sem merge da PR #117 e sem sobrescrever as releases QA v0.00.39/v0.00.40.
 
+## Não lançado — Ataque Inteligente simples VNext (22/11/2026)
+- Implementação experimental condicionada a runtime tipado: chamar o original de `ObserveBattleState` antes da observação, resolver indicação Super/Normal/Pouco e slot `Charge/Charge2` diretamente do display, comparar somente dois carregados VNext prontos, com correspondência de atualização e frescor. Sem espera de energia nem alteração de cadências.
+- Mantém o primeiro carregado tradicional quando OFF, dados ausentes, apenas um botão pronto, atualização antiga, metadata incompatível ou sessão ambígua. Escudos, trocas, Cura e executores Legacy/PvE não foram alterados.
+- Acrescentadas fixtures de classificação, escolha de slot e executor Rocket com objetos simulados. **Não confirmado em aparelho**; testes e compilação não são homologação de gameplay. Documento: [Integração VNext](docs/ATAQUE_INTELIGENTE_SIMPLES_VNEXT_2026-11-22.md). Preservar PR #117 até revisão da integração.
+
+## Não lançado — prioridade simples de eficácia (22/11/2026)
+- Nova política pura compara categorias de eficácia e reutiliza a tabela de tipos. Testes usam objetos simulados; ela ainda não está ligada aos executores nem altera a escolha no jogo. A investigação identificou um indicador candidato no display VNext, mas não comprovou sua atualização para a sessão/adversário atual. Sem release.
+
+## Não lançado — Ataque Inteligente: investigação do original (22/11/2026)
+- O APKM original 0.437.0 da biblioteca foi reconstruído e sua identidade conferida com o perfil fixado; metadados e biblioteca ARM64 foram examinados estaticamente fora do Git. Os nomes candidatos encontrados não comprovam a associação de golpes aos botões. Sem integração do motor, teste físico ou release. [Limites e evidências](docs/AUDITORIA_BATALHA_CURA_2026-11-22.md).
+
+## Não lançado — Ataque Inteligente: transporte da preferência (22/11/2026)
+- A preferência independente é incluída no snapshot nativo F3, preservando leitura legada F2 e tempos existentes. IDs de instância no motor não são mais truncados para 32 bits. Testes de compatibilidade e backup ampliados.
+- **Ainda não seleciona golpes no jogo**: não há associação comprovada dos IDs de golpes aos botões, leitura completa de energia e homologação. Nenhuma release nova.
+
+## Não lançado — proteção de cura e auditoria de batalha (22/11/2026)
+- Cura no mapa revalida configuração e permissão após consultas gerenciadas e antes do uso de item; a fixture host do runtime inclui revogação durante consultas. Não é garantia de atomicidade nem teste em aparelho.
+- Interface não promete classificação por tipo nem integração ainda inexistente. Motor de ataque, estado dinâmico, ligação a botões e homologação por modalidade continuam pendentes; tela branca sem causa comprovada. [Relatório](docs/AUDITORIA_BATALHA_CURA_2026-11-22.md). Nenhuma versão ou artefato novo.
+
 ## v0.00.40-LT — pré-release QA publicada: recuperar PvP/duelos e escopo do assistente (22/11/2026)
 - [PR #107](https://github.com/LucianoToscano/PGBR/pull/107) integrada na main no commit `f873c8652bac5dc4cded154e49fbab82bf778445` após 5 checks `success` (C++ host, NDK ARM64, Java/Root, site e governança). Correção condicional para observação de Hub/Preparação e confirmação PvP, em treino NPC, GBL e duelos com escopo nativo válido.
 - Publicação da máscara Ágil/Carregado/Escudo do usuário apenas em escopo reconhecido; desarmada em mapa, resultado, opção desligada, falha, lease expirada e alvos desconhecidos. Raid/Ginásio/Max continuam com seus motores próprios.

@@ -13,6 +13,13 @@ int main() {
     s.opponent_types[0]=10; s.energy=100; s.energy_cap=100; s.stab=1.2; s.moves=moves; s.count=3;
     auto d=decide(s);
     assert(d.status==Status::RECOMMENDED && d.ideal.id==101 && d.recommended.id==101);
+    // Real battle Pokemon identifiers are unsigned 64-bit, including the high bit.
+    s.active_id=UINT64_C(0xfedcba9876543210); s.opponent_id=UINT64_C(0x8000000000000001);
+    assert(decide(s).status==Status::RECOMMENDED);
+    s.active_id=0; assert(decide(s).status==Status::INVALID_DATA);
+    s.active_id=UINT64_C(0xfedcba9876543210); s.opponent_id=0;
+    assert(decide(s).status==Status::INVALID_DATA);
+    s.opponent_id=UINT64_C(0x8000000000000001);
     assert(near(d.recommended.effectiveness,1.6) && near(d.recommended.stab,1.2)); // super > neutral, STAB
     assert(near(d.recommended.adjusted_power,80*1.6*1.2));
     s.opponent_types[0]=11; d=decide(s);

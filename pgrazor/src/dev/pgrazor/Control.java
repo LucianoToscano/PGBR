@@ -928,10 +928,10 @@ public final class Control {
     }
     public static void setSmartBattle(boolean on){smartBattle=on;if(!on)smartBattleStatus="";saveSettings();event("smart-battle",on?"ON":"OFF");}
     public static String smartBattleStatus(){return smartBattle?smartBattleStatus:"";}
-    /** "F2|enabled|shield-choice|fainted-swap-choice" (existing transport slot 21).
-     *  The same coherent snapshot supplies both options to the shared native consumers. */
+    /** "F3|smart-battle|shield-choice|fainted-swap-choice|smart-attack" (transport slot 21).
+     *  Native readers still accept the older F2 snapshot with Smart Attack off. */
     public static String smartBattleConfig(){
-        return "F2|"+(smartBattle?1:0)+"|"+smartShieldTiming+"|"+smartFaintedSwapTiming;
+        return "F3|"+(smartBattle?1:0)+"|"+smartShieldTiming+"|"+smartFaintedSwapTiming+"|"+(smartAttack?1:0);
     }
     /** "H2|enabled|when|threshold|revive|full" for the native healer (transport slot 18). */
     public static String healConfig(){return "H2|"+(healEnabled?1:0)+"|"+healWhen+"|"+healThreshold+"|"+(healRevive?1:0)+"|"+(healFull?1:0);}

@@ -16,6 +16,8 @@ public final class SettingsBackupRoundTripTest {
     private static JSONObject copy(JSONObject document)throws Exception{return new JSONObject(document.toString());}
     private static void verify(boolean enabled,int shield,int swap,String label){
         check(Control.smartAttack()==enabled && Control.smartShieldTiming()==shield && Control.smartFaintedSwapTiming()==swap,label);
+        String nativeConfig="F3|"+(Control.smartBattle()?1:0)+"|"+shield+"|"+swap+"|"+(enabled?1:0);
+        check(nativeConfig.equals(Control.smartBattleConfig()),label+" native snapshot");
     }
     public static void main(String[] args)throws Exception{
         File root=new File(args[0],"backup-round-trip");check(root.mkdirs(),"test directory");

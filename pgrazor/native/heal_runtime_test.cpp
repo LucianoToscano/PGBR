@@ -5,6 +5,7 @@
 #include <functional>
 #include <thread>
 #include <ctime>
+#include <dlfcn.h>
 extern "C" void *heal_fixture_symbol(void *,const char *);
 extern "C" int heal_fixture_clock(clockid_t,struct timespec *);
 #define dlsym heal_fixture_symbol
@@ -26,7 +27,7 @@ uint64_t now=10000;bool enabled=true,fresh=true,active=true,ready=true,on_map=fa
 int when=0,threshold=50;bool revive=true,full=true;
 int stock_count[6]={10,10,10,10,10,10};int sends=0,polls=0,scans=0;
 int sent_item=0;uint64_t sent_id=0;bool answered=false;
-std::function<void()> lookup_callback;
+std::function<void()> lookup_callback,stock_callback;
 PgrBootBinding binding{};PgrBootApi boot_api{};PgrMetaApi meta_api{};
 PgrRuntimeTransportApi transport_api{};PgrVgpResultsApi results_api{};PgrSharedMetadataOutput metadata{};
 Object *map_obj,*container_obj,*bag_obj,*items_obj,*list_obj,*promise_obj;
@@ -68,7 +69,7 @@ void *invoke(void *m,void *,void **args,void **exception){
  if(n=="get_Count")return box(int(pokemon.size()));
  if(n=="CopyTo"){for(size_t i=0;i<pokemon.size();i++)put(args[0],32+8*i,pokemon[i]);return nullptr;}
  if(n=="GetPokemon"){if(lookup_callback){auto cb=std::move(lookup_callback);lookup_callback={};cb();}return find(*static_cast<uint64_t*>(args[0]));}
- if(n=="GetItemCount")return box(stock_count[*static_cast<int*>(args[0])-1]);
+ if(n=="GetItemCount"){if(stock_callback){auto cb=std::move(stock_callback);stock_callback={};cb();}return box(stock_count[*static_cast<int*>(args[0])-1]);}
  if(n=="UseItemOnPokemon"){assert(permission&&enabled&&fresh&&active&&ready&&(when!=1||on_map));++sends;sent_item=*static_cast<int*>(args[0]);sent_id=*static_cast<uint64_t*>(args[1]);assert(stock_count[sent_item-1]>0);--stock_count[sent_item-1];answered=false;return promise_obj;}
  assert(false);return nullptr;
 }
@@ -85,7 +86,7 @@ void answer(int hp){assert(st.promise);put(find(sent_id),24,hp);answered=true;no
 void reset(){
  if(initialized)pgr_heal_stop(tid());st=State{};gym_reset();initialized=faulted=busy=false;owner=0;md=nullptr;assert(roots.empty());
  objects.clear();pokemon.clear();now+=100000;enabled=fresh=active=ready=permission=true;on_map=false;when=0;threshold=50;revive=full=true;
- for(int &v:stock_count)v=10;sends=polls=scans=0;sent_item=0;sent_id=0;answered=false;lookup_callback={};
+ for(int &v:stock_count)v=10;sends=polls=scans=0;sent_item=0;sent_id=0;answered=false;lookup_callback={};stock_callback={};
  map_obj=object("Map");container_obj=object("Container");bag_obj=object("Bag");items_obj=object("Items");list_obj=object("List");promise_obj=object("Promise");
  binding={};binding.handle=reinterpret_cast<void*>(1);
  auto &r=binding.runtime;r.gchandle_new=reinterpret_cast<void*>(root_new);r.gchandle_get_target=reinterpret_cast<void*>(root_get);r.gchandle_free=reinterpret_cast<void*>(root_free);r.object_get_class=reinterpret_cast<void*>(object_class);r.object_unbox=reinterpret_cast<void*>(unbox_value);r.runtime_invoke=reinterpret_cast<void*>(invoke);r.field_static_get_value=reinterpret_cast<void*>(static_value);r.thread_current=reinterpret_cast<void*>(current_thread);
@@ -125,6 +126,22 @@ void tests(){
  for(int f=0;f<2;f++){reset();a=mon(1,100);threshold=100;full=f;for(int &v:stock_count)v=0;stock_count[MAX_POTION]=1;baseline();put(a,24,90);tick();assert(sends==f);}
  // Ordinary on-map periodic healing remains operational.
  reset();mon(1,20);when=1;on_map=true;pgr_heal_tick(tid(),&metadata);assert(sends==0);now+=10001;pgr_heal_tick(tid(),&metadata);assert(sends==1);
+ // Reentrant lookups can invalidate map permission or settings after the tick's initial check.
+ // No item may be sent until the changed condition is restored on a later tick.
+ for(int mode=0;mode<7;mode++){
+  reset();mon(1,20);when=1;on_map=true;pgr_heal_tick(tid(),&metadata);now+=10001;
+  lookup_callback=[mode](){
+   if(mode==0)on_map=false;else if(mode==1)enabled=false;else if(mode==2)fresh=false;
+   else if(mode==3)active=false;else if(mode==4)ready=false;else if(mode==5)when=0;else full=false;
+  };
+  pgr_heal_tick(tid(),&metadata);assert(sends==0&&!st.promise);
+  on_map=enabled=fresh=active=ready=full=true;when=1;
+  now+=500;pgr_heal_tick(tid(),&metadata);assert(sends==1);
+ }
+ // The stock lookup is another managed boundary after the Pokemon lookup.
+ reset();mon(1,20);when=1;on_map=true;pgr_heal_tick(tid(),&metadata);now+=10001;
+ stock_callback=[](){on_map=false;};pgr_heal_tick(tid(),&metadata);assert(sends==0&&!st.promise);
+ on_map=true;now+=500;pgr_heal_tick(tid(),&metadata);assert(sends==1);
  // Owner and callback are mandatory. Stop releases all persistent roots and the token.
  reset();mon(1,100);baseline();assert(pgr_heal_gym_tick(tid(),&metadata,1,nullptr)==-1);int wrong=0;std::thread t([&](){wrong=tick();});t.join();assert(wrong==-1);pgr_heal_stop(tid());assert(roots.empty()&&!gym.armed);assert(tick()==0);
  // Existing item planner still selects revival first and never spends missing stock.

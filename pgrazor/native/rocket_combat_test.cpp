@@ -28,6 +28,10 @@
 // double / out-of-range free (g_bad_free) and every injection scenario asserts it stayed zero and
 // all roots balanced. No test claims are made about having run this; it is NOT built into the app.
 #include "rocket_combat.h"
+#include "charge_effect_ui.h"
+#if defined(PGR_RC_DIRECT_TEST)
+extern "C" void pgrazor_rc_direct_smart_attack(int on);
+#endif
 #include "rocket_actions.h"
 
 #include <cstdint>
@@ -160,6 +164,9 @@ void reset_runtime() {
   std::memset(g_used, 0, sizeof(g_used)); std::memset(g_slot, 0, sizeof(g_slot));
   g_live = 0; g_new_fail = false; g_fault_method = nullptr; g_move_method = nullptr; g_move_obj = nullptr;
   g_bad_free = 0; g_cb = nullptr; g_in_cb = false; g_cb_done = 0; g_cb_tid = 0; g_scene = nullptr;
+#if defined(PGR_RC_DIRECT_TEST)
+  pgrazor_rc_direct_smart_attack(0);
+#endif
 }
 
 void fill_config(pgr_rocket_combat_config_v1 *c) {
@@ -625,13 +632,78 @@ int scenario(int n) {
       if(sc.shield.shieldClicked!=0)return 74;
       break;
     }
+#if defined(PGR_RC_DIRECT_TEST)
+    case 33: { // Smart ON: normal first, super second, both ready -> second.
+      arm(&sc.scope,2,tid);
+      api->observe(PGR_RC_OBS_VNEXT_UPDATE,&sc.vui,0,tid);
+      sc.vc2.button=&sc.vbutton;
+      using namespace pgr_charge_effect_ui;
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vcharge,pack({Slot::FIRST,Tier::NEUTRAL,41}),tid);
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vc2,pack({Slot::SECOND,Tier::SUPER,41}),tid);
+      pgrazor_rc_direct_smart_attack(1);
+      api->tick(tid,0);
+      if(sc.vcharge.tapped!=0||sc.vc2.tapped!=1)return 75;
+      break;
+    }
+    case 34: { // Smart OFF: exact same labels but original first-ready selection.
+      arm(&sc.scope,2,tid);
+      api->observe(PGR_RC_OBS_VNEXT_UPDATE,&sc.vui,0,tid);
+      sc.vc2.button=&sc.vbutton;
+      using namespace pgr_charge_effect_ui;
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vcharge,pack({Slot::FIRST,Tier::NEUTRAL,41}),tid);
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vc2,pack({Slot::SECOND,Tier::SUPER,41}),tid);
+      api->tick(tid,0);
+      if(sc.vcharge.tapped!=1||sc.vc2.tapped!=0)return 76;
+      break;
+    }
+    case 35: { // Changed battle-state token: classification untrustworthy -> legacy.
+      arm(&sc.scope,2,tid);
+      api->observe(PGR_RC_OBS_VNEXT_UPDATE,&sc.vui,0,tid);
+      sc.vc2.button=&sc.vbutton;
+      using namespace pgr_charge_effect_ui;
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vcharge,pack({Slot::FIRST,Tier::NEUTRAL,41}),tid);
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vc2,pack({Slot::SECOND,Tier::SUPER,42}),tid);
+      pgrazor_rc_direct_smart_attack(1);
+      api->tick(tid,0);
+      if(sc.vcharge.tapped!=1||sc.vc2.tapped!=0)return 77;
+      break;
+    }
+    case 36: { // Only first is ready: fire it immediately, do not wait for super.
+      arm(&sc.scope,2,tid);
+      api->observe(PGR_RC_OBS_VNEXT_UPDATE,&sc.vui,0,tid);
+      sc.vc2.button=&sc.vbutton;sc.vc2.vcharged=0;
+      using namespace pgr_charge_effect_ui;
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vcharge,pack({Slot::FIRST,Tier::NEUTRAL,41}),tid);
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vc2,pack({Slot::SECOND,Tier::SUPER,41}),tid);
+      pgrazor_rc_direct_smart_attack(1);
+      api->tick(tid,0);
+      if(sc.vcharge.tapped!=1||sc.vc2.tapped!=0)return 78;
+      break;
+    }
+    case 37: { // Capture order reversed: verified slot FIRST wins tie, not capture order.
+      arm(&sc.scope,2,tid);
+      api->observe(PGR_RC_OBS_VNEXT_UPDATE,&sc.vui,0,tid);
+      sc.vc2.button=&sc.vbutton;
+      using namespace pgr_charge_effect_ui;
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vcharge,pack({Slot::SECOND,Tier::NEUTRAL,41}),tid);
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vc2,pack({Slot::FIRST,Tier::NEUTRAL,41}),tid);
+      pgrazor_rc_direct_smart_attack(1);
+      api->tick(tid,0);
+      if(sc.vcharge.tapped!=0||sc.vc2.tapped!=1)return 79;
+      break;
+    }
+#endif
   }
   g_cb=nullptr;api->tick(tid,1);
   if(roots_now()!=0||g_live!=0||g_bad_free)return 90;
   return 0;
 }
 
+#if defined(PGR_RC_DIRECT_TEST)
+constexpr int kScenarios = 38;
+#else
 constexpr int kScenarios = 33;
+#endif
 
 }  // namespace
 

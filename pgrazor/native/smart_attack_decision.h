@@ -3,6 +3,7 @@
 #include "battle_counter.h"
 #include <cmath>
 #include <cstddef>
+#include <cstdint>
 
 namespace pgr_smart_attack {
 
@@ -26,7 +27,9 @@ struct Move {
 struct Snapshot {
     bool enabled = false;
     Mode mode = Mode::UNKNOWN;
-    int active_id = 0, opponent_id = 0;
+    // Runtime battle instance identifiers are uint64_t (e.g. ActivePokemonId), not species IDs.
+    // Zero is unknown. Preserve all bits for session/change tracking by future providers.
+    std::uint64_t active_id = 0, opponent_id = 0;
     int active_types[2] = {0, 0}, opponent_types[2] = {0, 0};
     int energy = -1, energy_cap = 0; // explicit mode-specific rules
     double stab = 0;                  // explicit mode-specific rules, e.g. 1.2
@@ -64,7 +67,7 @@ inline Decision decide(const Snapshot& s) {
     Decision result;
     if (!s.enabled) { result.status = Status::DISABLED; result.reason = Reason::DISABLED; return result; }
     if ((s.mode != Mode::PVP && s.mode != Mode::PVE) ||
-        s.active_id <= 0 || s.opponent_id <= 0 || !types_valid(s.active_types) ||
+        s.active_id == 0 || s.opponent_id == 0 || !types_valid(s.active_types) ||
         !types_valid(s.opponent_types) || s.energy_cap <= 0 || s.energy_cap > 1000 ||
         s.energy < 0 || s.energy > s.energy_cap || !std::isfinite(s.stab) ||
         s.stab < 1 || s.stab > 2 || !s.moves || s.count == 0 || s.count > 3) return result;
