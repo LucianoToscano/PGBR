@@ -41,6 +41,7 @@ public final class Control {
         EternatusRouteRunner.stop("Troca de conta solicitada.");
         OneShotAutomation.reset();
         AutoRaid.reset();
+        AutoMaxBattle.reset();
         GiftBatchSettings.reset();
         gameRoutes.stop("Account switch"); gameRoutesPlanning=false; gameRoutes.setPlanning(false); autoWalkPlanning=false;
         vgp.suspend();
@@ -340,7 +341,7 @@ public final class Control {
         // itemAccessAllowed() also requires Quick Catch summary and auto-transfer
         // readiness, neither of which is a prerequisite for VGP capture/spin.
         return vgpEnabled&&vgpReady&&hostLive()
-                &&!ShundoSniper.active()&&!AutoRaid.running();
+                &&!ShundoSniper.active()&&!AutoRaid.running()&&!AutoMaxBattle.running();
     }  // Shundo Sniper and Auto Raid still pause VGP+
     public static void vgpResult(String action,boolean success){vgp.result(action,success);}
     private static volatile boolean autoIncubate, incubateLongest, incubatorReady;
@@ -476,10 +477,11 @@ public final class Control {
     private static volatile int battleOptions;
     private static volatile boolean battlesReady;
     private static volatile String battleStatus="Waiting for battle support";
-    public static int battleOptions(){return battleOptions;}
+    /** Temporary Max session only augments runtime options; saved settings stay unchanged. */
+    public static int battleOptions(){return battleOptions|AutoMaxBattle.optionMask();}
     public static String battleStatus(){return battleStatus;}
     public static void setBattleOptions(int value){if(value<0||value>1023)return;battleOptions=value;saveSettings();event("battle-options",String.valueOf(value));}
-    public static void setBattlesReady(boolean ready,String status){battlesReady=ready;battleStatus=status;}
+    public static void setBattlesReady(boolean ready,String status){battlesReady=ready;battleStatus=status;if(!ready)AutoMaxBattle.reset();}
     public static void setBattleStatus(String status){battleStatus=status;}
     public static boolean battlesAllowed(){return battlesReady&&quickSummaryReady()&&hostLive();}
     private static volatile boolean gymRepeatEnabled;
@@ -1309,6 +1311,7 @@ public final class Control {
         requestInteractionStop();
         OneShotAutomation.reset();
         AutoRaid.reset();
+        AutoMaxBattle.reset();
         GiftBatchSettings.reset();
         foreground = false; autoWalkPlanning=false;mapPoiOpen=false;mapPoiSnapshot="";mapPoiAt=0; mapTapEpoch++; invalidateQuickBallOutcome(); cameraSampleRequest.set(false); invalidateCameraHeading("App backgrounded");
         // Losing the foreground switches VGP off, clears any target, and never auto-resumes.
@@ -1477,7 +1480,7 @@ public final class Control {
         AutoRaid.tick(joystickHeld);
         EternatusRouteRunner.tick();
         engine.setIdleWalkingAllowed(hostLive()&&desiredEnabled&&!joystickHeld&&!OneShotAutomation.idleBlocked()&&!AutoRaid.running()
-            &&!autoWalkPlanning&&!gameRoutesPlanning&&!gameRoutes.running()
+            &&!AutoMaxBattle.running()&&!autoWalkPlanning&&!gameRoutesPlanning&&!gameRoutes.running()
             &&!cameraSamplePending()&&!interactionDiagnosticRunning());
         engine.step(seconds);
     }
@@ -1528,6 +1531,7 @@ public final class Control {
     private static void loadSettings(Application app,boolean strict) throws IOException {
         OneShotAutomation.reset();
         AutoRaid.reset();
+        AutoMaxBattle.reset();
         GiftBatchSettings.reset();
         BatchEvolutionSettings.reset();
         synchronized(stateLock) {
