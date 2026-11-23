@@ -159,6 +159,8 @@ public final class Control {
     private static volatile int storageIvMode, storageIvFormat=3;
     private static volatile String storageIvStatus="";
     private static volatile int mapTapMode, mapTapEpoch;
+    // Explicit opt-in for a confirmed double-tap teleport. Reset on changing map-tap mode.
+    private static volatile boolean mapTapTeleportNoAsk;
     private static final MapTapSequence mapTapSequence=new MapTapSequence();
     private static volatile boolean mapTapReady;
     private static volatile boolean spawnBooster,spawnReady;
@@ -975,7 +977,18 @@ public final class Control {
     public static void setMapTapReady(boolean ready) { mapTapReady=ready; if(!ready)mapTapEpoch++; }
     public static int mapTapMode() { return mapTapMode; }
     public static int mapTapEpoch() { return mapTapEpoch; }
-    public static void setMapTapMode(int mode) { mapTapEpoch++; mapTapMode=mode>=0 && mode<=3 ? mode : 0; saveSettings(); event("map-tap-mode",""+mapTapMode); }
+    public static boolean mapTapTeleportNoAsk() { return mapTapMode==3 && mapTapTeleportNoAsk; }
+    public static void setMapTapTeleportNoAsk(boolean allow) {
+        if(mapTapMode!=3) allow=false;
+        if(mapTapTeleportNoAsk==allow)return;
+        mapTapTeleportNoAsk=allow; saveSettings();
+    }
+    public static void setMapTapMode(int mode) {
+        mapTapEpoch++;
+        mapTapMode=mode>=0 && mode<=3 ? mode : 0;
+        mapTapTeleportNoAsk=false; // Changing mode re-enables the confirmation choice.
+        saveSettings(); event("map-tap-mode",""+mapTapMode);
+    }
     public static boolean mapTapAllowed() { return desiredEnabled && mapTapMode!=0 && mapTapReady() && hostLive(); }
     public static void applyMapTap(double latitude,double longitude,int mode,int epoch,double sampledAt) {
         double age=SystemClock.elapsedRealtime()-sampledAt;
@@ -1539,6 +1552,7 @@ public final class Control {
             vgpIconStyle=0;
             vgpIconSize=48;
             vgpTapProtection=true;
+            mapTapTeleportNoAsk=false;
             hudLabelsVisible=true;hudLabelsMask=HUD_ALL;hudLabelOpacity=0;hudLabelTextSp=11;
             joystickSizeDp=136;joystickOpacity=60;
             joystickStyle=1;joystickEternatusEffects=true;eternatusFxIntensity=2;eternatusFxSpeed=1;
@@ -1735,6 +1749,7 @@ public final class Control {
                 throwAlwaysHit=Boolean.parseBoolean(p.getProperty("throwAlwaysHit","false"));
                 throwAr=Boolean.parseBoolean(p.getProperty("throwAr","false"));
                 throwGrade=boundedSetting(p,"grade",3); throwVariety=boundedSetting(p,"throwVariety",3); mapTapMode=boundedSetting(p,"mapTap",3);
+                mapTapTeleportNoAsk=mapTapMode==3 && "true".equals(p.getProperty("mapTapTeleportNoAsk","false"));
                 event("settings-restored","dismiss="+quickSummaryEnabled+" fastBall="+quickBallEnabled+" grade="+throwGrade+" variety="+throwVariety+" curve="+throwCurve+" mapTap="+mapTapMode+" cameraRelative=true heal="+healConfig());
             } catch(FileNotFoundException missing) {
                 // Defaults apply only until the user first saves a choice.
@@ -1893,6 +1908,7 @@ public final class Control {
         p.setProperty("throwAr",String.valueOf(throwAr)); p.setProperty("curve",String.valueOf(throwCurve)); p.setProperty("grade",String.valueOf(throwGrade)); p.setProperty("throwVariety",String.valueOf(throwVariety));
         p.setProperty("throwAlwaysHit",String.valueOf(throwAlwaysHit));
         p.setProperty("mapTap",String.valueOf(mapTapMode));
+        p.setProperty("mapTapTeleportNoAsk",String.valueOf(mapTapMode==3 && mapTapTeleportNoAsk));
         return p;
     }
     /** Writer sink: serializes to the captured AtomicFile off-thread, rolling back on failure. Never takes stateLock. */
