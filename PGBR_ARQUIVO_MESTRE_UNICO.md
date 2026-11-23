@@ -1331,3 +1331,13 @@ Foram executadas 18 fixtures C++ host, contratos de tempos/UI e verificação do
 - **SHA-256 Zygisk** (8277459 bytes): `8e4555623b7a4f0c177417673e6b0fa140edc4ee8a708537d0521c5ec6ff382a`.
 - **SHA do manifesto** `SHA256SUMS.txt` (281 bytes): `4ae341815207b8f76d9a36effa319ec17349b6b6f933295528c7e4c781429ce7`. Digests dos três pacotes confrontados com o GitHub Release API, conforme publicação do workflow.
 - **Limites inalterados:** `device_tested=false`. A seleção VNext depende de dois carregados prontos, metadados e eficácia reconhecidos; troca de oponente, KO, Root/sem Root e eventos PvP ainda precisam de ensaio real. Não afirmar eficácia universal nem correção da tela branca. Issues [#90](https://github.com/LucianoToscano/PGBR/issues/90) e [#105](https://github.com/LucianoToscano/PGBR/issues/105) permanecem abertas.
+
+
+## 23/11/2026 — Port seletivo de Batalha Max por sessão (fork belalsalah74)
+
+- **Origem:** [belalsalah74/PGRazor](https://github.com/belalsalah74/PGRazor), com implementação de referência em `AutoMaxBattle.java` e `AutoMaxBattleDialog.java`, adaptada ao PT-BR e às garantias do PGBR. **Branch isolada:** `feat/fork-max-session-20261123`, **base main:** `f78d0e2544cdb55a31bdf1dd5cf5b813e2376622`.
+- **Implementação de fonte:** interface de sessão voluntária para habilitar temporariamente Ágil, Carregado, Max e Esquiva nos **executores nativos já existentes**, reutilizando `Control.battleOptions()` como união do bitmask salvo e do mask de sessão (sem alterar `setBattleOptions()` nem o snapshot de persistência). Seleção manual do Power Spot, entrada, equipe, Partículas Max, recompensa e captura **não automatizadas**.
+- **Segurança:** bloquear simultaneidade com Auto-Raid, VGP+ e automações incompatíveis; resetar sessão em segundo plano, troca de conta, leitura de configurações e perda de prontidão do combate. Caminhada ociosa suspensa enquanto sessão está ativa; estado da sessão não é salvo em backup.
+- **Arquivos:** `pgrazor/src/dev/pgrazor/{AutoMaxBattle,AutoMaxBattleDialog,Control,AutoRaid,SettingsPanel}.java`; `pgrazor/test/AutoMaxBattleSessionTest.java`, `pgrazor/test/test_control_java.py`, `CHANGELOG.md` e este Mestre.
+- **Testes:** uma fixture da política no Control real foi adicionada e conectada à suíte JVM; **resultado do CI e teste no Android ainda pendentes no momento deste registro**. `device_tested=false`; funcionamento do Max no jogo depende dos hooks existentes e não está homologado. Não criar release/merge sem validar CI e PR.
+- **Preservar:** todas as funções LT042, incluindo Ataque Inteligente simples, Escudo/Troca/Cura, PvP, Root, Snipers e parceiros externos. A branch do lote 01 [PR #130](https://github.com/LucianoToscano/PGBR/pull/130) permanece isolada, não substituída por este port.
