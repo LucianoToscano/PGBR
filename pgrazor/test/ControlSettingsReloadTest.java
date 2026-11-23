@@ -14,6 +14,7 @@ public final class ControlSettingsReloadTest {
         if(Control.gymRepeatEnabled())throw new AssertionError("Gym repeat should default off");
         if(Control.localTimeOverlay())throw new AssertionError("Local clock should default off");
         if(!Control.vgpTapProtection())throw new AssertionError("VGP anti-tap should default ON");
+        if(Control.mapTapTeleportNoAsk())throw new AssertionError("Double-tap teleport consent must default OFF");
         load.setAccessible(true); load.invoke(null,app);
         if(Control.joystickStyle()!=1 || Control.menuLauncherIconStyle()!=1)
             throw new AssertionError("New profiles must default to Eternatus joystick and Pokeball");
