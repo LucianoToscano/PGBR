@@ -113,10 +113,9 @@ final class PgSharpDataImport {
         SavedPlaces places=new SavedPlaces(context);
         SavedPlaces.Snapshot before=places.read();
         if(before.damaged)throw new IOException("Há favoritos danificados. Exporte um backup antes de importar.");
-        Set<String> names=new HashSet<>(), coordinates=new HashSet<>();
+        Set<String> names=new HashSet<>();
         for(SavedPlaces.Entry existing:before.entries){
             names.add(existing.name.toLowerCase(Locale.ROOT));
-            coordinates.add(coordKey(existing.latitude,existing.longitude));
         }
         JSONArray sourceFavorites=root.getJSONArray("favorites");
         List<SavedPlaces.Entry> toAdd=new ArrayList<>();
@@ -125,9 +124,9 @@ final class PgSharpDataImport {
             JSONObject f=sourceFavorites.getJSONObject(i);
             String name=f.getString("name").trim();
             SavedPlaces.Entry entry=new SavedPlaces.Entry(name,f.getDouble("lat"),f.getDouble("lng"),"Geral");
-            String key=name.toLowerCase(Locale.ROOT), loc=coordKey(entry.latitude,entry.longitude);
-            if(names.contains(key) || coordinates.contains(loc)){skippedFavorites++;continue;}
-            names.add(key);coordinates.add(loc);
+            String key=name.toLowerCase(Locale.ROOT);
+            if(names.contains(key)){skippedFavorites++;continue;}
+            names.add(key);
             toAdd.add(entry);
         }
         if(before.entries.size()+toAdd.size()>SavedPlaces.LIMIT)
@@ -184,8 +183,5 @@ final class PgSharpDataImport {
             root.getJSONArray("pokemonFilters").length(),
             root.getJSONArray("questFilters").length(),
             root.getJSONArray("raidFilters").length());
-    }
-    private static String coordKey(double lat,double lon) {
-        return Double.doubleToLongBits(lat)+":"+Double.doubleToLongBits(lon);
     }
 }
