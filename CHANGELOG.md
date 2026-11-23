@@ -1,3 +1,7 @@
+## v0.00.42-LT — candidato QA do Ataque Inteligente VNext (22/11/2026)
+- [PR #124](https://github.com/LucianoToscano/PGBR/pull/124) integrada à main por `828807c15672d31614e1236458cc448927301c73`, incluindo o ancestral da PR #117 (cura e transporte F3). Com dois carregados VNext prontos, metadados validos e eficácia atual, ON prioriza super eficaz > normal > pouco eficaz. OFF, só um pronto, label incerta ou desatualizada: executor original imediato.
+- LT042 preparada com workflow QA isolado e três variantes assinadas. LT041 congelada e preservada; sem alterar cadências, escudos, trocas, Legacy/Raid/Gym/Max ou a questão da tela branca. `device_tested=false` e issues #90/#105 abertas. [Notas LT042](docs/releases/v0.00.42-LT.md). A publicação depende de tag e SHA verificados.
+
 ## v0.00.41-LT — candidata de pré-release QA (22/11/2026)
 - Corrige iFlowGo ao impedir requisições com raio inválido ou #Dex fora do intervalo; Reides não são rotuladas como globais quando o conector é apenas por área.
 - Documentação de instalação/compilação atualizada; master e auditoria de regressões preservados.

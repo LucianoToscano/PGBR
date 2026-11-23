@@ -3,10 +3,10 @@
 <h1 align="center">PGBR</h1>
 > **Arquivo Mestre Único do PGBR (leitura obrigatória):** [PGBR_ARQUIVO_MESTRE_UNICO.md](PGBR_ARQUIVO_MESTRE_UNICO.md). Fonte documental canônica na `main`; esta branch pode ter código mais avançado do que a `main`. Consulte os dois estados antes de afirmar qual versão está pronta.
 
-<p align="center"><strong>PGBR-v0.00.41-LT (candidata QA ainda não publicada; device_tested=false) · LT040 é a última APK publicada</strong></p>
+<p align="center"><strong>PGBR v0.00.42-LT — candidato QA do Ataque Inteligente VNext · device_tested=false. LT041 publicada e preservada.</strong></p>
 
-> **LT041 em validação:** [notas e limites](docs/releases/v0.00.41-LT.md) e [auditoria de regressões](docs/AUDITORIA_SEM_DOWNGRADE_2026-11-22.md). Não utilizar links de APK LT041 antes de confirmar build/assinatura e publicação. [LT040 — download seguro da última QA já publicada](https://github.com/LucianoToscano/PGBR/releases/download/v0.00.40-LT/PGBR-v0.00.40-LT.apk).
-> **Nome reservado do futuro APK:** `PGBR-v0.00.41-LT.apk` — ainda indisponível até build, assinatura, checks e publicação da nova tag; não distribuir como APK existente.
+> **LT042 em validação:** [notas e limites](docs/releases/v0.00.42-LT.md). A seleção simples está integrada ao executor Rocket VNext, mas não foi homologada em Android. Só anunciar APK LT042 após assinatura e verificação dos artefatos.
+> **LT041 publicada e preservada:** [APK sem Root](https://github.com/LucianoToscano/PGBR/releases/download/v0.00.41-LT/PGBR-v0.00.41-LT.apk), [Root](https://github.com/LucianoToscano/PGBR/releases/download/v0.00.41-LT/PGBR-v0.00.41-LT-Root.apk) e [módulo Zygisk](https://github.com/LucianoToscano/PGBR/releases/download/v0.00.41-LT/PGBR-v0.00.41-LT-Root-module.zip). Releases anteriores continuam disponíveis abaixo.
 <p align="center">Controles de localização, joystick, captura, rotas e recursos opcionais de automação para Pokémon GO.</p>
 
 > **Status (22/11/2026):** a pré-release LT034 acrescenta Sniper 100 IV manual ao PGBR e painel PGSharp Free/Standard com key criptografada; **a consulta direta a PGSharp e a verificação de licença ainda não estão operacionais**. LT033 consolida a linhagem LT032, Eventos no menu Pokébola, correções de visibilidade, testes nativos sazonais, manutenção e rastreabilidade. A publicação é **pré-lançamento de QA**: PvP, VGP+, Root+Vector, joystick, feeds e privacidade visual ainda exigem ensaio real. Não há integração autenticada a dados privados do PGSharp/Pokémod.
