@@ -1,3 +1,6 @@
+### Segurança — Batalha Max (PR #136 / issue #137)
+- Bloqueada a injeção da máscara temporária Max em opções globais sem identificação nativa confiável da batalha; preservadas preferências permanentes e testes de regressão. Sessão Max permanece preparatória, sem execução automática, até implementação segura do contexto Max. `device_tested=false`.
+
 ## Não lançado — correção de ordenação da linha de IV (fork Pokematrix)
 - Painel de IV reaplica a ordem de desenho do canvas a cada exibição para evitar sobreposição pelo modelo quando aberto pelo Pokédex.
 - Um arquivo C++ isolado; testes de compilação e Android necessários, `device_tested=false`.
