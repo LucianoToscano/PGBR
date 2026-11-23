@@ -1342,3 +1342,11 @@ Foram executadas 18 fixtures C++ host, contratos de tempos/UI e verificação do
 - **Arquivos:** `pgrazor/src/dev/pgrazor/{Control,TeleportDialog,Pad,SettingsPanel,GymAutomationSettings,BuddyEmotionSettings,SettingsBackupRules}.java`; `pgrazor/test/{ControlSettingsTest,ControlSettingsReloadTest,SettingsBackupRoundTripTest}.java`; `CHANGELOG.md` e este Mestre.
 - **Estado:** implementado em fonte na branch. Execução de testes/CI, compilação, instalação e comportamento real no Android **não comprovados neste registro**, `device_tested=false`. Compatibilidade/atribuição de terceiros e estabilidade de outras funções devem ser revisadas no PR antes do merge.
 - **Fora deste lote:** regras por etiquetas e IV real no VGP+, atalhos MT, painel Max independente, melhorias de mapas e atualizador Root; **não** declarar esses recursos portados. Integrações futuras exigem branches e testes próprios para evitar regressões de captura, Ataque Inteligente e Root.
+
+
+### Validação de CI do lote 01 — PR #130
+
+- [PR #130](https://github.com/LucianoToscano/PGBR/pull/130), draft, com base `f78d0e2544cdb55a31bdf1dd5cf5b813e2376622`.
+- [Workflow #45106540999](https://github.com/LucianoToscano/PGBR/actions/runs/45106540999): **5 de 5 jobs success** (website, políticas C++, Java/Root via `tools/check.py`, políticas ARM64, host/executor VNext ARM64), para o commit inicial de PR `f321411cf5fb8203189d962ccd859693eb8b37f9`.
+- [Governança #45106541070](https://github.com/LucianoToscano/PGBR/actions/runs/45106541070): job read-only **success**. Este registro documental é commit posterior: nova execução de PR deve ser novamente verificada; resultados anteriores não homologam revisão posterior.
+- **Sem merge, release nem teste físico**; `device_tested=false`, manter LT042 imutável.
