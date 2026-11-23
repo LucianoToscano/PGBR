@@ -126,7 +126,8 @@ final class PgSharpDataImport {
             String name=f.getString("name").trim();
             SavedPlaces.Entry entry=new SavedPlaces.Entry(name,f.getDouble("lat"),f.getDouble("lng"),"Geral");
             String key=name.toLowerCase(Locale.ROOT), loc=coordKey(entry.latitude,entry.longitude);
-            if(!names.add(key) || !coordinates.add(loc)){skippedFavorites++;continue;}
+            if(names.contains(key) || coordinates.contains(loc)){skippedFavorites++;continue;}
+            names.add(key);coordinates.add(loc);
             toAdd.add(entry);
         }
         if(before.entries.size()+toAdd.size()>SavedPlaces.LIMIT)
