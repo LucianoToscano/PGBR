@@ -163,5 +163,27 @@ int main() {
   energy[1].sample.batch_token=99;
   energy[1].sample.slot=Slot::FIRST;
   assert(!better_unready(true,2030,energy,2)); // unverified mapping
+  // Reproduction: the first charged button has no displayed effectiveness
+  // subtitle, while Charge2 shows SuperEffective. Never manufacture Normal.
+  DisplayCandidate hidden[2] = {
+      {{Slot::FIRST,Tier::UNKNOWN,55},4000,true},
+      {{Slot::SECOND,Tier::SUPER,55},4001,true}
+  };
+  assert(inspect_display(true,4020,hidden,2).reason==DisplayReason::KNOWN_SUPER);
+  assert(choose_display(true,4020,hidden,2)==1);
+  hidden[1].ready=false;
+  assert(better_unready(true,4020,hidden,2)); // keep doing quick until Charge2
+  hidden[1].ready=true;hidden[0].ready=false;
+  assert(!better_unready(true,4020,hidden,2));
+  hidden[0].ready=true;hidden[0].sample.batch_token=56;
+  assert(choose_display(true,4020,hidden,2)==-1); // mismatch never preferred
+  hidden[0].sample.batch_token=55;
+  hidden[0].observed_ms=3700;
+  assert(choose_display(true,4020,hidden,2)==-1); // stale never preferred
+  hidden[0].observed_ms=4000;
+  hidden[1].sample.tier=Tier::UNKNOWN;
+  assert(choose_display(true,4020,hidden,2)==-1); // no verified SUPER
+  hidden[0].sample.tier=Tier::NEUTRAL;
+  assert(choose_display(true,4020,hidden,2)==-1); // Normal vs hidden != ranked
   std::puts("smart attack priority: PASS (pure synthetic policy; no game action)");
 }
