@@ -1414,3 +1414,11 @@ Foram executadas 18 fixtures C++ host, contratos de tempos/UI e verificação do
 - [Governança #45109108082](https://github.com/LucianoToscano/PGBR/actions/runs/45109108082): **1/1 `completed/success`** na mesma HEAD. [PR #136](https://github.com/LucianoToscano/PGBR/pull/136) registra roteiro detalhado de QA Android, ainda não executado.
 - **Auditoria de port:** nove arquivos-chave da branch unificada confrontados integralmente com suas fontes nos PRs #130, #131 e #132, com conteúdo idêntico. `Control.java` e `SettingsPanel.java` receberam apenas composição explícita dos dois conjuntos de funcionalidade; comparação com `main`: 19 arquivos distintos, zero remoções, HEAD base ainda `f78d0e2544cdb55a31bdf1dd5cf5b813e2376622`.
 - **Pendências:** pós-registro, verificar CI da nova HEAD do adendo documental; não confundir testes estáticos com instalação em Android físico, eficácia dentro do jogo ou homologação. `device_tested=false`. Sem merge na `main`, nova release, novo APK ou mudança das tags publicadas.
+
+
+### 23/11/2026 — Hotfix de contenção da sessão Max (issue #137)
+
+- Revisão estática detectou que `Control.battleOptions()` era global, sem sinal nativo atestado do tipo da batalha. Ativar máscara temporária Max sem essa prova poderia alterar o comportamento de outros modos.
+- **Contenção implementada na branch de integração:** `AutoMaxBattle.optionMask()` retorna zero (fail-closed); a seleção de sessão fica somente em `selectedMask()` para UI e diagnóstico; `Control.battleOptions()` não recebe mais bits temporários Max em nenhum modo. A tela informa explicitamente que os ataques Max automáticos estão indisponíveis, apesar de permitir preparar a sessão sem automação.
+- `AutoMaxBattleSessionTest.java` atualizado para comprovar ausência de vazamento da máscara global com sessão armada, além de reset/stop/background.
+- **Não considerar issue #137 resolvida funcionalmente**: ainda falta atestação nativa confiável do tipo de batalha, ciclo de vida de cena e testes físicos. Não afirmar que a automação Max funciona. Sem APK/release, sem merge e `device_tested=false`. O CI da HEAD após esta alteração é obrigatório.
