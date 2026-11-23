@@ -1499,3 +1499,19 @@ Foram executadas 18 fixtures C++ host, contratos de tempos/UI e verificação do
 - **Rastreamento sem perdas:** #148 LT044 PT-BR/GPS está em QA paralela, #135 Savant, #115/#118/#121 Sniper, #108/#111/#114 Radar, #133/#134 Pokematrix pendentes; PR #140 foi integrada ancestralmente por #141, evitar reaplicar; nenhuma feature externa experimental foi ativada silenciosamente.
 - **Estado no registro inicial:** código/testes/docs aplicados à branch; CI, merge, compilação APK e validação em aparelho dependem de recibos futuros. `device_tested=false`. Não promover sem comparar HEAD atual e confirmar checksums.
 
+
+
+## 23/11/2026 — Candidata LT044 (pós-LT043): PT-BR + GPS; versão e QA preparados sem release
+
+- **Fonte:** [PR #146](https://github.com/LucianoToscano/PGBR/pull/146) de tradução #101 e GPS #109, com merge sem perdas sobre a `main` oficial LT043. Branch de release isolada `release/lt044-ptbr-gps-qa-20261123`, originada da HEAD QA `d99d1ac6128abc1a0b3d1cc10c538aa3b4afbceb`; versão planejada `0.00.44-LT`.
+- **Conteúdo previsto:** correções literais PT-BR e termos Teleporte; checagens `GameLocationDelivery` de valores não finitos/fora da faixa com callback original; todos os recursos e guardas da LT043 permanecem na árvore. Limites Max, Rocket QA6, VGP, Root, backups e metadados Unity não foram alterados pela candidata base.
+- **Workflow planejado:** `.github/workflows/pgbr-lt044-release.yml`, três instaladores/assinatura e verificação cruzada por `tools/verify_release.py`, com proteção de tag imutável. Release v0.00.43-LT existente permanece preservada.
+- **Gates:** testes históricos de versões ajustados para aceitar LT044 sem reduzir as verificações anteriores; novo contrato `test_lt044_release_contract.py`. **Ainda não há APK LT044, assinatura, SHA, tag ou release publicada**. CI e ensaio físico pendentes; `device_tested=false`.
+- **Pendências de chats paralelos não perdidas:** #115/#118/#121 Snipers, #114 feeds, #135 Savant e outras PRs na [issue #144](https://github.com/LucianoToscano/PGBR/issues/144). Não alegar que estas funções estão operacionais nesta candidata sem integração/teste.
+
+
+### Reconciliação LT044 com correção Ataque Inteligente
+
+- A branch de versão LT044 foi reconstruída a partir da `main` pós-merge da [PR #150](https://github.com/LucianoToscano/PGBR/pull/150) (`94d7e28e95c771574d0041260c99820e778c9181`), não substituindo o Mestre dessa revisão. Os 21 arquivos do contrato/versionamento da PR #148 foram reconciliados por conteúdo, enquanto este único Mestre recebeu **apenas o adendo histórico** de #148, preservando também o registro da auditoria e a correção da priorização de carregados já integrados.
+- A nova pré-release LT044, se for validada e publicada, deve conter PT-BR/GPS, Rocket QA6, mapa/HUD/IV, PGSharp local e prioridade imediata confirmada por CI da PR #150; continua `device_tested=false`. Não afirmar integração dos Snipers #115/#118/#121, Radar #114, Savant #135 ou VGP/MT de forks.
+- **Status inicial desta reconciliação:** merge/release e hashes ainda não concluídos neste registro; conferir GitHub Actions, source SHA e assets reais depois da publicação.
