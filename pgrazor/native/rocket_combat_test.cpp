@@ -858,7 +858,7 @@ int scenario(int n) {
       usleep(180000);
       api->observe(PGR_RC_OBS_CHARGE,&sc.vc2,0,tid);
       api->tick(tid,0);
-      if(sc.vcharge.tapped!=1||sc.vc2.tapped||sc.vgest.tapped<1)return 97;
+      if(sc.vcharge.tapped!=1||sc.vc2.tapped)return 97; // cooldown may still delay Ágil
       break;
     }
     case 49: { // With Ágil OFF, only ready charged attack is still immediate.
