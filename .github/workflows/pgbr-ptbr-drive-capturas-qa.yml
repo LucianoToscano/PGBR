@@ -1,0 +1,50 @@
+name: PGBR - PT-BR capturas Drive (QA isolado)
+on:
+  push:
+    branches:
+      - fix/ptbr-drive-capturas-20261122
+    paths:
+      - '.github/workflows/pgbr-ptbr-drive-capturas-qa.yml'
+      - 'pgrazor/i18n/pt-BR.json'
+      - 'pgrazor/src/dev/pgrazor/PtBr.java'
+      - 'pgrazor/root-installer/src/dev/pgrazor/root/RootPtBr.java'
+      - 'pgrazor/src/dev/pgrazor/AutoWalkDialog.java'
+      - 'pgrazor/test/PtBrDynamicTest.java'
+      - 'pgrazor/test/test_ptbr_glossary.py'
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/pgbr-ptbr-drive-capturas-qa.yml'
+      - 'pgrazor/i18n/pt-BR.json'
+      - 'pgrazor/src/dev/pgrazor/PtBr.java'
+      - 'pgrazor/root-installer/src/dev/pgrazor/root/RootPtBr.java'
+      - 'pgrazor/src/dev/pgrazor/AutoWalkDialog.java'
+      - 'pgrazor/test/PtBrDynamicTest.java'
+      - 'pgrazor/test/test_ptbr_glossary.py'
+permissions:
+  contents: read
+jobs:
+  translate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Validar dicionário PT-BR de ambos os APKs
+        run: |
+          python -m unittest pgrazor.test.test_ptbr_glossary -v
+          git diff --check
+      - name: Compilar e testar ambos tradutores de apresentação
+        run: |
+          mkdir -p "$RUNNER_TEMP/pgbr-ptbr"
+          javac -encoding UTF-8 -d "$RUNNER_TEMP/pgbr-ptbr" \
+            pgrazor/src/dev/pgrazor/PtBr.java \
+            pgrazor/root-installer/src/dev/pgrazor/root/RootPtBr.java \
+            pgrazor/test/PtBrDynamicTest.java
+          java -cp "$RUNNER_TEMP/pgbr-ptbr" dev.pgrazor.PtBrDynamicTest

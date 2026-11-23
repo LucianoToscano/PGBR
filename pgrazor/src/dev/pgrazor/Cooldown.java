@@ -108,7 +108,7 @@ public final class Cooldown {
         root.setOrientation(LinearLayout.VERTICAL);
         root.setPadding(margin * 2, margin, margin * 2, margin);
         TextView note = new TextView(ui);
-        note.setText("A espera é estimada pelas ações recentes e pela localização atual. Caminhar e se teletransportar mantêm a contagem.");
+        note.setText("A espera é estimada pelas ações recentes e pela localização atual. Caminhar e usar o teleporte mantêm a contagem.");
         note.setTextSize(13);
         root.addView(note);
         Button details = button(ui, "Como é calculada?");
@@ -198,7 +198,7 @@ public final class Cooldown {
                     .setPositiveButton("Excluir",(d,which)->{remove(e.id);renderCurrent(repaint);})
                     .show());
                 row.setClickable(true);row.setFocusable(true);
-                row.setContentDescription("Teletransportar para "+coords.getText()+", "+action+", "+time.getText());
+                row.setContentDescription("Teleporte para "+coords.getText()+", "+action+", "+time.getText());
                 row.setOnClickListener(v->TeleportDialog.confirm(a,e.lat,e.lon,(lat,lon)->{
                     boolean ok=mapApply(a,lat,lon,false);
                     if(ok&&historyDialog[0]!=null)historyDialog[0].dismiss();
