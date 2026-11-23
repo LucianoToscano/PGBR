@@ -143,6 +143,12 @@ uint64_t g_shield_opened_ms = 0; // per-prompt epoch, cleared on close
 bool     g_failed = false;
 int32_t  g_gate = -1;         // last emitted attack-gate reason (-1 == none, like rocketState.gate=null)
 uint64_t g_last_fast_ms = 0;  // 5 s de-dupe of the quick telemetry event
+// Rocket-owned strategic energy accumulation; keeps the same quick/charged
+// cadences and never delays a chosen, already-ready charged attack.
+constexpr uint64_t kSmartChargeMaxWaitMs=2600;
+uint64_t g_smart_hold_started_ms=0;
+uint32_t g_smart_hold_batch=0;
+pgr_charge_effect_ui::Slot g_smart_hold_better=pgr_charge_effect_ui::Slot::UNKNOWN;
 
 // Generation-safe paired-UI publication (CombatUI Initialize onEnter/onLeave).
 void    *g_pending_ui = nullptr;
@@ -282,6 +288,8 @@ inline bool stale(uint64_t epoch) { return g_epoch != epoch || g_stop_requested.
 // --- root teardown helpers (detach BEFORE gc_free) ----------------------------------
 void drop_ui()  { void *h = g_ui_handle;  g_ui_handle = nullptr;  refresh(); gc_free(h); }
 void drop_vui() { void *h = g_vui_handle; g_vui_handle = nullptr;
+  g_smart_hold_started_ms=0;g_smart_hold_batch=0;
+  g_smart_hold_better=pgr_charge_effect_ui::Slot::UNKNOWN;
   for(auto &sample:g_charge_observations)sample={};
   refresh(); gc_free(h); }
 // rocketDrop('shield'): notify feature 20 PROMPT_CLOSE first, then detach + free.
@@ -308,6 +316,8 @@ void rocket_clear(uint64_t tid) {
   std::memset(g_charges, 0, sizeof(g_charges)); g_charge_count = 0;
   for(auto &sample:g_charge_observations)sample={};
   g_pending_ui_token = 0; g_shield_used = false; g_shield_opened_ms = 0; g_failed = false; g_gate = -1; g_last_fast_ms = 0;
+  g_smart_hold_started_ms=0;g_smart_hold_batch=0;
+  g_smart_hold_better=pgr_charge_effect_ui::Slot::UNKNOWN;
   ++g_epoch;
   refresh();
   for (uint32_t i = 0; i < n; ++i) gc_free(old[i]);
@@ -500,6 +510,8 @@ int api_observe(uint32_t kind,void *obj,int32_t aux,uint64_t tid){
         void *old[1+PGR_RC_MAX_CHARGES];uint32_t n=0;old[n++]=g_vui_handle;g_vui_handle=nullptr;
         for(uint32_t i=0;i<g_charge_count;++i)old[n++]=g_charges[i];
         std::memset(g_charges,0,sizeof(g_charges));g_charge_count=0;
+        g_smart_hold_started_ms=0;g_smart_hold_batch=0;
+        g_smart_hold_better=pgr_charge_effect_ui::Slot::UNKNOWN;
         for(auto &sample:g_charge_observations)sample={};refresh();
         for(uint32_t i=0;i<n;++i)gc_free(old[i]);
       }break;
@@ -589,6 +601,7 @@ void vnext_tick(uint64_t tid, uint64_t epoch, uint32_t mask, uint64_t ticket) {
     // This is an optional VNext-only path; Legacy, PvE and shield/swap timers
     // remain untouched. A lone ready attack is never delayed.
     uint32_t preferred=g_charge_count;
+    bool wait_for_better=false;
     const bool intelligent_enabled=simple_attack_enabled();
     auto decision_reason=intelligent_enabled
         ? pgr_smart_priority::DisplayReason::UNAVAILABLE_PAIR
@@ -626,11 +639,38 @@ void vnext_tick(uint64_t tid, uint64_t epoch, uint32_t mask, uint64_t ticket) {
             true,observed_now,samples,2);
         decision_reason=decision.reason;
         if(decision.index>=0)preferred=static_cast<uint32_t>(decision.index);
+        // This is the ONE shared Rocket engine. PvP, friend challenges and
+        // training have no independent selector: their verified host scope
+        // delegates here just like quick attacks and shields already do.
+        if(decision.reason==pgr_smart_priority::DisplayReason::ONLY_ONE_READY &&
+           (mask&1u) && pgr_smart_priority::better_unready(
+                true,observed_now,samples,2)) {
+          const uint32_t better_index=samples[0].ready?1u:0u;
+          const auto better_slot=samples[better_index].sample.slot;
+          const uint32_t batch=samples[better_index].sample.batch_token;
+          if(!g_smart_hold_started_ms || g_smart_hold_batch!=batch ||
+             g_smart_hold_better!=better_slot ||
+             observed_now<g_smart_hold_started_ms) {
+            g_smart_hold_started_ms=observed_now;
+            g_smart_hold_batch=batch;
+            g_smart_hold_better=better_slot;
+          }
+          if(observed_now-g_smart_hold_started_ms<kSmartChargeMaxWaitMs) {
+            wait_for_better=true;
+          } else {
+            decision_reason=pgr_smart_priority::DisplayReason::HOLD_EXPIRED;
+          }
+        }
       } else {
         decision_reason=pgr_smart_priority::DisplayReason::UNKNOWN_EFFECT;
       }
     }
-    for (uint32_t pos = 0; pos < g_charge_count; ++pos) {
+    if(!wait_for_better) {
+      g_smart_hold_started_ms=0;g_smart_hold_batch=0;
+      g_smart_hold_better=pgr_charge_effect_ui::Slot::UNKNOWN;
+    }
+    // While holding, run the existing quick-attack method instead.
+    if(!wait_for_better) for (uint32_t pos = 0; pos < g_charge_count; ++pos) {
       // A verified second button may be tried first, but all action/liveness
       // gates and the original loop's fallback remain authoritative.
       const uint32_t i=preferred<g_charge_count&&pos==0?preferred:
