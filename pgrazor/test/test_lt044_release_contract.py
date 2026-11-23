@@ -15,6 +15,11 @@ class Lt044ReleaseContract(unittest.TestCase):
                      'pgrazor/nonroot.py','pgrazor/rooted.py'):
             self.assertIn(term, workflow)
         self.assertNotIn('PGBR-v0.00.43-LT.apk',workflow)
+        for frozen in ('pgbr-lt043-release.yml','pgbr-lt043-pgsharp-qa.yml'):
+            previous=(ROOT/'.github/workflows'/frozen).read_text(encoding='utf-8')
+            self.assertIn('workflow_dispatch:',previous)
+            self.assertNotIn('  push:',previous)
+            self.assertNotIn('  pull_request:',previous)
         for rel in ('README.md','CHANGELOG.md','PGBR_ARQUIVO_MESTRE_UNICO.md','docs/releases/v0.00.44-LT.md'):
             self.assertTrue((ROOT/rel).is_file())
             self.assertIn('LT044',(ROOT/rel).read_text(encoding='utf-8'))
