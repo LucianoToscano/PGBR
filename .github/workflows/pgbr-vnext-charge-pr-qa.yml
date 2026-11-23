@@ -32,7 +32,7 @@ jobs:
           /tmp/pgbr-charge-effect
           g++ -std=c++17 -Wall -Wextra -Werror -I pgrazor/native pgrazor/native/smart_attack_priority_test.cpp -o /tmp/pgbr-charge-priority
           /tmp/pgbr-charge-priority
-      - name: Verificar motor Rocket central e variantes (68 cenarios simulados)
+      - name: Verificar motor Rocket central e variantes (70 cenarios simulados)
         run: |
           g++ -std=c++17 -O0 -pthread -DPGR_RC_DIRECT_TEST -I pgrazor/native \
             pgrazor/native/rocket_actions.cpp pgrazor/native/rocket_combat.cpp \
