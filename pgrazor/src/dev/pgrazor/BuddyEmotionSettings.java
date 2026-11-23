@@ -17,7 +17,7 @@ public final class BuddyEmotionSettings {
     private static final BuddyEmotionPreferences preferences=new BuddyEmotionPreferences();
     private static final int[] BERRIES={701,703,705,706,708};
     private static final String[] BERRY_LABELS={"Razz Berry","Nanab Berry","Pinap Berry","Golden Razz Berry (premium)","Silver Pinap Berry (premium)"};
-    private static volatile String status="Off", savedHistory="", metric="EP: waiting";
+    private static volatile String status="Off", savedHistory="", metric="EP: waiting", compact="♥ --";
     /** Translate native status text only on display, keeping its original value for diagnostics. */
     public static String status(){return displayMetric(metric)+"\n"+displayStatus(status);}
     private static String displayMetric(String input){
@@ -44,18 +44,21 @@ public final class BuddyEmotionSettings {
             return "Solicitação cancelada; atualizando dados do companheiro.";
         return dev.pgrazor.PtBr.tr(raw);
     }
+    /** Compact badge; full translated status remains in the accessibility description. */
+    public static String compactStatus(){return compact;}
     public static String history(){return savedHistory;}
     public static void publish(String json){try{
         org.json.JSONObject event=new org.json.JSONObject(json);status=event.optString("message","Waiting");
         int ep=event.optInt("ep",-1);metric=ep<0?"EP: waiting":"EP: "+ep+(event.optBoolean("excited",false)?" | Excited":"");
         long seconds=event.optLong("maintenanceSeconds",0);
         if(seconds>0)metric+=" | Maintenance ~"+(seconds/60)+"m "+(seconds%60)+"s";
+        compact=(ep<0?"♥ --":"♥ "+ep)+(event.optBoolean("excited",false)?" ★":"")+(seconds>0?" ⏱"+((seconds+59)/60)+"m":"");
         String account=event.optString("account",""), h=event.optString("history","");
         if(AccountProfiles.matchesAutomationIdentity(account)&&h.matches("[0-9]+(;[0-9]+){5}")&&!h.startsWith("0;")&&h.length()<=256){
             String next=account+"|"+h;if(!next.equals(savedHistory)){savedHistory=next;Control.saveSettings();}
         }
     }catch(Exception ignored){}}
-    public static void read(Properties p){preferences.read(p);String h=p.getProperty("buddyEmotionHistory","");savedHistory=h.length()<=256?h:"";status="Waiting for buddy data";metric="EP: waiting";}
+    public static void read(Properties p){preferences.read(p);String h=p.getProperty("buddyEmotionHistory","");savedHistory=h.length()<=256?h:"";status="Waiting for buddy data";metric="EP: waiting";compact="♥ --";}
     public static void write(Properties p){preferences.write(p);p.setProperty("buddyEmotionHistory",savedHistory);}
     public static String config(){return preferences.config();}
     public static boolean enabled(){return preferences.enabled();}
