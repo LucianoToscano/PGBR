@@ -1406,3 +1406,11 @@ Foram executadas 18 fixtures C++ host, contratos de tempos/UI e verificação do
 - [PR #136](https://github.com/LucianoToscano/PGBR/pull/136): branch `integracao/qa-forks-pokematrix-max-20261123`, ainda em draft, base da `main` `f78d0e2544cdb55a31bdf1dd5cf5b813e2376622`.
 - [Comparação oficial de código](https://github.com/LucianoToscano/PGBR/compare/main...integracao/qa-forks-pokematrix-max-20261123): **19 arquivos distintos alterados, zero remoções**, incluindo testes, documentos e três ports; `main` não modificada.
 - [Primeiro CI da integração #45109074658](https://github.com/LucianoToscano/PGBR/actions/runs/45109074658) e [auditoria de governança #45109074666](https://github.com/LucianoToscano/PGBR/actions/runs/45109074666) iniciados; **resultado ainda a validar**. Esta alteração documental gera nova HEAD e exige o CI correspondente antes de qualquer merge. Não apresentar como release ou funcionalidade homologada.
+
+
+### CI completo aprovado da integração — PR #136
+
+- [Workflow integrado #45109108149](https://github.com/LucianoToscano/PGBR/actions/runs/45109108149) em `3e3ad7c0397dd994fe0c16f6a1bb89d8ee89e643`: **5/5 jobs `completed/success`**, abrangendo website/lockfile, políticas C++ host, políticas ARM64 via NDK, sintaxe de executor/host VNext ARM64 e `tools/check.py` + compilação Java/Root. O primeiro workflow #45109074658 foi cancelado pelo push documental, não por falha de código.
+- [Governança #45109108082](https://github.com/LucianoToscano/PGBR/actions/runs/45109108082): **1/1 `completed/success`** na mesma HEAD. [PR #136](https://github.com/LucianoToscano/PGBR/pull/136) registra roteiro detalhado de QA Android, ainda não executado.
+- **Auditoria de port:** nove arquivos-chave da branch unificada confrontados integralmente com suas fontes nos PRs #130, #131 e #132, com conteúdo idêntico. `Control.java` e `SettingsPanel.java` receberam apenas composição explícita dos dois conjuntos de funcionalidade; comparação com `main`: 19 arquivos distintos, zero remoções, HEAD base ainda `f78d0e2544cdb55a31bdf1dd5cf5b813e2376622`.
+- **Pendências:** pós-registro, verificar CI da nova HEAD do adendo documental; não confundir testes estáticos com instalação em Android físico, eficácia dentro do jogo ou homologação. `device_tested=false`. Sem merge na `main`, nova release, novo APK ou mudança das tags publicadas.
