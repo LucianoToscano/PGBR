@@ -1,4 +1,4 @@
-> **LT043 candidata QA (ainda não publicada):** `PGBR-v0.00.43-LT.apk` (nome reservado, arquivo ainda não compilado) — importação local de dados PGSharp via JSON convertido; compilação em validação, sem APK/release disponíveis até CI e verificação. [Notas](docs/releases/v0.00.43-LT.md) · [PR #138](https://github.com/LucianoToscano/PGBR/pull/138). `device_tested=false`.
+> **LT043 integrada e compilada como QA:** `PGBR-v0.00.43-LT.apk`, Root e Zygisk assinados e verificados no [Actions #45277310216](https://github.com/LucianoToscano/PGBR/actions/runs/45277310216). Conteúdo: Rocket QA6, mapa/HUD/IV, sessão Max preparatória e importação PGSharp local. **Publicação de release em validação** no [Actions #45279562497](https://github.com/LucianoToscano/PGBR/actions/runs/45279562497); não divulgar APK direto antes de verificar assets. [Notas detalhadas](docs/releases/v0.00.43-LT.md) · [merge #141](https://github.com/LucianoToscano/PGBR/pull/141) · [pendências #144](https://github.com/LucianoToscano/PGBR/issues/144). `device_tested=false`.
 
 <p align="center"><img src="pgrazor/branding/pgbr-logo.webp" width="92" alt="Logotipo PGBR"></p>
 
