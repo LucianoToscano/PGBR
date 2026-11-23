@@ -1340,3 +1340,10 @@ Foram executadas 18 fixtures C++ host, contratos de tempos/UI e verificação do
 - **Correção em código:** atualiza a ordem de desenho do canvas do painel IV em **cada exibição** (não somente na primeira criação), usando o canvas da tela pai. Visa impedir que o modelo/RawImage encubra a linha de IV quando a tela de detalhes é aberta por outra tela, especialmente Pokédex.
 - **Escopo:** somente 1 arquivo nativo alterado; sem mudanças de gancho, chamada de captura, IV real de VGP+, Ataque Inteligente, configurações, Root, assinatura ou releases anteriores. Correção da atualização de IV após fortalecer exige trabalho separado e não está incluída.
 - **Estado:** alteração presente na branch, sujeita a CI e revisão. A ordenação de canvas em dispositivo/Unity **não foi homologada** (`device_tested=false`); não publicar release nem declarar correção visual comprovada antes dos testes.
+
+
+### Resultado CI do port IV — PR #132
+
+- [PR #132](https://github.com/LucianoToscano/PGBR/pull/132), draft sobre base `f78d0e2544cdb55a31bdf1dd5cf5b813e2376622`.
+- [GitHub Actions #45107240963](https://github.com/LucianoToscano/PGBR/actions/runs/45107240963): **5/5 jobs success** no commit pré-registro `d1dd786789ee3121b70c92124322717851afad95` (website, C++ host, Java/Root, ARM64 selecionado, host VNext ARM64); governança read-only da mesma revisão foi acionada separadamente.
+- Registro documental é commit posterior, sem modificação adicional de C++; o CI da nova HEAD deve ser novamente verificado. Continua QA `device_tested=false`, sem merge/instalação/release ou confirmação visual da Unity.
