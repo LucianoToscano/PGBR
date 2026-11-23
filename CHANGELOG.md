@@ -1,3 +1,11 @@
+## PGBR 0.00.43-LT — integração QA consolidada (23/11/2026)
+
+- Merge [PR #141](https://github.com/LucianoToscano/PGBR/pull/141) preservando duas linhagens sem perda de commits: Rocket QA6 corrigindo a omissão do APK PR136; mapas/HUD/Pokédex IV; sessão Max preparatória; importação PGSharp local de favoritos/rotas/filtros arquivados.
+- Conservada a prioridade conservadora Charge/Charge2 quando metadados ou identidade do alvo não são válidos; **não homologado em dispositivo**. Batalha Max não dispara ações sem validação nativa confiável.
+- Merge [PR #142](https://github.com/LucianoToscano/PGBR/pull/142) prepara release imutável com variantes sem Root, Root e módulo Zygisk; [CI #45277310216](https://github.com/LucianoToscano/PGBR/actions/runs/45277310216) aprovou três pacotes QA com SHA-256; publicação depende da conclusão do workflow oficial.
+- Artefatos prévios LT042 preservados; nenhuma remoção de arquivos na comparação anterior ao merge; scripts de assinatura/empacotamento, motor de ação e VGP idênticos aos da LT042.
+- **Exclusões documentadas, sem declarar funcionalidades prontas:** #135 (Savant), #115/#121/#118 (Snipers), #108/#111/#114 (radar), #109 (GPS) e #101 (PT-BR). Pendências em [issue #144](https://github.com/LucianoToscano/PGBR/issues/144). `device_tested=false`.
+
 ### Segurança — Batalha Max (PR #136 / issue #137)
 - Bloqueada a injeção da máscara temporária Max em opções globais sem identificação nativa confiável da batalha; preservadas preferências permanentes e testes de regressão. Sessão Max permanece preparatória, sem execução automática, até implementação segura do contexto Max. `device_tested=false`.
 
