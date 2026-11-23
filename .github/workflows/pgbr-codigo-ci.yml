@@ -76,7 +76,11 @@ jobs:
           test -n "$SDK_ROOT"
           CXX="$SDK_ROOT/ndk/27.3.13750724/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android24-clang++"
           test -x "$CXX"
-          "$CXX" -std=c++17 -fsyntax-only -I pgrazor/native \
+          # Combat host includes Dobby's public header. Fetch only the pinned,
+          # SHA-verified upstream archive already used by native_build.py.
+          DOBBY="$(python3 -c "import sys; from pathlib import Path; sys.path.insert(0,'pgrazor'); import native_build; print(native_build.ensure_dobby(Path('pgrazor'),download=True).resolve())" | tail -n 1)"
+          test -f "$DOBBY/include/dobby.h"
+          "$CXX" -std=c++17 -fsyntax-only -I pgrazor/native -I "$DOBBY/include" \
             pgrazor/native/combat_host.cpp pgrazor/native/rocket_combat.cpp
 
   website-build:
