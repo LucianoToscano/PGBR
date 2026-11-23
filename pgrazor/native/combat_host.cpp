@@ -401,7 +401,7 @@ void drain_leaf_events(uint64_t tid) {
     if ((caps & PGR_CBH_CAP_ROCKET_COMBAT) && g_rocket_combat) {
         pgr_rocket_combat_event_v1 rev{};
         for (int i = 0; i < 64 && g_rocket_combat->next_event(&rev) == 1; ++i) {
-            char buf[256];
+            char buf[512]; // bounded diagnostic JSON includes effective toggle, binding and actor state
             switch (rev.code) {
                 case PGR_RC_EVT_READY:
                     queue_event(PGR_CBH_EV_ROCKET_COMBAT_READY, 1, 0, tid, "{\"available\":true}");
