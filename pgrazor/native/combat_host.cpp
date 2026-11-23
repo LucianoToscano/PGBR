@@ -834,7 +834,16 @@ void hook_rk_vn_update(void *self,void *a1, void *method){
  if(pins.valid&&rocket_gate(&tid)){
   pvp_vnext_open(pins.get(0),tid);
   g_rocket_combat->observe(PGR_RC_OBS_VNEXT_UPDATE,pins.get(0),0,tid);
-  drain_leaf_events(tid);}orig(pins.get(0),pins.get(1),method);
+  drain_leaf_events(tid);}
+ orig(pins.get(0),pins.get(1),method);
+ // A target replacement can precede the two Charge display callbacks.
+ // Probe the same typed battle director as Smart Battling after the VNext
+ // update, when available, to invalidate the old target before an auto tap.
+ if(pins.valid&&rocket_gate(&tid)){
+  const int32_t stamp=pgr_smart_battle_vnext_gui_actor_stamp(pins.get(0));
+  if(stamp>0&&rocket_gate(&tid))
+    g_rocket_combat->observe(PGR_RC_OBS_ACTOR_PAIR,nullptr,stamp,tid);
+ }
 }
 void hook_rk_vn_close(void *self,void *method){
  auto orig=reinterpret_cast<Fn2Ptr>(load_original(HK_RK_VN_CLOSE));FrameGuard frame;uint64_t tid=0;
