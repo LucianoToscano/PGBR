@@ -19,3 +19,8 @@ int pgr_smart_battle_pick_prompt(void *const *buttons,int count);
 // Pokemon ID. Works independently of the Smart Battling (swap) toggle.
 // Invoke only on the attached Unity owner thread with an already rooted state.
 int32_t pgr_smart_battle_vnext_actor_stamp(void *battle_state);
+
+// Optional early probe on the live VNext GUI after its update callback.
+// Uses the same battle-director state lookup already used by Smart Battling;
+// returns 0 for unsupported GUI layouts, without guessing an actor ID.
+int32_t pgr_smart_battle_vnext_gui_actor_stamp(void *vnext_gui);
