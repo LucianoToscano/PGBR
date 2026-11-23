@@ -16,8 +16,8 @@ import org.json.JSONObject;
 
 /** Small app-private destination library. Call persistence methods off the UI thread. */
 public final class SavedPlaces {
-    public static final int LIMIT = 50;
-    public static final int NAME_LIMIT = 40;
+    public static final int LIMIT = 200;
+    public static final int NAME_LIMIT = 100;
     public static final String[] CATEGORIES=Entry.CATEGORIES;
     private static final int JSON_LIMIT = 64 * 1024;
     private final SharedPreferences preferences;
@@ -39,7 +39,7 @@ public final class SavedPlaces {
             if(id==null||id.isEmpty()||id.length()>64)throw new IllegalArgumentException("ID inválido");
             if(name==null||name.trim().isEmpty())throw new IllegalArgumentException("Informe o nome do local");
             name=name.trim();
-            if(name.length()>NAME_LIMIT)throw new IllegalArgumentException("Nome com até 40 caracteres");
+            if(name.length()>NAME_LIMIT)throw new IllegalArgumentException("Nome com até 100 caracteres");
             for(int i=0;i<name.length();i++)if(Character.isISOControl(name.charAt(i)))
                 throw new IllegalArgumentException("Nome com caractere inválido");
             if(!Double.isFinite(latitude)||!Double.isFinite(longitude)||latitude < -90
@@ -69,7 +69,7 @@ public final class SavedPlaces {
             JSONArray array = new JSONArray(raw);
             Set<String> names = new HashSet<>(), ids = new HashSet<>();
             if (array.length() > LIMIT) damaged = true;
-            // Inspect at most50 records even when a corrupt document advertises a larger collection.
+            // Inspect at most LIMIT records even when a corrupt document advertises a larger collection.
             for (int i = 0; i < Math.min(array.length(), LIMIT); i++) {
                 try {
                     JSONObject object = array.getJSONObject(i);
@@ -86,10 +86,35 @@ public final class SavedPlaces {
 
     public synchronized void add(Entry entry) throws IOException {
         List<Entry> entries = new ArrayList<>(read().entries);
-        if (entries.size() >= LIMIT) throw new IllegalArgumentException("You have 50 saved places. Delete one before adding another.");
+        if (entries.size() >= LIMIT) throw new IllegalArgumentException("Você atingiu o limite de 200 favoritos. Exclua um antes de adicionar outro.");
         for (Entry existing : entries) if (existing.name.equalsIgnoreCase(entry.name)) throw new IllegalArgumentException("A place with this name already exists. Choose another name.");
         entries.add(entry);
         write(entries);
+    }
+
+    /** Import an all-or-nothing list, retaining existing entries and skipping repeated names (distinct labels may share a location). */
+    synchronized int merge(List<Entry> additions) throws IOException {
+        Snapshot snapshot=read();
+        if(snapshot.damaged)throw new IOException("Existing favorites are damaged.");
+        List<Entry> merged=new ArrayList<>(snapshot.entries);
+        Set<String> names=new HashSet<>();
+        for(Entry e:merged)names.add(e.name.toLowerCase(Locale.ROOT));
+        int added=0;
+        for(Entry e:additions) {
+            if(e==null)throw new IOException("Invalid imported favorite");
+            String n=e.name.toLowerCase(Locale.ROOT);
+            if(names.contains(n))continue;
+            merged.add(e);names.add(n);added++;
+        }
+        if(merged.size()>LIMIT)throw new IOException("Too many saved places");
+        if(added>0)write(merged);
+        return added;
+    }
+
+    /** Roll back an importer without deleting favorites that existed before the import. */
+    synchronized void restoreSnapshot(Snapshot snapshot) throws IOException {
+        if(snapshot==null||snapshot.damaged)throw new IOException("Invalid favorites rollback");
+        write(new ArrayList<>(snapshot.entries));
     }
 
     public synchronized boolean remove(String id) throws IOException {

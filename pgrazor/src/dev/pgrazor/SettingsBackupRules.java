@@ -90,11 +90,20 @@ public final class SettingsBackupRules {
         }
         JSONObject preferences=root.getJSONObject("preferences");
         for(Iterator<String> it=preferences.keys();it.hasNext();){String scope=it.next();JSONObject group=preferences.getJSONObject(scope);
-            require(Arrays.asList("pgrazor-map","pgrazor-overlays","pgrazor-saved-places-v1","pgrazor-livefeed").contains(scope),"Unknown settings group");
+            require(Arrays.asList("pgrazor-map","pgrazor-overlays","pgrazor-saved-places-v1","pgrazor-livefeed","pgrazor-pgsharp-data-v1").contains(scope),"Unknown settings group");
             for(Iterator<String> keys=group.keys();keys.hasNext();){String key=keys.next();Object value=group.get(key);
                 if(scope.equals("pgrazor-map")){require(Arrays.asList("Stops","Gyms","Raids").contains(key),"Unknown map setting");bool(value,key);}
                 else if(scope.equals("pgrazor-overlays")){require(Arrays.asList("cooldown.fx","cooldown.fy","vgp.fx","vgp.fy","transfer.fx","transfer.fy","gym-feed.fx","gym-feed.fy","local-time.fx","local-time.fy").contains(key),"Unknown overlay setting");number(value,0,1,key);}
                 else if(scope.equals("pgrazor-saved-places-v1")){require(key.equals("places")&&value instanceof String,"Invalid favorites");places((String)value);}
+                else if(scope.equals("pgrazor-pgsharp-data-v1")) {
+                    require(key.equals("migration_json") && value instanceof String
+                        && ((String)value).length()<=300000,"Invalid imported PGSharp data");
+                    JSONObject imported=new JSONObject((String)value);
+                    require("PGBR PGSharp migration".equals(imported.optString("format"))
+                        && imported.optInt("version",-1)==1,"Invalid PGSharp archive");
+                    for(String name:new String[]{"favorites","routes","pokemonFilters","questFilters","raidFilters"})
+                        require(imported.optJSONArray(name)!=null,"Missing PGSharp records");
+                }
                 else if(key.equals("category"))integer(value,5,key);
                 else if(key.equals("radius"))integer(value,2,key);
                 else if(key.equals("minIv"))integer(value,3,key);
@@ -123,7 +132,7 @@ public final class SettingsBackupRules {
         for(String row:value.split(";")){if(row.isEmpty())continue;require(row.matches("[0-9]{1,7}:[0-9]{1,6}"),"Invalid item limit");String[] pair=row.split(":");int id=Integer.parseInt(pair[0]),cap=Integer.parseInt(pair[1]);require(id>0&&cap<=100000&&ids.add(id),"Invalid item limit");}
     }
     private static void places(String value)throws JSONException{
-        require(value.length()<=65536,"Too many favorites");JSONArray list=new JSONArray(value);require(list.length()<=50,"Too many favorites");Set<String> ids=new HashSet<>(),names=new HashSet<>();
-        for(int i=0;i<list.length();i++){JSONObject p=list.getJSONObject(i);String id=p.getString("id"),name=p.getString("name");require(!id.isEmpty()&&id.length()<=64&&ids.add(id),"Invalid favorite ID");require(!name.trim().isEmpty()&&name.length()<=40&&names.add(name.trim().toLowerCase(Locale.ROOT)),"Invalid favorite name");number(p.get("latitude"),-90,90,"favorite latitude");number(p.get("longitude"),-180,180,"favorite longitude");}
+        require(value.length()<=65536,"Too many favorites");JSONArray list=new JSONArray(value);require(list.length()<=200,"Too many favorites");Set<String> ids=new HashSet<>(),names=new HashSet<>();
+        for(int i=0;i<list.length();i++){JSONObject p=list.getJSONObject(i);String id=p.getString("id"),name=p.getString("name");require(!id.isEmpty()&&id.length()<=64&&ids.add(id),"Invalid favorite ID");require(!name.trim().isEmpty()&&name.length()<=100&&names.add(name.trim().toLowerCase(Locale.ROOT)),"Invalid favorite name");number(p.get("latitude"),-90,90,"favorite latitude");number(p.get("longitude"),-180,180,"favorite longitude");}
     }
 }

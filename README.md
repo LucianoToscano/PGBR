@@ -1,3 +1,5 @@
+> **LT043 candidata QA (ainda não publicada):** `PGBR-v0.00.43-LT.apk` (nome reservado, arquivo ainda não compilado) — importação local de dados PGSharp via JSON convertido; compilação em validação, sem APK/release disponíveis até CI e verificação. [Notas](docs/releases/v0.00.43-LT.md) · [PR #138](https://github.com/LucianoToscano/PGBR/pull/138). `device_tested=false`.
+
 <p align="center"><img src="pgrazor/branding/pgbr-logo.webp" width="92" alt="Logotipo PGBR"></p>
 
 <h1 align="center">PGBR</h1>
