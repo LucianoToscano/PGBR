@@ -123,8 +123,9 @@ inline DisplayDecision inspect_display(bool enabled,uint64_t now,
 // better, verified move is still building energy. The SAME Rocket executor
 // serves typed battle variants; there is no independent PvP selector.
 // The comparison must be rerun on every tick, with fresh matching samples.
-// Missing/old classifications fail open unless the other *verified slot* has
-// a fresh confirmed SUPER tier. Unknown remains Unknown, never assumed Normal.
+// Missing/old classifications are rejected by admit_display when two slots
+// are observed. The Rocket owner must keep the normal quick gesture available
+// without automatically falling back to an unverified charged button.
 inline bool better_unready(bool enabled,uint64_t now,
                            const DisplayCandidate *items,std::size_t count) {
   if(!enabled||!items||count!=2||items[0].ready==items[1].ready)return false;
