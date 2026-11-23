@@ -376,6 +376,10 @@ void charge_capture(void *obj, int32_t observation, uint64_t epoch) {
     const auto sample=pgr_charge_effect_ui::unpack_observation(observation);
     g_charge_observations[g_charge_count]={sample,pgr_charge_effect_ui::pack_observation(sample)?boottime_ms():0};
     g_charges[g_charge_count++]=incoming.release();
+    // Record that this GUI exposed multiple charged objects at observation
+    // time. They may disappear before the first heartbeat/tick: never treat
+    // that later single candidate as proof that the Pokémon has one move.
+    if(g_charge_count>=2)g_smart_seen_pair=true;
   }
 }
 
