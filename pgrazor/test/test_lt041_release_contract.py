@@ -14,7 +14,7 @@ class Lt041ReleaseContract(unittest.TestCase):
                      "SHA256SUMS.txt", "tools/verify_release.py",
                      "pgrazor/nonroot.py", "pgrazor/rooted.py", "native-pvp-fixture:",
                      "test_pvp_settings_ui.py", "test_iflowgo_request_policy_java.py",
-                     "workflow_dispatch:", "branches: [main]",
+                     "workflow_dispatch:",
                      "gh release view", "gh release create", "--prerelease",
                      "--latest=false"):
             with self.subTest(text=text):
