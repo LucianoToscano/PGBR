@@ -59,18 +59,20 @@ inline Result choose(bool enabled, uint64_t session, uint64_t opponent,
 // Optional VNext display-only selector. Each candidate refers to a rooted
 // ChargeAttackDisplayVNext already observed AFTER its original state update.
 // A batch token is only an update-coherence hint, not an opponent ID.
-// This never overrides the legacy path unless BOTH charged buttons are ready,
-// recently observed together and their typed effect classifications are valid.
+// A strict hold is allowed with only one ready button when the OTHER button
+// is verified as strictly more effective, and fast attacks can keep charging.
+// A direct effectiveness selection still requires BOTH buttons ready. Never
+// treat the capture order or a batch pointer as proof of opponent identity.
 struct DisplayCandidate {
   pgr_charge_effect_ui::Sample sample{};
   uint64_t observed_ms = 0;
   bool ready = false;
 };
 // Why a charged tap used smart priority or the original first-ready path.
-// Packed into optional action telemetry only; never governs a new timing gate.
+// Packed into optional action telemetry; no timer overrides a strict ranking.
 enum class DisplayReason : uint8_t {
   OFF=0, EFFECTIVENESS=1, UNAVAILABLE_PAIR=2, ONLY_ONE_READY=3,
-  UNKNOWN_EFFECT=4, STALE_EFFECT=5, UNVERIFIED_SLOTS=6, HOLD_EXPIRED=7
+  UNKNOWN_EFFECT=4, STALE_EFFECT=5, UNVERIFIED_SLOTS=6
 };
 struct DisplayDecision {
   int index=-1;
@@ -103,12 +105,11 @@ inline DisplayDecision inspect_display(bool enabled,uint64_t now,
   return {static_cast<int>(tier2)>static_cast<int>(tier1)?second:first,
           DisplayReason::EFFECTIVENESS};
 }
-// Rocket VNext can continue its normal quick attacks briefly if an observed,
-// strictly stronger loaded move is still building energy. This policy is the
-// SAME for typed Rocket-derived sessions (League GO, friends, training); no
-// separate PvP executor or tap location is inferred. Requires fresh, matching
-// effectiveness readings for BOTH buttons, and exactly one ready button.
-// The caller owns the bounded waiting clock and must revalidate on each tick.
+// Rocket VNext can keep the normal quick attacks running while a strictly
+// better, verified move is still building energy. The SAME Rocket executor
+// serves typed battle variants; there is no independent PvP selector.
+// The comparison must be rerun on every tick, with fresh matching samples.
+// Missing/old classifications fail open to the old first-ready behavior.
 inline bool better_unready(bool enabled,uint64_t now,
                            const DisplayCandidate *items,std::size_t count) {
   if(!enabled||!items||count!=2||items[0].ready==items[1].ready)return false;
