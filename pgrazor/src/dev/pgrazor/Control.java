@@ -1969,14 +1969,18 @@ public final class Control {
                     String actor=b.optString("actorIdentity","not-observed");
                     String decision=b.optString("decision","unknown");
                     String reason=b.optString("reason","unknown");
+                    String chargeState=!b.optBoolean("chargeSeen",false)
+                        ?" [não observado]":
+                        b.optBoolean("chargeReady",false)?" [pronto]":" [não pronto]";
+                    String charge2State=!b.optBoolean("charge2Seen",false)
+                        ?" [não observado]":
+                        b.optBoolean("charge2Ready",false)?" [pronto]":" [não pronto]";
                     smartAttackNativeStatus="Menu: "+(smartAttack?"ON":"OFF")+
                         " | Motor: "+active+" | Classificador: "+classifier+
-                        "\nAdversário: "+actor+" | Decisão: "+decision+
-                        " ("+reason+")"+
-                        "\nCharge: "+b.optString("chargeTier","unknown")+
-                        (b.optBoolean("chargeReady")?" [pronto]":" [carregando]")+
-                        " | Charge2: "+b.optString("charge2Tier","unknown")+
-                        (b.optBoolean("charge2Ready")?" [pronto]":" [carregando]");
+                        "\nAdversário: "+actor+" | Leitura: "+b.optString("actorProbe","não informada")+
+                        " | Decisão: "+decision+" ("+reason+")"+
+                        "\nCharge: "+b.optString("chargeTier","unknown")+chargeState+
+                        " | Charge2: "+b.optString("charge2Tier","unknown")+charge2State;
                     smartAttackNativeJson=detail;
                 }else if(b.has("pvpExecutorReady")){
                     pvpBattleReady=b.optBoolean("pvpExecutorReady",false);
