@@ -730,7 +730,8 @@ void vnext_tick(uint64_t tid, uint64_t epoch, uint32_t mask, uint64_t ticket) {
     // Report effective mode even when the Java toggle failed to reach the
     // native coherent F3 snapshot. Without this, a real device with Smart
     // OFF looked identical to a selector that authorized Charge incorrectly.
-    diagnostic_aux|=(wait_for_better?8:0)|(selected_only?16:0);
+    diagnostic_aux|=(wait_for_better?8:0)|(selected_only?16:0)|
+       (g_actor_pair_observed?16384:0)|(g_actor_pair_stamp>0?32768:0);
     const uint64_t report_ms=boottime_ms();
       const uint32_t signature=
           (static_cast<uint32_t>(decision_reason)<<24)|
