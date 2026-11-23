@@ -1,0 +1,61 @@
+# PGBR — correção PT-BR das capturas do Google Drive (22/11/2026)
+
+## Referência e isolamento
+- Pasta de evidências: https://drive.google.com/drive/folders/138ds5DP0RN2GOmHnCB9qSWI4c-4DWWnG
+- Commit-base de `main`: `be01d9b59a9e1f31f292b8c562744e5801993d08`.
+- Branch independente: `fix/ptbr-drive-capturas-20261122`.
+- Não altera tempos, motor de ataques, Escudo Inteligente ou Troca Inteligente; não mesclar diretamente em `main`.
+
+## Falhas identificadas nas capturas
+- Reides automáticas: estados `Not running`, `Any tier`, seletor de distância e níveis de reide.
+- Localização, mapa e rotas: nomes de Ginásios, quantidades de paradas, progresso dinâmico da caminhada.
+- Fontes de dados, filtros e categorias: condições climáticas, grupos de Pokémon e títulos de filtros.
+- Scanner de Brilhantes: estado dinâmico `All N nearby checked · N checked, N shinies · N/M in 24 h`.
+- Autenticação em fonte ao vivo: erro `Your account doesn't have access to this feature.`.
+- Histórico do VGP: registro `VGP ball throw`.
+
+## Mudanças
+- Adicionadas **65 traduções ausentes**; as 12 chaves já presentes no conjunto analisado foram preservadas, evitando apagar a tradução aprovada.
+- Total do glossário passou de **1.384 para 1.449** entradas.
+- Mantidas exatamente iguais as chaves de apresentação em `pgrazor/i18n/pt-BR.json`, `PtBr.java` e `RootPtBr.java`.
+- Reconhecimento estritamente visual de três formas numéricas do Scanner de Brilhantes no tradutor do app e no Root. Sem modificar os códigos nativos que emitem o status.
+- Correção da montagem dos contadores dinâmicos de `AutoWalkDialog.java` por segmentos traduzidos, mantendo as variáveis numéricas e a lógica de automação.
+- Testes adicionados a `PtBrDynamicTest.java` e `test_ptbr_glossary.py`.
+
+## Limites, QA e integração
+- Revisão inicial de capturas e verificação estática de sincronização efetuadas; validação completa do CI e ensaio Android ainda precisam de confirmação independente.
+- Algumas capturas podem ser de um APK anterior ao commit-base; identificar eventual cache/versão instalada antes de concluir que uma tradução está ausente na versão compilada.
+- Identificadores de tarefas de pesquisa, códigos de API, IDs, chaves de filtros e nomes de provedores são preservados.
+- Não foi criado APK nem modificado o aplicativo instalado.
+- A integração exige testes de tradução, compilação e revisão de conflitos com outras branches; usar PR sem merge automático.
+
+## Resultado de QA confirmado em 22/11/2026
+- PR de revisão em rascunho: https://github.com/LucianoToscano/PGBR/pull/101.
+- [Workflow isolado #45044210002](https://github.com/LucianoToscano/PGBR/actions/runs/45044210002): **success**, job `translate` concluído; compila os dois tradutores Java e executa `PtBrDynamicTest` e `test_ptbr_glossary`.
+- Verificação local de correspondência: 1.449 chaves no JSON e 1.449 entradas em cada tradutor; 66 cenários de tradução simulados sem divergência.
+- Suíte ampliada de código [#45044210035](https://github.com/LucianoToscano/PGBR/actions/runs/45044210035) estava em execução na verificação. Sem homologação em aparelho ou geração de APK nesta branch.
+
+## Reavaliação de classificação das capturas — 22/11/2026
+- Oito imagens estavam em **Ajustes Corrigidos** apesar de ainda conterem textos em inglês. Foram devolvidas à pasta original de pendências. Capturas são evidências do APK antigo e não podem ser consideradas telas já traduzidas apenas porque o dicionário foi atualizado.
+- Traduções complementares: `Quests` → `Pesquisas`, `Primal` → `Primitivo`, além de padronização de `Shiny` nas frases de apresentação (`Brilhante`/`Brilhantes`). Não se alteram nomes de propriedades, payloads, IDs, APIs nem o conteúdo nativo da batalha.
+- Glossário PT-BR agora possui **1.451** entradas e permanece sincronizado entre aplicação padrão e Root.
+- O diálogo de distância foi contemplado com tradução de segmentos variáveis `Only raids within X km of where you press Start`; os testes regressivos incluem 10 km.
+- Critério atualizado: só mover imagens para **Ajustes Corrigidos** após build que contém o PR e validação visual no Android, sem texto visível em inglês não justificado (marcas/termos oficiais).
+- Nenhuma imagem foi alterada, recriada ou excluída, e nenhum APK foi publicado nesta rodada.
+
+## Rodada adicional — 20 capturas revisadas em 22/11/2026
+- Autorização expressa do usuário: **mover capturas após aplicar a correção ao código**, sem depender da homologação no Android; se o APK ainda mostrar inglês, uma nova captura será anexada para novo ajuste. Esta decisão substitui o critério de pasta da reavaliação anterior; não equivale a validar o APK.
+- Das **20 imagens remanescentes**, **17 foram analisadas e classificadas** como correção aplicada no código ou texto já apresentado em PT-BR (como a tela de atualização que só menciona o nome próprio GitHub Releases). A pasta **Ajustes Corrigidos** passou a **25 imagens** (8 anteriores + 17), e a pasta original ficou com **3 imagens de referência**: `PgSharp idioma Geral.jpg`, `PgSharp idioma Filtros Pokemons.jpg` e `Olho de exibir senha e ocultar.jpg`. Essas três não são erros textuais do PGBR: duas são referências de opções do PGSharp e uma é pedido de funcionalidade de senha. Nada foi excluído.
+- Novas **25 traduções** no glossário (1.451 → **1.476**), sincronizadas entre `pt-BR.json`, `PtBr.java` e `RootPtBr.java`; incluem descrições completas de presentes e alimentação em Ginásios, rótulos dos Ginásios, equipe e defensores, seleção no mapa, zoom, destino/tempo de espera, fases de automação, reides, contadores de presentes, notificações de captura e marcador de rota reversível.
+- Ajustado o parser de prefixos visuais numéricos com `(` e `–` para rótulos como `Nearby locations loaded by the game (158)`, `Saved routes (1)` e `Max completions (1–50):`. Regras presentes nos tradutores padrão e Root.
+- Ajustadas exclusivamente chamadas de exibição: `BatchEvolutionSettings.java` e `GiftBatchSettings.java` agora traduzem fases, mensagens e contadores separadamente; `MapPoiLayer.java` traduz rótulos de Ginásios próximos; `GpxRouteDialog.java` exibe o número de paradas em português; `ResearchSettings.java` localiza categorias e quantidade selecionada; `CatchOutcomeController.java` aplica a tradução ao Toast de captura. Protocolo, serviços, regras, dados, batalha e automação original permanecem sem alteração.
+- `PtBrDynamicTest.java` ampliado para **98 casos**; comparação estática dos 98 testes com a lógica dos tradutores **sem divergências** e 1.476 entradas correspondentes nos três arquivos de glossário/código. `test_ptbr_glossary.py` ampliado com requisitos de chamadas de exibição e prefixos. **Não se atribui aprovação de CI/JVM desta rodada sem execução confirmada; não houve teste em aparelho, APK gerado ou merge automático.**
+- Preservados nomes próprios, nomes de rotas criadas pelo usuário, `GitHub Releases`, códigos internos de pesquisa (ex.: `CHALLENGE_GOWA2026_...`) e IDs do jogo: não é correto traduzi-los como texto comum, nem alterar seu significado.
+- PR existente: https://github.com/LucianoToscano/PGBR/pull/101, branch isolada `fix/ptbr-drive-capturas-20261122`; atualizar a base divergente da `main` antes da integração, sem sobrescrever a implementação paralela de batalhas.
+
+## Padronização de nomenclatura: Teleporte — 22/11/2026
+- O usuário pediu substituir o texto visível **Teletransportar** por **Teleporte**.
+- Oito valores de tradução foram ajustados, incluindo botão `Teleport`, descrições de mapa, modo toque duplo, teleporte ao início da rota e entrada de reides; `Teleport cooldown` foi refinado para `Tempo de espera do teleporte`.
+- Textos de UI fora do tradutor também foram corrigidos em `AutoWalkDialog.java` (opção de deslocamento inicial) e `Cooldown.java` (orientação e acessibilidade), respeitando a gramática da frase.
+- Nenhuma chave em inglês/ID foi renomeada: somente o **texto apresentado em PT-BR**; mantidas as 1.476 entradas sincronizadas para Root e sem Root.
+- Oito novos cenários em `PtBrDynamicTest.java` e checagens de terminologia em `test_ptbr_glossary.py`; sem merge, sem APK e sem afirmar homologação em dispositivo.

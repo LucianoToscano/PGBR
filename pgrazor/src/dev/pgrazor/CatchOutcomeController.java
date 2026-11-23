@@ -70,7 +70,7 @@ final class CatchOutcomeController {
         if(reason!=null) { log.accept("suppressed outcome="+outcome+"; "+reason); return; }
         try {
             cancel();
-            toast=Toast.makeText(screen,message,Toast.LENGTH_SHORT);
+            toast=Toast.makeText(screen,dev.pgrazor.PtBr.tr(message),Toast.LENGTH_SHORT);
             toast.show();
             log.accept("displayed outcome="+outcome+"; Toast.show requested, user visibility unverified");
         } catch(RuntimeException error) {

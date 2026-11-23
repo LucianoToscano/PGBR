@@ -51,8 +51,10 @@ public final class GiftBatchSettings {
         synchronized (LOCK) {
             tick();
             String label = phase.isEmpty() ? "" : phase.substring(0, 1).toUpperCase(Locale.US) + phase.substring(1);
-            return label + ": " + message
-                + "\nSent " + sent + "   Opened " + opened + "   Skipped " + skipped;
+            return dev.pgrazor.PtBr.tr(label) + ": " + dev.pgrazor.PtBr.tr(message)
+                + "\n" + dev.pgrazor.PtBr.tr("Sent ") + sent
+                + "   " + dev.pgrazor.PtBr.tr("Opened ") + opened
+                + "   " + dev.pgrazor.PtBr.tr("Skipped ") + skipped;
         }
     }
 

@@ -19,7 +19,7 @@ public final class PtBr {
         m.put("Feeds", "Fontes de dados");
         m.put("Favorites", "Favoritos");
         m.put("Hotspots", "Pontos de interesse");
-        m.put("Teleport", "Teletransportar");
+        m.put("Teleport", "Teleporte");
         m.put("Switch account", "Trocar conta");
         m.put("Events", "Eventos");
         m.put("Automation", "Automação");
@@ -450,7 +450,7 @@ public final class PtBr {
         m.put("Send & Open Gifts", "Enviar e abrir presentes");
         m.put("Each task runs when you start it.", "Cada tarefa é executada quando você a inicia.");
         m.put("Shundo Sniper (Experimental)", "Caçador de Shundo (experimental)");
-        m.put("Shiny Scanner (Experimental)", "Scanner de Shiny (experimental)");
+        m.put("Shiny Scanner (Experimental)", "Scanner de Brilhantes (experimental)");
         m.put("Daily Incense Session", "Sessão do Incenso de Aventura Diário");
         m.put("Field research", "Pesquisas de campo");
         m.put("Settings for limited-time events.", "Configurações para eventos por tempo limitado.");
@@ -489,8 +489,8 @@ public final class PtBr {
         m.put("Send gifts", "Enviar presentes");
         m.put("Auto-Raid running", "Reide automático em execução");
         m.put("Shundo Sniper running", "Caçador de Shundo em execução");
-        m.put("Shiny Scanner on", "Scanner Shiny ativado");
-        m.put("Shundo, shiny scan, raids, incense, gym feeding, gifts, evolve, research", "Shundo, scanner Shiny, Reides, incenso, alimentação de Ginásios, presentes, evolução e pesquisas");
+        m.put("Shiny Scanner on", "Scanner de Brilhantes ativado");
+        m.put("Shundo, shiny scan, raids, incense, gym feeding, gifts, evolve, research", "Shundo, scanner de Brilhantes, reides, incenso, alimentação de Ginásios, presentes, evolução e pesquisas");
         m.put("Halloween · Go Wild", "Halloween · Área Selvagem GO");
         m.put("Dark", "Escuro");
         m.put("Light", "Claro");
@@ -515,7 +515,7 @@ public final class PtBr {
         m.put("Auto-transfer items: ", "Transferência automática de itens: ");
         m.put("Faster catch summary", "Resumo de captura mais rápido");
         m.put("Game map tap: ", "Toque no mapa do jogo: ");
-        m.put("Walk / double tap teleport", "Caminhar / toque duplo para teletransportar");
+        m.put("Walk / double tap teleport", "Caminhar / toque duplo: Teleporte");
         m.put("Throw rating: ", "Precisão do arremesso: ");
         m.put("Nice", "Bom");
         m.put("Great", "Ótimo");
@@ -553,7 +553,7 @@ public final class PtBr {
         m.put("No nearby locations are loaded yet. Move around in-game, then try again.", "Nenhum local próximo foi carregado. Mova-se no jogo e tente novamente.");
         m.put("Walk from the closest point\nStop ", "Caminhar do ponto mais próximo\nParada ");
         m.put("Walk from the beginning\n", "Caminhar desde o início\n");
-        m.put("Teleport to the beginning\nThen walk the whole route", "Teletransportar para o início\nDepois percorrer toda a rota");
+        m.put("Teleport to the beginning\nThen walk the whole route", "Teleporte para o início\nDepois percorrer toda a rota");
         m.put("Start “", "Iniciar “");
         m.put("Walking “", "Caminhando por “");
         m.put("User stopped the active route from Auto-walk", "O usuário interrompeu a rota ativa na caminhada automática");
@@ -583,7 +583,7 @@ public final class PtBr {
         m.put("Build route", "Criar rota");
         m.put("Start route", "Iniciar rota");
         m.put("Start route in numbered stop order", "Iniciar rota na ordem numérica das paradas");
-        m.put("Teleport to selected destination", "Teletransportar para o destino selecionado");
+        m.put("Teleport to selected destination", "Teleporte para o destino selecionado");
         m.put("Select valid coordinates for this stop.", "Selecione coordenadas válidas para esta parada.");
         m.put("Route stops (", "Paradas da rota (");
         m.put("Select a destination on the map and tap Add stop. Add at least two stops before starting.", "Selecione um destino no mapa e toque em Adicionar parada. Adicione pelo menos duas paradas antes de iniciar.");
@@ -610,17 +610,17 @@ public final class PtBr {
         m.put("Find a place", "Encontrar um local");
         m.put("Place search is unavailable right now.", "A busca por locais não está disponível no momento.");
         m.put("Type a place or coordinates and tap Search.", "Digite um local ou coordenadas e toque em Buscar.");
-        m.put("Select to place the destination pin here, then choose Teleport or Walk here.", "Selecione para colocar o pino de destino aqui e escolha Teletransportar ou Caminhar até aqui.");
+        m.put("Select to place the destination pin here, then choose Teleport or Walk here.", "Selecione para colocar o pino de destino aqui e escolha Teleporte ou Caminhar até aqui.");
         m.put("Enter at least two characters to search.", "Digite pelo menos dois caracteres para buscar.");
         m.put("Searching…", "Buscando…");
         m.put("Search is unavailable or busy. Wait a moment, check your connection, and try again.", "A busca está indisponível ou ocupada. Verifique a conexão e tente novamente.");
         m.put("Search could not be completed. Please try again.", "Não foi possível concluir a busca. Tente novamente.");
         m.put("No matching places found. Try a broader name or add a city.", "Nenhum local correspondente encontrado. Experimente um nome mais abrangente ou inclua uma cidade.");
         m.put("Show ", "Mostrar ");
-        m.put("My Shinies", "Meus Shiny");
+        m.put("My Shinies", "Meus Brilhantes");
         m.put("Choose species (N)", "Escolher espécies (N)");
-        m.put("My Shinies filters", "Filtros de Meus Shiny");
-        m.put("Applies to My Shinies only. Your other Nearby settings are kept.", "Aplica-se somente a Meus Shiny. Suas outras configurações de Próximos são mantidas.");
+        m.put("My Shinies filters", "Filtros de Meus Brilhantes");
+        m.put("Applies to My Shinies only. Your other Nearby settings are kept.", "Aplica-se somente a Meus Brilhantes. Suas outras configurações de Próximos são mantidas.");
         m.put("Show everything (overrides the filters below)", "Mostrar tudo (ignora os filtros abaixo)");
         m.put("Min IV", "IV mínimo");
         m.put("Max IV", "IV máximo");
@@ -638,9 +638,9 @@ public final class PtBr {
         m.put("Max PvP rank", "Ranking PvP máximo");
         m.put("With a league ticked, each refresh searches one by one, 10 s apart: first by IV, then Great League, then Ultra League. All results are added to the feed.", "Com uma liga selecionada, cada atualização faz buscas separadas por 10 segundos: primeiro por IV, depois pela Grande Liga e, por fim, pela Ultra-Liga. Todos os resultados são adicionados à lista.");
         m.put("Lists only Pokémon ranked within the max rank in a ticked league.", "Mostra apenas Pokémon com classificação dentro do limite escolhido na liga selecionada.");
-        m.put("Shiny only", "Somente Shiny");
+        m.put("Shiny only", "Somente Brilhantes");
         m.put("Background only", "Somente com fundo");
-        m.put("Shinies & backgrounds", "Shiny e fundos");
+        m.put("Shinies & backgrounds", "Brilhantes e fundos");
         m.put("Show my backgrounds", "Mostrar meus fundos");
         m.put("Species", "Espécies");
         m.put("All species", "Todas as espécies");
@@ -813,7 +813,7 @@ public final class PtBr {
         m.put("Ball", "Pokébola");
         m.put("Standard berry", "Fruta padrão");
         m.put("Berry", "Fruta");
-        m.put("Shiny or IV ≥90%: Ultra Ball + Golden Razz", "Shiny ou IV ≥90%: Ultra Bola + Fruta Frambo Dourada");
+        m.put("Shiny or IV ≥90%: Ultra Ball + Golden Razz", "Brilhante ou IV ≥90%: Ultra Bola + Fruta Frambo Dourada");
         m.put("Premium", "Especial");
         m.put("High CP threshold (0–10000)", "Limite de PC alto (0–10000)");
         m.put("High level threshold (0–50)", "Limite de nível alto (0–50)");
@@ -877,14 +877,14 @@ public final class PtBr {
         m.put("Reserve", "Reserva");
         m.put("Local time at spoofed location: ", "Hora no local simulado: ");
         m.put(". Drag to move.", ". Arraste para mover.");
-        m.put("Teleport cooldown", "Tempo de espera do teletransporte");
+        m.put("Teleport cooldown", "Tempo de espera do teleporte");
         m.put("Invalid teleport coordinates", "Coordenadas inválidas para teletransporte");
         m.put("Open even when item bag is full", "Abrir mesmo com a bolsa cheia");
         m.put("Uses the game's full-bag reward setting. Full-bag opening may award fewer rewards.", "Usa a configuração do jogo para recompensas com a bolsa cheia. Abrir assim pode conceder menos recompensas.");
         m.put("Send &amp; Open Gifts", "Enviar e abrir presentes");
         m.put("Sends your available gifts to eligible friends, then opens the gifts you have received. ", "Envia seus presentes disponíveis para amigos elegíveis e depois abre os presentes recebidos. ");
         m.put("Each friend is handled once. The game's own daily limits for sending and opening still apply, so some ", "Cada amigo é processado uma vez. Os limites diários do jogo para enviar e abrir presentes continuam valendo, portanto alguns ");
-        m.put("then battles using your raid auto-attack settings and catches the boss. Stops at the raid limit, after a shiny ", "depois batalha usando suas configurações de ataques automáticos em Reides e tenta capturar o chefe. Para ao atingir o limite de Reides ou após capturar um Shiny ");
+        m.put("then battles using your raid auto-attack settings and catches the boss. Stops at the raid limit, after a shiny ", "depois batalha usando suas configurações de ataques automáticos em Reides e tenta capturar o chefe. Para ao atingir o limite de Reides ou após capturar um Brilhante ");
         m.put("is caught if selected, or after two consecutive losses. Stop ends the session after its current raid.", "se a opção estiver marcada, ou após duas derrotas consecutivas. Parar encerra a sessão depois da Reide atual.");
         m.put("Uses an allowed free pass before a Premium Battle Pass. Remote Raid Passes are never used.", "Usa primeiro um Passe de Reide gratuito permitido e depois um Passe de Batalha Premium. Passes de Reide a Distância nunca são usados.");
         m.put("Golden Razz takes priority and falls back to Razz when unavailable. Leave both unchecked to use no berries. ", "Frambo Dourada tem prioridade; usa Frambo comum quando a dourada não estiver disponível. Deixe ambas desmarcadas para não usar frutas. ");
@@ -892,7 +892,7 @@ public final class PtBr {
         m.put("Select the raid tiers to join. Select none to join any tier.", "Selecione os níveis das Reides. Não selecione nenhum para participar de todos.");
         m.put("Raid tiers", "Níveis das Reides");
         m.put("Travel to raids", "Deslocar-se até Reides");
-        m.put("Teleport\nJump straight to the raid", "Teletransportar\nIr diretamente até a Reide");
+        m.put("Teleport\nJump straight to the raid", "Teleporte\nIr diretamente até a Reide");
         m.put("Walk\nMove there at walking speed", "Caminhar\nIr até lá na velocidade de caminhada");
         m.put("Stay within", "Permanecer dentro de");
         m.put("No limit\nJoin the nearest raid wherever it is", "Sem limite\nEntrar na Reide mais próxima, independentemente da distância");
@@ -1302,7 +1302,7 @@ public final class PtBr {
         m.put("Incubator ready", "Incubadora pronta");
         m.put("Search places or coordinates", "Buscar lugares ou coordenadas");
         m.put("List", "Lista");
-        m.put("Select shows this destination on the map. Choose Teleport or Walk here there to apply it.", "Selecionar mostra este destino no mapa. Depois, escolha Teletransportar ou Caminhar até lá.");
+        m.put("Select shows this destination on the map. Choose Teleport or Walk here there to apply it.", "Selecionar mostra este destino no mapa. Depois, escolha Teleporte ou Caminhar até lá.");
         m.put("recyclable item types", "tipos de itens recicláveis");
         m.put("Choose a tag to preview eligible Pokemon. Each is evolved once, without the animation. Favorites, your buddy, deployed Pokemon, eggs, Shadow and purified Pokemon, and evolutions needing a branch choice or special condition are skipped. Candy and items are checked before each evolution. Start your Lucky Egg yourself if wanted.", "Escolha uma etiqueta para visualizar os Pokémon que podem evoluir. Cada um será evoluído uma vez, sem animação. Favoritos, companheiro, Pokémon em Ginásios, ovos, Sombrios, Purificados e evoluções que exijam escolha de forma ou condições especiais são ignorados. Doces e itens são verificados antes de cada evolução. Ative o Ovo da Sorte manualmente, se desejar.");
         m.put("Acts only within 80 m of a Gym while the game is on the map screen. It slots eligible #Gym-tagged Pokémon first; the lowest-CP fallback is used only when enabled and no eligible #Gym defender is available, and it never picks favorite, buddy, or protected Pokémon. Feeding uses Nanab before Razz and only above the reserves you set. It obeys the game's own server limits, so some actions may be declined. No dust or coin payout is promised.", "Funciona somente a até 80 m de um Ginásio enquanto o jogo está na tela do mapa. Dá prioridade aos Pokémon elegíveis com a etiqueta #Gym; usa o Pokémon de menor PC apenas quando essa alternativa estiver ativada e não houver defensor elegível com a etiqueta. Nunca escolhe favoritos, companheiro ou Pokémon protegidos. A alimentação prioriza Caxí antes de Frambo e respeita as reservas configuradas. Os limites do servidor continuam valendo, portanto algumas ações podem ser recusadas. Não há garantia de Poeira Estelar nem Pokémoedas.");
@@ -1398,6 +1398,98 @@ public final class PtBr {
         m.put("Stop Auto-Raid first.", "Interrompa as Reides automáticas primeiro.");
         m.put("Galarian bird found — walking and VGP stopped", "Ave de Galar encontrada — caminhada e VGP interrompidos");
         m.put("Max", "Máximo");
+        m.put("Not running", "Não está em execução");
+        m.put("Any tier", "Qualquer nível de reide");
+        m.put("Any boss", "Qualquer chefe de reide");
+        m.put("No limit", "Sem limite");
+        m.put("Join the nearest raid wherever it is", "Entrar na reide mais próxima, independentemente da distância");
+        m.put("Only raids within ", "Somente reides em um raio de ");
+        m.put("1-star", "1 estrela");
+        m.put("3-star", "3 estrelas");
+        m.put("5-star / Legendary", "5 estrelas / Lendário");
+        m.put("Ultra Beast", "Ultracriatura");
+        m.put("Tier 1", "Nível 1");
+        m.put("Tier 2", "Nível 2");
+        m.put("Tier 3", "Nível 3");
+        m.put("Tier 4", "Nível 4");
+        m.put("Legendary Mega", "Mega Lendário");
+        m.put("Elite", "Elite");
+        m.put("Shadow Tier 1", "Sombrio nível 1");
+        m.put("Shadow Tier 2", "Sombrio nível 2");
+        m.put("Shadow Tier 3", "Sombrio nível 3");
+        m.put("Shadow Tier 4", "Sombrio nível 4");
+        m.put("Shadow Legendary", "Lendário Sombrio");
+        m.put("Super Mega", "Super Mega");
+        m.put("EX only", "Somente EX");
+        m.put("Normal only", "Somente normal");
+        m.put("Raid filters", "Filtros de reides");
+        m.put("Quest filters", "Filtros de pesquisas");
+        m.put("Weather filters", "Filtros de clima");
+        m.put("Rocket filters", "Filtros da Equipe Rocket");
+        m.put("Power Spot filters", "Filtros de Pontos de Poder");
+        m.put("Choose a weather in Filters.", "Escolha uma condição climática em Filtros.");
+        m.put("Choose a Rocket type in Filters.", "Escolha um tipo da Equipe Rocket em Filtros.");
+        m.put("Minimum players in lobby (1-20)", "Mínimo de jogadores na sala (1–20)");
+        m.put("Maximum completed raids (1-100)", "Máximo de reides concluídas (1–100)");
+        m.put("Lobby wait in seconds (15-120)", "Tempo de espera na sala em segundos (15–120)");
+        m.put("All Pokemon", "Todos os Pokémon");
+        m.put("Ultra Beasts", "Ultracriaturas");
+        m.put("Mega-capable", "Apto à megaevolução");
+        m.put("Primal-capable", "Apto à Reversão Primitiva");
+        m.put("Stage 2 (e.g. Ivysaur)", "Estágio 2 (ex.: Ivysaur)");
+        m.put("Stage 3 (e.g. Venusaur)", "Estágio 3 (ex.: Venusaur)");
+        m.put("Mighty (GO Wild Area)", "Poderosos (Área Selvagem GO)");
+        m.put("No matches", "Nenhum resultado");
+        m.put(" shown", " exibidos");
+        m.put("Sunny", "Ensolarado");
+        m.put("Rainy", "Chuvoso");
+        m.put("Partly Cloudy", "Parcialmente nublado");
+        m.put("Cloudy", "Nublado");
+        m.put("Windy", "Ventando");
+        m.put("Snow", "Neve");
+        m.put("Fog", "Neblina");
+        m.put("Gym (Blue)", "Ginásio (azul)");
+        m.put("Gym (Red)", "Ginásio (vermelho)");
+        m.put("Gym (Yellow)", "Ginásio (amarelo)");
+        m.put("Stops (1–", "Paradas (1–");
+        m.put("; blank = all):", "; em branco = todas):");
+        m.put(" stops in route (", " paradas na rota (");
+        m.put(" nearby).", " locais próximos).");
+        m.put("A route is running: ", "Uma rota está em andamento: ");
+        m.put(" of ", " de ");
+        m.put(" stops done.", " paradas concluídas.");
+        m.put("VGP ball throw", "Arremesso de bola pelo VGP");
+        m.put("Not caught - fled", "Não capturado — fugiu");
+        m.put("Your account doesn't have access to this feature.", "Sua conta não tem acesso a este recurso.");
+        m.put("Your session has expired. Please sign in again.", "Sua sessão expirou. Entre novamente.");
+        m.put("Too many requests. Please wait before refreshing.", "Muitas solicitações. Aguarde antes de atualizar.");
+        m.put("Quests", "Pesquisas");
+        m.put("Primal", "Primitivo");
+        m.put("Sends your available gifts to eligible friends, then opens the gifts you have received. Each friend is handled once. The game's own daily limits for sending and opening still apply, so some may be skipped. A single pass runs now — there is no recurring schedule.", "Envia seus presentes disponíveis para amigos elegíveis e depois abre os presentes recebidos. Cada amigo é processado uma vez. Os limites diários do jogo para envio e abertura continuam valendo, então alguns podem ser ignorados. Uma única execução começa agora, sem agendamento recorrente.");
+        m.put("Feeds the gyms you currently defend once, using surplus berries. Nanab is fed down to its reserve, then surplus Razz. Pinap is optional and off by default. A single batch runs now — there is no recurring schedule. The game's own server limits still apply, so some feeds may be declined. No dust or candy payout is promised.", "Alimenta uma vez os Ginásios que você defende com frutas excedentes. A Fruta Caxí é usada até atingir sua reserva; depois, a Fruta Frambo excedente. A Fruta Abacaxi é opcional e vem desativada. O lote é executado uma única vez, sem agendamento recorrente. Os limites do servidor do jogo continuam valendo e algumas alimentações podem ser recusadas. Não há garantia de Poeira Estelar nem de doces.");
+        m.put("Skipped ", "Ignorados ");
+        m.put("Scanning", "Verificando");
+        m.put("Running", "Em execução");
+        m.put("Stopping", "Interrompendo");
+        m.put("Team: ", "Equipe: ");
+        m.put("Defenders: ", "Defensores: ");
+        m.put(" slots open)", " vagas livres)");
+        m.put("Zoom ", "Zoom ");
+        m.put(" · Tap map to select", " · toque no mapa para selecionar");
+        m.put("Destination: ", "Destino: ");
+        m.put("Cooldown when you arrive: ", "Tempo de espera ao chegar: ");
+        m.put("Blue", "Azul");
+        m.put("Red", "Vermelho");
+        m.put("Yellow", "Amarelo");
+        m.put("Raid tier: ", "Nível da reide: ");
+        m.put("Boss: ", "Chefe: ");
+        m.put("Ends in ", "Termina em ");
+        m.put("Egg — boss not yet revealed", "Ovo — chefe ainda não revelado");
+        m.put("; hatches in ", "; eclode em ");
+        m.put("Raid ended.", "Reide encerrada.");
+        m.put("unavailable", "indisponível");
+        m.put(" (reversible)", " (reversível)");
+        m.put("Not caught - broke free", "Não capturado — escapou da Pokébola");
         LABELS = Collections.unmodifiableMap(m);
     }
     private PtBr() {}
@@ -1432,12 +1524,19 @@ public final class PtBr {
         }
         String exact = LABELS.get(line);
         if (exact != null) return exact;
+        // UI-only numeric status from Shiny Scanner; never alter protocol keys. 
+        if (line.matches("All [0-9]+ nearby checked"))
+            return line.replaceFirst("^All ([0-9]+) nearby checked$", "$1 locais próximos verificados");
+        if (line.matches("[0-9]+ checked, [0-9]+ shinies"))
+            return line.replaceFirst("^([0-9]+) checked, ([0-9]+) shinies$", "$1 verificados, $2 brilhantes");
+        if (line.matches("[0-9]+/[0-9]+ in 24 h"))
+            return line.replaceFirst("^([0-9]+/[0-9]+) in 24 h$", "$1 nas últimas 24 h");
         // A maior frase deve vencer: a ordem de HashMap nao e deterministica.
         String prefix = null;
         String suffix = null;
         for (String source : LABELS.keySet()) {
             if (source.length() < 2 || source.length() >= line.length()) continue;
-            if ((source.endsWith(" ") || source.endsWith("~")) && line.startsWith(source)
+            if ((source.endsWith(" ") || source.endsWith("~") || source.endsWith("(") || source.endsWith("–")) && line.startsWith(source)
                     && (prefix == null || source.length() > prefix.length())) {
                 prefix = source;
             }

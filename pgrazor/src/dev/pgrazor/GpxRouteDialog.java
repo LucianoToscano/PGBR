@@ -181,7 +181,7 @@ public final class GpxRouteDialog {
         String[] rows = new String[entries.size()];
         for (int i = 0; i < rows.length; i++) {
             GpxStore.Entry e = entries.get(i);
-            rows[i] = String.format(Locale.US, "%s\n%d stops", e.name, e.count);
+            rows[i] = String.format(Locale.forLanguageTag("pt-BR"), "%s\n%d paradas", e.name, e.count);
         }
         present(activity, ChoiceList.attach(builder.create(), rows, which -> showEntry(activity, entries.get(which), selection)));
     }

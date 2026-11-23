@@ -19,6 +19,7 @@ public final class GameLocationDeliveryTest {
     public static void main(String[] args) {
         installFreshness();
         nativePointerZero();
+        invalidLiveFixForwardsOriginal();
         disabledAndSatelliteForwarding();
         eligibleSuppressesOriginal();
         pauseResumeStop();
@@ -79,6 +80,75 @@ public final class GameLocationDeliveryTest {
         proxy.onProviderLocation(new Location("gps"));
         check(manager.delivered.isEmpty(), "zero native pointer suppresses callback delivery");
         check(rec.location == 1, "original forwarded when native pointer zero");
+        delivery.shutdown();
+    }
+
+    /**
+     * Invalid coordinates and motion inputs are not delivered to the native game callback.
+     * A provider callback must be forwarded unchanged, and a later valid fix must recover.
+     */
+    static void invalidLiveFixForwardsOriginal() {
+        GameLocationDelivery delivery = begin();
+        Recorder original = new Recorder();
+        NianticLocationProvider provider = new NianticLocationProvider("gps", original);
+        NianticLocationManager manager = managerWith(provider);
+        delivery.start(manager);
+        tick(); // Install the provider proxy and prove the normal update path runs.
+        manager.delivered.clear();
+        manager.deliveredProvider.clear();
+        NianticLocationProvider.ProviderListener proxy = provider.getListener();
+        int eventsBeforeFault = Control.events.size();
+
+        Control.lat = Double.NaN;
+        proxy.onProviderLocation(new Location("gps"));
+        check(manager.delivered.isEmpty() && original.location == 1, "NaN latitude forwards real callback");
+
+        Control.lat = 91.0;
+        proxy.onProviderLocation(new Location("gps"));
+        check(manager.delivered.isEmpty() && original.location == 2, "out-of-range latitude forwards callback");
+
+        Control.lat = 12.0;
+        Control.lon = Double.POSITIVE_INFINITY;
+        proxy.onProviderLocation(new Location("gps"));
+        check(manager.delivered.isEmpty() && original.location == 3, "infinite longitude forwards callback");
+
+        Control.lon = -181.0;
+        proxy.onProviderLocation(new Location("gps"));
+        check(manager.delivered.isEmpty() && original.location == 4, "out-of-range longitude forwards callback");
+
+        Control.lon = -34.0;
+        Control.spd = Float.NaN;
+        proxy.onProviderLocation(new Location("gps"));
+        check(manager.delivered.isEmpty() && original.location == 5, "NaN speed forwards callback");
+
+        Control.spd = -1f;
+        proxy.onProviderLocation(new Location("gps"));
+        check(manager.delivered.isEmpty() && original.location == 6, "negative speed forwards callback");
+
+        Control.spd = 0f;
+        Control.brg = Float.POSITIVE_INFINITY;
+        proxy.onProviderLocation(new Location("gps"));
+        check(manager.delivered.isEmpty() && original.location == 7, "infinite bearing forwards callback");
+
+        Control.brg = 360f;
+        proxy.onProviderLocation(new Location("gps"));
+        check(manager.delivered.size() == 1 && manager.delivered.get(0).bearing == 0f
+            && original.location == 7, "rounded 360-degree bearing is normalized to north");
+        manager.delivered.clear();
+
+        Control.brg = 361f;
+        proxy.onProviderLocation(new Location("gps"));
+        check(manager.delivered.isEmpty() && original.location == 8,
+            "bearing above 360 degrees forwards original callback");
+
+        check(Control.events.size() == eventsBeforeFault + 1,
+            "invalid fix fault is logged once without coordinates");
+        Control.brg = 180f;
+        proxy.onProviderLocation(new Location("gps"));
+        check(manager.delivered.size() == 1 && original.location == 8,
+            "valid coordinates resume synthetic delivery without suppressing an earlier real callback");
+        check(manager.delivered.get(0).latitude == 12.0 && manager.delivered.get(0).longitude == -34.0,
+            "recovered fix contains validated coordinates");
         delivery.shutdown();
     }
 

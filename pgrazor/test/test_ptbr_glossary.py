@@ -26,6 +26,9 @@ class PtBrGlossaryTests(unittest.TestCase):
             "Auto-claim completed field research",
             "No root access. Grant root to this app in your root manager, then Re-check.",
             "Batch evolution",
+            "Teleport",
+            "Teleport to selected destination",
+            "Teleport cooldown",
             "Search radius",
             "Settings backup",
             "Catch it",
@@ -34,10 +37,30 @@ class PtBrGlossaryTests(unittest.TestCase):
             "Galarian bird found — walking and VGP stopped",
             "No log file to save",
             "Stop Auto-Raid first.",
+            "Not running",
+            "Quests",
+            "Primal",
+            "Shiny Scanner (Experimental)",
+            "Any tier",
+            "Weather filters",
+            "All Pokemon",
+            "Gym (Blue)",
+            "Your account doesn't have access to this feature.",
+            " · Tap map to select",
+            "Destination: ",
+            "Cooldown when you arrive: ",
+            "Team: ",
+            "Defenders: ",
+            "Scanning",
+            "Skipped ",
+            "Not caught - broke free",
+            " (reversible)",
         ):
             with self.subTest(key=key):
                 self.assertIn(key, entries)
                 self.assertNotEqual(entries[key], key)
+        self.assertEqual(entries["Teleport"], "Teleporte")
+        self.assertEqual(entries["Teleport cooldown"], "Tempo de espera do teleporte")
         for key, value in entries.items():
             self.assertTrue(key and value, key)
 
@@ -51,6 +74,24 @@ class PtBrGlossaryTests(unittest.TestCase):
                     self.assertIn("m.put(" + json.dumps(key, ensure_ascii=False), text)
                 self.assertIn("String prefix = null;", text)
                 self.assertIn("String suffix = null;", text)
+                self.assertIn('source.endsWith("(")', text)
+                self.assertIn('source.endsWith("–")', text)
+
+    def test_screen_call_sites_apply_translations(self):
+        """Keep the screenshot-visible UI translations attached to their render sites."""
+        anchors = {
+            "BatchEvolutionSettings.java": 'PtBr.tr(message)',
+            "GiftBatchSettings.java": 'PtBr.tr("Skipped ")',
+            "MapPoiLayer.java": 'PtBr.tr(poiShortLabel(',
+            "GpxRouteDialog.java": '%d paradas',
+            "ResearchSettings.java": 'PtBr.tr(categoryName(category))',
+            "CatchOutcomeController.java": 'Toast.makeText(screen,dev.pgrazor.PtBr.tr(message)',
+            "TeleportDialog.java": 'PtBr.tr(warning(lat,lon))',
+        }
+        root = ROOT / "pgrazor" / "src" / "dev" / "pgrazor"
+        for filename, required in anchors.items():
+            with self.subTest(file=filename):
+                self.assertIn(required, (root / filename).read_text(encoding="utf-8"))
 
 
 if __name__ == "__main__":
