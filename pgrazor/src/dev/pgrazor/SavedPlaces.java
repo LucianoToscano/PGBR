@@ -92,24 +92,19 @@ public final class SavedPlaces {
         write(entries);
     }
 
-    /** Import an all-or-nothing list, retaining existing entries and skipping repeated names/coordinates. */
+    /** Import an all-or-nothing list, retaining existing entries and skipping repeated names (distinct labels may share a location). */
     synchronized int merge(List<Entry> additions) throws IOException {
         Snapshot snapshot=read();
         if(snapshot.damaged)throw new IOException("Existing favorites are damaged.");
         List<Entry> merged=new ArrayList<>(snapshot.entries);
         Set<String> names=new HashSet<>();
-        Set<String> coordinates=new HashSet<>();
-        for(Entry e:merged) {
-            names.add(e.name.toLowerCase(Locale.ROOT));
-            coordinates.add(Double.doubleToLongBits(e.latitude)+":"+Double.doubleToLongBits(e.longitude));
-        }
+        for(Entry e:merged)names.add(e.name.toLowerCase(Locale.ROOT));
         int added=0;
         for(Entry e:additions) {
             if(e==null)throw new IOException("Invalid imported favorite");
             String n=e.name.toLowerCase(Locale.ROOT);
-            String c=Double.doubleToLongBits(e.latitude)+":"+Double.doubleToLongBits(e.longitude);
-            if(names.contains(n)||coordinates.contains(c))continue;
-            merged.add(e);names.add(n);coordinates.add(c);added++;
+            if(names.contains(n))continue;
+            merged.add(e);names.add(n);added++;
         }
         if(merged.size()>LIMIT)throw new IOException("Too many saved places");
         if(added>0)write(merged);
