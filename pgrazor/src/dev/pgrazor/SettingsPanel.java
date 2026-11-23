@@ -1095,8 +1095,9 @@ final class SettingsPanel {
         smartAttackSwitch.setOnCheckedChangeListener((v,on)->{
             if(on!=Control.smartAttack())Control.setSmartAttack(on);
         });
-        caption(owner,"Em Rocket e em PvP, duelos ou treinamento VNext com sessão reconhecida, compara Charge e Charge2 quando os dois estão prontos: Super eficaz > Normal > Pouco eficaz. "+
-            "Se houver só um golpe pronto ou dados sem validação, mantém o carregado imediato original. O ataque ágil é independente dos dois lados da tela. Função experimental: ainda requer teste em aparelho.");
+        caption(owner,"O motor da Equipe GO Rocket decide qual carregado usar: Super eficaz > Normal > Pouco eficaz. Liga GO, duelos e treinamento reconhecidos reutilizam o mesmo motor, sem outro executor de ataques. "+
+            "Se o melhor ainda não carregou e ambos os golpes possuem eficácia confirmada, continua com Ágil por até 2,6 s antes de usar o primeiro pronto. Informações incertas ou opção desligada mantêm o comportamento original. "+
+            "O Ágil não pertence a um lado da tela. Experimental: requer teste real em aparelho.");
         shieldWaitButton=launch(owner,"Espera do Escudo",()->
             new AlertDialog.Builder(dialogContext())
                 .setTitle("Espera do Escudo Inteligente")
