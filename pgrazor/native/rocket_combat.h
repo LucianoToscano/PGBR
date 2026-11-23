@@ -58,7 +58,8 @@ enum PgrRocketCombatInfo {
   PGR_RC_CLOSED_STATE = 3     // GuiController.currentState closed scalar (literal, source: ===3)
 };
 
-// observe() kinds. aux carries the shield-prompt bool for SHIELD_PROMPT, else ignored.
+// observe() kinds. aux carries shield prompt bool or packed typed charge metadata
+// for OBS_CHARGE; the original action executor remains rooted inside Rocket.
 enum PgrRocketCombatObserve {
   PGR_RC_OBS_SCOPE_EXIT    = 0,  // obj=scope; rocketClear when it is the live scope
   PGR_RC_OBS_SCOPE_ENTER   = 1,  // obj=scope (InvasionCombatState); rocketClear + set + arm 20
@@ -71,7 +72,9 @@ enum PgrRocketCombatObserve {
   PGR_RC_OBS_SHIELD_MANUAL = 8,  // obj=shield modal (ShieldUiClicked); mark used + notify 20
   PGR_RC_OBS_SHIELD_CLOSE  = 9,  // obj=shield modal (HandleDismiss); drop shield by identity
   PGR_RC_OBS_PVP_SCOPE_ENTER = 10, // obj=CombatVNextGuiController; distinct PvP scope, never Rocket
-  PGR_RC_OBS_PVP_SCOPE_EXIT  = 11  // obj=the same rooted VNext controller; close PvP-only scope
+  PGR_RC_OBS_PVP_SCOPE_EXIT  = 11, // obj=the same rooted VNext controller; close PvP-only scope
+  PGR_RC_OBS_ACTOR_PAIR = 12, // obj=null, aux=opaque active/foe pair stamp; 0 revokes confidence
+  PGR_RC_OBS_ACTOR_PROBE = 13 // obj=null, aux=anonymous read-only actor probe reason (0..10)
 };
 
 // Table status codes. 0 == success.
@@ -92,9 +95,10 @@ enum PgrRocketCombatEventCode {
   PGR_RC_EVT_READY  = 1,  // native-rocket-combat-ready (aux=1)
   PGR_RC_EVT_SCOPE  = 2,  // rocket-scope        (aux=active 1/0)
   PGR_RC_EVT_UI     = 3,  // rocket-ui           (aux=PgrRocketCombatUiSource)
-  PGR_RC_EVT_ACTION = 4,  // rocket-action       (id=PgrRocketCombatAction, aux bit0=accepted, bit1=vnext)
+  PGR_RC_EVT_ACTION = 4,  // action aux bit0=accepted bit1=vnext; charged-only bit2=Charge bit3=Charge2, bits4..7=DisplayReason
   PGR_RC_EVT_GATE   = 5,  // rocket-attack-gate  (id=PgrRocketCombatGate)
-  PGR_RC_EVT_ERROR  = 6   // rocket-error        (managed-invoke fault)
+  PGR_RC_EVT_ERROR  = 6,  // rocket-error        (managed-invoke fault)
+  PGR_RC_EVT_SMART_DIAG = 7 // bounded decision diagnostic, without account data
 };
 
 // rocket-ui "source" values carried in the event aux.

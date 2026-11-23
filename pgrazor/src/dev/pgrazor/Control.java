@@ -898,8 +898,15 @@ public final class Control {
     public static String healStatus(){return healEnabled?healStatus:"";}
     // Smart battling: one switch, off by default. Native smart_battle.cpp owns all of the behaviour.
     private static volatile boolean smartBattle;
-    // One persistent preference for all battle modes; native selection is not yet wired.
+    // One persistent preference consumed by the shared native Rocket charged selector.
     private static volatile boolean smartAttack;
+    // Last native battle diagnosis, not the UI's desired setting. No IDs,
+    // account data or coordinates; kept only in memory for a QA screenshot.
+    private static volatile String smartAttackNativeStatus=
+        "Motor: sem diagnóstico de batalha. A opção no menu não confirma execução nativa.";
+    private static volatile String smartAttackNativeJson="";
+    public static String smartAttackNativeStatus(){return smartAttackNativeStatus;}
+    public static String smartAttackNativeJson(){return smartAttackNativeJson;}
     // Independent timing options: only indices 0..2 are selectable; legacy 3 migrates to default.
     // Defaults intentionally replace LT038's fixed 1.7 s shield / 2.3 s fainted choice.
     private static volatile int smartShieldTiming=1, smartFaintedSwapTiming=1;
@@ -921,6 +928,9 @@ public final class Control {
     public static void setSmartAttack(boolean on){
         if(smartAttack==on)return;
         smartAttack=on;
+        smartAttackNativeStatus="Preferência "+(on?"ON":"OFF")+
+            " salva no menu; aguardando confirmação do motor na próxima batalha.";
+        smartAttackNativeJson="";
         // Retain the legacy PvP preference without modifying fast/charged/shield bits.
         pvpBattleOptions=PvpBattleMode.update(pvpBattleOptions,PvpBattleMode.PREFER_SUPER,on);
         saveSettings();
@@ -1949,7 +1959,30 @@ public final class Control {
         if("battle-action".equals(kind)&&detail.startsWith("{")){
             try{
                 org.json.JSONObject b=new org.json.JSONObject(detail);
-                if(b.has("pvpExecutorReady")){
+                if(b.has("smartAttackMode")){
+                    // This is the actual native Rocket decision, not the
+                    // Java switch state. A screenshot can now distinguish:
+                    // F3 preference OFF, missing metadata, missing actor
+                    // and a correctly held/selected Charge. No Pokemon IDs.
+                    String active=b.optBoolean("smartAttackEnabled",false)?"ON":"OFF";
+                    String classifier=b.optBoolean("classifierBound",false)?"OK":"INDISPONÍVEL";
+                    String actor=b.optString("actorIdentity","not-observed");
+                    String decision=b.optString("decision","unknown");
+                    String reason=b.optString("reason","unknown");
+                    String chargeState=!b.optBoolean("chargeSeen",false)
+                        ?" [não observado]":
+                        b.optBoolean("chargeReady",false)?" [pronto]":" [não pronto]";
+                    String charge2State=!b.optBoolean("charge2Seen",false)
+                        ?" [não observado]":
+                        b.optBoolean("charge2Ready",false)?" [pronto]":" [não pronto]";
+                    smartAttackNativeStatus="Menu: "+(smartAttack?"ON":"OFF")+
+                        " | Motor: "+active+" | Classificador: "+classifier+
+                        "\nAdversário: "+actor+" | Leitura: "+b.optString("actorProbe","não informada")+
+                        " | Decisão: "+decision+" ("+reason+")"+
+                        "\nCharge: "+b.optString("chargeTier","unknown")+chargeState+
+                        " | Charge2: "+b.optString("charge2Tier","unknown")+charge2State;
+                    smartAttackNativeJson=detail;
+                }else if(b.has("pvpExecutorReady")){
                     pvpBattleReady=b.optBoolean("pvpExecutorReady",false);
                     String battleMode="training".equals(b.optString("mode","pvp"))
                         ?"Treinamento VNext":"PvP VNext";

@@ -1,0 +1,40 @@
+name: PGBR Rocket shared VNext Charge - host QA (PR)
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'pgrazor/native/rocket_combat.cpp'
+      - 'pgrazor/native/rocket_combat.h'
+      - 'pgrazor/native/combat_host.cpp'
+      - 'pgrazor/native/rocket_combat_test.cpp'
+      - 'pgrazor/src/dev/pgrazor/SettingsPanel.java'
+      - '.github/workflows/pgbr-vnext-charge-pr-qa.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: pgbr-vnext-charge-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+jobs:
+  host-fixtures:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - name: Checkout exact revision
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - name: Testar todos os modelos nativos C++ host
+        run: python3 -B tools/native_host_tests.py
+      - name: Validar escopos de PvP e o seletor tipado com compilacao estrita
+        run: |
+          g++ -std=c++17 -Wall -Wextra -Werror -I pgrazor/native pgrazor/native/pvp_scene_test.cpp -o /tmp/pgbr-pvp-scene
+          /tmp/pgbr-pvp-scene
+          g++ -std=c++17 -Wall -Wextra -Werror -I pgrazor/native pgrazor/native/charge_effect_ui_test.cpp -o /tmp/pgbr-charge-effect
+          /tmp/pgbr-charge-effect
+          g++ -std=c++17 -Wall -Wextra -Werror -I pgrazor/native pgrazor/native/smart_attack_priority_test.cpp -o /tmp/pgbr-charge-priority
+          /tmp/pgbr-charge-priority
+      - name: Verificar motor Rocket central e variantes (70 cenarios simulados)
+        run: |
+          g++ -std=c++17 -O0 -pthread -DPGR_RC_DIRECT_TEST -I pgrazor/native \
+            pgrazor/native/rocket_actions.cpp pgrazor/native/rocket_combat.cpp \
+            pgrazor/native/rocket_combat_test.cpp -o /tmp/pgbr-vnext-executor
+          /tmp/pgbr-vnext-executor

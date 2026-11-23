@@ -656,7 +656,7 @@ int scenario(int n) {
       if(sc.vcharge.tapped!=1||sc.vc2.tapped!=0)return 76;
       break;
     }
-    case 35: { // Changed battle-state token: classification untrustworthy -> legacy.
+    case 35: { // Different state token: never release the first automatically with Smart ON.
       arm(&sc.scope,2,tid);
       api->observe(PGR_RC_OBS_VNEXT_UPDATE,&sc.vui,0,tid);
       sc.vc2.button=&sc.vbutton;
@@ -665,10 +665,10 @@ int scenario(int n) {
       api->observe(PGR_RC_OBS_CHARGE,&sc.vc2,pack({Slot::SECOND,Tier::SUPER,42}),tid);
       pgrazor_rc_direct_smart_attack(1);
       api->tick(tid,0);
-      if(sc.vcharge.tapped!=1||sc.vc2.tapped!=0)return 77;
+      if(sc.vcharge.tapped||sc.vc2.tapped)return 77;
       break;
     }
-    case 36: { // Only first is ready: fire it immediately, do not wait for super.
+    case 36: { // First ready inferior, Super pending: deny the inferior even with Ágil OFF.
       arm(&sc.scope,2,tid);
       api->observe(PGR_RC_OBS_VNEXT_UPDATE,&sc.vui,0,tid);
       sc.vc2.button=&sc.vbutton;sc.vc2.vcharged=0;
@@ -677,7 +677,7 @@ int scenario(int n) {
       api->observe(PGR_RC_OBS_CHARGE,&sc.vc2,pack({Slot::SECOND,Tier::SUPER,41}),tid);
       pgrazor_rc_direct_smart_attack(1);
       api->tick(tid,0);
-      if(sc.vcharge.tapped!=1||sc.vc2.tapped!=0)return 78;
+      if(sc.vcharge.tapped||sc.vc2.tapped)return 78;
       break;
     }
     case 37: { // Capture order reversed: verified slot FIRST wins tie, not capture order.
@@ -692,6 +692,466 @@ int scenario(int n) {
       if(sc.vcharge.tapped!=0||sc.vc2.tapped!=1)return 79;
       break;
     }
+    case 38: { // Verified PvP VNext uses the same Smart Attack priority as Rocket.
+      api->update(3,2500,tid);api->tick(tid,0);
+      api->observe(PGR_RC_OBS_PVP_SCOPE_ENTER,&sc.vui,0,tid);
+      api->observe(PGR_RC_OBS_VNEXT_UPDATE,&sc.vui,0,tid);
+      sc.vc2.button=&sc.vbutton;
+      using namespace pgr_charge_effect_ui;
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vcharge,pack({Slot::FIRST,Tier::RESISTED,41}),tid);
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vc2,pack({Slot::SECOND,Tier::SUPER,41}),tid);
+      pgrazor_rc_direct_smart_attack(1);
+      api->tick(tid,0);
+      if(sc.vcharge.tapped!=0||sc.vc2.tapped!=1||sc.vgest.tapped!=0)return 80;
+      bool reported=false;
+      pgr_rocket_combat_event_v1 ev{};
+      while(api->next_event(&ev)==1){
+        if(ev.code==PGR_RC_EVT_ACTION&&ev.id==PGR_RC_ACT_CHARGED){
+          if((ev.aux&10)!=10||(ev.aux&4)||
+             ((static_cast<uint32_t>(ev.aux)>>4)&15u)!=1u)return 81;
+          // VNext + verified Charge2 + reason=effectiveness, not first-ready
+          reported=true;
+        }
+      }
+      if(!reported)return 82;
+      break;
+    }
+    case 39: { // PvP Smart OFF retains the original first-ready button.
+      api->update(2,2500,tid);api->tick(tid,0);
+      api->observe(PGR_RC_OBS_PVP_SCOPE_ENTER,&sc.vui,0,tid);
+      api->observe(PGR_RC_OBS_VNEXT_UPDATE,&sc.vui,0,tid);
+      sc.vc2.button=&sc.vbutton;
+      using namespace pgr_charge_effect_ui;
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vcharge,pack({Slot::FIRST,Tier::RESISTED,41}),tid);
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vc2,pack({Slot::SECOND,Tier::SUPER,41}),tid);
+      api->tick(tid,0);
+      if(sc.vcharge.tapped!=1||sc.vc2.tapped!=0)return 83;
+      break;
+    }
+    case 40: { // Trainer/friend challenges use this same scope only after host validation.
+      // The Rocket leaf cannot infer the social battle mode; the host must prove it.
+      api->update(2,2500,tid);api->tick(tid,0);
+      api->observe(PGR_RC_OBS_PVP_SCOPE_ENTER,&sc.vui,0,tid);
+      api->observe(PGR_RC_OBS_VNEXT_UPDATE,&sc.vui,0,tid);
+      sc.vc2.button=&sc.vbutton;
+      using namespace pgr_charge_effect_ui;
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vcharge,pack({Slot::FIRST,Tier::NEUTRAL,41}),tid);
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vc2,pack({Slot::SECOND,Tier::SUPER,41}),tid);
+      pgrazor_rc_direct_smart_attack(1);
+      api->tick(tid,0);
+      if(sc.vcharge.tapped!=0||sc.vc2.tapped!=1)return 84;
+      break;
+    }
+    case 41: { // Smart Attack must NOT redirect the fast gesture to either charged button.
+      api->update(3,2500,tid);api->tick(tid,0);
+      api->observe(PGR_RC_OBS_PVP_SCOPE_ENTER,&sc.vui,0,tid);
+      api->observe(PGR_RC_OBS_VNEXT_UPDATE,&sc.vui,0,tid);
+      sc.vc2.button=&sc.vbutton;sc.vcharge.vcharged=0;sc.vc2.vcharged=0;
+      pgrazor_rc_direct_smart_attack(1);
+      api->tick(tid,0);
+      if(sc.vgest.tapped!=1||sc.vcharge.tapped||sc.vc2.tapped)return 85;
+      break;
+    }
+    case 42: { // Only inferior Charge2 ready: deny until better Charge is ready.
+      api->update(2,2500,tid);api->tick(tid,0);
+      api->observe(PGR_RC_OBS_PVP_SCOPE_ENTER,&sc.vui,0,tid);
+      api->observe(PGR_RC_OBS_VNEXT_UPDATE,&sc.vui,0,tid);
+      sc.vc2.button=&sc.vbutton;sc.vcharge.vcharged=0;
+      using namespace pgr_charge_effect_ui;
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vcharge,pack({Slot::FIRST,Tier::SUPER,41}),tid);
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vc2,pack({Slot::SECOND,Tier::RESISTED,41}),tid);
+      pgrazor_rc_direct_smart_attack(1);
+      api->tick(tid,0);
+      if(sc.vcharge.tapped||sc.vc2.tapped)return 86;
+      break;
+    }
+    case 43: { // Different observation batches in shared motor: block auto charged.
+      api->update(2,2500,tid);api->tick(tid,0);
+      api->observe(PGR_RC_OBS_PVP_SCOPE_ENTER,&sc.vui,0,tid);
+      api->observe(PGR_RC_OBS_VNEXT_UPDATE,&sc.vui,0,tid);
+      sc.vc2.button=&sc.vbutton;
+      using namespace pgr_charge_effect_ui;
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vcharge,pack({Slot::FIRST,Tier::RESISTED,41}),tid);
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vc2,pack({Slot::SECOND,Tier::SUPER,42}),tid);
+      pgrazor_rc_direct_smart_attack(1);
+      api->tick(tid,0);
+      if(sc.vcharge.tapped||sc.vc2.tapped)return 87;
+      break;
+    }
+    case 44: { // Actual Rocket engine: build energy instead of wasting first resisted move.
+      arm(&sc.scope,3,tid);  // the identical controller receives derived scopes
+      api->observe(PGR_RC_OBS_VNEXT_UPDATE,&sc.vui,0,tid);
+      sc.vc2.button=&sc.vbutton;sc.vc2.vcharged=0;
+      using namespace pgr_charge_effect_ui;
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vcharge,pack({Slot::FIRST,Tier::RESISTED,41}),tid);
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vc2,pack({Slot::SECOND,Tier::SUPER,41}),tid);
+      pgrazor_rc_direct_smart_attack(1);
+      api->tick(tid,0);
+      if(sc.vcharge.tapped||sc.vc2.tapped||sc.vgest.tapped!=1)return 88;
+      // The preferred charge becomes ready; it fires immediately at next
+      // permitted cadence. No redirect of the quick gesture to either side.
+      sc.vc2.vcharged=1;
+      usleep(180000);
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vcharge,pack({Slot::FIRST,Tier::RESISTED,41}),tid);
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vc2,pack({Slot::SECOND,Tier::SUPER,41}),tid);
+      api->tick(tid,0);
+      if(sc.vcharge.tapped||sc.vc2.tapped!=1)return 89;
+      break;
+    }
+    case 45: { // Incomplete pair: Smart ON denies unverified charge, keeps quick.
+      arm(&sc.scope,3,tid);
+      api->observe(PGR_RC_OBS_VNEXT_UPDATE,&sc.vui,0,tid);
+      sc.vc2.button=&sc.vbutton;sc.vc2.vcharged=0;
+      using namespace pgr_charge_effect_ui;
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vcharge,pack({Slot::FIRST,Tier::RESISTED,41}),tid);
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vc2,0,tid);
+      pgrazor_rc_direct_smart_attack(1);
+      api->tick(tid,0);
+      if(sc.vcharge.tapped||sc.vc2.tapped||sc.vgest.tapped!=1)return 91;
+      break;
+    }
+    case 46: { // First-ready is stronger: fire it now, no strategic wait.
+      arm(&sc.scope,3,tid);
+      api->observe(PGR_RC_OBS_VNEXT_UPDATE,&sc.vui,0,tid);
+      sc.vc2.button=&sc.vbutton;sc.vc2.vcharged=0;
+      using namespace pgr_charge_effect_ui;
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vcharge,pack({Slot::FIRST,Tier::SUPER,41}),tid);
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vc2,pack({Slot::SECOND,Tier::RESISTED,41}),tid);
+      pgrazor_rc_direct_smart_attack(1);
+      api->tick(tid,0);
+      if(sc.vcharge.tapped!=1||sc.vc2.tapped||sc.vgest.tapped)return 92;
+      break;
+    }
+    case 47: { // Never authorize inferior Charge after 2.6 s while proof stays valid.
+      arm(&sc.scope,3,tid);
+      api->observe(PGR_RC_OBS_VNEXT_UPDATE,&sc.vui,0,tid);
+      sc.vc2.button=&sc.vbutton;sc.vc2.vcharged=0;
+      using namespace pgr_charge_effect_ui;
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vcharge,pack({Slot::FIRST,Tier::RESISTED,41}),tid);
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vc2,pack({Slot::SECOND,Tier::SUPER,41}),tid);
+      pgrazor_rc_direct_smart_attack(1);
+      api->tick(tid,0);
+      if(sc.vcharge.tapped||sc.vc2.tapped||sc.vgest.tapped!=1)return 93;
+      usleep(2700000);
+      api->update(3,2500,tid);
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vcharge,pack({Slot::FIRST,Tier::RESISTED,41}),tid);
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vc2,pack({Slot::SECOND,Tier::SUPER,41}),tid);
+      api->tick(tid,0);
+      if(sc.vcharge.tapped||sc.vc2.tapped||sc.vgest.tapped<2)return 94;
+      sc.vc2.vcharged=1;usleep(180000);
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vcharge,pack({Slot::FIRST,Tier::RESISTED,41}),tid);
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vc2,pack({Slot::SECOND,Tier::SUPER,41}),tid);
+      api->tick(tid,0);
+      if(sc.vcharge.tapped||sc.vc2.tapped!=1)return 95;
+      break;
+    }
+    case 48: { // Missing effect after suppression never releases first-ready.
+      arm(&sc.scope,3,tid);
+      api->observe(PGR_RC_OBS_VNEXT_UPDATE,&sc.vui,0,tid);
+      sc.vc2.button=&sc.vbutton;sc.vc2.vcharged=0;
+      using namespace pgr_charge_effect_ui;
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vcharge,pack({Slot::FIRST,Tier::RESISTED,41}),tid);
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vc2,pack({Slot::SECOND,Tier::SUPER,41}),tid);
+      pgrazor_rc_direct_smart_attack(1);
+      api->tick(tid,0);
+      if(sc.vcharge.tapped||sc.vc2.tapped||sc.vgest.tapped!=1)return 96;
+      usleep(180000);
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vc2,0,tid);
+      api->tick(tid,0);
+      if(sc.vcharge.tapped||sc.vc2.tapped||sc.vgest.tapped<2)return 97;
+      break;
+    }
+    case 49: { // Even with Ágil OFF, Smart ON never fires a verified inferior.
+      arm(&sc.scope,2,tid);
+      api->observe(PGR_RC_OBS_VNEXT_UPDATE,&sc.vui,0,tid);
+      sc.vc2.button=&sc.vbutton;sc.vc2.vcharged=0;
+      using namespace pgr_charge_effect_ui;
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vcharge,pack({Slot::FIRST,Tier::RESISTED,41}),tid);
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vc2,pack({Slot::SECOND,Tier::SUPER,41}),tid);
+      pgrazor_rc_direct_smart_attack(1);
+      api->tick(tid,0);
+      if(sc.vcharge.tapped||sc.vc2.tapped||sc.vgest.tapped)return 98;
+      break;
+    }
+    case 50: { // Video reproduction: no subtitle on Charge; SUPER on Charge2, both ready.
+      arm(&sc.scope,3,tid);api->observe(PGR_RC_OBS_VNEXT_UPDATE,&sc.vui,0,tid);
+      sc.vc2.button=&sc.vbutton;
+      using namespace pgr_charge_effect_ui;
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vcharge,pack_observation({Slot::FIRST,Tier::UNKNOWN,41}),tid);
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vc2,pack({Slot::SECOND,Tier::SUPER,41}),tid);
+      pgrazor_rc_direct_smart_attack(1);api->tick(tid,0);
+      if(sc.vcharge.tapped||sc.vc2.tapped!=1||sc.vgest.tapped)return 100;
+      break;
+    }
+    case 51: { // The unlabeled first is ready, stronger confirmed Charge2 is not.
+      arm(&sc.scope,3,tid);api->observe(PGR_RC_OBS_VNEXT_UPDATE,&sc.vui,0,tid);
+      sc.vc2.button=&sc.vbutton;sc.vc2.vcharged=0;
+      using namespace pgr_charge_effect_ui;
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vcharge,pack_observation({Slot::FIRST,Tier::UNKNOWN,41}),tid);
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vc2,pack({Slot::SECOND,Tier::SUPER,41}),tid);
+      pgrazor_rc_direct_smart_attack(1);api->tick(tid,0);
+      if(sc.vcharge.tapped||sc.vc2.tapped||sc.vgest.tapped!=1)return 101;
+      sc.vc2.vcharged=1;usleep(180000);
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vcharge,pack_observation({Slot::FIRST,Tier::UNKNOWN,41}),tid);
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vc2,pack({Slot::SECOND,Tier::SUPER,41}),tid);
+      api->tick(tid,0);
+      if(sc.vcharge.tapped||sc.vc2.tapped!=1)return 102;
+      break;
+    }
+    case 52: { // Neither effectiveness confirmed: deny the unranked charge.
+      arm(&sc.scope,3,tid);api->observe(PGR_RC_OBS_VNEXT_UPDATE,&sc.vui,0,tid);
+      sc.vc2.button=&sc.vbutton;
+      using namespace pgr_charge_effect_ui;
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vcharge,pack_observation({Slot::FIRST,Tier::UNKNOWN,41}),tid);
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vc2,pack_observation({Slot::SECOND,Tier::UNKNOWN,41}),tid);
+      pgrazor_rc_direct_smart_attack(1);api->tick(tid,0);
+      if(sc.vcharge.tapped||sc.vc2.tapped||sc.vgest.tapped!=1)return 103;
+      break;
+    }
+    case 53: { // Capture order reverse: known SUPER identified by real slot, not index.
+      arm(&sc.scope,3,tid);api->observe(PGR_RC_OBS_VNEXT_UPDATE,&sc.vui,0,tid);
+      sc.vc2.button=&sc.vbutton;
+      using namespace pgr_charge_effect_ui;
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vcharge,pack({Slot::SECOND,Tier::SUPER,41}),tid);
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vc2,pack_observation({Slot::FIRST,Tier::UNKNOWN,41}),tid);
+      pgrazor_rc_direct_smart_attack(1);api->tick(tid,0);
+      if(sc.vcharge.tapped!=1||sc.vc2.tapped)return 104;
+      break;
+    }
+    case 54: { // Actual ~280 ms old labels: prevent fallback to inferior.
+      arm(&sc.scope,3,tid);api->observe(PGR_RC_OBS_VNEXT_UPDATE,&sc.vui,0,tid);
+      sc.vc2.button=&sc.vbutton;
+      using namespace pgr_charge_effect_ui;
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vcharge,pack({Slot::FIRST,Tier::NEUTRAL,41}),tid);
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vc2,pack({Slot::SECOND,Tier::SUPER,41}),tid);
+      pgrazor_rc_direct_smart_attack(1);
+      usleep(280000);api->tick(tid,0);
+      if(sc.vcharge.tapped||sc.vc2.tapped||sc.vgest.tapped!=1)return 105;
+      bool saw_stale_hold=false; pgr_rocket_combat_event_v1 ev{};
+      while(api->next_event(&ev)==1)
+        if(ev.code==PGR_RC_EVT_SMART_DIAG&&ev.id==5&&(ev.aux&8))
+          saw_stale_hold=true;
+      if(!saw_stale_hold)return 106;
+      break;
+    }
+    case 55: { // 3 captured widgets must not bypass Smart gating.
+      arm(&sc.scope,3,tid);api->observe(PGR_RC_OBS_VNEXT_UPDATE,&sc.vui,0,tid);
+      sc.vc2.button=&sc.vbutton;sc.vc3.button=&sc.vbutton;
+      using namespace pgr_charge_effect_ui;
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vcharge,pack({Slot::FIRST,Tier::NEUTRAL,41}),tid);
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vc2,pack({Slot::FIRST,Tier::NEUTRAL,41}),tid);
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vc3,pack({Slot::SECOND,Tier::SUPER,41}),tid);
+      if(charges_now()!=3)return 107;
+      pgrazor_rc_direct_smart_attack(1);api->tick(tid,0);
+      if(sc.vcharge.tapped||sc.vc2.tapped||sc.vc3.tapped!=1)return 108;
+      break;
+    }
+    case 56: { // Replaced VNext GUI drops old charge roots, count and evidence.
+      arm(&sc.scope,3,tid);api->observe(PGR_RC_OBS_VNEXT_UPDATE,&sc.vui,0,tid);
+      sc.vc2.button=&sc.vbutton;sc.vc3.button=&sc.vbutton;sc.vc4.button=&sc.vbutton;
+      using namespace pgr_charge_effect_ui;
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vcharge,pack({Slot::FIRST,Tier::NEUTRAL,41}),tid);
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vc2,pack({Slot::SECOND,Tier::SUPER,41}),tid);
+      if(charges_now()!=2)return 109;
+      Obj replacement;replacement.klass=&c_rvui;replacement.gesture=&sc.vgest;
+      api->observe(PGR_RC_OBS_VNEXT_UPDATE,&replacement,0,tid);
+      if(charges_now()!=0)return 110;
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vc3,pack({Slot::FIRST,Tier::NEUTRAL,42}),tid);
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vc4,pack({Slot::SECOND,Tier::SUPER,42}),tid);
+      if(charges_now()!=2)return 111;
+      pgrazor_rc_direct_smart_attack(1);api->tick(tid,0);
+      if(sc.vcharge.tapped||sc.vc2.tapped||sc.vc3.tapped||sc.vc4.tapped!=1)return 112;
+      break;
+    }
+    case 57: { // Smart OFF still retains original first-ready even with old data.
+      arm(&sc.scope,2,tid);api->observe(PGR_RC_OBS_VNEXT_UPDATE,&sc.vui,0,tid);
+      sc.vc2.button=&sc.vbutton;
+      using namespace pgr_charge_effect_ui;
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vcharge,pack({Slot::FIRST,Tier::NEUTRAL,41}),tid);
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vc2,pack({Slot::SECOND,Tier::SUPER,41}),tid);
+      usleep(280000);api->tick(tid,0);
+      if(sc.vcharge.tapped!=1||sc.vc2.tapped)return 113;
+      break;
+    }
+    case 58: { // Pair was already seen; losing second does NOT prove single move.
+      arm(&sc.scope,3,tid);api->observe(PGR_RC_OBS_VNEXT_UPDATE,&sc.vui,0,tid);
+      sc.vc2.button=&sc.vbutton;
+      using namespace pgr_charge_effect_ui;
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vcharge,pack({Slot::FIRST,Tier::NEUTRAL,41}),tid);
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vc2,pack({Slot::SECOND,Tier::SUPER,41}),tid);
+      sc.vc2.alive=0;
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vcharge,pack({Slot::FIRST,Tier::NEUTRAL,41}),tid);
+      if(charges_now()!=1)return 114;
+      pgrazor_rc_direct_smart_attack(1);api->tick(tid,0);
+      if(sc.vcharge.tapped||sc.vgest.tapped!=1)return 115;
+      break;
+    }
+    case 59: { // Smart ON must not infer genuine single move from one captured widget.
+      arm(&sc.scope,2,tid);api->observe(PGR_RC_OBS_VNEXT_UPDATE,&sc.vui,0,tid);
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vcharge,0,tid);
+      pgrazor_rc_direct_smart_attack(1);api->tick(tid,0);
+      if(sc.vcharge.tapped)return 116;
+      break;
+    }
+    case 60: { // 3 opaque widgets and no slot mapping: never fire arbitrary first.
+      arm(&sc.scope,3,tid);api->observe(PGR_RC_OBS_VNEXT_UPDATE,&sc.vui,0,tid);
+      sc.vc2.button=&sc.vbutton;sc.vc3.button=&sc.vbutton;
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vcharge,0,tid);
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vc2,0,tid);
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vc3,0,tid);
+      pgrazor_rc_direct_smart_attack(1);api->tick(tid,0);
+      if(sc.vcharge.tapped||sc.vc2.tapped||sc.vc3.tapped||sc.vgest.tapped!=1)return 117;
+      break;
+    }
+    case 61: { // Equal tier: using already-ready button is permitted.
+      arm(&sc.scope,3,tid);api->observe(PGR_RC_OBS_VNEXT_UPDATE,&sc.vui,0,tid);
+      sc.vc2.button=&sc.vbutton;sc.vcharge.vcharged=0;
+      using namespace pgr_charge_effect_ui;
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vcharge,pack({Slot::FIRST,Tier::NEUTRAL,41}),tid);
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vc2,pack({Slot::SECOND,Tier::NEUTRAL,41}),tid);
+      pgrazor_rc_direct_smart_attack(1);api->tick(tid,0);
+      if(sc.vcharge.tapped||sc.vc2.tapped!=1||sc.vgest.tapped)return 118;
+      break;
+    }
+    case 62: { // New opponent between Charge and Charge2 observations must block first.
+      arm(&sc.scope,3,tid);api->observe(PGR_RC_OBS_VNEXT_UPDATE,&sc.vui,0,tid);
+      sc.vc2.button=&sc.vbutton;sc.vc2.vcharged=0;
+      using namespace pgr_charge_effect_ui;
+      pgrazor_rc_direct_smart_attack(1);
+      api->observe(PGR_RC_OBS_ACTOR_PAIR,nullptr,12345,tid);
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vcharge,pack({Slot::FIRST,Tier::RESISTED,41}),tid);
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vc2,pack({Slot::SECOND,Tier::SUPER,41}),tid);
+      api->tick(tid,0);
+      if(sc.vcharge.tapped||sc.vc2.tapped||sc.vgest.tapped!=1)return 119;
+      // Opponent Sneasel was replaced by Sealeo; a single refreshed button
+      // must NOT be mistaken for a genuine one-charge Pokemon.
+      api->observe(PGR_RC_OBS_ACTOR_PAIR,nullptr,56789,tid);
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vcharge,pack({Slot::FIRST,Tier::RESISTED,42}),tid);
+      usleep(180000);api->tick(tid,0);
+      if(sc.vcharge.tapped||sc.vc2.tapped||sc.vgest.tapped<2)return 120;
+      sc.vc2.vcharged=1;
+      usleep(180000); // unchanged quick-action cadence
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vcharge,pack({Slot::FIRST,Tier::RESISTED,42}),tid);
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vc2,pack({Slot::SECOND,Tier::SUPER,42}),tid);
+      api->tick(tid,0);
+      if(sc.vcharge.tapped||sc.vc2.tapped!=1)return 121;
+      break;
+    }
+    case 63: { // Unknown opponent must revoke all charged actions despite valid labels.
+      arm(&sc.scope,3,tid);api->observe(PGR_RC_OBS_VNEXT_UPDATE,&sc.vui,0,tid);
+      sc.vc2.button=&sc.vbutton;
+      using namespace pgr_charge_effect_ui;
+      pgrazor_rc_direct_smart_attack(1);
+      api->observe(PGR_RC_OBS_ACTOR_PAIR,nullptr,111,tid);
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vcharge,pack({Slot::FIRST,Tier::RESISTED,41}),tid);
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vc2,pack({Slot::SECOND,Tier::SUPER,41}),tid);
+      api->observe(PGR_RC_OBS_ACTOR_PAIR,nullptr,0,tid);
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vcharge,pack({Slot::FIRST,Tier::RESISTED,41}),tid);
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vc2,pack({Slot::SECOND,Tier::SUPER,41}),tid);
+      api->tick(tid,0);
+      if(sc.vcharge.tapped||sc.vc2.tapped||sc.vgest.tapped!=1)return 122;
+      usleep(180000);
+      api->observe(PGR_RC_OBS_ACTOR_PAIR,nullptr,222,tid);
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vcharge,pack({Slot::FIRST,Tier::RESISTED,42}),tid);
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vc2,pack({Slot::SECOND,Tier::SUPER,42}),tid);
+      api->tick(tid,0);
+      if(sc.vcharge.tapped||sc.vc2.tapped!=1)return 123;
+      break;
+    }
+    case 64: { // Smart ON: first captured button after new known actor cannot tap.
+      arm(&sc.scope,3,tid);api->observe(PGR_RC_OBS_VNEXT_UPDATE,&sc.vui,0,tid);
+      sc.vc2.button=&sc.vbutton;pgrazor_rc_direct_smart_attack(1);
+      using namespace pgr_charge_effect_ui;
+      api->observe(PGR_RC_OBS_ACTOR_PAIR,nullptr,12345,tid);
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vcharge,pack({Slot::FIRST,Tier::NEUTRAL,41}),tid);
+      api->tick(tid,0);
+      if(sc.vcharge.tapped||sc.vc2.tapped||sc.vgest.tapped!=1)return 124;
+      usleep(180000);
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vcharge,pack({Slot::FIRST,Tier::NEUTRAL,41}),tid);
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vc2,pack({Slot::SECOND,Tier::SUPER,41}),tid);
+      api->tick(tid,0);
+      if(sc.vcharge.tapped||sc.vc2.tapped!=1)return 125;
+      break;
+    }
+    case 65: { // Smart OFF: an actor transition does not change legacy first-ready.
+      arm(&sc.scope,2,tid);api->observe(PGR_RC_OBS_VNEXT_UPDATE,&sc.vui,0,tid);
+      using namespace pgr_charge_effect_ui;
+      api->observe(PGR_RC_OBS_ACTOR_PAIR,nullptr,12345,tid);
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vcharge,pack({Slot::FIRST,Tier::NEUTRAL,41}),tid);
+      api->tick(tid,0);
+      if(sc.vcharge.tapped!=1)return 126;
+      // No native confirmation of ON must be visible rather than silently
+      // classifying first-ready as Smart Attack selection.
+      pgr_rocket_combat_event_v1 ev{};bool saw_off=false;
+      while(api->next_event(&ev)==1)
+        if(ev.code==PGR_RC_EVT_SMART_DIAG&&ev.id==0&&(ev.aux&8)==0)saw_off=true;
+      if(!saw_off)return 127;
+      break;
+    }
+    case 66: { // First Charge is visible, SECOND callback not observed: ON blocks even on first tick.
+      arm(&sc.scope,3,tid);api->observe(PGR_RC_OBS_VNEXT_UPDATE,&sc.vui,0,tid);
+      using namespace pgr_charge_effect_ui;
+      pgrazor_rc_direct_smart_attack(1);
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vcharge,pack({Slot::FIRST,Tier::NEUTRAL,49}),tid);
+      api->tick(tid,0);
+      if(sc.vcharge.tapped||sc.vgest.tapped!=1)return 128;
+      pgr_rocket_combat_event_v1 ev{};bool saw_hold=false;
+      while(api->next_event(&ev)==1)
+        if(ev.code==PGR_RC_EVT_SMART_DIAG&&ev.id==2&&(ev.aux&8))saw_hold=true;
+      if(!saw_hold)return 129;
+      break;
+    }
+    case 67: { // Explicit Smart OFF still permits the single first-ready charge and reports OFF.
+      arm(&sc.scope,3,tid);api->observe(PGR_RC_OBS_VNEXT_UPDATE,&sc.vui,0,tid);
+      using namespace pgr_charge_effect_ui;
+      pgrazor_rc_direct_smart_attack(0);
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vcharge,pack({Slot::FIRST,Tier::NEUTRAL,49}),tid);
+      api->tick(tid,0);
+      if(sc.vcharge.tapped!=1||sc.vgest.tapped)return 130;
+      pgr_rocket_combat_event_v1 ev{};bool saw_off=false;
+      while(api->next_event(&ev)==1)
+        if(ev.code==PGR_RC_EVT_SMART_DIAG&&ev.id==0&&(ev.aux&8)==0)saw_off=true;
+      if(!saw_off)return 131;
+      break;
+    }
+    case 68: { // Exact real diagnostic: 3 displays, actor unknown, both tiers observable.
+      arm(&sc.scope,3,tid);api->observe(PGR_RC_OBS_VNEXT_UPDATE,&sc.vui,0,tid);
+      sc.vc2.button=&sc.vbutton;sc.vc3.button=&sc.vbutton;
+      using namespace pgr_charge_effect_ui;
+      pgrazor_rc_direct_smart_attack(1);
+      api->observe(PGR_RC_OBS_ACTOR_PROBE,nullptr,8,tid);
+      api->observe(PGR_RC_OBS_ACTOR_PAIR,nullptr,0,tid);
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vcharge,pack({Slot::FIRST,Tier::RESISTED,51}),tid);
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vc2,pack({Slot::FIRST,Tier::NEUTRAL,51}),tid);
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vc3,pack({Slot::SECOND,Tier::SUPER,51}),tid);
+      if(charges_now()!=3)return 132;
+      api->tick(tid,0);
+      if(sc.vcharge.tapped||sc.vc2.tapped||sc.vc3.tapped||sc.vgest.tapped!=1)return 133;
+      pgr_rocket_combat_event_v1 ev{};bool diagnostic=false;
+      while(api->next_event(&ev)==1)if(ev.code==PGR_RC_EVT_SMART_DIAG){
+        const unsigned bits=static_cast<unsigned>(ev.aux);
+        diagnostic=(ev.id==8&&(bits&7u)==3u&&(bits&8u)!=0 &&
+           ((bits>>16)&15u)==8u&&((bits>>20)&3u)==3u &&
+           ((bits>>8)&3u)==static_cast<unsigned>(Tier::NEUTRAL) &&
+           ((bits>>10)&3u)==static_cast<unsigned>(Tier::SUPER) &&
+           (bits&4096u)!=0&&(bits&8192u)!=0);
+      }
+      if(!diagnostic)return 134;
+      break;
+    }
+    case 69: { // Actor read succeeds: same two slots still authorize known better charged button.
+      arm(&sc.scope,3,tid);api->observe(PGR_RC_OBS_VNEXT_UPDATE,&sc.vui,0,tid);
+      sc.vc2.button=&sc.vbutton;
+      using namespace pgr_charge_effect_ui;
+      pgrazor_rc_direct_smart_attack(1);
+      api->observe(PGR_RC_OBS_ACTOR_PROBE,nullptr,1,tid);
+      api->observe(PGR_RC_OBS_ACTOR_PAIR,nullptr,8181,tid);
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vcharge,pack({Slot::FIRST,Tier::RESISTED,51}),tid);
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vc2,pack({Slot::SECOND,Tier::SUPER,51}),tid);
+      api->tick(tid,0);
+      if(sc.vcharge.tapped||sc.vc2.tapped!=1)return 135;
+      break;
+    }
 #endif
   }
   g_cb=nullptr;api->tick(tid,1);
@@ -700,7 +1160,7 @@ int scenario(int n) {
 }
 
 #if defined(PGR_RC_DIRECT_TEST)
-constexpr int kScenarios = 38;
+constexpr int kScenarios = 70;
 #else
 constexpr int kScenarios = 33;
 #endif

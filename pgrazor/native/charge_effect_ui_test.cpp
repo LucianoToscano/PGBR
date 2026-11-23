@@ -38,7 +38,14 @@ int main() {
   d.tier=0;s=observe(b,&d,&same_state,get);
   assert(s.tier==Tier::NEUTRAL);
   d.show=0;
-  assert(pack(observe(b,&d,&same_state,get))==0); // hidden != neutral
+  s=observe(b,&d,&same_state,get);
+  assert(pack(s)==0); // hidden != neutral
+  assert(s.slot==Slot::FIRST && s.tier==Tier::UNKNOWN && s.batch_token);
+  wire=pack_observation(s);
+  assert(wire>0 && unpack(wire).slot==Slot::UNKNOWN);
+  round=unpack_observation(wire);
+  assert(round.slot==Slot::FIRST && round.tier==Tier::UNKNOWN &&
+         round.batch_token==s.batch_token); // preserves slot without guessing effect
   d.show=1;d.tier=99;
   assert(pack(observe(b,&d,&same_state,get))==0);
   d.tier=0;d.slot=99;
@@ -50,6 +57,10 @@ int main() {
   assert(pack({Slot::FIRST,Tier::UNKNOWN,50})==0);
   assert(pack({Slot::FIRST,Tier::SUPER,0x200000u})==0);
   assert(pack(unpack(-1))==0);
+  assert(pack_observation({Slot::UNKNOWN,Tier::UNKNOWN,50})==0);
+  assert(pack_observation({Slot::FIRST,Tier::UNKNOWN,0})==0);
+  assert(pack_observation({Slot::FIRST,Tier::UNKNOWN,50})>0);
+  assert(unpack_observation(-1).slot==Slot::UNKNOWN);
   assert(!resolve(PgrBootBinding{},nullptr,b)); // missing runtime never enables
   assert(!b.valid);
   std::puts("charge effect UI: PASS (synthetic metadata fixture)");

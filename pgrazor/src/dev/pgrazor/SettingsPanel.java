@@ -74,7 +74,8 @@ final class SettingsPanel {
     private Button autoBallTarget, berryPriority;
     private Button vgpIconStyleButton, vgpStartStopButton, joystickStyleButton, eternatusIntensityButton, eternatusSpeedButton;
     private BerryPriorityPicker berryPicker;
-    private TextView quickSummaryLabel, vgpStatus, cutsceneStatus, healStatus, smartBattleStatus;
+    private TextView quickSummaryLabel, vgpStatus, cutsceneStatus, healStatus, smartBattleStatus,
+        smartAttackNativeStatus;
     private Switch healSwitch, healReviveSwitch, smartBattleSwitch, smartAttackSwitch, gymRepeatSwitch;
     private Button healWhen, healThreshold, healItems, shieldWaitButton, faintedSwapWaitButton;
     private static final String[] SHIELD_WAIT_LABELS={
@@ -1078,7 +1079,7 @@ final class SettingsPanel {
     private void buildSmartBattle(LinearLayout owner) {
         smartBattleSwitch = switchRow(owner, "Smart battling"); smartBattleSwitch.setChecked(Control.smartBattle());
         smartBattleSwitch.setOnCheckedChangeListener((v,checked) -> { if(checked==Control.smartBattle())return; Control.setSmartBattle(checked); refreshSmartBattle(); });
-        caption(owner, "Escolhe a equipe para Ginásios, Raides e Rocket e troca automaticamente em Ginásios e Rocket. Os demais modos exigem suporte próprio validado.");
+        caption(owner, "Escolhe equipes para Ginásios, Reides e Rocket. Faz trocas estratégicas em Ginásios e Rocket; em PvP, duelos e treinamento VNext reconhecidos, a mesma análise de troca é experimental e requer testes em aparelho.");
         smartBattleStatus = caption(owner, "");
         refreshSmartBattle();
     }
@@ -1094,9 +1095,28 @@ final class SettingsPanel {
         smartAttackSwitch.setChecked(Control.smartAttack());
         smartAttackSwitch.setOnCheckedChangeListener((v,on)->{
             if(on!=Control.smartAttack())Control.setSmartAttack(on);
+            refreshSmartAttackNativeStatus();
         });
-        caption(owner,"A preferência é salva, mas a seleção inteligente dos botões ainda não está integrada "+
-            "nem validada nos modos de batalha. A automação existente continua usando seus próprios critérios.");
+        caption(owner,"O motor da Equipe GO Rocket decide qual carregado usar: Super eficaz > Normal > Pouco eficaz. Liga GO, duelos e treinamento reconhecidos reutilizam o mesmo motor, sem outro executor de ataques. "+
+            "Se um golpe comprovadamente melhor ainda não carregou, o Rocket continua usando Ágil. Quando o outro botão não mostra a eficácia, um Super eficaz confirmado ganha prioridade, sem assumir que o golpe oculto seja Normal. "+
+            "Com Ataque Inteligente ligado, se dois carregados existem mas os dados estiverem incompletos ou vencidos, nenhum carregado automático será acionado até uma classificação válida; o Ágil pode continuar normalmente. "+
+            "Para voltar à ordem original do primeiro carregado pronto, desligue Ataque Inteligente. "+
+            "O Ágil não pertence a um lado da tela. Experimental: requer teste real em aparelho.");
+        smartAttackNativeStatus=caption(owner,Control.smartAttackNativeStatus());
+        launch(owner,"Copiar diagnóstico do Ataque Inteligente",()->{
+            String diagnosis=Control.smartAttackNativeJson();
+            if(diagnosis.isEmpty())diagnosis=Control.smartAttackNativeStatus();
+            android.content.ClipboardManager clipboard=(android.content.ClipboardManager)
+                activity.getSystemService(android.content.Context.CLIPBOARD_SERVICE);
+            if(clipboard!=null){
+                clipboard.setPrimaryClip(android.content.ClipData.newPlainText(
+                    "PGBR Ataque Inteligente",diagnosis));
+                android.widget.Toast.makeText(activity,
+                    "Diagnóstico do Ataque Inteligente copiado",
+                    android.widget.Toast.LENGTH_SHORT).show();
+            }
+        });
+        refreshSmartAttackNativeStatus();
         shieldWaitButton=launch(owner,"Espera do Escudo",()->
             new AlertDialog.Builder(dialogContext())
                 .setTitle("Espera do Escudo Inteligente")
@@ -1113,6 +1133,11 @@ final class SettingsPanel {
             "Escudo: 250 ms de intervalo técnico após usar; troca: até 8 s com 1 s entre tentativas. "+
             "As preferências só atuam em fluxos nativos reconhecidos, sem atrasar golpes carregados.");
         refreshBattleTimings();
+    }
+
+    private void refreshSmartAttackNativeStatus(){
+        if(smartAttackNativeStatus!=null)
+            smartAttackNativeStatus.setText(Control.smartAttackNativeStatus());
     }
 
     private void refreshBattleTimings(){
@@ -1565,6 +1590,7 @@ final class SettingsPanel {
         refreshHealing();
         refreshSmartBattle();
         if(smartAttackSwitch!=null)smartAttackSwitch.setChecked(Control.smartAttack());
+        refreshSmartAttackNativeStatus();
         refreshBattleTimings();
         refreshDependencies();
     }
