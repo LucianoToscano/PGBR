@@ -30,12 +30,13 @@ public final class AutoMaxBattleSessionTest {
         Control.setBattleOptions(1); // Opcao de reides permanente
         int session=AutoMaxBattle.CHARGED|AutoMaxBattle.MAX_ATTACK|AutoMaxBattle.DODGE;
         AutoMaxBattle.start(session);
-        check(AutoMaxBattle.running()&&AutoMaxBattle.optionMask()==session,"Sessao nao foi ativada");
-        check(Control.battleOptions()==(1|session),"Transporte nao combinou bits por sessao");
+        check(AutoMaxBattle.running()&&AutoMaxBattle.selectedMask()==session,"Sessao nao foi ativada");
+        check(AutoMaxBattle.optionMask()==0&&AutoMaxBattle.actionsBlocked(),"Sem contexto Max confiável, ações devem permanecer bloqueadas");
+        check(Control.battleOptions()==1,"Bits Max vazaram para opções globais sem contexto confiável");
         check(!Control.vgpAllowed(),"VGP nao pode executar em paralelo com a sessao Max");
         reject(AutoMaxBattle.QUICK,"Aceitou duas sessoes simultaneas");
         AutoMaxBattle.stop();
-        check(!AutoMaxBattle.running()&&Control.battleOptions()==1,"Parada nao restaurou opcoes de reides");
+        check(!AutoMaxBattle.running()&&Control.battleOptions()==1,"Parada nao preservou opcoes de reides");
 
         AutoMaxBattle.start(AutoMaxBattle.QUICK);
         Control.setBattlesReady(false,"Indisponível");
@@ -44,6 +45,7 @@ public final class AutoMaxBattleSessionTest {
         check(!AutoMaxBattle.running(),"Sessao retornou sem consentimento");
 
         AutoMaxBattle.start(AutoMaxBattle.MAX_ATTACK);
+        check(Control.battleOptions()==1,"Batalha desconhecida nao pode receber ataque Max");
         Control.suspendForBackground();
         check(!AutoMaxBattle.running()&&Control.battleOptions()==1,"Segundo plano nao revogou sessao");
         System.out.println("PASS: Max manual session policy, readiness, masks, opt-in, stop and revocation");
