@@ -10,6 +10,7 @@
 #include "pvp_scene.h"
 #include "shared_auto_battle_gate.h"
 #include "charge_effect_ui.h"
+#include "smart_battle.h"
 #include "rocket_minigame.h"
 #include "runtime_bootstrap.h"
 #include "runtime_metadata.h"
@@ -892,7 +893,16 @@ void hook_shared_vn_observe(void *self,void *battle_state,void *method){
      const auto read=reinterpret_cast<void (*)(void *,void *,void *)>(g_cfg.field_get_value);
      aux=pgr_charge_effect_ui::pack_observation(pgr_charge_effect_ui::observe(g_charge_ui,obj,state,read));
    }
-   if(rocket_gate(&tid))g_rocket_combat->observe(PGR_RC_OBS_CHARGE,pins.get(0),aux,tid);
+   // Identical state already used by Smart Battling for team/foe selection.
+   // Publish the actor pair BEFORE the charge display: a newly announced foe
+   // must revoke all previously admitted charge classifications immediately.
+   // Unknown actor pair (0) is also an explicit revocation. No identifiers
+   // cross to logs, and there is no additional hook or combat executor.
+   const int32_t actor_stamp=pgr_smart_battle_vnext_actor_stamp(state);
+   if(rocket_gate(&tid))
+     g_rocket_combat->observe(PGR_RC_OBS_ACTOR_PAIR,nullptr,actor_stamp,tid);
+   if(rocket_gate(&tid))
+     g_rocket_combat->observe(PGR_RC_OBS_CHARGE,pins.get(0),aux,tid);
  }
  if(battle_gate(&tid))g_battles->observe(PGR_BATTLE_OBS_CHARGE,pins.get(0),0,tid);
  drain_leaf_events(tid);
