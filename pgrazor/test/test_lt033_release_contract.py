@@ -8,7 +8,7 @@ ROOT=Path(__file__).resolve().parents[2]
 class Lt033ReleaseContract(unittest.TestCase):
     def test_version_manifest_release_and_master_agree(self):
         v=(ROOT/'pgrazor/VERSION').read_text(encoding='utf-8').strip()
-        self.assertIn(v,('0.00.33-LT','0.00.34-LT','0.00.35-LT','0.00.36-LT','0.00.37-LT','0.00.38-LT','0.00.39-LT','0.00.40-LT','0.00.41-LT','0.00.42-LT'))
+        self.assertIn(v,('0.00.33-LT','0.00.34-LT','0.00.35-LT','0.00.36-LT','0.00.37-LT','0.00.38-LT','0.00.39-LT','0.00.40-LT','0.00.41-LT','0.00.42-LT','0.00.43-LT'))
         wf=(ROOT/'.github/workflows/pgbr-lt033-release.yml').read_text(encoding='utf-8')
         self.assertIn('PGRAZOR_VERSION: v0.00.33-LT',wf)
         self.assertIn('--tag v0.00.33-LT',wf)
