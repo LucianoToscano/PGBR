@@ -479,6 +479,35 @@ void drain_leaf_events(uint64_t tid) {
                         transport_text_action(47, "Rocket: quick");
                     }
                     break;
+                case PGR_RC_EVT_SMART_DIAG: {
+                    // Same Rocket-owned selector also runs for approved trainer
+                    // and League/friend scopes. This explains why a charged
+                    // action was withheld rather than silently picking Charge.
+                    const unsigned flags=static_cast<unsigned>(rev.aux);
+                    const unsigned count=flags&7u;
+                    const bool held=(flags&8u)!=0;
+                    const bool picked=(flags&16u)!=0;
+                    const char *mode=g_pvp_ui_root?
+                        (g_pvp_training_scope?"training":"pvp"):"rocket";
+                    const char *tier_names[4]={"unknown","not-very-effective",
+                                               "normal","super-effective"};
+                    const char *tier1=tier_names[(flags>>8)&3u];
+                    const char *tier2=tier_names[(flags>>10)&3u];
+                    const char *reason=smart_charge_reason(rev.id<<4);
+                    std::snprintf(buf,sizeof(buf),
+                        "{\"smartAttackMode\":\"%s\",\"chargeCount\":%u,"
+                        "\"decision\":\"%s\",\"reason\":\"%s\","
+                        "\"chargeTier\":\"%s\",\"charge2Tier\":\"%s\","
+                        "\"chargeReady\":%s,\"charge2Ready\":%s}",
+                        mode,count,held?"hold":picked?"selected":"original",
+                        reason,tier1,tier2,(flags&4096u)?"true":"false",
+                        (flags&8192u)?"true":"false");
+                    queue_event(PGR_CBH_EV_BATTLE_ACTION,rev.id,rev.aux,tid,buf);
+                    if(held)transport_text_action(47,
+                        rev.id==3?"Ataque Inteligente: aguardando o melhor carregado":
+                                  "Ataque Inteligente: aguardando identificação segura");
+                    break;
+                }
                 case PGR_RC_EVT_GATE: {
                     static const char *const kGateReasons[8] = {
                         "unknown",
