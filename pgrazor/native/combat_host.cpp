@@ -387,6 +387,7 @@ const char *smart_charge_reason(int32_t aux) {
         case 4: return "unknown-effect";
         case 5: return "stale-effect";
         case 6: return "unverified-slots";
+        case 7: return "hold-expired";
         default: return "unknown";
     }
 }
