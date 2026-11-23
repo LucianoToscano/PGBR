@@ -387,6 +387,7 @@ const char *smart_charge_reason(int32_t aux) {
         case 4: return "unknown-effect";
         case 5: return "stale-effect";
         case 6: return "unverified-slots";
+        case 7: return "known-super-other-unknown";
         default: return "unknown";
     }
 }
@@ -860,7 +861,7 @@ void hook_shared_vn_observe(void *self,void *battle_state,void *method){
    if(g_charge_ui.valid&&obj&&state&&
       reinterpret_cast<void *(*)(void *)>(g_cfg.object_get_class)(obj)==md_k(OC_RVCHARGE)) {
      const auto read=reinterpret_cast<void (*)(void *,void *,void *)>(g_cfg.field_get_value);
-     aux=pgr_charge_effect_ui::pack(pgr_charge_effect_ui::observe(g_charge_ui,obj,state,read));
+     aux=pgr_charge_effect_ui::pack_observation(pgr_charge_effect_ui::observe(g_charge_ui,obj,state,read));
    }
    if(rocket_gate(&tid))g_rocket_combat->observe(PGR_RC_OBS_CHARGE,pins.get(0),aux,tid);
  }
