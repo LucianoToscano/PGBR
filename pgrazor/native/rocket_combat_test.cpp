@@ -1013,6 +1013,70 @@ int scenario(int n) {
       if(sc.vcharge.tapped||sc.vc2.tapped!=1||sc.vgest.tapped)return 118;
       break;
     }
+    case 62: { // New opponent between Charge and Charge2 observations must block first.
+      arm(&sc.scope,3,tid);api->observe(PGR_RC_OBS_VNEXT_UPDATE,&sc.vui,0,tid);
+      sc.vc2.button=&sc.vbutton;sc.vc2.vcharged=0;
+      using namespace pgr_charge_effect_ui;
+      pgrazor_rc_direct_smart_attack(1);
+      api->observe(PGR_RC_OBS_ACTOR_PAIR,nullptr,12345,tid);
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vcharge,pack({Slot::FIRST,Tier::RESISTED,41}),tid);
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vc2,pack({Slot::SECOND,Tier::SUPER,41}),tid);
+      api->tick(tid,0);
+      if(sc.vcharge.tapped||sc.vc2.tapped||sc.vgest.tapped!=1)return 119;
+      // Opponent Sneasel was replaced by Sealeo; a single refreshed button
+      // must NOT be mistaken for a genuine one-charge Pokemon.
+      api->observe(PGR_RC_OBS_ACTOR_PAIR,nullptr,56789,tid);
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vcharge,pack({Slot::FIRST,Tier::RESISTED,42}),tid);
+      usleep(180000);api->tick(tid,0);
+      if(sc.vcharge.tapped||sc.vc2.tapped||sc.vgest.tapped<2)return 120;
+      sc.vc2.vcharged=1;
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vc2,pack({Slot::SECOND,Tier::SUPER,42}),tid);
+      api->tick(tid,0);
+      if(sc.vcharge.tapped||sc.vc2.tapped!=1)return 121;
+      break;
+    }
+    case 63: { // Unknown opponent must revoke all charged actions despite valid labels.
+      arm(&sc.scope,3,tid);api->observe(PGR_RC_OBS_VNEXT_UPDATE,&sc.vui,0,tid);
+      sc.vc2.button=&sc.vbutton;
+      using namespace pgr_charge_effect_ui;
+      pgrazor_rc_direct_smart_attack(1);
+      api->observe(PGR_RC_OBS_ACTOR_PAIR,nullptr,111,tid);
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vcharge,pack({Slot::FIRST,Tier::RESISTED,41}),tid);
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vc2,pack({Slot::SECOND,Tier::SUPER,41}),tid);
+      api->observe(PGR_RC_OBS_ACTOR_PAIR,nullptr,0,tid);
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vcharge,pack({Slot::FIRST,Tier::RESISTED,41}),tid);
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vc2,pack({Slot::SECOND,Tier::SUPER,41}),tid);
+      api->tick(tid,0);
+      if(sc.vcharge.tapped||sc.vc2.tapped||sc.vgest.tapped!=1)return 122;
+      api->observe(PGR_RC_OBS_ACTOR_PAIR,nullptr,222,tid);
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vcharge,pack({Slot::FIRST,Tier::RESISTED,42}),tid);
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vc2,pack({Slot::SECOND,Tier::SUPER,42}),tid);
+      api->tick(tid,0);
+      if(sc.vcharge.tapped||sc.vc2.tapped!=1)return 123;
+      break;
+    }
+    case 64: { // Smart ON: first captured button after new known actor cannot tap.
+      arm(&sc.scope,3,tid);api->observe(PGR_RC_OBS_VNEXT_UPDATE,&sc.vui,0,tid);
+      sc.vc2.button=&sc.vbutton;pgrazor_rc_direct_smart_attack(1);
+      using namespace pgr_charge_effect_ui;
+      api->observe(PGR_RC_OBS_ACTOR_PAIR,nullptr,12345,tid);
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vcharge,pack({Slot::FIRST,Tier::NEUTRAL,41}),tid);
+      api->tick(tid,0);
+      if(sc.vcharge.tapped||sc.vc2.tapped||sc.vgest.tapped!=1)return 124;
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vc2,pack({Slot::SECOND,Tier::SUPER,41}),tid);
+      api->tick(tid,0);
+      if(sc.vcharge.tapped||sc.vc2.tapped!=1)return 125;
+      break;
+    }
+    case 65: { // Smart OFF: an actor transition does not change legacy first-ready.
+      arm(&sc.scope,2,tid);api->observe(PGR_RC_OBS_VNEXT_UPDATE,&sc.vui,0,tid);
+      using namespace pgr_charge_effect_ui;
+      api->observe(PGR_RC_OBS_ACTOR_PAIR,nullptr,12345,tid);
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vcharge,pack({Slot::FIRST,Tier::NEUTRAL,41}),tid);
+      api->tick(tid,0);
+      if(sc.vcharge.tapped!=1)return 126;
+      break;
+    }
 #endif
   }
   g_cb=nullptr;api->tick(tid,1);
@@ -1021,7 +1085,7 @@ int scenario(int n) {
 }
 
 #if defined(PGR_RC_DIRECT_TEST)
-constexpr int kScenarios = 62;
+constexpr int kScenarios = 66;
 #else
 constexpr int kScenarios = 33;
 #endif
