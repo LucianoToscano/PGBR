@@ -673,6 +673,11 @@ void vnext_tick(uint64_t tid, uint64_t epoch, uint32_t mask, uint64_t ticket) {
             indices[slot]=i;
         }
         wait_for_better=true; // strict Smart Attack ON: no unclassified tap
+        if(g_actor_pair_observed) {
+          decision_reason=g_actor_pair_stamp>0
+              ? pgr_smart_priority::DisplayReason::ACTOR_REFRESH
+              : pgr_smart_priority::DisplayReason::ACTOR_UNKNOWN;
+        }
         // Never consume a charge based on a vanished/unknown opponent. The
         // actor stamp need not be published in telemetry or passed to UI.
         if((!g_actor_pair_observed||g_actor_pair_stamp>0)&&
