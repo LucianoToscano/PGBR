@@ -1399,3 +1399,10 @@ Foram executadas 18 fixtures C++ host, contratos de tempos/UI e verificação do
 - **Evidências separadas antes da consolidação:** #130 [CI #45107135449](https://github.com/LucianoToscano/PGBR/actions/runs/45107135449) 5/5 `success`; #131 [CI #45107767418](https://github.com/LucianoToscano/PGBR/actions/runs/45107767418) 5/5 `success`, após correção de stub no run anterior; #132 [CI #45107643041](https://github.com/LucianoToscano/PGBR/actions/runs/45107643041) 5/5 `success`. Esses checks NÃO substituem CI sobre esta branch combinada.
 - **Gate integrado pendente:** workflow completo de PR e governança na HEAD final, resolução de eventuais erros, comparação funcional e teste de dispositivo para efeitos Unity. `device_tested=false`; nenhuma release, APK ou homologação decorre da aprovação dos testes de política.
 - **Outros recursos não portados:** MT nativa e VGP+ por etiquetas/IV real continuam nas issues #134 e #133, respectivamente. Não extrapolar o estado desses recursos.
+
+
+### Revisão unificada de QA — PR #136
+
+- [PR #136](https://github.com/LucianoToscano/PGBR/pull/136): branch `integracao/qa-forks-pokematrix-max-20261123`, ainda em draft, base da `main` `f78d0e2544cdb55a31bdf1dd5cf5b813e2376622`.
+- [Comparação oficial de código](https://github.com/LucianoToscano/PGBR/compare/main...integracao/qa-forks-pokematrix-max-20261123): **19 arquivos distintos alterados, zero remoções**, incluindo testes, documentos e três ports; `main` não modificada.
+- [Primeiro CI da integração #45109074658](https://github.com/LucianoToscano/PGBR/actions/runs/45109074658) e [auditoria de governança #45109074666](https://github.com/LucianoToscano/PGBR/actions/runs/45109074666) iniciados; **resultado ainda a validar**. Esta alteração documental gera nova HEAD e exige o CI correspondente antes de qualquer merge. Não apresentar como release ou funcionalidade homologada.
