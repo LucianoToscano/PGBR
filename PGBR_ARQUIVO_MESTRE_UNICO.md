@@ -1350,3 +1350,52 @@ Foram executadas 18 fixtures C++ host, contratos de tempos/UI e verificação do
 - [Workflow #45106540999](https://github.com/LucianoToscano/PGBR/actions/runs/45106540999): **5 de 5 jobs success** (website, políticas C++, Java/Root via `tools/check.py`, políticas ARM64, host/executor VNext ARM64), para o commit inicial de PR `f321411cf5fb8203189d962ccd859693eb8b37f9`.
 - [Governança #45106541070](https://github.com/LucianoToscano/PGBR/actions/runs/45106541070): job read-only **success**. Este registro documental é commit posterior: nova execução de PR deve ser novamente verificada; resultados anteriores não homologam revisão posterior.
 - **Sem merge, release nem teste físico**; `device_tested=false`, manter LT042 imutável.
+
+
+## 23/11/2026 — Port seletivo de Batalha Max por sessão (fork belalsalah74)
+
+- **Origem:** [belalsalah74/PGRazor](https://github.com/belalsalah74/PGRazor), com implementação de referência em `AutoMaxBattle.java` e `AutoMaxBattleDialog.java`, adaptada ao PT-BR e às garantias do PGBR. **Branch isolada:** `feat/fork-max-session-20261123`, **base main:** `f78d0e2544cdb55a31bdf1dd5cf5b813e2376622`.
+- **Implementação de fonte:** interface de sessão voluntária para habilitar temporariamente Ágil, Carregado, Max e Esquiva nos **executores nativos já existentes**, reutilizando `Control.battleOptions()` como união do bitmask salvo e do mask de sessão (sem alterar `setBattleOptions()` nem o snapshot de persistência). Seleção manual do Power Spot, entrada, equipe, Partículas Max, recompensa e captura **não automatizadas**.
+- **Segurança:** bloquear simultaneidade com Auto-Raid, VGP+ e automações incompatíveis; resetar sessão em segundo plano, troca de conta, leitura de configurações e perda de prontidão do combate. Caminhada ociosa suspensa enquanto sessão está ativa; estado da sessão não é salvo em backup.
+- **Arquivos:** `pgrazor/src/dev/pgrazor/{AutoMaxBattle,AutoMaxBattleDialog,Control,AutoRaid,SettingsPanel}.java`; `pgrazor/test/AutoMaxBattleSessionTest.java`, `pgrazor/test/test_control_java.py`, `CHANGELOG.md` e este Mestre.
+- **Testes:** uma fixture da política no Control real foi adicionada e conectada à suíte JVM; **resultado do CI e teste no Android ainda pendentes no momento deste registro**. `device_tested=false`; funcionamento do Max no jogo depende dos hooks existentes e não está homologado. Não criar release/merge sem validar CI e PR.
+- **Preservar:** todas as funções LT042, incluindo Ataque Inteligente simples, Escudo/Troca/Cura, PvP, Root, Snipers e parceiros externos. A branch do lote 01 [PR #130](https://github.com/LucianoToscano/PGBR/pull/130) permanece isolada, não substituída por este port.
+
+
+### CI inicial e correção de fixture — PR #131
+
+- [PR #131](https://github.com/LucianoToscano/PGBR/pull/131), draft. [Workflow #45107072775](https://github.com/LucianoToscano/PGBR/actions/runs/45107072775): **4/5 jobs success**, com falha no job Java/Root por fixture `test_auto_raid_controller_java.py`, que compila `AutoRaid.java` real com stubs e não tinha o novo símbolo `AutoMaxBattle`. A auditoria de governança [#45107073010](https://github.com/LucianoToscano/PGBR/actions/runs/45107073010) passou.
+- **Correção:** adicionado stub de teste `pgrazor/test/auto_raid_stubs/dev/pgrazor/AutoMaxBattle.java` somente na fixture de Auto-Raid. O código de produção `AutoMaxBattle.java` continua compilado e exercitado no runner JVM `test_control_java.py`. CI da revisão corrigida deverá rodar novamente e os resultados serão checados; não confundir falha de stub com confirmação de funcionamento real.
+- **Estado:** `device_tested=false`, sem merge, tag, release ou APK desta branch.
+
+
+### Rerun corrigido de Batalha Max — PR #131
+
+- [GitHub Actions #45107375898](https://github.com/LucianoToscano/PGBR/actions/runs/45107375898): **5/5 success** para commit `b2fa5066bd9da575ac643b8fda63a45d1f479574`. Passaram C++ host, Java/Python/Node + compilação do aplicativo e instalador Root, política selecionada ARM64, host/executor VNext e website. A falha original de stub `AutoMaxBattle` ficou corrigida na fixture independente Auto-Raid.
+- **Evidência limitada:** CI não comprova ação efetiva dentro da batalha Max, nem captura, Power Spot, versões de aparelho ou aceitação de hooks. `device_tested=false`; PR segue em draft; nenhum merge ou novo APK. Este adendo documental provoca uma execução adicional na nova HEAD e exige leitura dos resultados para concluir o gate documental.
+- **Dependências de outros forks:** VGP+ por etiquetas e IV real [issue #133](https://github.com/LucianoToscano/PGBR/issues/133), atalhos MT [issue #134](https://github.com/LucianoToscano/PGBR/issues/134); não foram portados neste PR.
+
+
+## 23/11/2026 — Port seletivo IV overlay do Pokematrix (branch independente)
+
+- **Origem:** [hugoalves6/PGRazor_Pokematrix](https://github.com/hugoalves6/PGRazor_Pokematrix), alteração pontual de `pgrazor/native/iv_panel.cpp` em `draw_in_front`.
+- **Branch:** `fix/pokematrix-iv-canvas-20261123`, base `f78d0e2544cdb55a31bdf1dd5cf5b813e2376622`. Não inclui nem sobrescreve PRs #130/#131.
+- **Correção em código:** atualiza a ordem de desenho do canvas do painel IV em **cada exibição** (não somente na primeira criação), usando o canvas da tela pai. Visa impedir que o modelo/RawImage encubra a linha de IV quando a tela de detalhes é aberta por outra tela, especialmente Pokédex.
+- **Escopo:** somente 1 arquivo nativo alterado; sem mudanças de gancho, chamada de captura, IV real de VGP+, Ataque Inteligente, configurações, Root, assinatura ou releases anteriores. Correção da atualização de IV após fortalecer exige trabalho separado e não está incluída.
+- **Estado:** alteração presente na branch, sujeita a CI e revisão. A ordenação de canvas em dispositivo/Unity **não foi homologada** (`device_tested=false`); não publicar release nem declarar correção visual comprovada antes dos testes.
+
+
+### Resultado CI do port IV — PR #132
+
+- [PR #132](https://github.com/LucianoToscano/PGBR/pull/132), draft sobre base `f78d0e2544cdb55a31bdf1dd5cf5b813e2376622`.
+- [GitHub Actions #45107240963](https://github.com/LucianoToscano/PGBR/actions/runs/45107240963): **5/5 jobs success** no commit pré-registro `d1dd786789ee3121b70c92124322717851afad95` (website, C++ host, Java/Root, ARM64 selecionado, host VNext ARM64); governança read-only da mesma revisão foi acionada separadamente.
+- Registro documental é commit posterior, sem modificação adicional de C++; o CI da nova HEAD deve ser novamente verificado. Continua QA `device_tested=false`, sem merge/instalação/release ou confirmação visual da Unity.
+
+
+## 23/11/2026 — Consolidação QA de PRs #130, #131 e #132 (sem merge na main)
+
+- **Branch única de integração:** `integracao/qa-forks-pokematrix-max-20261123`, originada da HEAD de [PR #130](https://github.com/LucianoToscano/PGBR/pull/130) `a96485f792a34c58b07eecd3af6d1b0a1f9502c1`, cujo commit-base da `main` é `f78d0e2544cdb55a31bdf1dd5cf5b813e2376622`. As alterações dos [PR #131](https://github.com/LucianoToscano/PGBR/pull/131) e [#132](https://github.com/LucianoToscano/PGBR/pull/132) foram incorporadas de forma seletiva, sem merge automático dos PRs nem alteração da `main`.
+- **Merges de fonte revisados:** `Control.java` contém tanto consentimento no duplo toque como bitmask transitório de Max; `SettingsPanel.java` contém tanto visibilidade de ginásios como painel de Batalha Max; `AutoRaid.java`, `test_control_java.py`, classes de sessão Max e fixture correspondente vêm de #131; `iv_panel.cpp` vem de #132. O prefixo histórico do CHANGELOG e as entradas completas dos três PRs neste Mestre foram preservados; nenhum arquivo antigo foi removido.
+- **Evidências separadas antes da consolidação:** #130 [CI #45107135449](https://github.com/LucianoToscano/PGBR/actions/runs/45107135449) 5/5 `success`; #131 [CI #45107767418](https://github.com/LucianoToscano/PGBR/actions/runs/45107767418) 5/5 `success`, após correção de stub no run anterior; #132 [CI #45107643041](https://github.com/LucianoToscano/PGBR/actions/runs/45107643041) 5/5 `success`. Esses checks NÃO substituem CI sobre esta branch combinada.
+- **Gate integrado pendente:** workflow completo de PR e governança na HEAD final, resolução de eventuais erros, comparação funcional e teste de dispositivo para efeitos Unity. `device_tested=false`; nenhuma release, APK ou homologação decorre da aprovação dos testes de política.
+- **Outros recursos não portados:** MT nativa e VGP+ por etiquetas/IV real continuam nas issues #134 e #133, respectivamente. Não extrapolar o estado desses recursos.
