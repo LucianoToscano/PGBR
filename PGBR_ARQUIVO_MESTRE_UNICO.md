@@ -1331,3 +1331,19 @@ Foram executadas 18 fixtures C++ host, contratos de tempos/UI e verificação do
 - **SHA-256 Zygisk** (8277459 bytes): `8e4555623b7a4f0c177417673e6b0fa140edc4ee8a708537d0521c5ec6ff382a`.
 - **SHA do manifesto** `SHA256SUMS.txt` (281 bytes): `4ae341815207b8f76d9a36effa319ec17349b6b6f933295528c7e4c781429ce7`. Digests dos três pacotes confrontados com o GitHub Release API, conforme publicação do workflow.
 - **Limites inalterados:** `device_tested=false`. A seleção VNext depende de dois carregados prontos, metadados e eficácia reconhecidos; troca de oponente, KO, Root/sem Root e eventos PvP ainda precisam de ensaio real. Não afirmar eficácia universal nem correção da tela branca. Issues [#90](https://github.com/LucianoToscano/PGBR/issues/90) e [#105](https://github.com/LucianoToscano/PGBR/issues/105) permanecem abertas.
+
+
+## 23/11/2026 — Port seletivo IV overlay do Pokematrix (branch independente)
+
+- **Origem:** [hugoalves6/PGRazor_Pokematrix](https://github.com/hugoalves6/PGRazor_Pokematrix), alteração pontual de `pgrazor/native/iv_panel.cpp` em `draw_in_front`.
+- **Branch:** `fix/pokematrix-iv-canvas-20261123`, base `f78d0e2544cdb55a31bdf1dd5cf5b813e2376622`. Não inclui nem sobrescreve PRs #130/#131.
+- **Correção em código:** atualiza a ordem de desenho do canvas do painel IV em **cada exibição** (não somente na primeira criação), usando o canvas da tela pai. Visa impedir que o modelo/RawImage encubra a linha de IV quando a tela de detalhes é aberta por outra tela, especialmente Pokédex.
+- **Escopo:** somente 1 arquivo nativo alterado; sem mudanças de gancho, chamada de captura, IV real de VGP+, Ataque Inteligente, configurações, Root, assinatura ou releases anteriores. Correção da atualização de IV após fortalecer exige trabalho separado e não está incluída.
+- **Estado:** alteração presente na branch, sujeita a CI e revisão. A ordenação de canvas em dispositivo/Unity **não foi homologada** (`device_tested=false`); não publicar release nem declarar correção visual comprovada antes dos testes.
+
+
+### Resultado CI do port IV — PR #132
+
+- [PR #132](https://github.com/LucianoToscano/PGBR/pull/132), draft sobre base `f78d0e2544cdb55a31bdf1dd5cf5b813e2376622`.
+- [GitHub Actions #45107240963](https://github.com/LucianoToscano/PGBR/actions/runs/45107240963): **5/5 jobs success** no commit pré-registro `d1dd786789ee3121b70c92124322717851afad95` (website, C++ host, Java/Root, ARM64 selecionado, host VNext ARM64); governança read-only da mesma revisão foi acionada separadamente.
+- Registro documental é commit posterior, sem modificação adicional de C++; o CI da nova HEAD deve ser novamente verificado. Continua QA `device_tested=false`, sem merge/instalação/release ou confirmação visual da Unity.
