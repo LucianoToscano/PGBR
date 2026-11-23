@@ -196,7 +196,7 @@ int main() {
   assert(!allowed.hold&&allowed.index==1);
   guarded[1].ready=false;
   allowed=admit_display(true,5050,guarded,2);
-  assert(allowed.hold&&allowed.index==-1); // deny loaded inferior, continue fast
+  assert(!allowed.hold&&allowed.index==0&&allowed.reason==DisplayReason::ONLY_ONE_READY); // ready neutral is immediate
   guarded[1].ready=true;
   allowed=admit_display(true,5300,guarded,2);
   assert(allowed.hold&&allowed.index==-1&&allowed.reason==DisplayReason::STALE_EFFECT);
@@ -210,7 +210,7 @@ int main() {
   assert(!allowed.hold&&allowed.index==1&&allowed.reason==DisplayReason::KNOWN_SUPER);
   guarded[1].ready=false;
   allowed=admit_display(true,5320,guarded,2);
-  assert(allowed.hold&&allowed.index==-1);
+  assert(allowed.hold&&allowed.index==-1); // ready UNKNOWN is not treated as neutral
   guarded[1].ready=true;
   guarded[1].sample.tier=Tier::UNKNOWN;
   assert(admit_display(true,5320,guarded,2).hold); // no fabricated neutral
@@ -220,6 +220,27 @@ int main() {
   guarded[0].ready=false;
   allowed=admit_display(true,5320,guarded,2);
   assert(!allowed.hold&&allowed.index==1); // equal tier: use ready one
+  // Full READY policy matrix with valid, same-batch samples:
+  // never wait on a higher-ranked but not-ready charged move.
+  guarded[0].ready=true;
+  guarded[0].sample.tier=Tier::RESISTED;
+  guarded[1].sample.tier=Tier::NEUTRAL;
+  guarded[1].ready=false;
+  allowed=admit_display(true,5320,guarded,2);
+  assert(!allowed.hold&&allowed.index==0); // resisted ready, neutral charging
+  guarded[0].sample.tier=Tier::NEUTRAL;
+  guarded[1].sample.tier=Tier::SUPER;
+  allowed=admit_display(true,5320,guarded,2);
+  assert(!allowed.hold&&allowed.index==0); // neutral ready, super charging
+  guarded[0].ready=false;
+  guarded[1].ready=true;
+  allowed=admit_display(true,5320,guarded,2);
+  assert(!allowed.hold&&allowed.index==1); // super ready, neutral charging
+  guarded[0].ready=true;
+  allowed=admit_display(true,5320,guarded,2);
+  assert(!allowed.hold&&allowed.index==1); // super wins when both ready
+  guarded[0].ready=false;guarded[1].ready=false;
+  assert(admit_display(true,5320,guarded,2).hold); // neither ready: fast remains available
   guarded[0].ready=true;
   assert(!admit_display(false,5320,guarded,2).hold); // OFF: original order
   assert(admit_display(true,5320,guarded,1).hold); // engine handles actual single-display separately
