@@ -591,32 +591,42 @@ void install(){
 // Side-effect-free combat identity bridge: reuses the same typed VNext
 // BattleState/ActorProto fields that Smart Battling already reads when scoring
 // counters. It does not install hooks, make swaps or require Smart Battle ON.
-int32_t pgr_smart_battle_vnext_actor_stamp(void *state) {
- if(!state||busy)return 0;
+int32_t pgr_smart_battle_vnext_actor_probe(void *state,int32_t *reason) {
+ auto finish=[&](int32_t code,int32_t value=0)->int32_t{
+   if(reason)*reason=code;
+   return value;
+ };
+ if(!state)return finish(PGR_ACTOR_PROBE_NO_STATE);
+ if(busy)return finish(PGR_ACTOR_PROBE_BUSY);
  try{
   if(!initialized){
    auto api=static_cast<const PgrBootApi*>(pgrazor_runtime_bootstrap_api(1));
    boot.version=1;boot.size=sizeof(boot);
-   if(!api||!api->snapshot||api->snapshot(&boot)!=PGR_BOOT_OK)return 0;
+   if(!api||!api->snapshot||api->snapshot(&boot)!=PGR_BOOT_OK)
+     return finish(PGR_ACTOR_PROBE_NO_BOOT);
    initialized=true;
   }
   void *actor=call(state,"get_LocalActor");
-  if(!actor)return 0;
+  if(!actor)return finish(PGR_ACTOR_PROBE_NO_LOCAL_ACTOR);
   const uint64_t active_id=active_pokemon_of(actor);
+  if(!active_id)return finish(PGR_ACTOR_PROBE_NO_LOCAL_POKEMON);
   void *opponents=at<void*>(state,off(klass(state),"ActiveOpponents"));
-  if(!opponents)return 0;
+  if(!opponents)return finish(PGR_ACTOR_PROBE_NO_OPPONENTS);
   void *enemy=dict_first(opponents);
-  const uint64_t enemy_id=enemy?active_pokemon_of(enemy):0;
-  if(!active_id||!enemy_id)return 0;
-  // Only the equality of actor pairs matters. This stamp is never emitted.
-  // Hash the full two 64-bit instance IDs, not species IDs or UI pointers.
+  if(!enemy)return finish(PGR_ACTOR_PROBE_NO_OPPONENT_ACTOR);
+  const uint64_t enemy_id=active_pokemon_of(enemy);
+  if(!enemy_id)return finish(PGR_ACTOR_PROBE_NO_OPPONENT_POKEMON);
   uint64_t h=active_id^0x9E3779B97F4A7C15ULL;
   h^=(enemy_id+0xBF58476D1CE4E5B9ULL+(h<<6)+(h>>2));
   h^=h>>30;h*=0xBF58476D1CE4E5B9ULL;
   h^=h>>27;h*=0x94D049BB133111EBULL;h^=h>>31;
   const uint32_t token=static_cast<uint32_t>(h&0x7FFFFFFFu);
-  return static_cast<int32_t>(token?token:1u);
- }catch(...){return 0;} // optional provider: unknown must fail closed
+  return finish(PGR_ACTOR_PROBE_OK,static_cast<int32_t>(token?token:1u));
+ }catch(...){return finish(PGR_ACTOR_PROBE_EXCEPTION);}
+}
+
+int32_t pgr_smart_battle_vnext_actor_stamp(void *state) {
+ return pgr_smart_battle_vnext_actor_probe(state,nullptr);
 }
 
 int32_t pgr_smart_battle_vnext_gui_actor_stamp(void *ui){
