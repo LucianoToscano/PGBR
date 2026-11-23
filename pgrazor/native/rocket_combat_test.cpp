@@ -822,7 +822,7 @@ int scenario(int n) {
       if(sc.vcharge.tapped!=1||sc.vc2.tapped||sc.vgest.tapped)return 92;
       break;
     }
-    case 47: { // Rocket hold has a strict deadline: never wait indefinitely.
+    case 47: { // Never authorize inferior Charge after 2.6 s while proof stays valid.
       arm(&sc.scope,3,tid);
       api->observe(PGR_RC_OBS_VNEXT_UPDATE,&sc.vui,0,tid);
       sc.vc2.button=&sc.vbutton;sc.vc2.vcharged=0;
@@ -837,7 +837,40 @@ int scenario(int n) {
       api->observe(PGR_RC_OBS_CHARGE,&sc.vcharge,pack({Slot::FIRST,Tier::RESISTED,41}),tid);
       api->observe(PGR_RC_OBS_CHARGE,&sc.vc2,pack({Slot::SECOND,Tier::SUPER,41}),tid);
       api->tick(tid,0);
-      if(sc.vcharge.tapped!=1||sc.vc2.tapped)return 94;
+      if(sc.vcharge.tapped||sc.vc2.tapped||sc.vgest.tapped<2)return 94;
+      sc.vc2.vcharged=1;usleep(180000);
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vcharge,pack({Slot::FIRST,Tier::RESISTED,41}),tid);
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vc2,pack({Slot::SECOND,Tier::SUPER,41}),tid);
+      api->tick(tid,0);
+      if(sc.vcharge.tapped||sc.vc2.tapped!=1)return 95;
+      break;
+    }
+    case 48: { // A missing effect after suppression releases first ready immediately.
+      arm(&sc.scope,3,tid);
+      api->observe(PGR_RC_OBS_VNEXT_UPDATE,&sc.vui,0,tid);
+      sc.vc2.button=&sc.vbutton;sc.vc2.vcharged=0;
+      using namespace pgr_charge_effect_ui;
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vcharge,pack({Slot::FIRST,Tier::RESISTED,41}),tid);
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vc2,pack({Slot::SECOND,Tier::SUPER,41}),tid);
+      pgrazor_rc_direct_smart_attack(1);
+      api->tick(tid,0);
+      if(sc.vcharge.tapped||sc.vc2.tapped||sc.vgest.tapped!=1)return 96;
+      usleep(180000);
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vc2,0,tid);
+      api->tick(tid,0);
+      if(sc.vcharge.tapped!=1||sc.vc2.tapped)return 97;
+      break;
+    }
+    case 49: { // Without the fast action, never suppress an available charge.
+      arm(&sc.scope,2,tid);
+      api->observe(PGR_RC_OBS_VNEXT_UPDATE,&sc.vui,0,tid);
+      sc.vc2.button=&sc.vbutton;sc.vc2.vcharged=0;
+      using namespace pgr_charge_effect_ui;
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vcharge,pack({Slot::FIRST,Tier::RESISTED,41}),tid);
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vc2,pack({Slot::SECOND,Tier::SUPER,41}),tid);
+      pgrazor_rc_direct_smart_attack(1);
+      api->tick(tid,0);
+      if(sc.vcharge.tapped!=1||sc.vc2.tapped||sc.vgest.tapped)return 98;
       break;
     }
 #endif
@@ -848,7 +881,7 @@ int scenario(int n) {
 }
 
 #if defined(PGR_RC_DIRECT_TEST)
-constexpr int kScenarios = 48;
+constexpr int kScenarios = 50;
 #else
 constexpr int kScenarios = 33;
 #endif
