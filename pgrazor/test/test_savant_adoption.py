@@ -2,6 +2,7 @@
 
 No device, APK, root privilege, network access or external module is required.
 """
+import os
 import shutil
 import subprocess
 import tempfile
@@ -19,7 +20,7 @@ class SavantAdoptionTest(unittest.TestCase):
         if not cxx:
             self.skipTest("host C++ compiler unavailable")
         with tempfile.TemporaryDirectory(prefix="pgbr-peer-matrix-") as tmp:
-            program = Path(tmp) / "peer-test"
+            program = Path(tmp) / ("peer-test.exe" if os.name == "nt" else "peer-test")
             subprocess.run(
                 [cxx, "-std=c++17", "-Wall", "-Wextra", "-Werror",
                  "-I", str(ZYGISK), str(ZYGISK / "peer_guard_test.cpp"),
@@ -66,7 +67,7 @@ class SavantAdoptionTest(unittest.TestCase):
         if not cxx:
             self.skipTest("host C++ compiler unavailable")
         with tempfile.TemporaryDirectory(prefix="pgbr-vsseeker-scene-") as tmp:
-            program = Path(tmp) / "scene-test"
+            program = Path(tmp) / ("scene-test.exe" if os.name == "nt" else "scene-test")
             subprocess.run(
                 [cxx, "-std=c++17", "-Wall", "-Wextra", "-I", str(NATIVE),
                  str(NATIVE / "pvp_scene_test.cpp"), "-o", str(program)],
