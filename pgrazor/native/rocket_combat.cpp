@@ -143,12 +143,6 @@ uint64_t g_shield_opened_ms = 0; // per-prompt epoch, cleared on close
 bool     g_failed = false;
 int32_t  g_gate = -1;         // last emitted attack-gate reason (-1 == none, like rocketState.gate=null)
 uint64_t g_last_fast_ms = 0;  // 5 s de-dupe of the quick telemetry event
-// Rocket-owned strategic energy accumulation; keeps the same quick/charged
-// cadences and never delays a chosen, already-ready charged attack.
-constexpr uint64_t kSmartChargeMaxWaitMs=2600;
-uint64_t g_smart_hold_started_ms=0;
-uint32_t g_smart_hold_batch=0;
-pgr_charge_effect_ui::Slot g_smart_hold_better=pgr_charge_effect_ui::Slot::UNKNOWN;
 
 // Generation-safe paired-UI publication (CombatUI Initialize onEnter/onLeave).
 void    *g_pending_ui = nullptr;
@@ -288,8 +282,6 @@ inline bool stale(uint64_t epoch) { return g_epoch != epoch || g_stop_requested.
 // --- root teardown helpers (detach BEFORE gc_free) ----------------------------------
 void drop_ui()  { void *h = g_ui_handle;  g_ui_handle = nullptr;  refresh(); gc_free(h); }
 void drop_vui() { void *h = g_vui_handle; g_vui_handle = nullptr;
-  g_smart_hold_started_ms=0;g_smart_hold_batch=0;
-  g_smart_hold_better=pgr_charge_effect_ui::Slot::UNKNOWN;
   for(auto &sample:g_charge_observations)sample={};
   refresh(); gc_free(h); }
 // rocketDrop('shield'): notify feature 20 PROMPT_CLOSE first, then detach + free.
@@ -316,8 +308,6 @@ void rocket_clear(uint64_t tid) {
   std::memset(g_charges, 0, sizeof(g_charges)); g_charge_count = 0;
   for(auto &sample:g_charge_observations)sample={};
   g_pending_ui_token = 0; g_shield_used = false; g_shield_opened_ms = 0; g_failed = false; g_gate = -1; g_last_fast_ms = 0;
-  g_smart_hold_started_ms=0;g_smart_hold_batch=0;
-  g_smart_hold_better=pgr_charge_effect_ui::Slot::UNKNOWN;
   ++g_epoch;
   refresh();
   for (uint32_t i = 0; i < n; ++i) gc_free(old[i]);
@@ -510,8 +500,6 @@ int api_observe(uint32_t kind,void *obj,int32_t aux,uint64_t tid){
         void *old[1+PGR_RC_MAX_CHARGES];uint32_t n=0;old[n++]=g_vui_handle;g_vui_handle=nullptr;
         for(uint32_t i=0;i<g_charge_count;++i)old[n++]=g_charges[i];
         std::memset(g_charges,0,sizeof(g_charges));g_charge_count=0;
-        g_smart_hold_started_ms=0;g_smart_hold_batch=0;
-        g_smart_hold_better=pgr_charge_effect_ui::Slot::UNKNOWN;
         for(auto &sample:g_charge_observations)sample={};refresh();
         for(uint32_t i=0;i<n;++i)gc_free(old[i]);
       }break;
@@ -598,10 +586,12 @@ void vnext_tick(uint64_t tid, uint64_t epoch, uint32_t mask, uint64_t ticket) {
   if (mask & 2u) {
     // Keep the original first-ready order unless the user enabled Smart Attack
     // and exactly two up-to-date, typed Charge/Charge2 displays are observed.
-    // This Rocket-owned VNext path is shared by strictly classified battle
-    // variants. A sole ready charged move is immediate unless the other move
-    // is verified stronger: then keep attacking quickly for at most 2.6 s.
-    // Legacy, PvE and shield/swap cadences remain untouched.
+    // The Rocket VNext executor alone admits or suppresses charged actions.
+    // If an observed Charge/Charge2 is strictly better but is not ready,
+    // keep fast-attacking while BOTH effect readings remain verified and fresh.
+    // Do not impose a fixed release deadline that wastes the weaker charged move.
+    // Unknown, stale, mismatched or unavailable readings fail open to legacy order.
+    // Legacy, PvE and shield/swap action cadences remain untouched.
     uint32_t preferred=g_charge_count;
     bool wait_for_better=false;
     const bool intelligent_enabled=simple_attack_enabled();
@@ -647,29 +637,14 @@ void vnext_tick(uint64_t tid, uint64_t epoch, uint32_t mask, uint64_t ticket) {
         if(decision.reason==pgr_smart_priority::DisplayReason::ONLY_ONE_READY &&
            (mask&1u) && pgr_smart_priority::better_unready(
                 true,observed_now,samples,2)) {
-          const uint32_t better_index=samples[0].ready?1u:0u;
-          const auto better_slot=samples[better_index].sample.slot;
-          const uint32_t batch=samples[better_index].sample.batch_token;
-          if(!g_smart_hold_started_ms || g_smart_hold_batch!=batch ||
-             g_smart_hold_better!=better_slot ||
-             observed_now<g_smart_hold_started_ms) {
-            g_smart_hold_started_ms=observed_now;
-            g_smart_hold_batch=batch;
-            g_smart_hold_better=better_slot;
-          }
-          if(observed_now-g_smart_hold_started_ms<kSmartChargeMaxWaitMs) {
-            wait_for_better=true;
-          } else {
-            decision_reason=pgr_smart_priority::DisplayReason::HOLD_EXPIRED;
-          }
+          // Intentional suppression of the weaker ready charge, not a "tap" to
+          // the other side. The unchanged fast gesture runs below this loop.
+          // Recompute every tick so loss of reliable data releases the gate.
+          wait_for_better=true;
         }
       } else {
         decision_reason=pgr_smart_priority::DisplayReason::UNKNOWN_EFFECT;
       }
-    }
-    if(!wait_for_better) {
-      g_smart_hold_started_ms=0;g_smart_hold_batch=0;
-      g_smart_hold_better=pgr_charge_effect_ui::Slot::UNKNOWN;
     }
     // While holding, run the existing quick-attack method instead.
     if(!wait_for_better) for (uint32_t pos = 0; pos < g_charge_count; ++pos) {
