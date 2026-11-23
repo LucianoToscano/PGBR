@@ -66,24 +66,45 @@ struct DisplayCandidate {
   uint64_t observed_ms = 0;
   bool ready = false;
 };
-inline int choose_display(bool enabled,uint64_t now,const DisplayCandidate *items,
-                          std::size_t count) {
-  if(!enabled||!items||count!=2||now==0)return -1;
+// Why a charged tap used smart priority or the original first-ready path.
+// Packed into optional action telemetry only; never governs a new timing gate.
+enum class DisplayReason : uint8_t {
+  OFF=0, EFFECTIVENESS=1, UNAVAILABLE_PAIR=2, ONLY_ONE_READY=3,
+  UNKNOWN_EFFECT=4, STALE_EFFECT=5, UNVERIFIED_SLOTS=6
+};
+struct DisplayDecision {
+  int index=-1;
+  DisplayReason reason=DisplayReason::OFF;
+};
+inline DisplayDecision inspect_display(bool enabled,uint64_t now,
+                                       const DisplayCandidate *items,
+                                       std::size_t count) {
+  if(!enabled)return {-1,DisplayReason::OFF};
+  if(!items||count!=2||now==0)return {-1,DisplayReason::UNAVAILABLE_PAIR};
   constexpr uint64_t kMaxAgeMs=200;
   const auto &a=items[0],&b=items[1];
-  if(!a.ready||!b.ready||!a.observed_ms||!b.observed_ms||
-     a.observed_ms>now||b.observed_ms>now||
+  if(!a.ready||!b.ready)return {-1,DisplayReason::ONLY_ONE_READY};
+  if(!a.sample.batch_token||!b.sample.batch_token||
+     pgr_charge_effect_ui::pack(a.sample)==0||
+     pgr_charge_effect_ui::pack(b.sample)==0)
+    return {-1,DisplayReason::UNKNOWN_EFFECT};
+  if(!a.observed_ms||!b.observed_ms||a.observed_ms>now||b.observed_ms>now||
      now-a.observed_ms>kMaxAgeMs||now-b.observed_ms>kMaxAgeMs||
      a.observed_ms>b.observed_ms+kMaxAgeMs||
-     b.observed_ms>a.observed_ms+kMaxAgeMs)return -1;
-  if(!a.sample.batch_token||a.sample.batch_token!=b.sample.batch_token||
-     pgr_charge_effect_ui::pack(a.sample)==0||
-     pgr_charge_effect_ui::pack(b.sample)==0||
-     a.sample.slot==b.sample.slot)return -1;
+     b.observed_ms>a.observed_ms+kMaxAgeMs)
+    return {-1,DisplayReason::STALE_EFFECT};
+  if(a.sample.batch_token!=b.sample.batch_token||
+     a.sample.slot==b.sample.slot)
+    return {-1,DisplayReason::UNVERIFIED_SLOTS};
   const int first=a.sample.slot==pgr_charge_effect_ui::Slot::FIRST?0:1;
   const int second=1-first;
   const auto tier1=items[first].sample.tier;
   const auto tier2=items[second].sample.tier;
-  return static_cast<int>(tier2)>static_cast<int>(tier1)?second:first;
+  return {static_cast<int>(tier2)>static_cast<int>(tier1)?second:first,
+          DisplayReason::EFFECTIVENESS};
+}
+inline int choose_display(bool enabled,uint64_t now,const DisplayCandidate *items,
+                          std::size_t count) {
+  return inspect_display(enabled,now,items,count).index;
 }
 } // namespace pgr_smart_priority
