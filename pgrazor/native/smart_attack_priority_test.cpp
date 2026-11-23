@@ -185,5 +185,43 @@ int main() {
   assert(choose_display(true,4020,hidden,2)==-1); // no verified SUPER
   hidden[0].sample.tier=Tier::NEUTRAL;
   assert(choose_display(true,4020,hidden,2)==-1); // Normal vs hidden != ranked
+  // Final authorization is distinct from candidate ordering. The old
+  // behavior used the first-ready button when labels aged past 200 ms,
+  // when just one charged attack was ready or when metadata was incomplete.
+  DisplayCandidate guarded[2] = {
+      {{Slot::FIRST,Tier::NEUTRAL,77},5000,true},
+      {{Slot::SECOND,Tier::SUPER,77},5000,true}
+  };
+  auto allowed=admit_display(true,5050,guarded,2);
+  assert(!allowed.hold&&allowed.index==1);
+  guarded[1].ready=false;
+  allowed=admit_display(true,5050,guarded,2);
+  assert(allowed.hold&&allowed.index==-1); // deny loaded inferior, continue fast
+  guarded[1].ready=true;
+  allowed=admit_display(true,5300,guarded,2);
+  assert(allowed.hold&&allowed.index==-1&&allowed.reason==DisplayReason::STALE_EFFECT);
+  guarded[1].observed_ms=5300;guarded[0].observed_ms=5300;
+  guarded[1].sample.batch_token=78;
+  allowed=admit_display(true,5320,guarded,2);
+  assert(allowed.hold&&allowed.reason==DisplayReason::UNVERIFIED_SLOTS);
+  guarded[1].sample.batch_token=77;
+  guarded[0].sample.tier=Tier::UNKNOWN;
+  allowed=admit_display(true,5320,guarded,2);
+  assert(!allowed.hold&&allowed.index==1&&allowed.reason==DisplayReason::KNOWN_SUPER);
+  guarded[1].ready=false;
+  allowed=admit_display(true,5320,guarded,2);
+  assert(allowed.hold&&allowed.index==-1);
+  guarded[1].ready=true;
+  guarded[1].sample.tier=Tier::UNKNOWN;
+  assert(admit_display(true,5320,guarded,2).hold); // no fabricated neutral
+  guarded[0].sample.tier=Tier::NEUTRAL;
+  assert(admit_display(true,5320,guarded,2).hold); // Normal vs unknown not ranked
+  guarded[1].sample.tier=Tier::NEUTRAL;
+  guarded[0].ready=false;
+  allowed=admit_display(true,5320,guarded,2);
+  assert(!allowed.hold&&allowed.index==1); // equal tier: use ready one
+  guarded[0].ready=true;
+  assert(!admit_display(false,5320,guarded,2).hold); // OFF: original order
+  assert(admit_display(true,5320,guarded,1).hold); // engine handles actual single-display separately
   std::puts("smart attack priority: PASS (pure synthetic policy; no game action)");
 }
