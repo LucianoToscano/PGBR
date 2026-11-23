@@ -149,6 +149,8 @@ struct ChargeObservation {
 ChargeObservation g_charge_observations[PGR_RC_MAX_CHARGES]{};
 uint32_t g_charge_count = 0;
 bool     g_smart_seen_pair = false;  // never misread a disappearing second as a 1-move team
+bool     g_actor_pair_observed = false; // exact live VNext actor-pair identity provider was invoked
+int32_t  g_actor_pair_stamp = 0; // ephemeral hashed active+opponent IDs, not telemetry
 uint32_t g_smart_last_diag = 0xFFFFFFFFu;
 uint64_t g_smart_last_diag_ms = 0;
 bool     g_shield_used = false;
@@ -306,7 +308,10 @@ void drop_vui() {
   g_vui_handle=nullptr;
   std::memset(g_charges,0,sizeof(g_charges));g_charge_count=0;
   for(auto &sample:g_charge_observations)sample={};
-  g_smart_seen_pair=false;g_smart_last_diag=0xFFFFFFFFu;g_smart_last_diag_ms=0;
+  // Preserve known two-charge topology across a VNext GUI replacement within
+  // the same combat scope. A fresh actor stamp decides when the foe changed.
+  if(!g_actor_pair_observed)g_smart_seen_pair=false;
+  g_smart_last_diag=0xFFFFFFFFu;g_smart_last_diag_ms=0;
   refresh();
   for(uint32_t i=0;i<n;++i)gc_free(old[i]);
 }
@@ -335,6 +340,7 @@ void rocket_clear(uint64_t tid) {
   for(auto &sample:g_charge_observations)sample={};
   g_pending_ui_token = 0; g_shield_used = false; g_shield_opened_ms = 0; g_failed = false; g_gate = -1; g_last_fast_ms = 0;
   g_smart_seen_pair=false;g_smart_last_diag=0xFFFFFFFFu;g_smart_last_diag_ms=0;
+  g_actor_pair_observed=false;g_actor_pair_stamp=0;
   ++g_epoch;
   refresh();
   for (uint32_t i = 0; i < n; ++i) gc_free(old[i]);
@@ -532,10 +538,28 @@ int api_observe(uint32_t kind,void *obj,int32_t aux,uint64_t tid){
         for(uint32_t i=0;i<g_charge_count;++i)old[n++]=g_charges[i];
         std::memset(g_charges,0,sizeof(g_charges));g_charge_count=0;
         for(auto &sample:g_charge_observations)sample={};
-        g_smart_seen_pair=false;g_smart_last_diag=0xFFFFFFFFu;g_smart_last_diag_ms=0;
+        if(!g_actor_pair_observed)g_smart_seen_pair=false;
+        g_smart_last_diag=0xFFFFFFFFu;g_smart_last_diag_ms=0;
         refresh();
         for(uint32_t i=0;i<n;++i)gc_free(old[i]);
       }break;
+    }
+    case PGR_RC_OBS_ACTOR_PAIR: {
+      if(!g_state_handle||!g_vui_handle)break;
+      // The host publishes a read-only actor stamp from the same VNext
+      // BattleState used by Smart Battling, before Charge observations.
+      // A changed/unknown pair INVALIDATES all prior effectiveness readings;
+      // the retained handles may be refreshed only by future callbacks.
+      if(!g_actor_pair_observed||aux!=g_actor_pair_stamp){
+        g_actor_pair_observed=true;
+        g_actor_pair_stamp=aux>0?aux:0;
+        for(auto &sample:g_charge_observations)sample={};
+        // Even if only one display has been seen after a foe switch, a
+        // first-ready fallback is not safe. Wait for two fresh typed slots.
+        g_smart_seen_pair=true;
+        g_smart_last_diag=0xFFFFFFFFu;g_smart_last_diag_ms=0;
+      }
+      break;
     }
     case PGR_RC_OBS_CHARGE:
       if(g_state_handle&&exact(obj,g_cfg.class_rvcharge)&&!stale(epoch))charge_capture(obj,aux,epoch);
@@ -635,7 +659,7 @@ void vnext_tick(uint64_t tid, uint64_t epoch, uint32_t mask, uint64_t ticket) {
       // Group by the verified game slot, using the newest observation for
       // each. Never infer slots from visual order or from list insertion.
       if(g_charge_count>=2)g_smart_seen_pair=true;
-      if(g_charge_count>=2||g_smart_seen_pair) {
+      if(g_charge_count>=2||g_smart_seen_pair||g_actor_pair_observed) {
         uint32_t indices[2]={g_charge_count,g_charge_count};
         for(uint32_t i=0;i<g_charge_count;++i) {
           const auto &obs=g_charge_observations[i];
@@ -649,7 +673,10 @@ void vnext_tick(uint64_t tid, uint64_t epoch, uint32_t mask, uint64_t ticket) {
             indices[slot]=i;
         }
         wait_for_better=true; // strict Smart Attack ON: no unclassified tap
-        if(indices[0]<g_charge_count&&indices[1]<g_charge_count) {
+        // Never consume a charge based on a vanished/unknown opponent. The
+        // actor stamp need not be published in telemetry or passed to UI.
+        if((!g_actor_pair_observed||g_actor_pair_stamp>0)&&
+           indices[0]<g_charge_count&&indices[1]<g_charge_count) {
           pgr_smart_priority::DisplayCandidate samples[2]{};
           for(uint32_t k=0;k<2;++k) {
             const uint32_t i=indices[k];
