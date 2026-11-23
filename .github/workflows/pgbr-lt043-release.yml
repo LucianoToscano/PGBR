@@ -8,6 +8,7 @@ on:
     paths:
       - '.github/workflows/pgbr-lt043-release.yml'
       - 'pgrazor/VERSION'
+      - 'docs/releases/v0.00.43-LT.md'
   workflow_dispatch:
 permissions:
   contents: read
