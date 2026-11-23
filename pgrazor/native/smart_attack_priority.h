@@ -72,7 +72,8 @@ struct DisplayCandidate {
 // Packed into optional action telemetry; no timer overrides a strict ranking.
 enum class DisplayReason : uint8_t {
   OFF=0, EFFECTIVENESS=1, UNAVAILABLE_PAIR=2, ONLY_ONE_READY=3,
-  UNKNOWN_EFFECT=4, STALE_EFFECT=5, UNVERIFIED_SLOTS=6
+  UNKNOWN_EFFECT=4, STALE_EFFECT=5, UNVERIFIED_SLOTS=6,
+  KNOWN_SUPER=7
 };
 struct DisplayDecision {
   int index=-1;
@@ -87,8 +88,8 @@ inline DisplayDecision inspect_display(bool enabled,uint64_t now,
   const auto &a=items[0],&b=items[1];
   if(!a.ready||!b.ready)return {-1,DisplayReason::ONLY_ONE_READY};
   if(!a.sample.batch_token||!b.sample.batch_token||
-     pgr_charge_effect_ui::pack(a.sample)==0||
-     pgr_charge_effect_ui::pack(b.sample)==0)
+     pgr_charge_effect_ui::pack_observation(a.sample)==0||
+     pgr_charge_effect_ui::pack_observation(b.sample)==0)
     return {-1,DisplayReason::UNKNOWN_EFFECT};
   if(!a.observed_ms||!b.observed_ms||a.observed_ms>now||b.observed_ms>now||
      now-a.observed_ms>kMaxAgeMs||now-b.observed_ms>kMaxAgeMs||
@@ -102,6 +103,19 @@ inline DisplayDecision inspect_display(bool enabled,uint64_t now,
   const int second=1-first;
   const auto tier1=items[first].sample.tier;
   const auto tier2=items[second].sample.tier;
+  // When the game hides one label, UNKNOWN is not Normal. However, a
+  // concurrently verified SUPER button is a positive and safer preference
+  // over first-ready ordering. This is an opt-in best-known preference, not
+  // an assertion of strictly higher damage or of the unknown button's tier.
+  if(tier1==pgr_charge_effect_ui::Tier::UNKNOWN &&
+     tier2==pgr_charge_effect_ui::Tier::SUPER)
+    return {second,DisplayReason::KNOWN_SUPER};
+  if(tier2==pgr_charge_effect_ui::Tier::UNKNOWN &&
+     tier1==pgr_charge_effect_ui::Tier::SUPER)
+    return {first,DisplayReason::KNOWN_SUPER};
+  if(pgr_charge_effect_ui::pack(a.sample)==0||
+     pgr_charge_effect_ui::pack(b.sample)==0)
+    return {-1,DisplayReason::UNKNOWN_EFFECT};
   return {static_cast<int>(tier2)>static_cast<int>(tier1)?second:first,
           DisplayReason::EFFECTIVENESS};
 }
@@ -109,16 +123,20 @@ inline DisplayDecision inspect_display(bool enabled,uint64_t now,
 // better, verified move is still building energy. The SAME Rocket executor
 // serves typed battle variants; there is no independent PvP selector.
 // The comparison must be rerun on every tick, with fresh matching samples.
-// Missing/old classifications fail open to the old first-ready behavior.
+// Missing/old classifications fail open unless the other *verified slot* has
+// a fresh confirmed SUPER tier. Unknown remains Unknown, never assumed Normal.
 inline bool better_unready(bool enabled,uint64_t now,
                            const DisplayCandidate *items,std::size_t count) {
   if(!enabled||!items||count!=2||items[0].ready==items[1].ready)return false;
   DisplayCandidate hypothetical[2]={items[0],items[1]};
   hypothetical[0].ready=hypothetical[1].ready=true;
   const auto rank=inspect_display(true,now,hypothetical,2);
-  if(rank.reason!=DisplayReason::EFFECTIVENESS||rank.index<0)return false;
+  if((rank.reason!=DisplayReason::EFFECTIVENESS &&
+      rank.reason!=DisplayReason::KNOWN_SUPER)||rank.index<0)return false;
   const int ready=items[0].ready?0:1;
-  // Strictly better: ties never justify withholding a ready charge.
+  // Suppress only when the selected button has a verified higher tier or
+  // a verified SUPER tier versus an explicitly UNKNOWN (hidden) other tier.
+  // Never claim the hidden tier is Normal; both remain revalidated per tick.
   return rank.index!=ready &&
     static_cast<int>(items[rank.index].sample.tier)>
     static_cast<int>(items[ready].sample.tier);
