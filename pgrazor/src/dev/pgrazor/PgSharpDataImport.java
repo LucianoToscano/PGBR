@@ -34,7 +34,8 @@ final class PgSharpDataImport {
         String summary() {
             return "Importação concluída. " + favoritesAdded + " favoritos e "
                 + routesAdded + " rotas adicionados; " + favoritesSkipped
-                + " favoritos e " + routesSkipped + " rotas já existentes; " + legendsPreserved\n                + " legendas/notas sem localização preservadas somente no arquivo. "
+                + " favoritos e " + routesSkipped + " rotas já existentes; " + legendsPreserved
+                + " legendas/notas sem localização preservadas somente no arquivo. "
                 + pokemonFilters + " filtros Pokémon, " + questFilters
                 + " filtros de pesquisas e " + raidFilters
                 + " filtros de reides preservados para compatibilização. "
