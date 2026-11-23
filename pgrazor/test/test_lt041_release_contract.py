@@ -6,7 +6,7 @@ ROOT = Path(__file__).resolve().parents[2]
 
 class Lt041ReleaseContract(unittest.TestCase):
     def test_candidate_version_and_immutable_prior_release(self):
-        self.assertEqual((ROOT / "pgrazor/VERSION").read_text(encoding="utf-8").strip(), "0.00.41-LT")
+        self.assertIn((ROOT / "pgrazor/VERSION").read_text(encoding="utf-8").strip(), ("0.00.41-LT", "0.00.42-LT"))
         release = (ROOT / ".github/workflows/pgbr-lt041-release.yml").read_text(encoding="utf-8")
         for text in ("PGRAZOR_VERSION: v0.00.41-LT", "--tag v0.00.41-LT",
                      "PGBR-v0.00.41-LT.apk", "PGBR-v0.00.41-LT-Root.apk",
@@ -14,12 +14,12 @@ class Lt041ReleaseContract(unittest.TestCase):
                      "SHA256SUMS.txt", "tools/verify_release.py",
                      "pgrazor/nonroot.py", "pgrazor/rooted.py", "native-pvp-fixture:",
                      "test_pvp_settings_ui.py", "test_iflowgo_request_policy_java.py",
-                     "workflow_dispatch:", "branches: [main]",
+                     "workflow_dispatch:",
                      "gh release view", "gh release create", "--prerelease",
                      "--latest=false"):
             with self.subTest(text=text):
                 self.assertIn(text, release)
-        self.assertIn("'.github/workflows/pgbr-lt041-release.yml'", release)
+        self.assertNotIn("  push:", release)  # published LT041 stays immutable
         self.assertNotIn("PGBR-v0.00.40-LT.apk", release)
         old = (ROOT / ".github/workflows/pgbr-lt040-release.yml").read_text(encoding="utf-8")
         self.assertIn("workflow_dispatch:", old)

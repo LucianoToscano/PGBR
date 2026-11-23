@@ -1,13 +1,9 @@
 name: PGBR v0.00.41-LT - compilar e publicar pre-release QA
-# LT041 QA is a new candidate: build once on verified main merge. Existing
+# LT041 was already published. Prevent unrelated version bumps from rebuilding. Existing
 # tags and assets stay immutable. Run only on this version/workflow change.
 # On manual dispatch, publication is allowed only from main and with no existing tag.
 on:
-  push:
-    branches: [main]
-    paths:
-      - '.github/workflows/pgbr-lt041-release.yml'
-      - 'pgrazor/VERSION'
+  # LT041 is already published and immutable. Manual reruns never replace assets.
   workflow_dispatch:
 permissions:
   contents: read
