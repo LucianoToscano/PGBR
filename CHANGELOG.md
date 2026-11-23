@@ -2,7 +2,7 @@
 
 - PT-BR das telas dos chats paralelos e terminologia Teleporte (#101), preservando novas mensagens de rollback de backup da LT043.
 - GPS defensivo: valores sintéticos fora da faixa e não finitos rejeitados sem bloquear o callback original; teste com retorno 360° para 0° (#109).
-- Sem alteração de Rocket QA6, Max preparatório, assinatura ou interfaces PokeSearch. **Ainda não publicada**; `device_tested=false`, aguardando CI, build e verificação dos três instaladores. Os Snipers (#115/#118/#121), radar (#114) e Savant (#135) não estão neste candidato.
+- **Ataque Inteligente Rocket/VNext (PR #150):** o carregado classificado já pronto é acionado sem esperar outro; se ambos estão prontos, usa Super eficaz > Normal > Pouco eficaz. Mantidos os bloqueios para metadata e ator desconhecidos, os tempos, o Max preparatório, a assinatura e o PokeSearch. QA `device_tested=false`, aguardando a validação de build; Snipers, radar e Savant continuam pendentes.
 
 ## PGBR 0.00.43-LT — integração QA consolidada (23/11/2026)
 
@@ -588,7 +588,3 @@ Quick menu, map layers and routes, LivePokeMap integration, movable overlays, un
 The new single-APK release path and latest UI changes still require device testing.
 
 Earlier release notes are available on [GitHub Releases](https://github.com/jpitty03/PGRazor/releases).
-
-### Correção do Ataque Inteligente
-- Rocket/VNext: usar carregado classificado pronto sem esperar outro golpe; entre dois prontos, manter prioridade Super > Normal > Pouco eficaz. Proteções para metadados inválidos, troca de adversário e cadências preservadas (PR #150). QA sem homologação Android.
-
