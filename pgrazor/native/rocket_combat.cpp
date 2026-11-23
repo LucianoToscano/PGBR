@@ -340,14 +340,14 @@ void charge_capture(void *obj, int32_t observation, uint64_t epoch) {
     void *candidate=gc_target(g_charges[i]);if(stale(epoch))return;
     void *in=incoming.target();if(stale(epoch))return;
     if(candidate==in){
-      const auto sample=pgr_charge_effect_ui::unpack(observation);
-      g_charge_observations[i]={sample,pgr_charge_effect_ui::pack(sample)?boottime_ms():0};
+      const auto sample=pgr_charge_effect_ui::unpack_observation(observation);
+      g_charge_observations[i]={sample,pgr_charge_effect_ui::pack_observation(sample)?boottime_ms():0};
       return;
     }
   }
   if(g_charge_count<PGR_RC_MAX_CHARGES){
-    const auto sample=pgr_charge_effect_ui::unpack(observation);
-    g_charge_observations[g_charge_count]={sample,pgr_charge_effect_ui::pack(sample)?boottime_ms():0};
+    const auto sample=pgr_charge_effect_ui::unpack_observation(observation);
+    g_charge_observations[g_charge_count]={sample,pgr_charge_effect_ui::pack_observation(sample)?boottime_ms():0};
     g_charges[g_charge_count++]=incoming.release();
   }
 }
@@ -606,7 +606,7 @@ void vnext_tick(uint64_t tid, uint64_t epoch, uint32_t mask, uint64_t ticket) {
         if(stale(epoch))return;
         samples[i].sample=g_charge_observations[i].sample;
         samples[i].observed_ms=g_charge_observations[i].observed_ms;
-        if(!pgr_charge_effect_ui::pack(samples[i].sample)){complete=false;break;}
+        if(!pgr_charge_effect_ui::pack_observation(samples[i].sample)){complete=false;break;}
         void *candidate=gc_target(g_charges[i]);if(stale(epoch))return;
         Root c;c.acquire(candidate,&err);if(stale(epoch))return;
         if(err){fault(tid);return;}
@@ -631,6 +631,8 @@ void vnext_tick(uint64_t tid, uint64_t epoch, uint32_t mask, uint64_t ticket) {
             true,observed_now,samples,2);
         decision_reason=decision.reason;
         if(decision.index>=0)preferred=static_cast<uint32_t>(decision.index);
+        // A verified SUPER label wins even if the other display hides its
+        // efficacy subtitle. We do not silently label the other as Normal.
         // This is the ONE shared Rocket engine. PvP, friend challenges and
         // training have no independent selector: their verified host scope
         // delegates here just like quick attacks and shields already do.
@@ -683,7 +685,7 @@ void vnext_tick(uint64_t tid, uint64_t epoch, uint32_t mask, uint64_t ticket) {
       const uint64_t action_now=boottime_ms();
       if(observation.observed_ms&&action_now>=observation.observed_ms&&
          action_now-observation.observed_ms<=200&&
-         pgr_charge_effect_ui::pack(observation.sample)!=0) {
+         pgr_charge_effect_ui::pack_observation(observation.sample)!=0) {
         if(observation.sample.slot==pgr_charge_effect_ui::Slot::FIRST)action_flags|=4;
         else if(observation.sample.slot==pgr_charge_effect_ui::Slot::SECOND)action_flags|=8;
       }
