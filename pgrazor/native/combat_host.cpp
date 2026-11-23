@@ -916,7 +916,10 @@ void hook_shared_vn_observe(void *self,void *battle_state,void *method){
    // must revoke all previously admitted charge classifications immediately.
    // Unknown actor pair (0) is also an explicit revocation. No identifiers
    // cross to logs, and there is no additional hook or combat executor.
-   const int32_t actor_stamp=pgr_smart_battle_vnext_actor_stamp(state);
+   int32_t actor_probe=PGR_ACTOR_PROBE_NONE;
+   const int32_t actor_stamp=pgr_smart_battle_vnext_actor_probe(state,&actor_probe);
+   if(rocket_gate(&tid))
+     g_rocket_combat->observe(PGR_RC_OBS_ACTOR_PROBE,nullptr,actor_probe,tid);
    if(rocket_gate(&tid))
      g_rocket_combat->observe(PGR_RC_OBS_ACTOR_PAIR,nullptr,actor_stamp,tid);
    if(rocket_gate(&tid))
