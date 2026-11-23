@@ -69,6 +69,12 @@ uint64_t shield_choice_wait_ms() {
 
 #if defined(PGR_RC_DIRECT_TEST)
 std::atomic<bool> g_smart_attack_test_enabled{false};
+#else
+// A transient invalid/stale transport snapshot is NOT a user-initiated OFF.
+// Keep the most recent coherent preference; only a valid OFF revokes Smart
+// Attack. Without any valid snapshot, legacy behavior remains unchanged.
+bool g_smart_preference_known=false;
+bool g_smart_preference_cached=false;
 #endif
 bool simple_attack_enabled() {
 #if defined(PGR_RC_DIRECT_TEST)
@@ -76,7 +82,11 @@ bool simple_attack_enabled() {
 #else
   const auto *tr=static_cast<const PgrRuntimeTransportApi*>(pgrazor_runtime_transport_api(1));
   pgr_battle_timing::Preferences p{};
-  return pgr_battle_timing::read(tr,p)&&p.smart_attack;
+  if(pgr_battle_timing::read(tr,p)) {
+    g_smart_preference_known=true;
+    g_smart_preference_cached=p.smart_attack;
+  }
+  return g_smart_preference_known&&g_smart_preference_cached;
 #endif
 }
 
