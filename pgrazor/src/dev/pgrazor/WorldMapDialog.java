@@ -357,7 +357,7 @@ public final class WorldMapDialog {
             });
         }
         private void showLibrary(SavedPlaces.Snapshot snapshot) {
-            AlertDialog.Builder builder = new AlertDialog.Builder(ui).setTitle(dev.pgrazor.PtBr.tr("Saved places (" + snapshot.entries.size() + "/50)"))
+            AlertDialog.Builder builder = new AlertDialog.Builder(ui).setTitle(dev.pgrazor.PtBr.tr("Saved places (" + snapshot.entries.size() + "/" + SavedPlaces.LIMIT + ")"))
                 .setNegativeButton(dev.pgrazor.PtBr.tr("Close"), null).setPositiveButton(dev.pgrazor.PtBr.tr("Save selected"), null);
             final AlertDialog[] holder = new AlertDialog[1];
             if (snapshot.entries.isEmpty()) builder.setMessage(dev.pgrazor.PtBr.tr(snapshot.damaged ? "Saved places could not be read. You can save new destinations here." : "No saved places yet. Save the selected map destination to find it again later."));
@@ -379,7 +379,7 @@ public final class WorldMapDialog {
             LinearLayout form = new LinearLayout(ui); form.setOrientation(LinearLayout.VERTICAL);
             int pad = dp(activity, 20); form.setPadding(pad, 0, pad, 0);
             form.addView(label(ui, String.format(Locale.US, "%.6f, %.6f", latitude, longitude), 14));
-            EditText name = new EditText(ui); name.setHint(dev.pgrazor.PtBr.tr("Place name (up to 40 characters)")); name.setSingleLine(true);
+            EditText name = new EditText(ui); name.setHint(dev.pgrazor.PtBr.tr("Place name (up to " + SavedPlaces.NAME_LIMIT + " characters)")); name.setSingleLine(true);
             name.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_CAP_SENTENCES);
             name.setFilters(new InputFilter[] {new InputFilter.LengthFilter(SavedPlaces.NAME_LIMIT)});
             form.addView(name);

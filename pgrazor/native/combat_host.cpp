@@ -10,6 +10,7 @@
 #include "pvp_scene.h"
 #include "shared_auto_battle_gate.h"
 #include "charge_effect_ui.h"
+#include "smart_battle.h"
 #include "rocket_minigame.h"
 #include "runtime_bootstrap.h"
 #include "runtime_metadata.h"
@@ -376,13 +377,31 @@ const char *battle_mode_label(int32_t mode) {
     }
 }
 
+// Diagnostic-only reason for the chosen charged attack. No Pokemon identity
+// or account data is carried in the event, and no client input is generated.
+const char *smart_charge_reason(int32_t aux) {
+    switch ((static_cast<uint32_t>(aux)>>4)&15u) {
+        case 0: return "disabled";
+        case 1: return "effectiveness";
+        case 2: return "unavailable-pair";
+        case 3: return "only-one-ready";
+        case 4: return "unknown-effect";
+        case 5: return "stale-effect";
+        case 6: return "unverified-slots";
+        case 7: return "known-super-other-unknown";
+        case 8: return "actor-unknown";
+        case 9: return "actor-refresh";
+        default: return "unknown";
+    }
+}
+
 void drain_leaf_events(uint64_t tid) {
     const uint32_t caps = g_capabilities.load(std::memory_order_acquire);
 
     if ((caps & PGR_CBH_CAP_ROCKET_COMBAT) && g_rocket_combat) {
         pgr_rocket_combat_event_v1 rev{};
         for (int i = 0; i < 64 && g_rocket_combat->next_event(&rev) == 1; ++i) {
-            char buf[256];
+            char buf[512]; // bounded diagnostic JSON includes effective toggle, binding and actor state
             switch (rev.code) {
                 case PGR_RC_EVT_READY:
                     queue_event(PGR_CBH_EV_ROCKET_COMBAT_READY, 1, 0, tid, "{\"available\":true}");
@@ -416,9 +435,20 @@ void drain_leaf_events(uint64_t tid) {
                     if(g_pvp_ui_root){
                         const char *act=rev.id==PGR_RC_ACT_SHIELD?"shield":
                                         rev.id==PGR_RC_ACT_CHARGED?"charged":"quick";
-                        std::snprintf(buf,sizeof(buf),
-                          "{\"mode\":\"%s\",\"pvpAction\":\"%s\",\"path\":\"vnext\",\"invoked\":true}",
-                          g_pvp_training_scope?"training":"pvp",act);
+                        const char *slot_detail=rev.id==PGR_RC_ACT_CHARGED?
+                            ((rev.aux&8)?R"(,"chargedSlot":"Charge2")":
+                             (rev.aux&4)?R"(,"chargedSlot":"Charge")":""):"";
+                        const char *choice_detail=rev.id==PGR_RC_ACT_CHARGED
+                            ? smart_charge_reason(rev.aux) : nullptr;
+                        if(choice_detail) {
+                          std::snprintf(buf,sizeof(buf),
+                            "{\"mode\":\"%s\",\"pvpAction\":\"%s\",\"path\":\"vnext\",\"invoked\":true%s,\"chargeChoice\":\"%s\"}",
+                            g_pvp_training_scope?"training":"pvp",act,slot_detail,choice_detail);
+                        } else {
+                          std::snprintf(buf,sizeof(buf),
+                            "{\"mode\":\"%s\",\"pvpAction\":\"%s\",\"path\":\"vnext\",\"invoked\":true}",
+                            g_pvp_training_scope?"training":"pvp",act);
+                        }
                         queue_event(PGR_CBH_EV_BATTLE_ACTION,rev.id,rev.aux,tid,buf);
                         break;
                     }
@@ -428,8 +458,12 @@ void drain_leaf_events(uint64_t tid) {
                         transport_text_action(47, "Rocket: shield");
                     } else if (rev.id == PGR_RC_ACT_CHARGED) {
                         if (rev.aux & 2) {
-                            queue_event(PGR_CBH_EV_ROCKET_ACTION, rev.id, rev.aux, tid,
-                                        "{\"action\":\"charged\",\"path\":\"vnext\"}");
+                            const char *slot=(rev.aux&8)?"Charge2":
+                                             (rev.aux&4)?"Charge":"Unknown";
+                            std::snprintf(buf,sizeof(buf),
+                              "{\"action\":\"charged\",\"path\":\"vnext\",\"chargedSlot\":\"%s\",\"chargeChoice\":\"%s\"}",
+                              slot,smart_charge_reason(rev.aux));
+                            queue_event(PGR_CBH_EV_ROCKET_ACTION,rev.id,rev.aux,tid,buf);
                         } else {
                             queue_event(PGR_CBH_EV_ROCKET_ACTION, rev.id, rev.aux, tid,
                                         "{\"action\":\"charged\"}");
@@ -448,6 +482,55 @@ void drain_leaf_events(uint64_t tid) {
                         transport_text_action(47, "Rocket: quick");
                     }
                     break;
+                case PGR_RC_EVT_SMART_DIAG: {
+                    // Same Rocket-owned selector also runs for approved trainer
+                    // and League/friend scopes. This explains why a charged
+                    // action was withheld rather than silently picking Charge.
+                    const unsigned flags=static_cast<unsigned>(rev.aux);
+                    const unsigned count=flags&7u;
+                    const bool held=(flags&8u)!=0;
+                    const bool picked=(flags&16u)!=0;
+                    const char *mode=g_pvp_ui_root?
+                        (g_pvp_training_scope?"training":"pvp"):"rocket";
+                    const char *tier_names[4]={"unknown","not-very-effective",
+                                               "normal","super-effective"};
+                    const char *tier1=tier_names[(flags>>8)&3u];
+                    const char *tier2=tier_names[(flags>>10)&3u];
+                    const char *reason=smart_charge_reason(rev.id<<4);
+                    const bool on=rev.id!=0; // OFF enum is emitted only when F3 is effectively OFF
+                    const char *actor=(flags&32768u)?"known":
+                                      (flags&16384u)?"unknown":"not-observed";
+                    const char *const actor_probes[]={
+                        "not-observed","resolved","no-battle-state","busy",
+                        "bootstrap-unavailable","local-actor-missing",
+                        "local-pokemon-missing","opponents-missing",
+                        "opponent-actor-missing","opponent-pokemon-missing",
+                        "metadata-exception"
+                    };
+                    const unsigned stage=(flags>>16)&15u;
+                    const char *probe=stage<11u?actor_probes[stage]:"invalid-stage";
+                    const unsigned slot_mask=(flags>>20)&3u;
+                    std::snprintf(buf,sizeof(buf),
+                        "{\"smartAttackMode\":\"%s\",\"smartAttackEnabled\":%s,"
+                        "\"classifierBound\":%s,\"actorIdentity\":\"%s\","
+                        "\"actorProbe\":\"%s\",\"chargeSeen\":%s,\"charge2Seen\":%s,"
+                        "\"chargeCount\":%u,\"decision\":\"%s\",\"reason\":\"%s\","
+                        "\"chargeTier\":\"%s\",\"charge2Tier\":\"%s\","
+                        "\"chargeReady\":%s,\"charge2Ready\":%s}",
+                        mode,on?"true":"false",g_charge_ui.valid?"true":"false",actor,
+                        probe,(slot_mask&1u)?"true":"false",
+                        (slot_mask&2u)?"true":"false",
+                        count,held?"hold":picked?"selected":"original",
+                        reason,tier1,tier2,(flags&4096u)?"true":"false",
+                        (flags&8192u)?"true":"false");
+                    queue_event(PGR_CBH_EV_BATTLE_ACTION,rev.id,rev.aux,tid,buf);
+                    if(held)transport_text_action(47,
+                        rev.id==3?"Ataque Inteligente: aguardando o melhor carregado":
+                        rev.id==8?"Ataque Inteligente: aguardando adversário identificado":
+                        rev.id==9?"Ataque Inteligente: atualizando golpes após troca":
+                                  "Ataque Inteligente: aguardando identificação segura");
+                    break;
+                }
                 case PGR_RC_EVT_GATE: {
                     static const char *const kGateReasons[8] = {
                         "unknown",
@@ -773,7 +856,16 @@ void hook_rk_vn_update(void *self,void *a1, void *method){
  if(pins.valid&&rocket_gate(&tid)){
   pvp_vnext_open(pins.get(0),tid);
   g_rocket_combat->observe(PGR_RC_OBS_VNEXT_UPDATE,pins.get(0),0,tid);
-  drain_leaf_events(tid);}orig(pins.get(0),pins.get(1),method);
+  drain_leaf_events(tid);}
+ orig(pins.get(0),pins.get(1),method);
+ // A target replacement can precede the two Charge display callbacks.
+ // Probe the same typed battle director as Smart Battling after the VNext
+ // update, when available, to invalidate the old target before an auto tap.
+ if(pins.valid&&rocket_gate(&tid)){
+  const int32_t stamp=pgr_smart_battle_vnext_gui_actor_stamp(pins.get(0));
+  if(stamp>0&&rocket_gate(&tid))
+    g_rocket_combat->observe(PGR_RC_OBS_ACTOR_PAIR,nullptr,stamp,tid);
+ }
 }
 void hook_rk_vn_close(void *self,void *method){
  auto orig=reinterpret_cast<Fn2Ptr>(load_original(HK_RK_VN_CLOSE));FrameGuard frame;uint64_t tid=0;
@@ -830,9 +922,21 @@ void hook_shared_vn_observe(void *self,void *battle_state,void *method){
    if(g_charge_ui.valid&&obj&&state&&
       reinterpret_cast<void *(*)(void *)>(g_cfg.object_get_class)(obj)==md_k(OC_RVCHARGE)) {
      const auto read=reinterpret_cast<void (*)(void *,void *,void *)>(g_cfg.field_get_value);
-     aux=pgr_charge_effect_ui::pack(pgr_charge_effect_ui::observe(g_charge_ui,obj,state,read));
+     aux=pgr_charge_effect_ui::pack_observation(pgr_charge_effect_ui::observe(g_charge_ui,obj,state,read));
    }
-   if(rocket_gate(&tid))g_rocket_combat->observe(PGR_RC_OBS_CHARGE,pins.get(0),aux,tid);
+   // Identical state already used by Smart Battling for team/foe selection.
+   // Publish the actor pair BEFORE the charge display: a newly announced foe
+   // must revoke all previously admitted charge classifications immediately.
+   // Unknown actor pair (0) is also an explicit revocation. No identifiers
+   // cross to logs, and there is no additional hook or combat executor.
+   int32_t actor_probe=PGR_ACTOR_PROBE_NONE;
+   const int32_t actor_stamp=pgr_smart_battle_vnext_actor_probe(state,&actor_probe);
+   if(rocket_gate(&tid))
+     g_rocket_combat->observe(PGR_RC_OBS_ACTOR_PROBE,nullptr,actor_probe,tid);
+   if(rocket_gate(&tid))
+     g_rocket_combat->observe(PGR_RC_OBS_ACTOR_PAIR,nullptr,actor_stamp,tid);
+   if(rocket_gate(&tid))
+     g_rocket_combat->observe(PGR_RC_OBS_CHARGE,pins.get(0),aux,tid);
  }
  if(battle_gate(&tid))g_battles->observe(PGR_BATTLE_OBS_CHARGE,pins.get(0),0,tid);
  drain_leaf_events(tid);

@@ -41,6 +41,7 @@ public final class Control {
         EternatusRouteRunner.stop("Troca de conta solicitada.");
         OneShotAutomation.reset();
         AutoRaid.reset();
+        AutoMaxBattle.reset();
         GiftBatchSettings.reset();
         gameRoutes.stop("Account switch"); gameRoutesPlanning=false; gameRoutes.setPlanning(false); autoWalkPlanning=false;
         vgp.suspend();
@@ -159,6 +160,8 @@ public final class Control {
     private static volatile int storageIvMode, storageIvFormat=3;
     private static volatile String storageIvStatus="";
     private static volatile int mapTapMode, mapTapEpoch;
+    // Explicit opt-in for a confirmed double-tap teleport. Reset on changing map-tap mode.
+    private static volatile boolean mapTapTeleportNoAsk;
     private static final MapTapSequence mapTapSequence=new MapTapSequence();
     private static volatile boolean mapTapReady;
     private static volatile boolean spawnBooster,spawnReady;
@@ -338,7 +341,7 @@ public final class Control {
         // itemAccessAllowed() also requires Quick Catch summary and auto-transfer
         // readiness, neither of which is a prerequisite for VGP capture/spin.
         return vgpEnabled&&vgpReady&&hostLive()
-                &&!ShundoSniper.active()&&!AutoRaid.running();
+                &&!ShundoSniper.active()&&!AutoRaid.running()&&!AutoMaxBattle.running();
     }  // Shundo Sniper and Auto Raid still pause VGP+
     public static void vgpResult(String action,boolean success){vgp.result(action,success);}
     private static volatile boolean autoIncubate, incubateLongest, incubatorReady;
@@ -474,10 +477,11 @@ public final class Control {
     private static volatile int battleOptions;
     private static volatile boolean battlesReady;
     private static volatile String battleStatus="Waiting for battle support";
+    /** Battle actions are the persisted global policy; no Max session bits are injected. */
     public static int battleOptions(){return battleOptions;}
     public static String battleStatus(){return battleStatus;}
     public static void setBattleOptions(int value){if(value<0||value>1023)return;battleOptions=value;saveSettings();event("battle-options",String.valueOf(value));}
-    public static void setBattlesReady(boolean ready,String status){battlesReady=ready;battleStatus=status;}
+    public static void setBattlesReady(boolean ready,String status){battlesReady=ready;battleStatus=status;if(!ready)AutoMaxBattle.reset();}
     public static void setBattleStatus(String status){battleStatus=status;}
     public static boolean battlesAllowed(){return battlesReady&&quickSummaryReady()&&hostLive();}
     private static volatile boolean gymRepeatEnabled;
@@ -898,8 +902,15 @@ public final class Control {
     public static String healStatus(){return healEnabled?healStatus:"";}
     // Smart battling: one switch, off by default. Native smart_battle.cpp owns all of the behaviour.
     private static volatile boolean smartBattle;
-    // One persistent preference for all battle modes; native selection is not yet wired.
+    // One persistent preference consumed by the shared native Rocket charged selector.
     private static volatile boolean smartAttack;
+    // Last native battle diagnosis, not the UI's desired setting. No IDs,
+    // account data or coordinates; kept only in memory for a QA screenshot.
+    private static volatile String smartAttackNativeStatus=
+        "Motor: sem diagnóstico de batalha. A opção no menu não confirma execução nativa.";
+    private static volatile String smartAttackNativeJson="";
+    public static String smartAttackNativeStatus(){return smartAttackNativeStatus;}
+    public static String smartAttackNativeJson(){return smartAttackNativeJson;}
     // Independent timing options: only indices 0..2 are selectable; legacy 3 migrates to default.
     // Defaults intentionally replace LT038's fixed 1.7 s shield / 2.3 s fainted choice.
     private static volatile int smartShieldTiming=1, smartFaintedSwapTiming=1;
@@ -921,6 +932,9 @@ public final class Control {
     public static void setSmartAttack(boolean on){
         if(smartAttack==on)return;
         smartAttack=on;
+        smartAttackNativeStatus="Preferência "+(on?"ON":"OFF")+
+            " salva no menu; aguardando confirmação do motor na próxima batalha.";
+        smartAttackNativeJson="";
         // Retain the legacy PvP preference without modifying fast/charged/shield bits.
         pvpBattleOptions=PvpBattleMode.update(pvpBattleOptions,PvpBattleMode.PREFER_SUPER,on);
         saveSettings();
@@ -975,7 +989,18 @@ public final class Control {
     public static void setMapTapReady(boolean ready) { mapTapReady=ready; if(!ready)mapTapEpoch++; }
     public static int mapTapMode() { return mapTapMode; }
     public static int mapTapEpoch() { return mapTapEpoch; }
-    public static void setMapTapMode(int mode) { mapTapEpoch++; mapTapMode=mode>=0 && mode<=3 ? mode : 0; saveSettings(); event("map-tap-mode",""+mapTapMode); }
+    public static boolean mapTapTeleportNoAsk() { return mapTapMode==3 && mapTapTeleportNoAsk; }
+    public static void setMapTapTeleportNoAsk(boolean allow) {
+        if(mapTapMode!=3) allow=false;
+        if(mapTapTeleportNoAsk==allow)return;
+        mapTapTeleportNoAsk=allow; saveSettings();
+    }
+    public static void setMapTapMode(int mode) {
+        mapTapEpoch++;
+        mapTapMode=mode>=0 && mode<=3 ? mode : 0;
+        mapTapTeleportNoAsk=false; // Changing mode re-enables the confirmation choice.
+        saveSettings(); event("map-tap-mode",""+mapTapMode);
+    }
     public static boolean mapTapAllowed() { return desiredEnabled && mapTapMode!=0 && mapTapReady() && hostLive(); }
     public static void applyMapTap(double latitude,double longitude,int mode,int epoch,double sampledAt) {
         double age=SystemClock.elapsedRealtime()-sampledAt;
@@ -1296,6 +1321,7 @@ public final class Control {
         requestInteractionStop();
         OneShotAutomation.reset();
         AutoRaid.reset();
+        AutoMaxBattle.reset();
         GiftBatchSettings.reset();
         foreground = false; autoWalkPlanning=false;mapPoiOpen=false;mapPoiSnapshot="";mapPoiAt=0; mapTapEpoch++; invalidateQuickBallOutcome(); cameraSampleRequest.set(false); invalidateCameraHeading("App backgrounded");
         // Losing the foreground switches VGP off, clears any target, and never auto-resumes.
@@ -1464,7 +1490,7 @@ public final class Control {
         AutoRaid.tick(joystickHeld);
         EternatusRouteRunner.tick();
         engine.setIdleWalkingAllowed(hostLive()&&desiredEnabled&&!joystickHeld&&!OneShotAutomation.idleBlocked()&&!AutoRaid.running()
-            &&!autoWalkPlanning&&!gameRoutesPlanning&&!gameRoutes.running()
+            &&!AutoMaxBattle.running()&&!autoWalkPlanning&&!gameRoutesPlanning&&!gameRoutes.running()
             &&!cameraSamplePending()&&!interactionDiagnosticRunning());
         engine.step(seconds);
     }
@@ -1515,6 +1541,7 @@ public final class Control {
     private static void loadSettings(Application app,boolean strict) throws IOException {
         OneShotAutomation.reset();
         AutoRaid.reset();
+        AutoMaxBattle.reset();
         GiftBatchSettings.reset();
         BatchEvolutionSettings.reset();
         synchronized(stateLock) {
@@ -1539,6 +1566,7 @@ public final class Control {
             vgpIconStyle=0;
             vgpIconSize=48;
             vgpTapProtection=true;
+            mapTapTeleportNoAsk=false;
             hudLabelsVisible=true;hudLabelsMask=HUD_ALL;hudLabelOpacity=0;hudLabelTextSp=11;
             joystickSizeDp=136;joystickOpacity=60;
             joystickStyle=1;joystickEternatusEffects=true;eternatusFxIntensity=2;eternatusFxSpeed=1;
@@ -1735,6 +1763,7 @@ public final class Control {
                 throwAlwaysHit=Boolean.parseBoolean(p.getProperty("throwAlwaysHit","false"));
                 throwAr=Boolean.parseBoolean(p.getProperty("throwAr","false"));
                 throwGrade=boundedSetting(p,"grade",3); throwVariety=boundedSetting(p,"throwVariety",3); mapTapMode=boundedSetting(p,"mapTap",3);
+                mapTapTeleportNoAsk=mapTapMode==3 && "true".equals(p.getProperty("mapTapTeleportNoAsk","false"));
                 event("settings-restored","dismiss="+quickSummaryEnabled+" fastBall="+quickBallEnabled+" grade="+throwGrade+" variety="+throwVariety+" curve="+throwCurve+" mapTap="+mapTapMode+" cameraRelative=true heal="+healConfig());
             } catch(FileNotFoundException missing) {
                 // Defaults apply only until the user first saves a choice.
@@ -1893,6 +1922,7 @@ public final class Control {
         p.setProperty("throwAr",String.valueOf(throwAr)); p.setProperty("curve",String.valueOf(throwCurve)); p.setProperty("grade",String.valueOf(throwGrade)); p.setProperty("throwVariety",String.valueOf(throwVariety));
         p.setProperty("throwAlwaysHit",String.valueOf(throwAlwaysHit));
         p.setProperty("mapTap",String.valueOf(mapTapMode));
+        p.setProperty("mapTapTeleportNoAsk",String.valueOf(mapTapMode==3 && mapTapTeleportNoAsk));
         return p;
     }
     /** Writer sink: serializes to the captured AtomicFile off-thread, rolling back on failure. Never takes stateLock. */
@@ -1949,7 +1979,30 @@ public final class Control {
         if("battle-action".equals(kind)&&detail.startsWith("{")){
             try{
                 org.json.JSONObject b=new org.json.JSONObject(detail);
-                if(b.has("pvpExecutorReady")){
+                if(b.has("smartAttackMode")){
+                    // This is the actual native Rocket decision, not the
+                    // Java switch state. A screenshot can now distinguish:
+                    // F3 preference OFF, missing metadata, missing actor
+                    // and a correctly held/selected Charge. No Pokemon IDs.
+                    String active=b.optBoolean("smartAttackEnabled",false)?"ON":"OFF";
+                    String classifier=b.optBoolean("classifierBound",false)?"OK":"INDISPONÍVEL";
+                    String actor=b.optString("actorIdentity","not-observed");
+                    String decision=b.optString("decision","unknown");
+                    String reason=b.optString("reason","unknown");
+                    String chargeState=!b.optBoolean("chargeSeen",false)
+                        ?" [não observado]":
+                        b.optBoolean("chargeReady",false)?" [pronto]":" [não pronto]";
+                    String charge2State=!b.optBoolean("charge2Seen",false)
+                        ?" [não observado]":
+                        b.optBoolean("charge2Ready",false)?" [pronto]":" [não pronto]";
+                    smartAttackNativeStatus="Menu: "+(smartAttack?"ON":"OFF")+
+                        " | Motor: "+active+" | Classificador: "+classifier+
+                        "\nAdversário: "+actor+" | Leitura: "+b.optString("actorProbe","não informada")+
+                        " | Decisão: "+decision+" ("+reason+")"+
+                        "\nCharge: "+b.optString("chargeTier","unknown")+chargeState+
+                        " | Charge2: "+b.optString("charge2Tier","unknown")+charge2State;
+                    smartAttackNativeJson=detail;
+                }else if(b.has("pvpExecutorReady")){
                     pvpBattleReady=b.optBoolean("pvpExecutorReady",false);
                     String battleMode="training".equals(b.optString("mode","pvp"))
                         ?"Treinamento VNext":"PvP VNext";

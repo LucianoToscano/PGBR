@@ -59,31 +59,122 @@ inline Result choose(bool enabled, uint64_t session, uint64_t opponent,
 // Optional VNext display-only selector. Each candidate refers to a rooted
 // ChargeAttackDisplayVNext already observed AFTER its original state update.
 // A batch token is only an update-coherence hint, not an opponent ID.
-// This never overrides the legacy path unless BOTH charged buttons are ready,
-// recently observed together and their typed effect classifications are valid.
+// A strict hold is allowed with only one ready button when the OTHER button
+// is verified as strictly more effective, and fast attacks can keep charging.
+// A direct effectiveness selection still requires BOTH buttons ready. Never
+// treat the capture order or a batch pointer as proof of opponent identity.
 struct DisplayCandidate {
   pgr_charge_effect_ui::Sample sample{};
   uint64_t observed_ms = 0;
   bool ready = false;
 };
-inline int choose_display(bool enabled,uint64_t now,const DisplayCandidate *items,
-                          std::size_t count) {
-  if(!enabled||!items||count!=2||now==0)return -1;
+// Why a charged tap used smart priority or the original first-ready path.
+// Packed into optional action telemetry; no timer overrides a strict ranking.
+enum class DisplayReason : uint8_t {
+  OFF=0, EFFECTIVENESS=1, UNAVAILABLE_PAIR=2, ONLY_ONE_READY=3,
+  UNKNOWN_EFFECT=4, STALE_EFFECT=5, UNVERIFIED_SLOTS=6,
+  KNOWN_SUPER=7, ACTOR_UNKNOWN=8, ACTOR_REFRESH=9
+};
+struct DisplayDecision {
+  int index=-1;
+  DisplayReason reason=DisplayReason::OFF;
+};
+inline DisplayDecision inspect_display(bool enabled,uint64_t now,
+                                       const DisplayCandidate *items,
+                                       std::size_t count) {
+  if(!enabled)return {-1,DisplayReason::OFF};
+  if(!items||count!=2||now==0)return {-1,DisplayReason::UNAVAILABLE_PAIR};
   constexpr uint64_t kMaxAgeMs=200;
   const auto &a=items[0],&b=items[1];
-  if(!a.ready||!b.ready||!a.observed_ms||!b.observed_ms||
-     a.observed_ms>now||b.observed_ms>now||
+  if(!a.ready||!b.ready)return {-1,DisplayReason::ONLY_ONE_READY};
+  if(!a.sample.batch_token||!b.sample.batch_token||
+     pgr_charge_effect_ui::pack_observation(a.sample)==0||
+     pgr_charge_effect_ui::pack_observation(b.sample)==0)
+    return {-1,DisplayReason::UNKNOWN_EFFECT};
+  if(!a.observed_ms||!b.observed_ms||a.observed_ms>now||b.observed_ms>now||
      now-a.observed_ms>kMaxAgeMs||now-b.observed_ms>kMaxAgeMs||
      a.observed_ms>b.observed_ms+kMaxAgeMs||
-     b.observed_ms>a.observed_ms+kMaxAgeMs)return -1;
-  if(!a.sample.batch_token||a.sample.batch_token!=b.sample.batch_token||
-     pgr_charge_effect_ui::pack(a.sample)==0||
-     pgr_charge_effect_ui::pack(b.sample)==0||
-     a.sample.slot==b.sample.slot)return -1;
+     b.observed_ms>a.observed_ms+kMaxAgeMs)
+    return {-1,DisplayReason::STALE_EFFECT};
+  if(a.sample.batch_token!=b.sample.batch_token||
+     a.sample.slot==b.sample.slot)
+    return {-1,DisplayReason::UNVERIFIED_SLOTS};
   const int first=a.sample.slot==pgr_charge_effect_ui::Slot::FIRST?0:1;
   const int second=1-first;
   const auto tier1=items[first].sample.tier;
   const auto tier2=items[second].sample.tier;
-  return static_cast<int>(tier2)>static_cast<int>(tier1)?second:first;
+  // When the game hides one label, UNKNOWN is not Normal. However, a
+  // concurrently verified SUPER button is a positive and safer preference
+  // over first-ready ordering. This is an opt-in best-known preference, not
+  // an assertion of strictly higher damage or of the unknown button's tier.
+  if(tier1==pgr_charge_effect_ui::Tier::UNKNOWN &&
+     tier2==pgr_charge_effect_ui::Tier::SUPER)
+    return {second,DisplayReason::KNOWN_SUPER};
+  if(tier2==pgr_charge_effect_ui::Tier::UNKNOWN &&
+     tier1==pgr_charge_effect_ui::Tier::SUPER)
+    return {first,DisplayReason::KNOWN_SUPER};
+  if(pgr_charge_effect_ui::pack(a.sample)==0||
+     pgr_charge_effect_ui::pack(b.sample)==0)
+    return {-1,DisplayReason::UNKNOWN_EFFECT};
+  return {static_cast<int>(tier2)>static_cast<int>(tier1)?second:first,
+          DisplayReason::EFFECTIVENESS};
+}
+// Rocket VNext can keep the normal quick attacks running while a strictly
+// better, verified move is still building energy. The SAME Rocket executor
+// serves typed battle variants; there is no independent PvP selector.
+// The comparison must be rerun on every tick, with fresh matching samples.
+// Missing/old classifications are rejected by admit_display when two slots
+// are observed. The Rocket owner must keep the normal quick gesture available
+// without automatically falling back to an unverified charged button.
+inline bool better_unready(bool enabled,uint64_t now,
+                           const DisplayCandidate *items,std::size_t count) {
+  if(!enabled||!items||count!=2||items[0].ready==items[1].ready)return false;
+  DisplayCandidate hypothetical[2]={items[0],items[1]};
+  hypothetical[0].ready=hypothetical[1].ready=true;
+  const auto rank=inspect_display(true,now,hypothetical,2);
+  if((rank.reason!=DisplayReason::EFFECTIVENESS &&
+      rank.reason!=DisplayReason::KNOWN_SUPER)||rank.index<0)return false;
+  const int ready=items[0].ready?0:1;
+  // Suppress only when the selected button has a verified higher tier or
+  // a verified SUPER tier versus an explicitly UNKNOWN (hidden) other tier.
+  // Never claim the hidden tier is Normal; both remain revalidated per tick.
+  return rank.index!=ready &&
+    static_cast<int>(items[rank.index].sample.tier)>
+    static_cast<int>(items[ready].sample.tier);
+}
+// Final VNext charged-action authorization. Merely ordering the candidates
+// is not sufficient: a fallback-to-first loop can issue a weaker charge even
+// after the classifier rejected or lost its evidence. With Smart Attack ON,
+// never automatically issue an unranked charge when a pair was observed.
+// The quick gesture and manual input remain independent of this decision.
+struct DisplayAdmission {
+  int index=-1;                 // 0 / 1 only when this exact candidate may fire
+  bool hold=false;              // true: do not invoke ANY charged button
+  DisplayReason reason=DisplayReason::OFF;
+};
+inline DisplayAdmission admit_display(bool enabled,uint64_t now,
+                                      const DisplayCandidate *items,
+                                      std::size_t count) {
+  if(!enabled)return {-1,false,DisplayReason::OFF}; // original-order mode
+  if(!items||count!=2)return {-1,true,DisplayReason::UNAVAILABLE_PAIR};
+  DisplayCandidate hypothetical[2]={items[0],items[1]};
+  hypothetical[0].ready=hypothetical[1].ready=true;
+  const auto ranking=inspect_display(true,now,hypothetical,2);
+  // Old behavior fell back to first ready here; the new Smart Attack mode
+  // fail-closes charged automation rather than undoing its own policy.
+  if(ranking.index<0)return {-1,true,ranking.reason};
+  const int best=ranking.index,other=1-best;
+  if(items[best].ready)return {best,false,ranking.reason};
+  const auto best_tier=items[best].sample.tier;
+  const auto other_tier=items[other].sample.tier;
+  // Equal-effect moves may use whichever is already ready. UNKNOWN never
+  // becomes Normal; a confirmed SUPER still wins over an UNKNOWN alternative.
+  if(items[other].ready&&best_tier==other_tier)
+    return {other,false,ranking.reason};
+  return {-1,true,DisplayReason::ONLY_ONE_READY};
+}
+inline int choose_display(bool enabled,uint64_t now,const DisplayCandidate *items,
+                          std::size_t count) {
+  return inspect_display(enabled,now,items,count).index;
 }
 } // namespace pgr_smart_priority

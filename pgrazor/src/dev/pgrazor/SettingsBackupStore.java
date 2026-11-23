@@ -9,8 +9,8 @@ import org.json.JSONObject;
 
 /** Production backup serialization and restoration, separate from Android picker UI. */
 final class SettingsBackupStore {
-    private static final String[] SCOPES={"pgrazor-map","pgrazor-overlays","pgrazor-saved-places-v1","pgrazor-livefeed"};
-    private static final String[][] KEYS={{"Stops","Gyms","Raids"},{"cooldown.fx","cooldown.fy","vgp.fx","vgp.fy","transfer.fx","transfer.fy","gym-feed.fx","gym-feed.fy","local-time.fx","local-time.fy"},{"places"},{"category","radius","minIv","myShinies","filters_v1","filter_presets_v1"}};
+    private static final String[] SCOPES={"pgrazor-map","pgrazor-overlays","pgrazor-saved-places-v1","pgrazor-livefeed","pgrazor-pgsharp-data-v1"};
+    private static final String[][] KEYS={{"Stops","Gyms","Raids"},{"cooldown.fx","cooldown.fy","vgp.fx","vgp.fy","transfer.fx","transfer.fy","gym-feed.fx","gym-feed.fy","local-time.fx","local-time.fy"},{"places"},{"category","radius","minIv","myShinies","filters_v1","filter_presets_v1"},{"migration_json"}};
     static synchronized JSONObject snapshot(Context context)throws Exception{
         JSONObject result=new JSONObject();result.put("format","PGBR settings");result.put("version",1);result.put("speedKmh",Control.engine.speedKmh);
         JSONObject settings=new JSONObject();Properties p=Control.exportSettings();

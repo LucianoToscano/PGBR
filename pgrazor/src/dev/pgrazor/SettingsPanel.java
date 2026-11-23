@@ -74,7 +74,8 @@ final class SettingsPanel {
     private Button autoBallTarget, berryPriority;
     private Button vgpIconStyleButton, vgpStartStopButton, joystickStyleButton, eternatusIntensityButton, eternatusSpeedButton;
     private BerryPriorityPicker berryPicker;
-    private TextView quickSummaryLabel, vgpStatus, cutsceneStatus, healStatus, smartBattleStatus;
+    private TextView quickSummaryLabel, vgpStatus, cutsceneStatus, healStatus, smartBattleStatus,
+        smartAttackNativeStatus;
     private Switch healSwitch, healReviveSwitch, smartBattleSwitch, smartAttackSwitch, gymRepeatSwitch;
     private Button healWhen, healThreshold, healItems, shieldWaitButton, faintedSwapWaitButton;
     private static final String[] SHIELD_WAIT_LABELS={
@@ -634,6 +635,7 @@ final class SettingsPanel {
         LinearLayout map = group(loc, "Game map");
         mapTap = button("Game map tap: Do nothing"); map.addView(mapTap);
         mapTap.setOnClickListener(v -> { Control.setMapTapMode((Control.mapTapMode()+1)%4); host.refresh(); });
+        caption(map,"No modo toque duplo, escolha Caminhar ou Teleporte. A opção «Não perguntar novamente» vale apenas até você alterar o modo.");
         spawnSwitch = switchRow(map, "Spawn booster (80 m)"); spawnSwitch.setChecked(Control.spawnBooster());
         spawnSwitch.setOnCheckedChangeListener((v,checked) -> { if(checked==Control.spawnBooster())return; Control.setSpawnBooster(spawnSwitch.isChecked()); });
         spawnStatus = caption(map, "");
@@ -1052,6 +1054,9 @@ final class SettingsPanel {
 
         LinearLayout gymC = group(battleC, "Gyms");
         launch(gymC, "Gym Slotter & Berry Feeder", () -> GymAutomationSettings.show(activity));
+        Switch gymOverlaySwitch=switchRow(gymC,"Exibir ícone de ginásios no mapa");
+        gymOverlaySwitch.setChecked(GymAutomationSettings.overlayEnabled());
+        gymOverlaySwitch.setOnCheckedChangeListener((v,on)->{if(on!=GymAutomationSettings.overlayEnabled())GymAutomationSettings.setOverlayEnabled(on);host.refresh();});
         battleChoice(gymC,2,"Auto quick attack");
         battleChoice(gymC,3,"Auto charged attack");
         battleChoice(gymC,8,"Auto dodge");
@@ -1072,13 +1077,14 @@ final class SettingsPanel {
         battleChoice(maxC,6,"Auto Max attack");
         battleChoice(maxC,9,"Auto dodge");
         caption(maxC,"Automatically moves toward nearby Max energy orbs during battle while PGBR is active.");
+        launch(maxC,"Batalha Max Automática (sessão)",()->AutoMaxBattleDialog.show(activity));
         battleStatus = caption(battleC, "");
     }
 
     private void buildSmartBattle(LinearLayout owner) {
         smartBattleSwitch = switchRow(owner, "Smart battling"); smartBattleSwitch.setChecked(Control.smartBattle());
         smartBattleSwitch.setOnCheckedChangeListener((v,checked) -> { if(checked==Control.smartBattle())return; Control.setSmartBattle(checked); refreshSmartBattle(); });
-        caption(owner, "Escolhe a equipe para Ginásios, Raides e Rocket e troca automaticamente em Ginásios e Rocket. Os demais modos exigem suporte próprio validado.");
+        caption(owner, "Escolhe equipes para Ginásios, Reides e Rocket. Faz trocas estratégicas em Ginásios e Rocket; em PvP, duelos e treinamento VNext reconhecidos, a mesma análise de troca é experimental e requer testes em aparelho.");
         smartBattleStatus = caption(owner, "");
         refreshSmartBattle();
     }
@@ -1094,9 +1100,28 @@ final class SettingsPanel {
         smartAttackSwitch.setChecked(Control.smartAttack());
         smartAttackSwitch.setOnCheckedChangeListener((v,on)->{
             if(on!=Control.smartAttack())Control.setSmartAttack(on);
+            refreshSmartAttackNativeStatus();
         });
-        caption(owner,"A preferência é salva, mas a seleção inteligente dos botões ainda não está integrada "+
-            "nem validada nos modos de batalha. A automação existente continua usando seus próprios critérios.");
+        caption(owner,"O motor da Equipe GO Rocket decide qual carregado usar: Super eficaz > Normal > Pouco eficaz. Liga GO, duelos e treinamento reconhecidos reutilizam o mesmo motor, sem outro executor de ataques. "+
+            "Se um golpe comprovadamente melhor ainda não carregou, o Rocket continua usando Ágil. Quando o outro botão não mostra a eficácia, um Super eficaz confirmado ganha prioridade, sem assumir que o golpe oculto seja Normal. "+
+            "Com Ataque Inteligente ligado, se dois carregados existem mas os dados estiverem incompletos ou vencidos, nenhum carregado automático será acionado até uma classificação válida; o Ágil pode continuar normalmente. "+
+            "Para voltar à ordem original do primeiro carregado pronto, desligue Ataque Inteligente. "+
+            "O Ágil não pertence a um lado da tela. Experimental: requer teste real em aparelho.");
+        smartAttackNativeStatus=caption(owner,Control.smartAttackNativeStatus());
+        launch(owner,"Copiar diagnóstico do Ataque Inteligente",()->{
+            String diagnosis=Control.smartAttackNativeJson();
+            if(diagnosis.isEmpty())diagnosis=Control.smartAttackNativeStatus();
+            android.content.ClipboardManager clipboard=(android.content.ClipboardManager)
+                activity.getSystemService(android.content.Context.CLIPBOARD_SERVICE);
+            if(clipboard!=null){
+                clipboard.setPrimaryClip(android.content.ClipData.newPlainText(
+                    "PGBR Ataque Inteligente",diagnosis));
+                android.widget.Toast.makeText(activity,
+                    "Diagnóstico do Ataque Inteligente copiado",
+                    android.widget.Toast.LENGTH_SHORT).show();
+            }
+        });
+        refreshSmartAttackNativeStatus();
         shieldWaitButton=launch(owner,"Espera do Escudo",()->
             new AlertDialog.Builder(dialogContext())
                 .setTitle("Espera do Escudo Inteligente")
@@ -1113,6 +1138,11 @@ final class SettingsPanel {
             "Escudo: 250 ms de intervalo técnico após usar; troca: até 8 s com 1 s entre tentativas. "+
             "As preferências só atuam em fluxos nativos reconhecidos, sem atrasar golpes carregados.");
         refreshBattleTimings();
+    }
+
+    private void refreshSmartAttackNativeStatus(){
+        if(smartAttackNativeStatus!=null)
+            smartAttackNativeStatus.setText(Control.smartAttackNativeStatus());
     }
 
     private void refreshBattleTimings(){
@@ -1190,6 +1220,7 @@ final class SettingsPanel {
         launch(page, "Shundo Sniper (Experimental)", () -> ShundoSniper.show(activity));
         launch(page, "Shiny Scanner (Experimental)", () -> ShinyScanner.show(activity));
         launch(page, "Auto-Raid", () -> AutoRaidDialog.show(activity));
+        launch(page,"Batalha Max Automática (sessão)",()->AutoMaxBattleDialog.show(activity));
         launch(page, "Daily Incense Session", () -> AutomationPanel.showIncense(activity));
         launch(page, "Remote Gym Feeding", () -> AutomationPanel.showRemoteFeed(activity));
         launch(page, "Send & Open Gifts", () -> GiftBatchDialog.show(activity));
@@ -1445,9 +1476,9 @@ final class SettingsPanel {
         summary(2,active("Quick catch",Control.quickSummaryEnabled(),"Auto throw",Control.autoThrow(),"Auto ball",Control.autoBall(),"Curveball",Control.throwCurve(),"Always hit",Control.throwAlwaysHit(),"Berries",Control.encounterBerryEnabled()));
         summary(3,active("Auto-transfer",Control.autoTransferEnabled(),"Evolve first",Control.autoTransferEnabled()&&Control.evolveTransferEnabled(),"IVs shown",Control.ivCatchMode()!=0||Control.ivOwnedMode()!=0||Control.storageIvMode()!=0));
         summary(4,active("Go Plus overlay",Control.vgpOverlay(),"Quick spin",Control.quickSpinEnabled(),"Item cleanup",Control.itemTransferEnabled()));
-        summary(5,active("Smart battling",Control.smartBattle(),"Smart healing",Control.healEnabled(),"Auto attacks",Control.battleOptions()!=0||Control.rocketOptions()!=0,"Gym repeat",Control.gymRepeatEnabled()));
+        summary(5,active("Smart battling",Control.smartBattle(),"Smart healing",Control.healEnabled(),"Auto Max session",AutoMaxBattle.running(),"Auto attacks",Control.battleOptions()!=0||Control.rocketOptions()!=0,"Gym repeat",Control.gymRepeatEnabled()));
         summary(6,active("Buddy engine",BuddyEmotionSettings.enabled(),"Auto incubate",Control.autoIncubate(),"Open gifts",(Control.giftOptions()&1)!=0,"Send gifts",(Control.giftOptions()&2)!=0));
-        summary(7,AutoRaid.running()?"Auto-Raid running":ShundoSniper.active()?"Shundo Sniper running":ShinyScanner.enabled()?"Shiny Scanner on":"Shundo, shiny scan, raids, incense, gym feeding, gifts, evolve, research");
+        summary(7,AutoMaxBattle.running()?"Sessão Max ativada":AutoRaid.running()?"Auto-Raid running":ShundoSniper.active()?"Shundo Sniper running":ShinyScanner.enabled()?"Shiny Scanner on":"Shundo, shiny scan, raids, incense, gym feeding, gifts, evolve, research");
         summary(8,"Halloween · Go Wild");
         summary(9,"UI "+Control.uiScalePercent()+"% · "+(Control.darkTheme()?"Dark":"Light")+" theme"+(Control.skipCutscenes()?" · Skip cutscenes":""));
         summary(10,"Accounts, export / import, run log, diagnostics");
@@ -1565,6 +1596,7 @@ final class SettingsPanel {
         refreshHealing();
         refreshSmartBattle();
         if(smartAttackSwitch!=null)smartAttackSwitch.setChecked(Control.smartAttack());
+        refreshSmartAttackNativeStatus();
         refreshBattleTimings();
         refreshDependencies();
     }

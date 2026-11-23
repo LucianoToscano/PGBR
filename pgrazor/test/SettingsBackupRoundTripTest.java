@@ -23,6 +23,7 @@ public final class SettingsBackupRoundTripTest {
         File root=new File(args[0],"backup-round-trip");check(root.mkdirs(),"test directory");
         Application app=new Application(){public File getFilesDir(){return root;}};reload(app);Control.engine.speed(5.0);
         Control.setSmartAttack(true);Control.setSmartShieldTiming(2);Control.setSmartFaintedSwapTiming(0);
+        Control.setMapTapMode(3);Control.setMapTapTeleportNoAsk(true);
         Control.setQuickMenuVisible(QuickMenuVisibilityPolicy.SELECTOR_BIT,false);
         AccountProfiles.preferences(app,"pgrazor-map").edit().putBoolean("Stops",true).commit();
         Control.flushSettings(5000);
@@ -30,11 +31,14 @@ public final class SettingsBackupRoundTripTest {
         SettingsBackupRules.validate(backup);
         JSONObject settings=backup.getJSONObject("settings");
         check("true".equals(settings.getString("smartAttack")) && "2".equals(settings.getString("smartShieldTiming")) && "0".equals(settings.getString("smartFaintedSwapTiming")),"exported choices");
+        check("true".equals(settings.getString("mapTapTeleportNoAsk")),"double-tap confirmation preference exported");
         check((Integer.parseInt(settings.getString("quickMenuHidden")) & QuickMenuVisibilityPolicy.SELECTOR_BIT)!=0,"selector exported");
         Control.setSmartAttack(false);Control.setSmartShieldTiming(0);Control.setSmartFaintedSwapTiming(2);
+        Control.setMapTapMode(1);check(!Control.mapTapTeleportNoAsk(),"mode change must reset consent");
         Control.setQuickMenuVisible(QuickMenuVisibilityPolicy.SELECTOR_BIT,true);
         AccountProfiles.preferences(app,"pgrazor-map").edit().putBoolean("Stops",false).commit();
         SettingsBackupStore.restore(app,backup);reload(app);verify(true,2,0,"restore and cold reload");
+        check(Control.mapTapMode()==3&&Control.mapTapTeleportNoAsk(),"double-tap choice backup round trip");
         check(!Control.quickMenuVisible(QuickMenuVisibilityPolicy.SELECTOR_BIT),"selector round trip");
         check(Boolean.TRUE.equals(AccountProfiles.preferences(app,"pgrazor-map").getAll().get("Stops")),"preference group restored");
         JSONObject old=copy(backup);old.put("format","PGRazor settings");
