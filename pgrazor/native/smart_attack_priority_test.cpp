@@ -116,5 +116,22 @@ int main() {
   assert(choose_display(true,1020,pair,2)==-1);
   pair[0].sample.tier=Tier::RESISTED;
   assert(choose_display(true,900,pair,2)==-1); // clock inversion
+  // Diagnostic reason must explain why the original first-ready choice won.
+  DisplayCandidate diag[2] = {
+      {{Slot::FIRST,Tier::NEUTRAL,14},1000,true},
+      {{Slot::SECOND,Tier::SUPER,14},1000,true}
+  };
+  assert(inspect_display(true,1020,diag,2).reason==DisplayReason::EFFECTIVENESS);
+  assert(inspect_display(true,1020,diag,2).index==1);
+  assert(inspect_display(false,1020,diag,2).reason==DisplayReason::OFF);
+  assert(inspect_display(true,1020,diag,1).reason==DisplayReason::UNAVAILABLE_PAIR);
+  diag[1].ready=false;
+  assert(inspect_display(true,1020,diag,2).reason==DisplayReason::ONLY_ONE_READY);
+  diag[1].ready=true;diag[1].sample.tier=Tier::UNKNOWN;
+  assert(inspect_display(true,1020,diag,2).reason==DisplayReason::UNKNOWN_EFFECT);
+  diag[1].sample.tier=Tier::SUPER;diag[1].observed_ms=100;
+  assert(inspect_display(true,1020,diag,2).reason==DisplayReason::STALE_EFFECT);
+  diag[1].observed_ms=1000;diag[1].sample.batch_token=15;
+  assert(inspect_display(true,1020,diag,2).reason==DisplayReason::UNVERIFIED_SLOTS);
   std::puts("smart attack priority: PASS (pure synthetic policy; no game action)");
 }
