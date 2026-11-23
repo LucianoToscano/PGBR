@@ -1,6 +1,7 @@
 #include "max_session_gate.h"
 #include <cassert>
 #include <cstdio>
+#include <initializer_list>
 
 int main() {
   using Gate=PgrMaxSessionGate;
