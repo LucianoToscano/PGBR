@@ -1114,6 +1114,44 @@ int scenario(int n) {
       if(!saw_off)return 131;
       break;
     }
+    case 68: { // Exact real diagnostic: 3 displays, actor unknown, both tiers observable.
+      arm(&sc.scope,3,tid);api->observe(PGR_RC_OBS_VNEXT_UPDATE,&sc.vui,0,tid);
+      sc.vc2.button=&sc.vbutton;sc.vc3.button=&sc.vbutton;
+      using namespace pgr_charge_effect_ui;
+      pgrazor_rc_direct_smart_attack(1);
+      api->observe(PGR_RC_OBS_ACTOR_PROBE,nullptr,8,tid);
+      api->observe(PGR_RC_OBS_ACTOR_PAIR,nullptr,0,tid);
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vcharge,pack({Slot::FIRST,Tier::RESISTED,51}),tid);
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vc2,pack({Slot::FIRST,Tier::NEUTRAL,51}),tid);
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vc3,pack({Slot::SECOND,Tier::SUPER,51}),tid);
+      if(charges_now()!=3)return 132;
+      api->tick(tid,0);
+      if(sc.vcharge.tapped||sc.vc2.tapped||sc.vc3.tapped||sc.vgest.tapped!=1)return 133;
+      pgr_rocket_combat_event_v1 ev{};bool diagnostic=false;
+      while(api->next_event(&ev)==1)if(ev.code==PGR_RC_EVT_SMART_DIAG){
+        const unsigned bits=static_cast<unsigned>(ev.aux);
+        diagnostic=(ev.id==8&&(bits&7u)==3u&&(bits&8u)!=0 &&
+           ((bits>>16)&15u)==8u&&((bits>>20)&3u)==3u &&
+           ((bits>>8)&3u)==static_cast<unsigned>(Tier::NEUTRAL) &&
+           ((bits>>10)&3u)==static_cast<unsigned>(Tier::SUPER) &&
+           (bits&4096u)!=0&&(bits&8192u)!=0);
+      }
+      if(!diagnostic)return 134;
+      break;
+    }
+    case 69: { // Actor read succeeds: same two slots still authorize known better charged button.
+      arm(&sc.scope,3,tid);api->observe(PGR_RC_OBS_VNEXT_UPDATE,&sc.vui,0,tid);
+      sc.vc2.button=&sc.vbutton;
+      using namespace pgr_charge_effect_ui;
+      pgrazor_rc_direct_smart_attack(1);
+      api->observe(PGR_RC_OBS_ACTOR_PROBE,nullptr,1,tid);
+      api->observe(PGR_RC_OBS_ACTOR_PAIR,nullptr,8181,tid);
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vcharge,pack({Slot::FIRST,Tier::RESISTED,51}),tid);
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vc2,pack({Slot::SECOND,Tier::SUPER,51}),tid);
+      api->tick(tid,0);
+      if(sc.vcharge.tapped||sc.vc2.tapped!=1)return 135;
+      break;
+    }
 #endif
   }
   g_cb=nullptr;api->tick(tid,1);
@@ -1122,7 +1160,7 @@ int scenario(int n) {
 }
 
 #if defined(PGR_RC_DIRECT_TEST)
-constexpr int kScenarios = 68;
+constexpr int kScenarios = 70;
 #else
 constexpr int kScenarios = 33;
 #endif
