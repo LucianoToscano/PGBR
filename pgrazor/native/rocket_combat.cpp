@@ -648,12 +648,9 @@ void vnext_tick(uint64_t tid, uint64_t epoch, uint32_t mask, uint64_t ticket) {
       if (!balive || !binter) continue;
       void *target = c.target();  // final lookup (c is rooted -> current)
       if (!target || !final_ok(epoch)) return;
-      if (!pol_claim(ticket, PGR_ROCKET_VNEXT_CHARGE, tid)) return;
-      invoke(g_cfg.vm_charge, target, nullptr, &err);
-      if (err) { if(!stale(epoch))fault(tid); return; }
-      // Report the verified Charge/Charge2 identity of the action actually invoked,
-      // not the first observed display or the side of a quick-attack gesture.
-      // This is diagnostics only: no change to prioritization, timing or tap.
+      // Snapshot the verified slot BEFORE the managed click: invoking the game
+      // can reenter hooks and replace battle observations. Unknown stays unknown.
+      // This affects diagnostics only, never timing or charged-button selection.
       int32_t action_flags=2;  // bit1: vNext path
       const auto &observation=g_charge_observations[i];
       const uint64_t action_now=boottime_ms();
@@ -663,7 +660,11 @@ void vnext_tick(uint64_t tid, uint64_t epoch, uint32_t mask, uint64_t ticket) {
         if(observation.sample.slot==pgr_charge_effect_ui::Slot::FIRST)action_flags|=4;
         else if(observation.sample.slot==pgr_charge_effect_ui::Slot::SECOND)action_flags|=8;
       }
-      emit_action(PGR_RC_ACT_CHARGED,action_flags);  // verified slot flags are optional
+      if (!pol_claim(ticket, PGR_ROCKET_VNEXT_CHARGE, tid)) return;
+      invoke(g_cfg.vm_charge, target, nullptr, &err);
+      if (err) { if(!stale(epoch))fault(tid); return; }
+      if(stale(epoch))return; // do not publish an action under a replaced battle scope
+      emit_action(PGR_RC_ACT_CHARGED,action_flags);  // optional verified Charge/Charge2
       return;
     }
   }
