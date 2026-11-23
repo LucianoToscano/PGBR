@@ -1,0 +1,46 @@
+name: PGBR sniper engine (JVM)
+
+# Compiles the sniper engine and panel with ECJ and runs the engine contract suite. This is not an
+# Android build: it proves the Java compiles and the engine assertions hold, nothing about a device.
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'pgrazor/src/dev/pgrazor/Spawn*.java'
+      - 'pgrazor/src/dev/pgrazor/SpeciesGroups.java'
+      - 'pgrazor/src/dev/pgrazor/SniperPanel.java'
+      - 'pgrazor/src/dev/pgrazor/SnipeAdvancedFilterDialog.java'
+      - 'pgrazor/src/dev/pgrazor/FeedChooser.java'
+      - 'pgrazor/test/SnipeEngineTest.java'
+      - 'pgrazor/test/test_sniper_panel_contract.py'
+      - 'tools/sniper_jvm/**'
+      - '.github/workflows/pgbr-sniper-jvm-qa.yml'
+  pull_request:
+    paths:
+      - 'pgrazor/src/dev/pgrazor/Spawn*.java'
+      - 'pgrazor/src/dev/pgrazor/SpeciesGroups.java'
+      - 'pgrazor/src/dev/pgrazor/SniperPanel.java'
+      - 'pgrazor/src/dev/pgrazor/SnipeAdvancedFilterDialog.java'
+      - 'tools/sniper_jvm/**'
+
+jobs:
+  engine:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Baixar o compilador ECJ (usado só por este job)
+        run: |
+          curl -sSfL -o tools/sniper_jvm/ecj.jar \
+            https://repo1.maven.org/maven2/org/eclipse/jdt/ecj/3.38.0/ecj-3.38.0.jar
+          ls -l tools/sniper_jvm/ecj.jar
+      - name: Compilar motor + painel e rodar a suíte
+        env:
+          ECJ_JAR: tools/sniper_jvm/ecj.jar
+        run: python3 tools/sniper_jvm/compile_engine.py
+      - name: Contratos estáticos do painel
+        working-directory: pgrazor/test
+        run: python3 -m unittest test_sniper_panel_contract test_snipe_slots_contract
