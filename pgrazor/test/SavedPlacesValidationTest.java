@@ -11,13 +11,14 @@ public final class SavedPlacesValidationTest {
         new SavedPlaces.Entry("North dateline", 90, 180);
         new SavedPlaces.Entry("South dateline", -90, -180);
         new SavedPlaces.Entry("1234567890123456789012345678901234567890", 0, 0);
-        invalid("12345678901234567890123456789012345678901", 0, 0);
+        new SavedPlaces.Entry("12345678901234567890123456789012345678901", 0, 0);
+        invalid("X".repeat(101), 0, 0);
         invalid(null, 0, 0); invalid("  ", 0, 0); invalid("Bad\nname", 0, 0);
         invalid("Bad\tname", 0, 0); invalid("Bad\u0000name", 0, 0);
         invalid("Invalid", Double.NaN, 0); invalid("Invalid", 0, Double.POSITIVE_INFINITY);
         invalid("Invalid", 90.01, 0); invalid("Invalid", -90.01, 0);
         invalid("Invalid", 0, 180.01); invalid("Invalid", 0, -180.01);
-        if (SavedPlaces.LIMIT != 50 || SavedPlaces.NAME_LIMIT != 40) throw new AssertionError("Library bounds changed");
+        if (SavedPlaces.LIMIT != 200 || SavedPlaces.NAME_LIMIT != 100) throw new AssertionError("Library bounds changed");
         System.out.println("PASS: saved-place names, coordinate boundaries, non-finite rejection, bounds");
     }
 }
