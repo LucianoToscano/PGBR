@@ -171,7 +171,7 @@ public final class BuddyEmotionSettings {
 public final class GymAutomationSettings {
  private static final GymAutomationPreferences prefs=new GymAutomationPreferences();
  public static String config(){return prefs.config();}
- public static boolean enabled(){return prefs.deploy()||prefs.feed();}
+ public static boolean enabled(){return prefs.deploy()||prefs.feed();} public static boolean running(){return false;}
  public static void publish(String detail){}
  public static void read(java.util.Properties p){prefs.read(p);}
  public static void write(java.util.Properties p){prefs.write(p);}
@@ -271,14 +271,14 @@ class ControlJavaTests(unittest.TestCase):
                 source.write_text(text, encoding='utf-8')
                 sources.append(source)
             sources.extend(ROOT / 'src/dev/pgrazor' / name for name in (
-                'Control.java', 'SettingsBackupStore.java', 'SettingsBackupRules.java', 'LiveFeedFilters.java', 'AutoRaidPreferences.java', 'QuickMenuVisibilityPolicy.java', 'PvpBattleMode.java', 'SharedBattleOptions.java', 'TrainerAliasPolicy.java', 'MapCatchStatus.java', 'MotionEngine.java', 'LocationState.java', 'GameRoutesController.java',
+                'Control.java', 'AutoMaxBattle.java', 'SettingsBackupStore.java', 'SettingsBackupRules.java', 'LiveFeedFilters.java', 'AutoRaidPreferences.java', 'QuickMenuVisibilityPolicy.java', 'PvpBattleMode.java', 'SharedBattleOptions.java', 'TrainerAliasPolicy.java', 'MapCatchStatus.java', 'MotionEngine.java', 'LocationState.java', 'GameRoutesController.java',
                 'CameraHeadingState.java', 'CameraSteering.java',
                 'BerryPriority.java', 'MapTapSequence.java', 'CooldownState.java',
                 'VgpController.java', 'CatchOutcomeController.java', 'SettingsWriter.java', 'SmartCatchPreferences.java', 'GymAutomationPreferences.java', 'BuddyEmotionPreferences.java', 'ResearchPreferences.java'))
             sources.extend([ROOT / 'test/ControlWildEventTest.java', ROOT / 'test/ControlEggInventoryTest.java', ROOT / 'test/ControlAdventureSyncTest.java', ROOT / 'test/ControlLogRetentionTest.java', ROOT / 'test/ControlQuickSummaryTest.java',ROOT / 'test/ControlQuickBallTest.java',
                             ROOT / 'test/ControlQuickBallOutcomeTest.java',ROOT / 'test/ControlSettingsTest.java',
                             ROOT / 'test/VgpControllerTest.java',ROOT / 'test/CooldownTest.java',ROOT / 'test/ControlCooldownTest.java',
-                            ROOT / 'test/ControlSettingsReloadTest.java', ROOT / 'test/SettingsBackupRoundTripTest.java',ROOT / 'test/ControlItemCatalogTest.java',ROOT / 'test/ControlIdleWalkingTest.java'])
+                            ROOT / 'test/ControlSettingsReloadTest.java', ROOT / 'test/SettingsBackupRoundTripTest.java',ROOT / 'test/ControlItemCatalogTest.java',ROOT / 'test/ControlIdleWalkingTest.java',ROOT / 'test/AutoMaxBattleSessionTest.java'])
             classes = work / 'classes'
             sdk = Path(os.environ.get('ANDROID_HOME') or os.environ.get('ANDROID_SDK_ROOT') or str(Path(os.environ.get('LOCALAPPDATA', str(Path.home()))) / 'Android/Sdk'))
             json_sources = sorted((sdk / 'sources').glob('android-*/org/json'), reverse=True)
@@ -330,6 +330,9 @@ class ControlJavaTests(unittest.TestCase):
             self.assertEqual(tested.returncode, 0, tested.stdout + tested.stderr)
             tested = subprocess.run([str(runtime), '-cp', str(classes), 'dev.pgrazor.ControlIdleWalkingTest'], capture_output=True, text=True, timeout=15)
             self.assertEqual(tested.returncode, 0, tested.stdout + tested.stderr)
+            tested=subprocess.run([str(runtime),'-cp',str(classes),'dev.pgrazor.AutoMaxBattleSessionTest'],capture_output=True,text=True,timeout=15)
+            self.assertEqual(tested.returncode,0,tested.stdout+tested.stderr)
+            self.assertIn('PASS: Max manual session policy',tested.stdout)
             for phase in ('save','load','load-off'):
                 tested=subprocess.run([str(runtime),'-cp',str(classes),'dev.pgrazor.ControlSettingsTest',phase,str(work)],capture_output=True,text=True,timeout=15)
                 self.assertEqual(tested.returncode,0,tested.stdout+tested.stderr)
