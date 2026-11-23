@@ -376,6 +376,21 @@ const char *battle_mode_label(int32_t mode) {
     }
 }
 
+// Diagnostic-only reason for the chosen charged attack. No Pokemon identity
+// or account data is carried in the event, and no client input is generated.
+const char *smart_charge_reason(int32_t aux) {
+    switch ((static_cast<uint32_t>(aux)>>4)&15u) {
+        case 0: return "disabled";
+        case 1: return "effectiveness";
+        case 2: return "unavailable-pair";
+        case 3: return "only-one-ready";
+        case 4: return "unknown-effect";
+        case 5: return "stale-effect";
+        case 6: return "unverified-slots";
+        default: return "unknown";
+    }
+}
+
 void drain_leaf_events(uint64_t tid) {
     const uint32_t caps = g_capabilities.load(std::memory_order_acquire);
 
@@ -419,9 +434,17 @@ void drain_leaf_events(uint64_t tid) {
                         const char *slot_detail=rev.id==PGR_RC_ACT_CHARGED?
                             ((rev.aux&8)?R"(,"chargedSlot":"Charge2")":
                              (rev.aux&4)?R"(,"chargedSlot":"Charge")":""):"";
-                        std::snprintf(buf,sizeof(buf),
-                          "{\"mode\":\"%s\",\"pvpAction\":\"%s\",\"path\":\"vnext\",\"invoked\":true%s}",
-                          g_pvp_training_scope?"training":"pvp",act,slot_detail);
+                        const char *choice_detail=rev.id==PGR_RC_ACT_CHARGED
+                            ? smart_charge_reason(rev.aux) : nullptr;
+                        if(choice_detail) {
+                          std::snprintf(buf,sizeof(buf),
+                            "{\"mode\":\"%s\",\"pvpAction\":\"%s\",\"path\":\"vnext\",\"invoked\":true%s,\"chargeChoice\":\"%s\"}",
+                            g_pvp_training_scope?"training":"pvp",act,slot_detail,choice_detail);
+                        } else {
+                          std::snprintf(buf,sizeof(buf),
+                            "{\"mode\":\"%s\",\"pvpAction\":\"%s\",\"path\":\"vnext\",\"invoked\":true}",
+                            g_pvp_training_scope?"training":"pvp",act);
+                        }
                         queue_event(PGR_CBH_EV_BATTLE_ACTION,rev.id,rev.aux,tid,buf);
                         break;
                     }
@@ -431,10 +454,12 @@ void drain_leaf_events(uint64_t tid) {
                         transport_text_action(47, "Rocket: shield");
                     } else if (rev.id == PGR_RC_ACT_CHARGED) {
                         if (rev.aux & 2) {
-                            queue_event(PGR_CBH_EV_ROCKET_ACTION, rev.id, rev.aux, tid,
-                              (rev.aux&8)?R"({"action":"charged","path":"vnext","chargedSlot":"Charge2"})":
-                              (rev.aux&4)?R"({"action":"charged","path":"vnext","chargedSlot":"Charge"})":
-                                           R"({"action":"charged","path":"vnext"})");
+                            const char *slot=(rev.aux&8)?"Charge2":
+                                             (rev.aux&4)?"Charge":"Unknown";
+                            std::snprintf(buf,sizeof(buf),
+                              "{\"action\":\"charged\",\"path\":\"vnext\",\"chargedSlot\":\"%s\",\"chargeChoice\":\"%s\"}",
+                              slot,smart_charge_reason(rev.aux));
+                            queue_event(PGR_CBH_EV_ROCKET_ACTION,rev.id,rev.aux,tid,buf);
                         } else {
                             queue_event(PGR_CBH_EV_ROCKET_ACTION, rev.id, rev.aux, tid,
                                         "{\"action\":\"charged\"}");
