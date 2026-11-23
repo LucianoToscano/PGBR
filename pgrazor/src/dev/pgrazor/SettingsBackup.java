@@ -38,18 +38,19 @@ final class SettingsBackup {
             .setPositiveButton("OK",null).show());
         ScrollView scroll=new ScrollView(activity);scroll.addView(root);MapTheme.style(scroll);
         if(PgAssets.rooted()){
-            detail.append("\n\nA versão Root usa um arquivo fixo na pasta de arquivos externos do jogo. Copie-o para outro local antes de desinstalar. Para importar, coloque o backup neste caminho:\n"+rootedFile());
+            detail.append("\n\nA versão Root usa arquivos na pasta de arquivos externos do jogo. Backup comum:\n"+rootedFile()+"\nImportação PGSharp (JSON convertido):\n"+rootedPgSharpFile());
             dialog=new android.app.AlertDialog.Builder(MapTheme.wrap(activity)).setView(scroll).create();
             dialog.setCancelable(false);dialog.show();
         }else activity.setContentView(scroll);
     }
     private File rootedFile(){File dir=activity.getExternalFilesDir(null);return dir==null?null:new File(dir,"PGBR-settings.json");}
+    private File rootedPgSharpFile(){File dir=activity.getExternalFilesDir(null);return dir==null?null:new File(dir,"PGBR_PGSharp_Importacao.json");}
     private void pick(int code){
-        if(PgAssets.rooted() && code!=PGSHARP){
-            File file=rootedFile();
+        if(PgAssets.rooted()){
+            File file=code==PGSHARP?rootedPgSharpFile():rootedFile();
             if(file==null){status.setText(dev.pgrazor.PtBr.tr("External storage is unavailable."));return;}
             new android.app.AlertDialog.Builder(MapTheme.wrap(activity))
-                .setMessage(dev.pgrazor.PtBr.tr(code==EXPORT?"Replace the settings backup at "+file+"?":"Replace settings with the backup at "+file+"? VGP will stay off."))
+                .setMessage(dev.pgrazor.PtBr.tr(code==EXPORT?"Replace the settings backup at "+file+"?":code==PGSHARP?"Importar e unir os dados PGSharp de "+file+"? Os filtros serão apenas preservados.":"Replace settings with the backup at "+file+"? VGP will stay off."))
                 .setNegativeButton(dev.pgrazor.PtBr.tr("Cancel"),null).setPositiveButton(dev.pgrazor.PtBr.tr("Continue"),(d,w)->result(code,Activity.RESULT_OK,new Intent().setData(Uri.fromFile(file)))).show();
             return;
         }
