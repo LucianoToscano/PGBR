@@ -1,0 +1,81 @@
+name: PGBR PR136 - publicar apenas APKs QA validados
+# One-off publication of the already-successful artifact for direct APK links.
+# No new build, no overwrite, no merge into main. This is an untested QA pre-release.
+on:
+  push:
+    branches:
+      - qa/apk-pr136-20261123
+    paths:
+      - '.github/workflows/pgbr-pr136-qa-asset-release.yml'
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: pgbr-pr136-qa-assets
+  cancel-in-progress: false
+jobs:
+  publish-pre-release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - name: Conferir origem e evitar publicacao duplicada
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "${{ github.ref }}" = 'refs/heads/qa/apk-pr136-20261123'
+          test -f pgrazor/native/max_session_gate.h
+          if gh release view 'v0.00.43-LT-PR136' --repo "${{ github.repository }}" >/dev/null 2>&1; then
+            echo 'Tag QA ja existe; recusa sobrescrita ou republicacao.' >&2
+            exit 1
+          fi
+          gh api 'repos/${{ github.repository }}/actions/runs/45255048891' \
+            --jq '.conclusion + "|" + .head_sha' \
+            | grep -Fx 'success|e98b011641382096dc070cc0eccba6a3032ba926'
+      - name: Recuperar APKs da compilacao aprovada
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p dist/pgbr-pr136
+          gh run download 45255048891 --repo "${{ github.repository }}" \
+            --name PGBR-PR136-ARM64-Root-e-SemRoot-QA --dir dist/pgbr-pr136
+      - name: Conferir integridade, assinatura registrada e origem
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -B tools/verify_release.py dist/pgbr-pr136 --tag v0.00.43-LT-PR136
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          data=json.loads(Path('dist/pgbr-pr136/build-info.json').read_text())
+          assert data['source_commit']=='e98b011641382096dc070cc0eccba6a3032ba926', 'source commit mismatch'
+          assert data.get('device_tested') is False, 'QA validation claim changed'
+          print('QA provenance verified')
+          PY
+      - name: Publicar pre-release de QA sem sobrescrever versoes existentes
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          tag='v0.00.43-LT-PR136'
+          files=(
+            "dist/pgbr-pr136/PGBR-${tag}.apk"
+            "dist/pgbr-pr136/PGBR-${tag}-Root.apk"
+            "dist/pgbr-pr136/PGBR-${tag}-Root-module.zip"
+            'dist/pgbr-pr136/build-info.json'
+            'dist/pgbr-pr136/root-build-info.json'
+            'dist/pgbr-pr136/SHA256SUMS.txt'
+          )
+          for f in "${files[@]}"; do test -s "$f"; done
+          gh release create "$tag" "${files[@]}" \
+            --repo "${{ github.repository }}" \
+            --target e98b011641382096dc070cc0eccba6a3032ba926 \
+            --title 'PGBR v0.00.43-LT-PR136 (QA sem homologacao em aparelho)' \
+            --notes-file docs/releases/pr136-apk-qa.md \
+            --prerelease --latest=false
+          gh release view "$tag" --repo "${{ github.repository }}" --json url,assets
