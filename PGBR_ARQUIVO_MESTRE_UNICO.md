@@ -1515,3 +1515,9 @@ Foram executadas 18 fixtures C++ host, contratos de tempos/UI e verificação do
 - A branch de versão LT044 foi reconstruída a partir da `main` pós-merge da [PR #150](https://github.com/LucianoToscano/PGBR/pull/150) (`94d7e28e95c771574d0041260c99820e778c9181`), não substituindo o Mestre dessa revisão. Os 21 arquivos do contrato/versionamento da PR #148 foram reconciliados por conteúdo, enquanto este único Mestre recebeu **apenas o adendo histórico** de #148, preservando também o registro da auditoria e a correção da priorização de carregados já integrados.
 - A nova pré-release LT044, se for validada e publicada, deve conter PT-BR/GPS, Rocket QA6, mapa/HUD/IV, PGSharp local e prioridade imediata confirmada por CI da PR #150; continua `device_tested=false`. Não afirmar integração dos Snipers #115/#118/#121, Radar #114, Savant #135 ou VGP/MT de forks.
 - **Status inicial desta reconciliação:** merge/release e hashes ainda não concluídos neste registro; conferir GitHub Actions, source SHA e assets reais depois da publicação.
+
+### 23/11/2026 — Correção preventiva de workflow histórico LT042 (isolada)
+
+- O merge LT044 `cbd4c69daad4e526bed7a1328925b3f82fdea56c` disparou indevidamente o fluxo antigo LT042 (`45289777398`), porque `.github/workflows/pgbr-lt042-release.yml` ainda monitorava `push main` e `pgrazor/VERSION`.
+- Na branch de manutenção `fix/freeze-lt042-legacy-workflow-20261123`, o workflow LT042 mantém apenas `workflow_dispatch` para reprodução forense. O código de compilação, as credenciais, a verificação de asset/tag imutável e os fluxos LT043/LT044 permanecem preservados sem alterações. Isso não interfere na release LT044 em execução.
+- **Ainda não é merge nesta etapa**; exige revisão/CI da PR dedicada e registro do resultado final. Não considerar a execução LT042 um downgrade de APK instalado; nenhum asset LT042 foi sobrescrito.
