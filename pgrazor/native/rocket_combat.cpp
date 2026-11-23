@@ -654,6 +654,10 @@ void vnext_tick(uint64_t tid, uint64_t epoch, uint32_t mask, uint64_t ticket) {
         : pgr_smart_priority::DisplayReason::OFF;
     int32_t diagnostic_aux=static_cast<int32_t>(g_charge_count&7u);
     if(intelligent_enabled) {
+      // A single first-ready Charge is not proof the pokemon has just one
+      // charged move. Do NOT silently auto-tap it with Smart Attack ON.
+      // Wait for BOTH typed slots, even before the first actor-pair event.
+      wait_for_better=true;
       // The old equality check (count==2) was a silent escape hatch: a
       // replaced UI could leave old live displays among 3-4 rooted objects.
       // Group by the verified game slot, using the newest observation for
@@ -722,10 +726,12 @@ void vnext_tick(uint64_t tid, uint64_t epoch, uint32_t mask, uint64_t ticket) {
               (samples[1].ready?1u:0u)<<13);
         }
       }
-      // One genuinely observed button remains usable until a second one is
-      // seen; after a pair disappears, never treat it as proof of one move.
-      diagnostic_aux|=(wait_for_better?8:0)|(selected_only?16:0);
-      const uint64_t report_ms=boottime_ms();
+    }
+    // Report effective mode even when the Java toggle failed to reach the
+    // native coherent F3 snapshot. Without this, a real device with Smart
+    // OFF looked identical to a selector that authorized Charge incorrectly.
+    diagnostic_aux|=(wait_for_better?8:0)|(selected_only?16:0);
+    const uint64_t report_ms=boottime_ms();
       const uint32_t signature=
           (static_cast<uint32_t>(decision_reason)<<24)|
           static_cast<uint32_t>(diagnostic_aux);
@@ -736,7 +742,6 @@ void vnext_tick(uint64_t tid, uint64_t epoch, uint32_t mask, uint64_t ticket) {
         push_event(PGR_RC_EVT_SMART_DIAG,
                    static_cast<int32_t>(decision_reason),diagnostic_aux);
       }
-    }
     // While holding, run the existing quick-attack method instead.
     if(!wait_for_better) for (uint32_t pos = 0;
                                pos < (selected_only?1u:g_charge_count); ++pos) {
