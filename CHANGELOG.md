@@ -1,3 +1,10 @@
+## Não lançado — integração seletiva Pokematrix (branch QA 23/11/2026)
+- Duplo toque do mapa oferece Caminhar ou Teleporte; «Não perguntar novamente» exige escolha explícita e é revogado quando o modo muda.
+- Badge compacto do companheiro com EP, estrela e manutenção, sem retirar o status completo de acessibilidade.
+- Botão para exibir/ocultar ícone de ginásios diretamente nas configurações; usa preferência existente.
+- Backup e testes JVM estendidos para consentimento de duplo toque. Não altera motor de batalha, captura nativa, modos Root ou versões LT042 publicadas.
+- **Branch, ainda não lançado nem validado em aparelho**: `feat/pokematrix-map-tap-hud-20261123`. Ver Arquivo Mestre Único.
+
 ## v0.00.42-LT — candidato QA do Ataque Inteligente VNext (22/11/2026)
 - [PR #124](https://github.com/LucianoToscano/PGBR/pull/124) integrada à main por `828807c15672d31614e1236458cc448927301c73`, incluindo o ancestral da PR #117 (cura e transporte F3). Com dois carregados VNext prontos, metadados validos e eficácia atual, ON prioriza super eficaz > normal > pouco eficaz. OFF, só um pronto, label incerta ou desatualizada: executor original imediato.
 - LT042 preparada com workflow QA isolado e três variantes assinadas. LT041 congelada e preservada; sem alterar cadências, escudos, trocas, Legacy/Raid/Gym/Max ou a questão da tela branca. `device_tested=false` e issues #90/#105 abertas. [Notas LT042](docs/releases/v0.00.42-LT.md). **Publicada:** [pré-release QA v0.00.42-LT](https://github.com/LucianoToscano/PGBR/releases/tag/v0.00.42-LT), 23/11/2026 00:38:40 UTC. [Build e publicação #45088743052](https://github.com/LucianoToscano/PGBR/actions/runs/45088743052) `completed/success`: seis assets, três pacotes assinados e hashes verificados, `device_tested=false`.
