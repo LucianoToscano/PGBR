@@ -692,6 +692,90 @@ int scenario(int n) {
       if(sc.vcharge.tapped!=0||sc.vc2.tapped!=1)return 79;
       break;
     }
+    case 38: { // Verified PvP VNext uses the same Smart Attack priority as Rocket.
+      api->update(3,2500,tid);api->tick(tid,0);
+      api->observe(PGR_RC_OBS_PVP_SCOPE_ENTER,&sc.vui,0,tid);
+      api->observe(PGR_RC_OBS_VNEXT_UPDATE,&sc.vui,0,tid);
+      sc.vc2.button=&sc.vbutton;
+      using namespace pgr_charge_effect_ui;
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vcharge,pack({Slot::FIRST,Tier::RESISTED,41}),tid);
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vc2,pack({Slot::SECOND,Tier::SUPER,41}),tid);
+      pgrazor_rc_direct_smart_attack(1);
+      api->tick(tid,0);
+      if(sc.vcharge.tapped!=0||sc.vc2.tapped!=1||sc.vgest.tapped!=0)return 80;
+      bool reported=false;
+      pgr_rocket_combat_event_v1 ev{};
+      while(api->next_event(&ev)==1){
+        if(ev.code==PGR_RC_EVT_ACTION&&ev.id==PGR_RC_ACT_CHARGED){
+          if((ev.aux&10)!=10||(ev.aux&4))return 81; // VNext + confirmed Charge2
+          reported=true;
+        }
+      }
+      if(!reported)return 82;
+      break;
+    }
+    case 39: { // PvP Smart OFF retains the original first-ready button.
+      api->update(2,2500,tid);api->tick(tid,0);
+      api->observe(PGR_RC_OBS_PVP_SCOPE_ENTER,&sc.vui,0,tid);
+      api->observe(PGR_RC_OBS_VNEXT_UPDATE,&sc.vui,0,tid);
+      sc.vc2.button=&sc.vbutton;
+      using namespace pgr_charge_effect_ui;
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vcharge,pack({Slot::FIRST,Tier::RESISTED,41}),tid);
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vc2,pack({Slot::SECOND,Tier::SUPER,41}),tid);
+      api->tick(tid,0);
+      if(sc.vcharge.tapped!=1||sc.vc2.tapped!=0)return 83;
+      break;
+    }
+    case 40: { // Trainer/friend challenges use this same scope only after host validation.
+      // The Rocket leaf cannot infer the social battle mode; the host must prove it.
+      api->update(2,2500,tid);api->tick(tid,0);
+      api->observe(PGR_RC_OBS_PVP_SCOPE_ENTER,&sc.vui,0,tid);
+      api->observe(PGR_RC_OBS_VNEXT_UPDATE,&sc.vui,0,tid);
+      sc.vc2.button=&sc.vbutton;
+      using namespace pgr_charge_effect_ui;
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vcharge,pack({Slot::FIRST,Tier::NEUTRAL,41}),tid);
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vc2,pack({Slot::SECOND,Tier::SUPER,41}),tid);
+      pgrazor_rc_direct_smart_attack(1);
+      api->tick(tid,0);
+      if(sc.vcharge.tapped!=0||sc.vc2.tapped!=1)return 84;
+      break;
+    }
+    case 41: { // Smart Attack must NOT redirect the fast gesture to either charged button.
+      api->update(3,2500,tid);api->tick(tid,0);
+      api->observe(PGR_RC_OBS_PVP_SCOPE_ENTER,&sc.vui,0,tid);
+      api->observe(PGR_RC_OBS_VNEXT_UPDATE,&sc.vui,0,tid);
+      sc.vc2.button=&sc.vbutton;sc.vcharge.vcharged=0;sc.vc2.vcharged=0;
+      pgrazor_rc_direct_smart_attack(1);
+      api->tick(tid,0);
+      if(sc.vgest.tapped!=1||sc.vcharge.tapped||sc.vc2.tapped)return 85;
+      break;
+    }
+    case 42: { // Only Charge2 ready: it fires immediately without waiting for Charge.
+      api->update(2,2500,tid);api->tick(tid,0);
+      api->observe(PGR_RC_OBS_PVP_SCOPE_ENTER,&sc.vui,0,tid);
+      api->observe(PGR_RC_OBS_VNEXT_UPDATE,&sc.vui,0,tid);
+      sc.vc2.button=&sc.vbutton;sc.vcharge.vcharged=0;
+      using namespace pgr_charge_effect_ui;
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vcharge,pack({Slot::FIRST,Tier::SUPER,41}),tid);
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vc2,pack({Slot::SECOND,Tier::RESISTED,41}),tid);
+      pgrazor_rc_direct_smart_attack(1);
+      api->tick(tid,0);
+      if(sc.vcharge.tapped!=0||sc.vc2.tapped!=1)return 86;
+      break;
+    }
+    case 43: { // Different observation batches: safe first-ready fallback in PvP.
+      api->update(2,2500,tid);api->tick(tid,0);
+      api->observe(PGR_RC_OBS_PVP_SCOPE_ENTER,&sc.vui,0,tid);
+      api->observe(PGR_RC_OBS_VNEXT_UPDATE,&sc.vui,0,tid);
+      sc.vc2.button=&sc.vbutton;
+      using namespace pgr_charge_effect_ui;
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vcharge,pack({Slot::FIRST,Tier::RESISTED,41}),tid);
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vc2,pack({Slot::SECOND,Tier::SUPER,42}),tid);
+      pgrazor_rc_direct_smart_attack(1);
+      api->tick(tid,0);
+      if(sc.vcharge.tapped!=1||sc.vc2.tapped!=0)return 87;
+      break;
+    }
 #endif
   }
   g_cb=nullptr;api->tick(tid,1);
@@ -700,7 +784,7 @@ int scenario(int n) {
 }
 
 #if defined(PGR_RC_DIRECT_TEST)
-constexpr int kScenarios = 38;
+constexpr int kScenarios = 44;
 #else
 constexpr int kScenarios = 33;
 #endif
