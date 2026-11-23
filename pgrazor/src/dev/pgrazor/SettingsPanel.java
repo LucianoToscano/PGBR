@@ -634,6 +634,7 @@ final class SettingsPanel {
         LinearLayout map = group(loc, "Game map");
         mapTap = button("Game map tap: Do nothing"); map.addView(mapTap);
         mapTap.setOnClickListener(v -> { Control.setMapTapMode((Control.mapTapMode()+1)%4); host.refresh(); });
+        caption(map,"No modo toque duplo, escolha Caminhar ou Teleporte. A opção «Não perguntar novamente» vale apenas até você alterar o modo.");
         spawnSwitch = switchRow(map, "Spawn booster (80 m)"); spawnSwitch.setChecked(Control.spawnBooster());
         spawnSwitch.setOnCheckedChangeListener((v,checked) -> { if(checked==Control.spawnBooster())return; Control.setSpawnBooster(spawnSwitch.isChecked()); });
         spawnStatus = caption(map, "");
@@ -1052,6 +1053,9 @@ final class SettingsPanel {
 
         LinearLayout gymC = group(battleC, "Gyms");
         launch(gymC, "Gym Slotter & Berry Feeder", () -> GymAutomationSettings.show(activity));
+        Switch gymOverlaySwitch=switchRow(gymC,"Exibir ícone de ginásios no mapa");
+        gymOverlaySwitch.setChecked(GymAutomationSettings.overlayEnabled());
+        gymOverlaySwitch.setOnCheckedChangeListener((v,on)->{if(on!=GymAutomationSettings.overlayEnabled())GymAutomationSettings.setOverlayEnabled(on);host.refresh();});
         battleChoice(gymC,2,"Auto quick attack");
         battleChoice(gymC,3,"Auto charged attack");
         battleChoice(gymC,8,"Auto dodge");
