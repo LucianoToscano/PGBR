@@ -252,8 +252,8 @@ public final class Pad {
         vgpToggle=new VgpToggle(host);FrameLayout.LayoutParams vgpButtonLayout=new FrameLayout.LayoutParams(dp(Math.max(48,Control.vgpIconSize())),dp(Math.max(48,Control.vgpIconSize())),Gravity.TOP|Gravity.LEFT);vgpButtonLayout.leftMargin=dp(12);vgpButtonLayout.topMargin=dp(156);overlays.addView(vgpToggle,vgpButtonLayout);vgpToggle.setOnClickListener(v->handleVgpIconTap());
         vgpActivity=text("VGP",11,ink());vgpActivity.setPadding(dp(4),dp(2),dp(4),dp(2));vgpActivity.setMaxLines(1);vgpActivity.setEllipsize(android.text.TextUtils.TruncateAt.END);
         FrameLayout.LayoutParams vgpLayout=new FrameLayout.LayoutParams(dp(140),-2,Gravity.TOP|Gravity.LEFT);vgpLayout.leftMargin=dp(12);vgpLayout.topMargin=dp(216);overlays.addView(vgpActivity,vgpLayout);vgpActivity.setVisibility(View.GONE);
-        buddyEmotionStatus=text("EP: aguardando",11,ink());buddyEmotionStatus.setPadding(dp(4),dp(2),dp(4),dp(2));buddyEmotionStatus.setMaxLines(1);buddyEmotionStatus.setEllipsize(android.text.TextUtils.TruncateAt.END);
-        FrameLayout.LayoutParams buddyEpLayout=new FrameLayout.LayoutParams(dp(155),-2,Gravity.TOP|Gravity.LEFT);buddyEpLayout.leftMargin=dp(12);buddyEpLayout.topMargin=dp(265);overlays.addView(buddyEmotionStatus,buddyEpLayout);buddyEmotionStatus.setVisibility(View.GONE);
+        buddyEmotionStatus=text("♥ --",11,ink());buddyEmotionStatus.setPadding(dp(4),dp(2),dp(4),dp(2));buddyEmotionStatus.setSingleLine(true);buddyEmotionStatus.setMaxWidth(dp(220));buddyEmotionStatus.setEllipsize(android.text.TextUtils.TruncateAt.END);
+        FrameLayout.LayoutParams buddyEpLayout=new FrameLayout.LayoutParams(-2,-2,Gravity.TOP|Gravity.LEFT);buddyEpLayout.leftMargin=dp(12);buddyEpLayout.topMargin=dp(265);overlays.addView(buddyEmotionStatus,buddyEpLayout);buddyEmotionStatus.setVisibility(View.GONE);
         buddyEmotionStatus.setOnClickListener(v->BuddyEmotionSettings.show(activity));buddyEmotionDrag=OverlayDrag.attach(overlays,buddyEmotionStatus,"buddy-emotion");
         gymFeedOverlay=new GymFeedOverlay(activity);FrameLayout.LayoutParams gymFeedLayout=new FrameLayout.LayoutParams(dp(Control.gymIconSizeDp()),dp(Control.gymIconSizeDp()),Gravity.TOP|Gravity.LEFT);gymFeedLayout.leftMargin=dp(12);gymFeedLayout.topMargin=dp(375);overlays.addView(gymFeedOverlay,gymFeedLayout);
         gymAutomationStatus=text("Off",11,ink());gymAutomationStatus.setPadding(dp(6),dp(3),dp(6),dp(3));gymAutomationStatus.setMaxLines(1);gymAutomationStatus.setMaxWidth(dp(165));gymAutomationStatus.setEllipsize(android.text.TextUtils.TruncateAt.END);
@@ -646,14 +646,12 @@ public final class Pad {
         }
     }
     private static String compactBuddyStatus(String full){
-        if(full==null||full.isEmpty())return "EP: aguardando";
-        String first=full.split("\\n",2)[0];
-        if(first.contains(" | Maintenance"))first=first.substring(0,first.indexOf(" | Maintenance"));
-        if(first.contains(" | Manutenção"))first=first.substring(0,first.indexOf(" | Manutenção"));
+        String badge=BuddyEmotionSettings.compactStatus();
+        if(full==null||full.isEmpty())return badge;
         String second=full.contains("\n")?full.substring(full.indexOf('\n')+1):"";
         if(second.toLowerCase(java.util.Locale.ROOT).contains("paused")||
-            second.toLowerCase(java.util.Locale.ROOT).contains("pausad"))return first+" · Pausado";
-        return first.length()>44?first.substring(0,44):first;
+            second.toLowerCase(java.util.Locale.ROOT).contains("pausad"))return badge+" · Pausado";
+        return badge;
     }
     private void refresh() {
         applyMapScale();
@@ -690,7 +688,7 @@ public final class Pad {
         if(vgpToggle!=null){vgpToggle.setVisibility(Control.vgpOverlayVisible()&&!settings.isVisible()&&!(quickMenu!=null&&quickMenu.isShowing())?View.VISIBLE:View.GONE);vgpToggle.setContentDescription(dev.pgrazor.PtBr.tr("Virtual Go Plus "+(Control.vgpEnabled()?"on; tap to turn off":Control.vgpTapProtection()?"off; tap to confirm activation":"off; tap to turn on")+". "+Control.vgpDiagnosticStatus()));vgpToggle.invalidate();}
 
         // Pair the status line with the toggle so the cooldown shutoff reason is visible even when VGP is off.
-        if(buddyEmotionStatus!=null){buddyEmotionStatus.setVisibility(Control.hudLabelVisible(Control.HUD_BUDDY)&&BuddyEmotionSettings.overlayEnabled()&&!settings.isVisible()&&!(quickMenu!=null&&quickMenu.isShowing())?View.VISIBLE:View.GONE);setTextIfChanged(buddyEmotionStatus,compactBuddyStatus(BuddyEmotionSettings.status()));}
+        if(buddyEmotionStatus!=null){buddyEmotionStatus.setVisibility(Control.hudLabelVisible(Control.HUD_BUDDY)&&BuddyEmotionSettings.overlayEnabled()&&!settings.isVisible()&&!(quickMenu!=null&&quickMenu.isShowing())?View.VISIBLE:View.GONE);setTextIfChanged(buddyEmotionStatus,compactBuddyStatus(BuddyEmotionSettings.status()));buddyEmotionStatus.setContentDescription(BuddyEmotionSettings.status()+". Toque para abrir as configurações.");}
         if(catchChance!=null){catchChance.setVisibility(Control.hudLabelVisible(Control.HUD_CATCH)&&CatchChance.visible()&&!settings.isVisible()&&!(quickMenu!=null&&quickMenu.isShowing())?View.VISIBLE:View.GONE);setTextIfChanged(catchChance,CatchChance.text());}
         if(automationStatus!=null){automationStatus.setVisibility(Control.hudLabelVisible(Control.HUD_AUTOMATION)&&(EternatusRouteRunner.active()||OneShotAutomation.overlayVisible()||AutoRaid.running())&&!settings.isVisible()&&!(quickMenu!=null&&quickMenu.isShowing())?View.VISIBLE:View.GONE);setTextIfChanged(automationStatus,EternatusRouteRunner.active()?"Eternatus "+EternatusRouteRunner.currentStop()+"/"+EternatusRouteRunner.totalStops()+" · "+EternatusRouteRunner.compactStatus():AutoRaid.running()?"Auto-Raid | "+AutoRaid.status():OneShotAutomation.overlayStatus());automationDrag.refreshBounds();}
         if(vgpActivity!=null){vgpActivity.setVisibility(Control.hudLabelVisible(Control.HUD_VGP)&&Control.vgpOverlayVisible()&&!settings.isVisible()&&!(quickMenu!=null&&quickMenu.isShowing())?View.VISIBLE:View.GONE);boolean on=Control.vgpEnabled();setTextIfChanged(vgpActivity,on?(Control.vgpAllowed()&&(Control.vgpOptions()&3)!=0?"●":"!"):"○");vgpActivity.setContentDescription(dev.pgrazor.PtBr.tr("Status completo do VGP: "+Control.vgpDiagnosticStatus()));}
@@ -890,12 +888,25 @@ public final class Pad {
         } catch (IllegalArgumentException error) { Toast.makeText(activity,dev.pgrazor.PtBr.tr("Enter valid coordinates"),Toast.LENGTH_SHORT).show(); return false; }
     }
     void confirmMapTeleport(double latitude,double longitude,int mode,int epoch) {
-        TeleportDialog.confirm(activity,latitude,longitude,(lat,lon)->{
-            if(closed||!Control.mapTapAllowed()||mode!=Control.mapTapMode()||epoch!=Control.mapTapEpoch()||Control.engine.activeRouteToken()!=0) {
-                Toast.makeText(activity,dev.pgrazor.PtBr.tr("Map-tap settings changed; tap the map again."),Toast.LENGTH_SHORT).show();return true;
+        TeleportDialog.Action teleport=(lat,lon)->{
+            if(closed||!Control.mapTapAllowed()||mode!=Control.mapTapMode()||epoch!=Control.mapTapEpoch()||Control.engine.activeRouteToken()!=0){
+                Toast.makeText(activity,"Configuração do toque alterada. Toque novamente no mapa.",Toast.LENGTH_SHORT).show();return true;
             }
             if(!quickTeleport(lat,lon))return false;
             Control.event("map-tap-applied",String.format(Locale.US,"mode=%d lat=%.7f lon=%.7f",mode,lat,lon));return true;
+        };
+        if(mode!=3){TeleportDialog.confirm(activity,latitude,longitude,teleport);return;}
+        if(Control.mapTapTeleportNoAsk()){teleport.apply(latitude,longitude);return;}
+        TeleportDialog.Action walk=(lat,lon)->{
+            if(closed||!Control.mapTapAllowed()||mode!=Control.mapTapMode()||epoch!=Control.mapTapEpoch()||Control.engine.activeRouteToken()!=0){
+                Toast.makeText(activity,"Configuração do toque alterada. Toque novamente no mapa.",Toast.LENGTH_SHORT).show();return true;
+            }
+            return quickWalk(lat,lon);
+        };
+        TeleportDialog.confirmMapTap(activity,latitude,longitude,teleport,walk,chooseTeleport->{
+            if(chooseTeleport)Control.setMapTapTeleportNoAsk(true);
+            else Control.setMapTapMode(1);
+            refresh();
         });
     }
     private boolean quickWalk(double latitude,double longitude) {
