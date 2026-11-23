@@ -1030,6 +1030,8 @@ int scenario(int n) {
       usleep(180000);api->tick(tid,0);
       if(sc.vcharge.tapped||sc.vc2.tapped||sc.vgest.tapped<2)return 120;
       sc.vc2.vcharged=1;
+      usleep(180000); // unchanged quick-action cadence
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vcharge,pack({Slot::FIRST,Tier::RESISTED,42}),tid);
       api->observe(PGR_RC_OBS_CHARGE,&sc.vc2,pack({Slot::SECOND,Tier::SUPER,42}),tid);
       api->tick(tid,0);
       if(sc.vcharge.tapped||sc.vc2.tapped!=1)return 121;
@@ -1048,6 +1050,7 @@ int scenario(int n) {
       api->observe(PGR_RC_OBS_CHARGE,&sc.vc2,pack({Slot::SECOND,Tier::SUPER,41}),tid);
       api->tick(tid,0);
       if(sc.vcharge.tapped||sc.vc2.tapped||sc.vgest.tapped!=1)return 122;
+      usleep(180000);
       api->observe(PGR_RC_OBS_ACTOR_PAIR,nullptr,222,tid);
       api->observe(PGR_RC_OBS_CHARGE,&sc.vcharge,pack({Slot::FIRST,Tier::RESISTED,42}),tid);
       api->observe(PGR_RC_OBS_CHARGE,&sc.vc2,pack({Slot::SECOND,Tier::SUPER,42}),tid);
@@ -1063,6 +1066,8 @@ int scenario(int n) {
       api->observe(PGR_RC_OBS_CHARGE,&sc.vcharge,pack({Slot::FIRST,Tier::NEUTRAL,41}),tid);
       api->tick(tid,0);
       if(sc.vcharge.tapped||sc.vc2.tapped||sc.vgest.tapped!=1)return 124;
+      usleep(180000);
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vcharge,pack({Slot::FIRST,Tier::NEUTRAL,41}),tid);
       api->observe(PGR_RC_OBS_CHARGE,&sc.vc2,pack({Slot::SECOND,Tier::SUPER,41}),tid);
       api->tick(tid,0);
       if(sc.vcharge.tapped||sc.vc2.tapped!=1)return 125;
