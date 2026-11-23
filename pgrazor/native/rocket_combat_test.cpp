@@ -986,11 +986,11 @@ int scenario(int n) {
       if(sc.vcharge.tapped||sc.vgest.tapped!=1)return 115;
       break;
     }
-    case 59: { // Genuine single charged button still works with Smart ON.
+    case 59: { // Smart ON must not infer genuine single move from one captured widget.
       arm(&sc.scope,2,tid);api->observe(PGR_RC_OBS_VNEXT_UPDATE,&sc.vui,0,tid);
       api->observe(PGR_RC_OBS_CHARGE,&sc.vcharge,0,tid);
       pgrazor_rc_direct_smart_attack(1);api->tick(tid,0);
-      if(sc.vcharge.tapped!=1)return 116;
+      if(sc.vcharge.tapped)return 116;
       break;
     }
     case 60: { // 3 opaque widgets and no slot mapping: never fire arbitrary first.
@@ -1080,6 +1080,38 @@ int scenario(int n) {
       api->observe(PGR_RC_OBS_CHARGE,&sc.vcharge,pack({Slot::FIRST,Tier::NEUTRAL,41}),tid);
       api->tick(tid,0);
       if(sc.vcharge.tapped!=1)return 126;
+      // No native confirmation of ON must be visible rather than silently
+      // classifying first-ready as Smart Attack selection.
+      pgr_rocket_combat_event_v1 ev{};bool saw_off=false;
+      while(api->next_event(&ev)==1)
+        if(ev.code==PGR_RC_EVT_SMART_DIAG&&ev.id==0&&(ev.aux&8)==0)saw_off=true;
+      if(!saw_off)return 127;
+      break;
+    }
+    case 66: { // First Charge is visible, SECOND callback not observed: ON blocks even on first tick.
+      arm(&sc.scope,3,tid);api->observe(PGR_RC_OBS_VNEXT_UPDATE,&sc.vui,0,tid);
+      using namespace pgr_charge_effect_ui;
+      pgrazor_rc_direct_smart_attack(1);
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vcharge,pack({Slot::FIRST,Tier::NEUTRAL,49}),tid);
+      api->tick(tid,0);
+      if(sc.vcharge.tapped||sc.vgest.tapped!=1)return 128;
+      pgr_rocket_combat_event_v1 ev{};bool saw_hold=false;
+      while(api->next_event(&ev)==1)
+        if(ev.code==PGR_RC_EVT_SMART_DIAG&&ev.id==2&&(ev.aux&8))saw_hold=true;
+      if(!saw_hold)return 129;
+      break;
+    }
+    case 67: { // Explicit Smart OFF still permits the single first-ready charge and reports OFF.
+      arm(&sc.scope,3,tid);api->observe(PGR_RC_OBS_VNEXT_UPDATE,&sc.vui,0,tid);
+      using namespace pgr_charge_effect_ui;
+      pgrazor_rc_direct_smart_attack(0);
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vcharge,pack({Slot::FIRST,Tier::NEUTRAL,49}),tid);
+      api->tick(tid,0);
+      if(sc.vcharge.tapped!=1||sc.vgest.tapped)return 130;
+      pgr_rocket_combat_event_v1 ev{};bool saw_off=false;
+      while(api->next_event(&ev)==1)
+        if(ev.code==PGR_RC_EVT_SMART_DIAG&&ev.id==0&&(ev.aux&8)==0)saw_off=true;
+      if(!saw_off)return 131;
       break;
     }
 #endif
@@ -1090,7 +1122,7 @@ int scenario(int n) {
 }
 
 #if defined(PGR_RC_DIRECT_TEST)
-constexpr int kScenarios = 66;
+constexpr int kScenarios = 68;
 #else
 constexpr int kScenarios = 33;
 #endif
