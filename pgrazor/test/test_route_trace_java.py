@@ -113,6 +113,11 @@ class RouteTraceTest(unittest.TestCase):
         for token in ["source==null", "parent.hasWindowFocus()", "frame.usable(", "view.postDelayed(expire", "view.clearTrace()", "parent.removeView(view)"]:
             self.assertIn(token, overlay)
         self.assertIn("onTouchEvent(android.view.MotionEvent event){return false;}", view)
+        pad=(ROOT / "src/dev/pgrazor/Pad.java").read_text(encoding="utf-8")
+        for token in ["void attachVisualRouteSource(", "if(source!=null) visualRouteOverlay=", "if(visualRouteOverlay==null)return", "!Control.catchScreenVisible()&&!blackShown", "visualRouteOverlay.close()"]:
+            self.assertIn(token, pad)
+        self.assertEqual(pad.count("attachVisualRouteSource("),1)
+
         for forbidden in ["Control.", "MotionEngine", "NativeCore", "System.load", "inject"]:
             self.assertNotIn(forbidden, overlay)
 
