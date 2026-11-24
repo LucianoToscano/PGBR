@@ -70,15 +70,31 @@ final class LocalAuditDialog {
  static void combat(Activity a){
   LinearLayout b=body(a);text(a,b,"Simulação: use potência e custo da modalidade e forma corretas. Não considera escudos, bônus de estado, clima ou prioridade CMP. Nenhum ataque será executado.");
   Spinner mode=select(a,b,"Modalidade",new String[]{"PvP","PvE"});
+  Spinner objective=select(a,b,"Objetivo da comparação",new String[]{"Eficiência (dano por energia)","Maior dano imediato","Dano por segundo (PvE)","Finalizar alvo sem escudo"});
+  EditText targetHp=input(a,b,"PS restantes do alvo (somente finalizar)","");
+  text(a,b,"O cálculo de finalização só vale sem escudo, com PS e atributos informados corretamente. A duração PvE é a do golpe, sem incluir o ciclo de geração de energia.");
   Spinner u1=select(a,b,"Seu tipo 1",LocalAuditPolicy.TYPES),u2=select(a,b,"Seu tipo 2",LocalAuditPolicy.TYPES),f1=select(a,b,"Tipo adversário 1",LocalAuditPolicy.TYPES),f2=select(a,b,"Tipo adversário 2",LocalAuditPolicy.TYPES);
   EditText atk=input(a,b,"Ataque efetivo",""),def=input(a,b,"Defesa efetiva adversária",""),energy=input(a,b,"Energia disponível (0–100)","");
   CheckBox single=new CheckBox(MapTheme.wrap(a));single.setText("Confirmo que existe somente um carregado");b.addView(single);
-  Spinner[] type=new Spinner[2];EditText[] power=new EditText[2],cost=new EditText[2];
-  for(int i=0;i<2;i++){type[i]=select(a,b,"Tipo carregado "+(i+1),LocalAuditPolicy.TYPES);power[i]=input(a,b,"Potência "+(i+1),"");cost[i]=input(a,b,"Energia exigida "+(i+1),"");}
+  Spinner[] type=new Spinner[2];EditText[] power=new EditText[2],cost=new EditText[2],duration=new EditText[2];
+  for(int i=0;i<2;i++){type[i]=select(a,b,"Tipo carregado "+(i+1),LocalAuditPolicy.TYPES);power[i]=input(a,b,"Potência "+(i+1),"");cost[i]=input(a,b,"Energia exigida "+(i+1),"");duration[i]=input(a,b,"Duração do golpe em segundos (PvE) "+(i+1),"");}
   TextView result=text(a,b,"");action(a,b,"Comparar",()->{try{
    LocalAuditPolicy.Estimate[] e=new LocalAuditPolicy.Estimate[2];StringBuilder out=new StringBuilder(mode.getSelectedItemPosition()==0?"PvP\n":"PvE\n");
    for(int i=0;i<(single.isChecked()?1:2);i++){e[i]=LocalAuditPolicy.estimate(type[i].getSelectedItemPosition(),decimal(power[i]),decimal(cost[i]),u1.getSelectedItemPosition(),u2.getSelectedItemPosition(),f1.getSelectedItemPosition(),f2.getSelectedItemPosition(),decimal(atk),decimal(def),decimal(energy));if(e[i]==null)throw new IllegalArgumentException();out.append(String.format(Locale.forLanguageTag("pt-BR"),"Carregado %d: ×%.3f • %s • dano estimado %.0f • DPE %.2f • %s%n",i+1,e[i].effectiveness,e[i].effectiveness>1.001?"Super eficaz":e[i].effectiveness<0.999?"Pouco eficaz":"Neutro",e[i].damage,e[i].perEnergy,e[i].ready?"Pronto":"Sem energia"));}
-   int best=single.isChecked()?LocalAuditPolicy.recommendSingle(e[0]):LocalAuditPolicy.recommend(e[0],e[1]);out.append(best<0?"Nenhum carregado pronto.":"Melhor DPE entre os prontos: carregado "+(best+1));result.setText(out);
+   LocalAuditPolicy.Objective goal=LocalAuditPolicy.Objective.values()[objective.getSelectedItemPosition()];
+   if(goal==LocalAuditPolicy.Objective.DAMAGE_PER_SECOND&&mode.getSelectedItemPosition()!=1)throw new IllegalArgumentException();
+   double secA=goal==LocalAuditPolicy.Objective.DAMAGE_PER_SECOND?decimal(duration[0]):1;
+   double secB=goal==LocalAuditPolicy.Objective.DAMAGE_PER_SECOND&&!single.isChecked()?decimal(duration[1]):1;
+   double hp=goal==LocalAuditPolicy.Objective.FINISH_TARGET?decimal(targetHp):1;
+   if(goal==LocalAuditPolicy.Objective.FINISH_TARGET&&(!Double.isFinite(hp)||hp<=0))throw new IllegalArgumentException();
+   if(goal==LocalAuditPolicy.Objective.DAMAGE_PER_SECOND){
+    if(!Double.isFinite(LocalAuditPolicy.damagePerSecond(e[0],secA))||(!single.isChecked()&&!Double.isFinite(LocalAuditPolicy.damagePerSecond(e[1],secB))))throw new IllegalArgumentException();
+    for(int i=0;i<(single.isChecked()?1:2);i++)out.append(String.format(Locale.forLanguageTag("pt-BR"),"Carregado %d: %.2f dano/s%n",i+1,LocalAuditPolicy.damagePerSecond(e[i],i==0?secA:secB)));
+   }
+   int best=single.isChecked()?LocalAuditPolicy.recommendSingle(e[0]):LocalAuditPolicy.compareContext(e[0],e[1],goal,secA,secB,hp);
+   out.append(best<0?"Nenhum carregado pronto.":"Recomendação pelo objetivo selecionado: carregado "+(best+1));
+   if(goal==LocalAuditPolicy.Objective.FINISH_TARGET&&best>=0)out.append(e[best].damage>=hp?" — dano estimado suficiente, sem escudo.":" — dano estimado insuficiente para finalizar.");
+   result.setText(out);
   }catch(RuntimeException invalid){result.setText("Dados incompletos ou inválidos. Não há recomendação.");}});
   present(a,new AlertDialog.Builder(MapTheme.wrap(a)).setTitle("Simulador de eficácia").setView(scroll(a,b)).setPositiveButton("Fechar",null).create());
  }

@@ -1,5 +1,7 @@
 ## PGBR LT045 (v0.00.45-LT) — candidata QA, publicação pendente
 
+- Prévia local: evidências contraditórias explicitadas; comparação de ataques por eficiência, dano, duração PvE e PS restantes sem escudo. Nenhuma ação executada pelo simulador.
+
 - Revisão local: prévia de proteção não destrutiva, explicação de códigos, simulador manual de eficácia/DPE, desenho GPX e traduções. ZIP de compartilhamento passa a usar lista de campos técnicos permitidos; TXT bruto continua privado. Sem alteração de execução de ações do jogo. CI e homologação Android ainda pendentes.
 
 - Integra a candidata #157 (Snipers 1/2, Radar/filtros, Savant Root/PvP, coletor IV100 upstream e refinamento VGP+ #158) sem substituir a política de ataque da LT044.

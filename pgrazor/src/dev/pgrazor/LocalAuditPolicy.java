@@ -3,7 +3,7 @@ import java.util.*;
 /** Local advice only. No action or network API. */
 public final class LocalAuditPolicy {
  private LocalAuditPolicy(){}
- public static final int SCHEMA=1;
+ public static final int SCHEMA=2;
  public enum Flag {
  SHINY("shiny"),HUNDO("IV 100%"),NUNDO("IV 0%"),LEGENDARY("lendário"),MYTHICAL("mítico"),ULTRA("Ultra Criatura"),
  LUCKY("sortudo"),FAVORITE("favorito"),SHADOW("sombrio"),PURIFIED("purificado"),COSTUME("fantasia"),EVENT("evento"),BACKGROUND("fundo especial"),
@@ -21,6 +21,14 @@ public final class LocalAuditPolicy {
  List<String> reasons=new ArrayList<>(),unknown=new ArrayList<>();
  boolean iv=validIv(a)&&validIv(d)&&validIv(s);
  if(!iv)unknown.add("IV não confirmado");else if((a+d+s)*100>=min*45)reasons.add("IV acima ou igual ao limite");
+ // Contradictions are uncertainty even if the optional protection is disabled.
+ if(iv){
+  if(observed.get(Flag.HUNDO)!=null&&observed.get(Flag.HUNDO)!=(a+d+s==45))unknown.add("Marcação IV 100% contradiz o IV informado");
+  if(observed.get(Flag.NUNDO)!=null&&observed.get(Flag.NUNDO)!=(a+d+s==0))unknown.add("Marcação IV 0% contradiz o IV informado");
+ }
+ if(Boolean.TRUE.equals(observed.get(Flag.HUNDO))&&Boolean.TRUE.equals(observed.get(Flag.NUNDO)))unknown.add("Marcações IV 100% e IV 0% incompatíveis");
+ if(Boolean.TRUE.equals(observed.get(Flag.XXL))&&Boolean.TRUE.equals(observed.get(Flag.XXS)))unknown.add("Marcações XXL e XXS incompatíveis");
+ if(Boolean.TRUE.equals(observed.get(Flag.SHADOW))&&Boolean.TRUE.equals(observed.get(Flag.PURIFIED)))unknown.add("Marcações sombrio e purificado incompatíveis");
  for(Flag f:enabled){
  Boolean v=observed.get(f);
  if(f==Flag.HUNDO)v=iv?Boolean.valueOf(a+d+s==45):null;
@@ -66,8 +74,8 @@ public final class LocalAuditPolicy {
  return Math.pow(1.6,CHART[move-1][a-1]+(b==0?0:CHART[move-1][b-1]));
  }
  public static final class Estimate {
- public final double effectiveness,damage,perEnergy;public final boolean ready;
- Estimate(double e,double d,double pe,boolean r){effectiveness=e;damage=d;perEnergy=pe;ready=r;}
+ public final double effectiveness,damage,perEnergy,energyCost;public final boolean ready;
+ Estimate(double e,double d,double cost,boolean r){effectiveness=e;damage=d;perEnergy=d/cost;energyCost=cost;ready=r;}
  }
  /** Inputs are supplied by user for the chosen mode/form. Excludes shields, buffs, weather and CMP. */
  public static Estimate estimate(int move,double power,double cost,int own1,int own2,int foe1,int foe2,double attack,double defense,double energy){
@@ -75,7 +83,7 @@ public final class LocalAuditPolicy {
  !Double.isFinite(power)||power<=0||!Double.isFinite(cost)||cost<=0||cost>100||!Double.isFinite(energy)||energy<0||energy>100)return null;
  double e=effectiveness(move,foe1,foe2);if(!Double.isFinite(e))return null;
  double d=Math.floor(0.5*power*attack/defense*(move==own1||move==own2?1.2:1)*e)+1;
- if(!Double.isFinite(d))return null;return new Estimate(e,d,d/cost,energy>=cost);
+ if(!Double.isFinite(d)||!Double.isFinite(d/cost))return null;return new Estimate(e,d,cost,energy>=cost);
  }
  /** Offline planning with explicit energy bounds; no live battle input. */
  public static final class EnergyPlan {
@@ -93,6 +101,27 @@ public final class LocalAuditPolicy {
  private static int fasts(int energy,int gain,int cost){return (Math.max(0,cost-energy)+gain-1)/gain;}
  /** Explicit one-move configuration, never inferred from missing data. */
  public static int recommendSingle(Estimate a){return a!=null&&a.ready?0:-1;}
+ /** Contextual offline estimates; never represents shielded outcomes as guaranteed damage. */
+ public enum Objective { EFFICIENCY, IMMEDIATE_DAMAGE, DAMAGE_PER_SECOND, FINISH_TARGET }
+ public static double damagePerSecond(Estimate estimate,double seconds){
+  return estimate!=null&&Double.isFinite(seconds)&&seconds>0&&Double.isFinite(estimate.damage/seconds)?estimate.damage/seconds:Double.NaN;
+ }
+ public static int compareContext(Estimate a,Estimate b,Objective objective,double secondsA,double secondsB,double targetHp){
+  if(a==null||b==null||objective==null)return -1;
+  if(objective==Objective.DAMAGE_PER_SECOND&&(!Double.isFinite(damagePerSecond(a,secondsA))||!Double.isFinite(damagePerSecond(b,secondsB))))return -1;
+  if(objective==Objective.FINISH_TARGET&&(!Double.isFinite(targetHp)||targetHp<=0))return -1;
+  if(!a.ready&&!b.ready)return -1;if(!a.ready)return 1;if(!b.ready)return 0;
+  switch(objective){
+   case IMMEDIATE_DAMAGE:return b.damage>a.damage?1:0;
+   case DAMAGE_PER_SECOND:return damagePerSecond(b,secondsB)>damagePerSecond(a,secondsA)?1:0;
+   case FINISH_TARGET:
+    boolean finishA=a.damage>=targetHp,finishB=b.damage>=targetHp;
+    if(finishA!=finishB)return finishB?1:0;
+    if(finishA)return b.energyCost<a.energyCost?1:0;
+    return b.damage>a.damage?1:0;
+   default:return recommend(a,b);
+  }
+ }
  public static int recommend(Estimate a,Estimate b){
  if(a==null||b==null)return -1;if(!a.ready&&!b.ready)return -1;if(!a.ready)return 1;if(!b.ready)return 0;
  return b.perEnergy>a.perEnergy?1:0;
