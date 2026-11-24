@@ -179,7 +179,7 @@ final class RouteAnchorSnapshot {
             while (at < s.length()) {
                 expect('{');
                 String id = null, kind = null;
-                double lat = Double.NaN, lon = Double.NaN, x = Double.NaN, y = Double.NaN;
+                double lat = Double.NaN, lon = Double.NaN, x = Double.NaN, y = Double.NaN, z = Double.NaN;
                 boolean visible = false;
                 int fields = 0;
                 while (true) {
@@ -191,15 +191,17 @@ final class RouteAnchorSnapshot {
                     else if ("lon".equals(key)) lon = number();
                     else if ("x".equals(key)) x = number();
                     else if ("y".equals(key)) y = number();
+                    else if ("z".equals(key)) z = number();
                     else if ("visible".equals(key)) visible = bool();
                     else throw new IllegalArgumentException();
                     fields++;
                     if (!commaOrObjectEnd()) break;
                 }
                 if (id == null || id.length() == 0 || id.length() > 64 || kind == null ||
-                        !( "stop".equals(kind) || "gym".equals(kind)) || fields != 7 ||
+                        !( "stop".equals(kind) || "gym".equals(kind)) || fields != 8 ||
                         !Double.isFinite(lat) || Math.abs(lat) > 90 || !Double.isFinite(lon) ||
-                        Math.abs(lon) > 180 || !Double.isFinite(x) || !Double.isFinite(y)) return null;
+                        Math.abs(lon) > 180 || !Double.isFinite(x) || !Double.isFinite(y) ||
+                        !Double.isFinite(z) || z <= 0) return null;
                 if (visible && Math.abs(x) <= 1 && Math.abs(y) <= 1) out.add(new double[]{lat, lon, x, y});
                 ws();
                 if (at < s.length() && s.charAt(at) == ',') { at++; continue; }
