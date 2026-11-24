@@ -56,6 +56,15 @@ class ItemIconAssetsTest(unittest.TestCase):
         self.assertEqual(data['follow_up']['named_balls_same_size'],3)
         self.assertEqual(data['follow_up']['potion_revive_named_different_size'],6)
         self.assertEqual(data['follow_up']['generic_egg_unresolved'],1)
+        expected_counts={'byte_identical':30,'visual_match_distinct_bytes':6,'unresolved_generic_egg':1}
+        for status,count in expected_counts.items():
+            self.assertEqual(sum(r['comparison']['status']==status for r in data['items']),count)
+        self.assertEqual(data['follow_up']['binary_audit']['assets_replaced'],0)
+        badge=(ROOT/'src/dev/pgrazor/ItemBadge.java').read_text(encoding='utf-8')
+        self.assertIn('itemId==101?0xffc449d9:itemId==102?0xffffa520:itemId==103?0xfff4a9c1:0xff268cde',badge)
+        self.assertIn('if(itemId==202){',badge)
+        self.assertIn('i<10;i++',badge)
+        self.assertIn('fill(0xfff4c64f)',badge)
         by_id={row['id']:row for row in data['items']}
         self.assertEqual(by_id[301]['drive_named_reference']['status'],'ambiguous_generic_egg')
         self.assertTrue(all(by_id[i]['drive_named_reference']['same_size'] for i in (1,2,3)))

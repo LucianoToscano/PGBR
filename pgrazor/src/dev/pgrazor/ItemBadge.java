@@ -115,7 +115,8 @@ final class ItemBadge extends View {
         stroke(0xff17222b,1.6f);c.drawCircle(0,0,4.3f,paint);
     }
     private void drawPotion(Canvas c){
-        int color=itemId==101?0xff7fa8e5:itemId==102?0xff6a8ce8:itemId==103?0xffa85acf:0xffe16ab4;
+        // Approximate fallback colors checked against the existing item PNGs and Drive references.
+        int color=itemId==101?0xffc449d9:itemId==102?0xffffa520:itemId==103?0xfff4a9c1:0xff268cde;
         fill(0xff768a94);c.drawRoundRect(-5,-13,5,-8,1,1,paint);
         fill(0xffe1eef5);c.drawRoundRect(-9,-9,9,13,4,4,paint);
         fill(color);c.drawRoundRect(-7,-6,7,11,3,3,paint);
@@ -123,9 +124,21 @@ final class ItemBadge extends View {
         c.drawRoundRect(-5.5f,0.5f,5.5f,3.5f,1,1,paint);
     }
     private void drawRevive(Canvas c){
-        fill(itemId==201?0xfff4b642:0xffd78be9);
-        Path diamond=new Path();diamond.moveTo(0,-14);diamond.lineTo(13,0);diamond.lineTo(0,14);diamond.lineTo(-13,0);diamond.close();c.drawPath(diamond,paint);
-        stroke(0xffffffff,2);c.drawLine(0,-7,0,7,paint);c.drawLine(-7,0,7,0,paint);
+        // The original Max Revive is a golden star, not a purple diamond.
+        fill(0xfff4c64f);
+        Path gem=new Path();
+        if(itemId==202){
+            for(int i=0;i<10;i++){
+                double angle=-Math.PI/2+i*Math.PI/5;
+                double radius=(i%2==0)?14:6;
+                float x=(float)(Math.cos(angle)*radius),y=(float)(Math.sin(angle)*radius);
+                if(i==0)gem.moveTo(x,y);else gem.lineTo(x,y);
+            }
+        }else{
+            gem.moveTo(4,-14);gem.lineTo(9,-7);gem.lineTo(-4,14);gem.lineTo(-9,7);
+        }
+        gem.close();c.drawPath(gem,paint);
+        stroke(0xff9b7529,1.1f);c.drawPath(gem,paint);
     }
     private void drawEgg(Canvas c){
         fill(0xfff4e8a6);c.drawOval(-10,-14,10,14,paint);

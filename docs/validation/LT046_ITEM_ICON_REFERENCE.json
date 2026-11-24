@@ -23,6 +23,11 @@
         "bytes": 26184,
         "same_size": true,
         "status": "metadata_only_not_byte_or_visual_verified"
+      },
+      "comparison": {
+        "status": "byte_identical",
+        "reference_filename": "poke-ball.png",
+        "method": "complete base64-normalized byte comparison"
       }
     },
     {
@@ -36,6 +41,11 @@
         "bytes": 29945,
         "same_size": true,
         "status": "metadata_only_not_byte_or_visual_verified"
+      },
+      "comparison": {
+        "status": "byte_identical",
+        "reference_filename": "great-ball.png",
+        "method": "complete base64-normalized byte comparison"
       }
     },
     {
@@ -49,6 +59,11 @@
         "bytes": 29367,
         "same_size": true,
         "status": "metadata_only_not_byte_or_visual_verified"
+      },
+      "comparison": {
+        "status": "byte_identical",
+        "reference_filename": "ultra-ball.png",
+        "method": "complete base64-normalized byte comparison"
       }
     },
     {
@@ -68,6 +83,12 @@
         "bytes": 39445,
         "same_size": false,
         "status": "metadata_only_not_byte_or_visual_verified"
+      },
+      "comparison": {
+        "status": "visual_match_distinct_bytes",
+        "numeric_bytes_equal": false,
+        "named_bytes_equal": false,
+        "visual_observation": "same item identity; different framing and resolution; existing PNG retained"
       }
     },
     {
@@ -87,6 +108,12 @@
         "bytes": 36835,
         "same_size": false,
         "status": "metadata_only_not_byte_or_visual_verified"
+      },
+      "comparison": {
+        "status": "visual_match_distinct_bytes",
+        "numeric_bytes_equal": false,
+        "named_bytes_equal": false,
+        "visual_observation": "same item identity; different framing and resolution; existing PNG retained"
       }
     },
     {
@@ -106,6 +133,12 @@
         "bytes": 37095,
         "same_size": false,
         "status": "metadata_only_not_byte_or_visual_verified"
+      },
+      "comparison": {
+        "status": "visual_match_distinct_bytes",
+        "numeric_bytes_equal": false,
+        "named_bytes_equal": false,
+        "visual_observation": "same item identity; different framing and resolution; existing PNG retained"
       }
     },
     {
@@ -125,6 +158,12 @@
         "bytes": 55956,
         "same_size": false,
         "status": "metadata_only_not_byte_or_visual_verified"
+      },
+      "comparison": {
+        "status": "visual_match_distinct_bytes",
+        "numeric_bytes_equal": false,
+        "named_bytes_equal": false,
+        "visual_observation": "same item identity; different framing and resolution; existing PNG retained"
       }
     },
     {
@@ -144,6 +183,12 @@
         "bytes": 15555,
         "same_size": false,
         "status": "metadata_only_not_byte_or_visual_verified"
+      },
+      "comparison": {
+        "status": "visual_match_distinct_bytes",
+        "numeric_bytes_equal": false,
+        "named_bytes_equal": false,
+        "visual_observation": "same item identity; different framing and resolution; existing PNG retained"
       }
     },
     {
@@ -163,6 +208,12 @@
         "bytes": 27804,
         "same_size": false,
         "status": "metadata_only_not_byte_or_visual_verified"
+      },
+      "comparison": {
+        "status": "visual_match_distinct_bytes",
+        "numeric_bytes_equal": false,
+        "named_bytes_equal": false,
+        "visual_observation": "same item identity; different framing and resolution; existing PNG retained"
       }
     },
     {
@@ -195,6 +246,10 @@
             "bytes": 29314
           }
         ]
+      },
+      "comparison": {
+        "status": "unresolved_generic_egg",
+        "visual_observation": "current PNG shows a blue speckled egg; no verified equivalent for generic item ID 301"
       }
     },
     {
@@ -208,7 +263,12 @@
           "size": 69689,
           "same_size": true
         }
-      ]
+      ],
+      "comparison": {
+        "status": "byte_identical",
+        "reference_filename": "Item_0401.png",
+        "method": "complete base64-normalized byte comparison"
+      }
     },
     {
       "id": 701,
@@ -221,7 +281,12 @@
           "size": 54614,
           "same_size": true
         }
-      ]
+      ],
+      "comparison": {
+        "status": "byte_identical",
+        "reference_filename": "Item_0701.png",
+        "method": "complete base64-normalized byte comparison"
+      }
     },
     {
       "id": 702,
@@ -234,7 +299,12 @@
           "size": 40396,
           "same_size": true
         }
-      ]
+      ],
+      "comparison": {
+        "status": "byte_identical",
+        "reference_filename": "Item_0702.png",
+        "method": "complete base64-normalized byte comparison"
+      }
     },
     {
       "id": 703,
@@ -247,7 +317,12 @@
           "size": 42308,
           "same_size": true
         }
-      ]
+      ],
+      "comparison": {
+        "status": "byte_identical",
+        "reference_filename": "Item_0703.png",
+        "method": "complete base64-normalized byte comparison"
+      }
     },
     {
       "id": 704,
@@ -260,7 +335,12 @@
           "size": 26043,
           "same_size": true
         }
-      ]
+      ],
+      "comparison": {
+        "status": "byte_identical",
+        "reference_filename": "Item_0704.png",
+        "method": "complete base64-normalized byte comparison"
+      }
     },
     {
       "id": 705,
@@ -273,7 +353,12 @@
           "size": 49222,
           "same_size": true
         }
-      ]
+      ],
+      "comparison": {
+        "status": "byte_identical",
+        "reference_filename": "Item_0705.png",
+        "method": "complete base64-normalized byte comparison"
+      }
     },
     {
       "id": 706,
@@ -286,7 +371,12 @@
           "size": 43710,
           "same_size": true
         }
-      ]
+      ],
+      "comparison": {
+        "status": "byte_identical",
+        "reference_filename": "Item_0706.png",
+        "method": "complete base64-normalized byte comparison"
+      }
     },
     {
       "id": 707,
@@ -299,7 +389,12 @@
           "size": 51721,
           "same_size": true
         }
-      ]
+      ],
+      "comparison": {
+        "status": "byte_identical",
+        "reference_filename": "Item_0707.png",
+        "method": "complete base64-normalized byte comparison"
+      }
     },
     {
       "id": 1201,
@@ -312,7 +407,12 @@
           "size": 24021,
           "same_size": true
         }
-      ]
+      ],
+      "comparison": {
+        "status": "byte_identical",
+        "reference_filename": "Item_1201.png",
+        "method": "complete base64-normalized byte comparison"
+      }
     },
     {
       "id": 1202,
@@ -325,7 +425,12 @@
           "size": 25882,
           "same_size": true
         }
-      ]
+      ],
+      "comparison": {
+        "status": "byte_identical",
+        "reference_filename": "Item_1202.png",
+        "method": "complete base64-normalized byte comparison"
+      }
     },
     {
       "id": 1203,
@@ -338,7 +443,12 @@
           "size": 37844,
           "same_size": true
         }
-      ]
+      ],
+      "comparison": {
+        "status": "byte_identical",
+        "reference_filename": "Item_1203.png",
+        "method": "complete base64-normalized byte comparison"
+      }
     },
     {
       "id": 1204,
@@ -351,7 +461,12 @@
           "size": 37094,
           "same_size": true
         }
-      ]
+      ],
+      "comparison": {
+        "status": "byte_identical",
+        "reference_filename": "Item_1204.png",
+        "method": "complete base64-normalized byte comparison"
+      }
     },
     {
       "id": 1301,
@@ -364,7 +479,12 @@
           "size": 32333,
           "same_size": true
         }
-      ]
+      ],
+      "comparison": {
+        "status": "byte_identical",
+        "reference_filename": "Item_1301.png",
+        "method": "complete base64-normalized byte comparison"
+      }
     },
     {
       "id": 1350,
@@ -377,7 +497,12 @@
           "size": 57450,
           "same_size": true
         }
-      ]
+      ],
+      "comparison": {
+        "status": "byte_identical",
+        "reference_filename": "item_1350.png",
+        "method": "complete base64-normalized byte comparison"
+      }
     },
     {
       "id": 1351,
@@ -390,7 +515,12 @@
           "size": 59918,
           "same_size": true
         }
-      ]
+      ],
+      "comparison": {
+        "status": "byte_identical",
+        "reference_filename": "item_1351.png",
+        "method": "complete base64-normalized byte comparison"
+      }
     },
     {
       "id": 1401,
@@ -403,7 +533,12 @@
           "size": 33407,
           "same_size": true
         }
-      ]
+      ],
+      "comparison": {
+        "status": "byte_identical",
+        "reference_filename": "Item_1401.png",
+        "method": "complete base64-normalized byte comparison"
+      }
     },
     {
       "id": 1402,
@@ -416,7 +551,12 @@
           "size": 34288,
           "same_size": true
         }
-      ]
+      ],
+      "comparison": {
+        "status": "byte_identical",
+        "reference_filename": "Item_1402.png",
+        "method": "complete base64-normalized byte comparison"
+      }
     },
     {
       "id": 1403,
@@ -429,7 +569,12 @@
           "size": 34417,
           "same_size": true
         }
-      ]
+      ],
+      "comparison": {
+        "status": "byte_identical",
+        "reference_filename": "Item_1403.png",
+        "method": "complete base64-normalized byte comparison"
+      }
     },
     {
       "id": 1404,
@@ -442,7 +587,12 @@
           "size": 54726,
           "same_size": true
         }
-      ]
+      ],
+      "comparison": {
+        "status": "byte_identical",
+        "reference_filename": "Item_1404.png",
+        "method": "complete base64-normalized byte comparison"
+      }
     },
     {
       "id": 1406,
@@ -455,7 +605,12 @@
           "size": 56541,
           "same_size": true
         }
-      ]
+      ],
+      "comparison": {
+        "status": "byte_identical",
+        "reference_filename": "Item_1406.png",
+        "method": "complete base64-normalized byte comparison"
+      }
     },
     {
       "id": 1408,
@@ -468,7 +623,12 @@
           "size": 32542,
           "same_size": true
         }
-      ]
+      ],
+      "comparison": {
+        "status": "byte_identical",
+        "reference_filename": "Item_1408.png",
+        "method": "complete base64-normalized byte comparison"
+      }
     },
     {
       "id": 1600,
@@ -481,7 +641,12 @@
           "size": 68379,
           "same_size": true
         }
-      ]
+      ],
+      "comparison": {
+        "status": "byte_identical",
+        "reference_filename": "item_1600.png",
+        "method": "complete base64-normalized byte comparison"
+      }
     },
     {
       "id": 1601,
@@ -494,7 +659,12 @@
           "size": 56473,
           "same_size": true
         }
-      ]
+      ],
+      "comparison": {
+        "status": "byte_identical",
+        "reference_filename": "item_1601.png",
+        "method": "complete base64-normalized byte comparison"
+      }
     },
     {
       "id": 1602,
@@ -507,7 +677,12 @@
           "size": 51118,
           "same_size": true
         }
-      ]
+      ],
+      "comparison": {
+        "status": "byte_identical",
+        "reference_filename": "item_1602.png",
+        "method": "complete base64-normalized byte comparison"
+      }
     },
     {
       "id": 1606,
@@ -520,7 +695,12 @@
           "size": 52309,
           "same_size": true
         }
-      ]
+      ],
+      "comparison": {
+        "status": "byte_identical",
+        "reference_filename": "item_1606.png",
+        "method": "complete base64-normalized byte comparison"
+      }
     },
     {
       "id": 1607,
@@ -533,7 +713,12 @@
           "size": 53126,
           "same_size": true
         }
-      ]
+      ],
+      "comparison": {
+        "status": "byte_identical",
+        "reference_filename": "item_1607.png",
+        "method": "complete base64-normalized byte comparison"
+      }
     },
     {
       "id": 1609,
@@ -546,7 +731,12 @@
           "size": 5631,
           "same_size": true
         }
-      ]
+      ],
+      "comparison": {
+        "status": "byte_identical",
+        "reference_filename": "Item_1609.png",
+        "method": "complete base64-normalized byte comparison"
+      }
     }
   ],
   "unmapped_named_candidates": [
@@ -610,7 +800,14 @@
     "named_balls_same_size": 3,
     "potion_revive_named_different_size": 6,
     "generic_egg_unresolved": 1,
-    "byte_comparison": "not performed; no byte-level Drive checksum or materializable image bytes exposed in current connector",
-    "action": "preserve current images; do not substitute from names or sizes"
+    "byte_comparison": "completed for 36 of 37 existing IDs using complete binary responses from GitHub and Drive; 30 identical, six distinct binaries visually matching",
+    "action": "retain existing PNGs; correct only fallback drawing palette and Max Revive shape; do not infer new IDs or redistribution permissions",
+    "binary_audit": {
+      "baseline": "e1515315e290b23924adc0b2fc383b343b903ac7",
+      "byte_identical": 30,
+      "visual_match_distinct_bytes": 6,
+      "unresolved": 1,
+      "assets_replaced": 0
+    }
   }
 }
