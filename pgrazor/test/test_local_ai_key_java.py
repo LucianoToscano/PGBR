@@ -19,6 +19,10 @@ class AiKeyTests(unittest.TestCase):
         ui=(src/'LocalAiKeyDialog.java').read_text(encoding='utf-8')
         for term in ['dev.pgrazor.preview','getNoBackupFilesDir()','AndroidKeyStore','ATOMIC_MOVE','Arrays.fill(plaintext']:
             self.assertIn(term,vault)
+        self.assertIn('new byte[LocalAiKeyEnvelope.MAX_ENVELOPE+1]',vault)
+        self.assertIn('count>LocalAiKeyEnvelope.MAX_ENVELOPE',vault)
+        self.assertNotIn('Files.readAllBytes(',vault)
+        self.assertIn('Arrays.fill(buffer',vault)
         self.assertIn('LocalAiKeyVault.allowed(a)',ui)
         self.assertIn('TYPE_TEXT_VARIATION_PASSWORD',ui)
         self.assertIn('presentPrivate',ui)
