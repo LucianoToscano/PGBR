@@ -123,3 +123,14 @@ PGBR-CI-205 integrado após CI completo; PGBR-UI-SMALL candidata de correção e
 - MAP-03/SYS-03: #209, HEAD 1756b7ad034927b12ea5024127b652bc7f5a26b0; validação uniforme de GPX armazenado, rejeição de links simbólicos e arquivo canônico com múltiplas rotas; CI 45495347808/45495347684, conferir resultado final.
 - SYS-02: #210, HEAD cd7c2f89ae71c6ef02921aea9ed9a2542bdb53f3; inclui leitura mais recente na interpolação dentro do último intervalo e rejeita janelas não positivas; CI 45495517445/45495517220, conferir resultado final.
 - Próximo: integrar correções independentes após reconciliação e checks do HEAD exato, preservar as tarefas abrangentes abertas; conferir execução agendada da #205 e preparar nova QA quando alterações estiverem integradas. device_tested=false. Nenhuma publicação nova neste ciclo.
+
+
+### Ciclo 24/11/2026 — recibos, GPX, cache e estatísticas
+
+- MAP-03/SYS-03: #209 integrada em 8f3cca68406642a86710fca78f02b7a6e091389d, CI 45495347684/45495347808 aprovados. Correção de integridade de armazenamento GPX verificada; escopo MAP-03 completo ainda aberto.
+- SYS-02: #210 integrada em c77e1bde89288ccc01450623a6355df194e0cca8, CI 45495517220/45495517445 aprovados. Correção da interpolação de janelas curtas verificada; demais requisitos de estatísticas abertos.
+- MAP-01/SYS-05: #208 integrada em e01b841fd745e57cb05f580d972cbdc5921e4855, HEAD fae0eba7098f61dbfb38dc649e98dcfeaa401d9d, CI 45495955974/45495956007 aprovados. Cache atômico e concorrência corrigidos; demais requisitos mantidos abertos.
+- SYS-08/PGBR-PR-TRIAGE: #212 integrada em ea1420ccd49abd60b4f797abfb41da31e0a1ebd0; CI 45495838111/45495838001 aprovados. #180/#190 encerradas após comparação textual de todos os arquivos, sem exclusão de histórico; sete propostas substituídas encerradas no total. Preservada prioridade Rocket e transparência, sem comprovação física.
+- SYS-03: #213 HEAD 50b658ef8b7f1829e60a12ac1045fcc415f2c3c7, validação do índice local de contas; auditoria 45496180632 aprovada, código 45496180585 em execução na consulta. Não declarar integrada antes de confirmação.
+- PGBR-RELEASE-047: recibo histórico acrescentado às notas LT047; artefato original não expirado, hashes individuais registrados pelo CI. Nenhuma nova compilação ou publicação neste ciclo. A próxima QA deve incluir as correções integradas e distinguir sua revisão do artefato LT047 anterior.
+- Próximo: validar #213 e integrar somente se checks e comparação de arquivos confirmarem ausência de conflito. Preparar versão seguinte para QA consolidada e retomar requisitos abertos. device_tested=false.
