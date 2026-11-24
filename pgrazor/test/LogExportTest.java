@@ -45,6 +45,9 @@ public final class LogExportTest {
         if(safe.contains("secret-example")||safe.contains("private-example")||!safe.contains("\"reasonCode\":12")||!safe.contains("actor-unknown"))throw new AssertionError("Log privacy");
         if(!safe.contains("\"itemId\":708")||!safe.contains("\"itemId\":1401")||safe.contains("999999999"))throw new AssertionError("Icon diagnostic privacy");
         try{LocalDiagnosticSummary.parse("\n".repeat(LocalDiagnosticSummary.MAX_LINES));throw new AssertionError("Line preflight");}catch(IllegalArgumentException expected){if(!expected.getMessage().equals("Excesso de registros."))throw expected;}
+        Thread.currentThread().interrupt();
+        try{LocalDiagnosticSummary.parse(safe);throw new AssertionError("Canceled diagnostic");}
+        catch(java.util.concurrent.CancellationException expected){}finally{Thread.interrupted();}
         LocalDiagnosticSummary.Summary summary=LocalDiagnosticSummary.parse(safe);
         LocalDiagnosticSummary.Summary crlf=LocalDiagnosticSummary.parse(safe.replace("\n","\r\n"));
         if(crlf.records!=summary.records||crlf.omitted!=summary.omitted||!crlf.icons.equals(summary.icons))throw new AssertionError("CRLF summary");

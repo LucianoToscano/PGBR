@@ -211,10 +211,34 @@ final class LocalAuditDialog {
    return null;
   }});
   invalidateOnEdit(result,source);
-  action(a,b,"Resumir registros",()->{try{
-    if(rejected[0])throw new IllegalArgumentException("Substitua todo o conteúdo após a colagem rejeitada.");
-    result.setText(LocalDiagnosticSummary.parse(source.getText().toString()).describe());
-   }catch(IllegalArgumentException invalid){result.setText(invalid.getMessage());}});
+  Button summarize=new Button(MapTheme.wrap(a));summarize.setText("Resumir registros");summarize.setAllCaps(false);summarize.setTextColor(MapTheme.ink());MapTheme.setButtonBackground(summarize);b.addView(summarize);
+  final Thread[] worker={null};
+  b.addOnAttachStateChangeListener(new android.view.View.OnAttachStateChangeListener(){
+   public void onViewAttachedToWindow(android.view.View v){}
+   public void onViewDetachedFromWindow(android.view.View v){if(worker[0]!=null)worker[0].interrupt();worker[0]=null;}
+  });
+  summarize.setOnClickListener(v->{
+   if(worker[0]!=null)return;
+   if(rejected[0]){result.setText("Substitua todo o conteúdo após a colagem rejeitada.");return;}
+   final String snapshot=source.getText().toString();
+   source.setEnabled(false);summarize.setEnabled(false);result.setText("Analisando diagnóstico local…");
+   Thread task=new Thread(()->{
+    String message;
+    try{message=LocalDiagnosticSummary.parse(snapshot).describe();}
+    catch(java.util.concurrent.CancellationException canceled){return;}
+    catch(IllegalArgumentException invalid){message=invalid.getMessage();}
+    catch(RuntimeException invalid){message="Não foi possível analisar o diagnóstico.";}
+    final String completed=message;final Thread current=Thread.currentThread();
+    a.runOnUiThread(()->{
+     if(worker[0]!=current)return;worker[0]=null;
+     if(a.isDestroyed()||!b.isAttachedToWindow())return;
+     source.setEnabled(true);summarize.setEnabled(true);
+     if(!rejected[0]&&snapshot.contentEquals(source.getText()))result.setText(completed);
+     else result.setText("Dados alterados. Calcule novamente.");
+    });
+   },"pgbr-local-diagnostic");
+   worker[0]=task;task.start();
+  });
   presentPrivate(a,new AlertDialog.Builder(MapTheme.wrap(a)).setTitle("Resumo local de diagnóstico").setView(scroll(a,b)).setPositiveButton("Fechar",null).create());
  }
  static void maxPlan(Activity a){

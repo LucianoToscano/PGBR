@@ -41,18 +41,22 @@ final class LocalDiagnosticSummary {
             return out.append("\nContagens não confirmam ação executada, causa individual, ausência de falhas ou funcionamento no aparelho. A exportação pode omitir campos e conter contexto repetido.").toString();
         }
     }
+    private static void checkCanceled(){if(Thread.currentThread().isInterrupted())throw new java.util.concurrent.CancellationException();}
     static Summary parse(String raw){
+        checkCanceled();
         if(raw==null||raw.length()>MAX_CHARS)throw new IllegalArgumentException("Diagnóstico acima do limite.");
         // Preflight before split: an input consisting of line breaks must not allocate
         // millions of array entries before the line limit is checked.
         int lineCount=1;
         for(int i=0;i<raw.length();i++){
+            if((i&4095)==0)checkCanceled();
             char ch=raw.charAt(i);
             if(ch=='\r'||ch=='\n'){
                 if(ch=='\r'&&i+1<raw.length()&&raw.charAt(i+1)=='\n')i++;
                 if(++lineCount>MAX_LINES)throw new IllegalArgumentException("Excesso de registros.");
             }
         }
+        checkCanceled();
         String[] lines=raw.split("\\r\\n|\\n|\\r",-1);
         if(lines.length>MAX_LINES)throw new IllegalArgumentException("Excesso de registros.");
         int end=lines.length-1;while(end>0&&lines[end].trim().isEmpty())end--;
@@ -61,7 +65,8 @@ final class LocalDiagnosticSummary {
         int omitted=Integer.parseInt(footer.group(1)),records=0,unknown=0,other=0;
         Map<Integer,Integer> transfers=new TreeMap<>(),icons=new TreeMap<>();Map<String,Integer> battle=new TreeMap<>();
         for(int i=1;i<end;i++){
-            records++;
+            checkCanceled();records++;
+            if(lines[i].length()>4200){unknown++;continue;}
             Matcher row=LINE.matcher(lines[i]);
             if(!row.matches()||row.group(2).length()>4096){unknown++;continue;}
             try{

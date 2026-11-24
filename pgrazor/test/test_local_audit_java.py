@@ -63,6 +63,14 @@ class LocalAuditTests(unittest.TestCase):
         self.assertIn('present(a,new AlertDialog.Builder(MapTheme.wrap(a)).setTitle("Conferência visual de itens")',source)
         self.assertIn('evaluatedAt[0]=evaluationTime()',source)
 
+    def test_diagnostic_worker_is_bounded_and_detached(self):
+        source=(ROOT/'src/dev/pgrazor/LocalAuditDialog.java').read_text(encoding='utf-8')
+        panel=source.split(' static void summarize(Activity a){',1)[1].split(' static void maxPlan(Activity a){',1)[0]
+        for term in ['if(worker[0]!=null)return','source.setEnabled(false)','worker[0].interrupt()','if(worker[0]!=current)return','!b.isAttachedToWindow()','snapshot.contentEquals(source.getText())','LocalDiagnosticSummary.parse(snapshot)']:
+            self.assertIn(term,panel)
+        self.assertIn('new Thread(',panel)
+        self.assertIn('a.runOnUiThread(',panel)
+
     def test_new_ui_is_read_only_and_wired(self):
         for name in ['LocalAuditPolicy.java','LocalCollectionPreview.java','LocalAuditDialog.java','LocalDiagnosticSummary.java','GpxPreviewView.java','GpxPreviewGeometry.java']:
             source=(ROOT/'src/dev/pgrazor'/name).read_text(encoding='utf-8')

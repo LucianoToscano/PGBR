@@ -4,6 +4,8 @@
 - Prévia GPX por distância e percentual; limites agregados de pontos em GPX e novas importações JSON; compatibilidade com arquivos históricos.
 - Exportações locais verificadas por SHA-256 antes de concluir; resumo de diagnósticos filtrados, sem inferir Pokémon únicos nem execução de ações.
 - Cache de sprites limitado, validação estrutural dos PNGs, controles acessíveis, teclado adequado ao campo, diálogos roláveis e data PT-BR com fuso.
+- Auditoria dos 37 ícones: 30 idênticos aos arquivos do Drive e 7 visualmente equivalentes, incluindo Ovo da Sorte. Correções de fallback e galeria; nenhum PNG substituído.
+- Cofre Gemini/Groq restrito à prévia independente: AndroidKeyStore, criptografia e remoção local; sem conexão aos provedores. Resumo de diagnóstico em worker cancelável, sem bloquear a thread de interface durante análise.
 - CI do commit c2f389e aprovado 3/3; revisões posteriores dependem de CI do HEAD exato. [Matriz de homologação](docs/validation/LT046_HOMOLOGACAO.md). Não há APK LT046 nem homologação física confirmada. O arquivo VERSION permanece LT045 até a preparação de entrega.
 
 ## PGBR LT045 (v0.00.45-LT) — pré-release QA publicada (24/11/2026)
