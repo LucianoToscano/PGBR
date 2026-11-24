@@ -26,13 +26,17 @@ public class RouteTraceHarness {
     for(int i=0;i<20;i++) e.step(.25);
     MotionEngine.RouteVisualSnapshot c=e.routeVisualSnapshot(a.token);
     check(c.newPoints==null && c.legFraction>.4 && c.legFraction<.5 && c.remainingMeters<a.remainingMeters);
+    check(Math.abs(c.completedMeters-5)<1e-4 && Math.abs(c.routeMeters-c.completedMeters-c.remainingMeters)<1e-4);
     check(e.routeVisualSnapshot(0).newPoints[1][1]==.0001);
     e.speed(0); check(e.routeVisualSnapshot(c.token).paused);
     e.stop(); check(e.routeVisualSnapshot(c.token)==null);
     e.speed(3.6); e.position(0,0); e.walkRoute(new double[][]{{0,0},{0,.000001}},true);
     MotionEngine.RouteVisualSnapshot loop=e.routeVisualSnapshot(c.token);
     check(loop!=null && loop.looping && loop.newPoints!=null && loop.token!=c.token);
+    e.step(.25); check(e.routeVisualSnapshot(loop.token)!=null);
     e.stop(); e.walkTo(0,.0001); check(e.routeVisualSnapshot(0)==null);
+    e.stop(); e.position(0,0); e.walkRoute(new double[][]{{0,0},{0,.000001}},false);
+    e.step(.25); check(e.routeVisualSnapshot(0)==null);
   }
   public static void main(String[] args) {
     testSnapshot();
@@ -69,6 +73,14 @@ class RouteTraceTest(unittest.TestCase):
                             str(ROOT / "src/dev/pgrazor/MotionEngine.java"),
                             str(harness)], check=True, timeout=30)
             subprocess.run([str(runtime), "-cp", tmp, "RouteTraceHarness"], check=True, timeout=30)
+
+    def test_map_integration(self):
+        source = (ROOT / "src/dev/pgrazor/WorldMapDialog.java").read_text(encoding="utf-8")
+        for token in ["routeVisualSnapshot(traceToken)", "routeTraceEnabled", "activeTrace=Collections.emptyList()", "drawTraceSegment(canvas", "traceState.legFraction", "traceState.completedMeters", "Prévia: branco"]:
+            self.assertIn(token, source)
+        self.assertIn("preferences.getBoolean(\"routeTraceEnabled\",false)", source)
+        self.assertIn("removeCallbacks(locationRefresh)", source)
+        self.assertIn("traceSummary=null", source)
 
 if __name__ == "__main__":
     unittest.main()
