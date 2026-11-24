@@ -174,8 +174,8 @@ jobs:
         run: |
           set +e
           python -B -m unittest discover -s pgrazor/test -p 'test_*.py' -v > /tmp/diag-tests.log 2>&1
-          grep -E '^(FAIL|ERROR):' /tmp/diag-tests.log | sed 's/^/::error::/'
-          grep -A18 -E '^(FAIL|ERROR):' /tmp/diag-tests.log | sed 's/^/::error::/'
+          grep -E '^(FAIL|ERROR):' /tmp/diag-tests.log | sed 's/^/::error::/' || true
+          grep -A18 -E '^(FAIL|ERROR):' /tmp/diag-tests.log | sed 's/^/::error::/' || true
       - name: Testar codigo PGBR apos preparar ferramentas DEX
         shell: bash
         run: |
