@@ -34,8 +34,11 @@ public final class LocalAuditPolicy {
  if(Boolean.TRUE.equals(observed.get(Flag.SHADOW))&&Boolean.TRUE.equals(observed.get(Flag.PURIFIED)))unknown.add("Marcações sombrio e purificado incompatíveis");
  for(Flag f:enabled){
  Boolean v=observed.get(f);
- if(f==Flag.HUNDO)v=iv?Boolean.valueOf(a+d+s==45):null;
- if(f==Flag.NUNDO)v=iv?Boolean.valueOf(a+d+s==0):null;
+ // An explicit positive observation is a reason to preserve, even if IVs
+ // are incomplete or inconsistent. Contradictions remain visible above.
+ // A negative observation alone cannot establish an unknown IV.
+ if(f==Flag.HUNDO)v=Boolean.TRUE.equals(v)?Boolean.TRUE:iv?Boolean.valueOf(a+d+s==45):null;
+ if(f==Flag.NUNDO)v=Boolean.TRUE.equals(v)?Boolean.TRUE:iv?Boolean.valueOf(a+d+s==0):null;
  if(Boolean.TRUE.equals(v))reasons.add(f.label);else if(v==null)unknown.add(f.label+" não confirmado");
  }
  Status status=!reasons.isEmpty()?Status.PROTECTED:!unknown.isEmpty()?Status.UNCERTAIN:Status.MATCH;
