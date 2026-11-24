@@ -74,6 +74,22 @@ public final class SessionStatsHistoryTest {
         near(0, r.change(SessionStatsHistory.HOUR_MS).get(SessionStatsHistory.DUST), "fresh stardust");
         check(r.change(SessionStatsHistory.DAY_MS).coveredMs == 0, "nothing covered yet");
 
+        // The newest reading in a slot is not necessarily retained as a slot sample.
+        // Short windows must interpolate to it, rather than count the whole slot.
+        SessionStatsHistory shortWindow = new SessionStatsHistory();
+        long slotStart = T0 - T0 % SessionStatsHistory.SLOT_MS;
+        check(shortWindow.record(slotStart, v(1000, 10, 20, 0, 0, 0, 100)), "slot start");
+        check(shortWindow.record(slotStart + 4 * MIN, v(1400, 14, 24, 0, 0, 0, 500)), "latest in slot");
+        near(100, shortWindow.change(MIN).get(SessionStatsHistory.XP), "short-window XP");
+        near(1, shortWindow.change(MIN).get(SessionStatsHistory.CAUGHT), "short-window catches");
+        near(100, shortWindow.change(MIN).get(SessionStatsHistory.DUST), "short-window dust");
+        check(shortWindow.change(MIN).coveredMs == MIN, "short window covered");
+        check(shortWindow.change(0) == null, "zero window rejected");
+        check(shortWindow.change(-MIN) == null, "negative window rejected");
+        SessionStatsHistory restoredShort = new SessionStatsHistory();
+        restoredShort.load(shortWindow.save(), slotStart + 4 * MIN);
+        near(100, restoredShort.change(MIN).get(SessionStatsHistory.XP), "short window after reload");
+
         // A day later the oldest samples are dropped and the day window is full.
         SessionStatsHistory d = new SessionStatsHistory();
         for (int m = 0; m <= 26 * 60; m += 5) d.record(T0 + m * MIN, v(1_000_000 + 10.0 * m, 0, 0, 0, 0, 0, 10.0 * m));
