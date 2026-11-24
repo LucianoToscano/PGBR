@@ -19,6 +19,9 @@ final class ItemSpriteFitTest {
         check(238,161);
         check(172,196);
         check(256,256);
+        check(1,8192);
+        if(ItemSpriteFit.sampleSize(104,104)!=1||ItemSpriteFit.sampleSize(4096,64)!=16||ItemSpriteFit.sampleSize(257,256)!=2||ItemSpriteFit.sampleSize(8192,1)!=32)throw new AssertionError("Icon decode bounds");
+        try {ItemSpriteFit.sampleSize(8193,1);throw new AssertionError("Oversized icon");}catch(IllegalArgumentException expected){}
         try {ItemSpriteFit.centeredRect(0,100,30);throw new AssertionError("zero width");}
         catch(IllegalArgumentException expected){}
         System.out.println("PASS: ItemSpriteFit");

@@ -45,11 +45,12 @@ final class ItemBadge extends View {
                 if(bounds.outWidth<=0||bounds.outHeight<=0)
                     throw new java.io.IOException("Invalid image dimensions");
                 BitmapFactory.Options options=new BitmapFactory.Options();
-                // Preserve small source details; reduce only very oversized images.
-                options.inSampleSize=bounds.outWidth>104&&bounds.outHeight>104?2:1;
+                // Bound decoded dimensions even for very tall or wide source images.
+                options.inSampleSize=ItemSpriteFit.sampleSize(bounds.outWidth,bounds.outHeight);
                 try(java.io.InputStream stream=PgAssets.open(context,file)){
                     Bitmap bitmap=BitmapFactory.decodeStream(stream,null,options);
                     if(bitmap==null)throw new java.io.IOException("Image decoder returned null");
+                    if(bitmap.getWidth()>256||bitmap.getHeight()>256){bitmap.recycle();throw new java.io.IOException("Decoded image exceeds icon limit");}
                     CACHE.put(id,bitmap);
                     WARNED.delete(id);
                     return bitmap;

@@ -17,7 +17,7 @@ final class LocalAuditDialog {
  static TextView text(Activity a,LinearLayout b,String s){TextView t=new TextView(MapTheme.wrap(a));t.setText(s);b.addView(t);return t;}
  static EditText input(Activity a,LinearLayout b,String title,String initial){text(a,b,title);EditText e=new EditText(MapTheme.wrap(a));e.setSingleLine(true);e.setText(initial);b.addView(e);return e;}
  static Spinner select(Activity a,LinearLayout b,String title,String[] values){text(a,b,title);Spinner s=new Spinner(MapTheme.wrap(a));ArrayAdapter<String> ad=new ArrayAdapter<>(a,android.R.layout.simple_spinner_item,values);ad.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);s.setAdapter(ad);b.addView(s);return s;}
- static void action(Activity a,LinearLayout b,String title,Runnable f){Button v=new Button(MapTheme.wrap(a));v.setText(title);v.setOnClickListener(x->f.run());b.addView(v);}
+ static void action(Activity a,LinearLayout b,String title,Runnable f){Button v=new Button(MapTheme.wrap(a));v.setText(title);v.setTextColor(MapTheme.ink());MapTheme.setButtonBackground(v);v.setAllCaps(false);v.setOnClickListener(x->f.run());b.addView(v);}
  static int integer(EditText e){return Integer.parseInt(e.getText().toString().trim());}
  static double decimal(EditText e){return Double.parseDouble(e.getText().toString().trim().replace(',','.'));}
  static void collection(Activity a){
