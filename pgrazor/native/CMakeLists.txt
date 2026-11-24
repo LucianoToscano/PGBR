@@ -99,6 +99,7 @@ add_library(pgrazor_core SHARED
   catch_discovery.cpp
   camera_sampler.cpp
   map_poi.cpp
+  map_anchor.cpp
   routes_gate.cpp
   routes_actions.cpp
   routes_discovery.cpp

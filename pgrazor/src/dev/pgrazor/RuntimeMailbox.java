@@ -88,6 +88,7 @@ public final class RuntimeMailbox {
         "vgpAllowed::boolean",
         "vgpEnabled::boolean",
         "vgpMapVisible::boolean",
+        "routeAnchorsAllowed::boolean",
         "vgpOptions::int",
         "accountCommandSnapshot::String[]"
     };
@@ -155,7 +156,8 @@ public final class RuntimeMailbox {
         "setVgpTarget:boolean,double,double,boolean:void",
         "transferResult:String:void",
         "updateCameraHeadingAt:double,int,boolean,long:void",
-        "vgpResult:String,boolean:void"
+        "vgpResult:String,boolean:void",
+        "setMapAnchorSnapshot:String:void"
     };
     private final Path directory;
     private final String session;

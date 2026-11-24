@@ -131,6 +131,14 @@ public final class WorldMapDialog {
         traceTools.addView(traceOptions,new LinearLayout.LayoutParams(dp(activity,100),dp(activity,48)));
         layout.addView(traceTools);
         layout.addView(traceSummary);
+        CheckBox autoTrace=new CheckBox(ui);
+        autoTrace.setText("Rota Visual • projeção automática (protótipo)");
+        autoTrace.setTextSize(13);
+        autoTrace.setChecked(preferences.getBoolean("routeAutoProjectionEnabled",false));
+        autoTrace.setEnabled(trace.isChecked());
+        layout.addView(autoTrace);
+        TextView autoSummary=label(ui,"Usa âncoras de Poképaradas/Ginásios já visíveis; oculta o traço se não houver ajuste confiável.",11);
+        layout.addView(autoSummary);
         map.setTraceStyle(RouteTraceSettings.read(preferences));
         traceOptions.setOnClickListener(v->RouteTraceSettings.show(activity,preferences,
             ()->map.setTraceStyle(RouteTraceSettings.read(preferences))));
@@ -138,8 +146,11 @@ public final class WorldMapDialog {
         trace.setOnCheckedChangeListener((v,on)->{
             preferences.edit().putBoolean("routeTraceEnabled",on).apply();
             traceOptions.setEnabled(on);
+            autoTrace.setEnabled(on);
             map.setTraceEnabled(on,traceSummary);
         });
+        autoTrace.setOnCheckedChangeListener((v,on)->
+            preferences.edit().putBoolean("routeAutoProjectionEnabled",on).apply());
         TextView coverage=label(ui,"Nearby locations loaded by the game",12);layout.addView(coverage);map.setPoiStatus(coverage);
         map.refreshPois();
         PlaceUi places = new PlaceUi(activity, ui, map, saved);

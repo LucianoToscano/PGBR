@@ -19,6 +19,7 @@ public final class Pad {
     private final FrameLayout overlays;
     private RouteTraceOverlay visualRouteOverlay;
     private RouteScreenProjectionSource screenRouteSource;
+    private RouteAutoAnchorSource autoRouteSource;
     private View unhideWatcher;
     private boolean overlaysHidden;
     private AlertDialog hideOverlaysDialog;
@@ -674,6 +675,24 @@ public final class Pad {
         if(source!=null) visualRouteOverlay=new RouteTraceOverlay(activity,overlays,source);
         refreshVisualRoute();
     }
+    /** Opt-in experimental source: native POI anchors -> existing overlay. No manual calibration. */
+    private void syncAutoRouteSource(android.content.SharedPreferences prefs) {
+        boolean enabled=prefs.getBoolean("routeTraceEnabled",false)&&
+            prefs.getBoolean("routeAutoProjectionEnabled",false);
+        if(!enabled) {
+            if(autoRouteSource!=null) {
+                autoRouteSource=null;
+                disableVisualRoute();
+            }
+            return;
+        }
+        if(overlays.getWidth()<40||overlays.getHeight()<40)return;
+        if(autoRouteSource!=null&&autoRouteSource.width==overlays.getWidth()&&
+                autoRouteSource.height==overlays.getHeight())return;
+        disableVisualRoute();
+        autoRouteSource=new RouteAutoAnchorSource(overlays.getWidth(),overlays.getHeight());
+        attachVisualRouteSource(autoRouteSource);
+    }
     private void disableVisualRoute() {
         if(screenRouteSource!=null){screenRouteSource.close();screenRouteSource=null;}
         if(visualRouteOverlay!=null){visualRouteOverlay.close();visualRouteOverlay=null;}
@@ -692,8 +711,9 @@ public final class Pad {
         });
     }
     private void refreshVisualRoute() {
-        if(visualRouteOverlay==null)return;
         android.content.SharedPreferences prefs=AccountProfiles.preferences(activity,"pgrazor-map");
+        syncAutoRouteSource(prefs);
+        if(visualRouteOverlay==null)return;
         boolean allowed=prefs.getBoolean("routeTraceEnabled",false)&&!overlaysHidden&&
             !settings.isVisible()&&!(quickMenu!=null&&quickMenu.isShowing())&&
             !Control.catchScreenVisible()&&!blackShown;

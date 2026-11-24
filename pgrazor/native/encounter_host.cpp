@@ -21,6 +21,7 @@
 #include "inventory_host.h"
 #include "items.h"
 #include "map_poi.h"
+#include "map_anchor.h"
 #include "quickball_host.h"
 #include "runtime_bootstrap.h"
 #include "runtime_metadata.h"
@@ -173,6 +174,8 @@ static PgrEncounterHostSample g_sample = {PGR_EH_API_VERSION, sizeof(PgrEncounte
 static uint32_t g_active_caps = 0;
 static uint64_t g_lease_deadline_ms = 0;
 static uint64_t g_last_map_poi_ms = 0;
+static uint64_t g_last_map_anchor_ms = 0;
+static bool g_route_anchors_allowed = false;
 static uint64_t g_vgp_epoch = 1;
 static uint64_t g_transfer_epoch = 1;
 static uint64_t g_vgp_cleanup_until_ms = 0;
@@ -190,6 +193,7 @@ static uint32_t g_keep_species_count = 0;
 // Leaf API pointers
 static const pgr_berry_api_v1 *g_berries = nullptr;
 static const PgrMapPoiApi *g_map_poi = nullptr;
+static const PgrMapAnchorApi *g_map_anchor = nullptr;
 static const PgrVgpPolicyApi *g_vp = nullptr;
 static const PgrVgpActionsApi *g_va = nullptr;
 static const PgrVgpMarkerApi *g_vmk = nullptr;
@@ -211,6 +215,8 @@ static bool g_ticking = false;
 static bool g_direct_transport = false;
 // Heap-allocated 294,928-byte MapPOI output buffer (never on stack)
 static PgrMapPoiOutput *g_map_poi_out = nullptr;
+// Heap-allocated 23,568-byte anchor buffer (never on stack).
+static PgrMapAnchorOutput *g_map_anchor_out = nullptr;
 
 // VGP -> Transfer active handoff state (4 owned GC handles from PGR_VGC_EV_TRANSFER_READY)
 struct ActiveVgpTransfer {
@@ -1269,6 +1275,51 @@ static size_t utf16_to_escaped_json(const uint16_t *src, uint32_t len, char *dst
   return pos;
 }
 
+// Feature 72 companion: compact read-only anchor snapshot. Delivered as its own action so that the legacy
+// large map-pois payload is untouched. The Java side gates consumption on an active own visual-route token.
+static void publish_map_anchors(uint64_t tid, uint64_t lease_ms) {
+  if (!g_map_anchor || !g_map_anchor_out) return;
+  PgrMapAnchorRequest request = {};
+  request.version = PGR_MA_REQUEST_VERSION;
+  request.size = sizeof(request);
+  request.tid = tid;
+  request.remaining_ms = lease_ms;
+  request.wall_ms = wall_clock_ms();
+  if (g_map_anchor->scan(&request, g_map_anchor_out) != PGR_MA_OK) return;
+
+  static char anchors[28000];
+  size_t pos = 0;
+  pos += static_cast<size_t>(snprintf(anchors + pos, sizeof(anchors) - pos, "{\"count\":%u,\"points\":[",
+                                      g_map_anchor_out->count));
+  for (uint32_t i = 0; i < g_map_anchor_out->count && pos + 256 < sizeof(anchors); ++i) {
+    const PgrMapAnchorPoint &a = g_map_anchor_out->anchors[i];
+    char id_buf[160];
+    utf16_to_escaped_json(a.id, a.id_length, id_buf, sizeof(id_buf));
+    if (i) anchors[pos++] = ',';
+    pos += static_cast<size_t>(snprintf(anchors + pos, sizeof(anchors) - pos,
+        "{\"id\":\"%s\",\"kind\":\"%s\",\"lat\":%.7f,\"lon\":%.7f,\"x\":%.6f,\"y\":%.6f,\"z\":%.3f,\"visible\":%s}",
+        id_buf, a.kind == PGR_MA_KIND_GYM ? "gym" : "stop", a.lat, a.lon, a.x, a.y, a.z,
+        (a.flags & PGR_MA_FLAG_VISIBLE) ? "true" : "false"));
+  }
+  if (pos + 2 >= sizeof(anchors)) return;
+  anchors[pos++] = ']';
+  anchors[pos++] = '}';
+  anchors[pos] = '\0';
+
+  // Appended action at the END of the compiled schema (opcode 59): existing opcodes never shift.
+  const char *args[1] = {anchors};
+  transport_emit_op(59, nullptr, 0, args, 1);
+  emit_event("map-anchors", anchors);
+}
+
+static void tick_map_anchor(uint64_t tid, uint64_t now_ms, uint64_t lease_ms) {
+  // Only an active PGBR visual-route token opens this reader; no permanent POI/camera polling.
+  if (!g_route_anchors_allowed || !g_map_anchor || !lease_ms) return;
+  if (g_last_map_anchor_ms != 0 && (now_ms - g_last_map_anchor_ms) < 250ULL) return;
+  g_last_map_anchor_ms = now_ms;
+  publish_map_anchors(tid, lease_ms);
+}
+
 static void tick_map_poi(uint64_t tid, uint64_t now_ms, uint64_t lease_ms) {
   if (!g_map_poi || !(g_active_caps & PGR_EH_CAP_MAP_POI) || !g_map_poi_out) return;
   if (!g_opts.map_poi_allowed || lease_ms == 0) return;
@@ -1356,6 +1407,10 @@ static void tick_map_poi(uint64_t tid, uint64_t now_ms, uint64_t lease_ms) {
   s_poi_json[pos++] = ']';
   s_poi_json[pos] = '\0';
 
+  // Optional read-only anchor companion (feature 72). The compact snapshot is delivered through its own
+  // bounded action; the legacy map-pois payload is left byte-for-byte unchanged. A fault or empty scan
+  // publishes nothing, and no guessed projection is ever emitted.
+
   snprintf(s_poi_event, sizeof(s_poi_event), "{\"kind\":\"map-pois\",\"points\":%s}", s_poi_json);
   notify_map_poi_snapshot(s_poi_event);
   emit_event("map-pois", s_poi_event);
@@ -1397,6 +1452,7 @@ static void sync_from_transport(uint64_t tid) {
     start = {};
   }
   bool fresh = (start.snapshot_fresh != 0 && start.fault == 0);
+  if (!fresh) g_route_anchors_allowed = false;
   int active = 0;
   if (fresh && t->get_bool(3, &active) != PGR_TRANSPORT_OK) {
     fresh = false;
@@ -1422,6 +1478,7 @@ static void sync_from_transport(uint64_t tid) {
   next_opts.item_access_allowed = (active > 0 && bval(16) > 0) ? 1u : 0u;
   next_opts.item_transfer_enabled = (active > 0 && bval(17) > 0) ? 1u : 0u;
   next_opts.map_poi_allowed = (active > 0 && bval(21) > 0) ? 1u : 0u;
+  g_route_anchors_allowed = (active > 0 && bval(39) > 0);
   next_opts.transfer_keep_all = (bval(35) > 0) ? 1u : 0u;
   next_opts.vgp_allowed = (active > 0 && bval(36) > 0) ? 1u : 0u;
   next_opts.vgp_enabled = (bval(37) > 0) ? 1u : 0u;
@@ -1611,6 +1668,59 @@ static int install_berries_leaf() {
   g_berries = api;
   //18 only latches its owner on tick; latch before publishing encounter observers.
   if(g_berries->tick(g_owner_tid,0)!=PGR_BERRY_OK)return PGR_EH_ERR_LEAF;
+  return PGR_EH_OK;
+}
+
+// Feature 72: read-only geographic anchors from the SAME POI classes as feature 42, projected through the
+// game's own camera/transform methods (feature 28 metadata). Installed only when both leaves are available.
+// No new hook, no gameplay request and no change to feature 42's ABI.
+static int install_map_anchor_leaf() {
+  const auto *api = static_cast<const PgrMapAnchorApi *>(pgrazor_map_anchor_api(PGR_MA_API_VERSION));
+  if (!api || !api->install) return PGR_EH_ERR_LEAF;
+  PgrMapAnchorConfig acfg = {};
+  acfg.version = PGR_MA_CONFIG_VERSION;
+  acfg.size = sizeof(acfg);
+  acfg.runtime_invoke = reinterpret_cast<void *>(g_exp.runtime_invoke);
+  acfg.object_get_class = reinterpret_cast<void *>(g_exp.object_get_class);
+  acfg.field_get_value = reinterpret_cast<void *>(g_exp.field_get_value);
+  acfg.object_unbox = reinterpret_cast<void *>(g_exp.object_unbox);
+  acfg.gchandle_new = reinterpret_cast<void *>(g_exp.gchandle_new);
+  acfg.gchandle_get_target = reinterpret_cast<void *>(g_exp.gchandle_get_target);
+  acfg.gchandle_free = reinterpret_cast<void *>(g_exp.gchandle_free);
+  acfg.thread_current = reinterpret_cast<void *>(g_exp.thread_current);
+  acfg.class_get_type = reinterpret_cast<void *>(g_exp.meta.class_get_type);
+  acfg.type_get_object = g_exp.extra.type_get_object;
+  acfg.array_length = g_exp.extra.array_length;
+  acfg.object_get_virtual_method = reinterpret_cast<void *>(g_exp.object_get_virtual_method);
+  acfg.string_length = reinterpret_cast<void *>(g_exp.string_length);
+  acfg.string_chars = reinterpret_cast<void *>(g_exp.string_chars);
+  acfg.m_find = md_h(H_VGP_M_FIND_ALL);
+  acfg.m_alive = md_m(5);
+  acfg.m_fort = md_h(H_VGP_M_FORT);
+  acfg.camera_get_main = md_h(H_VGPM_CAMERA);
+  acfg.component_get_transform = md_h(H_VGPM_TRANSFORM);
+  acfg.transform_get_position = md_h(H_VGPM_POSITION);
+  acfg.project = md_h(H_VGPM_PROJECT);
+  acfg.screen_width = md_h(H_VGPM_WIDTH);
+  acfg.screen_height = md_h(H_VGPM_HEIGHT);
+  acfg.class_stop = md_k(OC_VGP_STOP);
+  acfg.class_gym = md_h(H_MP_GYM) ? md_h(H_MP_GYM) : md_k(OC_MAP_GYM);
+  acfg.class_fort = md_k(OC_VGP_FORT);
+  acfg.class_bool = md_c(6);
+  acfg.class_string = md_k(OC_STRING);
+  acfg.class_vector = md_k(OC_VECTOR3);
+  acfg.class_int = md_k(OC_INT);
+  acfg.class_camera = md_k(OC_VGP_CAMERA);
+  acfg.class_transform = md_k(OC_TRANSFORM);
+  acfg.f_fortId = md_h(H_VGP_F_FORT_ID);
+  acfg.f_lat = md_h(H_VGP_F_FORT_LAT);
+  acfg.f_lon = md_h(H_VGP_F_FORT_LON);
+  if (api->install(&acfg) != PGR_MA_OK) return PGR_EH_ERR_LEAF;
+  if (!g_map_anchor_out) {
+    g_map_anchor_out = static_cast<PgrMapAnchorOutput *>(calloc(1, sizeof(PgrMapAnchorOutput)));
+    if (!g_map_anchor_out) return PGR_EH_ERR_LEAF;
+  }
+  g_map_anchor = api;
   return PGR_EH_OK;
 }
 
@@ -2056,6 +2166,9 @@ static int install_vgp_leaves(bool *out_has_marker) {
       if (mk->install(&mk_cfg) == 0) {
         vmk = mk;
         has_marker = true;
+        // Feature 72 is a pure companion reader; an unavailable anchor leaf only disables the
+        // experimental auto-projection source, never the existing marker/POI features.
+        install_map_anchor_leaf();
       }
     }
   }
@@ -2574,6 +2687,7 @@ static int api_tick(uint64_t proven_tid) {
 
   // 3. MapPOI snapshot scan
   tick_map_poi(os_tid, now, rem_lease);
+  tick_map_anchor(os_tid, now, rem_lease);
   if(!raid_block){
     pgr_gift_batch_tick(os_tid, &g_md);
     pgr_research_tick(os_tid, &g_md);

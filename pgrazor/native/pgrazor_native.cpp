@@ -50,6 +50,7 @@
 #include "catch_discovery.h"
 #include "camera_sampler.h"
 #include "map_poi.h"
+#include "map_anchor.h"
 #include "routes_gate.h"
 #include "routes_actions.h"
 #include "routes_discovery.h"
@@ -348,6 +349,7 @@ const void *query_feature(uint32_t id, uint32_t version) {
         case 40: return pgrazor_catch_discovery_api(version);
         case 41: return pgrazor_camera_sampler_api(version);
         case 42: return pgrazor_map_poi_api(version);
+        case 72: return pgrazor_map_anchor_api(version);
         case 43: return pgrazor_routes_actions_api(version);
         case 44: return pgrazor_routes_discovery_api(version);
         case 45: return pgrazor_routes_services_api(version);

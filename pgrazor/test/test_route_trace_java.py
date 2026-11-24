@@ -109,6 +109,51 @@ public class RouteTraceHarness {
   }
 }
 """
+ANCHOR_HARNESS = r"""
+package dev.pgrazor;
+public class RouteAnchorHarness {
+  static void check(boolean ok) { if (!ok) throw new AssertionError(); }
+  static String json(double[][] refs, int declared) {
+    StringBuilder b=new StringBuilder("{\"count\":"+declared+",\"points\":[");
+    for(int i=0;i<refs.length;i++) {
+      double[] r=refs[i];
+      if(i>0)b.append(',');
+      b.append("{\"id\":\"p").append(i).append("\",\"kind\":\"").append(i%2==0?"stop":"gym")
+       .append("\",\"lat\":").append(r[0]).append(",\"lon\":").append(r[1])
+       .append(",\"x\":").append(r[2]).append(",\"y\":").append(r[3])
+       .append(",\"z\":5,\"visible\":true}");
+    }
+    return b.append("]}").toString();
+  }
+  public static void main(String[] args) {
+    int width=360,height=800;
+    double[][] refs=new double[6][4];
+    int k=0;
+    for(double ey:new double[]{0.10,0.20}) for(double ex:new double[]{0.10,0.20,0.30}) {
+      double lat=Math.toDegrees(ey*1000.0/110574.0), lon=Math.toDegrees(ex*1000.0/(111320.0*Math.cos(Math.toRadians(lat))));
+      double denom=1+0.05*ex;
+      double u=width*(0.5+0.4*ex+0.1*ey)/denom, v=height*(0.5+0.2*ex+0.3*ey)/denom;
+      refs[k++]=new double[]{lat,lon,u/width,v/height};
+    }
+    RouteAnchorSnapshot a=RouteAnchorSnapshot.parse(json(refs,6));
+    check(a!=null&&a.size()==6);
+    RouteGroundProjection p=a.fit(width,height);
+    check(p!=null);
+    double[] mid=p.project(refs[2][0],refs[2][1]);
+    check(Math.hypot(mid[0]-refs[2][2]*width,mid[1]-refs[2][3]*height)<2);
+    check(RouteAnchorSnapshot.parse(json(refs,7))==null);
+    check(RouteAnchorSnapshot.parse(json(refs,6).replace("\"kind\"","\"bad\""))==null);
+    double[][] broken=refs.clone();
+    for(int i=0;i<broken.length;i++)broken[i]=refs[i].clone();
+    broken[4][2]+=0.05;
+    RouteAnchorSnapshot bad=RouteAnchorSnapshot.parse(json(broken,6));
+    check(bad!=null&&bad.fit(width,height)==null);
+    String offscreen=json(refs,6).replace("\"visible\":true","\"visible\":false");
+    check(RouteAnchorSnapshot.parse(offscreen)!=null);
+    check(RouteAnchorSnapshot.parse(offscreen).size()==0);
+  }
+}
+"""
 class RouteTraceTest(unittest.TestCase):
     def test_geometry(self):
         compiler, runtime = java_tools()
@@ -140,6 +185,17 @@ class RouteTraceTest(unittest.TestCase):
                             str(ROOT / "test/ScreenProjectionTest.java")], check=True, timeout=30)
             subprocess.run([str(runtime), "-cp", tmp, "ScreenProjectionTest"], check=True, timeout=30)
 
+    def test_auto_anchor_snapshot(self):
+        compiler, runtime = java_tools()
+        with tempfile.TemporaryDirectory() as tmp:
+            harness = Path(tmp) / "RouteAnchorHarness.java"
+            harness.write_text(ANCHOR_HARNESS, encoding="utf-8")
+            subprocess.run([str(compiler), "-encoding", "UTF-8", "-d", tmp,
+                            str(ROOT / "src/dev/pgrazor/RouteGroundProjection.java"),
+                            str(ROOT / "src/dev/pgrazor/RouteAnchorSnapshot.java"),
+                            str(harness)], check=True, timeout=30)
+            subprocess.run([str(runtime), "-cp", tmp, "dev.pgrazor.RouteAnchorHarness"], check=True, timeout=30)
+
     def test_overlay_boundaries(self):
         overlay=(ROOT / "src/dev/pgrazor/RouteTraceOverlay.java").read_text(encoding="utf-8")
         view=(ROOT / "src/dev/pgrazor/RouteTraceView.java").read_text(encoding="utf-8")
@@ -149,7 +205,7 @@ class RouteTraceTest(unittest.TestCase):
         pad=(ROOT / "src/dev/pgrazor/Pad.java").read_text(encoding="utf-8")
         for token in ["void attachVisualRouteSource(", "if(source!=null) visualRouteOverlay=", "if(visualRouteOverlay==null)return", "!Control.catchScreenVisible()&&!blackShown", "visualRouteOverlay.close()"]:
             self.assertIn(token, pad)
-        self.assertEqual(pad.count("attachVisualRouteSource("),2)
+        self.assertEqual(pad.count("attachVisualRouteSource("),3)
         self.assertIn("source.calibrate(()->", pad)
         self.assertIn("Control::vgpMapVisible", pad)
         self.assertIn("screenRouteSource.close()", pad)

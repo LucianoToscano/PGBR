@@ -60,9 +60,16 @@ public final class Control {
     private static volatile long mapPoiAt;
     public static void setMapPoiOpen(boolean open){mapPoiOpen=open;if(!open&&!autoWalkPlanning){mapPoiSnapshot="";mapPoiAt=0;}}
     public static void setAutoWalkPlanning(boolean open){autoWalkPlanning=open;if(!open&&!mapPoiOpen){mapPoiSnapshot="";mapPoiAt=0;}}
+    private static volatile String mapAnchorSnapshot="";
+    private static volatile long mapAnchorAt;
+    // Anchor snapshots are a separate read-only gate for the own visual-route prototype only.
     public static boolean mapPoiAllowed(){return (mapPoiOpen||autoWalkPlanning)&&hostLive();}
     public static void setMapPoiSnapshot(String value){if((mapPoiOpen||autoWalkPlanning)&&value!=null&&value.length()<160000){mapPoiSnapshot=value;mapPoiAt=SystemClock.elapsedRealtime();}}
     public static String mapPoiSnapshot(){return SystemClock.elapsedRealtime()-mapPoiAt<10000?mapPoiSnapshot:"";}
+    public static boolean routeAnchorsAllowed(){return engine.activeVisualRouteToken()>0&&hostLive();}
+    public static void setMapAnchorSnapshot(String value){if(routeAnchorsAllowed()&&value!=null&&value.length()<64000){mapAnchorSnapshot=value;mapAnchorAt=SystemClock.elapsedRealtime();}}
+    public static String mapAnchorSnapshot(){return SystemClock.elapsedRealtime()-mapAnchorAt<4000?mapAnchorSnapshot:"";}
+    public static long mapAnchorReceivedAt(){return mapAnchorAt;}
     public static final MotionEngine engine = new MotionEngine();
     private static final GameRoutesController gameRoutes = new GameRoutesController(
         engine, SystemClock::elapsedRealtime, System::currentTimeMillis);
