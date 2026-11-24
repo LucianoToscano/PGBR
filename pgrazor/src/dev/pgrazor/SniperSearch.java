@@ -141,6 +141,12 @@ public final class SniperSearch {
         List<Contribution> contributions = new ArrayList<>();
         int received = 0;
         boolean anyUnavailable = false;
+        // The caller passes the device position for exactly this: ordering by distance and showing
+        // how far each target is must work even when the query itself carries no radius/centre.
+        boolean centerKnown = query.hasCenter()
+                || SourceEvent.validCoordinates(Double.valueOf(centerLat), Double.valueOf(centerLon));
+        double effectiveLat = query.hasCenter() ? query.centerLat : centerLat;
+        double effectiveLon = query.hasCenter() ? query.centerLon : centerLon;
 
         if (local != null && local.size() > 0) {
             LocalStoreAdapter storeAdapter = new LocalStoreAdapter(local);
@@ -148,8 +154,8 @@ public final class SniperSearch {
             received += page.items.size();
             contributions.add(new Contribution(storeAdapter.sourceId(), page.items.size(),
                     page.items.size(), page.items.isEmpty() ? "empty" : "ok", page.note));
-            results.addAll(collect(query, page.items, now, centerLat, centerLon, cooldownUntilMs,
-                    requireActionable));
+            results.addAll(collect(query, page.items, now, centerKnown, effectiveLat, effectiveLon,
+                    cooldownUntilMs, requireActionable));
         }
 
         if (adapters != null) for (SourceAdapter adapter : adapters) {
@@ -159,8 +165,8 @@ public final class SniperSearch {
                 received += page.items.size();
                 contributions.add(new Contribution(adapter.sourceId(), page.items.size(),
                         page.items.size(), page.items.isEmpty() ? "empty" : "ok", page.note));
-                results.addAll(collect(query, page.items, now, centerLat, centerLon, cooldownUntilMs,
-                        requireActionable));
+                results.addAll(collect(query, page.items, now, centerKnown, effectiveLat,
+                        effectiveLon, cooldownUntilMs, requireActionable));
             } catch (SourceUnavailableException unavailable) {
                 anyUnavailable = true;
                 contributions.add(new Contribution(adapter.sourceId(), 0, 0,
@@ -168,7 +174,7 @@ public final class SniperSearch {
             }
         }
 
-        if (query.hasCenter()) {
+        if (centerKnown) {
             results.sort((a, b) -> Double.compare(
                     Double.isNaN(a.distanceKm) ? Double.MAX_VALUE : a.distanceKm,
                     Double.isNaN(b.distanceKm) ? Double.MAX_VALUE : b.distanceKm));
@@ -178,14 +184,14 @@ public final class SniperSearch {
     }
 
     private static List<Result> collect(SourceQuery query, List<SourceEvent> events, long now,
-                                        double centerLat, double centerLon, long cooldownUntilMs,
-                                        boolean requireActionable) {
+                                        boolean centerKnown, double centerLat, double centerLon,
+                                        long cooldownUntilMs, boolean requireActionable) {
         List<Result> out = new ArrayList<>();
         for (SourceEvent event : events) {
             if (event == null) continue;
             if (requireActionable && !event.hasCoordinates()) continue;
-            double distance = event.hasCoordinates() && query.hasCenter()
-                    ? event.distanceKm(query.centerLat, query.centerLon)
+            double distance = event.hasCoordinates() && centerKnown
+                    ? event.distanceKm(centerLat, centerLon)
                     : Double.NaN;
             out.add(new Result(event, distance, event.remainingMs(now),
                     actionFor(event, now, cooldownUntilMs)));
