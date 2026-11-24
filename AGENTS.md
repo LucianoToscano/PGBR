@@ -19,3 +19,6 @@ Qualquer mudança de privacidade deve afetar apenas a apresentação local do tr
 O coordenador Eternatus só avança por sucesso de resgate da instância exata. A opção manual de pular parada não concede progresso. Preservar cooldown e não iniciar ações automáticas por toque acidental.
 
 Nunca expor chaves de assinatura, tokens, APKM privado, dados pessoais nem credenciais. Builds oficiais usam os secrets existentes no GitHub Actions, e as releases antigas não são apagadas.
+
+## REGRA PRIORITÁRIA — CLARÃO NO ATAQUE CARREGADO
+Para investigar a tela branca no instante do ataque carregado, iniciar pela Batalha Rocket e pelo fluxo visual compartilhado, antes de avaliar PvP/Treinamento. Consultar o registro prioritário no Mestre e https://github.com/LucianoToscano/PGBR/issues/192. Preservar funcionalidades e regras de combate; corrigir somente a apresentação local identificada, sem encobrir a tela. Não presumir causalidade nem marcar como homologado sem validação física. Preservar outros trabalhos paralelos.
