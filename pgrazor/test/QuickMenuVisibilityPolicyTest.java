@@ -31,6 +31,11 @@ public final class QuickMenuVisibilityPolicyTest {
         ok(QuickMenuVisibilityPolicy.sanitize(32768)==0,"unsupported bits ignored");
         ok(QuickMenuVisibilityPolicy.withVisibility(512,3,false)==512,"invalid mask unchanged");
         ok(QuickMenuVisibilityPolicy.visible(8192,0),"settings not hidden by Selector");
+        int locations=QuickMenuVisibilityPolicy.LOCATIONS_BIT;
+        ok(QuickMenuVisibilityPolicy.visible(32,locations)&&QuickMenuVisibilityPolicy.visible(64,locations),"either legacy shortcut remains available");
+        ok(!QuickMenuVisibilityPolicy.visible(96,locations),"both formerly hidden");
+        ok(QuickMenuVisibilityPolicy.withVisibility(512,locations,false)==608,"hide both legacy bits, preserve events");
+        ok(QuickMenuVisibilityPolicy.withVisibility(608,locations,true)==512,"restore Locais only");
         System.out.println("PASS QuickMenuVisibilityPolicy: Events, Selector, persisted masks");
     }
 }

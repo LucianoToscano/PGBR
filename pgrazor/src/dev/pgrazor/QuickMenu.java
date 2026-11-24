@@ -26,8 +26,7 @@ public final class QuickMenu {
         void onAutoWalk();
         void onGameRoutes();
         void onFeeds();
-        void onFavorites();
-        void onHotspots();
+        void onLocations();
         void onTeleport();
         void onAccounts();
         void onSettings();
@@ -39,7 +38,7 @@ public final class QuickMenu {
         ACCOUNTS = MenuIcon.ACCOUNTS, SETTINGS = MenuIcon.SETTINGS, EVENTS = MenuIcon.EVENTS, AUTOMATION = MenuIcon.AUTOMATION, HIDE = MenuIcon.HIDE, ROUTES = MenuIcon.ROUTES, RESEARCH = MenuIcon.RESEARCH;
 
     // Append-only order: persisted visibility bits must not follow icon IDs (some are shared).
-    static final String[] CUSTOMIZABLE = {"Map", "Walking speed", "Autowalk", "In-game Routes", "Busca Pokémon", "Favorites", "Hotspots", "Teleport", "Switch account", "Events", "Automation", "Research", "Hide overlay", "Seletor de Pokémon"};
+    static final String[] CUSTOMIZABLE = {"Map", "Walking speed", "Autowalk", "In-game Routes", "Busca Pokémon", null, "Locais", "Teleport", "Switch account", "Events", "Automation", "Research", "Hide overlay", "Seletor de Pokémon"};
     private final List<View> rows = new ArrayList<>();
     private final List<Integer> visibilityBits = new ArrayList<>();
     private int appliedHidden = -1;
@@ -72,8 +71,7 @@ public final class QuickMenu {
         card.addView(row(FEEDS, "Busca Pokémon", true, listener::onFeeds, 16));
         card.addView(row(FEEDS, "Seletor de Pokémon", true,
                 () -> PokemonSelectorDialog.show(activity), 8192));
-        card.addView(row(FAVORITES, "Favorites", true, listener::onFavorites, 32));
-        card.addView(row(MAP, "Hotspots", true, listener::onHotspots, 64));
+        card.addView(row(MAP, "Locais", true, listener::onLocations, QuickMenuVisibilityPolicy.LOCATIONS_BIT));
         card.addView(row(TELEPORT, "Teleport", true, listener::onTeleport, 128));
         card.addView(row(ACCOUNTS, "Switch account", true, listener::onAccounts, 256));
         card.addView(row(EVENTS, "Events", true, () -> dev.pgrazor.events.EventPanel.showSelector(activity, Control.darkTheme()), QuickMenuVisibilityPolicy.EVENTS_BIT));
@@ -123,7 +121,7 @@ public final class QuickMenu {
     private void updateVisibility() {
         int hidden=Control.quickMenuHidden();if(hidden==appliedHidden)return;
         appliedHidden=hidden;
-        for(int i=0;i<rows.size();i++)rows.get(i).setVisibility((hidden&visibilityBits.get(i))==0?View.VISIBLE:View.GONE);
+        for(int i=0;i<rows.size();i++)rows.get(i).setVisibility(QuickMenuVisibilityPolicy.visible(hidden,visibilityBits.get(i))?View.VISIBLE:View.GONE);
         if(isShowing())card.post(this::position);
     }
     private void refreshIconSizes(){

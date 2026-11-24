@@ -1421,6 +1421,7 @@ final class SettingsPanel {
         caption(menu,"Choose which entries appear. This does not turn features on or off. Settings stays visible.");
         for(int i=0;i<QuickMenu.CUSTOMIZABLE.length;i++){
             final int bit=1<<i;
+            if(QuickMenu.CUSTOMIZABLE[i]==null)continue; // legacy Favorites bit remains reserved
             CheckBox box=new CheckBox(activity);box.setText(dev.pgrazor.PtBr.tr(QuickMenu.CUSTOMIZABLE[i]));
             box.setChecked(Control.quickMenuVisible(bit));quickMenuChoices[i]=box;menu.addView(box);
             box.setOnClickListener(v->{Control.setQuickMenuVisible(bit,box.isChecked());host.refresh();});
@@ -1833,7 +1834,7 @@ final class SettingsPanel {
     }
 
     private void refreshLocationOptions() {
-        for(int i=0;i<quickMenuChoices.length;i++)quickMenuChoices[i].setChecked(Control.quickMenuVisible(1<<i));
+        for(int i=0;i<quickMenuChoices.length;i++)if(quickMenuChoices[i]!=null)quickMenuChoices[i].setChecked(Control.quickMenuVisible(1<<i));
         idleWalkSwitch.setChecked(Control.idleWalking());idleWalkSwitch.setEnabled(Control.desiredEnabled());idleWalkSwitch.setAlpha(Control.desiredEnabled()?1f:.45f);
         mapTap.setText(dev.pgrazor.PtBr.tr("Game map tap: "+new String[]{"Do nothing","Walk","Teleport","Walk / double tap teleport"}[Control.mapTapMode()]));
         mapTap.setEnabled(Control.quickBallConfigured());

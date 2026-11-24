@@ -309,9 +309,8 @@ public final class Pad {
             public void onAutoWalk(){stick.release(true);AutoWalkDialog.show(activity);}
             public void onGameRoutes(){stick.release(true);GameRoutesDialog.show(activity);}
             public void onFeeds(){stick.release(true);FeedChooser.show(activity);}
-            public void onFavorites(){QuickLocationDialogs.showFavorites(activity,Pad.this::quickTeleport);}
+            public void onLocations(){openWorldMap(true);}
             public void onTeleport(){stick.release(true);QuickLocationDialogs.showTeleport(activity,Pad.this::quickTeleport,Pad.this::quickWalk);}
-            public void onHotspots(){stick.release(true);HotspotsDialog.showQuick(activity,Pad.this::quickTeleport,Pad.this::quickWalk);}
             public void onAccounts(){stick.release(true);AccountsDialog.show(activity);}
             public void onSettings(){openSettings();}
             public void onHideOverlays(){confirmHideOverlays();}
@@ -891,7 +890,8 @@ public final class Pad {
     }
 
     /** Shared World map handler for both the settings list and the quick menu Map row. */
-    private void openWorldMap() {
+    private void openWorldMap() {openWorldMap(false);}
+    private void openWorldMap(boolean openLocations) {
         if(quickMenu!=null)quickMenu.hide();
         stick.release(true);
         Control.event("map-open", "Browsing does not apply a destination; current walk=" + Control.engine.walking);
@@ -918,7 +918,7 @@ public final class Pad {
                 Control.event("route-started", String.format(Locale.US,"stops=%d visited=%d remainingMeters=%.2f speedKmh=%.2f loop=%s",progress.total,progress.visited,progress.remainingMeters,Control.engine.speedKmh,loop));
                 refresh(); return true;
             } catch (IllegalArgumentException error) { Toast.makeText(activity,error.getMessage(),Toast.LENGTH_SHORT).show(); return false; }
-        });
+        },openLocations);
     }
     /** Opens the existing settings panel full screen; the game runtime is left untouched. */
     private void openSettings() {

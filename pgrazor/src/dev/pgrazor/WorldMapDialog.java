@@ -66,6 +66,9 @@ public final class WorldMapDialog {
     }
 
     public static AlertDialog show(Activity activity, double latitude, double longitude, DestinationListener listener, DestinationListener walk, RouteListener route) {
+        return show(activity,latitude,longitude,listener,walk,route,false);
+    }
+    public static AlertDialog show(Activity activity,double latitude,double longitude,DestinationListener listener,DestinationListener walk,RouteListener route,boolean openLocations) {
         if (!Double.isFinite(latitude) || !Double.isFinite(longitude) || latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180)
             throw new IllegalArgumentException("Invalid map coordinates");
         Context ui = MapTheme.wrap(activity); // themed chrome; the map view itself keeps the real Activity
@@ -80,16 +83,12 @@ public final class WorldMapDialog {
         LinearLayout selectionRow = new LinearLayout(ui);
         selectionRow.setGravity(Gravity.CENTER_VERTICAL);
         // Selection panel is below the map, next to destination actions.
-        Button saved = button(ui, "Favoritos");
-        selectionRow.addView(saved, new LinearLayout.LayoutParams(0, dp(activity, 48), 1));
-        Button hotspots = button(ui, "Pontos");
-        selectionRow.addView(hotspots, new LinearLayout.LayoutParams(0, dp(activity, 48), 1));
+        Button saved=button(ui,"Locais");
+        selectionRow.addView(saved,new LinearLayout.LayoutParams(0,dp(activity,48),1));
         Button routeMode = button(ui, "Voltar ao mapa");
         routeMode.setVisibility(View.GONE);
-        Button savedRoutes=button(ui,"Rotas"),events=button(ui,"Missões / Eventos");
-        savedRoutes.setContentDescription("Biblioteca e criação de percursos GPX");
-        selectionRow.addView(savedRoutes,new LinearLayout.LayoutParams(0,dp(activity,48),1));
-        selectionRow.addView(events,new LinearLayout.LayoutParams(0,dp(activity,48),1));
+        // Internal GPX action, invoked by the single Locais library; not a second navigation button.
+        Button savedRoutes=button(ui,"Rotas");
         layout.addView(selectionRow);
         TextView attribution = label(ui, "", 12);
         attribution.setGravity(Gravity.RIGHT);
@@ -100,10 +99,10 @@ public final class WorldMapDialog {
         TextView status = label(ui, "Loading map…", 12);
         MapView map = new MapView(activity, latitude, longitude, selected, status);
         final AlertDialog[] hotspotsDialog = {null}, cooldownDialog = {null};
-        hotspots.setOnClickListener(v -> {
-            if(hotspotsDialog[0]!=null && hotspotsDialog[0].isShowing())return;
-            hotspotsDialog[0]=HotspotsDialog.show(activity,spot->{map.select(spot.latitude,spot.longitude);});
-        });
+        Runnable openPoints=()->{
+            if(hotspotsDialog[0]!=null&&hotspotsDialog[0].isShowing())return;
+            hotspotsDialog[0]=HotspotsDialog.show(activity,spot->map.select(spot.latitude,spot.longitude));
+        };
         Button search = button(ui, "Search places, addresses or coordinates");
         layout.addView(search, 0, new LinearLayout.LayoutParams(-1, dp(activity, 48)));
         final AlertDialog[] searchDialog = {null};
@@ -159,8 +158,7 @@ public final class WorldMapDialog {
         powerLayer.setOnCheckedChangeListener((v,on)->{preferences.edit().putBoolean("mapImportedPower",on).apply();places.setMarkerLayers(favoriteLayer.isChecked(),on);});
         officialLayer.setOnCheckedChangeListener((v,on)->{preferences.edit().putBoolean("mapOfficialRoutes",on).apply();map.setOfficialLayer(on);});
         places.setMarkerLayers(favoriteLayer.isChecked(),powerLayer.isChecked());map.setOfficialLayer(officialLayer.isChecked());
-        saved.setOnClickListener(v -> places.openLibrary());
-        events.setOnClickListener(v->places.show(ChoiceList.attach(new AlertDialog.Builder(ui).setTitle("Missões e eventos").setNegativeButton("Fechar",null).create(),new String[]{"Missões / Pesquisas","Eventos"},i->{if(i==0)ResearchSettings.show(activity);else dev.pgrazor.events.EventPanel.showSelector(activity,Control.darkTheme());})));
+        Runnable openEvents=()->places.show(ChoiceList.attach(new AlertDialog.Builder(ui).setTitle("Missões e eventos").setNegativeButton("Fechar",null).create(),new String[]{"Missões / Pesquisas","Eventos"},i->{if(i==0)ResearchSettings.show(activity);else dev.pgrazor.events.EventPanel.showSelector(activity,Control.darkTheme());}));
         android.widget.FrameLayout mapFrame=new android.widget.FrameLayout(ui);
         mapFrame.addView(map,new android.widget.FrameLayout.LayoutParams(-1,-1));
         LinearLayout floating=new LinearLayout(ui);floating.setOrientation(LinearLayout.VERTICAL);
@@ -219,6 +217,7 @@ public final class WorldMapDialog {
         layout.addView(copyRow);
         RouteUi routes = route == null ? null : new RouteUi(activity,ui,map,routeMode,hint,globe,center,retry,gpx,clearRoute,loop,route,walk != null);
         savedRoutes.setEnabled(routes!=null);
+        saved.setOnClickListener(v->places.openLocations(openPoints,routes==null?null:()->savedRoutes.performClick(),openEvents));
         if(routes!=null)routes.reopen=()->WorldMapDialog.show(activity,Control.engine.latitude,Control.engine.longitude,listener,walk,route);
         AlertDialog.Builder builder = new AlertDialog.Builder(ui).setTitle(dev.pgrazor.PtBr.tr("World map")).setView(layout)
             .setNegativeButton(dev.pgrazor.PtBr.tr("Cancel"), null).setPositiveButton(dev.pgrazor.PtBr.tr("Teleport"), null);
@@ -252,6 +251,7 @@ public final class WorldMapDialog {
             });
         });
         dialog.show();
+        if(openLocations)saved.performClick();
         return dialog;
     }
 
@@ -461,6 +461,14 @@ public final class WorldMapDialog {
             dialog.setOnDismissListener(d -> dialogs.remove(dialog));
             dialog.show();
         }
+        void openLocations(Runnable points,Runnable routes,Runnable events){
+            if(closed)return;
+            String[] options=routes==null?new String[]{"Salvos","Pontos","Missões / Eventos"}:new String[]{"Salvos","Pontos","Rotas GPX","Missões / Eventos"};
+            AlertDialog library=ChoiceList.attach(new AlertDialog.Builder(ui).setTitle("Locais").setNegativeButton("Fechar",null).create(),options,i->{
+                if(closed)return;
+                if(i==0)openLibrary();else if(i==1)points.run();else if(i==2&&routes!=null)routes.run();else events.run();
+            });show(library);
+        }
         void openLibrary() {
             if (closed) return;
             opener.setEnabled(false);
@@ -483,11 +491,11 @@ public final class WorldMapDialog {
             toolbar.addView(add,new LinearLayout.LayoutParams(dp(activity,48),dp(activity,48)));
             toolbar.addView(filter,new LinearLayout.LayoutParams(0,dp(activity,48),1));
             toolbar.addView(order,new LinearLayout.LayoutParams(0,dp(activity,48),1));panel.addView(toolbar);
-            EditText search=new EditText(ui);search.setSingleLine(true);search.setHint("Buscar favoritos");panel.addView(search);
+            EditText search=new EditText(ui);search.setSingleLine(true);search.setHint("Buscar locais salvos");panel.addView(search);
             android.widget.ScrollView scroll=new android.widget.ScrollView(ui);
             LinearLayout rows=new LinearLayout(ui);rows.setOrientation(LinearLayout.VERTICAL);scroll.addView(rows);
             panel.addView(scroll,new LinearLayout.LayoutParams(-1,0,1));
-            AlertDialog dialog=new AlertDialog.Builder(ui).setTitle("Favoritos ("+snapshot.entries.size()+"/"+SavedPlaces.LIMIT+")").setView(panel).setNegativeButton("Fechar",null).create();
+            AlertDialog dialog=new AlertDialog.Builder(ui).setTitle("Locais salvos ("+snapshot.entries.size()+"/"+SavedPlaces.LIMIT+")").setView(panel).setNegativeButton("Fechar",null).create();
             Runnable render=()->{
                 if(closed)return;rows.removeAllViews();String needle=search.getText().toString().trim().toLowerCase(Locale.ROOT);
                 List<SavedPlaces.Entry> ordered=new ArrayList<>();for(SavedPlaces.Entry e:snapshot.entries)if((favoriteCategory.isEmpty()||favoriteCategory.equals(e.category))&&(e.name+" "+e.category).toLowerCase(Locale.ROOT).contains(needle))ordered.add(e);
@@ -502,7 +510,7 @@ public final class WorldMapDialog {
                     default:ordered.sort(byName);
                 }
                 filter.setText(favoriteCategory.isEmpty()?"Filtrar: todos":favoriteCategory);
-                if(ordered.isEmpty())rows.addView(label(ui,snapshot.damaged?"Alguns dados não puderam ser lidos.":"Nenhum favorito neste filtro. Use + para salvar o local selecionado.",14));
+                if(ordered.isEmpty())rows.addView(label(ui,snapshot.damaged?"Alguns dados não puderam ser lidos.":"Nenhum local salvo neste filtro. Use + para salvar o local selecionado.",14));
                 LocalTimeClock clock=new LocalTimeClock();
                 for(SavedPlaces.Entry entry:ordered){
                     String detail=clock.label(entry.latitude,entry.longitude,now,true,Locale.forLanguageTag("pt-BR"));
