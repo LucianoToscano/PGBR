@@ -1,6 +1,6 @@
 # PGBR Root — instalação e funcionamento
 
-> **Referência atual:** LT040 é uma pré-release de QA publicada e assinada, **não homologada em Android físico** (`device_tested=false`). A instalação exige a versão exata de Pokémon GO e configurações compatíveis. Não substitua sua instalação estável antes de validar. Consulte também `docs/releases/v0.00.40-LT.md`.
+> **Referência publicada:** LT045 é uma pré-release QA assinada, **não homologada em Android físico** (`device_tested=false`). A instalação exige a versão exata de Pokémon GO e configurações compatíveis. Não substitua sua instalação estável antes de validar. Consulte [notas LT045](releases/v0.00.45-LT.md), [instalador Root](https://github.com/LucianoToscano/PGBR/releases/download/v0.00.45-LT/PGBR-v0.00.45-LT-Root.apk), [módulo](https://github.com/LucianoToscano/PGBR/releases/download/v0.00.45-LT/PGBR-v0.00.45-LT-Root-module.zip) e [SHA256SUMS](https://github.com/LucianoToscano/PGBR/releases/download/v0.00.45-LT/SHA256SUMS.txt). A LT046 permanece em desenvolvimento; as referências LT040 abaixo são históricas.
 
 PGBR Root é um instalador separado (`dev.pgrazor.root`) para o Pokémon GO oficial, assinado pela Niantic. Ele inclui um módulo Zygisk e o instala por Magisk 27+, KernelSU ou APatch. KernelSU e APatch também exigem um provedor Zygisk. O APK modificado `PGBR-v0.00.40-LT.apk` continua sendo a versão sem Root.
 

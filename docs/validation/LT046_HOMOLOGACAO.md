@@ -22,6 +22,22 @@ Registrar versão/commit e hash do pacote; modelo, Android, variante, data e res
 | Privacidade | Conferir nas telas autorizadas se a máscara cobre o nome e se é reversível; não presumir proteção em live | Pendente | Pendente |
 | Desempenho | Medir memória/bateria com protocolo reproduzível, não inferir de limites de cache | Pendente | Pendente |
 
+## Casos adicionais para a sessão única de homologação
+
+Todos pendentes; verificar apenas em ambiente autorizado. Registrar observação, resultado esperado/real e evidência sanitizada. Não usar a coleção valiosa para ensaios destrutivos.
+
+| Caso | Critério de aceitação | Root | Sem Root |
+|---|---|---|---|
+| Etiquetas e tempo de carregamento | Medir início/fim, timeout e recuperação; não confundir catálogo manual com carregamento real | Pendente | Pendente |
+| Alteração de filtros/evento | Validar positivos, negativos, desconhecidos e reavaliação, sem perda de coleção | Pendente | Pendente |
+| Proteções | Verificar cada critério isolado e combinações contraditórias; ausência de evidência não autoriza ação | Pendente | Pendente |
+| PvP e lifecycle | Observar estado após abrir/fechar menus, mudança de tela e suspensão; registrar falhas e tela branca | Pendente | Pendente |
+| Diagnóstico de ataques | Registrar actor-unknown, um/dois carregados e discrepâncias de eficácia sem inferir execução | Pendente | Pendente |
+| Max, frutas e MT | Distinguir preparação manual de recurso funcional; conferir disponibilidade e alternativas sem gasto de teste | Pendente | Pendente |
+| Fortalecimento | Conferir apresentação de IV/nível antes e depois de alteração confirmada | Pendente | Pendente |
+| GPX multissegmento | Nomes longos mantêm sufixos distintos, limite de 80 caracteres e Unicode válido; progresso preservado | Pendente | Pendente |
+| Ícones adicionais | Confirmar ID e identidade visual, sem adivinhar por semelhança | Pendente | Pendente |
+
 ## Bloqueios separados
 
 - Comportamento observado PvP/VGP+, telas externas e modo streamer: evidências reais autorizadas; não declarar resolução com simulador, metadados ou testes host.

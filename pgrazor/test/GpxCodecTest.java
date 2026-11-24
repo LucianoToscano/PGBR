@@ -66,6 +66,22 @@ public final class GpxCodecTest {
         check(split.size() == 2, "Segments split a track into separate routes");
         check(split.get(0).name.contains("segment 1") && split.get(1).name.contains("segment 2"), "Split routes are numbered by segment");
 
+        // A full-length name must not hide segment identity or split a Unicode surrogate pair.
+        String longName = "A".repeat(80);
+        String longPrefix = "<gpx><trk><name>";
+        String longTail = "</name><trkseg><trkpt lat='1' lon='1'/></trkseg>"
+            + "<trkseg><trkpt lat='2' lon='2'/></trkseg></trk></gpx>";
+        List<GpxRoute> longSplit = read(longPrefix + longName + longTail);
+        check(longSplit.size() == 2 && !longSplit.get(0).name.equalsIgnoreCase(longSplit.get(1).name), "Long segment names remain distinct");
+        check(longSplit.get(0).name.endsWith(" (segment 1)") && longSplit.get(1).name.endsWith(" (segment 2)"), "Segment suffix preserved");
+        check(longSplit.get(0).name.length() <= GpxRoute.NAME_LIMIT && longSplit.get(1).name.length() <= GpxRoute.NAME_LIMIT, "Segment names remain bounded");
+        String emojiName = "A".repeat(GpxRoute.NAME_LIMIT - " (segment 1)".length() - 1) + "\uD83D\uDE00" + "B".repeat(20);
+        List<GpxRoute> emojiSplit = read(longPrefix + emojiName + longTail);
+        check(emojiSplit.get(0).name.equals("A".repeat(GpxRoute.NAME_LIMIT - " (segment 1)".length() - 1) + " (segment 1)"), "No split surrogate at segment suffix boundary");
+        ByteArrayOutputStream segmentOut = new ByteArrayOutputStream();
+        GpxCodec.write(segmentOut, emojiSplit.get(0));
+        check(GpxCodec.read(new ByteArrayInputStream(segmentOut.toByteArray()), "ignored").get(0).name.equals(emojiSplit.get(0).name), "Long segment name round-trips");
+
         // --- A real route is preferred over unrelated waypoints in the same file ---
         List<GpxRoute> mixed = read("<gpx version=\"1.1\">"
             + "<wpt lat=\"10\" lon=\"10\"/><wpt lat=\"11\" lon=\"11\"/>"
