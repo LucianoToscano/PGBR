@@ -30,12 +30,22 @@ public final class LocalCollectionPreview {
  public static Report parse(String text,int min,Set<LocalAuditPolicy.Flag> enabled,Set<String> names){
   if(text==null||text.length()>MAX_CHARS||min<0||min>101||enabled==null||names==null)throw new IllegalArgumentException("Dados acima do limite ou configuração inválida.");
   List<Row> rows=new ArrayList<>();Map<Integer,String> bad=new LinkedHashMap<>();
-  String[] lines=text.split("\\r\\n|\\n|\\r",-1);int count=0;
-  for(int i=0;i<lines.length;i++){
-   String line=lines[i];if(i==0&&line.startsWith("\uFEFF"))line=line.substring(1);line=line.trim();if(line.isEmpty())continue;if(++count>MAX_ROWS)throw new IllegalArgumentException("Máximo de 500 registros.");
+  int count=0;
+  // Scan one physical line at a time. A paste containing only newlines must
+  // not allocate a split array proportional to MAX_CHARS.
+  for(int i=0,start=0;start<text.length();i++){
+   int end=start;
+   while(end<text.length()&&text.charAt(end)!='\r'&&text.charAt(end)!='\n')end++;
+   String line=text.substring(start,end);
+   start=end;
+   if(start<text.length()){
+    char separator=text.charAt(start++);
+    if(separator=='\r'&&start<text.length()&&text.charAt(start)=='\n')start++;
+   }
+   if(i==0&&line.startsWith("\uFEFF"))line=line.substring(1);line=line.trim();if(line.isEmpty())continue;if(++count>MAX_ROWS)throw new IllegalArgumentException("Máximo de 500 registros.");
    String error="Formato: são necessários seis campos separados por ponto e vírgula.";
    try{
-    String[] fields=line.split(";",-1);if(fields.length!=6)throw new IllegalArgumentException();
+    String[] fields=line.split(";",7);if(fields.length!=6)throw new IllegalArgumentException();
     error="Nome de espécie ausente ou inválido.";
     String name=fields[0].trim();LocalAuditPolicy.speciesKey(name);
     error="PC inválido: informe um inteiro de 0 a 100000.";
@@ -43,9 +53,9 @@ public final class LocalCollectionPreview {
     error="IV inválido: use 0–15, -1 ou ?.";
     int a=iv(fields[2]),d=iv(fields[3]),s=iv(fields[4]);
     EnumMap<LocalAuditPolicy.Flag,Boolean> observed=new EnumMap<>(LocalAuditPolicy.Flag.class);
-    if(!fields[5].trim().isEmpty())for(String fact:fields[5].split(",",-1)){
+    if(!fields[5].trim().isEmpty())for(String fact:fields[5].split(",",LocalAuditPolicy.Flag.values().length+1)){
       error="Critério inválido: use NOME=1, NOME=0 ou NOME=?.";
-      String[] parts=fact.trim().split("=",-1);if(parts.length!=2)throw new IllegalArgumentException();
+      String[] parts=fact.trim().split("=",3);if(parts.length!=2)throw new IllegalArgumentException();
       error="Critério não reconhecido.";
       LocalAuditPolicy.Flag f=LocalAuditPolicy.Flag.valueOf(parts[0].trim().toUpperCase(Locale.ROOT));
       error="Critério repetido.";if(observed.containsKey(f))throw new IllegalArgumentException();
