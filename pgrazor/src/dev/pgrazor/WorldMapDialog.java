@@ -80,14 +80,21 @@ public final class WorldMapDialog {
         LinearLayout selectionRow = new LinearLayout(ui);
         selectionRow.setGravity(Gravity.CENTER_VERTICAL);
         // Selection panel is below the map, next to destination actions.
-        Button saved = button(ui, "Saved places");
+        Button saved = button(ui, "Favoritos");
         selectionRow.addView(saved, new LinearLayout.LayoutParams(0, dp(activity, 48), 1));
-        Button hotspots = button(ui, "Hotspots");
+        Button hotspots = button(ui, "Pontos");
         selectionRow.addView(hotspots, new LinearLayout.LayoutParams(0, dp(activity, 48), 1));
-        Button routeMode = button(ui, "Route"); routeMode.setContentDescription(dev.pgrazor.PtBr.tr("Open route builder"));
+        Button routeMode = button(ui, "Criar GPX"); routeMode.setContentDescription(dev.pgrazor.PtBr.tr("Open route builder"));
         routeMode.setVisibility(route == null ? View.GONE : View.VISIBLE);
         selectionRow.addView(routeMode,new LinearLayout.LayoutParams(dp(activity, 64),dp(activity, 48)));
         layout.addView(selectionRow);
+        LinearLayout libraryTabs=new LinearLayout(ui);
+        Button savedRoutes=button(ui,"Rotas GPX"),events=button(ui,"Missões / Eventos"),addFavorite=button(ui,"+");
+        addFavorite.setContentDescription("Salvar local selecionado nos favoritos");
+        libraryTabs.addView(savedRoutes,new LinearLayout.LayoutParams(0,dp(activity,48),1));
+        libraryTabs.addView(events,new LinearLayout.LayoutParams(0,dp(activity,48),1));
+        libraryTabs.addView(addFavorite,new LinearLayout.LayoutParams(dp(activity,48),dp(activity,48)));
+        layout.addView(libraryTabs);
         TextView attribution = label(ui, "", 12);
         attribution.setGravity(Gravity.RIGHT);
         attribution.setPadding(0, 0, 0, dp(activity, 6));
@@ -157,6 +164,8 @@ public final class WorldMapDialog {
         officialLayer.setOnCheckedChangeListener((v,on)->{preferences.edit().putBoolean("mapOfficialRoutes",on).apply();map.setOfficialLayer(on);});
         places.setMarkerLayers(favoriteLayer.isChecked(),powerLayer.isChecked());map.setOfficialLayer(officialLayer.isChecked());
         saved.setOnClickListener(v -> places.openLibrary());
+        addFavorite.setOnClickListener(v->places.showSave(null));
+        events.setOnClickListener(v->places.show(ChoiceList.attach(new AlertDialog.Builder(ui).setTitle("Missões e eventos").setNegativeButton("Fechar",null).create(),new String[]{"Missões / Pesquisas","Eventos"},i->{if(i==0)ResearchSettings.show(activity);else dev.pgrazor.events.EventPanel.showSelector(activity,Control.darkTheme());})));
         android.widget.FrameLayout mapFrame=new android.widget.FrameLayout(ui);
         mapFrame.addView(map,new android.widget.FrameLayout.LayoutParams(-1,-1));
         LinearLayout floating=new LinearLayout(ui);floating.setOrientation(LinearLayout.VERTICAL);
@@ -216,6 +225,8 @@ public final class WorldMapDialog {
         layout.addView(actions);
         layout.addView(status);
         RouteUi routes = route == null ? null : new RouteUi(activity,ui,map,routeMode,hint,globe,center,retry,gpx,clearRoute,loop,route,walk != null);
+        savedRoutes.setEnabled(routes!=null);
+        if(routes!=null)savedRoutes.setOnClickListener(v->GpxRouteDialog.chooseSaved(activity,routes::onGpxChosen));
         if(routes!=null)routes.reopen=()->WorldMapDialog.show(activity,Control.engine.latitude,Control.engine.longitude,listener,walk,route);
         AlertDialog.Builder builder = new AlertDialog.Builder(ui).setTitle(dev.pgrazor.PtBr.tr("World map")).setView(layout)
             .setNegativeButton(dev.pgrazor.PtBr.tr("Cancel"), null).setPositiveButton(dev.pgrazor.PtBr.tr("Teleport"), null);
@@ -294,7 +305,7 @@ public final class WorldMapDialog {
         void refresh() {
             if(draft.isEmpty())imported=false;
             boolean big=draft.size()>LIMIT;
-            mode.setText(dev.pgrazor.PtBr.tr(editing ? "Map" : "Route"));
+            mode.setText(editing ? "Mapa" : "Criar GPX");
             mode.setContentDescription(dev.pgrazor.PtBr.tr(editing ? "Leave route builder without starting" : "Open route builder"));
             hint.setText(dev.pgrazor.PtBr.tr(!editing ? "Blue dot: you. Red pin: destination. Tap to select; drag to pan."
                 : big ? "GPX route: "+draft.size()+" stops. Tap Start to walk it in order."
