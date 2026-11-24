@@ -26,6 +26,7 @@ public class RouteAnchorHarness {
     catch(IllegalArgumentException e) { System.out.println("DIRECT_FAIL "+e.getMessage()); }
     RouteAnchorSnapshot a=RouteAnchorSnapshot.parse(json(normal,6));
     check(a!=null&&a.size()==6);
+    for(int i=0;i<a.size();i++){double[] rr=a.reference(i);System.out.println("PARSED "+i+" "+rr[0]+" "+rr[1]+" "+rr[2]+" "+rr[3]);}
     RouteGroundProjection p=a.fit(width,height);
     for(int i=0;i<6;i++)System.out.println("REF "+i+" "+normal[i][0]+" "+normal[i][1]+" "+normal[i][2]+" "+normal[i][3]);
     System.out.println("FIT "+(p==null?"null":"ok"));
