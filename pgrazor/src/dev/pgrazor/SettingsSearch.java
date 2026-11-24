@@ -38,7 +38,7 @@ final class SettingsSearch {
 
     private final List<Entry> entries = new ArrayList<>();
     private static final Pattern MARKS = Pattern.compile("\\p{M}+");
-    private static final Pattern SPACES = Pattern.compile("\\s+");
+    private static final Pattern SPACES = Pattern.compile("\\s+", Pattern.UNICODE_CHARACTER_CLASS);
     private static final Pattern COUNT = Pattern.compile("\\s*\\(\\d+\\)$");
 
     int add(String name, String group, String category, int page) {
@@ -90,13 +90,13 @@ final class SettingsSearch {
         if (value == null || value.isEmpty()) return "";
         String lower = value.toLowerCase(Locale.ROOT).trim();
         String folded = Normalizer.normalize(lower, Normalizer.Form.NFD);
-        return SPACES.matcher(MARKS.matcher(folded).replaceAll("")).replaceAll(" ");
+        return SPACES.matcher(MARKS.matcher(folded).replaceAll("")).replaceAll(" ").trim();
     }
 
     /** The setting name without its current value: {@code "Throw rating: Great"} becomes {@code "Throw rating"}. */
     static String cleanName(String raw) {
         if (raw == null) return "";
-        String name = SPACES.matcher(raw.trim()).replaceAll(" ");
+        String name = SPACES.matcher(raw).replaceAll(" ").trim();
         int split = name.indexOf(": ");
         if (split > 0) name = name.substring(0, split);
         name = COUNT.matcher(name).replaceAll("");

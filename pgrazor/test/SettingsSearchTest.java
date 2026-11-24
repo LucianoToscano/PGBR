@@ -17,6 +17,8 @@ public final class SettingsSearchTest {
     private static void normalization() {
         eq("pokemon go", SettingsSearch.normalize("  Pokémon GO  "));
         eq("pokemon", SettingsSearch.normalize("POKÉMON"));
+        eq("pokemon go", SettingsSearch.normalize("\u00a0Pokémon\u202fGO\u2003"));
+        eq("", SettingsSearch.normalize("\u00a0\u0301\u2003"));
         eq("favorites", SettingsSearch.normalize("Favorites"));
         eq("", SettingsSearch.normalize(null));
         eq("", SettingsSearch.normalize("   "));
@@ -28,6 +30,7 @@ public final class SettingsSearchTest {
         eq("Evolve applies to", SettingsSearch.cleanName("Applies to: current transfer rules"));
         eq("Evolve species", SettingsSearch.cleanName("Selected species (3)"));
         eq("Auto ball target", SettingsSearch.cleanName("  Auto ball target: 90%  "));
+        eq("Tema escuro", SettingsSearch.cleanName("\u00a0Tema\u202fescuro: Ligado\u00a0"));
         eq("", SettingsSearch.cleanName(null));
     }
 
@@ -81,6 +84,8 @@ public final class SettingsSearchTest {
         accented.add("Pokémon stats IV display", "Display", "Catching", 2);
         eq("1", Integer.toString(accented.find("POKEMON").size()));
         eq("1", Integer.toString(accented.find("pokémon").size()));
+        eq("1", Integer.toString(accented.find("\u00a0pokémon\u202fstats\u00a0").size()));
+        eq("0", Integer.toString(accented.find("\u00a0\u2003").size()));
     }
 
     private static void synonyms() {
