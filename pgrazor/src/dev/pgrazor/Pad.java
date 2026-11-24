@@ -778,11 +778,15 @@ public final class Pad {
     /** "Hide overlay": confirm first, naming the three-finger tap that shows the overlays again. */
     void confirmHideOverlays() {
         if(closed||overlaysHidden||activity.isFinishing()||activity.isDestroyed()||hideOverlaysDialog!=null)return;
+        android.content.SharedPreferences prefs=AccountProfiles.preferences(activity,"pgrazor-overlays");
+        if(prefs.getBoolean("hideWarningDisabled",false)){setOverlaysHidden(true);return;}
+        CheckBox dontShow=new CheckBox(dialogContext());dontShow.setText("Não mostrar este aviso novamente");
         AlertDialog dialog=new AlertDialog.Builder(dialogContext())
             .setTitle(dev.pgrazor.PtBr.tr("Hide overlay?"))
-            .setMessage(dev.pgrazor.PtBr.tr("All PGBR buttons, status bars, messages and in-game IV text will be hidden so the game looks stock. To show them again, tap the screen with three fingers at once."))
+            .setMessage("Os controles e indicadores visuais do PGBR serão ocultados. Toque com três dedos para restaurar.")
+            .setView(dontShow)
             .setNegativeButton(dev.pgrazor.PtBr.tr("Cancel"),null)
-            .setPositiveButton(dev.pgrazor.PtBr.tr("Hide"),(d,w)->setOverlaysHidden(true)).create();
+            .setPositiveButton(dev.pgrazor.PtBr.tr("Hide"),(d,w)->{if(dontShow.isChecked())prefs.edit().putBoolean("hideWarningDisabled",true).apply();setOverlaysHidden(true);}).create();
         hideOverlaysDialog=dialog;
         DialogLifecycle.bind(activity,dialog,()->{if(hideOverlaysDialog==dialog)hideOverlaysDialog=null;});
         dialog.setOnShowListener(d->MapTheme.styleButtons(dialog));
@@ -803,26 +807,24 @@ public final class Pad {
      * 250 ms at least 24dp apart show it again; one finger tapping the same spot quickly does not.
      */
     private final class ThreeFingerWatcher extends View {
-        private final long[] times=new long[3];
-        private final float[] xs=new float[3],ys=new float[3];
-        private int next;
+        private final OverlayGesturePolicy gesture=new OverlayGesturePolicy();
         ThreeFingerWatcher(Context context){super(context);setClickable(false);setFocusable(false);setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);}
         @Override public boolean dispatchTouchEvent(MotionEvent e){
             int action=e.getActionMasked();
-            if(!overlaysHidden||(action!=MotionEvent.ACTION_DOWN&&action!=MotionEvent.ACTION_POINTER_DOWN))return false;
-            if(e.getPointerCount()>=3){unhide();return false;}
-            int index=e.getActionIndex();
-            times[next]=e.getEventTime();xs[next]=e.getX(index);ys[next]=e.getY(index);next=(next+1)%3;
-            long newest=e.getEventTime();float apart=dp(24);
-            boolean together=true;
-            for(int i=0;i<3&&together;i++){
-                together=times[i]!=0&&newest-times[i]<=250;
-                for(int j=i+1;j<3&&together;j++)together=Math.hypot(xs[i]-xs[j],ys[i]-ys[j])>=apart;
+            if(action==MotionEvent.ACTION_CANCEL){gesture.clear();return false;}
+            if(action!=MotionEvent.ACTION_DOWN&&action!=MotionEvent.ACTION_POINTER_DOWN)return false;
+            if(!overlaysHidden&&(settings.isVisible()||(quickMenu!=null&&quickMenu.isShowing())||hideOverlaysDialog!=null)){
+                gesture.clear();return false;
             }
-            if(together)unhide();
+            long time=e.getEventTime();int index=e.getActionIndex();
+            boolean ready=e.getPointerCount()>=3?gesture.accept(time):gesture.down(time,e.getX(index),e.getY(index),dp(24));
+            if(ready)post(()->{
+                if(closed)return;
+                if(overlaysHidden){setOverlaysHidden(false);return;}
+                if(!settings.isVisible()&&!(quickMenu!=null&&quickMenu.isShowing())&&AccountProfiles.preferences(activity,"pgrazor-overlays").getBoolean("threeFingerHide",false))confirmHideOverlays();
+            });
             return false;
         }
-        private void unhide(){java.util.Arrays.fill(times,0);post(()->setOverlaysHidden(false));}
     }
     /** A ground tap must never silently replace a planned route. */
     void confirmStopRoute() {

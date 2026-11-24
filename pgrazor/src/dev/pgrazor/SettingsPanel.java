@@ -1364,6 +1364,16 @@ final class SettingsPanel {
         caption(battery, "Turns off shadows, fog, water reflections, grass in encounters, HDR and anti-aliasing, and shows less far detail.");
 
         LinearLayout appearance=group(page,"Personalização dos ícones e fundos");
+        launch(appearance,"Gesto de três dedos e aviso de ocultação",()->{
+            android.content.SharedPreferences prefs=AccountProfiles.preferences(activity,"pgrazor-overlays");
+            String[] names={"Permitir ocultar com três dedos","Não mostrar aviso de ocultação"};
+            boolean[] chosen={prefs.getBoolean("threeFingerHide",false),prefs.getBoolean("hideWarningDisabled",false)};
+            AlertDialog d=new AlertDialog.Builder(dialogContext()).setTitle("Controles visuais")
+                .setMultiChoiceItems(names,chosen,(dialog,index,checked)->chosen[index]=checked)
+                .setPositiveButton("Salvar",(dialog,which)->prefs.edit().putBoolean("threeFingerHide",chosen[0]).putBoolean("hideWarningDisabled",chosen[1]).apply())
+                .setNegativeButton("Cancelar",null).create();
+            DialogLifecycle.bind(activity,d,null);d.setOnShowListener(x->MapTheme.styleButtons(d));d.show();
+        });
         visualSlider(appearance,"Tamanho dos ícones dos menus",16,40,Control.menuIconSizeDp(),value->{
             Control.setMenuIconSizeDp(value);host.refresh();});
         launch(appearance,"Ícone do menu principal: PGBR / PGEterna / Personalizado",()->{
