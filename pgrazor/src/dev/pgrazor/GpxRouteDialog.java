@@ -147,10 +147,12 @@ public final class GpxRouteDialog {
         run(() -> {
             String error = null;
             try {
-                OutputStream out = activity.getContentResolver().openOutputStream(uri,"wt");
-                if (out == null) throw new IOException("Could not open the destination file.");
-                try { GpxCodec.write(out, route); }
-                finally { out.close(); }
+                byte[] encoded = GpxCodec.encode(route);
+                try (OutputStream out = activity.getContentResolver().openOutputStream(uri,"wt")) {
+                    if (out == null) throw new IOException("Could not open the destination file.");
+                    out.write(encoded);
+                    out.flush();
+                }
             } catch (IOException | RuntimeException e) { error = message(e, "Could not export that route."); }
             final String err = error;
             MAIN.post(() -> { if (alive(activity)) note(activity, err == null ? "Exported “" + route.name + "”." : err); });

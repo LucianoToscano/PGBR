@@ -99,6 +99,12 @@ public final class GpxCodec {
      */
     public static void write(OutputStream out, GpxRoute route) throws IOException {
         if (out == null) throw new IOException("No GPX destination was provided.");
+        out.write(encode(route));
+        out.flush();
+    }
+
+    /** Prepare and validate the entire bounded document before opening a truncating destination. */
+    public static byte[] encode(GpxRoute route) throws IOException {
         if (route == null) throw new IOException("No route to write.");
         StringBuilder xml = new StringBuilder();
         xml.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
@@ -113,8 +119,7 @@ public final class GpxCodec {
         byte[] encoded = xml.toString().getBytes(StandardCharsets.UTF_8);
         // Reject before touching the destination; never write a file that our reader cannot reopen.
         if (encoded.length > MAX_BYTES) throw new IOException("GPX export exceeds 2 MB; split the route into smaller files.");
-        out.write(encoded);
-        out.flush();
+        return encoded;
     }
 
     private static byte[] readBounded(InputStream in) throws IOException {

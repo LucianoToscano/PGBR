@@ -25,6 +25,12 @@ public class Context {
 
 
 class GpxJavaTests(unittest.TestCase):
+    def test_export_preflight_before_truncation(self):
+        dialog = (ROOT / "src/dev/pgrazor/GpxRouteDialog.java").read_text(encoding="utf-8")
+        export = dialog.split("private static void writeExport(", 1)[1].split("// ---- saved routes", 1)[0]
+        self.assertLess(export.index("GpxCodec.encode(route)"), export.index("openOutputStream(uri"))
+        self.assertIn("out.write(encoded)", export)
+
     def test_codec_and_route(self):
         compiler, runtime = java_tools()
         with tempfile.TemporaryDirectory(prefix='pgrazor-gpx-codec-') as directory:
