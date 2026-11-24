@@ -668,7 +668,7 @@ int scenario(int n) {
       if(sc.vcharge.tapped||sc.vc2.tapped)return 77;
       break;
     }
-    case 36: { // Only ready Neutral fires immediately; Super charging does not delay it.
+    case 36: { // Neutral ready: hold for a confirmed charging SUPER.
       arm(&sc.scope,2,tid);
       api->observe(PGR_RC_OBS_VNEXT_UPDATE,&sc.vui,0,tid);
       sc.vc2.button=&sc.vbutton;sc.vc2.vcharged=0;
@@ -677,7 +677,7 @@ int scenario(int n) {
       api->observe(PGR_RC_OBS_CHARGE,&sc.vc2,pack({Slot::SECOND,Tier::SUPER,41}),tid);
       pgrazor_rc_direct_smart_attack(1);
       api->tick(tid,0);
-      if(sc.vcharge.tapped!=1||sc.vc2.tapped)return 78;
+      if(sc.vcharge.tapped||sc.vc2.tapped)return 78;
       break;
     }
     case 37: { // Capture order reversed: verified slot FIRST wins tie, not capture order.
@@ -778,7 +778,7 @@ int scenario(int n) {
       if(sc.vcharge.tapped||sc.vc2.tapped)return 87;
       break;
     }
-    case 44: { // Rocket fires ready Resisted, then prefers Super when both are ready.
+    case 44: { // Rocket keeps fast attacks while confirmed SUPER charges.
       arm(&sc.scope,3,tid);  // the identical controller receives derived scopes
       api->observe(PGR_RC_OBS_VNEXT_UPDATE,&sc.vui,0,tid);
       sc.vc2.button=&sc.vbutton;sc.vc2.vcharged=0;
@@ -787,7 +787,7 @@ int scenario(int n) {
       api->observe(PGR_RC_OBS_CHARGE,&sc.vc2,pack({Slot::SECOND,Tier::SUPER,41}),tid);
       pgrazor_rc_direct_smart_attack(1);
       api->tick(tid,0);
-      if(sc.vcharge.tapped!=1||sc.vc2.tapped||sc.vgest.tapped)return 88;
+      if(sc.vcharge.tapped||sc.vc2.tapped||sc.vgest.tapped!=1)return 88;
       // The preferred charge becomes ready; it fires immediately at next
       // permitted cadence. No redirect of the quick gesture to either side.
       sc.vc2.vcharged=1;
@@ -795,7 +795,7 @@ int scenario(int n) {
       api->observe(PGR_RC_OBS_CHARGE,&sc.vcharge,pack({Slot::FIRST,Tier::RESISTED,41}),tid);
       api->observe(PGR_RC_OBS_CHARGE,&sc.vc2,pack({Slot::SECOND,Tier::SUPER,41}),tid);
       api->tick(tid,0);
-      if(sc.vcharge.tapped!=1||sc.vc2.tapped!=1)return 89;
+      if(sc.vcharge.tapped||sc.vc2.tapped!=1)return 89;
       break;
     }
     case 45: { // Incomplete pair: Smart ON denies unverified charge, keeps quick.
@@ -822,7 +822,7 @@ int scenario(int n) {
       if(sc.vcharge.tapped!=1||sc.vc2.tapped||sc.vgest.tapped)return 92;
       break;
     }
-    case 47: { // No artificial 2.6s wait: use ready attack on authorized cadence.
+    case 47: { // No timeout may force a weaker charge while SUPER is confirmed.
       arm(&sc.scope,3,tid);
       api->observe(PGR_RC_OBS_VNEXT_UPDATE,&sc.vui,0,tid);
       sc.vc2.button=&sc.vbutton;sc.vc2.vcharged=0;
@@ -831,21 +831,21 @@ int scenario(int n) {
       api->observe(PGR_RC_OBS_CHARGE,&sc.vc2,pack({Slot::SECOND,Tier::SUPER,41}),tid);
       pgrazor_rc_direct_smart_attack(1);
       api->tick(tid,0);
-      if(sc.vcharge.tapped!=1||sc.vc2.tapped||sc.vgest.tapped)return 93;
+      if(sc.vcharge.tapped||sc.vc2.tapped||sc.vgest.tapped!=1)return 93;
       usleep(2700000);
       api->update(3,2500,tid);
       api->observe(PGR_RC_OBS_CHARGE,&sc.vcharge,pack({Slot::FIRST,Tier::RESISTED,41}),tid);
       api->observe(PGR_RC_OBS_CHARGE,&sc.vc2,pack({Slot::SECOND,Tier::SUPER,41}),tid);
       api->tick(tid,0);
-      if(sc.vcharge.tapped!=2||sc.vc2.tapped)return 94;
+      if(sc.vcharge.tapped||sc.vc2.tapped)return 94;
       sc.vc2.vcharged=1;usleep(650000);
       api->observe(PGR_RC_OBS_CHARGE,&sc.vcharge,pack({Slot::FIRST,Tier::RESISTED,41}),tid);
       api->observe(PGR_RC_OBS_CHARGE,&sc.vc2,pack({Slot::SECOND,Tier::SUPER,41}),tid);
       api->tick(tid,0);
-      if(sc.vcharge.tapped!=2||sc.vc2.tapped!=1)return 95;
+      if(sc.vcharge.tapped||sc.vc2.tapped!=1)return 95;
       break;
     }
-    case 48: { // Missing metadata after a valid tap blocks further charged fallback.
+    case 48: { // Missing metadata while waiting for SUPER blocks weaker fallback.
       arm(&sc.scope,3,tid);
       api->observe(PGR_RC_OBS_VNEXT_UPDATE,&sc.vui,0,tid);
       sc.vc2.button=&sc.vbutton;sc.vc2.vcharged=0;
@@ -854,14 +854,14 @@ int scenario(int n) {
       api->observe(PGR_RC_OBS_CHARGE,&sc.vc2,pack({Slot::SECOND,Tier::SUPER,41}),tid);
       pgrazor_rc_direct_smart_attack(1);
       api->tick(tid,0);
-      if(sc.vcharge.tapped!=1||sc.vc2.tapped||sc.vgest.tapped)return 96;
+      if(sc.vcharge.tapped||sc.vc2.tapped||sc.vgest.tapped!=1)return 96;
       usleep(180000);
       api->observe(PGR_RC_OBS_CHARGE,&sc.vc2,0,tid);
       api->tick(tid,0);
-      if(sc.vcharge.tapped!=1||sc.vc2.tapped)return 97; // cooldown may still delay Ágil
+      if(sc.vcharge.tapped||sc.vc2.tapped)return 97; // no inferior fallback
       break;
     }
-    case 49: { // With Ágil OFF, only ready charged attack is still immediate.
+    case 49: { // With Ágil OFF, preserve manual control and never fire inferior automatically.
       arm(&sc.scope,2,tid);
       api->observe(PGR_RC_OBS_VNEXT_UPDATE,&sc.vui,0,tid);
       sc.vc2.button=&sc.vbutton;sc.vc2.vcharged=0;
@@ -870,7 +870,7 @@ int scenario(int n) {
       api->observe(PGR_RC_OBS_CHARGE,&sc.vc2,pack({Slot::SECOND,Tier::SUPER,41}),tid);
       pgrazor_rc_direct_smart_attack(1);
       api->tick(tid,0);
-      if(sc.vcharge.tapped!=1||sc.vc2.tapped||sc.vgest.tapped)return 98;
+      if(sc.vcharge.tapped||sc.vc2.tapped||sc.vgest.tapped)return 98;
       break;
     }
     case 50: { // Video reproduction: no subtitle on Charge; SUPER on Charge2, both ready.
