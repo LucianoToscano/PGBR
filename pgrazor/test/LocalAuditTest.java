@@ -89,6 +89,9 @@ public final class LocalAuditTest {
  check(malformed.rejectedReasons.get(2).startsWith("PC inválido")&&malformed.rejectedReasons.get(3).startsWith("IV inválido")&&malformed.rejectedReasons.get(4).equals("Critério não reconhecido.")&&malformed.rejectedReasons.get(5).startsWith("Valor de critério inválido"));
  try{malformed.rejectedReasons.clear();throw new AssertionError();}catch(UnsupportedOperationException expected){}
  try{LocalCollectionPreview.parse(" ".repeat(LocalCollectionPreview.MAX_CHARS+1),99,flags);throw new AssertionError();}catch(IllegalArgumentException expected){}
+ Thread.currentThread().interrupt();
+ try{LocalCollectionPreview.parse("X;1;0;0;0;",99,flags);throw new AssertionError("Canceled collection preview");}
+ catch(java.util.concurrent.CancellationException expected){}finally{Thread.interrupted();}
  var sparse=LocalCollectionPreview.parse("\r\n".repeat(30000)+"X;1;0;0;0;EVENT=0,SHINY=0\r\n\rY;1;0;0;0;EVENT=0,SHINY=0\n",99,flags);
  check(sparse.matchCount==2&&sparse.rows.get(0).sourceLine==30001&&sparse.rows.get(1).sourceLine==30003);
  check(LocalCollectionPreview.parse("\n".repeat(LocalCollectionPreview.MAX_CHARS),99,flags).rows.isEmpty());
