@@ -177,7 +177,13 @@ jobs:
           grep -E '^(FAIL|ERROR):' /tmp/diag-tests.log | sed 's/^/::error::/'
           grep -A18 -E '^(FAIL|ERROR):' /tmp/diag-tests.log | sed 's/^/::error::/'
       - name: Testar codigo PGBR apos preparar ferramentas DEX
-        run: python -B tools/check.py
+        shell: bash
+        run: |
+          set +e
+          python -B tools/check.py > /tmp/check.log 2>&1
+          rc=$?
+          tail -30 /tmp/check.log | sed 's/^/::error::/'
+          exit $rc
       - name: Testar menu, busca iFlowGo segura e janelas de escolha manual
         run: |
           python -B pgrazor/test/test_iflowgo_request_policy_java.py
