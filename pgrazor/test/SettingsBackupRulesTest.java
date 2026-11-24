@@ -180,6 +180,18 @@ public class SettingsBackupRulesTest {
         String places="[{\"id\":\"a\",\"name\":\"Home\",\"latitude\":40,\"longitude\":-70}]";
         v=valid();v.getJSONObject("preferences").put("pgrazor-saved-places-v1",new JSONObject().put("places",places));SettingsBackupRules.validate(v);
         v.getJSONObject("preferences").getJSONObject("pgrazor-saved-places-v1").put("places",places.replace("40","400"));rejects(v);
+        // Backup acceptance must agree with the local destination store.
+        for(Object badName:new Object[]{123,true,JSONObject.NULL,new JSONObject(),"Bad\nname","Bad\tname","Bad\u0000name","X".repeat(101)}){
+            JSONObject entry=new JSONObject().put("id","a").put("name",badName).put("latitude",0).put("longitude",0);
+            v=valid();v.getJSONObject("preferences").put("pgrazor-saved-places-v1",new JSONObject().put("places",new JSONArray().put(entry).toString()));rejects(v);
+        }
+        for(Object badId:new Object[]{123,true,JSONObject.NULL,new JSONObject(),"","X".repeat(65)}){
+            JSONObject entry=new JSONObject().put("id",badId).put("name","Local").put("latitude",0).put("longitude",0);
+            v=valid();v.getJSONObject("preferences").put("pgrazor-saved-places-v1",new JSONObject().put("places",new JSONArray().put(entry).toString()));rejects(v);
+        }
+        JSONObject unicodePlace=new JSONObject().put("id","a").put("name","  Praça São José  ").put("latitude",0).put("longitude",0);
+        v=valid();v.getJSONObject("preferences").put("pgrazor-saved-places-v1",new JSONObject().put("places",new JSONArray().put(unicodePlace).toString()));
+        SettingsBackupRules.validate(v);
         System.out.println("PASS settings backup: valid settings/favorites, schema, credential and VGP exclusion, bounds, IV display booleans, transfer keep list/Keep All/overlay validation, evolve-before-transfer enable/mode/stages/species validation and preference types");
     }
 }
