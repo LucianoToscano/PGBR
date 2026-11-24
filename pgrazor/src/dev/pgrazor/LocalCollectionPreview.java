@@ -26,16 +26,22 @@ public final class LocalCollectionPreview {
   if(index<0||index>=pages)throw new IllegalArgumentException("Página inválida");
   int start=index*PAGE_SIZE;return Collections.unmodifiableList(new ArrayList<>(all.subList(start,Math.min(all.size(),start+PAGE_SIZE))));
  }
+ private static void checkCanceled(){if(Thread.currentThread().isInterrupted())throw new java.util.concurrent.CancellationException();}
  public static Report parse(String text,int min,Set<LocalAuditPolicy.Flag> enabled){return parse(text,min,enabled,Collections.emptySet());}
  public static Report parse(String text,int min,Set<LocalAuditPolicy.Flag> enabled,Set<String> names){
   if(text==null||text.length()>MAX_CHARS||min<0||min>101||enabled==null||names==null)throw new IllegalArgumentException("Dados acima do limite ou configuração inválida.");
+  checkCanceled();
   List<Row> rows=new ArrayList<>();Map<Integer,String> bad=new LinkedHashMap<>();
   int count=0;
   // Scan one physical line at a time. A paste containing only newlines must
   // not allocate a split array proportional to MAX_CHARS.
   for(int i=0,start=0;start<text.length();i++){
+   checkCanceled();
    int end=start;
-   while(end<text.length()&&text.charAt(end)!='\r'&&text.charAt(end)!='\n')end++;
+   while(end<text.length()&&text.charAt(end)!='\r'&&text.charAt(end)!='\n'){
+    if((end&4095)==0)checkCanceled();
+    end++;
+   }
    String line=text.substring(start,end);
    start=end;
    if(start<text.length()){
@@ -67,6 +73,7 @@ public final class LocalCollectionPreview {
     rows.add(new Row(i+1,name,cp,a,d,s,LocalAuditPolicy.withSpeciesProtection(LocalAuditPolicy.preview(a,d,s,min,enabled,observed),name,names)));
    }catch(IllegalArgumentException invalid){bad.put(i+1,error);}
   }
+  checkCanceled();
   return new Report(rows,bad);
  }
  private static int iv(String value){String v=value.trim();if(v.equals("?"))return -1;int n=Integer.parseInt(v);if(n< -1||n>15)throw new IllegalArgumentException();return n;}

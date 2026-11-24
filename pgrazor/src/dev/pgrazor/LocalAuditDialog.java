@@ -81,13 +81,15 @@ final class LocalAuditDialog {
   Spinner filter=select(a,b,"Mostrar resultados",new String[]{"Todos","Protegidos","Protegidos por incerteza","Correspondem ao filtro"});
   TextView result=text(a,b,"");
   LocalCollectionPreview.Report[] report={null};int[] page={0};String[] evaluatedAt={""};final boolean[] oversized={false};
+  final Thread[] worker={null};final long[] generation={0};
   records.setFilters(new android.text.InputFilter[]{(incoming,start,end,dest,ds,de)->{
-   if((long)dest.length()-(de-ds)+(end-start)>LocalCollectionPreview.MAX_CHARS){oversized[0]=true;report[0]=null;page[0]=0;result.setText("Colagem rejeitada; nenhuma avaliação atual disponível.");records.setError("Lista grande demais. Use lotes menores.");return dest.subSequence(ds,de);}
+   if((long)dest.length()-(de-ds)+(end-start)>LocalCollectionPreview.MAX_CHARS){oversized[0]=true;generation[0]++;report[0]=null;page[0]=0;result.setText("Colagem rejeitada; nenhuma avaliação atual disponível.");records.setError("Lista grande demais. Use lotes menores.");return dest.subSequence(ds,de);}
    if(ds==0&&de==dest.length()){oversized[0]=false;records.setError(null);}return null;
   }});
   java.util.function.Supplier<LocalAuditPolicy.Status> status=()->filter.getSelectedItemPosition()<=0?null:LocalAuditPolicy.Status.values()[filter.getSelectedItemPosition()-1];
   Runnable render=()->{
-   if(report[0]==null){result.setText("Avalie a lista para obter os resultados.");return;}
+   if(worker[0]!=null)return;
+   if(report[0]==null){result.setText(oversized[0]?"Colagem rejeitada. Substitua toda a lista.":"Avalie a lista para obter os resultados.");return;}
    LocalCollectionPreview.Report r=report[0];int pages=LocalCollectionPreview.pageCount(r,status.get());page[0]=Math.max(0,Math.min(page[0],pages-1));
    StringBuilder out=new StringBuilder("Protegidos: "+r.protectedCount+" | Incertos: "+r.uncertainCount+" | Correspondem: "+r.matchCount+" | Linhas inválidas: "+r.rejectedLines.size()+"\n");
    if(!r.rejectedLines.isEmpty())out.append("Avaliação parcial: há registros inválidos que não foram classificados. Corrija-os antes de usar esta prévia.\n");
@@ -101,7 +103,7 @@ final class LocalAuditDialog {
    }
    result.setText(out.toString());
   };
-  Runnable invalidate=()->{report[0]=null;page[0]=0;result.setText("Dados ou filtros alterados. Avalie novamente.");};
+  Runnable invalidate=()->{generation[0]++;report[0]=null;page[0]=0;result.setText("Dados ou filtros alterados. Avalie novamente.");};
   android.text.TextWatcher watcher=new android.text.TextWatcher(){
    public void beforeTextChanged(CharSequence s,int start,int count,int after){}
    public void onTextChanged(CharSequence s,int start,int before,int count){invalidate.run();}
@@ -113,15 +115,44 @@ final class LocalAuditDialog {
    public void onItemSelected(AdapterView<?> parent,android.view.View v,int position,long id){page[0]=0;render.run();}
    public void onNothingSelected(AdapterView<?> parent){}
   });
-  action(a,b,"Avaliar lista sem transferir",()->{
+  Button evaluate=new Button(MapTheme.wrap(a));evaluate.setText("Avaliar lista sem transferir");evaluate.setAllCaps(false);MapTheme.setButtonBackground(evaluate);b.addView(evaluate);
+  java.util.function.Consumer<Boolean> inputEnabled=enabled->{
+   records.setEnabled(enabled);limit.setEnabled(enabled);protectedNames.setEnabled(enabled);
+   for(CheckBox c:active)c.setEnabled(enabled);evaluate.setEnabled(enabled);
+  };
+  b.addOnAttachStateChangeListener(new android.view.View.OnAttachStateChangeListener(){
+   public void onViewAttachedToWindow(android.view.View v){}
+   public void onViewDetachedFromWindow(android.view.View v){generation[0]++;if(worker[0]!=null)worker[0].interrupt();worker[0]=null;report[0]=null;}
+  });
+  evaluate.setOnClickListener(v->{
+   if(worker[0]!=null)return;
    report[0]=null;page[0]=0;
    if(oversized[0]||records.length()>LocalCollectionPreview.MAX_CHARS){result.setText("Colagem rejeitada por tamanho. Substitua todo o conteúdo por um lote completo menor; nenhum registro foi avaliado.");return;}
-   try{
-    EnumSet<LocalAuditPolicy.Flag> selected=EnumSet.noneOf(LocalAuditPolicy.Flag.class);for(int i=0;i<flags.length;i++)if(active[i].isChecked())selected.add(flags[i]);
-    report[0]=LocalCollectionPreview.parse(records.getText().toString(),integer(limit),selected,LocalAuditPolicy.protectedNames(protectedNames.getText().toString()));evaluatedAt[0]=evaluationTime();render.run();
-   }catch(IllegalArgumentException invalid){result.setText("Confira os limites e o formato da lista.");}
+   final int threshold;
+   final Set<String> names;
+   try{threshold=integer(limit);names=LocalAuditPolicy.protectedNames(protectedNames.getText().toString());}
+   catch(IllegalArgumentException invalid){result.setText("Confira os limites e o formato da lista.");return;}
+   final EnumSet<LocalAuditPolicy.Flag> selected=EnumSet.noneOf(LocalAuditPolicy.Flag.class);for(int i=0;i<flags.length;i++)if(active[i].isChecked())selected.add(flags[i]);
+   final String snapshot=records.getText().toString();final long revision=++generation[0];
+   inputEnabled.accept(false);result.setText("Analisando coleção local…");
+   Thread task=new Thread(()->{
+    LocalCollectionPreview.Report parsed=null;
+    try{parsed=LocalCollectionPreview.parse(snapshot,threshold,selected,names);}
+    catch(java.util.concurrent.CancellationException canceled){return;}
+    catch(RuntimeException invalid){/* Fixed error message, no supplied data. */}
+    final LocalCollectionPreview.Report completed=parsed;final Thread current=Thread.currentThread();
+    a.runOnUiThread(()->{
+     if(worker[0]!=current)return;worker[0]=null;
+     if(a.isDestroyed()||!b.isAttachedToWindow())return;
+     inputEnabled.accept(true);
+     if(revision!=generation[0]||oversized[0]||!snapshot.contentEquals(records.getText())){result.setText("Dados ou filtros alterados. Avalie novamente.");return;}
+     if(completed==null){result.setText("Confira os limites e o formato da lista.");return;}
+     report[0]=completed;evaluatedAt[0]=evaluationTime();render.run();
+    });
+   },"pgbr-local-collection");worker[0]=task;task.start();
   });
   action(a,b,"Consultar motivos das linhas inválidas",()->{
+   if(worker[0]!=null)return;
    if(report[0]==null){result.setText("Avalie uma lista válida primeiro.");return;}
    StringBuilder errors=new StringBuilder();
    for(Map.Entry<Integer,String> entry:report[0].rejectedReasons.entrySet())errors.append("Linha ").append(entry.getKey()).append(": ").append(entry.getValue()).append('\n');
