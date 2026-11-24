@@ -70,13 +70,24 @@ class ItemIconAssetsTest(unittest.TestCase):
         self.assertIn('drawLuckyEgg(c)',badge)
         self.assertTrue(all(by_id[i]['drive_named_reference']['same_size'] for i in (1,2,3)))
         self.assertTrue(all(not by_id[i]['drive_named_reference']['same_size'] for i in (101,102,103,104,201,202)))
-        for row in data['items']:
-            payload=(ROOT/'assets/item-icons'/row['filename']).read_bytes()
-            self.assertEqual(len(payload),row['bytes'])
-            self.assertEqual(hashlib.sha1(b'blob '+str(len(payload)).encode()+b'\0'+payload).hexdigest(),row['git_blob_sha1'])
+        expansion=json.loads((ROOT.parent/"docs/validation/LT046_ITEM_ICON_EXPANSION.json").read_text(encoding="utf-8"))
+        expanded={row["id"]:row for row in expansion["items"]}
+        for row in data["items"]:
+            expected=expanded.get(row["id"],row)
+            payload=(ROOT/"assets/item-icons"/row["filename"]).read_bytes()
+            self.assertEqual(len(payload),expected["bytes"])
+            self.assertEqual(hashlib.sha1(b"blob "+str(len(payload)).encode()+b"\0"+payload).hexdigest(),expected["git_blob_sha1"])
+        for row in expansion["items"]+expansion["named"]:
+            payload=(ROOT.parent/row["path"]).read_bytes()
+            self.assertEqual(len(payload),row["bytes"])
+            self.assertEqual(hashlib.sha1(b"blob "+str(len(payload)).encode()+b"\0"+payload).hexdigest(),row["git_blob_sha1"])
+            self.assert_png_integrity(payload,row["path"])
+        self.assertEqual(expanded[401]["source"],"incense.png")
+        self.assertEqual(expanded[406]["source"],"daily-adventure-incense.png")
+        self.assertIn("stardust.png",{row["source"] for row in expansion["named"]})
         source=(ROOT/'src/dev/pgrazor/LocalAuditDialog.java').read_text(encoding='utf-8')
         ids=re.search(r'GALLERY_IDS=\{([0-9,]+)\}',source).group(1)
-        self.assertEqual(set(map(int,ids.split(','))),EXPECTED)
+        self.assertEqual(set(map(int,ids.split(','))),EXPECTED|set(expanded))
         self.assertIn('badge.hasDecodedSprite()',source)
         self.assertIn('int pageSize=9',source)
         theme=(ROOT/'src/dev/pgrazor/MapTheme.java').read_text(encoding='utf-8')
@@ -104,7 +115,17 @@ class ItemIconAssetsTest(unittest.TestCase):
         module=importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
         icons=module.item_icon_assets()
-        self.assertEqual(set(icons),{"item-%d.png"%i for i in EXPECTED})
+        expansion=json.loads((ROOT.parent/"docs/validation/LT046_ITEM_ICON_EXPANSION.json").read_text(encoding="utf-8"))
+        self.assertEqual(set(icons),{"item-%d.png"%i for i in EXPECTED|{r["id"] for r in expansion["items"]}})
+        self.assertIn("stardust.png",module.map_icon_assets())
+        self.assertIn("daily-adventure-incense.png",module.map_icon_assets())
+        for package in ("build.py","nonroot.py","rooted.py"):
+            self.assertIn("map_icon_assets()", (ROOT/package).read_text(encoding="utf-8"))
+        feed=(ROOT/"src/dev/pgrazor/PogoFeedIcons.java").read_text(encoding="utf-8")
+        self.assertIn('"stardust".equals(e.questRewardKind)',feed)
+        self.assertIn('"pgrazor/item-icons/item-"+e.questItemId+".png"',feed)
+        for name in ("AutomationPanel.java","SettingsPanel.java"):
+            self.assertIn("ItemBadge.decorate(",(ROOT/"src/dev/pgrazor"/name).read_text(encoding="utf-8"))
         for name,path in icons.items():
             self.assertGreater(path.stat().st_size,100)
             self.assert_png_integrity(path.read_bytes(),name)

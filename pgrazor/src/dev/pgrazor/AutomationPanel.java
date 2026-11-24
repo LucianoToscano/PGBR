@@ -38,7 +38,7 @@ public final class AutomationPanel {
         entry(ui, body, "Shundo Sniper (Experimental)", () -> { if (holder[0] != null) holder[0].dismiss(); ShundoSniper.show(activity); });
         entry(ui, body, "Shiny Scanner (Experimental)", () -> { if (holder[0] != null) holder[0].dismiss(); ShinyScanner.show(activity); });
         entry(ui, body, "Auto-Raid", () -> { if (holder[0] != null) holder[0].dismiss(); AutoRaidDialog.show(activity); });
-        entry(ui, body, "Daily Incense Session", () -> { if (holder[0] != null) holder[0].dismiss(); showIncense(activity); });
+        ItemBadge.decorate(entry(ui, body, "Daily Incense Session", () -> { if (holder[0] != null) holder[0].dismiss(); showIncense(activity); }),406);
         entry(ui, body, "Remote Gym Feeding", () -> { if (holder[0] != null) holder[0].dismiss(); showRemoteFeed(activity); });
         entry(ui, body, "Send & Open Gifts", () -> { if (holder[0] != null) holder[0].dismiss(); GiftBatchDialog.show(activity); });
         entry(ui, body, "Mass Evolve", () -> { if (holder[0] != null) holder[0].dismiss(); BatchEvolutionSettings.show(activity); });
@@ -64,6 +64,7 @@ public final class AutomationPanel {
         description.setText(dev.pgrazor.PtBr.tr("Activate Daily Adventure Incense in the game first. This steers a straight line at 10.5 km/h "
             + "for up to 15 minutes. Stop any time. "
             + "Galarian birds open automatically for you to handle. Walking and VGP stop. Move the joystick to resume idle walking."));
+        ItemBadge.decorate(description,406);
         body.addView(description);
         TextView headingLabel = new TextView(ui); headingLabel.setText(dev.pgrazor.PtBr.tr("Heading (0–359°)")); body.addView(headingLabel);
         EditText headingInput = new EditText(ui); headingInput.setSingleLine(true);

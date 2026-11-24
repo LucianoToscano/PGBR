@@ -99,5 +99,11 @@ public final class PogoFeedDataTest {
         check(PogoFeedData.countryFlag("CP 403 · Lv 20 · Take Down / Stomp").isEmpty(),"Moves are not a country");
         check(PogoFeedData.countryFlag("Somewhere, Atlantis").isEmpty()&&PogoFeedData.countryFlag(null).isEmpty()&&PogoFeedData.countryFlag("").isEmpty(),"Unknown place: no flag");
         System.out.println("PASS: feed country flags");
+        PogoFeedData.Entry dust=new PogoFeedData.Entry("q",PogoFeedData.Kind.QUEST,"Reward","",Double.NaN,Double.NaN,-1,-1,-1,-1,0,false,0,0,false,false,PogoFeedData.Attrs.UNKNOWN,"code","stardust",-1);
+        check("stardust".equals(PogoFeedData.Entry.fromJson(dust.toJson()).questRewardKind),"Persist typed stardust icon");
+        check("stardust".equals(dust.withCoords(1,2).questRewardKind),"Preserve icon when copying row");
+        PogoFeedData.Entry item=new PogoFeedData.Entry("q2",PogoFeedData.Kind.QUEST,"Reward","",Double.NaN,Double.NaN,-1,-1,-1,-1,0,false,0,0,false,false,PogoFeedData.Attrs.UNKNOWN,null,"item",406);
+        check(PogoFeedData.Entry.fromJson(item.toJson()).questItemId==406,"Preserve exact item id");
+        check(PogoFeedData.Entry.fromJson(new JSONObject().put("kind","QUEST").put("id","old")).questRewardKind.isEmpty(),"Legacy row remains unknown");
     }
 }

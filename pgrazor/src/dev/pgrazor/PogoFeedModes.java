@@ -278,7 +278,8 @@ final class PogoFeedModes {
     private static PogoFeedData.Entry quest(JSONObject r, String code) {
         JSONArray rewards = r.optJSONArray("rewards");
         List<String> labels = new ArrayList<>();
-        int dex = -1;
+        int dex = -1, itemId = -1;
+        String rewardKind = "";
         if (rewards != null) for (int i = 0; i < rewards.length(); i++) {
             JSONObject w = rewards.optJSONObject(i);
             if (w == null) continue;
@@ -286,6 +287,17 @@ final class PogoFeedModes {
             if (label.isEmpty()) label = str(w, "kind");
             if (!label.isEmpty()) labels.add(label);
             if (dex < 0 && w.has("pokemon_id") && !w.isNull("pokemon_id")) dex = w.optInt("pokemon_id", -1);
+            String typed = str(w,"kind");
+            if (rewardKind.isEmpty()) {
+                if ("stardust".equalsIgnoreCase(typed)) rewardKind = "stardust";
+                else if ("item".equalsIgnoreCase(typed)) {
+                    Object raw=w.opt("item_id");
+                    if (raw instanceof Number) {
+                        double value=((Number)raw).doubleValue();
+                        if(value>=1&&value<=999999&&value==Math.rint(value)){itemId=(int)value;rewardKind="item";}
+                    }
+                }
+            }
         }
         String name = labels.isEmpty() ? "Quest" : join(labels, ", ");
         List<String> d = new ArrayList<>();
@@ -296,7 +308,7 @@ final class PogoFeedModes {
         if (!stop.isEmpty()) d.add(stop);
         return new PogoFeedData.Entry("quest:" + str(r, "quest_id"), PogoFeedData.Kind.QUEST, name, join(d, " · "),
                 Double.NaN, Double.NaN, dex, -1, -1, -1, parseIso(str(r, "expires")), false, 0, 0, false, false,
-                PogoFeedData.Attrs.UNKNOWN, code);
+                PogoFeedData.Attrs.UNKNOWN, code, rewardKind, itemId);
     }
 
     private static PogoFeedData.Entry weather(JSONObject r, String code) {

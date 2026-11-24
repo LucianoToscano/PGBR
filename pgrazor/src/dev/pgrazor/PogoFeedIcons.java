@@ -46,7 +46,11 @@ public final class PogoFeedIcons {
             case GYM:     return mapIcon(teamIcon(e.team));
             case RAID:    return raidIcon(e, now);
             case STATION: return species(e.dexId); // a known power-spot boss uses its sprite, else fallback glyph
-            case QUEST:   return e.dexId > 0 ? species(e.dexId) : mapIcon("stop.png"); // Pokémon reward sprite, else the stop
+            case QUEST:
+                if(e.dexId>0)return species(e.dexId);
+                if("stardust".equals(e.questRewardKind))return mapIcon("stardust.png");
+                if("item".equals(e.questRewardKind)&&e.questItemId>0)return decode("pgrazor/item-icons/item-"+e.questItemId+".png");
+                return mapIcon("stop.png");
             default:      return null;
         }
     }

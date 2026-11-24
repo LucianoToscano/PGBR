@@ -1227,7 +1227,7 @@ final class SettingsPanel {
         launch(page, "Shiny Scanner (Experimental)", () -> ShinyScanner.show(activity));
         launch(page, "Auto-Raid", () -> AutoRaidDialog.show(activity));
         launch(page,"Batalha Max Automática (sessão)",()->AutoMaxBattleDialog.show(activity));
-        launch(page, "Daily Incense Session", () -> AutomationPanel.showIncense(activity));
+        ItemBadge.decorate(launch(page, "Daily Incense Session", () -> AutomationPanel.showIncense(activity)),406);
         launch(page, "Remote Gym Feeding", () -> AutomationPanel.showRemoteFeed(activity));
         launch(page, "Send & Open Gifts", () -> GiftBatchDialog.show(activity));
         launch(page, "Mass Evolve", () -> BatchEvolutionSettings.show(activity));

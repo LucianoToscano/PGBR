@@ -165,12 +165,57 @@ final class LocalAuditDialog {
   presentPrivate(a,new AlertDialog.Builder(MapTheme.wrap(a)).setTitle("Prévia de coleção em lote").setView(scroll(a,b)).setPositiveButton("Fechar",null).create());
  }
  static void reason(Activity a){LinearLayout b=body(a);EditText code=numeric(a,b,"Código do diagnóstico (reasonCode)","12",false,false);TextView r=text(a,b,"");invalidateOnEdit(r,code);action(a,b,"Interpretar",()->{try{r.setText(LocalAuditPolicy.reason(integer(code)));}catch(RuntimeException e){r.setText("Código inválido.");}});present(a,new AlertDialog.Builder(MapTheme.wrap(a)).setTitle("Motivos de proteção").setView(scroll(a,b)).setPositiveButton("Fechar",null).create());}
- static final int[] GALLERY_IDS={1,2,3,101,102,103,104,201,202,301,401,701,702,703,704,705,706,707,1201,1202,1203,1204,1301,1350,1351,1401,1402,1403,1404,1406,1408,1600,1601,1602,1606,1607,1609};
+ static final int[] GALLERY_IDS={1,2,3,4,5,6,7,101,102,103,104,201,202,301,302,303,304,305,401,405,406,407,501,502,503,504,505,506,701,702,703,704,705,706,707,708,709,801,802,803,901,902,903,904,1101,1102,1103,1104,1105,1106,1107,1201,1202,1203,1204,1301,1302,1350,1351,1401,1402,1403,1404,1405,1406,1408,1410,1411,1501,1502,1503,1504,1505,1506,1507,1600,1601,1602,1606,1607,1609};
  static String galleryLabel(int id){
   switch(id){
    case 1:return "Poké Bola";case 2:return "Grande Bola";case 3:return "Ultra Bola";
    case 101:return "Poção";case 102:return "Superpoção";case 103:return "Hiperpoção";case 104:return "Poção Máxima";
    case 201:return "Reviver";case 202:return "Reviver Máximo";case 301:return "Ovo da Sorte";
+   case 4:return "Master Ball";
+   case 5:return "Premier Ball";
+   case 6:return "Beast Ball";
+   case 7:return "Bola Safári";
+   case 302:return "Cogumelo Max";
+   case 303:return "Amuleto da Sorte";
+   case 304:return "Tampinha prateada";
+   case 305:return "Tampinha dourada";
+   case 401:return "Incenso";
+   case 405:return "Caixa Misteriosa";
+   case 406:return "Incenso de Aventura Diário";
+   case 407:return "Bolsa de Moedas";
+   case 501:return "Módulo Atrair";
+   case 502:return "Módulo Atrair Glacial";
+   case 503:return "Módulo Atrair Musgoso";
+   case 504:return "Módulo Atrair Magnético";
+   case 505:return "Módulo Atrair Chuvoso";
+   case 506:return "Módulo Atrair Dourado";
+   case 708:return "Fruta Caxí Prateada";
+   case 709:return "Poffin";
+   case 801:return "Câmera";
+   case 802:return "Adesivos";
+   case 803:return "Álbum de Cartões Postais";
+   case 901:return "Incubadora ilimitada";
+   case 902:return "Incubadora";
+   case 903:return "Superincubadora";
+   case 904:return "Incubadora temporária";
+   case 1101:return "Pedra Solar";
+   case 1102:return "Pedra do Rei";
+   case 1103:return "Revestimento Metálico";
+   case 1104:return "Escama de Dragão";
+   case 1105:return "Melhora";
+   case 1106:return "Pedra de Sinnoh";
+   case 1107:return "Pedra de Unova";
+   case 1302:return "Doce Raro GG";
+   case 1405:return "Presente";
+   case 1410:return "Cargas de Vínculo";
+   case 1411:return "Porta-vínculo";
+   case 1501:return "Componente Misterioso";
+   case 1502:return "Radar Rocket";
+   case 1503:return "Super-radar Rocket";
+   case 1504:return "Fragmento Sombrio";
+   case 1505:return "Joia Purificada";
+   case 1506:return "Partículas Max";
+   case 1507:return "Pacote de Partículas Max";
    default:return "Item";
   }
  }
