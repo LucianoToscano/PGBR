@@ -30,6 +30,8 @@ public final class AccountProfileStoreTest {
         corruptionFailsClosed(new File(root, "corrupt"));
         oversizeRejected(new File(root, "oversize"));
         invalidInputsRejected(new File(root, "invalid"));
+        malformedPropertiesRejected(new File(root, "bad-properties"));
+        foreignIndexRejected(new File(root, "foreign-index"));
 
         System.out.println("PASS: AccountProfileStore legacy/identity/separation/restart/corruption/validation");
     }
@@ -152,6 +154,59 @@ public final class AccountProfileStoreTest {
             // Expected: corruption surfaces rather than discarding the mapping.
         }
         check(index.isFile(), "A corrupt index is left in place, never reset");
+    }
+
+    private static void malformedPropertiesRejected(File filesDir) throws Exception {
+        File base = new File(filesDir, "pgrazor-accounts-v1");
+        base.mkdirs();
+        File index = new File(base, "index.properties");
+        // Build a malformed Unicode escape without Java's source-level Unicode escape processing.
+        byte[] malformed = ("version=1\nlabel=" + (char)92 + "u00ZZ\n").getBytes(StandardCharsets.UTF_8);
+        Files.write(index.toPath(), malformed);
+        try {
+            new AccountProfileStore(filesDir);
+            throw new AssertionError("Malformed escape accepted");
+        } catch (IOException expected) { }
+        check(java.util.Arrays.equals(malformed, Files.readAllBytes(index.toPath())), "Malformed index preserved");
+        char[] chars = new char[201];
+        java.util.Arrays.fill(chars, 'a');
+        byte[] oversizedLabel = ("version=1\nselected=default\npending=\nids=default\nprofile.default.label="
+            + new String(chars) + "\nprofile.default.hash=\nprofile.default.lastUsed=0\n").getBytes(StandardCharsets.UTF_8);
+        Files.write(index.toPath(), oversizedLabel);
+        try {
+            new AccountProfileStore(filesDir);
+            throw new AssertionError("Oversized persisted label accepted");
+        } catch (IOException expected) { }
+        check(java.util.Arrays.equals(oversizedLabel, Files.readAllBytes(index.toPath())), "Invalid label index preserved");
+    }
+
+    private static void foreignIndexRejected(File filesDir) throws Exception {
+        File base = new File(filesDir, "pgrazor-accounts-v1");
+        base.mkdirs();
+        File index = new File(base, "index.properties");
+        check(index.mkdir(), "Directory fixture created");
+        try {
+            new AccountProfileStore(filesDir);
+            throw new AssertionError("Directory index accepted");
+        } catch (IOException expected) { }
+        check(index.isDirectory(), "Foreign index directory preserved");
+        check(index.delete(), "Remove directory fixture");
+        File outside = new File(filesDir, "outside.properties");
+        boolean linked = false;
+        try {
+            Files.createSymbolicLink(index.toPath(), outside.toPath().toAbsolutePath());
+            linked = true;
+        } catch (UnsupportedOperationException | IOException unavailable) {
+            System.out.println("SKIP: symbolic link unavailable");
+        }
+        if (linked) {
+            try {
+                new AccountProfileStore(filesDir);
+                throw new AssertionError("Dangling link bootstrapped as account index");
+            } catch (IOException expected) { }
+            check(Files.isSymbolicLink(index.toPath()), "Dangling link preserved");
+            check(!outside.exists(), "External target not created");
+        }
     }
 
     private static void oversizeRejected(File filesDir) throws Exception {

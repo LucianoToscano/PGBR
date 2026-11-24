@@ -8,6 +8,8 @@ import java.nio.channels.FileChannel;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
+import java.nio.file.LinkOption;
+import java.io.InputStream;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
@@ -95,7 +97,9 @@ public final class AccountProfileStore {
         this.filesDir = filesDir;
         this.baseDir = new File(filesDir, DIR);
         this.indexFile = new File(baseDir, INDEX_NAME);
-        if (indexFile.isFile()) {
+        if (Files.exists(indexFile.toPath(), LinkOption.NOFOLLOW_LINKS)) {
+            if (!Files.isRegularFile(indexFile.toPath(), LinkOption.NOFOLLOW_LINKS))
+                throw new IOException("Account index is not a regular file.");
             load();
         } else {
             // First run (or a fresh install upgrading from the legacy single-account layout):
@@ -439,12 +443,21 @@ public final class AccountProfileStore {
 
     /** Reads and strictly validates the on-disk index into the in-memory snapshot. */
     private void load() throws IOException {
-        if(Files.size(indexFile.toPath())>MAX_INDEX_BYTES)throw new IOException("Index exceeds size bound");
-        byte[] bytes = Files.readAllBytes(indexFile.toPath());
-        if (bytes.length > MAX_INDEX_BYTES) throw new IOException("Index exceeds the size bound; refusing to load.");
-
+        ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+        try (InputStream in = Files.newInputStream(indexFile.toPath(), LinkOption.NOFOLLOW_LINKS)) {
+            byte[] chunk = new byte[8192];
+            for (int n; (n = in.read(chunk)) != -1;) {
+                if (n > MAX_INDEX_BYTES - buffer.size())
+                    throw new IOException("Index exceeds the size bound; refusing to load.");
+                buffer.write(chunk, 0, n);
+            }
+        }
         Properties props = new Properties();
-        props.load(new ByteArrayInputStream(bytes));
+        try {
+            props.load(new ByteArrayInputStream(buffer.toByteArray()));
+        } catch (IllegalArgumentException malformed) {
+            throw new IOException("Account index contains malformed properties.", malformed);
+        }
 
         String version = props.getProperty(KEY_VERSION);
         if (!INDEX_VERSION.equals(version)) throw new IOException("Unsupported index version: " + version);
@@ -467,7 +480,11 @@ public final class AccountProfileStore {
                 String lastUsedRaw = props.getProperty(PREFIX + id + ".lastUsed");
                 if (label == null || hash == null || lastUsedRaw == null)
                     throw new IOException("Index is missing fields for profile " + id + ".");
-                if (label.trim().isEmpty()) throw new IOException("Index holds a blank label.");
+                try {
+                    label = requireLabel(label);
+                } catch (IllegalArgumentException invalid) {
+                    throw new IOException("Index holds an invalid label.", invalid);
+                }
                 String identityHash;
                 if (hash.isEmpty()) {
                     identityHash = null;
