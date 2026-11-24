@@ -244,8 +244,25 @@ int main(int argc, char **argv) {
     api->tick(1);
     if (g_roots != 0 || trA.scale[0] != 2.f || goA.active != 0) return 30;    // deferred restore
 
+    // 11) A finished challenge restores immediately even while permission is live.
+    api->update(1, 2500); api->tick(1);
+    chA.running = 1;
+    call_update(&chA, 1, method);
+    if (g_roots != 3 || goA.active != 1) return 31;
+    chA.running = 0;
+    call_update(&chA, 1, method);
+    if (g_roots != 0 || trA.scale[0] != 2.f || trA.scale[1] != -3.f ||
+        trA.scale[2] != 0.5f || goA.active != 0) return 32;
+    // A new active challenge remains supported; a tick alone also restores on end.
+    chA.running = 1;
+    call_update(&chA, 1, method);
+    if (g_roots != 3 || goA.active != 1) return 33;
+    chA.running = 0;
+    api->tick(1);
+    if (g_roots != 0 || trA.scale[0] != 2.f || goA.active != 0) return 34;
+
     std::puts("PASS native rocket minigame: real hooks/ABI, proven-tick gating, snapshot "
               "scale/active preserve+1000, no re-snapshot, disable/expiry/change restore, "
-              "lifecycle-before-original, root/scale/bool failure containment, reentrant no-deadlock");
+              "lifecycle-before-original, root/scale/bool failure containment, reentrant no-deadlock, running-end restore");
     return 0;
 }
