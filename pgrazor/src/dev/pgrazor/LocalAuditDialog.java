@@ -189,7 +189,7 @@ final class LocalAuditDialog {
     int id=integer(lookup);if(id<1||id>999999)throw new IllegalArgumentException();
     ItemBadge badge=new ItemBadge(MapTheme.wrap(a),id);
     inspected.addView(badge,new LinearLayout.LayoutParams(MapTheme.dp(a,56),MapTheme.dp(a,56)));
-    text(a,inspected,galleryLabel(id)+" • ID "+id+" • "+(badge.hasDecodedSprite()?"Imagem decodificada; confira a identidade":"Arte alternativa / ausente; não atribua outro ID por semelhança"));
+    text(a,inspected,galleryLabel(id)+" • ID "+id+" • "+(badge.hasDecodedSprite()?"Imagem decodificada; confira a identidade":badge.spriteStatus()+"; não atribua outro ID por semelhança"));
    }catch(IllegalArgumentException invalid){text(a,inspected,"Informe um ID válido de catálogo.");}
   });
   LinearLayout gallery=body(a);b.addView(gallery);
@@ -204,7 +204,7 @@ final class LocalAuditDialog {
     int id=GALLERY_IDS[i];LinearLayout row=new LinearLayout(MapTheme.wrap(a));row.setGravity(android.view.Gravity.CENTER_VERTICAL);
     ItemBadge badge=new ItemBadge(MapTheme.wrap(a),id);
     row.addView(badge,new LinearLayout.LayoutParams(MapTheme.dp(a,48),MapTheme.dp(a,48)));
-    TextView label=new TextView(MapTheme.wrap(a));label.setText(galleryLabel(id)+" • ID "+id+"\n"+(badge.hasDecodedSprite()?"Imagem decodificada":"Arte alternativa / ausente"));
+    TextView label=new TextView(MapTheme.wrap(a));label.setText(galleryLabel(id)+" • ID "+id+"\n"+badge.spriteStatus());
     row.addView(label,new LinearLayout.LayoutParams(0,-2,1));gallery.addView(row);
    }
   };
