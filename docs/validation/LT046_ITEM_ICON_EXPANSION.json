@@ -1,0 +1,430 @@
+{
+  "schema": 1,
+  "base": "e1f94193835dcc8f6f56050dece0efa8b22afdd9",
+  "source_folder": "16gmB22ZdMjyeTlpQ2JHcoEPzisOKwSeA",
+  "mapping_reference": "https://gist.github.com/notmarek/b755025ba26dfe2b73ffd6a641a73feb",
+  "scope": "Visual only; public historical enum reference, not verification of live 0.437.0 runtime. Preserve prior 37-ID audit and do not assign speculative IDs.",
+  "items": [
+    {
+      "id": 4,
+      "path": "pgrazor/assets/item-icons/item-4.png",
+      "drive_id": "19Uofm24-H0WsRI5WAxZK7zxjpGIaknyV",
+      "bytes": 31086,
+      "git_blob_sha1": "9a6bec888aa285ee62c0b27d693e4a425807e2b5",
+      "source": "master-ball.png",
+      "label": "Master Ball"
+    },
+    {
+      "id": 5,
+      "path": "pgrazor/assets/item-icons/item-5.png",
+      "drive_id": "1vtw6CmjrwnL7l90lwP3dUZqeCOErHTJI",
+      "bytes": 34504,
+      "git_blob_sha1": "23d685eb963cc05f899c16013b865d7d2deebe14",
+      "source": "premier-ball.png",
+      "label": "Premier Ball"
+    },
+    {
+      "id": 6,
+      "path": "pgrazor/assets/item-icons/item-6.png",
+      "drive_id": "1bdWK_GBSvE4W5BxiIKMLHJJi6oqRiEEx",
+      "bytes": 56164,
+      "git_blob_sha1": "f94b6964460edc96e23a5dcea0be7a8058b42747",
+      "source": "beast-ball.png",
+      "label": "Beast Ball"
+    },
+    {
+      "id": 7,
+      "path": "pgrazor/assets/item-icons/item-7.png",
+      "drive_id": "1xqQUzkRZs4DMXk7lO31FqDPjaskLxuek",
+      "bytes": 38985,
+      "git_blob_sha1": "17a635e570890b74c9a247b967cf59aae15d2419",
+      "source": "safari-ball.png",
+      "label": "Bola Safári"
+    },
+    {
+      "id": 302,
+      "path": "pgrazor/assets/item-icons/item-302.png",
+      "drive_id": "1D9PJV8LEK2Rs2nqmG5WZCG4qRF4-L9p7",
+      "bytes": 39473,
+      "git_blob_sha1": "2e80d54a974f9c5b64abb6c99b878977dd18accf",
+      "source": "max-mushroom.png",
+      "label": "Cogumelo Max"
+    },
+    {
+      "id": 303,
+      "path": "pgrazor/assets/item-icons/item-303.png",
+      "drive_id": "1jGKITktBwc1gYQs1pO7QSyYeEEEaj8Ii",
+      "bytes": 61129,
+      "git_blob_sha1": "aace1c8d310f5993ecc1ae0e375e60731954b294",
+      "source": "lucky-trinket.png",
+      "label": "Amuleto da Sorte"
+    },
+    {
+      "id": 304,
+      "path": "pgrazor/assets/item-icons/item-304.png",
+      "drive_id": "1vBDjASKzRRQl7BiYjoSccP5cfoz-ffb5",
+      "bytes": 16333,
+      "git_blob_sha1": "397626c87aad7874b9e5098c1fd498abff52fd9e",
+      "source": "silver-bottle-cap.png",
+      "label": "Tampinha prateada"
+    },
+    {
+      "id": 305,
+      "path": "pgrazor/assets/item-icons/item-305.png",
+      "drive_id": "1gelRBnmu2vuwVXsZucayO72F3LURr73L",
+      "bytes": 54034,
+      "git_blob_sha1": "58f60df1b639f64d61ebe6cb8f8da0ed02d53176",
+      "source": "gold-bottle-cap.png",
+      "label": "Tampinha dourada"
+    },
+    {
+      "id": 401,
+      "path": "pgrazor/assets/item-icons/item-401.png",
+      "drive_id": "1II5h3FihmEAf7LUWrCEFkyb5_D1bdyPq",
+      "bytes": 63074,
+      "git_blob_sha1": "4eada7fb11f7cbded27906629de4dcf430ee29c7",
+      "source": "incense.png",
+      "label": "Incenso"
+    },
+    {
+      "id": 405,
+      "path": "pgrazor/assets/item-icons/item-405.png",
+      "drive_id": "1DZgX1VNqeWrDv99y_lxz89VC2Slku9w8",
+      "bytes": 47073,
+      "git_blob_sha1": "feadbb86a5272bf750d2648b8702ad93703d034e",
+      "source": "mystery-box.png",
+      "label": "Caixa Misteriosa"
+    },
+    {
+      "id": 406,
+      "path": "pgrazor/assets/item-icons/item-406.png",
+      "drive_id": "1q3XbyGHc4BUU_Penv4R1UQGHXSgXHr_E",
+      "bytes": 55206,
+      "git_blob_sha1": "904e80ee474887894732dcfbc77d1c32216b783a",
+      "source": "daily-adventure-incense.png",
+      "label": "Incenso de Aventura Diário"
+    },
+    {
+      "id": 407,
+      "path": "pgrazor/assets/item-icons/item-407.png",
+      "drive_id": "1FxznnMOOwUKVLedAY3yKpS_f9go_QaOs",
+      "bytes": 204903,
+      "git_blob_sha1": "749899330de6be5004f09862cadb7ab3cd2ef3d7",
+      "source": "coin-bag.png",
+      "label": "Bolsa de Moedas"
+    },
+    {
+      "id": 501,
+      "path": "pgrazor/assets/item-icons/item-501.png",
+      "drive_id": "1ncU7uSxN630HkLFJ4B-SDdxYSEry-cCb",
+      "bytes": 70837,
+      "git_blob_sha1": "5c17cb548f2b0a7bee6e47fde4f6428b0e48f3ce",
+      "source": "lure-module.png",
+      "label": "Módulo Atrair"
+    },
+    {
+      "id": 502,
+      "path": "pgrazor/assets/item-icons/item-502.png",
+      "drive_id": "1zUitf0tAA3-tomYAfH1fZJXNZwVnO-pK",
+      "bytes": 43827,
+      "git_blob_sha1": "24b81bbfb1b3d330840e68dc44409dc443febe4a",
+      "source": "glacial-lure-module.png",
+      "label": "Módulo Atrair Glacial"
+    },
+    {
+      "id": 503,
+      "path": "pgrazor/assets/item-icons/item-503.png",
+      "drive_id": "1B4N3mCDYJxbVXD6GtcMurL2CGf6Nke4g",
+      "bytes": 43036,
+      "git_blob_sha1": "b67c0ff2981b21ea48cd92a1cc64cfae18805e12",
+      "source": "mossy-lure-module.png",
+      "label": "Módulo Atrair Musgoso"
+    },
+    {
+      "id": 504,
+      "path": "pgrazor/assets/item-icons/item-504.png",
+      "drive_id": "1SCMpnnojJw1g_a5GVjS8t8uRwx7v13d_",
+      "bytes": 41805,
+      "git_blob_sha1": "866c92d44184140e81ac768b58616b9bfaf5c43e",
+      "source": "magnetic-lure-module.png",
+      "label": "Módulo Atrair Magnético"
+    },
+    {
+      "id": 505,
+      "path": "pgrazor/assets/item-icons/item-505.png",
+      "drive_id": "1kWimHxkDtDpCm-IoRte1rgce0v4bcjYm",
+      "bytes": 51003,
+      "git_blob_sha1": "2b6391dfd40413da96c45fc1f5b84f35f951883f",
+      "source": "rainy-lure-module.png",
+      "label": "Módulo Atrair Chuvoso"
+    },
+    {
+      "id": 506,
+      "path": "pgrazor/assets/item-icons/item-506.png",
+      "drive_id": "1ffy7MoVcV5alPdrfJbhCuiTglng_a3Up",
+      "bytes": 59161,
+      "git_blob_sha1": "a3d8fb41b4dcd4d5eb8d35472a3d7f29184d90a2",
+      "source": "golden-lure-module.png",
+      "label": "Módulo Atrair Dourado"
+    },
+    {
+      "id": 708,
+      "path": "pgrazor/assets/item-icons/item-708.png",
+      "drive_id": "1pV27c0OL8X8jyUVsgja5TvV2G8oL5Tk8",
+      "bytes": 56168,
+      "git_blob_sha1": "80d78a93a67c04059bdf6b2ba0c45a10bc46483d",
+      "source": "silver-pinap-berry.png",
+      "label": "Fruta Caxí Prateada"
+    },
+    {
+      "id": 709,
+      "path": "pgrazor/assets/item-icons/item-709.png",
+      "drive_id": "1Rt1oji-bkRao9zLxJEyR8IDSepDsMoaq",
+      "bytes": 29861,
+      "git_blob_sha1": "777f564c689c10fa9943417d557daa9c1ac3711a",
+      "source": "poffin.png",
+      "label": "Poffin"
+    },
+    {
+      "id": 801,
+      "path": "pgrazor/assets/item-icons/item-801.png",
+      "drive_id": "1ERuEfxQ0J1YFF0RqZORGbepS3rrAEnh3",
+      "bytes": 151738,
+      "git_blob_sha1": "d93c6d2d852eec02c606ac2609b48d6f2386551b",
+      "source": "camera.png",
+      "label": "Câmera"
+    },
+    {
+      "id": 802,
+      "path": "pgrazor/assets/item-icons/item-802.png",
+      "drive_id": "1Lyd0WdXAQwvsD8tvKWL-QCkcIS7dZ0wC",
+      "bytes": 65551,
+      "git_blob_sha1": "cbec92b09594216207d22b45286e3dbf147c05eb",
+      "source": "stickers.png",
+      "label": "Adesivos"
+    },
+    {
+      "id": 803,
+      "path": "pgrazor/assets/item-icons/item-803.png",
+      "drive_id": "1Q-CgkVEF_huawYv-6ZlZb7N1mFso4QeJ",
+      "bytes": 43558,
+      "git_blob_sha1": "250a82fb6aa880daafca9a7a66dd59ac9009d02d",
+      "source": "postcard-book.png",
+      "label": "Álbum de Cartões Postais"
+    },
+    {
+      "id": 901,
+      "path": "pgrazor/assets/item-icons/item-901.png",
+      "drive_id": "1N9rzocmmlR_DR_6fxus8nT88SuWlfCOW",
+      "bytes": 58685,
+      "git_blob_sha1": "96230cdd2d2eb5ca51eaade0c85138694c165142",
+      "source": "egg-incubator-unlimited-empty.png",
+      "label": "Incubadora ilimitada"
+    },
+    {
+      "id": 902,
+      "path": "pgrazor/assets/item-icons/item-902.png",
+      "drive_id": "1BpbY_4jyYPn9nG4gL2GUtNLpZBdAO7Ex",
+      "bytes": 59991,
+      "git_blob_sha1": "ecfadb27d2a294c6e5953b497e8ef087f2d44d07",
+      "source": "egg-incubator-empty.png",
+      "label": "Incubadora"
+    },
+    {
+      "id": 903,
+      "path": "pgrazor/assets/item-icons/item-903.png",
+      "drive_id": "1iDdoIhavsLEcoYf2Wc6aAQJpt8yLVCN7",
+      "bytes": 50972,
+      "git_blob_sha1": "92bc1f85e022e48e92b9127561e211a408ea9bd5",
+      "source": "super-egg-incubator.png",
+      "label": "Superincubadora"
+    },
+    {
+      "id": 904,
+      "path": "pgrazor/assets/item-icons/item-904.png",
+      "drive_id": "1NuTVa-4-zGzIk8qtWCYr79Tm9omG7td0",
+      "bytes": 57421,
+      "git_blob_sha1": "26998d187dcaf0c72140c68d41d7d82a5ef1c520",
+      "source": "timed-incubator.png",
+      "label": "Incubadora temporária"
+    },
+    {
+      "id": 1101,
+      "path": "pgrazor/assets/item-icons/item-1101.png",
+      "drive_id": "1rXbTWXxF3SEE1gZB5l1OK4YG43Kd8JME",
+      "bytes": 29814,
+      "git_blob_sha1": "79ace6b5465db81721d3933d7c1376423deca43c",
+      "source": "sun-stone.png",
+      "label": "Pedra Solar"
+    },
+    {
+      "id": 1102,
+      "path": "pgrazor/assets/item-icons/item-1102.png",
+      "drive_id": "1ueUgq9Y88a-Nj-7ZptMRSsocoJ4zKjeV",
+      "bytes": 40529,
+      "git_blob_sha1": "54874eca21ab2de75e8c690faf760dcaae63303b",
+      "source": "kings-rock.png",
+      "label": "Pedra do Rei"
+    },
+    {
+      "id": 1103,
+      "path": "pgrazor/assets/item-icons/item-1103.png",
+      "drive_id": "10D2nuAaFrVAXkJ83frq95MIKK_3YkyIe",
+      "bytes": 53338,
+      "git_blob_sha1": "c2bbcad2947056df36e1b61c8806474204f8a5c5",
+      "source": "metal-coat.png",
+      "label": "Revestimento Metálico"
+    },
+    {
+      "id": 1104,
+      "path": "pgrazor/assets/item-icons/item-1104.png",
+      "drive_id": "1rZPGJxH5wXySihp9AdIrRrPppgqe6Maz",
+      "bytes": 26503,
+      "git_blob_sha1": "6699ec17f7833d3fad7fb4e0c05ea70932691230",
+      "source": "dragon-scale.png",
+      "label": "Escama de Dragão"
+    },
+    {
+      "id": 1105,
+      "path": "pgrazor/assets/item-icons/item-1105.png",
+      "drive_id": "1qY308o1KHM2fCGz6sQvS_o6J6CPT_b9l",
+      "bytes": 27812,
+      "git_blob_sha1": "239111b2a0add8acd81b8e7cf2a92e30c7290b5c",
+      "source": "upgrade.png",
+      "label": "Melhora"
+    },
+    {
+      "id": 1106,
+      "path": "pgrazor/assets/item-icons/item-1106.png",
+      "drive_id": "1wvcCphekEhIExP8nlg-SMkkZzKDPr9Bv",
+      "bytes": 43253,
+      "git_blob_sha1": "d732a6be9ebcc9f3bf8f0fba3201635295f7b063",
+      "source": "sinnoh-stone.png",
+      "label": "Pedra de Sinnoh"
+    },
+    {
+      "id": 1107,
+      "path": "pgrazor/assets/item-icons/item-1107.png",
+      "drive_id": "1lU_6WNNJXO-Iq_frUtXH7Tstu_JyfG-p",
+      "bytes": 51140,
+      "git_blob_sha1": "556466c34f892d6b70fb8426e7852d4bf4aa40f3",
+      "source": "unova-stone.png",
+      "label": "Pedra de Unova"
+    },
+    {
+      "id": 1302,
+      "path": "pgrazor/assets/item-icons/item-1302.png",
+      "drive_id": "1oDJhWbEVUiiZNXThJjkI5KE7jWuM1YeW",
+      "bytes": 39775,
+      "git_blob_sha1": "16a420ddf3c5fa695d8d5d4c7e3fc0f8b5879741",
+      "source": "rare-candy-xl.png",
+      "label": "Doce Raro GG"
+    },
+    {
+      "id": 1405,
+      "path": "pgrazor/assets/item-icons/item-1405.png",
+      "drive_id": "1muYTDPklhypfnrF14AWQUUS6c6gwFHv7",
+      "bytes": 60078,
+      "git_blob_sha1": "8d975647f0456500f0d555eddf329eca50976037",
+      "source": "gift.png",
+      "label": "Presente"
+    },
+    {
+      "id": 1410,
+      "path": "pgrazor/assets/item-icons/item-1410.png",
+      "drive_id": "1jZ73cR9URyPndpP-Mptio8GtKlV4rg6O",
+      "bytes": 17503,
+      "git_blob_sha1": "4c69d892718c80aa6c714e603541a11ba946a96e",
+      "source": "link-charges.png",
+      "label": "Cargas de Vínculo"
+    },
+    {
+      "id": 1411,
+      "path": "pgrazor/assets/item-icons/item-1411.png",
+      "drive_id": "1NEsDC83oGN8rlcByfu18T4qlrFfz8dzJ",
+      "bytes": 11847,
+      "git_blob_sha1": "893e074485ae894325ef496c22520f693c093a35",
+      "source": "link-holder.png",
+      "label": "Porta-vínculo"
+    },
+    {
+      "id": 1501,
+      "path": "pgrazor/assets/item-icons/item-1501.png",
+      "drive_id": "1HpjbR7cZn91bDwT-7jEMIUIzFP4NEpXa",
+      "bytes": 70304,
+      "git_blob_sha1": "3b1cff2abb572caed840e360a965f4f34d74202a",
+      "source": "mysterious-component.png",
+      "label": "Componente Misterioso"
+    },
+    {
+      "id": 1502,
+      "path": "pgrazor/assets/item-icons/item-1502.png",
+      "drive_id": "1snlOyyWa1VBiP__WbstDZ_3xAJGYinE-",
+      "bytes": 62103,
+      "git_blob_sha1": "9bc39d61d9dbff0f62a35b4c8b8db212f03eba7a",
+      "source": "rocket-radar.png",
+      "label": "Radar Rocket"
+    },
+    {
+      "id": 1503,
+      "path": "pgrazor/assets/item-icons/item-1503.png",
+      "drive_id": "1sDs7mwBhTYos0RxySWt1vxzs9ot807h1",
+      "bytes": 60694,
+      "git_blob_sha1": "56c1ce49269b55411d11c8d2b30eec866cc9b06c",
+      "source": "super-rocket-radar.png",
+      "label": "Super-radar Rocket"
+    },
+    {
+      "id": 1504,
+      "path": "pgrazor/assets/item-icons/item-1504.png",
+      "drive_id": "1nnL_6b8HoF3yBSsgoSYOO0VyUvKhHmFb",
+      "bytes": 131563,
+      "git_blob_sha1": "5f682d930431b473a567bf010def6aa1e8fb23c8",
+      "source": "shadow-shard.png",
+      "label": "Fragmento Sombrio"
+    },
+    {
+      "id": 1505,
+      "path": "pgrazor/assets/item-icons/item-1505.png",
+      "drive_id": "1cy2MmUATgUXhWzTGb6WBGhbcc0x25Elb",
+      "bytes": 192908,
+      "git_blob_sha1": "1e2523ddd5fd48d1a88d19b62f5402f48362db4b",
+      "source": "purified-gem.png",
+      "label": "Joia Purificada"
+    },
+    {
+      "id": 1506,
+      "path": "pgrazor/assets/item-icons/item-1506.png",
+      "drive_id": "148qchALpXxUH73BI5-isH2oSPmTW481T",
+      "bytes": 114424,
+      "git_blob_sha1": "487198974be6d8878c90e6a4f91f0d2304ca8a68",
+      "source": "max-particles.png",
+      "label": "Partículas Max"
+    },
+    {
+      "id": 1507,
+      "path": "pgrazor/assets/item-icons/item-1507.png",
+      "drive_id": "1zeBMIyPAMkr7m09uNjvIWL8bcqYnrzUM",
+      "bytes": 55700,
+      "git_blob_sha1": "f99821374ac8589a3c7c197c1a0e8fdafc8357fe",
+      "source": "max-particle-pack.png",
+      "label": "Pacote de Partículas Max"
+    }
+  ],
+  "named": [
+    {
+      "path": "pgrazor/assets/map-icons/stardust.png",
+      "source": "stardust.png",
+      "drive_id": "1f_zKIAWT5mA6I0EFW9rX0H0kAkNc4sil",
+      "bytes": 22636,
+      "git_blob_sha1": "6d5c5669310b032e3cd1dfc2997afed8a387632f"
+    },
+    {
+      "path": "pgrazor/assets/map-icons/daily-adventure-incense.png",
+      "source": "daily-adventure-incense.png",
+      "drive_id": "1q3XbyGHc4BUU_Penv4R1UQGHXSgXHr_E",
+      "bytes": 55206,
+      "git_blob_sha1": "904e80ee474887894732dcfbc77d1c32216b783a"
+    }
+  ]
+}
