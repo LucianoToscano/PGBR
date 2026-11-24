@@ -498,7 +498,9 @@ public final class Pad {
             else if(master){canvas.drawLine(19,24,33,24,paint);Path a=new Path();a.moveTo(29,19);a.lineTo(35,24);a.lineTo(29,29);canvas.drawPath(a,paint);} // transfer-out arrow
             else{canvas.drawLine(21,24,33,24,paint);} // dash: master off
             paint.setStyle(Paint.Style.FILL);paint.setColor(tint);paint.setTextSize(10);paint.setTypeface(Typeface.DEFAULT_BOLD);paint.setTextAlign(Paint.Align.CENTER);
-            canvas.drawText(keep?"KEEP":(master?"XFER":"OFF"),27,51,paint);
+            String shown=keep?"MANTER":(master?"TRANSFERIR":"DESL.");
+            float measured=paint.measureText(shown);if(measured>48)paint.setTextSize(10*48/measured);
+            canvas.drawText(shown,27,51,paint);
             canvas.restore();}
     }
     private String transferToggleDescription(){

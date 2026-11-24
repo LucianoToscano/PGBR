@@ -16,7 +16,7 @@ public final class SmartCatchSettings {
     private SmartCatchSettings() {}
     private static final SmartCatchPreferences preferences=new SmartCatchPreferences();
     private static final int[] BERRIES={0,701,703,705,706,708};
-    private static final String[] SPEED_NAMES={"Normal (about 1.5 s)","Fast (about 1 s)","Fastest (about 0.5 s)"};
+    private static final String[] SPEED_NAMES={"Normal (about 1.5 s)","Fast (about 1 s)","Fastest (about 0.5 s)","Slow (about 3 s)"};
     private static final String[] BERRY_NAMES={"Off","Razz","Nanab","Pinap","Golden Razz","Silver Pinap"};
     public static void init(Context context) {}
     public static void read(Properties p){preferences.read(p);}

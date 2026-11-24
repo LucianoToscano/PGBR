@@ -66,7 +66,7 @@ public final class SmartCatchPreferences {
         berry=number(p,"Berry",0,0,708);if(!validBerry(berry))berry=0;
         premium=flag(p,"Premium",true);highCp=number(p,"HighCp",1500,0,10000);
         highLevel=number(p,"HighLevel",30,0,50);grade=number(p,"Grade",3,0,3);curve=flag(p,"Curve",true);
-        autoBall=flag(p,"AutoBall",false);autoBallTarget=number(p,"AutoBallTarget",75,1,99);variety=number(p,"Variety",0,0,3);speed=number(p,"Speed",0,0,2);shinyOnly=flag(p,"ShinyOnly",false);
+        autoBall=flag(p,"AutoBall",false);autoBallTarget=number(p,"AutoBallTarget",75,1,99);variety=number(p,"Variety",0,0,3);speed=number(p,"Speed",0,0,3);shinyOnly=flag(p,"ShinyOnly",false);
         rareCustom=flag(p,"RareCustom",false);rareMask=number(p,"RareMask",17,0,255);manualBerry=flag(p,"ManualBerry",false);
         rareIvMin=number(p,"RareIvMin",90,1,100);rareBerry=number(p,"RareBerry",706,0,708);
         if(!validBerry(rareBerry))rareBerry=706;
@@ -131,7 +131,7 @@ public final class SmartCatchPreferences {
     public synchronized int highCp(){return highCp;}
     public synchronized int highLevel(){return highLevel;}
     public synchronized int grade(){return grade;}
-    /** Catch speed: 0 normal, 1 fast, 2 fastest. Sent to native by Control.smartCatchConfig (version 6), not by config(). */
+    /** Catch speed: 0 normal, 1 fast, 2 fastest, 3 slow. Sent to native by Control.smartCatchConfig (version 6), not by config(). */
     public synchronized int speed(){return speed;}
     /** Catch only shinies: everything is still encountered, but only a shiny is thrown at. Sent to native by Control.smartCatchConfig (version 7). */
     public synchronized boolean shinyOnly(){return shinyOnly;}

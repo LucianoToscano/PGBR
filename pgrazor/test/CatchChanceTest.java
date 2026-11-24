@@ -10,7 +10,7 @@ public final class CatchChanceTest {
             + "\"berry\":701,\"throw\":\"Excellent\",\"curve\":true,\"balls\":["
             + "{\"item\":1,\"chance\":0.4123,\"count\":30},{\"item\":2,\"chance\":0.555,\"count\":12},{\"item\":3,\"chance\":0.6649,\"count\":0}]}");
         String text = CatchChance.describe(o);
-        require(text.equals("Poké 41% · ▸Great 56% · Ultra 66%"), text);
+        require(text.equals("Poké 41% · ▸Grande 56% · Ultra 66%"), text);
 
         JSONObject plain = new JSONObject("{\"active\":true,\"show\":true,\"current\":1,\"berry\":0,\"throw\":\"\",\"curve\":false,"
             + "\"balls\":[{\"item\":1,\"chance\":0.2,\"count\":5}]}");
