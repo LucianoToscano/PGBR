@@ -24,19 +24,6 @@ jobs:
         run: |
           g++ -std=c++17 -Wall -Wextra -Werror -I pgrazor/native pgrazor/native/map_anchor_test.cpp pgrazor/native/map_anchor.cpp -o /tmp/map_anchor_test
           /tmp/map_anchor_test
-      - name: Instalar JDK para diagnostico
-        uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3
-        with:
-          distribution: temurin
-          java-version: '17'
-      - name: Compilar e executar harness JVM de ancoras
-        run: |
-          mkdir -p /tmp/anchor-classes
-          python3 -c "import re;s=open('pgrazor/test/test_route_trace_java.py').read();m=re.search(r'ANCHOR_HARNESS = r\"\"\"(.*?)\"\"\"',s,re.S);open('/tmp/RouteAnchorHarness.java','w').write(m.group(1))"
-          javac -encoding UTF-8 -d /tmp/anchor-classes pgrazor/src/dev/pgrazor/RouteGroundProjection.java pgrazor/src/dev/pgrazor/RouteAnchorSnapshot.java /tmp/RouteAnchorHarness.java 2>&1 | tee /tmp/javac.log
-          if [ ${PIPESTATUS[0]} -ne 0 ]; then sed 's/^/::error::/' /tmp/javac.log; exit 1; fi
-          java -cp /tmp/anchor-classes dev.pgrazor.RouteAnchorHarness 2>&1 | tee /tmp/java.log
-          if [ ${PIPESTATUS[0]} -ne 0 ]; then sed 's/^/::error::/' /tmp/java.log; exit 1; fi
       - name: Testar allowlist do motor compartilhado (Rocket, PvP, treino)
         run: |
           g++ -std=c++17 -Wall -Wextra -Werror -I pgrazor/native pgrazor/native/battle_target_policy_test.cpp -o /tmp/battle_target_policy_test

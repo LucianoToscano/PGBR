@@ -44,7 +44,6 @@ final class RouteAnchorSnapshot {
                     refs == null || refs.length != count) return null;
             return new RouteAnchorSnapshot(refs);
         } catch (RuntimeException invalid) {
-            invalid.printStackTrace();
             return null;
         }
     }
@@ -196,9 +195,8 @@ final class RouteAnchorSnapshot {
                     else if ("visible".equals(key)) visible = bool();
                     else throw new IllegalArgumentException();
                     fields++;
-                    if (!commaOrObjectEnd()) break;
+                    if (commaOrObjectEnd()) break;
                 }
-                System.err.println("DEBUG POINT id="+id+" fields="+fields+" lat="+lat+" lon="+lon+" x="+x+" y="+y+" z="+z+" visible="+visible+" at="+at);
                 if (id == null || id.length() == 0 || id.length() > 64 || kind == null ||
                         !( "stop".equals(kind) || "gym".equals(kind)) || fields != 8 ||
                         !Double.isFinite(lat) || Math.abs(lat) > 90 || !Double.isFinite(lon) ||
