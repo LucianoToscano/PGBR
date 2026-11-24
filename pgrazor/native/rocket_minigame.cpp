@@ -9,6 +9,9 @@
 #include <cstdlib>
 #include <unistd.h>
 #include <sys/syscall.h>
+#if defined(__ANDROID__)
+#include <android/log.h>
+#endif
 
 // Native state is Unity-thread-only. The only cross-thread entrypoints are the table
 // functions (update/tick/restore) driven from the JS pilot; those touch atomics and a
@@ -45,6 +48,7 @@ struct MiniState {
     void *go;          // gchandle
     float scale[3];
     int   active;
+    int64_t visual_trace_start_ms;
 };
 MiniState g_mini{};
 bool g_have_mini = false;
@@ -55,6 +59,20 @@ int64_t boottime_ms() {
     return (int64_t)ts.tv_sec * 1000 + ts.tv_nsec / 1000000;
 }
 int64_t native_tid() { return (int64_t)syscall(SYS_gettid); }
+
+// Diagnostic only: one record per lifecycle phase, never per frame. No object
+// addresses, account data, extra Unity calls, or changes to input/renderer state.
+void trace_charge_visual(const char *phase,const MiniState &state,const float scale[3],int active) {
+#if defined(__ANDROID__)
+    __android_log_print(ANDROID_LOG_INFO,"PGBR-ChargeVisual",
+        "phase=%s elapsed_ms=%lld scale=%.3f,%.3f,%.3f active=%d failed=%d",
+        phase,static_cast<long long>(boottime_ms()-state.visual_trace_start_ms),
+        static_cast<double>(scale[0]),static_cast<double>(scale[1]),static_cast<double>(scale[2]),
+        active,g_failed.load());
+#else
+    (void)phase;(void)state;(void)scale;(void)active;
+#endif
+}
 
 bool on_unity_thread() {
     int64_t u = g_unity_tid.load(std::memory_order_acquire);
@@ -132,6 +150,7 @@ void do_restore() {
     void *go = g_cfg.target(snap.go);
     if (transform && obj_alive(transform)) set_scale(transform, snap.scale);
     if (go && obj_alive(go)) set_active(go, snap.active);
+    trace_charge_visual("restore-requested",snap,snap.scale,snap.active);
     g_cfg.free_root(snap.challenge);
     g_cfg.free_root(snap.transform);
     g_cfg.free_root(snap.go);
@@ -156,7 +175,8 @@ void do_collect(void *challenge) {
 
     if (g_busy.exchange(1)) return;
 
-    if (!g_have_mini) {
+    const bool first_collect = !g_have_mini;
+    if (first_collect) {
         // Root the challenge BEFORE any invoke, so the collider it owns stays reachable
         // across the transform/gameObject calls (no unrooted managed refs across invokes).
         void *ch_h = g_cfg.root(challenge, 0);
@@ -204,7 +224,9 @@ void do_collect(void *challenge) {
         g_mini.go = go_h;
         std::memcpy(g_mini.scale, sc, sizeof(sc));
         g_mini.active = act;
+        g_mini.visual_trace_start_ms = boottime_ms();
         g_have_mini = true;
+        trace_charge_visual("original-snapshot",g_mini,g_mini.scale,g_mini.active);
     }
 
     float scaled[3];
@@ -215,6 +237,7 @@ void do_collect(void *challenge) {
     }
     set_scale(g_cfg.target(g_mini.transform), scaled);
     set_active(g_cfg.target(g_mini.go), 1);
+    if (first_collect) trace_charge_visual("expanded-requested",g_mini,scaled,1);
     g_busy.store(0);
 }
 
