@@ -58,6 +58,10 @@ O release `v0.00.33-LT` é uma **nova identificação de build**, não uma mudan
 - Branch fix/lt046-gpx-export-validacao-20261124; base 0d29f3c1e0db08945b3299a3f0413a973004ee65 (merge #170). Validação de nomes compatíveis com XML 1.0, preservando pares Unicode válidos e saneando nomes de fallback inválidos. Exportação GPX verifica limite de 2 MB antes da escrita, inclusive para coordenadas decimais extremas, sem reduzir precisão nem copiar a matriz inteira de pontos. Fixtures de Unicode, round-trip e preservação do destino em exportação excessiva. CI e homologação física pendentes. Sem alteração de localização, jogo, automação, APK ou release.
 
 <a id="mestre-evidencias"></a>
+### Checkpoint LT046 — cofre e consolidação QA (24/11/2026)
+
+- Base ed3684a7d24f98d3154b8cd001ea7f78cf0ed730; #171 merge 15d5e270e4c6a8e297b22b54aac296a7a0fd1851 e #172 merge ed3684a7d24f98d3154b8cd001ea7f78cf0ed730, CI geral 5/5 em cada HEAD. Changelog e matriz de homologação atualizados com referências de CI #166–#172. Revisão da janela de cofre local: operações serializadas por provedor no diálogo, campo e botões desabilitados durante consulta/salvamento/remoção, confirmação protegida e callbacks ignorados após Activity encerrada. Testes de ligação adicionados; novo CI pendente. Nenhuma conexão externa, alteração de jogo ou APK; teste físico pendente.
+
 ## 2. Hierarquia de evidências e estados
 Use os termos com precisão:
 1. **Planejado** — requisito/decisão, sem código integrado.
