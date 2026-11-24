@@ -29,6 +29,7 @@ public final class SmartCatchSettings {
     static boolean shinyOnly(){return preferences.shinyOnly();}
     static String rareConfig(){return preferences.rareConfig();}
     static String tagConfig(){return preferences.tagConfig();}
+    static boolean manualBerry(){return preferences.manualBerry();}
     static String candySpecies(){return preferences.candySpecies();}
     static void setCandySpecies(String value){set("CandySpecies",value);}
     static String catchSpecies(){return preferences.catchSpecies();}
@@ -57,7 +58,7 @@ public final class SmartCatchSettings {
         CheckBox customRare=new CheckBox(ui);customRare.setText("Personalizar critérios de raridade");customRare.setChecked(preferences.rareCustom());options.addView(customRare);
         LinearLayout rareOptions=new SettingsUi.OptionList(ui);options.addView(rareOptions);
         TextView rareCriteria=button(rareOptions,"Critérios de raridade: "+Integer.bitCount(preferences.rareMask()));
-        String[] rareNames={"Shiny","IV 100% (Hundo)","Shiny 100% (Shundo)","IV 0% (Nundo)","IV mínimo"};
+        String[] rareNames={"Shiny","IV 100% (Hundo)","Shiny 100% (Shundo)","IV 0% (Nundo)","IV mínimo","Lendário, mítico ou Ultra Beast","Fantasia","Fundo especial"};
         rareCriteria.setOnClickListener(v->{
             boolean[] selected=new boolean[rareNames.length];int mask=preferences.rareMask();
             for(int i=0;i<selected.length;i++)selected[i]=(mask&(1<<i))!=0;
@@ -94,6 +95,8 @@ public final class SmartCatchSettings {
         tagInput(activity,options,"Fruta nas famílias das etiquetas","CandyTags",preferences.candyTags());
         int tagBerryIndex=0;for(int i=0;i<BERRIES.length;i++)if(BERRIES[i]==preferences.tagBerry())tagBerryIndex=i;
         row(activity,options,"Fruta para etiquetas",BERRY_NAMES,tagBerryIndex,index->{set("TagBerry",BERRIES[index]);});
+        CheckBox manual=new CheckBox(ui);manual.setText("Aplicar frutas de raridade e etiquetas ao lançar manualmente");manual.setChecked(preferences.manualBerry());options.addView(manual);manual.setOnCheckedChangeListener((v,on)->set("ManualBerry",on));
+        TextView manualHelp=new TextView(ui);manualHelp.setText("Requer Auto Frutas ativo e uma prioridade normal configurada. A fruta especial tem preferência quando disponível; senão a ordem de estoque normal é preservada. Não lança bola automaticamente.");options.addView(manualHelp);
         CheckBox shinyOnly=new CheckBox(ui);shinyOnly.setText(dev.pgrazor.PtBr.tr("Catch only shinies"));shinyOnly.setChecked(preferences.shinyOnly());options.addView(shinyOnly);
         TextView shinyOnlyHelp=new TextView(ui);shinyOnlyHelp.setText(dev.pgrazor.PtBr.tr("VGP+ still opens every Pokémon to see whether it is shiny, but throws only at shinies and leaves the rest on the map. Each one it opens counts as an encounter."));options.addView(shinyOnlyHelp);
         shinyOnly.setOnCheckedChangeListener((v,on)->{if(on!=preferences.shinyOnly())set("ShinyOnly",on);});

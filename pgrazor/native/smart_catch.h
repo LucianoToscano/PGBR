@@ -13,6 +13,9 @@ void pgr_smart_set_capture_source(bool (*source)(void *target, uint64_t owner, d
 void pgr_smart_set_rare_source(void *(*source)(void *target, uint64_t owner));
 struct PgrSmartSettings;
 void pgr_smart_set_tag_source(int (*source)(void *pokemon, uint64_t owner, const PgrSmartSettings &settings));
+void pgr_smart_set_extra_rare_source(int (*source)(void *pokemon,uint64_t owner,int mask));
+bool pgr_smart_manual_enabled();
+int pgr_smart_manual_priority(void *target,uint64_t owner);
 // Optional, owner-thread-only binding. Missing support leaves regular catching
 // available. The source checks the target's own confirmed response, not manual UI.
 void pgr_smart_set_safari_source(void *strong_field, int item,
@@ -144,7 +147,7 @@ struct PgrSmartSettings {
   int32_t  shiny_only;     // version 7: encounter as usual, but only a shiny is thrown at
   int32_t  rare_custom, rare_mask, rare_iv_min, rare_berry; // v8 opt-in; legacy premium retained
   char catch_tags[529], candy_tags[529]; // v9 exact UTF-8 names encoded as hex
-  int32_t tag_berry;
+  int32_t tag_berry, manual_berry; // v10 adds explicit manual encounter opt-in
 };
 
 // Pacing for a catch speed (out-of-range values pace as normal). The throw wait is base plus a

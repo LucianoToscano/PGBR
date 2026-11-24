@@ -8,7 +8,7 @@ public final class SmartCatchPreferences {
     private boolean enabled, premium=true, curve=true, spinGyms, autoBall, shinyOnly;
     private int ball=1, berry, highCp=1500, highLevel=30, grade=3, autoBallTarget=75, variety, speed;
     private String candySpecies="",catchSpecies="";
-    private boolean rareCustom;
+    private boolean rareCustom,manualBerry;
     private String catchTags="",candyTags="";
     private int tagBerry=705;
     private int rareMask=17,rareIvMin=90,rareBerry=706;
@@ -67,7 +67,7 @@ public final class SmartCatchPreferences {
         premium=flag(p,"Premium",true);highCp=number(p,"HighCp",1500,0,10000);
         highLevel=number(p,"HighLevel",30,0,50);grade=number(p,"Grade",3,0,3);curve=flag(p,"Curve",true);
         autoBall=flag(p,"AutoBall",false);autoBallTarget=number(p,"AutoBallTarget",75,1,99);variety=number(p,"Variety",0,0,3);speed=number(p,"Speed",0,0,2);shinyOnly=flag(p,"ShinyOnly",false);
-        rareCustom=flag(p,"RareCustom",false);rareMask=number(p,"RareMask",17,0,31);
+        rareCustom=flag(p,"RareCustom",false);rareMask=number(p,"RareMask",17,0,255);manualBerry=flag(p,"ManualBerry",false);
         rareIvMin=number(p,"RareIvMin",90,1,100);rareBerry=number(p,"RareBerry",706,0,708);
         if(!validBerry(rareBerry))rareBerry=706;
         tagBerry=number(p,"TagBerry",705,0,708);if(!validBerry(tagBerry))tagBerry=705;
@@ -95,6 +95,7 @@ public final class SmartCatchPreferences {
         p.setProperty("smartCatchRareBerry",String.valueOf(rareBerry));
         p.setProperty("smartCatchCatchTags",catchTags);p.setProperty("smartCatchCandyTags",candyTags);
         p.setProperty("smartCatchTagBerry",String.valueOf(tagBerry));
+        p.setProperty("smartCatchManualBerry",String.valueOf(manualBerry));
     }
     public synchronized String config(){
         // Version 2 adds auto ball and its target before the species list; version 3 appends the
@@ -109,8 +110,10 @@ public final class SmartCatchPreferences {
     public synchronized String catchTags(){return catchTags;}
     public synchronized String candyTags(){return candyTags;}
     public synchronized int tagBerry(){return tagBerry;}
+    public synchronized boolean manualBerry(){return manualBerry;}
     public synchronized String tagConfig(){
-        return !enabled||(catchTags.isEmpty()&&candyTags.isEmpty())?"":";"+rareMask+";"+rareIvMin+";"+rareBerry+";"+(rareCustom?1:0)+";"+encodeTags(catchTags)+";"+encodeTags(candyTags)+";"+tagBerry;
+        if(!manualBerry&&(!enabled||(catchTags.isEmpty()&&candyTags.isEmpty())))return "";
+        return ";"+rareMask+";"+rareIvMin+";"+rareBerry+";"+(rareCustom?1:0)+";"+encodeTags(catchTags)+";"+encodeTags(candyTags)+";"+tagBerry+(manualBerry?";1":"");
     }
     public synchronized boolean rareCustom(){return rareCustom;}
     public synchronized int rareMask(){return rareMask;}

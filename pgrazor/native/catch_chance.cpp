@@ -1,4 +1,9 @@
 #include "catch_chance.h"
+#include "smart_catch.h"
+#include "smart_catch_binding.h"
+extern bool pgr_smart_manual_enabled() __attribute__((weak));
+extern int pgr_smart_manual_priority(void*,uint64_t) __attribute__((weak));
+extern "C" int pgr_smart_ensure_bound(uint64_t) __attribute__((weak));
 #include "game_bindings.h"
 #include "shared_metadata.h"
 #include "runtime_bootstrap.h"
@@ -297,4 +302,26 @@ bool pgr_catch_chance_offers_ball(void *encounter_out,int item){
 void pgr_catch_chance_stop(){
  if(owner&&owner!=uint64_t(gettid()))return;
  if(uintptr_t h=live.exchange(0))fn<void(*)(uintptr_t)>(boot.runtime.gchandle_free)(h);
+}
+
+ // Read-only override for the already-authorized manual Berry controller.
+int pgr_manual_encounter_berry(void *scope,uint64_t tid){
+ if(!ready||busy||!scope||tid!=owner||tid!=uint64_t(gettid())||!pgr_smart_manual_enabled||!pgr_smart_manual_priority||!pgr_smart_ensure_bound||!pgr_smart_manual_enabled())return 0;
+ struct Guard{Guard(){busy=true;}~Guard(){busy=false;}}guard;
+ try{
+  auto token=live.load();uint64_t gen=generation.load();
+  if(!token||fn<void*(*)(uintptr_t)>(boot.runtime.gchandle_get_target)(token)!=scope||klass(scope)!=cls("Niantic.Holoholo.Encounter","EncounterInteractionState"))return 0;
+  Root state(scope);void *lazy_field=safari.encounter_lazy;
+  if(!lazy_field){void *it=nullptr;while(void *f=fn<void*(*)(void*,void**)>(exp("class_get_fields"))(klass(state.get()),&it)){
+    auto type=typename_of(fn<void*(*)(void*)>(boot.meta.field_get_type)(f));if(type.find("Zenject.LazyInject")!=std::string::npos&&type.find("<Niantic.Holoholo.Encounter.IEncounterState>")!=std::string::npos){if(lazy_field)return 0;lazy_field=f;}
+  }}
+  if(!lazy_field||fn<int(*)(void*)>(boot.meta.field_get_flags)(lazy_field)&0x10)return 0;
+  void *v=nullptr;fn<void(*)(void*,void*,void*)>(boot.runtime.field_get_value)(state.get(),lazy_field,&v);Root lazy(v);if(!lazy)return 0;
+  Root encounter(call(lazy.get(),"get_Value"));if(!encounter)return 0;
+  Root map(call(encounter.get(),"get_MapPokemon"));if(!map)return 0;
+  if(pgr_smart_ensure_bound(tid)!=0)return 0;
+  int berry=pgr_smart_manual_priority(map.get(),tid);
+  if(gen!=generation.load()||token!=live.load()||fn<void*(*)(uintptr_t)>(boot.runtime.gchandle_get_target)(token)!=state.get())return 0;
+  Root current(call(encounter.get(),"get_MapPokemon"));return current&&current.get()==map.get()&&gen==generation.load()&&token==live.load()?berry:0;
+ }catch(...){return 0;}
 }

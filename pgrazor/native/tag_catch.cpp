@@ -49,7 +49,7 @@ void *field_info(void *k,const char *name,const char *type){
 }
 template<class T>T field(void *o,const char *name,const char *type){T value{};auto f=field_info(klass(o),name,type);fn<void(*)(void*,void*,void*)>(boot.runtime.field_get_value)(o,f,&value);return value;}
 void *method(void *k,const char *name,int count){void *m=fn<void*(*)(void*,const char*,int)>(boot.meta.class_get_method_from_name)(k,name,count);require(m,name);require(fn<unsigned(*)(void*)>(boot.meta.method_get_param_count)(m)==unsigned(count),name);return m;}
-void *invoke(void *m,void *o,void **args=nullptr){void *ex=nullptr;void *v=fn<void*(*)(void*,void*,void**,void**)>(boot.runtime.runtime_invoke)(m,o,args,&ex);if(ex){char detail[512]{};auto format=reinterpret_cast<void(*)(void*,char*,int)>(dlsym(boot.handle,"il2cpp_format_exception"));if(format)format(ex,detail,sizeof(detail));__android_log_print(ANDROID_LOG_ERROR,"PGRazorTagCatch","%s: %s",managed_context,detail);throw Failure{managed_context};}return v;}
+void *invoke(void *m,void *o,void **args=nullptr){void *ex=nullptr;void *v=fn<void*(*)(void*,void*,void**,void**)>(boot.runtime.runtime_invoke)(m,o,args,&ex);if(ex)throw Failure{managed_context};return v;}
 void *call(void *o,const char *name,int n=0,void **args=nullptr){return invoke(method(klass(o),name,n),o,args);}
 template<class T>T boxed(void *o,const char *type){require(o&&typename_of(fn<void*(*)(void*)>(boot.meta.class_get_type)(klass(o)))==type,type);T v{};auto p=fn<void*(*)(void*)>(boot.runtime.object_unbox)(o);require(p,"boxed value");memcpy(&v,p,sizeof(v));return v;}
 std::string string(void *o){
@@ -75,12 +75,13 @@ Root reference(void *o,const char *name,const char *prefix){
  void *v=nullptr;fn<void(*)(void*,void*,void*)>(boot.runtime.field_get_value)(o,f,&v);return Root(v);
 }
 
-struct Config {bool valid=false;uint64_t generation=0;std::string c,d;};
+struct Config {bool valid=false;bool extra=false;uint64_t generation=0;std::string c,d;};
 Config config(){
- Config p;auto t=static_cast<const PgrRuntimeTransportApi*>(pgrazor_runtime_transport_api(1));PgrRuntimeTransportSample a{},z{};int allowed=0;char buf[PGR_SMART_CONFIG_MAX+1];uint32_t n=0;
- if(!t||t->sample(&a)||!a.snapshot_fresh||a.fault||t->get_bool(36,&allowed)||!allowed||t->get_string(7,buf,sizeof(buf),&n)||n>PGR_SMART_CONFIG_MAX||t->sample(&z)||!z.snapshot_fresh||z.fault||z.generation!=a.generation||z.snapshot_seq!=a.snapshot_seq)return p;
+ Config p;auto t=static_cast<const PgrRuntimeTransportApi*>(pgrazor_runtime_transport_api(1));PgrRuntimeTransportSample a{},z{};int allowed=0,manual=0,live=0;char buf[PGR_SMART_CONFIG_MAX+1];uint32_t n=0;
+ if(!t||t->sample(&a)||!a.snapshot_fresh||a.fault||t->get_bool(36,&allowed)||t->get_bool(7,&manual)||t->get_bool(9,&live)||!live||(!allowed&&!manual)||t->get_string(7,buf,sizeof(buf),&n)||n>PGR_SMART_CONFIG_MAX||t->sample(&z)||!z.snapshot_fresh||z.fault||z.generation!=a.generation||z.snapshot_seq!=a.snapshot_seq)return p;
  PgrSmartSettings s{};pgr_smart_parse_settings(buf,n,&s);
- if(!s.enabled||(!s.catch_tags[0]&&!s.candy_tags[0]))return p;
+ if(!(s.enabled&&allowed)&&!(s.manual_berry&&manual))return p;
+ p.extra=s.rare_custom&&(s.rare_mask&224);if(!p.extra&&!s.catch_tags[0]&&!s.candy_tags[0])return p;
  p.valid=true;p.generation=a.generation;p.c=s.catch_tags;p.d=s.candy_tags;return p;
 }
 struct Scan {
@@ -124,6 +125,25 @@ void step(){
  require(account()==scan.account&&boxed<int>(call(scan.tags.get(),"get_NumberOfTags"),"System.Int32")==scan.tag_count&&same(config(),scan.cfg),"tag snapshot changed");
  scan.ready=true;scan.expiry=clock_ms()+30000;scan.tags.reset();scan.rows.reset();
 }
+int extra(void *pokemon,uint64_t tid,int mask){
+ if(tid!=owner||tid!=uint64_t(gettid())||busy||!md||!config().extra||!pokemon)return 0;
+ int flags=0;
+ try{
+  Root pk(pokemon);if(!pk||klass(pk.get())!=cls("Holoholo.Rpc","PokemonProto"))return 0;
+  auto read=fn<void(*)(void*,void*,void*)>(boot.runtime.field_get_value);
+  if((mask&32)&&h(H_TR_RARE_M)){
+    try{Root bag=resolve("Niantic.Holoholo","IPokemonBag");if(bag){Root gm=reference(bag.get(),PGR_GAME_BATCH_EVOLUTION_CPP_ERIK_NAME,"IGameMasterData");if(gm){void *args[]={gm.get()};Root answer(invoke(h(H_TR_RARE_M),pk.get(),args));if(boxed<bool>(answer.get(),"System.Boolean"))flags|=32;}}}catch(...){}
+  }
+  if((mask&192)&&h(H_TR_DISPLAY)){
+    void *v=nullptr;read(pk.get(),h(H_TR_DISPLAY),&v);Root disp(v);
+    if(disp&&klass(disp.get())==cls("Holoholo.Rpc","PokemonDisplayProto")){
+      if((mask&64)&&h(H_TR_COSTUME)&&h(H_TR_ORIG_COSTUME)){int a=0,b=0;read(disp.get(),h(H_TR_COSTUME),&a);read(disp.get(),h(H_TR_ORIG_COSTUME),&b);if(a!=md->opt_ints[I_TR_COSTUME_NONE]||b!=md->opt_ints[I_TR_COSTUME_NONE])flags|=64;}
+      if((mask&128)&&h(H_TR_BACKGROUND)&&h(H_TR_ART)&&h(H_TR_ART_ASSET)){void *card=nullptr;int a=0,b=0;read(disp.get(),h(H_TR_BACKGROUND),&card);read(disp.get(),h(H_TR_ART),&a);read(disp.get(),h(H_TR_ART_ASSET),&b);if(card||a!=md->opt_ints[I_TR_ART_NONE]||b!=md->opt_ints[I_TR_ASSET_NONE])flags|=128;}
+    }
+  }
+ }catch(...){return 0;}
+ return flags;
+}
 int decision(void *pokemon,uint64_t tid,const PgrSmartSettings &s){
  if(tid!=owner||tid!=uint64_t(gettid())||!scan.ready||clock_ms()>=scan.expiry||scan.cfg.c!=s.catch_tags||scan.cfg.d!=s.candy_tags)return -1;
  try{if(!same(config(),scan.cfg)||account()!=scan.account)return -1;int f=family(pokemon,scan.gm);if(!same(config(),scan.cfg)||account()!=scan.account)return -1;return pgr_tags::decide(true,!scan.catch_names.empty(),scan.catch_families,scan.candy_families,f);}catch(...){return -1;}
@@ -134,7 +154,8 @@ void pgr_tag_catch_tick(uint64_t tid,const PgrSharedMetadataOutput *metadata){
  struct Guard{Guard(){busy=true;}~Guard(){busy=false;}}guard;
  auto p=config();if(!p.valid){scan=Scan{};retry_at=0;return;}
  try{
-  if(!initialized){auto api=static_cast<const PgrBootApi*>(pgrazor_runtime_bootstrap_api(1));boot.version=1;boot.size=sizeof(boot);require(api&&api->snapshot(&boot)==0&&metadata,"bootstrap");md=metadata;owner=tid;initialized=true;pgr_smart_set_tag_source(decision);}
+  if(!initialized){auto api=static_cast<const PgrBootApi*>(pgrazor_runtime_bootstrap_api(1));boot.version=1;boot.size=sizeof(boot);require(api&&api->snapshot(&boot)==0&&metadata,"bootstrap");md=metadata;owner=tid;initialized=true;pgr_smart_set_tag_source(decision);pgr_smart_set_extra_rare_source(extra);}
+  if(p.c.empty()&&p.d.empty()){scan=Scan{};return;}
   if(!same(p,scan.cfg)){scan=Scan{};retry_at=0;}
   uint64_t now=clock_ms();if(now<retry_at)return;
   if(scan.ready&&now<scan.expiry)return;

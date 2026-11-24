@@ -93,7 +93,7 @@ jobs:
           "$CXX" -std=c++17 -fsyntax-only -I pgrazor/native -I "$DOBBY/include" \
             pgrazor/native/combat_host.cpp pgrazor/native/rocket_combat.cpp
           "$CXX" -std=c++17 -fexceptions -fsyntax-only -I pgrazor/native -I "$DOBBY/include" \
-            pgrazor/native/tm_shortcut.cpp pgrazor/native/smart_catch_binding.cpp pgrazor/native/smart_catch.cpp pgrazor/native/jni_core.cpp pgrazor/native/battles.cpp pgrazor/native/tag_catch.cpp
+            pgrazor/native/tm_shortcut.cpp pgrazor/native/smart_catch_binding.cpp pgrazor/native/smart_catch.cpp pgrazor/native/jni_core.cpp pgrazor/native/battles.cpp pgrazor/native/tag_catch.cpp pgrazor/native/catch_chance.cpp pgrazor/native/encounter_berries.cpp
 
   website-build:
     name: Build do website com lockfile
