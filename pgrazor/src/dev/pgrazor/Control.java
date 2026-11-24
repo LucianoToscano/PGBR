@@ -188,7 +188,8 @@ public final class Control {
     public static String giftStatus(){return giftStatus;}
     public static boolean giftsAllowed(){return giftsReady&&quickSummaryReady()&&hostLive();}
     private static volatile boolean vgpEnabled,vgpReady,vgpOverlay;
-    /** Persistent safety preference; when armed a live cooldown keeps VGP off. */
+    /** Saved preference; the cooldown gates new actions, never clears manual ON intent. */
+    private static volatile boolean vgpStopOnCooldown=true;
     // Protect the floating VGP icon from accidental activation (runtime automation is unaffected).
     private static volatile boolean vgpTapProtection=true;
     private static volatile int vgpOptions=3;
@@ -261,14 +262,13 @@ public final class Control {
     public static void setVgpBackgroundOpacity(int percent){vgpBackgroundOpacity=Math.max(0,Math.min(100,percent));saveSettings();}
     public static int vgpIconSize(){return vgpIconSize;}
     public static void setVgpIconSize(int value){vgpIconSize=Math.max(28,Math.min(72,value));saveSettings();}
-    /** Legacy API retained for older modules. VGP no longer stops on estimated cooldown. */
-    public static boolean vgpStopOnCooldown(){return false;}
+    public static boolean vgpStopOnCooldown(){return vgpStopOnCooldown;}
+    public static boolean vgpCooldownPaused(){return vgpEnabled()&&vgpStopOnCooldown&&Cooldown.remaining()>0;}
     public static boolean vgpTapProtection(){return vgpTapProtection;}
     public static void setVgpTapProtection(boolean value){if(vgpTapProtection!=value){vgpTapProtection=value;saveSettings();}}
-    /** User-controlled start/stop; no dependency on estimated cooldown. */
+    /** Manual intent is independent of the estimated cooldown permission gate. */
     public static void setVgpEnabled(boolean value){vgp.setEnabled(value);}
-    /** Legacy compatibility setter: always disabled, intentionally not persisted. */
-    public static void setVgpStopOnCooldown(boolean value){}
+    public static void setVgpStopOnCooldown(boolean value){if(vgpStopOnCooldown!=value){vgpStopOnCooldown=value;saveSettings();}}
     public static void setVgpOptions(int value){vgpOptions=value&7;saveSettings();}
     public static void setVgpReady(boolean ready,String status){vgpReady=ready;vgp.setStatus(status);}
     public static void setVgpStatus(String status){vgp.setStatus(status);}
@@ -296,6 +296,7 @@ public final class Control {
         // readiness checks. Quick Catch summary and auto-transfer are optional,
         // independent features: they must not veto Pokémon/Stop scanning.
         if(!vgpReady)return "VGP aguardando: mecanismo nativo indisponível. "+vgp.status();
+        if(vgpCooldownPaused())return "VGP pausada por cooldown estimado. Retoma quando a espera terminar, se continuar ligada.";
         if(ShundoSniper.active())return "VGP aguardando: Shundo Sniper tem prioridade.";
         if(AutoRaid.running())return "VGP aguardando: Auto Raid tem prioridade.";
         String nativeState=vgp.status();
@@ -340,7 +341,7 @@ public final class Control {
         // VGP owns native inventory checks and action-gate checks independently.
         // itemAccessAllowed() also requires Quick Catch summary and auto-transfer
         // readiness, neither of which is a prerequisite for VGP capture/spin.
-        return vgpEnabled&&vgpReady&&hostLive()
+        return vgpEnabled&&vgpReady&&hostLive()&&!vgpCooldownPaused()
                 &&!ShundoSniper.active()&&!AutoRaid.running()&&!AutoMaxBattle.running();
     }  // Shundo Sniper and Auto Raid still pause VGP+
     public static void vgpResult(String action,boolean success){vgp.result(action,success);}
@@ -1670,6 +1671,7 @@ public final class Control {
                 incubateLongest=Boolean.parseBoolean(p.getProperty("incubateLongest","false"));
                 vgpEnabled=false;vgp.clearTarget();
                 vgpOverlay=Boolean.parseBoolean(p.getProperty("vgpOverlay","false"));
+                vgpStopOnCooldown=!"false".equals(p.getProperty("vgpStopOnCooldown","true"));
                 try{int legacy=Integer.parseInt(p.getProperty("vgpIconStyle","0"));vgpIconStyle=legacy>=0&&legacy<=3?legacy:0;}
                 catch(NumberFormatException ignored){vgpIconStyle=0;}
                 try{vgpIconSize=Math.max(28,Math.min(72,Integer.parseInt(p.getProperty("vgpIconSize","48"))));}
@@ -1899,6 +1901,7 @@ public final class Control {
         p.setProperty("spawnBooster",String.valueOf(spawnBooster));
         p.setProperty("giftOptions",String.valueOf(giftOptions));
         p.setProperty("vgpOverlay",String.valueOf(vgpOverlay));
+        p.setProperty("vgpStopOnCooldown",String.valueOf(vgpStopOnCooldown));
         p.setProperty("vgpIconStyle",String.valueOf(vgpIconStyle));
         p.setProperty("vgpIconSize",String.valueOf(vgpIconSize));
         p.setProperty("vgpIconOpacity",String.valueOf(vgpIconOpacity));
