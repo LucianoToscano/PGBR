@@ -63,6 +63,14 @@ class LocalAuditTests(unittest.TestCase):
         self.assertIn('present(a,new AlertDialog.Builder(MapTheme.wrap(a)).setTitle("Conferência visual de itens")',source)
         self.assertIn('evaluatedAt[0]=evaluationTime()',source)
 
+    def test_collection_worker_is_bounded_and_detached(self):
+        source=(ROOT/'src/dev/pgrazor/LocalAuditDialog.java').read_text(encoding='utf-8')
+        panel=source.split(' static void batch(Activity a){',1)[1].split(' static void reason(Activity a)',1)[0]
+        for term in ['if(worker[0]!=null)return','inputEnabled.accept(false)','worker[0].interrupt()','if(worker[0]!=current)return','!b.isAttachedToWindow()','revision!=generation[0]','snapshot.contentEquals(records.getText())','LocalCollectionPreview.parse(snapshot,threshold,selected,names)','a.runOnUiThread(']:
+            self.assertIn(term,panel)
+        self.assertIn('new Thread(',panel)
+        self.assertNotIn('LocalCollectionPreview.parse(records.getText()',panel)
+
     def test_diagnostic_worker_is_bounded_and_detached(self):
         source=(ROOT/'src/dev/pgrazor/LocalAuditDialog.java').read_text(encoding='utf-8')
         panel=source.split(' static void summarize(Activity a){',1)[1].split(' static void maxPlan(Activity a){',1)[0]
