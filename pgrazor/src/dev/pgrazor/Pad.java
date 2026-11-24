@@ -17,6 +17,7 @@ public final class Pad {
     // Every on-screen overlay lives in this full-screen layer so "Hide overlay" can hide them all at once;
     // the three-finger watcher brings them back.
     private final FrameLayout overlays;
+    private RouteTraceOverlay visualRouteOverlay;
     private View unhideWatcher;
     private boolean overlaysHidden;
     private AlertDialog hideOverlaysDialog;
@@ -661,6 +662,23 @@ public final class Pad {
             second.toLowerCase(java.util.Locale.ROOT).contains("pausad"))return badge+" · Pausado";
         return badge;
     }
+    /** Optional visual-only host integration; no provider is installed by default.
+     * Must be called on the activity UI thread by a supported projection adapter.
+     */
+    void attachVisualRouteSource(RouteTraceOverlay.ProjectedFrameSource source) {
+        if(closed)return;
+        if(visualRouteOverlay!=null){visualRouteOverlay.close();visualRouteOverlay=null;}
+        if(source!=null) visualRouteOverlay=new RouteTraceOverlay(activity,overlays,source);
+        refreshVisualRoute();
+    }
+    private void refreshVisualRoute() {
+        if(visualRouteOverlay==null)return;
+        android.content.SharedPreferences prefs=AccountProfiles.preferences(activity,"pgrazor-map");
+        boolean allowed=prefs.getBoolean("routeTraceEnabled",false)&&!overlaysHidden&&
+            !settings.isVisible()&&!(quickMenu!=null&&quickMenu.isShowing())&&
+            !Control.catchScreenVisible()&&!blackShown;
+        visualRouteOverlay.refresh(allowed,Control.engine.activeRouteToken(),RouteTraceSettings.read(prefs));
+    }
     private void refresh() {
         applyMapScale();
         if(gymFeedOverlay!=null)gymFeedOverlay.refresh(!settings.isVisible()&&!(quickMenu!=null&&quickMenu.isShowing()));
@@ -669,6 +687,7 @@ public final class Pad {
             blackShown=black;blackScreen.setVisibility(black?View.VISIBLE:View.GONE);
             if(black){blackHint.setVisibility(View.VISIBLE);handler.postDelayed(()->{if(blackHint!=null)blackHint.setVisibility(View.GONE);},4000);}
         }
+        refreshVisualRoute();
         applyHudAppearance();
         refreshVgpHitbox();
         refreshLauncherAppearance();
@@ -931,6 +950,7 @@ public final class Pad {
     public void close() {
         if (closed) return;
         closed = true;if(vgpStartDialog!=null){vgpStartDialog.dismiss();vgpStartDialog=null;}if(stopRouteDialog!=null)stopRouteDialog.dismiss(); stick.release(true); Control.suspendForBackground(); handler.removeCallbacks(tick);
+        if(visualRouteOverlay!=null){visualRouteOverlay.close();visualRouteOverlay=null;}
         if(quickMenu!=null){quickMenu.destroy();quickMenu=null;}
         if(cooldownDrag!=null){cooldownDrag.detach();cooldownDrag=null;}if(vgpDrag!=null){vgpDrag.detach();vgpDrag=null;}if(transferDrag!=null){transferDrag.detach();transferDrag=null;}if(gameRoutesDrag!=null){gameRoutesDrag.detach();gameRoutesDrag=null;}
         if(localTimeDrag!=null){localTimeDrag.detach();localTimeDrag=null;}if(localTime!=null){localTime.close();overlays.removeView(localTime);localTime=null;}
