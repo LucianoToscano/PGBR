@@ -120,7 +120,7 @@ final class MapPoiLayer {
     private boolean poiVisible(JSONObject point, long now) {
         boolean stop = "stop".equals(point.optString("kind"));
         boolean showRaid = point.optLong("raidEnd") > now && (layers & 4) != 0;
-        return stop ? (layers & 1) != 0 : ((layers & 2) != 0 || showRaid);
+        return stop ? ((layers & 1) != 0 || ((layers & 8) != 0 && rocketName(point,now)!=null)) : ("gym".equals(point.optString("kind")) && ((layers & 2) != 0 || showRaid));
     }
 
     private void drawMarker(Canvas canvas, JSONObject point, float x, float y, float radius, long now) {
@@ -231,6 +231,16 @@ final class MapPoiLayer {
         List<JSONObject> sorted = new ArrayList<>(); for (int i : order) sorted.add(hits.get(i)); return sorted;
     }
 
+    void openNearbyList(){
+        if(closed)return;long now=System.currentTimeMillis();List<JSONObject> rows=new ArrayList<>();
+        for(int i=0;i<pois.length();i++){JSONObject p=pois.optJSONObject(i);if(p==null||!poiVisible(p,now))continue;double lat=p.optDouble("lat",Double.NaN),lon=p.optDouble("lon",Double.NaN);if(Double.isFinite(lat)&&Double.isFinite(lon)&&Math.abs(lat)<=90&&Math.abs(lon)<=180)rows.add(p);}
+        final boolean known=Control.locationKnown();final double lat=Control.currentLatitude(),lon=Control.currentLongitude();
+        if(known)rows.sort(java.util.Comparator.comparingDouble(p->WorldMapDialog.distanceMeters(lat,lon,p.optDouble("lat"),p.optDouble("lon"))));
+        int count=Math.min(200,rows.size());String[] labels=new String[count];for(int i=0;i<count;i++){JSONObject p=rows.get(i);String line=dev.pgrazor.PtBr.tr(poiShortLabel(p));if(known)line+=String.format(Locale.forLanguageTag("pt-BR")," • %.0f m",WorldMapDialog.distanceMeters(lat,lon,p.optDouble("lat"),p.optDouble("lon")));if(p.optLong("raidEnd")>now)line+=" • "+countdown(p.optLong("raidEnd")-now);labels[i]=line;}
+        AlertDialog.Builder b=new AlertDialog.Builder(dialogContext).setTitle("Recursos próximos ("+count+"/"+rows.size()+")").setNegativeButton("Fechar",null);
+        AlertDialog d=count==0?b.setMessage("Nenhum recurso disponível nas camadas selecionadas.").create():ChoiceList.attach(b.create(),labels,i->showPoiDetails(rows.get(i)));
+        registerPoiDialog(d);d.show();
+    }
     void openDetails(List<JSONObject> hits) {
         if (closed || hits.isEmpty()) return;
         if (hits.size() == 1) { showPoiDetails(hits.get(0)); return; }

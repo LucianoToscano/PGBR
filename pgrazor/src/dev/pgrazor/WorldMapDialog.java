@@ -78,7 +78,7 @@ public final class WorldMapDialog {
         selected.setPadding(0, dp(activity, 8), 0, dp(activity, 8));
         LinearLayout selectionRow = new LinearLayout(ui);
         selectionRow.setGravity(Gravity.CENTER_VERTICAL);
-        layout.addView(selected);
+        // Selection panel is below the map, next to destination actions.
         Button saved = button(ui, "Saved places");
         selectionRow.addView(saved, new LinearLayout.LayoutParams(0, dp(activity, 48), 1));
         Button hotspots = button(ui, "Hotspots");
@@ -101,7 +101,7 @@ public final class WorldMapDialog {
             hotspotsDialog[0]=HotspotsDialog.show(activity,spot->{map.select(spot.latitude,spot.longitude);});
         });
         Button search = button(ui, "Search places, addresses or coordinates");
-        layout.addView(search, new LinearLayout.LayoutParams(-1, dp(activity, 48)));
+        layout.addView(search, 0, new LinearLayout.LayoutParams(-1, dp(activity, 48)));
         final AlertDialog[] searchDialog = {null};
         search.setOnClickListener(v -> {
             if(searchDialog[0]!=null && searchDialog[0].isShowing()) return;
@@ -110,14 +110,17 @@ public final class WorldMapDialog {
         });
         LinearLayout layers=new LinearLayout(ui);
         SharedPreferences preferences=AccountProfiles.preferences(activity,"pgrazor-map");
-        String[] names={"Stops","Gyms","Raids"};
+        String[] names={"Stops","Gyms","Raids","Equipe GO Rocket"};
+        android.widget.HorizontalScrollView layerScroll=new android.widget.HorizontalScrollView(ui);
+        layerScroll.setHorizontalScrollBarEnabled(false);
         for(int i=0;i<names.length;i++){
             final int bit=1<<i;CheckBox toggle=new CheckBox(ui);toggle.setText(dev.pgrazor.PtBr.tr(names[i]));toggle.setTextSize(13);
             boolean enabled=preferences.getBoolean(names[i],false);if(enabled)map.setPoiLayer(bit,true);toggle.setChecked(enabled);
             final String key=names[i];toggle.setOnCheckedChangeListener((b,on)->{map.setPoiLayer(bit,on);preferences.edit().putBoolean(key,on).apply();map.refreshPois();});
-            layers.addView(toggle,new LinearLayout.LayoutParams(0,-2,1));
+            layers.addView(toggle,new LinearLayout.LayoutParams(-2,-2));
         }
-        layout.addView(layers);
+        layerScroll.addView(layers,new android.widget.FrameLayout.LayoutParams(-2,-2));
+        layout.addView(layerScroll);
         CheckBox trace=new CheckBox(ui);
         trace.setText("Rota Visual • caminhada e GPX próprios");
         trace.setTextSize(13);
@@ -144,9 +147,18 @@ public final class WorldMapDialog {
         map.refreshPois();
         PlaceUi places = new PlaceUi(activity, ui, map, saved);
         saved.setOnClickListener(v -> places.openLibrary());
-        layout.map = map;
-        // The map fills the space left by the controls (see ResponsiveLayout); this is only a baseline height.
-        layout.addView(map, new LinearLayout.LayoutParams(-1, dp(activity, 240)));
+        android.widget.FrameLayout mapFrame=new android.widget.FrameLayout(ui);
+        mapFrame.addView(map,new android.widget.FrameLayout.LayoutParams(-1,-1));
+        LinearLayout floating=new LinearLayout(ui);floating.setOrientation(LinearLayout.VERTICAL);
+        Button plus=button(ui,"+"),minus=button(ui,"−"),locate=button(ui,"◎"),radar=button(ui,"☰");
+        plus.setContentDescription("Aumentar zoom");minus.setContentDescription("Diminuir zoom");locate.setContentDescription("Centralizar no jogador");radar.setContentDescription("Lista de recursos próximos");
+        plus.setOnClickListener(v->map.zoom(1));minus.setOnClickListener(v->map.zoom(-1));locate.setOnClickListener(v->map.centerCurrentLocation());radar.setOnClickListener(v->map.poiLayer.openNearbyList());
+        for(Button b:new Button[]{plus,minus,locate,radar})floating.addView(b,new LinearLayout.LayoutParams(dp(activity,48),dp(activity,48)));
+        android.widget.FrameLayout.LayoutParams floatParams=new android.widget.FrameLayout.LayoutParams(-2,-2,Gravity.TOP|Gravity.RIGHT);floatParams.setMargins(0,dp(activity,4),dp(activity,4),0);
+        mapFrame.addView(floating,floatParams);
+        layout.map = mapFrame;
+        layout.addView(mapFrame,new LinearLayout.LayoutParams(-1,dp(activity,240)));
+        layout.addView(selected);
         CheckBox loop = new CheckBox(ui); loop.setText(dev.pgrazor.PtBr.tr("Loop route")); loop.setTextSize(13);
         loop.setContentDescription(dev.pgrazor.PtBr.tr("Repeat the route from the first stop after the last")); loop.setVisibility(View.GONE);
         LinearLayout routeTools = new LinearLayout(ui);
@@ -169,6 +181,8 @@ public final class WorldMapDialog {
         pin.setOnClickListener(v -> { map.centerSelection(); CoordinateClipboard.copy(activity, map.latitude, map.longitude, "Pin location copied"); });
         copyRow.addView(current, new LinearLayout.LayoutParams(0, dp(activity, 48), 1));
         copyRow.addView(pin, new LinearLayout.LayoutParams(0, dp(activity, 48), 1));
+        Button savePin=button(ui,"Salvar");savePin.setOnClickListener(v->places.openLibrary());
+        copyRow.addView(savePin,new LinearLayout.LayoutParams(0,dp(activity,48),1));
         layout.addView(copyRow);
         LinearLayout actions = new LinearLayout(ui);
         Button globe = button(ui, "World"), center = button(ui, "Selected"), retry = button(ui, "Retry");
@@ -218,6 +232,7 @@ public final class WorldMapDialog {
         return dialog;
     }
 
+    static double distanceMeters(double lat1,double lon1,double lat2,double lon2){double p=Math.toRadians(lat2-lat1),q=Math.toRadians(lon2-lon1);double a=Math.sin(p/2)*Math.sin(p/2)+Math.cos(Math.toRadians(lat1))*Math.cos(Math.toRadians(lat2))*Math.sin(q/2)*Math.sin(q/2);return 12742017.6*Math.asin(Math.sqrt(Math.max(0,Math.min(1,a))));}
     private static int dp(Context c, float value) { return Math.round(value * c.getResources().getDisplayMetrics().density); }
     private static TextView label(Context c, String text, int size) { TextView v = new TextView(c); v.setText(dev.pgrazor.PtBr.tr(text)); v.setTextSize(size); return v; }
     private static Button button(Context c, String text) { Button b = new Button(c); b.setText(dev.pgrazor.PtBr.tr(text)); b.setAllCaps(false); b.setTextSize(13); b.setPadding(0, 0, 0, 0); return b; }
@@ -248,7 +263,7 @@ public final class WorldMapDialog {
             this.activity=activity;this.ui=ui;this.map=map;this.mode=mode;this.hint=hint;this.loop=loop;
             this.add=add;this.undo=undo;this.stops=stops;this.gpx=gpx;this.clearRoute=clearRoute;this.listener=listener;this.hasWalk=hasWalk;
             clearRoute.setOnClickListener(v -> clearDraft());
-            loop.setOnCheckedChangeListener((v,on)->map.setDraftLoop(on));
+            loop.setOnCheckedChangeListener((v,on)->{map.setDraftLoop(on);refresh();});
             mode.setOnClickListener(v -> {editing=!editing;if(editing)maybeLoadPending();refresh();});
             add.setOnClickListener(v -> {if(editing)addStop();else map.worldView();});
             undo.setOnClickListener(v -> {if(editing)undo();else map.centerSelection();});
@@ -271,6 +286,11 @@ public final class WorldMapDialog {
             clearRoute.setVisibility(editing ? View.VISIBLE : View.GONE);clearRoute.setEnabled(!draft.isEmpty());
             add.setEnabled(!editing || draft.size()<LIMIT);undo.setEnabled(!editing || !draft.isEmpty());
             loop.setVisibility(editing ? View.VISIBLE : View.GONE); // route-only toggle; defaults to stopping at the last stop
+            if(editing&&!draft.isEmpty()){
+                double meters=0;for(int i=1;i<draft.size();i++)meters+=distanceMeters(draft.get(i-1)[0],draft.get(i-1)[1],draft.get(i)[0],draft.get(i)[1]);
+                if(loop.isChecked()&&draft.size()>1)meters+=distanceMeters(draft.get(draft.size()-1)[0],draft.get(draft.size()-1)[1],draft.get(0)[0],draft.get(0)[1]);
+                hint.setText(hint.getText()+String.format(Locale.forLanguageTag("pt-BR")," • %.2f km",meters));
+            }
             if(parent!=null) {
                 parent.setTitle(dev.pgrazor.PtBr.tr(editing ? "Build route" : "World map"));
                 Button action=parent.getButton(AlertDialog.BUTTON_POSITIVE);
@@ -294,7 +314,8 @@ public final class WorldMapDialog {
         void clearDraft() {draft.clear();imported=false;routeName="Route";WorldMapDialog.pendingRoute=null;refresh();}
         void showStops() {
             AlertDialog.Builder builder=new AlertDialog.Builder(ui).setTitle(dev.pgrazor.PtBr.tr("Route stops ("+draft.size()+(draft.size()>LIMIT?"":"/"+LIMIT)+")"))
-                .setNegativeButton(dev.pgrazor.PtBr.tr("Close"),null).setPositiveButton(dev.pgrazor.PtBr.tr("Clear route"),null);
+                .setNegativeButton(dev.pgrazor.PtBr.tr("Close"),null).setPositiveButton(dev.pgrazor.PtBr.tr("Clear route"),null)
+                .setNeutralButton("Inverter percurso",null);
             if(draft.isEmpty())builder.setMessage(dev.pgrazor.PtBr.tr("Select a destination on the map and tap Add stop. Add at least two stops before starting."));
             AlertDialog dialog=builder.create();dialogs.add(dialog);
             if(!draft.isEmpty()){
@@ -306,6 +327,8 @@ public final class WorldMapDialog {
             dialog.setOnShowListener(d -> {
                 Button clear=dialog.getButton(AlertDialog.BUTTON_POSITIVE);clear.setEnabled(!draft.isEmpty());
                 clear.setOnClickListener(v -> {clearDraft();dialog.dismiss();});
+                Button reverse=dialog.getButton(AlertDialog.BUTTON_NEUTRAL);reverse.setEnabled(draft.size()>1);
+                reverse.setOnClickListener(v->{Collections.reverse(draft);refresh();dialog.dismiss();});
             });
             dialog.show();
         }
@@ -385,12 +408,14 @@ public final class WorldMapDialog {
             final AlertDialog[] holder = new AlertDialog[1];
             if (snapshot.entries.isEmpty()) builder.setMessage(dev.pgrazor.PtBr.tr(snapshot.damaged ? "Saved places could not be read. You can save new destinations here." : "No saved places yet. Save the selected map destination to find it again later."));
             else {
-                String[] names = new String[snapshot.entries.size()];
+                List<SavedPlaces.Entry> ordered=new ArrayList<>(snapshot.entries);
+                ordered.sort(java.util.Comparator.comparing((SavedPlaces.Entry e)->e.category).thenComparing(e->e.name,String.CASE_INSENSITIVE_ORDER));
+                String[] names = new String[ordered.size()];
                 for (int i = 0; i < names.length; i++) {
-                    SavedPlaces.Entry entry = snapshot.entries.get(i);
-                    names[i] = String.format(Locale.US, "%s\n%.6f, %.6f", entry.name, entry.latitude, entry.longitude);
+                    SavedPlaces.Entry entry = ordered.get(i);
+                    names[i] = String.format(Locale.US, "%s • %s\n%.6f, %.6f", entry.category,entry.name, entry.latitude, entry.longitude);
                 }
-                ChoiceList.attach(holder[0] = builder.create(), names, which -> showPlace(snapshot.entries.get(which)));
+                ChoiceList.attach(holder[0] = builder.create(), names, which -> showPlace(ordered.get(which)));
             }
             if (holder[0] == null) holder[0] = builder.create();
             holder[0].setOnShowListener(d -> holder[0].getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> showSave(holder[0])));
@@ -406,11 +431,13 @@ public final class WorldMapDialog {
             name.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_CAP_SENTENCES);
             name.setFilters(new InputFilter[] {new InputFilter.LengthFilter(SavedPlaces.NAME_LIMIT)});
             form.addView(name);
+            android.widget.Spinner category=new android.widget.Spinner(ui);
+            android.widget.ArrayAdapter<String> adapter=new android.widget.ArrayAdapter<>(ui,android.R.layout.simple_spinner_item,SavedPlaces.CATEGORIES);adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);category.setAdapter(adapter);form.addView(category);
             AlertDialog dialog = new AlertDialog.Builder(ui).setTitle(dev.pgrazor.PtBr.tr("Save selected place")).setView(form)
                 .setNegativeButton(dev.pgrazor.PtBr.tr("Cancel"), null).setPositiveButton(dev.pgrazor.PtBr.tr("Save"), null).create();
             dialog.setOnShowListener(d -> dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
                 final SavedPlaces.Entry entry;
-                try { entry = new SavedPlaces.Entry(name.getText().toString(), latitude, longitude); }
+                try { entry = new SavedPlaces.Entry(name.getText().toString(), latitude, longitude,(String)category.getSelectedItem()); }
                 catch (IllegalArgumentException e) { name.setError(e.getMessage()); return; }
                 dialog.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(false);
                 storage.execute(() -> {
@@ -558,7 +585,7 @@ public final class WorldMapDialog {
         private final Runnable locationRefresh = new Runnable() {
             public void run() {
                 if(closed) return;
-                refreshTrace();
+                refreshTrace();updateSelection();
                 invalidate(); // Refresh the live player marker without requesting new tiles.
                 postDelayed(this, 250);
             }
@@ -606,7 +633,10 @@ public final class WorldMapDialog {
         void refreshPois() { poiLayer.refresh(); }
 
         private void updateSelection() {
-            selectionLabel.setText(dev.pgrazor.PtBr.tr(String.format(Locale.US, "Selected: %.6f, %.6f", latitude, longitude)));
+            String info=String.format(Locale.US,"Local selecionado: %.6f, %.6f",latitude,longitude);
+            if(Control.locationKnown())info+=String.format(Locale.forLanguageTag("pt-BR"),"\nDistância: %.0f m",distanceMeters(Control.currentLatitude(),Control.currentLongitude(),latitude,longitude));
+            if(Control.locationKnown()&&Cooldown.hasHistory()){long seconds=(Cooldown.remainingAt(latitude,longitude)+999)/1000;info+=String.format(Locale.US," • Cooldown est.: %d:%02d:%02d",seconds/3600,seconds/60%60,seconds%60);}else info+=" • Cooldown: sem estimativa";
+            if(!info.contentEquals(selectionLabel.getText()))selectionLabel.setText(info);
         }
         private double displayedTileSize() { return (zoom == 0 ? Math.max(1, Math.min(getWidth(), getHeight())) : tileSize)*zoomScale; }
         private double world() { return MapProjection.worldPixels(zoom, displayedTileSize()); }

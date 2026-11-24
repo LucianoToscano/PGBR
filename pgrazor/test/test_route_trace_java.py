@@ -175,6 +175,14 @@ class RouteTraceTest(unittest.TestCase):
         for forbidden in ["Control.", "MotionEngine", "NativeCore", "System.load", "inject"]:
             self.assertNotIn(forbidden, overlay)
 
+    def test_map_intelligent_controls(self):
+        source=(ROOT/"src/dev/pgrazor/WorldMapDialog.java").read_text(encoding="utf-8")
+        for token in ["map.zoom(1)","map.zoom(-1)","map.centerCurrentLocation()","map.poiLayer.openNearbyList()","Cooldown.remainingAt(latitude,longitude)","Collections.reverse(draft)","SavedPlaces.CATEGORIES","layout.addView(selected)"]:
+            self.assertIn(token,source)
+        poi=(ROOT/"src/dev/pgrazor/MapPoiLayer.java").read_text(encoding="utf-8")
+        self.assertIn("((layers & 8) != 0 && rocketName(point,now)!=null)",poi)
+        self.assertIn("void openNearbyList()",poi)
+
     def test_map_integration(self):
         source = (ROOT / "src/dev/pgrazor/WorldMapDialog.java").read_text(encoding="utf-8")
         for token in ["routeVisualSnapshot(traceToken)", "routeTraceEnabled", "activeTrace=Collections.emptyList()", "drawTraceSegment(canvas", "traceState.legFraction", "traceState.completedMeters", "Prévia: caminho planejado"]:
