@@ -3,7 +3,7 @@ import java.util.*;
 /** Local advice only. No action or network API. */
 public final class LocalAuditPolicy {
  private LocalAuditPolicy(){}
- public static final int SCHEMA=2;
+ public static final int SCHEMA=3;
  public enum Flag {
  SHINY("shiny"),HUNDO("IV 100%"),NUNDO("IV 0%"),LEGENDARY("lendário"),MYTHICAL("mítico"),ULTRA("Ultra Criatura"),
  LUCKY("sortudo"),FAVORITE("favorito"),SHADOW("sombrio"),PURIFIED("purificado"),COSTUME("fantasia"),EVENT("evento"),BACKGROUND("fundo especial"),
@@ -17,10 +17,10 @@ public final class LocalAuditPolicy {
  }
  public static boolean validIv(int n){return n>=0&&n<=15;}
  public static Decision preview(int a,int d,int s,int min,Set<Flag> enabled,Map<Flag,Boolean> observed){
- if(min<0||min>100||enabled==null||observed==null)throw new IllegalArgumentException("Configuração inválida");
+ if(min<0||min>101||enabled==null||observed==null)throw new IllegalArgumentException("Configuração inválida");
  List<String> reasons=new ArrayList<>(),unknown=new ArrayList<>();
  boolean iv=validIv(a)&&validIv(d)&&validIv(s);
- if(!iv)unknown.add("IV não confirmado");else if((a+d+s)*100>=min*45)reasons.add("IV acima ou igual ao limite");
+ if(!iv)unknown.add("IV não confirmado");else if(min<=100&&(a+d+s)*100>=min*45)reasons.add("IV acima ou igual ao limite");
  // Contradictions are uncertainty even if the optional protection is disabled.
  if(iv){
   if(observed.get(Flag.HUNDO)!=null&&observed.get(Flag.HUNDO)!=(a+d+s==45))unknown.add("Marcação IV 100% contradiz o IV informado");
@@ -38,6 +38,49 @@ public final class LocalAuditPolicy {
  Status status=!reasons.isEmpty()?Status.PROTECTED:!unknown.isEmpty()?Status.UNCERTAIN:Status.MATCH;
  if(status==Status.MATCH)reasons.add("Corresponde ao filtro; nenhuma transferência executada.");
  reasons.addAll(unknown);return new Decision(status,reasons);
+ }
+ /** A separately selected exact species-name list is an additional protection, not a replacement
+  * for the imported SPECIES observation or any other criterion. No fuzzy/form matching. */
+ public static Decision withSpeciesProtection(Decision base,String species,Set<String> names){
+  Objects.requireNonNull(base);Objects.requireNonNull(names);
+  if(!names.contains(speciesKey(species)))return base;
+  List<String> reasons=new ArrayList<>();
+  reasons.add("Espécie na lista personalizada de proteção");
+  if(base.status!=Status.MATCH)reasons.addAll(base.reasons);
+  return new Decision(Status.PROTECTED,reasons);
+ }
+ static String speciesKey(String name){
+  if(name==null||name.trim().isEmpty()||name.length()>80)throw new IllegalArgumentException("Nome de espécie inválido");
+  for(int i=0;i<name.length();i++)if(Character.isISOControl(name.charAt(i))||Character.getType(name.charAt(i))==Character.FORMAT)throw new IllegalArgumentException("Nome de espécie inválido");
+  return java.text.Normalizer.normalize(name.trim(),java.text.Normalizer.Form.NFC).toLowerCase(Locale.ROOT);
+ }
+ public static Set<String> protectedNames(String text){
+  if(text==null||text.length()>20000)throw new IllegalArgumentException("Lista de espécies inválida");
+  Set<String> result=new LinkedHashSet<>();
+  int count=0;
+  for(String name:text.split("[,;\\r\\n]",-1)){
+   if(name.trim().isEmpty())continue;
+   if(++count>200)throw new IllegalArgumentException("Máximo de 200 espécies");
+   result.add(speciesKey(name.trim()));
+  }
+  return Collections.unmodifiableSet(result);
+ }
+ /** Manual stock review only: first confirmed available item in the supplied order.
+  * -1 is unknown stock, 0 is unavailable, and a positive value is available.
+  * An unknown earlier choice is explicitly reported; no action or inventory read. */
+ public static final class StockAdvice {
+  public final int index;public final boolean earlierUnknown;
+  StockAdvice(int index,boolean earlierUnknown){this.index=index;this.earlierUnknown=earlierUnknown;}
+ }
+ public static StockAdvice reviewStock(int[] counts){
+  if(counts==null||counts.length<1||counts.length>5)throw new IllegalArgumentException("Lista inválida");
+  for(int count:counts)if(count< -1||count>100000)throw new IllegalArgumentException("Estoque inválido");
+  boolean unknown=false;
+  for(int i=0;i<counts.length;i++){
+   if(counts[i]>0)return new StockAdvice(i,unknown);
+   if(counts[i]<0)unknown=true;
+  }
+  return new StockAdvice(-1,unknown);
  }
  public static String reason(int code){
  switch(code){

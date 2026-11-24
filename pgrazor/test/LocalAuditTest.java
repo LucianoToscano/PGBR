@@ -68,6 +68,18 @@ public final class LocalAuditTest {
  check(LocalCollectionPreview.page(many,LocalAuditPolicy.Status.PROTECTED,0).isEmpty());
  try{LocalCollectionPreview.page(many,null,3);throw new AssertionError();}catch(IllegalArgumentException expected){}
  check(LocalCollectionPreview.parse("X;1;0;0;0;EVENT=0",99,flags).uncertainCount==1);
+ var protectedNames=LocalAuditPolicy.protectedNames("Mew; Pikachu, MEW");
+ check(protectedNames.size()==2);
+ var custom=LocalCollectionPreview.parse("mew;1;0;0;0;SPECIES=0\nMewtwo;1;0;0;0;SPECIES=0\nPikachu;1;?;0;0;",101,EnumSet.noneOf(LocalAuditPolicy.Flag.class),protectedNames);
+ check(custom.protectedCount==2&&custom.matchCount==1&&custom.rows.get(2).decision.reasons.contains("IV não confirmado"));
+ check(LocalAuditPolicy.preview(15,15,15,101,EnumSet.of(LocalAuditPolicy.Flag.HUNDO),Collections.emptyMap()).status==LocalAuditPolicy.Status.PROTECTED);
+ check(LocalAuditPolicy.preview(15,15,15,101,EnumSet.noneOf(LocalAuditPolicy.Flag.class),Collections.emptyMap()).status==LocalAuditPolicy.Status.MATCH);
+ check(LocalAuditPolicy.reviewStock(new int[]{0,2,3}).index==1);
+ check(LocalAuditPolicy.reviewStock(new int[]{-1,2}).earlierUnknown);
+ check(LocalAuditPolicy.reviewStock(new int[]{0,-1}).index==-1&&LocalAuditPolicy.reviewStock(new int[]{0,-1}).earlierUnknown);
+ check(!LocalAuditPolicy.reviewStock(new int[]{3,-1}).earlierUnknown);
+ try{LocalAuditPolicy.reviewStock(new int[]{2,-2});throw new AssertionError();}catch(IllegalArgumentException expected){}
+
  check(LocalCollectionPreview.parse("X;1;0;0;0;EVENT=0,SHINY=0\rY;1;0;0;0;EVENT=0,SHINY=0",99,flags).matchCount==2);
  try{LocalCollectionPreview.parse(String.join("\n",Collections.nCopies(501,"X;1;0;0;0;")),99,flags);throw new AssertionError();}catch(IllegalArgumentException expected){}
  var plan=LocalAuditPolicy.planEnergy(24,24,8,40,4);check(Arrays.equals(plan.sequence,new int[]{2,5,5,5})&&plan.earliest==2&&plan.latest==2);

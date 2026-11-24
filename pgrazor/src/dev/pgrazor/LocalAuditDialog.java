@@ -8,7 +8,7 @@ final class LocalAuditDialog {
  private LocalAuditDialog(){}
  static void show(Activity a){
   AlertDialog d=new AlertDialog.Builder(MapTheme.wrap(a)).setTitle("Análise local • sem ações no jogo")
-   .setItems(new String[]{"Prévia de proteção da coleção","Simular ataques carregados","Interpretar código de diagnóstico","Avaliar lista de Pokémon","Planejar energia PvP","Interpretar diagnóstico PvP"},(x,i)->{if(i==0)collection(a);else if(i==1)combat(a);else if(i==2)reason(a);else if(i==3)batch(a);else if(i==4)energyPlan(a);else battleDiagnostic(a);})
+   .setItems(new String[]{"Prévia de proteção da coleção","Simular ataques carregados","Interpretar código de diagnóstico","Avaliar lista de Pokémon","Planejar energia PvP","Interpretar diagnóstico PvP","Planejar alternativas de frutas"},(x,i)->{if(i==0)collection(a);else if(i==1)combat(a);else if(i==2)reason(a);else if(i==3)batch(a);else if(i==4)energyPlan(a);else if(i==5)battleDiagnostic(a);else berryPlan(a);})
    .setNegativeButton("Fechar",null).create();present(a,d);
  }
  static void present(Activity a,AlertDialog d){DialogLifecycle.bind(a,d,null);d.setOnShowListener(x->MapTheme.styleButtons(d));d.show();}
@@ -36,7 +36,7 @@ final class LocalAuditDialog {
  static double decimal(EditText e){return Double.parseDouble(e.getText().toString().trim().replace(',','.'));}
  static void collection(Activity a){
   LinearLayout b=body(a);text(a,b,"Informe dados verificados. Desconhecido protege por precaução. Nenhuma transferência será executada.");
-  EditText name=input(a,b,"Espécie",""),cp=input(a,b,"PC",""),atk=input(a,b,"IV ataque (0–15 ou -1 desconhecido)","-1"),def=input(a,b,"IV defesa","-1"),sta=input(a,b,"IV PS","-1"),limit=input(a,b,"IV mínimo para preservar (%)","99");
+  EditText name=input(a,b,"Espécie",""),cp=input(a,b,"PC",""),atk=input(a,b,"IV ataque (0–15 ou -1 desconhecido)","-1"),def=input(a,b,"IV defesa","-1"),sta=input(a,b,"IV PS","-1"),limit=input(a,b,"IV mínimo para preservar (0–100; 101 desativa só o limite de IV)","99");
   LocalAuditPolicy.Flag[] flags=LocalAuditPolicy.Flag.values();Spinner[] observed=new Spinner[flags.length];CheckBox[] active=new CheckBox[flags.length];
   for(int i=0;i<flags.length;i++){CheckBox c=new CheckBox(MapTheme.wrap(a));c.setText("Proteger: "+flags[i].label);c.setChecked(true);b.addView(c);active[i]=c;observed[i]=select(a,b,"Dado observado",new String[]{"Desconhecido","Sim","Não"});}
   TextView result=text(a,b,"");invalidateOnEdit(result,name,cp,atk,def,sta,limit);invalidateOnSelection(result,observed);
@@ -55,7 +55,9 @@ final class LocalAuditDialog {
  static void batch(Activity a){
   LinearLayout b=body(a);
   text(a,b,"Cole até 500 registros de uma fonte autorizada, um por linha. Formato: espécie;PC;IV ataque;IV defesa;IV PS;critérios. Use ? para desconhecido; critérios no formato EVENT=1,SHINY=0. Ausência de informação não significa falso. Não lê a coleção nem transfere Pokémon.");
-  EditText limit=input(a,b,"IV mínimo para preservar (%)","99");
+  EditText limit=input(a,b,"IV mínimo para preservar (0–100; 101 desativa só o limite de IV)","99");
+  EditText protectedNames=input(a,b,"Espécies adicionais protegidas (nomes exatos separados por vírgulas)","");
+  text(a,b,"A lista é adicional aos 20 critérios; formas diferentes precisam de nomes próprios. Não usa dados do jogo.");
   EditText records=new EditText(MapTheme.wrap(a));records.setMinLines(4);records.setMaxLines(8);records.setHint("Rattata;478;4;4;5;EVENT=1,SHINY=0");records.setFilters(new android.text.InputFilter[]{new android.text.InputFilter.LengthFilter(LocalCollectionPreview.MAX_CHARS)});b.addView(records);
   LocalAuditPolicy.Flag[] flags=LocalAuditPolicy.Flag.values();CheckBox[] active=new CheckBox[flags.length];
   for(int i=0;i<flags.length;i++){CheckBox c=new CheckBox(MapTheme.wrap(a));c.setText("Proteger "+flags[i].label+" ("+flags[i].name()+")");c.setChecked(true);b.addView(c);active[i]=c;}
@@ -83,7 +85,7 @@ final class LocalAuditDialog {
    public void onTextChanged(CharSequence s,int start,int before,int count){invalidate.run();}
    public void afterTextChanged(android.text.Editable e){}
   };
-  records.addTextChangedListener(watcher);limit.addTextChangedListener(watcher);
+  records.addTextChangedListener(watcher);limit.addTextChangedListener(watcher);protectedNames.addTextChangedListener(watcher);
   for(CheckBox c:active)c.setOnCheckedChangeListener((v,on)->invalidate.run());
   filter.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener(){
    public void onItemSelected(AdapterView<?> parent,android.view.View v,int position,long id){page[0]=0;render.run();}
@@ -93,7 +95,7 @@ final class LocalAuditDialog {
    report[0]=null;page[0]=0;
    try{
     EnumSet<LocalAuditPolicy.Flag> selected=EnumSet.noneOf(LocalAuditPolicy.Flag.class);for(int i=0;i<flags.length;i++)if(active[i].isChecked())selected.add(flags[i]);
-    report[0]=LocalCollectionPreview.parse(records.getText().toString(),integer(limit),selected);evaluatedAt[0]=new java.util.Date().toString();render.run();
+    report[0]=LocalCollectionPreview.parse(records.getText().toString(),integer(limit),selected,LocalAuditPolicy.protectedNames(protectedNames.getText().toString()));evaluatedAt[0]=new java.util.Date().toString();render.run();
    }catch(IllegalArgumentException invalid){result.setText("Confira os limites e o formato da lista.");}
   });
   action(a,b,"Página anterior",()->{if(report[0]!=null&&page[0]>0){page[0]--;render.run();}});
@@ -101,6 +103,29 @@ final class LocalAuditDialog {
   present(a,new AlertDialog.Builder(MapTheme.wrap(a)).setTitle("Prévia de coleção em lote").setView(scroll(a,b)).setPositiveButton("Fechar",null).create());
  }
  static void reason(Activity a){LinearLayout b=body(a);EditText code=input(a,b,"reasonCode","12");TextView r=text(a,b,"");action(a,b,"Interpretar",()->{try{r.setText(LocalAuditPolicy.reason(integer(code)));}catch(RuntimeException e){r.setText("Código inválido.");}});present(a,new AlertDialog.Builder(MapTheme.wrap(a)).setTitle("Motivos de proteção").setView(b).setPositiveButton("Fechar",null).create());}
+ static void berryPlan(Activity a){
+  LinearLayout b=body(a);text(a,b,"Escolha até três frutas em ordem de preferência e informe o estoque que você verificou: -1 desconhecido, 0 indisponível. O painel não lê inventário nem usa frutas.");
+  String[] names={"Nenhuma","Fruta Frambo","Fruta Anaba","Fruta Caxi","Fruta Frambo Dourada","Fruta Caxi Prateada"};
+  Spinner[] order=new Spinner[3];EditText[] count=new EditText[3];
+  for(int i=0;i<3;i++){order[i]=select(a,b,"Preferência "+(i+1),names);count[i]=input(a,b,"Estoque "+(i+1),"-1");}
+  TextView result=text(a,b,"");invalidateOnEdit(result,count);invalidateOnSelection(result,order);
+  action(a,b,"Consultar alternativas",()->{try{
+   ArrayList<Integer> selected=new ArrayList<>();ArrayList<Integer> stock=new ArrayList<>();
+   for(int i=0;i<3;i++){
+    int id=order[i].getSelectedItemPosition();
+    if(id<0)throw new IllegalArgumentException();
+    if(id==0)continue;
+    if(selected.contains(id))throw new IllegalArgumentException();
+    selected.add(id);stock.add(integer(count[i]));
+   }
+   int[] values=new int[stock.size()];for(int i=0;i<values.length;i++)values[i]=stock.get(i);
+   LocalAuditPolicy.StockAdvice advice=LocalAuditPolicy.reviewStock(values);
+   String msg=advice.index<0?"Nenhuma alternativa com estoque confirmado.":"Alternativa disponível informada: "+names[selected.get(advice.index)];
+   if(advice.earlierUnknown)msg+="\nHá estoque desconhecido em uma preferência anterior; confira antes de escolher.";
+   result.setText(msg);
+  }catch(IllegalArgumentException invalid){result.setText("Selecione frutas distintas e informe estoques válidos.");}});
+  present(a,new AlertDialog.Builder(MapTheme.wrap(a)).setTitle("Planejamento manual de frutas").setView(scroll(a,b)).setPositiveButton("Fechar",null).create());
+ }
  static void battleDiagnostic(Activity a){
   LinearLayout b=body(a);text(a,b,"Selecione o código do diagnóstico que você observou. A descrição é informativa e não executa ataques.");
   String[] codes={"actor-unknown","actor-refresh","stale-effect","unknown-effect","unverified-slots","unavailable-pair","only-one-ready","effectiveness","known-super","off"};

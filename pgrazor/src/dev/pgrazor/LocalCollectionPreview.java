@@ -26,8 +26,9 @@ public final class LocalCollectionPreview {
   if(index<0||index>=pages)throw new IllegalArgumentException("Página inválida");
   int start=index*PAGE_SIZE;return Collections.unmodifiableList(new ArrayList<>(all.subList(start,Math.min(all.size(),start+PAGE_SIZE))));
  }
- public static Report parse(String text,int min,Set<LocalAuditPolicy.Flag> enabled){
-  if(text==null||text.length()>MAX_CHARS||min<0||min>100||enabled==null)throw new IllegalArgumentException("Dados acima do limite ou configuração inválida.");
+ public static Report parse(String text,int min,Set<LocalAuditPolicy.Flag> enabled){return parse(text,min,enabled,Collections.emptySet());}
+ public static Report parse(String text,int min,Set<LocalAuditPolicy.Flag> enabled,Set<String> names){
+  if(text==null||text.length()>MAX_CHARS||min<0||min>101||enabled==null||names==null)throw new IllegalArgumentException("Dados acima do limite ou configuração inválida.");
   List<Row> rows=new ArrayList<>();List<Integer> bad=new ArrayList<>();
   String[] lines=text.split("\\r\\n|\\n|\\r",-1);int count=0;
   for(int i=0;i<lines.length;i++){
@@ -35,7 +36,7 @@ public final class LocalCollectionPreview {
    try{
     String[] fields=line.split(";",-1);if(fields.length!=6)throw new IllegalArgumentException();
     String name=fields[0].trim();if(name.isEmpty()||name.length()>80)throw new IllegalArgumentException();
-    for(int k=0;k<name.length();k++)if(Character.isISOControl(name.charAt(k)))throw new IllegalArgumentException();
+    LocalAuditPolicy.speciesKey(name);
     int cp=Integer.parseInt(fields[1].trim()),a=iv(fields[2]),d=iv(fields[3]),s=iv(fields[4]);if(cp<0||cp>100000)throw new IllegalArgumentException();
     EnumMap<LocalAuditPolicy.Flag,Boolean> observed=new EnumMap<>(LocalAuditPolicy.Flag.class);
     if(!fields[5].trim().isEmpty())for(String fact:fields[5].split(",",-1)){
@@ -44,7 +45,7 @@ public final class LocalCollectionPreview {
       String val=parts[1].trim();if(observed.containsKey(f)||(!val.equals("1")&&!val.equals("0")&&!val.equals("?")))throw new IllegalArgumentException();
       observed.put(f,val.equals("?")?null:val.equals("1"));
     }
-    rows.add(new Row(i+1,name,cp,a,d,s,LocalAuditPolicy.preview(a,d,s,min,enabled,observed)));
+    rows.add(new Row(i+1,name,cp,a,d,s,LocalAuditPolicy.withSpeciesProtection(LocalAuditPolicy.preview(a,d,s,min,enabled,observed),name,names)));
    }catch(IllegalArgumentException invalid){bad.add(i+1);}
   }
   return new Report(rows,bad);
