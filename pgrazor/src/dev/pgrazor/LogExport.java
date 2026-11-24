@@ -57,8 +57,12 @@ public final class LogExport {
         ByteArrayOutputStream raw=new ByteArrayOutputStream();byte[] buffer=new byte[8192];int n;
         while((n=input.read(buffer))!=-1){if(raw.size()+n>2097152)throw new IOException("Log acima do limite de compartilhamento.");raw.write(buffer,0,n);}
         StringBuilder out=new StringBuilder("PGBR — diagnóstico filtrado; mensagens livres e identificadores omitidos.\n");
-        int omitted=0;
-        for(String line:new String(raw.toByteArray(),StandardCharsets.UTF_8).split("\\r?\\n")){
+        int omitted=0,records=0;
+        // Match the local summary's limits, including header, footer and final newline.
+        // Read one line at a time instead of allocating an array for millions of empty lines.
+        try(BufferedReader reader=new BufferedReader(new StringReader(new String(raw.toByteArray(),StandardCharsets.UTF_8)))) {
+        for(String line;(line=reader.readLine())!=null;){
+            if(line.length()>4200 || records>=LocalDiagnosticSummary.MAX_LINES-3){omitted++;continue;}
             java.util.regex.Matcher m=LOG_LINE.matcher(line);
             if(!m.matches()||!SAFE_KINDS.contains(m.group(2))){omitted++;continue;}
             JSONObject safe=new JSONObject();
@@ -77,7 +81,10 @@ public final class LogExport {
                 }
                 }
             }catch(JSONException ignored){}
-            out.append(m.group(1)).append(" [").append(m.group(2)).append("] ").append(safe.toString()).append('\n');
+            String row=m.group(1)+" ["+m.group(2)+"] "+safe.toString()+"\n";
+            if(out.length()+row.length()+40>LocalDiagnosticSummary.MAX_CHARS){omitted++;continue;}
+            out.append(row);records++;
+        }
         }
         out.append("Registros omitidos: ").append(omitted).append('\n');
         return out.toString().getBytes(StandardCharsets.UTF_8);
@@ -125,11 +132,15 @@ public final class LogExport {
             MessageDigest checked=MessageDigest.getInstance("SHA-256");
             long count=0,verified=0;
             Control.event("export-start","document-provider");
-            try(InputStream in=new FileInputStream(file); OutputStream out=context.getContentResolver().openOutputStream(uri,"wt")) {
+            // Validate and filter before opening a potentially truncating document-provider stream.
+            byte[] filtered=null;
+            if(includeSettings)try(InputStream original=new FileInputStream(file)){filtered=shareLog(original);}
+            try(InputStream in=includeSettings?new ByteArrayInputStream(filtered):new FileInputStream(file);
+                OutputStream out=context.getContentResolver().openOutputStream(uri,"wt")) {
                 if(out==null) throw new IOException("Document provider returned no output stream");
                 // Digest the actual archive bytes, including the ZIP directory, before read-back verification.
                 CountingOutputStream counted=new CountingOutputStream(new DigestOutputStream(out,written));
-                if(includeSettings)bundle(new ByteArrayInputStream(shareLog(in)),"diagnostico.txt",settings,counted);
+                if(includeSettings)bundle(in,"diagnostico.txt",settings,counted);
                 else {
                     byte[] buffer=new byte[8192]; int n;
                     while((n=in.read(buffer))!=-1)counted.write(buffer,0,n);

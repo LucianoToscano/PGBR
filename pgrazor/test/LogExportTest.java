@@ -69,6 +69,19 @@ public final class LogExportTest {
             +"2026-11-24T01:10:02.000-03:00 [heartbeat-expired] {}\nRegistros omitidos: 0\n";
         LocalDiagnosticSummary.Summary observed=LocalDiagnosticSummary.parse(context);
         if(observed.other!=3||observed.observedEvents.get("vgp")!=1||observed.observedEvents.get("panel-closed")!=1||observed.observedEvents.get("heartbeat-expired")!=1||observed.describe().contains("secret-example"))throw new AssertionError("Context event counts and privacy");
+        // Dense valid input can exceed the summary's line limit even below the byte limit.
+        String event="2026-11-24T01:10:00.000Z [vgp] {}\n";
+        int eventCount=LocalDiagnosticSummary.MAX_LINES+10;
+        String dense=new String(LogExport.shareLog(new ByteArrayInputStream(event.repeat(eventCount).getBytes(StandardCharsets.UTF_8))),StandardCharsets.UTF_8);
+        LocalDiagnosticSummary.Summary bounded=LocalDiagnosticSummary.parse(dense);
+        if(bounded.records!=LocalDiagnosticSummary.MAX_LINES-3||bounded.records+bounded.omitted!=eventCount)
+            throw new AssertionError("Export and summary line limits disagree");
+        String noise=new String(LogExport.shareLog(new ByteArrayInputStream("\n".repeat(100000).getBytes(StandardCharsets.UTF_8))),StandardCharsets.UTF_8);
+        LocalDiagnosticSummary.Summary noiseSummary=LocalDiagnosticSummary.parse(noise);
+        if(noiseSummary.records!=0||noiseSummary.omitted!=100000)throw new AssertionError("Empty line accounting");
+        String longLine="2026-11-24T01:10:00.000Z [vgp] {\"ignored\":\""+ "x".repeat(5000)+"\"}\n";
+        LocalDiagnosticSummary.Summary oversized=LocalDiagnosticSummary.parse(new String(LogExport.shareLog(new ByteArrayInputStream(longLine.getBytes(StandardCharsets.UTF_8))),StandardCharsets.UTF_8));
+        if(oversized.records!=0||oversized.omitted!=1)throw new AssertionError("Oversized row not omitted");
         StringBuilder many=new StringBuilder(LocalDiagnosticSummary.HEADER).append('\n');
         for(int i=1;i<=201;i++)many.append("2026-11-24T01:10:00.000-03:00 [item-icon-error] {\"itemId\":").append(i).append("}\n");
         many.append("Registros omitidos: 0\n");
