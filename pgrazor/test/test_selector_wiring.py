@@ -10,7 +10,7 @@ class PokemonSelectorWiringTest(unittest.TestCase):
         dialog=(ROOT/"src/dev/pgrazor/PokemonSelectorDialog.java").read_text(encoding="utf-8")
         provider=(ROOT/"src/dev/pgrazor/IFlowGoFeedClient.java").read_text(encoding="utf-8")
         policy=(ROOT/"src/dev/pgrazor/PokemonSelectorPolicy.java").read_text(encoding="utf-8")
-        self.assertIn('"Selector Pokémon", true',menu)
+        self.assertIn('"Seletor de Pokémon", true',menu)
         self.assertIn('PokemonSelectorDialog.show(activity)',menu)
         self.assertIn('8192',menu)
         self.assertIn('listener::onFeeds',menu,"Advanced legacy feed must remain available")

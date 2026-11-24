@@ -1722,3 +1722,5 @@ continuam fora do conjunto JVM por depender de `LiveFeedClient` (Android-bound),
 ## 24/11/2026 — Auditoria local não destrutiva (branch independente)
 - Base #162 ae86a4035791b3fd2c109025611fc119c2e673ac; #160 ancestral. Branch audit/lt045-diagnostico-local-20261124. Mestre/especificação Drive e inventário geral consultados; ZIP e MP4 não encontrados. Reason 12 = evento; origem count>0 ou identificador limitado não vazio, fantasia/fundo separados. IV compara soma*100 >= limite*45. Não comprova falso positivo individual.
 - LocalAuditPolicy e GpxPreviewGeometry: modelos puros, 20 proteções tri-state, códigos PT-BR, dano estimado/energia e tipagem dupla/STAB, geometria GPX com distância e antimeridiano. Testes JVM sintéticos; sem transferência, ação no jogo, alteração nativa ou servidor. UI e CI a confirmar. Sem APK, merge, release.
+
+- Interface candidata: novo painel em Diagnósticos, dados manuais e nenhum comando de jogo; prévia esquemática GPX no menu existente; correção Seletor de Pokémon e texto da interrupção de rota sem alterar geração/controle. Android e CI ainda não verificados. Preserva todos os códigos de decisão e proteção existentes.

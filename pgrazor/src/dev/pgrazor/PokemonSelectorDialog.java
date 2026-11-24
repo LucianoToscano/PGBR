@@ -195,7 +195,7 @@ public final class PokemonSelectorDialog {
             attribution.setPadding(0,dp(8),0,0);
             root.addView(attribution);
             dialog = new AlertDialog.Builder(context)
-                    .setTitle("PGBR · Selector Pokémon")
+                    .setTitle("PGBR · Seletor de Pokémon")
                     .setView(root)
                     .setNegativeButton("Fechar", null)
                     .setNeutralButton("Filtros avançados", (d,w)->LiveFeedDialog.showPokemonSearch(activity))

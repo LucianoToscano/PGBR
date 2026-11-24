@@ -1423,6 +1423,7 @@ final class SettingsPanel {
 
         // ----- Diagnostics (status plumbing kept out of everyday settings) -----
         LinearLayout diag = section(page, "Diagnostics", false);
+        launch(diag, "Análise local de filtros e ataques", () -> LocalAuditDialog.show(activity));
         state = caption(diag, Control.connection);
         for(TextView status:new TextView[]{steeringStatus,spawnStatus,quickSummaryStatus,transferStatus,quickSpinStatus,buddyStatus,giftStatus,itemStatus,rocketStatus,battleStatus,quickBallStatus}){
             ((ViewGroup)status.getParent()).removeView(status);diag.addView(status);
