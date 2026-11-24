@@ -76,6 +76,9 @@ public final class WorldMapDialog {
         layout.setOrientation(LinearLayout.VERTICAL);
         int pad = dp(activity, 6);
         layout.setPadding(pad, pad, pad, pad);
+        MapContentScroll scroll = new MapContentScroll(ui, layout);
+        scroll.setFillViewport(true);
+        scroll.addView(layout,new android.widget.FrameLayout.LayoutParams(-1,-2));
         TextView hint = label(ui, "Blue dot: you. Red pin: destination. Drag to pan; pinch to zoom.", 13);
         hint.setVisibility(View.GONE);
         TextView selected = label(ui, "", 15);
@@ -85,7 +88,8 @@ public final class WorldMapDialog {
         selectionRow.setGravity(Gravity.CENTER_VERTICAL);
         // Selection panel is below the map, next to destination actions.
         Button saved=button(ui,"Locais");
-        selectionRow.addView(saved,new LinearLayout.LayoutParams(dp(activity,68),dp(activity,48)));
+        saved.setMinHeight(dp(activity,48));
+        selectionRow.addView(saved,new LinearLayout.LayoutParams(dp(activity,68),-2));
         Button routeMode = button(ui, "Voltar ao mapa");
         routeMode.setVisibility(View.GONE);
         // Internal GPX action, invoked by the single Locais library; not a second navigation button.
@@ -105,10 +109,12 @@ public final class WorldMapDialog {
 
         Button search = button(ui, "Buscar local ou coordenadas");
         search.setContentDescription("Buscar lugares, endereços ou coordenadas");
-        selectionRow.addView(search, 0, new LinearLayout.LayoutParams(0, dp(activity, 48), 1));
+        search.setMinHeight(dp(activity,48));
+        selectionRow.addView(search, 0, new LinearLayout.LayoutParams(0, -2, 1));
         Button filters = button(ui, "Filtros");
         filters.setContentDescription("Mostrar filtros, camadas e aparência do mapa");
-        selectionRow.addView(filters,new LinearLayout.LayoutParams(dp(activity,68),dp(activity,48)));
+        filters.setMinHeight(dp(activity,48));
+        selectionRow.addView(filters,new LinearLayout.LayoutParams(dp(activity,68),-2));
         LinearLayout filterPanel=new LinearLayout(ui);
         filterPanel.setOrientation(LinearLayout.VERTICAL);
         filterPanel.setVisibility(View.GONE);
@@ -147,7 +153,8 @@ public final class WorldMapDialog {
         Button traceOptions=button(ui,"Aparência");
         traceOptions.setContentDescription("Configurar aparência do percurso");
         traceOptions.setEnabled(trace.isChecked());
-        traceTools.addView(traceOptions,new LinearLayout.LayoutParams(dp(activity,100),dp(activity,48)));
+        traceOptions.setMinHeight(dp(activity,48));
+        traceTools.addView(traceOptions,new LinearLayout.LayoutParams(dp(activity,100),-2));
         filterPanel.addView(traceTools);
         filterPanel.addView(traceSummary);
         map.setTraceStyle(RouteTraceSettings.read(preferences));
@@ -181,13 +188,15 @@ public final class WorldMapDialog {
         for(Button b:new Button[]{plus,minus,locate,radar})floating.addView(b,new LinearLayout.LayoutParams(dp(activity,48),dp(activity,48)));
         android.widget.FrameLayout.LayoutParams floatParams=new android.widget.FrameLayout.LayoutParams(-2,-2,Gravity.TOP|Gravity.RIGHT);floatParams.setMargins(0,dp(activity,4),dp(activity,4),0);
         mapFrame.addView(floating,floatParams);
-        android.widget.FrameLayout.LayoutParams attributionParams=new android.widget.FrameLayout.LayoutParams(-2,-2,Gravity.BOTTOM|Gravity.RIGHT);
-        mapFrame.addView(attribution,attributionParams);
+        // Keep attribution and action buttons in a measured footer, not overlapping overlays.
+        LinearLayout footer=new LinearLayout(ui);footer.setOrientation(LinearLayout.VERTICAL);
+        layout.floating=floating;layout.footer=footer;
         layout.map = mapFrame;
         layout.addView(mapFrame,new LinearLayout.LayoutParams(-1,dp(activity,240)));
         LinearLayout walkControls=new LinearLayout(ui);Button pauseWalk=button(ui,"Pausar"),stopWalk=button(ui,"Parar percurso");
-        walkControls.addView(pauseWalk,new LinearLayout.LayoutParams(0,dp(activity,48),1));
-        walkControls.addView(stopWalk,new LinearLayout.LayoutParams(0,dp(activity,48),1));layout.addView(walkControls);
+        pauseWalk.setMinHeight(dp(activity,48));stopWalk.setMinHeight(dp(activity,48));
+        walkControls.addView(pauseWalk,new LinearLayout.LayoutParams(0,-2,1));
+        walkControls.addView(stopWalk,new LinearLayout.LayoutParams(0,-2,1));layout.addView(walkControls);
         map.setActiveWalkControls(walkControls,pauseWalk,stopWalk);
         pauseWalk.setOnClickListener(v->{long token=map.displayedWalkToken;MotionEngine.RouteVisualSnapshot state=Control.engine.routeVisualSnapshot(token);
             if(state==null||state.token!=token||Control.gameRoutesRunning())return;
@@ -199,12 +208,14 @@ public final class WorldMapDialog {
         loop.setContentDescription(dev.pgrazor.PtBr.tr("Repeat the route from the first stop after the last")); loop.setVisibility(View.GONE);
         LinearLayout routeTools = new LinearLayout(ui);
         routeTools.setGravity(Gravity.CENTER_VERTICAL);
-        routeTools.addView(routeMode,new LinearLayout.LayoutParams(0,dp(activity,48),1));
-        routeTools.addView(loop,new LinearLayout.LayoutParams(0,dp(activity,48),1));
+        routeMode.setMinHeight(dp(activity,48));loop.setMinHeight(dp(activity,48));
+        routeTools.addView(routeMode,new LinearLayout.LayoutParams(0,-2,1));
+        routeTools.addView(loop,new LinearLayout.LayoutParams(0,-2,1));
         Button clearRoute=button(ui,"Clear route");
         clearRoute.setContentDescription(dev.pgrazor.PtBr.tr("Clear all stops from the route draft"));
         clearRoute.setVisibility(View.GONE);
-        routeTools.addView(clearRoute,new LinearLayout.LayoutParams(dp(activity,112),dp(activity,48)));
+        clearRoute.setMinHeight(dp(activity,48));
+        routeTools.addView(clearRoute,new LinearLayout.LayoutParams(dp(activity,112),-2));
         layout.addView(routeTools);
         // Copy without moving the map or changing the selected destination.
         LinearLayout copyRow = new LinearLayout(ui);
@@ -215,20 +226,22 @@ public final class WorldMapDialog {
             if(Control.locationKnown())CoordinateClipboard.copy(activity, Control.currentLatitude(), Control.currentLongitude(), "Your location copied");
         });
         pin.setOnClickListener(v -> CoordinateClipboard.copy(activity, map.latitude, map.longitude, "Pin location copied"));
-        copyRow.addView(current, new LinearLayout.LayoutParams(0, dp(activity, 48), 1));
-        copyRow.addView(pin, new LinearLayout.LayoutParams(0, dp(activity, 48), 1));
+        current.setMinHeight(dp(activity,48));pin.setMinHeight(dp(activity,48));
+        copyRow.addView(current, new LinearLayout.LayoutParams(0, -2, 1));
+        copyRow.addView(pin, new LinearLayout.LayoutParams(0, -2, 1));
         // Coordinates and copy actions are the last block inside the map content.
         LinearLayout actions = new LinearLayout(ui);
         Button globe = button(ui, "World"), center = button(ui, "Selected"), retry = button(ui, "Retry");
         // The single Rotas tab owns GPX actions in both browsing and editing modes.
         Button gpx = route == null ? null : savedRoutes;
         Button[] row = new Button[] {globe, center, retry};
-        for (Button b : row) actions.addView(b, new LinearLayout.LayoutParams(0, dp(activity, 48), 1));
+        for (Button b : row) { b.setMinHeight(dp(activity,48)); actions.addView(b, new LinearLayout.LayoutParams(0, -2, 1)); }
         globe.setOnClickListener(v -> map.worldView());
         center.setOnClickListener(v -> map.centerSelection()); retry.setOnClickListener(v -> map.retry());
-        android.widget.FrameLayout.LayoutParams actionParams=new android.widget.FrameLayout.LayoutParams(-1,dp(activity,44),Gravity.BOTTOM);
-        actionParams.setMargins(dp(activity,2),0,dp(activity,2),dp(activity,20));
-        mapFrame.addView(actions,actionParams);
+        footer.addView(actions,new LinearLayout.LayoutParams(-1,-2));
+        footer.addView(attribution,new LinearLayout.LayoutParams(-1,-2));
+        android.widget.FrameLayout.LayoutParams footerParams=new android.widget.FrameLayout.LayoutParams(-1,-2,Gravity.BOTTOM);
+        mapFrame.addView(footer,footerParams);
         layout.addView(status);
         layout.addView(selected);
         layout.addView(copyRow);
@@ -237,7 +250,7 @@ public final class WorldMapDialog {
         places.routeUi=routes;
         saved.setOnClickListener(v->places.openLocations());
         if(routes!=null)routes.reopen=()->WorldMapDialog.show(activity,Control.engine.latitude,Control.engine.longitude,listener,walk,route);
-        AlertDialog.Builder builder = new AlertDialog.Builder(ui).setTitle(dev.pgrazor.PtBr.tr("World map")).setView(layout)
+        AlertDialog.Builder builder = new AlertDialog.Builder(ui).setTitle(dev.pgrazor.PtBr.tr("World map")).setView(scroll)
             .setNegativeButton(dev.pgrazor.PtBr.tr("Cancel"), null).setPositiveButton(dev.pgrazor.PtBr.tr("Teleport"), null);
         if (walk != null) builder.setNeutralButton(dev.pgrazor.PtBr.tr("Walk here"), null);
         AlertDialog dialog = builder.create();
@@ -254,7 +267,7 @@ public final class WorldMapDialog {
         });
         DialogLifecycle.bind(activity, dialog, () -> { if(hotspotsDialog[0]!=null)hotspotsDialog[0].dismiss(); if(cooldownDialog[0]!=null)cooldownDialog[0].dismiss(); if(searchDialog[0]!=null)searchDialog[0].dismiss(); if(routes!=null)routes.close(); places.close(); map.close(); });
         dialog.setOnShowListener(d -> {
-            MapTheme.fullScreen(dialog); MapTheme.style(layout); MapTheme.styleButtons(dialog);
+            MapTheme.fullScreen(dialog); MapTheme.style(scroll); MapTheme.styleButtons(dialog);
             if(routes!=null)routes.attach(dialog);
             dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
                 if(routes!=null && routes.editing) { routes.start(); return; }
@@ -676,11 +689,24 @@ public final class WorldMapDialog {
     }
 
     /** Give the map the space left after controls, rather than guessing from physical screen orientation. */
+    /** Scroll only when chrome cannot fit; MapView already disallows parent interception during gestures. */
+    private static final class MapContentScroll extends android.widget.ScrollView {
+        final ResponsiveLayout content;
+        MapContentScroll(Context context,ResponsiveLayout content){super(context);this.content=content;}
+        @Override protected void onMeasure(int widthSpec,int heightSpec){
+            content.viewportHeight=MeasureSpec.getMode(heightSpec)==MeasureSpec.UNSPECIFIED
+                ? -1 : Math.max(0,MeasureSpec.getSize(heightSpec)-getPaddingTop()-getPaddingBottom());
+            super.onMeasure(widthSpec,heightSpec);
+        }
+    }
     private static final class ResponsiveLayout extends LinearLayout {
-        View map;
-        final int maximumMapHeight;
-        ResponsiveLayout(Activity activity) { super(activity); maximumMapHeight = dp(activity, 640); }
-        protected void onMeasure(int widthSpec, int heightSpec) {
+        View map,floating,footer;
+        int viewportHeight=-1;
+        final int minimumMapHeight,maximumMapHeight,overlayGap;
+        ResponsiveLayout(Activity activity) {
+            super(activity);minimumMapHeight=dp(activity,280);maximumMapHeight=dp(activity,640);overlayGap=dp(activity,28);
+        }
+        @Override protected void onMeasure(int widthSpec, int heightSpec) {
             if (map != null) {
                 int reserved = getPaddingTop() + getPaddingBottom();
                 for (int i = 0; i < getChildCount(); i++) {
@@ -690,14 +716,14 @@ public final class WorldMapDialog {
                     LinearLayout.LayoutParams params = (LinearLayout.LayoutParams)child.getLayoutParams();
                     reserved += child.getMeasuredHeight() + params.topMargin + params.bottomMargin;
                 }
-                // Fill the space left by the controls so the actions stay visible; never a fixed height that pushes them off screen.
-                int mode = MeasureSpec.getMode(heightSpec);
-                int available;
-                if (mode == MeasureSpec.UNSPECIFIED) available = maximumMapHeight;
-                else {
-                    available = Math.max(0, MeasureSpec.getSize(heightSpec) - reserved);
-
-                }
+                int width=MeasureSpec.getMode(widthSpec)==MeasureSpec.UNSPECIFIED
+                    ? getResources().getDisplayMetrics().widthPixels : MeasureSpec.getSize(widthSpec);
+                width=Math.max(0,width-getPaddingLeft()-getPaddingRight());
+                int unbounded=MeasureSpec.makeMeasureSpec(0,MeasureSpec.UNSPECIFIED);
+                floating.measure(MeasureSpec.makeMeasureSpec(width,MeasureSpec.AT_MOST),unbounded);
+                footer.measure(MeasureSpec.makeMeasureSpec(width,MeasureSpec.EXACTLY),unbounded);
+                int available=MapLayoutPolicy.height(viewportHeight,reserved,minimumMapHeight,maximumMapHeight,
+                    floating.getMeasuredHeight(),footer.getMeasuredHeight(),overlayGap);
                 map.getLayoutParams().height = available;
             }
             super.onMeasure(widthSpec, heightSpec);
