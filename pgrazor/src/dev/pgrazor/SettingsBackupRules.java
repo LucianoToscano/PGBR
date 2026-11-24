@@ -137,6 +137,16 @@ public final class SettingsBackupRules {
     }
     private static void places(String value)throws JSONException{
         require(value.length()<=65536,"Too many favorites");JSONArray list=new JSONArray(value);require(list.length()<=200,"Too many favorites");Set<String> ids=new HashSet<>(),names=new HashSet<>();
-        for(int i=0;i<list.length();i++){JSONObject p=list.getJSONObject(i);String id=p.getString("id"),name=p.getString("name");require(!id.isEmpty()&&id.length()<=64&&ids.add(id),"Invalid favorite ID");require(!name.trim().isEmpty()&&name.length()<=100&&names.add(name.trim().toLowerCase(Locale.ROOT)),"Invalid favorite name");number(p.get("latitude"),-90,90,"favorite latitude");number(p.get("longitude"),-180,180,"favorite longitude");}
+        for(int i=0;i<list.length();i++){
+            JSONObject p=list.getJSONObject(i);
+            Object rawId=p.get("id"),rawName=p.get("name");
+            require(rawId instanceof String&&rawName instanceof String,"Invalid favorite ID or name type");
+            String id=(String)rawId,name=((String)rawName).trim();
+            require(!id.isEmpty()&&id.length()<=64&&ids.add(id),"Invalid favorite ID");
+            require(!name.isEmpty()&&name.length()<=100&&names.add(name.toLowerCase(Locale.ROOT)),"Invalid favorite name");
+            for(int j=0;j<name.length();j++)require(!Character.isISOControl(name.charAt(j)),"Invalid favorite name character");
+            number(p.get("latitude"),-90,90,"favorite latitude");
+            number(p.get("longitude"),-180,180,"favorite longitude");
+        }
     }
 }
