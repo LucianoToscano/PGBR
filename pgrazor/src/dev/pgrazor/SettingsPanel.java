@@ -34,6 +34,8 @@ final class SettingsPanel {
         /** Open the coordinates & speed editor (tied to engine/joystick state Pad owns). */
         void editLocation();
         default void resetOverlayPositions(){}
+        default void calibrateVisualRoute(){}
+        default void disableVisualRoute(){}
     }
 
     private final Activity activity;
@@ -582,6 +584,8 @@ final class SettingsPanel {
                 }).setNegativeButton("Cancelar",null).show();
         });
         launch(loc, "World map", host::openMap);
+        launch(loc, "Calibrar Rota Visual no mapa (experimental)", host::calibrateVisualRoute);
+        launch(loc, "Desativar sobreposição da Rota Visual", host::disableVisualRoute);
         joystickSwitch = switchRow(loc, "Show joystick"); joystickSwitch.setChecked(Control.joystickVisible());
         joystickSwitch.setOnCheckedChangeListener((v,checked) -> { if(checked==Control.joystickVisible())return; host.setJoystickVisible(checked); });
         LinearLayout joystickArt=section(loc,"Aparência do joystick",false);
