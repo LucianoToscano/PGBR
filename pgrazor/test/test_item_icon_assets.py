@@ -55,8 +55,8 @@ class ItemIconAssetsTest(unittest.TestCase):
         self.assertEqual(data['counts']['total'],len(EXPECTED))
         self.assertEqual(data['follow_up']['named_balls_same_size'],3)
         self.assertEqual(data['follow_up']['potion_revive_named_different_size'],6)
-        self.assertEqual(data['follow_up']['generic_egg_unresolved'],1)
-        expected_counts={'byte_identical':30,'visual_match_distinct_bytes':6,'unresolved_generic_egg':1}
+        self.assertEqual(data['follow_up']['generic_egg_unresolved'],0)
+        expected_counts={'byte_identical':30,'visual_match_distinct_bytes':7,'unresolved_generic_egg':0}
         for status,count in expected_counts.items():
             self.assertEqual(sum(r['comparison']['status']==status for r in data['items']),count)
         self.assertEqual(data['follow_up']['binary_audit']['assets_replaced'],0)
@@ -66,7 +66,8 @@ class ItemIconAssetsTest(unittest.TestCase):
         self.assertIn('i<10;i++',badge)
         self.assertIn('fill(0xfff4c64f)',badge)
         by_id={row['id']:row for row in data['items']}
-        self.assertEqual(by_id[301]['drive_named_reference']['status'],'ambiguous_generic_egg')
+        self.assertEqual(by_id[301]['comparison']['reference_filename'],'lucky-egg.png')
+        self.assertIn('drawLuckyEgg(c)',badge)
         self.assertTrue(all(by_id[i]['drive_named_reference']['same_size'] for i in (1,2,3)))
         self.assertTrue(all(not by_id[i]['drive_named_reference']['same_size'] for i in (101,102,103,104,201,202)))
         for row in data['items']:

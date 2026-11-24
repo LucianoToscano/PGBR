@@ -248,8 +248,12 @@
         ]
       },
       "comparison": {
-        "status": "unresolved_generic_egg",
-        "visual_observation": "current PNG shows a blue speckled egg; no verified equivalent for generic item ID 301"
+        "status": "visual_match_distinct_bytes",
+        "reference_filename": "lucky-egg.png",
+        "reference_bytes": 37243,
+        "named_bytes_equal": false,
+        "visual_observation": "Ovo da Sorte azul brilhante; referência histórica ITEM_LUCKY_EGG=301; não é ovo de incubação",
+        "id_reference": "https://github.com/Armax/Pokemon-GO-node-api/blob/master/items.json"
       }
     },
     {
@@ -743,17 +747,20 @@
     {
       "filename": "max-particles.png",
       "bytes": 114424,
-      "status": "reference_only_no_verified_id_or_rights"
+      "status": "historical_enum_reference_only_not_current_semantics_or_rights_verified",
+      "candidate_id": 1506
     },
     {
       "filename": "link-holder.png",
       "bytes": 11847,
-      "status": "reference_only_no_verified_id_or_rights"
+      "status": "historical_enum_reference_only_not_current_semantics_or_rights_verified",
+      "candidate_id": 1411
     },
     {
       "filename": "link-charges.png",
       "bytes": 17503,
-      "status": "reference_only_no_verified_id_or_rights"
+      "status": "historical_enum_reference_only_not_current_semantics_or_rights_verified",
+      "candidate_id": 1410
     },
     {
       "filename": "explorer-gadget.png",
@@ -763,17 +770,20 @@
     {
       "filename": "silver-bottle-cap.png",
       "bytes": 16333,
-      "status": "reference_only_no_verified_id_or_rights"
+      "status": "historical_enum_reference_only_not_current_semantics_or_rights_verified",
+      "candidate_id": 304
     },
     {
       "filename": "max-particle-pack.png",
       "bytes": 55700,
-      "status": "reference_only_no_verified_id_or_rights"
+      "status": "historical_enum_reference_only_not_current_semantics_or_rights_verified",
+      "candidate_id": 1507
     },
     {
       "filename": "gold-bottle-cap.png",
       "bytes": 54034,
-      "status": "reference_only_no_verified_id_or_rights"
+      "status": "historical_enum_reference_only_not_current_semantics_or_rights_verified",
+      "candidate_id": 305
     },
     {
       "filename": "safari-ball.png",
@@ -783,31 +793,35 @@
     {
       "filename": "premier-ball.png",
       "bytes": 34504,
-      "status": "reference_only_no_verified_id_or_rights"
+      "status": "historical_enum_reference_only_not_current_semantics_or_rights_verified",
+      "candidate_id": 5
     },
     {
       "filename": "beast-ball.png",
       "bytes": 56164,
-      "status": "reference_only_no_verified_id_or_rights"
+      "status": "historical_enum_reference_only_not_current_semantics_or_rights_verified",
+      "candidate_id": 6
     },
     {
       "filename": "master-ball.png",
       "bytes": 31086,
-      "status": "reference_only_no_verified_id_or_rights"
+      "status": "historical_enum_reference_only_not_current_semantics_or_rights_verified",
+      "candidate_id": 4
     }
   ],
   "follow_up": {
     "named_balls_same_size": 3,
     "potion_revive_named_different_size": 6,
-    "generic_egg_unresolved": 1,
-    "byte_comparison": "completed for 36 of 37 existing IDs using complete binary responses from GitHub and Drive; 30 identical, six distinct binaries visually matching",
-    "action": "retain existing PNGs; correct only fallback drawing palette and Max Revive shape; do not infer new IDs or redistribution permissions",
+    "generic_egg_unresolved": 0,
+    "byte_comparison": "37 existing IDs compared using complete binary responses; 30 identical, seven distinct binaries visually matching",
+    "action": "Preserve current PNGs; Lucky Egg identified; new assets require provenance and redistribution rights.",
     "binary_audit": {
-      "baseline": "e1515315e290b23924adc0b2fc383b343b903ac7",
+      "baseline": "c8b43c71e99b082f0e6b619cf5c4868357458d0c",
       "byte_identical": 30,
-      "visual_match_distinct_bytes": 6,
-      "unresolved": 1,
+      "visual_match_distinct_bytes": 7,
+      "unresolved": 0,
       "assets_replaced": 0
-    }
+    },
+    "enum_reference": "https://gist.github.com/notmarek/b755025ba26dfe2b73ffd6a641a73feb"
   }
 }

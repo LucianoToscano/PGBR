@@ -96,7 +96,7 @@ final class ItemBadge extends View {
         }else if(itemId==201||itemId==202){
             drawRevive(c);
         }else if(itemId==301){
-            drawEgg(c);
+            drawLuckyEgg(c);
         }else{
             // Do not draw a wrong Potion/Revive/Egg for a completely different
             // unknown item merely because its numeric ID falls in that range.
@@ -140,10 +140,12 @@ final class ItemBadge extends View {
         gem.close();c.drawPath(gem,paint);
         stroke(0xff9b7529,1.1f);c.drawPath(gem,paint);
     }
-    private void drawEgg(Canvas c){
-        fill(0xfff4e8a6);c.drawOval(-10,-14,10,14,paint);
-        fill(0xffffffff);c.drawCircle(-4,-4,3,paint);c.drawCircle(5,5,2,paint);
-        stroke(0xffb8ac6a,1.4f);c.drawOval(-10,-14,10,14,paint);
+    private void drawLuckyEgg(Canvas c){
+        // ID 301 is a Lucky Egg, not a distance-specific hatchable egg.
+        fill(0xff6daee0);c.drawOval(-10,-14,10,14,paint);
+        fill(0xffe8f7ff);c.drawCircle(-4,-6,2.5f,paint);c.drawCircle(4,2,1.7f,paint);
+        c.drawCircle(-3,7,1.3f,paint);c.drawCircle(4,-7,1f,paint);
+        stroke(0xff3f75a1,1.4f);c.drawOval(-10,-14,10,14,paint);
     }
     private void drawGeneric(Canvas c){
         // Neutral missing-art indicator: never impersonate the wrong Pok\u00e9mon GO item.
