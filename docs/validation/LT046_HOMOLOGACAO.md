@@ -38,6 +38,22 @@ Todos pendentes; verificar apenas em ambiente autorizado. Registrar observação
 | GPX multissegmento | Nomes longos mantêm sufixos distintos, limite de 80 caracteres e Unicode válido; progresso preservado | Pendente | Pendente |
 | Ícones adicionais | Confirmar ID e identidade visual, sem adivinhar por semelhança | Pendente | Pendente |
 
+## Evidências de integração acumuladas (24/11/2026)
+
+Base consolidada ed3684a7d24f98d3154b8cd001ea7f78cf0ed730; os HEADs exatos dos PRs tiveram CI aprovado. Não substitui a homologação física.
+
+| PR | Escopo validado | Workflows |
+|---|---|---|
+| #166 | BOM e cancelamento no diagnóstico; distância GPX | 45356941370, 45356941320 |
+| #167 | Sufixos e Unicode GPX; matriz QA | 45357357962, 45357357907 |
+| #168 | Envelope do cofre local e limites de leitura | 45368218108, 45368218049 |
+| #169 | Parser e critérios de proteção locais | 45370546529, 45370546494 |
+| #170 | Prévia em lote em worker cancelável | 45371840759, 45371840647 |
+| #171 | Tipos e nomes de novos arquivos de migração | 45372949115, 45372949324, 45372949127 |
+| #172 | Nomes XML e tamanho de exportação GPX | 45373080938, 45373081108 |
+
+Complementar a sessão física com: fechar/reabrir cofre durante consulta/salvamento/remoção, edição bloqueada enquanto ocupado, confirmação protegida, chave não exibida nem enviada; fechar/reabrir a prévia em lote durante avaliação; exportação GPX excessiva deve falhar sem publicar arquivo inválido. Nenhuma dessas observações foi executada no aparelho.
+
 ## Bloqueios separados
 
 - Comportamento observado PvP/VGP+, telas externas e modo streamer: evidências reais autorizadas; não declarar resolução com simulador, metadados ou testes host.
