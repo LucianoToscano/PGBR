@@ -11,7 +11,7 @@ final class RouteTraceView extends View {
     private final Path remaining = new Path(), completed = new Path();
     private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private RouteTraceGeometry geometry;
-    private float widthDp = 5;
+    private RouteTraceStyle style=RouteTraceStyle.defaults();
     private final float density;
 
     RouteTraceView(Context context) {
@@ -52,28 +52,24 @@ final class RouteTraceView extends View {
         invalidate();
     }
 
-    void setLineWidthDp(float value) {
-        if (!Float.isNaN(value) && value >= 2 && value <= 12) {
-            widthDp = value;
-            invalidate();
-        }
+    void setStyle(RouteTraceStyle value) {
+        if(value!=null&&style!=value){style=value;invalidate();}
     }
 
     @Override protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
         if (geometry == null) return;
         paint.setStyle(Paint.Style.STROKE);
-        paint.setStrokeWidth((widthDp+2)*density);
-        paint.setColor(0x99303945);
+        paint.setStrokeWidth((style.width+2)*density);
+        paint.setColor(style.color(0xff303945));
         canvas.drawPath(remaining,paint);
         canvas.drawPath(completed,paint);
-        paint.setStrokeWidth(widthDp*density);
-        paint.setColor(0xffeeeeee);
+        paint.setStrokeWidth(style.width*density);
+        paint.setColor(style.color(style.remaining));
         canvas.drawPath(remaining,paint);
-        paint.setColor(0xff168fea);
+        paint.setColor(style.color(style.showProgress?style.completed:style.remaining));
         canvas.drawPath(completed,paint);
-        marker(canvas,0,0xff168fea);
-        marker(canvas,geometry.size()-1,0xffe2574f);
+        if(style.showMarkers){marker(canvas,0,0xff168fea);marker(canvas,geometry.size()-1,0xffe2574f);}
     }
 
     private void marker(Canvas canvas,int index,int color) {
@@ -84,6 +80,8 @@ final class RouteTraceView extends View {
         paint.setColor(color);
         canvas.drawCircle(x,y,4*density,paint);
     }
+
+    @Override public boolean onTouchEvent(android.view.MotionEvent event){return false;}
 
     @Override protected void onDetachedFromWindow() {
         clearTrace();
