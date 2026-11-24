@@ -7,6 +7,7 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -49,12 +50,9 @@ public final class GpxStore {
         List<Entry> entries = new ArrayList<>();
         for (File file : files()) {
             String id = idOf(file);
-            try (InputStream in = new FileInputStream(file)) {
-                List<GpxRoute> routes = GpxCodec.read(in, id);
-                if (!routes.isEmpty()) {
-                    GpxRoute route = routes.get(0);
-                    entries.add(new Entry(id, route.name, route.size()));
-                }
+            try {
+                GpxRoute route = readStored(resolve(id), id);
+                entries.add(new Entry(id, route.name, route.size()));
             } catch (IOException ignored) {
                 // A single damaged or foreign file must not break the whole listing.
             }
@@ -92,12 +90,17 @@ public final class GpxStore {
     public GpxRoute load(String id) throws IOException { synchronized(LOCK) {
         File file = resolve(id);
         if (!file.isFile()) throw new FileNotFoundException("No stored route with that id.");
+        return readStored(file, id);
+    } }
+
+    /** A canonical entry represents exactly one route; importing a multi-route GPX uses the importer. */
+    private static GpxRoute readStored(File file,String id) throws IOException {
         try (InputStream in = new FileInputStream(file)) {
             List<GpxRoute> routes = GpxCodec.read(in, id);
-            if (routes.isEmpty()) throw new IOException("The stored route is empty or damaged.");
+            if (routes.size() != 1) throw new IOException("The stored route is empty or damaged.");
             return routes.get(0);
         }
-    } }
+    }
 
     /** Delete a stored route by id; a missing route is treated as already deleted. */
     public void delete(String id) throws IOException { synchronized(LOCK) {
@@ -119,7 +122,8 @@ public final class GpxStore {
         if (id == null || !ID.matcher(id).matches()) throw new IOException("Invalid route id.");
         File file = new File(directory, id + ".gpx");
         // Defence in depth: the resolved path must stay inside the store even if the id ever slipped through.
-        if (!file.getCanonicalPath().startsWith(directory.getCanonicalPath() + File.separator))
+        if (Files.isSymbolicLink(file.toPath()) ||
+            !file.getCanonicalPath().startsWith(directory.getCanonicalPath() + File.separator))
             throw new IOException("Invalid route id.");
         return file;
     }

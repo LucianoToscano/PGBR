@@ -5,6 +5,8 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.List;
+import java.nio.file.Files;
+import java.nio.charset.StandardCharsets;
 
 /**
  * Drives the app-private GPX store against a temp directory through a minimal Context shell.
@@ -46,6 +48,42 @@ public final class GpxStoreTest {
             try { store.delete(bad); throw new AssertionError("Traversal id accepted on delete: " + bad); }
             catch (IOException expected) { }
         }
+
+        // A canonical entry cannot silently discard the second route in a foreign file.
+        File directory = new File(context.getFilesDir(), "pgrazor-gpx-routes-v1");
+        String invalidId = "11111111-1111-1111-1111-111111111111";
+        File invalid = new File(directory, invalidId + ".gpx");
+        String multi = "<gpx><rte><name>One</name><rtept lat='1' lon='2'/></rte>"
+            + "<rte><name>Two</name><rtept lat='3' lon='4'/></rte></gpx>";
+        Files.write(invalid.toPath(), multi.getBytes(StandardCharsets.UTF_8));
+        check(store.list().size() == 2, "Foreign multi-route file skipped without truncation");
+        try { store.load(invalidId); throw new AssertionError("Multi-route entry was accepted"); }
+        catch (IOException expected) { }
+        store.delete(invalidId);
+
+        // Listing, loading and deleting must agree on the path boundary.
+        String linkId = "22222222-2222-2222-2222-222222222222";
+        File outside = new File(context.getFilesDir(), "outside.gpx");
+        Files.copy(new File(directory, bravo.id + ".gpx").toPath(), outside.toPath());
+        File link = new File(directory, linkId + ".gpx");
+        boolean symlinkAvailable = false;
+        try {
+            Files.createSymbolicLink(link.toPath(), outside.toPath().toAbsolutePath());
+            symlinkAvailable = true;
+        } catch (UnsupportedOperationException | IOException unavailable) {
+            // Windows or restricted hosts may prohibit symbolic link creation.
+            System.out.println("SKIP: symbolic link unavailable on this host");
+        }
+        if (symlinkAvailable) {
+            check(store.list().size() == 2, "Listing must not follow a foreign link");
+            try { store.load(linkId); throw new AssertionError("Symbolic link loaded"); }
+            catch (IOException expected) { }
+            try { store.delete(linkId); throw new AssertionError("Symbolic link delete accepted"); }
+            catch (IOException expected) { }
+            check(outside.isFile(), "Outside file preserved");
+            Files.delete(link.toPath());
+        }
+        Files.delete(outside.toPath());
 
         // Delete removes the route and is idempotent on a missing id.
         store.delete(alpha.id);
