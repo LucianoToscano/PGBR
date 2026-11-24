@@ -1,0 +1,97 @@
+name: PGBR - continuidade e fila a cada 10 minutos
+
+on:
+  schedule:
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/pgbr-continuity-10min.yml'
+
+permissions: {}
+concurrency:
+  group: pgbr-continuity-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  audit:
+    if: github.repository == 'LucianoToscano/PGBR'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      issues: read
+      pull-requests: read
+      actions: read
+    outputs:
+      head: ${{ steps.audit.outputs.head }}
+      missing: ${{ steps.audit.outputs.missing }}
+    steps:
+      - name: Conferir Mestre, fila e CI da main
+        id: audit
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          sha=$(gh api "repos/$REPO/branches/main" --jq '.commit.sha')
+          [[ "$sha" =~ ^[0-9a-f]{40}$ ]]
+          master=$(gh api "repos/$REPO/contents/PGBR_ARQUIVO_MESTRE_UNICO.md?ref=$sha" --jq '.sha')
+          [[ "$master" =~ ^[0-9a-f]{40}$ ]]
+          issues=$(gh api --paginate "repos/$REPO/issues?state=open&per_page=100" | jq -s '[.[][] | select(has("pull_request") | not)] | length')
+          prs=$(gh api --paginate "repos/$REPO/pulls?state=open&per_page=100" | jq -s '[.[][]] | length')
+          missing=0
+          {
+            printf '# Continuidade PGBR\n\n'
+            printf '- HEAD da main: [%s](https://github.com/%s/commit/%s)\n' "$sha" "$REPO" "$sha"
+            printf '- [Arquivo Mestre nesta HEAD](https://github.com/%s/blob/%s/PGBR_ARQUIVO_MESTRE_UNICO.md), blob `%s`\n' "$REPO" "$sha" "$master"
+            printf '- [Issues abertas](https://github.com/%s/issues): %s\n' "$REPO" "$issues"
+            printf '- [PRs abertas](https://github.com/%s/pulls): %s\n' "$REPO" "$prs"
+            printf '\n## CI da HEAD (não equivale a teste físico)\n\n'
+            for workflow in pgbr-codigo-ci.yml pgbr-auditoria-mestre.yml; do
+              runs=$(gh api "repos/$REPO/actions/workflows/$workflow/runs?branch=main&head_sha=$sha&per_page=100")
+              count=$(jq -er '.total_count' <<< "$runs")
+              printf '- %s: ' "$workflow"
+              if [[ "$count" == 0 ]]; then
+                printf 'sem execução registrada\n'
+                missing=1
+              else
+                jq -r '.workflow_runs[0] | "[run \(.id)](\(.html_url)) — \(.status)/\(.conclusion // "aguardando")"' <<< "$runs"
+              fi
+            done
+            printf '\nFalhas existentes são reportadas, não reexecutadas indefinidamente. PRs, código, versões e releases não são alterados por este fluxo.\n'
+          } >> "$GITHUB_STEP_SUMMARY"
+          printf 'head=%s\nmissing=%s\n' "$sha" "$missing" >> "$GITHUB_OUTPUT"
+
+  recover-missing-ci:
+    needs: audit
+    if: github.repository == 'LucianoToscano/PGBR' && github.ref == 'refs/heads/main' && github.event_name != 'pull_request' && needs.audit.outputs.missing == '1'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      actions: write
+    steps:
+      - name: Disparar somente CI ausente para a HEAD conferida
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          HEAD_SHA: ${{ needs.audit.outputs.head }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$HEAD_SHA" =~ ^[0-9a-f]{40}$ ]]
+          for workflow in pgbr-codigo-ci.yml pgbr-auditoria-mestre.yml; do
+            current=$(gh api "repos/$REPO/branches/main" --jq '.commit.sha')
+            if [[ "$current" != "$HEAD_SHA" ]]; then
+              echo 'main avançou; próxima rodada fará nova auditoria.' >> "$GITHUB_STEP_SUMMARY"
+              exit 0
+            fi
+            count=$(gh api "repos/$REPO/actions/workflows/$workflow/runs?branch=main&head_sha=$HEAD_SHA&per_page=1" --jq '.total_count')
+            if [[ "$count" == 0 ]]; then
+              gh workflow run "$workflow" --repo "$REPO" --ref main
+              printf 'Solicitado CI ausente: %s\n' "$workflow" >> "$GITHUB_STEP_SUMMARY"
+            fi
+          done
