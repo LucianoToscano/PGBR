@@ -1784,3 +1784,12 @@ continuam fora do conjunto JVM por depender de `LiveFeedClient` (Android-bound),
 - LT046: resumo local do diagnostico.txt filtrado (extraído do ZIP pelo usuário) agrupa ocorrências de proteção por reasonCode, motivos PvP conhecidos e IDs de catálogo com erro de ícone; separa campos insuficientes, outros eventos e registros omitidos. Exige cabeçalho/rodapé e limites, não reproduz valores arbitrários, não lê conta e não envia dados. Não confunde ocorrências com Pokémon únicos ou diagnóstico com prova de execução. Testes com exportação sintética real, truncamento e dados não confiáveis. Colagens acima do limite na coleção/diagnóstico são rejeitadas inteiramente, exigindo substituir todo conteúdo antes de avaliar; não há truncamento silencioso. Sem APK/release. CI pendente.
 
 - Revisão de robustez: colagem rejeitada invalida imediatamente a apresentação anterior. Resumo exibe no máximo 200 IDs de ícones, ordenados por quantidade e ID, mantém contagem integral e informa quantos não são exibidos. Fixture de 201 IDs. Sem alteração de executores ou publicação; CI pendente.
+
+- CI do 1f15a5b aprovado (2/2 workflows 45342795747 e 45342795750; 5/5 jobs internos). Paridade LT046: análise individual passa a aceitar a mesma lista de proteção adicional por nomes exatos da prévia em lote e invalida resultados ao editar essa lista. Teste de ligação das duas interfaces. Sem acesso à coleção do jogo.
+
+### Reconciliação de branches — checkpoint 24/11/2026
+Base main 205ac2105a45dac4821c26b9ff73e66c4097e76a, comparação GitHub antes de alteração:
+- PR #165 GeoLab 480645c8: 2 commits à frente, 0 atrás, 23 caminhos; sobreposição com #164 somente no Mestre. Laboratório separado; respeitar seu CI e escopo, não mesclar às cegas nem incluir no APK de produção.
+- PR #161 5b539d39: 7 à frente, 54 atrás, 7 caminhos, divergente; elimina PgSharpFeedDialog.java e PgSharpLicenseVault.java na comparação do ancestral, portanto não aplicar remoção de módulos de licença como integração automática.
+- PR #118 6ac3950c: 20 à frente, 389 atrás, 12 caminhos, divergente; contrato Partner depende de #115 e B1–B10, licença, URL/chave staging e feed autorizado. Não declarar conexão real.
+- Nenhuma dessas branches foi modificada; manter revisões independentes, Mestre cumulativo e LT045 imutável. CI deste novo commit pendente.

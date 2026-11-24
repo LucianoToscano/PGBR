@@ -19,6 +19,15 @@ class LocalAuditTests(unittest.TestCase):
             self.assertEqual(p.returncode,0,p.stdout+p.stderr)
             self.assertIn('PASS: overlay gesture',p.stdout)
 
+    def test_species_protection_is_available_in_both_previews(self):
+        source=(ROOT/'src/dev/pgrazor/LocalAuditDialog.java').read_text(encoding='utf-8')
+        individual=source.split(' static void collection(Activity a){',1)[1].split(' static void batch(Activity a){',1)[0]
+        batch=source.split(' static void batch(Activity a){',1)[1].split(' static void reason(Activity a)',1)[0]
+        self.assertIn('LocalAuditPolicy.withSpeciesProtection(',individual)
+        self.assertIn('LocalAuditPolicy.protectedNames(names.getText().toString())',individual)
+        self.assertIn('invalidateOnEdit(result,name,cp,atk,def,sta,limit,names)',individual)
+        self.assertIn('LocalAuditPolicy.protectedNames(protectedNames.getText().toString())',batch)
+
     def test_new_ui_is_read_only_and_wired(self):
         for name in ['LocalAuditPolicy.java','LocalCollectionPreview.java','LocalAuditDialog.java','LocalDiagnosticSummary.java','GpxPreviewView.java','GpxPreviewGeometry.java']:
             source=(ROOT/'src/dev/pgrazor'/name).read_text(encoding='utf-8')
