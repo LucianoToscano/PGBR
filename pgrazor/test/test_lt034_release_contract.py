@@ -45,7 +45,7 @@ class Lt034ReleaseContract(unittest.TestCase):
         self.assertIn('PR #73',master)
         menu=(ROOT/'pgrazor/src/dev/pgrazor/FeedChooser.java').read_text(encoding='utf-8')
         self.assertIn('HundoFeedDialog.show(activity)',menu)
-        self.assertIn('PgSharpFeedDialog.show(activity)',menu)
+        self.assertNotIn('PgSharpFeedDialog.show(activity)',menu)
         policy=(ROOT/'pgrazor/src/dev/pgrazor/PgSharpFeedPolicy.java').read_text(encoding='utf-8')
         self.assertIn('Connector.UNVERIFIED',policy)
 if __name__=='__main__': unittest.main()

@@ -14,7 +14,6 @@ final class FeedChooser {
                            "Radar LivePokeMap\nPokémon, Poképaradas, Ginásios, Reides e Pontos de Poder",
                            "PoGoCoordinates\nBusca por IV, Shiny, PvP e espécie (limites próprios da fonte)",
                            "Sniper 100% IV · PGBR\nConsulta manual ao feed existente; toque para coordenadas e confirmação",
-                           "PGSharp · 100% IV grátis / licença\nOrigem separada; key opcional para filtros Standard",
                            "Sniper 1 e 2 · filtros separados\nDois filtros independentes sobre a fonte 100% IV do PGBR",
                            "Sniper 1 · busca rápida nativa\nFonte selecionável, filtros completos e teleporte confirmado",
                            "Sniper 2 · filtros independentes\nPerfis, PvP, região, distância e teleporte confirmado"};
@@ -25,10 +24,9 @@ final class FeedChooser {
                 else if (which == 2) LiveFeedDialog.show(activity);
                 else if (which == 3) PogoFeedDialog.show(activity);
                 else if (which == 4) HundoFeedDialog.show(activity);
-                else if (which == 5) PgSharpFeedDialog.show(activity);
-                else if (which == 6) SnipeSlotsDialog.show(activity);
-                else if (which == 7) SniperPanel.show(activity, SpawnProfiles.SLOT_ONE);
-                else if (which == 8) SniperPanel.show(activity, SpawnProfiles.SLOT_TWO);
+                else if (which == 5) SnipeSlotsDialog.show(activity);
+                else if (which == 6) SniperPanel.show(activity, SpawnProfiles.SLOT_ONE);
+                else if (which == 7) SniperPanel.show(activity, SpawnProfiles.SLOT_TWO);
             });
         DialogLifecycle.bind(activity, choose, null);
         choose.setOnShowListener(d -> MapTheme.styleButtons(choose));
