@@ -1793,3 +1793,5 @@ Base main 205ac2105a45dac4821c26b9ff73e66c4097e76a, comparação GitHub antes de
 - PR #161 5b539d39: 7 à frente, 54 atrás, 7 caminhos, divergente; elimina PgSharpFeedDialog.java e PgSharpLicenseVault.java na comparação do ancestral, portanto não aplicar remoção de módulos de licença como integração automática.
 - PR #118 6ac3950c: 20 à frente, 389 atrás, 12 caminhos, divergente; contrato Partner depende de #115 e B1–B10, licença, URL/chave staging e feed autorizado. Não declarar conexão real.
 - Nenhuma dessas branches foi modificada; manter revisões independentes, Mestre cumulativo e LT045 imutável. CI deste novo commit pendente.
+
+- LT046: cache visual de sprites limitado a 8 MiB por bytes de alocação e listas de falha/ausência a 512 IDs cada; IDs inválidos não entram no cache. Bitmaps ainda usados por Views não são reciclados ao sair do cache. Preserva seleção por ID, fallback e proporções. Teste dos 37 sprites empacotados passa a validar estrutura PNG, CRC de chunks, dimensões, IDAT e IEND (não comprova identidade visual). Sem alteração de motor, acesso a jogo ou publicação. CI pendente.

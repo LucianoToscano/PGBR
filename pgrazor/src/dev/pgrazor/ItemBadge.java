@@ -15,10 +15,14 @@ final class ItemBadge extends View {
     private final int itemId;
     private final Paint paint=new Paint(Paint.ANTI_ALIAS_FLAG|Paint.FILTER_BITMAP_FLAG);
     private final Bitmap itemSprite;
-    // Decode each catalog icon at most once; a live catalog may render dozens of rows.
-    private static final android.util.SparseArray<Bitmap> CACHE=new android.util.SparseArray<>();
-    private static final android.util.SparseBooleanArray MISSED=new android.util.SparseBooleanArray();
-    private static final android.util.SparseBooleanArray WARNED=new android.util.SparseBooleanArray();
+    // Bound retained memory; evicted bitmaps may still be displayed by existing Views.
+    // Never recycle them on eviction. Unknown IDs must not grow a permanent cache.
+    private static final int MAX_CACHE_BYTES=8*1024*1024,MAX_NEGATIVE_IDS=512;
+    private static final android.util.LruCache<Integer,Bitmap> CACHE=new android.util.LruCache<Integer,Bitmap>(MAX_CACHE_BYTES){
+        @Override protected int sizeOf(Integer id,Bitmap bitmap){return bitmap.getAllocationByteCount();}
+    };
+    private static final android.util.LruCache<Integer,Boolean> MISSED=new android.util.LruCache<>(MAX_NEGATIVE_IDS);
+    private static final android.util.LruCache<Integer,Boolean> WARNED=new android.util.LruCache<>(MAX_NEGATIVE_IDS);
 
     ItemBadge(Context context,int itemId){
         super(context);
@@ -27,10 +31,10 @@ final class ItemBadge extends View {
         setImportantForAccessibility(IMPORTANT_FOR_ACCESSIBILITY_NO);
     }
     private static synchronized Bitmap load(Context context,int id){
+        if(id<=0||id>999999)return null;
         Bitmap cached=CACHE.get(id);
         if(cached!=null)return cached;
-        if(MISSED.get(id))return null;
-        if(id<=0||id>999999){MISSED.put(id,true);return null;}
+        if(Boolean.TRUE.equals(MISSED.get(id)))return null;
         // Prefer an ID-exact inventory sprite; old map berries are a compatibility fallback.
         String[] choices=id>=701&&id<=707?
             new String[]{"pgrazor/item-icons/item-"+id+".png","pgrazor/map-icons/berry-"+id+".png"}:
@@ -52,14 +56,14 @@ final class ItemBadge extends View {
                     if(bitmap==null)throw new java.io.IOException("Image decoder returned null");
                     if(bitmap.getWidth()>256||bitmap.getHeight()>256){bitmap.recycle();throw new java.io.IOException("Decoded image exceeds icon limit");}
                     CACHE.put(id,bitmap);
-                    WARNED.delete(id);
+                    WARNED.remove(id);
                     return bitmap;
                 }
             }catch(java.io.FileNotFoundException missing){
                 // Only an actually absent file is eligible for negative caching.
             }catch(Exception error){
                 failed=true;
-                if(!WARNED.get(id)){
+                if(!Boolean.TRUE.equals(WARNED.get(id))){
                     Control.event("item-icon-error","id="+id+" asset="+file+" cause="+error.getClass().getSimpleName());
                     WARNED.put(id,true);
                 }
