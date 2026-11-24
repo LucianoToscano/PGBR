@@ -138,20 +138,20 @@ jobs:
         run: python -c "import sys; sys.path.insert(0, 'pgrazor'); import dex_bridges; dex_bridges.dependencies(download=True)"
       - name: Testar Java Python Node geradores e vendor
         run: |
-          set -o pipefail
-          python -B tools/check.py > /tmp/check.log 2>&1 || {
+          status=0
+          python -B tools/check.py > /tmp/check.log 2>&1 || status=$?
+          if [ "$status" -ne 0 ]; then
+            echo "::error title=check.py (fim do log)::$(tail -40 /tmp/check.log | tr '\n' '|' | cut -c1-2000)"
+            { grep -E 'error:|AssertionError|FAIL:|ERROR:|Exception' /tmp/check.log | head -25 || true; } | while read -r line; do
+              echo "::error title=check.py::$(echo "$line" | cut -c1-300)"
+            done
             echo '```' >> "$GITHUB_STEP_SUMMARY"
             tail -120 /tmp/check.log >> "$GITHUB_STEP_SUMMARY"
             echo '```' >> "$GITHUB_STEP_SUMMARY"
-            grep -E 'error:|AssertionError|FAIL:|ERROR:|Error' /tmp/check.log | head -25 | while read -r line; do
-              echo "::error title=check.py::$(echo "$line" | cut -c1-300)"
-            done
-            echo "::error title=check.py (fim do log)::$(tail -30 /tmp/check.log | tr '\n' '|' | cut -c1-1500)"
-            echo '```'
-            tail -60 /tmp/check.log
-            echo '```'
-            exit 1
-          }
+            echo '--- fim do log do check.py ---'
+            tail -80 /tmp/check.log
+            exit "$status"
+          fi
       - name: Compilar Java do aplicativo sem entradas de jogo
         run: python -B pgrazor/build.py
       - name: Validar compilacao do instalador Root
