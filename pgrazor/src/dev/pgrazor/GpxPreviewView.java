@@ -51,7 +51,8 @@ final class GpxPreviewView extends View {
   java.util.function.DoubleConsumer update=distance->{
    v.setDistance(distance);syncing[0]=true;
    try{seek.setProgress(v.geo.percentForDistance(distance));}finally{syncing[0]=false;}
-   km.setText(String.format(Locale.forLanguageTag("pt-BR"),"%.6f",distance/1000));
+   // Round down to the displayed precision so reapplying the field never exceeds route length.
+   km.setText(java.math.BigDecimal.valueOf(distance/1000).setScale(6,java.math.RoundingMode.DOWN).toPlainString().replace('.',','));
    km.setError(null);
    String progress=v.geo.meters==0?"Sem extensão mensurável":String.format(Locale.forLanguageTag("pt-BR"),"%.2f%%",100*(distance/v.geo.meters));
    summary.setText(String.format(Locale.forLanguageTag("pt-BR"),"%d pontos • %.3f km\nPrévia: %s • %.3f km • restam %.3f km\nVerde: início • Laranja: fim\nProgresso ilustrativo, sem movimentação.",route.size(),v.geo.meters/1000,progress,distance/1000,(v.geo.meters-distance)/1000));

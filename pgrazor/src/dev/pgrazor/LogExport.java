@@ -163,13 +163,14 @@ public final class LogExport {
         File dir=context.getExternalFilesDir("pgrazor-logs");
         if(dir==null) dir=new File(context.getFilesDir(),"pgrazor-logs/exports");
         if(!dir.isDirectory() && !dir.mkdirs()) throw new IOException("Cannot create export folder");
-        String name=includeSettings?file.getName().replaceFirst("\\.txt$","")+".zip":file.getName();
-        File dest=new File(dir,name),temp=new File(dir,name+".tmp");
+        // A unique temporary file avoids collisions with parallel exports. Never delete a previous copy.
+        File temp=File.createTempFile("pgbr-diagnostic-", ".tmp",dir);
+        File dest=new File(dir,temp.getName().replaceFirst("\\.tmp$",includeSettings?".zip":".txt"));
         try {
             byte[] settings=includeSettings?settingsJson(shareSettings(Control.diagnosticSettings()),Control.engine.speedKmh,new JSONObject()):null;
             MessageDigest written=MessageDigest.getInstance("SHA-256");
             MessageDigest checked=MessageDigest.getInstance("SHA-256");
-            long count=0,verified=0;
+            long count=0;
             Control.event("export-start","local-copy");
             try(InputStream in=new FileInputStream(file); OutputStream out=new FileOutputStream(temp)) {
                 CountingOutputStream counted=new CountingOutputStream(new DigestOutputStream(out,written));
@@ -181,17 +182,23 @@ public final class LogExport {
                 count=counted.count;
                 out.flush();
             }
-            if(dest.exists() && !dest.delete()) throw new IOException("Could not replace the previous export");
-            if(!temp.renameTo(dest)) throw new IOException("Could not finish writing the export");
-            try(InputStream in=new FileInputStream(dest)) {
-                byte[] buffer=new byte[8192]; int n;
-                while((n=in.read(buffer))!=-1) { checked.update(buffer,0,n); verified+=n; }
-            }
-            if(count!=verified || !Arrays.equals(written.digest(),checked.digest())) throw new IOException("Saved copy verification failed");
+            verifyAndPublish(temp,dest,count,written.digest(),checked);
             Control.event("export-complete","verifiedBytes="+count);
             return dest;
         } catch(NoSuchAlgorithmException impossible) { throw new IOException(impossible); }
-        catch(IOException error) { temp.delete(); Control.event("export-error","io-failure"); throw error; }
+        catch(IOException error) { Control.event("export-error","io-failure"); throw error; }
+        finally{if(temp.exists())temp.delete();}
+    }
+    /** Verify before exposing the final name; never remove an existing export. */
+    static void verifyAndPublish(File temp,File dest,long count,byte[] digest,MessageDigest checked)throws IOException{
+        if(temp.equals(dest)||dest.exists()||!temp.getCanonicalFile().getParentFile().equals(dest.getCanonicalFile().getParentFile()))throw new IOException("Export destination conflict");
+        long verified=0;checked.reset();
+        try(InputStream in=new FileInputStream(temp)){
+            byte[] buffer=new byte[8192];int n;
+            while((n=in.read(buffer))!=-1){checked.update(buffer,0,n);verified+=n;}
+        }
+        if(count!=verified||!MessageDigest.isEqual(digest,checked.digest()))throw new IOException("Saved copy verification failed");
+        if(dest.exists()||!temp.renameTo(dest))throw new IOException("Could not finish writing the export");
     }
     private static final class CountingOutputStream extends FilterOutputStream {
         long count;

@@ -44,6 +44,21 @@ public final class LogExportTest {
         String safe=new String(LogExport.shareLog(new ByteArrayInputStream(raw.getBytes(StandardCharsets.UTF_8))),StandardCharsets.UTF_8);
         if(safe.contains("secret-example")||safe.contains("private-example")||!safe.contains("\"reasonCode\":12")||!safe.contains("actor-unknown"))throw new AssertionError("Log privacy");
         if(!safe.contains("\"itemId\":708")||!safe.contains("\"itemId\":1401")||safe.contains("999999999"))throw new AssertionError("Icon diagnostic privacy");
+        java.nio.file.Path dir=java.nio.file.Files.createTempDirectory("pgbr-export-test");
+        File tmp=dir.resolve("current.tmp").toFile(),old=dir.resolve("old.zip").toFile(),dest=dir.resolve("current.zip").toFile();
+        try{
+            java.nio.file.Files.write(old.toPath(),new byte[]{7});
+            java.nio.file.Files.write(tmp.toPath(),log);
+            byte[] hash=java.security.MessageDigest.getInstance("SHA-256").digest(log);
+            java.security.MessageDigest verify=java.security.MessageDigest.getInstance("SHA-256");
+            try{LogExport.verifyAndPublish(tmp,old,log.length,hash,verify);throw new AssertionError("Overwrite");}catch(IOException expected){}
+            try{LogExport.verifyAndPublish(tmp,dest,log.length+1,hash,verify);throw new AssertionError("Invalid length");}catch(IOException expected){}
+            byte[] wrong=hash.clone();wrong[0]^=1;
+            try{LogExport.verifyAndPublish(tmp,dest,log.length,wrong,verify);throw new AssertionError("Invalid digest");}catch(IOException expected){}
+            if(dest.exists()||!tmp.exists()||java.nio.file.Files.readAllBytes(old.toPath())[0]!=7)throw new AssertionError("Previous export preservation");
+            LogExport.verifyAndPublish(tmp,dest,log.length,hash,verify);
+            if(tmp.exists()||!Arrays.equals(log,java.nio.file.Files.readAllBytes(dest.toPath())))throw new AssertionError("Verified publication");
+        }finally{tmp.delete();old.delete();dest.delete();java.nio.file.Files.deleteIfExists(dir);}
         System.out.println("PASS compact JSON escaping and ZIP log/settings byte-exact round trip");
     }
 }
