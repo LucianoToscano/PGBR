@@ -182,7 +182,7 @@ jobs:
           set +e
           python -B tools/check.py > /tmp/check.log 2>&1
           rc=$?
-          tail -30 /tmp/check.log | sed 's/^/::error::/'
+          echo "::error::$(tail -60 /tmp/check.log | tr '\n' '|')"
           exit $rc
       - name: Testar menu, busca iFlowGo segura e janelas de escolha manual
         run: |
