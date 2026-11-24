@@ -33,6 +33,7 @@ class AutoAnchorSchemaTest(unittest.TestCase):
     def test_native_reader_is_gated_and_owned(self):
         host = (ROOT / "native/encounter_host.cpp").read_text(encoding="utf-8")
         self.assertIn("bval(g_direct_transport ? 41 : 39) > 0", host)
+        self.assertIn('\\"at\\":%llu', host)
         self.assertIn("if (!g_route_anchors_allowed || !g_map_anchor || !lease_ms) return;", host)
         self.assertIn("const uint32_t opcode = g_direct_transport ? 60u : 59u;", host)
         self.assertIn("if (!fresh) g_route_anchors_allowed = false;", host)
@@ -69,7 +70,8 @@ class AutoAnchorSchemaTest(unittest.TestCase):
         source = (ROOT / "src/dev/pgrazor/RouteAutoAnchorSource.java").read_text(encoding="utf-8")
         for token in ["RouteTraceOverlay.ProjectedFrameSource", "Control.mapAnchorReceivedAt()",
                       "MAX_ANCHOR_AGE_MS", "if (projection == null) return null;",
-                      "Control.engine.activeVisualRouteToken()", "RouteScreenFrameBuilder.build(",
+                      "Control.engine.activeVisualRouteToken()", "capturedAtMs()",
+                      "RouteScreenFrameBuilder.build(",
                       "routeVisualSnapshot(cachedToken)", "if (points == null || points.length < 2) return null;"]:
             self.assertIn(token, source)
         for forbidden in ["PixelCopy", "NativeCore", "inject", ".walkRoute(", ".teleport("]:
@@ -80,6 +82,7 @@ class AutoAnchorSchemaTest(unittest.TestCase):
             self.assertIn(token, parser)
         pad = (ROOT / "src/dev/pgrazor/Pad.java").read_text(encoding="utf-8")
         self.assertIn('prefs.getBoolean("routeAutoProjectionEnabled",false)', pad)
+        self.assertIn("if(!closed&&visualRouteOverlay==null)", pad)
         dialog = (ROOT / "src/dev/pgrazor/WorldMapDialog.java").read_text(encoding="utf-8")
         self.assertIn('putBoolean("routeAutoProjectionEnabled",on)', dialog)
 

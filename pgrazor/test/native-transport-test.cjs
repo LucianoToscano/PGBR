@@ -89,7 +89,7 @@ f.schema.STRING_READERS.forEach((name,id)=>assert.equal(control[name](),'reader-
 let before=f.calls.length;assert.deepEqual(Array.from(control.accountCommandSnapshot()),['command-1\0\u96ea','18446744073709551615']);
 assert.deepEqual(f.calls.slice(before),['command'],'command/token pair is one atomic native call');
 f.schema.PULSE_READERS.forEach((name,id)=>assert.equal(control[name](),id===1));
-console.log('PASS native transport all57 readers/3 pulses/59 schema entries, exact atomic command strings');
+console.log('PASS native transport all58 readers/3 pulses/60 schema entries, exact atomic command strings');
 
 // Exercise EVERY action, preserving scalar order/bits and length-prefixed UTF8.
 const valid=type=>type==='String'?'value\0\u96ea\ud83d\ude42':type==='boolean'?true:type==='double'?-123.25:type==='long'?Number.MAX_SAFE_INTEGER:-2147483648;

@@ -24,22 +24,17 @@ jobs:
         run: |
           g++ -std=c++17 -Wall -Wextra -Werror -I pgrazor/native pgrazor/native/map_anchor_test.cpp pgrazor/native/map_anchor.cpp -o /tmp/map_anchor_test
           /tmp/map_anchor_test
-      - name: JDK e harness ancoras (diagnostico rapido)
+      - name: JDK para harness de ancoras
         uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3
         with:
           distribution: temurin
           java-version: '17'
-      - name: Executar harness ancoras com saida anotada
+      - name: Executar harness de ancoras
         shell: bash
         run: |
-          set +e
           mkdir -p /tmp/anchor-classes
-          javac -encoding UTF-8 -d /tmp/anchor-classes pgrazor/src/dev/pgrazor/RouteGroundProjection.java pgrazor/src/dev/pgrazor/RouteAnchorSnapshot.java pgrazor/test/RouteAnchorHarness.java 2>&1 | tee /tmp/javac.log
-          rc=${PIPESTATUS[0]}
-          if [ $rc -ne 0 ]; then sed 's/^/::error::/' /tmp/javac.log; exit 1; fi
-          java -cp /tmp/anchor-classes dev.pgrazor.RouteAnchorHarness 2>&1 | tee /tmp/java.log
-          rc=${PIPESTATUS[0]}
-          if [ $rc -ne 0 ]; then sed 's/^/::error::/' /tmp/java.log; exit 1; fi
+          javac -encoding UTF-8 -d /tmp/anchor-classes pgrazor/src/dev/pgrazor/RouteGroundProjection.java pgrazor/src/dev/pgrazor/RouteAnchorSnapshot.java pgrazor/test/RouteAnchorHarness.java
+          java -cp /tmp/anchor-classes dev.pgrazor.RouteAnchorHarness
       - name: Testar allowlist do motor compartilhado (Rocket, PvP, treino)
         run: |
           g++ -std=c++17 -Wall -Wextra -Werror -I pgrazor/native pgrazor/native/battle_target_policy_test.cpp -o /tmp/battle_target_policy_test
@@ -169,21 +164,8 @@ jobs:
         run: python -c "import sys; sys.path.insert(0, 'pgrazor'); import dex_bridges; dex_bridges.dependencies(download=True)"
       - name: Auditoria de integridade dos modulos preservados
         run: python -B pgrazor/test/test_lt032_consolidation.py
-      - name: Diagnostico final da suite Python
-        shell: bash
-        run: |
-          set +e
-          python -B -m unittest discover -s pgrazor/test -p 'test_*.py' -v > /tmp/diag-tests.log 2>&1
-          grep -E '^(FAIL|ERROR):' /tmp/diag-tests.log | sed 's/^/::error::/' || true
-          grep -A18 -E '^(FAIL|ERROR):' /tmp/diag-tests.log | sed 's/^/::error::/' || true
       - name: Testar codigo PGBR apos preparar ferramentas DEX
-        shell: bash
-        run: |
-          set +e
-          python -B tools/check.py > /tmp/check.log 2>&1
-          rc=$?
-          echo "::error::B64:$(tail -80 /tmp/check.log | base64 -w0)"
-          exit $rc
+        run: python -B tools/check.py
       - name: Testar menu, busca iFlowGo segura e janelas de escolha manual
         run: |
           python -B pgrazor/test/test_iflowgo_request_policy_java.py

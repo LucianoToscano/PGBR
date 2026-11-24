@@ -688,7 +688,12 @@ public final class Pad {
         }
         if(overlays.getWidth()<40||overlays.getHeight()<40)return;
         if(autoRouteSource!=null&&autoRouteSource.width==overlays.getWidth()&&
-                autoRouteSource.height==overlays.getHeight())return;
+                autoRouteSource.height==overlays.getHeight()){
+            // A transient loss of confidence hides the view but must not disable the source forever.
+            if(!closed&&visualRouteOverlay==null)
+                visualRouteOverlay=new RouteTraceOverlay(activity,overlays,autoRouteSource);
+            return;
+        }
         disableVisualRoute();
         autoRouteSource=new RouteAutoAnchorSource(overlays.getWidth(),overlays.getHeight());
         attachVisualRouteSource(autoRouteSource);

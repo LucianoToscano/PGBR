@@ -1289,8 +1289,10 @@ static void publish_map_anchors(uint64_t tid, uint64_t lease_ms) {
 
   static char anchors[28000];
   size_t pos = 0;
-  pos += static_cast<size_t>(snprintf(anchors + pos, sizeof(anchors) - pos, "{\"count\":%u,\"points\":[",
-                                      g_map_anchor_out->count));
+  // The capture time travels with the sample, so a late delivery cannot masquerade as a fresh camera frame.
+  pos += static_cast<size_t>(snprintf(anchors + pos, sizeof(anchors) - pos,
+      "{\"at\":%llu,\"count\":%u,\"points\":[",
+      static_cast<unsigned long long>(monotonic_ms()), g_map_anchor_out->count));
   for (uint32_t i = 0; i < g_map_anchor_out->count && pos + 256 < sizeof(anchors); ++i) {
     const PgrMapAnchorPoint &a = g_map_anchor_out->anchors[i];
     char id_buf[160];

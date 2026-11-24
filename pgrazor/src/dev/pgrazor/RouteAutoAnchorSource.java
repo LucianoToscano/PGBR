@@ -15,7 +15,7 @@ final class RouteAutoAnchorSource implements RouteTraceOverlay.ProjectedFrameSou
     private RouteGroundProjection projection;
     private double[][] points;
     private boolean loop;
-    private long cachedToken, completedToken;
+    private long cachedToken, completedToken, lastFitAttempt;
     private double completed;
 
     RouteAutoAnchorSource(int width, int height) {
@@ -33,10 +33,17 @@ final class RouteAutoAnchorSource implements RouteTraceOverlay.ProjectedFrameSou
         // Control renews the timestamp on every native observation, even when the camera is stationary
         // and the JSON payload is byte-identical. No fresh observation -> no stale line.
         if (observedAt <= 0 || now < observedAt || now - observedAt > MAX_ANCHOR_AGE_MS) return null;
-        if (!snapshot.equals(raw)) {
-            raw = snapshot;
-            RouteAnchorSnapshot parsed = RouteAnchorSnapshot.parse(snapshot);
-            projection = parsed == null ? null : parsed.fit(width, height);
+        RouteAnchorSnapshot parsed = RouteAnchorSnapshot.parse(snapshot);
+        if (parsed == null) { raw = ""; projection = null; return null; }
+        // A late message with an old native capture time is not a current camera frame.
+        long capturedAt = parsed.capturedAtMs();
+        if (capturedAt <= 0 || now < capturedAt || now - capturedAt > MAX_ANCHOR_AGE_MS) return null;
+        // Only the geometry is a cache key: a new capture time alone must not trigger 924 homographies.
+        String geometry = snapshot.replaceFirst("\"at\":\\d+,", "");
+        if (!geometry.equals(raw) || (projection == null && now - lastFitAttempt > 1000)) {
+            raw = geometry;
+            lastFitAttempt = now;
+            projection = parsed.fit(width, height);
             completedToken = 0;
         }
         if (projection == null) return null;
