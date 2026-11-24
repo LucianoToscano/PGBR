@@ -43,7 +43,7 @@ public final class Control {
         AutoRaid.reset();
         AutoMaxBattle.reset();
         GiftBatchSettings.reset();
-        gameRoutes.stop("Account switch"); gameRoutesPlanning=false; gameRoutes.setPlanning(false); autoWalkPlanning=false;
+        gameRoutes.stop("Account switch"); gameRoutesPlanning=false;mapRoutesOpen=false; gameRoutes.setPlanning(false); autoWalkPlanning=false;
         vgp.suspend();
         mapTapEpoch++; invalidateQuickBallOutcome();
         engine.stop(); saveState();
@@ -66,10 +66,12 @@ public final class Control {
     public static final MotionEngine engine = new MotionEngine();
     private static final GameRoutesController gameRoutes = new GameRoutesController(
         engine, SystemClock::elapsedRealtime, System::currentTimeMillis);
-    private static volatile boolean gameRoutesPlanning;
+    private static volatile boolean gameRoutesPlanning,mapRoutesOpen;
     private static String gameRoutesLastStatus="";
     private static volatile String gameRoutesReadiness="Waiting for Route support";
-    public static void setGameRoutesPlanning(boolean open) { gameRoutesPlanning=open; gameRoutes.setPlanning(open); }
+    public static void setGameRoutesPlanning(boolean open) { gameRoutesPlanning=open; gameRoutes.setPlanning(open||mapRoutesOpen); }
+    public static void setMapRoutesOpen(boolean open){mapRoutesOpen=open;gameRoutes.setPlanning(gameRoutesPlanning||open);}
+    public static String gameRoutesMapSnapshot(){return hostLive()?gameRoutes.mapSnapshot():"";}
     public static boolean gameRoutesReady() { return gameRoutes.ready(); }
     public static boolean gameRoutesRunning() { return gameRoutes.running(); }
     public static String gameRoutesStatus() { return gameRoutes.ready()?gameRoutes.status():gameRoutesReadiness; }
@@ -78,7 +80,7 @@ public final class Control {
     public static String takeGameRoutesRewardNotice() { return gameRoutes.takeRewardNotice(); }
     public static String gameRoutesDetails() { return gameRoutes.details(); }
     public static String gameRoutesCommand() { return gameRoutes.command(); }
-    public static boolean gameRoutesAllowed() { return hostLive() && desiredEnabled && (gameRoutesPlanning || gameRoutes.running()); }
+    public static boolean gameRoutesAllowed() { return hostLive() && desiredEnabled && (gameRoutesPlanning || mapRoutesOpen || gameRoutes.running()); }
     public static void setGameRoutesReady(boolean value,String reason) {
         gameRoutesReadiness=reason==null||reason.isEmpty()?"Waiting for Route support":reason;
         gameRoutes.setReady(value);
@@ -1340,7 +1342,7 @@ public final class Control {
     public static void suspendForBackground() {
         EternatusRouteRunner.stop("O aplicativo deixou o primeiro plano.");
         gameRoutes.stop("App left foreground; check the active in-game Route before restarting");
-        gameRoutesPlanning=false;gameRoutes.setPlanning(false);
+        gameRoutesPlanning=false;mapRoutesOpen=false;gameRoutes.setPlanning(false);
         requestInteractionStop();
         OneShotAutomation.reset();
         AutoRaid.reset();

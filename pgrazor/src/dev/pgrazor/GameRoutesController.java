@@ -102,6 +102,7 @@ final class GameRoutesController {
     String lastReward() { synchronized(lock) { return lastReward; } }
     String takeRewardNotice() { synchronized(lock) { String value=pendingReward; pendingReward=""; return value; } }
     String snapshot() { synchronized (lock) { return rawSnapshot; } }
+    String mapSnapshot(){synchronized(lock){return ready&&freshSnapshot()?rawSnapshot:"";}}
 
     /**
      * A compact, immutable JSON description of the active run for the details UI. Everything is copied

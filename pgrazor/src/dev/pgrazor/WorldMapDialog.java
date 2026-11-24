@@ -12,6 +12,7 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.widget.CheckBox;
 import org.json.JSONObject;
+import org.json.JSONArray;
 import android.os.Handler;
 import android.os.Looper;
 import android.text.Html;
@@ -146,13 +147,22 @@ public final class WorldMapDialog {
         TextView coverage=label(ui,"Nearby locations loaded by the game",12);layout.addView(coverage);map.setPoiStatus(coverage);
         map.refreshPois();
         PlaceUi places = new PlaceUi(activity, ui, map, saved);
+        CheckBox favoriteLayer=new CheckBox(ui);favoriteLayer.setText("Favoritos");favoriteLayer.setTextSize(13);
+        CheckBox powerLayer=new CheckBox(ui);powerLayer.setText("Pontos de Energia importados");powerLayer.setTextSize(13);
+        CheckBox officialLayer=new CheckBox(ui);officialLayer.setText("Rotas oficiais");officialLayer.setTextSize(13);
+        for(CheckBox toggle:new CheckBox[]{favoriteLayer,powerLayer,officialLayer})layers.addView(toggle,new LinearLayout.LayoutParams(-2,-2));
+        favoriteLayer.setChecked(preferences.getBoolean("mapFavorites",false));powerLayer.setChecked(preferences.getBoolean("mapImportedPower",false));officialLayer.setChecked(preferences.getBoolean("mapOfficialRoutes",false));
+        favoriteLayer.setOnCheckedChangeListener((v,on)->{preferences.edit().putBoolean("mapFavorites",on).apply();places.setMarkerLayers(on,powerLayer.isChecked());});
+        powerLayer.setOnCheckedChangeListener((v,on)->{preferences.edit().putBoolean("mapImportedPower",on).apply();places.setMarkerLayers(favoriteLayer.isChecked(),on);});
+        officialLayer.setOnCheckedChangeListener((v,on)->{preferences.edit().putBoolean("mapOfficialRoutes",on).apply();map.setOfficialLayer(on);});
+        places.setMarkerLayers(favoriteLayer.isChecked(),powerLayer.isChecked());map.setOfficialLayer(officialLayer.isChecked());
         saved.setOnClickListener(v -> places.openLibrary());
         android.widget.FrameLayout mapFrame=new android.widget.FrameLayout(ui);
         mapFrame.addView(map,new android.widget.FrameLayout.LayoutParams(-1,-1));
         LinearLayout floating=new LinearLayout(ui);floating.setOrientation(LinearLayout.VERTICAL);
         Button plus=button(ui,"+"),minus=button(ui,"−"),locate=button(ui,"◎"),radar=button(ui,"☰");
         plus.setContentDescription("Aumentar zoom");minus.setContentDescription("Diminuir zoom");locate.setContentDescription("Centralizar no jogador");radar.setContentDescription("Lista de recursos próximos");
-        plus.setOnClickListener(v->map.zoom(1));minus.setOnClickListener(v->map.zoom(-1));locate.setOnClickListener(v->map.centerCurrentLocation());radar.setOnClickListener(v->map.poiLayer.openNearbyList());
+        plus.setOnClickListener(v->map.zoom(1));minus.setOnClickListener(v->map.zoom(-1));locate.setOnClickListener(v->map.centerCurrentLocation());radar.setOnClickListener(v->places.openResourceCategories());
         for(Button b:new Button[]{plus,minus,locate,radar})floating.addView(b,new LinearLayout.LayoutParams(dp(activity,48),dp(activity,48)));
         android.widget.FrameLayout.LayoutParams floatParams=new android.widget.FrameLayout.LayoutParams(-2,-2,Gravity.TOP|Gravity.RIGHT);floatParams.setMargins(0,dp(activity,4),dp(activity,4),0);
         mapFrame.addView(floating,floatParams);
@@ -186,7 +196,7 @@ public final class WorldMapDialog {
         pin.setContentDescription(dev.pgrazor.PtBr.tr("Center the map on the red pin and copy its coordinates"));
         current.setOnClickListener(v -> {
             map.centerCurrentLocation();
-            CoordinateClipboard.copy(activity, Control.engine.latitude, Control.engine.longitude, "Your location copied");
+            if(Control.locationKnown())CoordinateClipboard.copy(activity, Control.currentLatitude(), Control.currentLongitude(), "Your location copied");
         });
         pin.setOnClickListener(v -> { map.centerSelection(); CoordinateClipboard.copy(activity, map.latitude, map.longitude, "Pin location copied"); });
         copyRow.addView(current, new LinearLayout.LayoutParams(0, dp(activity, 48), 1));
@@ -391,7 +401,45 @@ public final class WorldMapDialog {
         final ThreadPoolExecutor storage = new ThreadPoolExecutor(1, 1, 0, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<Runnable>(8));
         final List<AlertDialog> dialogs = new ArrayList<>();
         SavedPlaces places;
-        boolean closed;
+        boolean closed,showFavorites,showPowers;
+        int markerRevision;
+        void setMarkerLayers(boolean favorites,boolean powers){showFavorites=favorites;showPowers=powers;refreshMarkerLayers();}
+        void refreshMarkerLayers(){
+            final int revision=++markerRevision;final boolean favorites=showFavorites,powers=showPowers;
+            if(!favorites)map.setFavoriteMarkers(Collections.emptyList());if(!powers)map.setPowerMarkers(Collections.emptyList());
+            if(closed||(!favorites&&!powers))return;
+            try{storage.execute(()->{
+                List<SavedPlaces.Entry> savedRows=Collections.emptyList();List<SourceEvent> powerRows=new ArrayList<>();long now=System.currentTimeMillis();
+                try{if(favorites)savedRows=store().read().entries;
+                    if(powers)for(SourceEvent event:SourceDataStore.events(activity,now).live(now))if(event.kind==SourceEvent.Kind.POWERSPOT&&event.isActionable(now))powerRows.add(event);
+                }catch(RuntimeException unavailable){}
+                final List<SavedPlaces.Entry> f=savedRows;
+                main.post(()->{if(!closed&&revision==markerRevision){if(favorites)map.setFavoriteMarkers(f);if(powers)map.setPowerMarkers(powerRows);}});
+            });}catch(java.util.concurrent.RejectedExecutionException busy){}
+        }
+        void openResourceCategories(){
+            String[] choices={"Poképaradas / Ginásios / Reides / Rocket","Rotas oficiais carregadas","Pontos de Energia importados","Favoritos"};
+            AlertDialog dialog=ChoiceList.attach(new AlertDialog.Builder(ui).setTitle("Radar de recursos").setNegativeButton("Fechar",null).create(),choices,i->{
+                if(closed)return;if(i==0)map.poiLayer.openNearbyList();else if(i==1)openOfficialList();else if(i==2)openPowerList();else openLibrary();
+            });show(dialog);
+        }
+        void openOfficialList(){
+            map.refreshOfficialRoutes();
+            List<OfficialPreview> rows=new ArrayList<>(map.officialRoutes);
+            if(Control.locationKnown())rows.sort(java.util.Comparator.comparingDouble(r->distanceMeters(Control.currentLatitude(),Control.currentLongitude(),r.points[0][0],r.points[0][1])));
+            AlertDialog.Builder builder=new AlertDialog.Builder(ui).setTitle("Rotas oficiais carregadas ("+rows.size()+")").setNegativeButton("Fechar",null);
+            if(rows.isEmpty()){show(builder.setMessage("Ative a camada Rotas oficiais e aguarde os dados carregados pelo jogo. Nenhuma disponibilidade é presumida.").create());return;}
+            String[] names=new String[rows.size()];for(int i=0;i<rows.size();i++){OfficialPreview row=rows.get(i);names[i]=row.name+(Double.isFinite(row.meters)&&row.meters>0?String.format(Locale.forLanguageTag("pt-BR")," • %.0f m",row.meters):" • distância não informada");}
+            show(ChoiceList.attach(builder.create(),names,i->{OfficialPreview row=rows.get(i);map.select(row.points[0][0],row.points[0][1]);}));
+        }
+        void openPowerList(){
+            long now=System.currentTimeMillis();List<SourceEvent> rows=new ArrayList<>();for(SourceEvent e:map.powerMarkers)if(e.isActionable(now))rows.add(e);
+            if(Control.locationKnown())rows.sort(java.util.Comparator.comparingDouble(e->e.distanceKm(Control.currentLatitude(),Control.currentLongitude())));
+            AlertDialog.Builder builder=new AlertDialog.Builder(ui).setTitle("Pontos de Energia importados ("+rows.size()+")").setNegativeButton("Fechar",null);
+            if(rows.isEmpty()){show(builder.setMessage("Ative a camada de Pontos de Energia importados. Só aparecem registros locais válidos; não há confirmação ao vivo.").create());return;}
+            String[] labels=new String[rows.size()];for(int i=0;i<rows.size();i++){SourceEvent e=rows.get(i);String name=e.name.isEmpty()?"Ponto de Energia":e.name;labels[i]=name+"\n"+e.originKind.labelPtBr+" • disponibilidade não confirmada"+(Control.locationKnown()?String.format(Locale.forLanguageTag("pt-BR")," • %.2f km",e.distanceKm(Control.currentLatitude(),Control.currentLongitude())):"");}
+            show(ChoiceList.attach(builder.create(),labels,i->{SourceEvent e=rows.get(i);if(e.isActionable(System.currentTimeMillis()))map.select(e.lat,e.lon);}));
+        }
         PlaceUi(Activity activity, Context ui, MapView map, Button opener) { this.activity = activity; this.ui = ui; this.map = map; this.opener = opener; }
         private SavedPlaces store() { if (places == null) places = new SavedPlaces(activity); return places; }
         private void show(AlertDialog dialog) {
@@ -471,7 +519,7 @@ public final class WorldMapDialog {
                         store().add(entry);
                         main.post(() -> {
                             if (!closed && dialog.isShowing()) {
-                                dialog.dismiss(); if(library!=null)library.dismiss(); Toast.makeText(activity, "Saved " + entry.name, Toast.LENGTH_SHORT).show(); openLibrary();
+                                dialog.dismiss(); if(library!=null)library.dismiss(); Toast.makeText(activity, "Saved " + entry.name, Toast.LENGTH_SHORT).show(); refreshMarkerLayers();openLibrary();
                             }
                         });
                     } catch (IOException | RuntimeException e) {
@@ -499,7 +547,7 @@ public final class WorldMapDialog {
                 storage.execute(() -> {
                     try {
                         store().remove(entry.id);
-                        main.post(() -> { if (!closed && confirm.isShowing()) { confirm.dismiss(); details.dismiss(); openLibrary(); } });
+                        main.post(() -> { if (!closed && confirm.isShowing()) { confirm.dismiss(); details.dismiss(); refreshMarkerLayers();openLibrary(); } });
                     } catch (IOException | RuntimeException e) {
                         main.post(() -> {
                             if (!closed && confirm.isShowing()) {
@@ -549,12 +597,41 @@ public final class WorldMapDialog {
         }
     }
 
+    /** Read-only, bounded official route preview. No movement or completion command is created here. */
+    private static final class OfficialPreview {
+        final String name;final double meters;final double[][] points;
+        OfficialPreview(String name,double meters,double[][] points){this.name=name;this.meters=meters;this.points=points;}
+    }
+    private static List<OfficialPreview> officialPreviews(String snapshot){
+        List<OfficialPreview> out=new ArrayList<>();
+        if(snapshot==null||snapshot.isEmpty()||snapshot.length()>700000)return out;
+        try{JSONArray routes=new JSONObject(snapshot).optJSONArray("routes");if(routes==null)return out;
+            for(int i=0;i<Math.min(100,routes.length());i++){
+                JSONObject r=routes.optJSONObject(i);if(r==null)continue;JSONArray points=r.optJSONArray("points");if(points==null||points.length()<2||points.length()>MotionEngine.MAX_ROUTE_STOPS)continue;
+                int size=Math.min(100,points.length());double[][] sampled=new double[size][2];boolean valid=true;
+                for(int j=0;j<points.length();j++){JSONArray point=points.optJSONArray(j);if(point==null||point.length()<2){valid=false;break;}double lat=point.optDouble(0,Double.NaN),lon=point.optDouble(1,Double.NaN);if(!Double.isFinite(lat)||!Double.isFinite(lon)||Math.abs(lat)>90||Math.abs(lon)>180){valid=false;break;}}
+                if(!valid)continue;
+                for(int j=0;j<size;j++){JSONArray point=points.optJSONArray((int)Math.round((double)j*(points.length()-1)/(size-1)));sampled[j][0]=point.optDouble(0);sampled[j][1]=point.optDouble(1);}
+                out.add(new OfficialPreview(r.optString("name",r.optString("id","Rota oficial")),r.optDouble("distanceMeters",Double.NaN),sampled));
+            }
+        }catch(org.json.JSONException malformed){}
+        return out;
+    }
     private static final class MapView extends View {
         private final TextView selectionLabel;
         private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.FILTER_BITMAP_FLAG);
         private final int tileSize, slop;
         private final MapTileSource tiles;
         private final MapPoiLayer poiLayer;
+        private List<SavedPlaces.Entry> favoriteMarkers=Collections.emptyList();
+        private List<SourceEvent> powerMarkers=Collections.emptyList();
+        private List<OfficialPreview> officialRoutes=Collections.emptyList();
+        private boolean officialLayer;private String lastOfficialSnapshot="";
+        void setFavoriteMarkers(List<SavedPlaces.Entry> rows){favoriteMarkers=new ArrayList<>(rows);invalidate();}
+        void setPowerMarkers(List<SourceEvent> rows){powerMarkers=new ArrayList<>(rows);invalidate();}
+        void setOfficialLayer(boolean enabled){if(officialLayer==enabled)return;officialLayer=enabled;Control.setMapRoutesOpen(enabled);lastOfficialSnapshot="";officialRoutes=Collections.emptyList();refreshOfficialRoutes();invalidate();}
+        void refreshOfficialRoutes(){String raw=officialLayer?Control.gameRoutesMapSnapshot():"";if(!raw.equals(lastOfficialSnapshot)){lastOfficialSnapshot=raw;officialRoutes=officialPreviews(raw);invalidate();}}
+        private String selectedResource="";
         private List<double[]> route = Collections.emptyList();
         private List<double[]> activeTrace = Collections.emptyList();
         private MotionEngine.RouteVisualSnapshot traceState;
@@ -616,7 +693,7 @@ public final class WorldMapDialog {
         private final Runnable locationRefresh = new Runnable() {
             public void run() {
                 if(closed) return;
-                refreshTrace();updateSelection();refreshWalkControls();
+                refreshTrace();updateSelection();refreshWalkControls();refreshOfficialRoutes();
                 invalidate(); // Refresh the live player marker without requesting new tiles.
                 postDelayed(this, 250);
             }
@@ -664,7 +741,7 @@ public final class WorldMapDialog {
         void refreshPois() { poiLayer.refresh(); }
 
         private void updateSelection() {
-            String info=String.format(Locale.US,"Local selecionado: %.6f, %.6f",latitude,longitude);
+            String info=String.format(Locale.US,"%s: %.6f, %.6f",selectedResource.isEmpty()?"Local selecionado":selectedResource,latitude,longitude);
             if(Control.locationKnown())info+=String.format(Locale.forLanguageTag("pt-BR"),"\nDistância: %.0f m",distanceMeters(Control.currentLatitude(),Control.currentLongitude(),latitude,longitude));
             if(Control.locationKnown()&&Cooldown.hasHistory()){long seconds=(Cooldown.remainingAt(latitude,longitude)+999)/1000;info+=String.format(Locale.US," • Cooldown est.: %d:%02d:%02d",seconds/3600,seconds/60%60,seconds%60);}else info+=" • Cooldown: sem estimativa";
             info+="\nHorário local: "+destinationClock.label(latitude,longitude,System.currentTimeMillis(),true,Locale.forLanguageTag("pt-BR"));
@@ -675,14 +752,14 @@ public final class WorldMapDialog {
         void zoom(int amount) { int next = Math.max(0, Math.min(19, zoom + amount)); if (next != zoom) { zoom = next; viewportChanged(); } }
         void worldView() { zoomScale=1; zoom = 0; centerX = .5; centerY = .5; viewportChanged(); }
         void centerCurrentLocation() {
-            double lat=Control.engine.latitude,lon=Control.engine.longitude;
-            if(!Double.isFinite(lat)||!Double.isFinite(lon)||Math.abs(lat)>90||Math.abs(lon)>180)return;
+            double lat=Control.currentLatitude(),lon=Control.currentLongitude();
+            if(!Control.locationKnown()||!Double.isFinite(lat)||!Double.isFinite(lon)||Math.abs(lat)>90||Math.abs(lon)>180)return;
             zoomScale=1;if(zoom==0)zoom=14;
             centerX=MapProjection.x(lon);centerY=MapProjection.y(lat);viewportChanged();
         }
         void centerSelection() { zoomScale=1; if (zoom == 0) zoom = 14; centerX = MapProjection.x(longitude); centerY = MapProjection.y(latitude); viewportChanged(); }
         void select(double latitude, double longitude) {
-            this.latitude = latitude; this.longitude = longitude;
+            this.latitude = latitude; this.longitude = longitude;selectedResource="";
             zoomScale=1; zoom = 14; centerX = MapProjection.x(longitude); centerY = MapProjection.y(latitude);
             updateSelection(); viewportChanged();
         }
@@ -725,7 +802,9 @@ public final class WorldMapDialog {
                     paint.setColor(Color.rgb(202, 211, 216)); paint.setStyle(Paint.Style.STROKE); canvas.drawRect(bounds, paint); paint.setStyle(Paint.Style.FILL);
                 }
             }
+            drawOfficialRoutes(canvas);
             poiLayer.draw(canvas);
+            drawSupplementalMarkers(canvas);
             drawRoute(canvas,false);
             float markerX = (float)(getWidth() / 2.0 + MapProjection.deltaX(MapProjection.x(longitude), centerX) * world());
             float markerY = (float)(getHeight() / 2.0 + (MapProjection.y(latitude) - centerY) * world());
@@ -737,10 +816,31 @@ public final class WorldMapDialog {
             drawCurrentLocation(canvas);
         }
 
+        private void drawOfficialRoutes(Canvas canvas){
+            if(!officialLayer||officialRoutes.isEmpty())return;float w=(float)world();paint.setColor(0xff4b718d);paint.setStyle(Paint.Style.STROKE);paint.setStrokeWidth(dp(getContext(),3));
+            paint.setPathEffect(new android.graphics.DashPathEffect(new float[]{dp(getContext(),7),dp(getContext(),5)},0));
+            for(OfficialPreview route:officialRoutes){for(int i=1;i<route.points.length;i++){double[] a=route.points[i-1],b=route.points[i];float x=projectX(a[1]),y=projectY(a[0]);float x2=x+(float)(MapProjection.deltaX(MapProjection.x(b[1]),MapProjection.x(a[1]))*w),y2=projectY(b[0]);canvas.drawLine(x,y,x2,y2,paint);if(x2<0||x2>getWidth()){canvas.drawLine(x-w,y,x2-w,y2,paint);canvas.drawLine(x+w,y,x2+w,y2,paint);}}}
+            paint.setPathEffect(null);paint.setStyle(Paint.Style.FILL);
+        }
+        private void drawSupplementalMarkers(Canvas canvas){
+            paint.setStyle(Paint.Style.FILL);paint.setTextAlign(Paint.Align.CENTER);paint.setTextSize(dp(getContext(),11));long now=System.currentTimeMillis();
+            for(SavedPlaces.Entry e:favoriteMarkers)drawResourceMarker(canvas,e.latitude,e.longitude,"★",0xffa66b00);
+            for(SourceEvent e:powerMarkers)if(e.isActionable(now))drawResourceMarker(canvas,e.lat,e.lon,"D",0xff8140b1);
+        }
+        private void drawResourceMarker(Canvas canvas,double lat,double lon,String glyph,int color){
+            float x=projectX(lon),y=projectY(lat),r=dp(getContext(),10);if(x<-r||x>getWidth()+r||y<-r||y>getHeight()+r)return;
+            paint.setColor(Color.WHITE);canvas.drawCircle(x,y,r+dp(getContext(),2),paint);paint.setColor(color);canvas.drawCircle(x,y,r,paint);paint.setColor(Color.WHITE);canvas.drawText(glyph,x,y+dp(getContext(),4),paint);
+        }
+        private boolean pickResource(float x,float y){
+            double best=dp(getContext(),22);String name="";double lat=0,lon=0;long now=System.currentTimeMillis();
+            for(SavedPlaces.Entry e:favoriteMarkers){double d=Math.hypot(x-projectX(e.longitude),y-projectY(e.latitude));if(d<best){best=d;name="Favorito • "+e.name;lat=e.latitude;lon=e.longitude;}}
+            for(SourceEvent e:powerMarkers){if(!e.isActionable(now))continue;double d=Math.hypot(x-projectX(e.lon),y-projectY(e.lat));if(d<best){best=d;name="Ponto de Energia importado • "+(e.name.isEmpty()?"sem nome":e.name);lat=e.lat;lon=e.lon;}}
+            if(name.isEmpty())return false;latitude=lat;longitude=lon;selectedResource=name;updateSelection();invalidate();return true;
+        }
         /** Independent of the destination: selecting or searching never changes this position. */
         private void drawCurrentLocation(Canvas canvas) {
-            double lat=Control.engine.latitude,lon=Control.engine.longitude;
-            if(!Double.isFinite(lat)||!Double.isFinite(lon)||Math.abs(lat)>90||Math.abs(lon)>180)return;
+            double lat=Control.currentLatitude(),lon=Control.currentLongitude();
+            if(!Control.locationKnown()||!Double.isFinite(lat)||!Double.isFinite(lon)||Math.abs(lat)>90||Math.abs(lon)>180)return;
             float x=projectX(lon),y=projectY(lat),radius=dp(getContext(),5);
             if(x < -radius*3 || x > getWidth()+radius*3 || y < -radius*3 || y > getHeight()+radius*3)return;
             paint.setStyle(Paint.Style.FILL);
@@ -856,8 +956,9 @@ public final class WorldMapDialog {
                         // Browsing marker details never moves the destination; movement needs an explicit action.
                         List<JSONObject> hits = poiLayer.hasLayers() ? poiLayer.hits(event.getX(), event.getY()) : Collections.<JSONObject>emptyList();
                         if (!hits.isEmpty()) { performClick(); poiLayer.openDetails(hits); getParent().requestDisallowInterceptTouchEvent(false); return true; }
+                        if(insideWorld&&pickResource(event.getX(),event.getY())){performClick();getParent().requestDisallowInterceptTouchEvent(false);return true;}
                         if (insideWorld) {
-                            longitude = MapProjection.longitude(MapProjection.offsetX(centerX, event.getX() - getWidth() / 2.0, world()));
+                            selectedResource="";longitude = MapProjection.longitude(MapProjection.offsetX(centerX, event.getX() - getWidth() / 2.0, world()));
                             latitude = MapProjection.latitude(MapProjection.offsetY(centerY, event.getY() - getHeight() / 2.0, world()));
                             updateSelection(); invalidate(); performClick();
                         }
@@ -874,6 +975,7 @@ public final class WorldMapDialog {
             if (closed) return;
             closed = true;
             traceState=null;traceToken=0;activeTrace=Collections.emptyList();traceSummary=null;
+            if(officialLayer)Control.setMapRoutesOpen(false);officialLayer=false;officialRoutes=Collections.emptyList();favoriteMarkers=Collections.emptyList();powerMarkers=Collections.emptyList();
             poiLayer.close();
             tiles.close();
         }

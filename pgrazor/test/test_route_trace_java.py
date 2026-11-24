@@ -183,6 +183,10 @@ class RouteTraceTest(unittest.TestCase):
         poi=(ROOT/"src/dev/pgrazor/MapPoiLayer.java").read_text(encoding="utf-8")
         self.assertIn("((layers & 8) != 0 && rocketName(point,now)!=null)",poi)
         self.assertIn("void openNearbyList()",poi)
+        for token in ["mapFavorites","mapImportedPower","mapOfficialRoutes","event.isActionable(now)","drawOfficialRoutes(canvas)","Control.setMapRoutesOpen(false)","gameRoutesMapSnapshot()","setVisualRoutePaused(token"]:
+            self.assertIn(token,source)
+        controller=(ROOT/"src/dev/pgrazor/GameRoutesController.java").read_text(encoding="utf-8")
+        self.assertIn("ready&&freshSnapshot()?rawSnapshot",controller)
 
     def test_map_integration(self):
         source = (ROOT / "src/dev/pgrazor/WorldMapDialog.java").read_text(encoding="utf-8")
