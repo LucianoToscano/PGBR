@@ -471,41 +471,54 @@ public final class WorldMapDialog {
                 }
             });
         }
-        private void showLibrary(SavedPlaces.Snapshot snapshot) {showLibrary(snapshot,"");}
-        private void showLibrary(SavedPlaces.Snapshot snapshot,String query) {
-            String needle=query.trim().toLowerCase(Locale.ROOT);
-            List<SavedPlaces.Entry> filtered=new ArrayList<>();
-            for(SavedPlaces.Entry e:snapshot.entries)if((e.name+" "+e.category).toLowerCase(Locale.ROOT).contains(needle))filtered.add(e);
-            AlertDialog.Builder builder = new AlertDialog.Builder(ui).setTitle(dev.pgrazor.PtBr.tr("Saved places (" + snapshot.entries.size() + "/" + SavedPlaces.LIMIT + ")"))
-                .setNegativeButton(dev.pgrazor.PtBr.tr("Close"), null).setPositiveButton(dev.pgrazor.PtBr.tr("Save selected"), null);
-            builder.setNeutralButton("Buscar",null);
-            final AlertDialog[] holder = new AlertDialog[1];
-            if(filtered.isEmpty()&&!snapshot.entries.isEmpty())builder.setMessage("Nenhum favorito corresponde à busca: "+query);
-            else if (snapshot.entries.isEmpty()) builder.setMessage(dev.pgrazor.PtBr.tr(snapshot.damaged ? "Saved places could not be read. You can save new destinations here." : "No saved places yet. Save the selected map destination to find it again later."));
-            else {
-                List<SavedPlaces.Entry> ordered=new ArrayList<>(filtered);
-                ordered.sort(java.util.Comparator.comparing((SavedPlaces.Entry e)->e.category).thenComparing(e->e.name,String.CASE_INSENSITIVE_ORDER));
-                String[] names = new String[ordered.size()];
-                LocalTimeClock clock=new LocalTimeClock();long now=System.currentTimeMillis();
-                for (int i = 0; i < names.length; i++) {
-                    SavedPlaces.Entry entry = ordered.get(i);
-                    String detail=clock.label(entry.latitude,entry.longitude,now,true,Locale.forLanguageTag("pt-BR"));
-                    if(Control.locationKnown())detail+=String.format(Locale.forLanguageTag("pt-BR")," • %.0f m",distanceMeters(Control.currentLatitude(),Control.currentLongitude(),entry.latitude,entry.longitude));
-                    if(Control.locationKnown()&&Cooldown.hasHistory())detail+=" • espera est. "+((Cooldown.remainingAt(entry.latitude,entry.longitude)+59999)/60000)+" min";
-                    names[i]=String.format(Locale.US,"%s • %s\n%.6f, %.6f\n%s",entry.category,entry.name,entry.latitude,entry.longitude,detail);
+        private String favoriteCategory="";
+        private int favoriteSort=0;
+        private void showLibrary(SavedPlaces.Snapshot snapshot) {
+            LinearLayout panel=new LinearLayout(ui);panel.setOrientation(LinearLayout.VERTICAL);
+            LinearLayout toolbar=new LinearLayout(ui);
+            Button add=button(ui,"+"),filter=button(ui,"Filtrar"),order=button(ui,"Ordenar por");
+            add.setContentDescription("Salvar local selecionado");
+            toolbar.addView(add,new LinearLayout.LayoutParams(dp(activity,48),dp(activity,48)));
+            toolbar.addView(filter,new LinearLayout.LayoutParams(0,dp(activity,48),1));
+            toolbar.addView(order,new LinearLayout.LayoutParams(0,dp(activity,48),1));panel.addView(toolbar);
+            EditText search=new EditText(ui);search.setSingleLine(true);search.setHint("Buscar favoritos");panel.addView(search);
+            android.widget.ScrollView scroll=new android.widget.ScrollView(ui);
+            LinearLayout rows=new LinearLayout(ui);rows.setOrientation(LinearLayout.VERTICAL);scroll.addView(rows);
+            panel.addView(scroll,new LinearLayout.LayoutParams(-1,0,1));
+            AlertDialog dialog=new AlertDialog.Builder(ui).setTitle("Favoritos ("+snapshot.entries.size()+"/"+SavedPlaces.LIMIT+")").setView(panel).setNegativeButton("Fechar",null).create();
+            Runnable render=()->{
+                if(closed)return;rows.removeAllViews();String needle=search.getText().toString().trim().toLowerCase(Locale.ROOT);
+                List<SavedPlaces.Entry> ordered=new ArrayList<>();for(SavedPlaces.Entry e:snapshot.entries)if((favoriteCategory.isEmpty()||favoriteCategory.equals(e.category))&&(e.name+" "+e.category).toLowerCase(Locale.ROOT).contains(needle))ordered.add(e);
+                long now=System.currentTimeMillis();boolean known=Control.locationKnown();double lat=Control.currentLatitude(),lon=Control.currentLongitude();
+                java.util.Comparator<SavedPlaces.Entry> byName=java.util.Comparator.comparing((SavedPlaces.Entry e)->e.name,String.CASE_INSENSITIVE_ORDER);
+                switch(favoriteSort){
+                    case 1:ordered.sort(byName.reversed());break;
+                    case 2:ordered.sort(java.util.Comparator.comparingLong((SavedPlaces.Entry e)->e.createdAtMs).reversed().thenComparing(byName));break;
+                    case 3:if(known)ordered.sort(java.util.Comparator.comparingDouble(e->distanceMeters(lat,lon,e.latitude,e.longitude)));break;
+                    case 4:if(known&&Cooldown.hasHistory())ordered.sort(java.util.Comparator.comparingLong(e->Cooldown.remainingAt(e.latitude,e.longitude)));break;
+                    case 5:ordered.sort(java.util.Comparator.comparing((SavedPlaces.Entry e)->e.category).thenComparing(byName));break;
+                    default:ordered.sort(byName);
                 }
-                ChoiceList.attach(holder[0] = builder.create(), names, which -> showPlace(ordered.get(which)));
-            }
-            if (holder[0] == null) holder[0] = builder.create();
-            holder[0].setOnShowListener(d -> {
-                holder[0].getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> showSave(holder[0]));
-                holder[0].getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener(v->{
-                    EditText field=new EditText(ui);field.setSingleLine(true);field.setHint("Nome ou categoria");field.setText(query);
-                    AlertDialog search=new AlertDialog.Builder(ui).setTitle("Buscar favoritos").setView(field).setNegativeButton("Cancelar",null).setPositiveButton("Buscar",(x,y)->{if(closed)return;holder[0].dismiss();showLibrary(snapshot,field.getText().toString());}).create();show(search);
-                });
-            });
-            show(holder[0]);
-            if (snapshot.damaged && !snapshot.entries.isEmpty()) Toast.makeText(activity, dev.pgrazor.PtBr.tr("Some saved places could not be read. Valid entries are shown."), Toast.LENGTH_LONG).show();
+                filter.setText(favoriteCategory.isEmpty()?"Filtrar: todos":favoriteCategory);
+                if(ordered.isEmpty())rows.addView(label(ui,snapshot.damaged?"Alguns dados não puderam ser lidos.":"Nenhum favorito neste filtro. Use + para salvar o local selecionado.",14));
+                LocalTimeClock clock=new LocalTimeClock();
+                for(SavedPlaces.Entry entry:ordered){
+                    String detail=clock.label(entry.latitude,entry.longitude,now,true,Locale.forLanguageTag("pt-BR"));
+                    if(known)detail+=String.format(Locale.forLanguageTag("pt-BR")," • %.0f m",distanceMeters(lat,lon,entry.latitude,entry.longitude));
+                    if(known&&Cooldown.hasHistory())detail+=" • espera est. "+((Cooldown.remainingAt(entry.latitude,entry.longitude)+59999)/60000)+" min";
+                    TextView row=label(ui,String.format(Locale.US,"%s • %s\n%.6f, %.6f\n%s",entry.category,entry.name,entry.latitude,entry.longitude,detail),15);
+                    int p=dp(activity,12);row.setPadding(p,p,p,p);row.setClickable(true);row.setFocusable(true);
+                    row.setOnClickListener(v->{dialog.dismiss();showPlace(entry);});rows.addView(row);
+                }
+                MapTheme.style(rows);
+            };
+            add.setOnClickListener(v->showSave(dialog));
+            filter.setOnClickListener(v->{String[] options=new String[SavedPlaces.CATEGORIES.length+1];options[0]="Todas";System.arraycopy(SavedPlaces.CATEGORIES,0,options,1,SavedPlaces.CATEGORIES.length);
+                show(new AlertDialog.Builder(ui).setTitle("Mostrar categorias").setItems(options,(d,i)->{favoriteCategory=i==0?"":options[i];render.run();}).setNegativeButton("Cancelar",null).create());});
+            order.setOnClickListener(v->show(new AlertDialog.Builder(ui).setTitle("Ordenar por").setItems(new String[]{"Nome A–Z","Nome Z–A","Mais recentes","Distância","Cooldown estimado","Categoria"},(d,i)->{favoriteSort=i;render.run();}).setNegativeButton("Cancelar",null).create()));
+            search.addTextChangedListener(new android.text.TextWatcher(){public void beforeTextChanged(CharSequence s,int st,int count,int after){}public void onTextChanged(CharSequence s,int st,int before,int count){render.run();}public void afterTextChanged(android.text.Editable e){}});
+            render.run();dialog.setOnShowListener(d->{MapTheme.fullScreen(dialog);MapTheme.style(panel);MapTheme.styleButtons(dialog);});show(dialog);
+            if(snapshot.damaged&&!snapshot.entries.isEmpty())Toast.makeText(activity,"Alguns favoritos não puderam ser lidos. Os válidos foram preservados.",Toast.LENGTH_LONG).show();
         }
         private void showSave(AlertDialog library) {
             final double latitude = map.latitude, longitude = map.longitude;
