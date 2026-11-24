@@ -3,10 +3,12 @@ from pathlib import Path
 import subprocess
 import tempfile
 import unittest
+from test_control_java import java_tools
 
 ROOT = Path(__file__).resolve().parents[1]
 HARNESS = r"""
 import dev.pgrazor.RouteTraceGeometry;
+import dev.pgrazor.MotionEngine;
 import java.util.ArrayList;
 public class RouteTraceHarness {
   static void check(boolean ok) { if (!ok) throw new AssertionError(); }
@@ -14,7 +16,26 @@ public class RouteTraceHarness {
     try { r.run(); throw new AssertionError("accepted invalid input"); }
     catch (IllegalArgumentException expected) {}
   }
+  static void testSnapshot() {
+    MotionEngine e=new MotionEngine(); e.position(0,0); e.speed(3.6);
+    check(e.routeVisualSnapshot(0)==null);
+    e.walkRoute(new double[][]{{0,0},{0,.0001},{0,.0002}},false);
+    MotionEngine.RouteVisualSnapshot a=e.routeVisualSnapshot(0);
+    check(a!=null && a.visited==1 && a.total==3 && a.newPoints.length==3 && a.legFraction==0);
+    a.newPoints[1][1]=999;
+    for(int i=0;i<20;i++) e.step(.25);
+    MotionEngine.RouteVisualSnapshot c=e.routeVisualSnapshot(a.token);
+    check(c.newPoints==null && c.legFraction>.4 && c.legFraction<.5 && c.remainingMeters<a.remainingMeters);
+    check(e.routeVisualSnapshot(0).newPoints[1][1]==.0001);
+    e.speed(0); check(e.routeVisualSnapshot(c.token).paused);
+    e.stop(); check(e.routeVisualSnapshot(c.token)==null);
+    e.speed(3.6); e.position(0,0); e.walkRoute(new double[][]{{0,0},{0,.000001}},true);
+    MotionEngine.RouteVisualSnapshot loop=e.routeVisualSnapshot(c.token);
+    check(loop!=null && loop.looping && loop.newPoints!=null && loop.token!=c.token);
+    e.stop(); e.walkTo(0,.0001); check(e.routeVisualSnapshot(0)==null);
+  }
   public static void main(String[] args) {
+    testSnapshot();
     double[] x={0,10,0,0}, y={0,0,0,0}, d={0,10,20,20};
     RouteTraceGeometry g=new RouteTraceGeometry(x,y,d);
     x[1]=999; d[1]=999;
@@ -39,13 +60,15 @@ public class RouteTraceHarness {
 """
 class RouteTraceTest(unittest.TestCase):
     def test_geometry(self):
+        compiler, runtime = java_tools()
         with tempfile.TemporaryDirectory() as tmp:
             harness = Path(tmp) / "RouteTraceHarness.java"
             harness.write_text(HARNESS, encoding="utf-8")
-            subprocess.run(["javac", "-encoding", "UTF-8", "-d", tmp,
+            subprocess.run([str(compiler), "-encoding", "UTF-8", "-d", tmp,
                             str(ROOT / "src/dev/pgrazor/RouteTraceGeometry.java"),
-                            str(harness)], check=True)
-            subprocess.run(["java", "-cp", tmp, "RouteTraceHarness"], check=True)
+                            str(ROOT / "src/dev/pgrazor/MotionEngine.java"),
+                            str(harness)], check=True, timeout=30)
+            subprocess.run([str(runtime), "-cp", tmp, "RouteTraceHarness"], check=True, timeout=30)
 
 if __name__ == "__main__":
     unittest.main()
