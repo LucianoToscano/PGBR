@@ -32,9 +32,9 @@ Verificar PR #203 e run 45482026778, registrar logs/resultado real, preservar o 
 
 Main observada `56cff4b885b9e52aa914aab8152a67959516e852`. Fila numerada de trabalho: os itens de catálogo incluem verificação de recursos existentes, propostas e melhorias; aberto não significa bug comprovado nem autorização para executar ações em serviço terceiro. Dependências e critérios completos permanecem no catálogo; decisões posteriores do Mestre prevalecem (BYOK retirado, não reativar automaticamente). Os itens já integrados podem exigir aceite em dispositivo separado. Não marcar conclusão sem evidência.
 
-8. [ ] PGBR-CI-205 / P0 — Workflow continuidade: falha Bash printf confirmada em 45485685560, job 138770313243; cinco formatos corrigidos no commit b67cd7ad1129c5a8733a5d48e16e4fb15359dffd na PR #205. Verificar novo CI e integrar somente se aprovado.
+8. [x] PGBR-CI-205 / P0 — Falha Bash printf corrigida em b67cd7ad1129c5a8733a5d48e16e4fb15359dffd; HEAD reconciliado 7b5a8424ff77eee98526c839e7db2b6cfdc102a0, CI 45493274906/45493274883/45493274892 aprovados, merge 606d90d455632fc7f7847eb8626a7ea99ada77e8. Primeira execução agendada na main deve ser conferida separadamente.
 9. [x] PGBR-DOC-204 / P5 — Índice MESTRE.md integrado em 56cff4b885b9e52aa914aab8152a67959516e852, CI 45482888669/45482888540 aprovado.
-10. [ ] PGBR-UI-SMALL / P1 — Risco de mapa sem altura útil, sobreposição de botões ou corte com filtros abertos, fonte grande e paisagem; reproduzir em layout e testar.
+10. [ ] PGBR-UI-SMALL / P1 — Causa estática confirmada: altura disponível podia ser zero; rodapé e atribuição sobrepostos. Candidata: scroll de contingência, altura mínima conforme controles medidos, rodapé empilhado e altura flexível dos botões; teste host de aritmética e integração estática. CI e teste Android físico ainda exigidos.
 11. [ ] PGBR-PR-TRIAGE / P2 — Reconciliar PRs antigas por equivalência comprovada e registrar decisão sem apagar trabalho.
 
 ### Inventário de 65 registros do catálogo
@@ -108,3 +108,8 @@ Main observada `56cff4b885b9e52aa914aab8152a67959516e852`. Fila numerada de trab
 ### Próxima ação executável
 
 PGBR-CI-205: confirmar CI do novo HEAD #205 e corrigir eventual falha. Em paralelo, QA LT047 real disponível em https://github.com/LucianoToscano/PGBR/actions/runs/45482026778/artifacts/14961904891 ; publicação ainda distinta. Testar layout em condições de tamanho reduzido e preservar o estado das tarefas anteriores. O executor agendado deve retomar desta fila e manter IDs, evidências e histórico de cada ciclo.
+
+
+### Ciclo 24/11/2026 — layout de viewport reduzido
+
+PGBR-CI-205 integrado após CI completo; PGBR-UI-SMALL candidata de correção em `WorldMapDialog.java`, `MapLayoutPolicy.java` e `test_route_trace_java.py`. Sem mudanças em motor, movimento, rotas, captura ou batalhas; `device_tested=false`. Próximo: verificar CI no HEAD desta PR, testar viewport Android e confirmar primeira execução agendada do workflow na main.

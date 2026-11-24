@@ -221,8 +221,9 @@ class RouteTraceTest(unittest.TestCase):
         for token in ["filterPanel.setVisibility(View.GONE)", "selectionRow.addView(search, 0,",
                       "selectionRow.addView(filters,", "filterPanel.addView(layerScroll)",
                       "filterPanel.addView(traceTools)", "filterPanel.addView(traceSummary)",
-                      "filterPanel.addView(coverage)", "mapFrame.addView(actions,actionParams)",
-                      "mapFrame.addView(attribution,attributionParams)",
+                      "filterPanel.addView(coverage)", "footer.addView(actions,",
+                      "footer.addView(attribution,", "mapFrame.addView(footer,footerParams)",
+                      "scroll.setFillViewport(true)", ".setView(scroll)", "MapLayoutPolicy.height(",
                       "hint.setVisibility(editing?View.VISIBLE:View.GONE)", "map.getLayoutParams().height = available"]:
             self.assertIn(token,source)
         for forbidden in ["layout.addView(layerScroll)", "layout.addView(traceTools)",
@@ -230,6 +231,36 @@ class RouteTraceTest(unittest.TestCase):
             self.assertNotIn(forbidden,source)
         self.assertLess(source.index("layout.addView(selectionRow)"),source.index("layout.addView(mapFrame"))
         self.assertLess(source.index("layout.addView(mapFrame"),source.index("layout.addView(selected)"))
+
+    def test_small_viewport_layout_policy(self):
+        compiler, runtime = java_tools()
+        harness = """package dev.pgrazor;
+public class MapLayoutPolicyTest {
+  static void check(int actual,int expected) {
+    if(actual!=expected) throw new AssertionError(actual+" != "+expected);
+  }
+  public static void main(String[] args) {
+    check(MapLayoutPolicy.height(800,180,280,640,192,68,28),620);
+    check(MapLayoutPolicy.height(320,400,280,640,192,68,28),288);
+    check(MapLayoutPolicy.height(0,400,280,640,192,160,28),380);
+    check(MapLayoutPolicy.height(-1,100,280,640,192,68,28),640);
+    check(MapLayoutPolicy.height(1200,100,280,640,192,68,28),1100);
+    check(MapLayoutPolicy.height(320,400,280,640,192,250,28),470);
+  }
+}
+"""
+        with tempfile.TemporaryDirectory() as tmp:
+            path=Path(tmp)/"MapLayoutPolicyTest.java"
+            path.write_text(harness,encoding="utf-8")
+            subprocess.run([str(compiler),"-encoding","UTF-8","-d",tmp,
+                            str(ROOT/"src/dev/pgrazor/MapLayoutPolicy.java"),str(path)],check=True,timeout=30)
+            subprocess.run([str(runtime),"-cp",tmp,"dev.pgrazor.MapLayoutPolicyTest"],check=True,timeout=30)
+        source=(ROOT/"src/dev/pgrazor/WorldMapDialog.java").read_text(encoding="utf-8")
+        self.assertIn("content.viewportHeight=MeasureSpec.getMode(heightSpec)",source)
+        self.assertIn("floating.getMeasuredHeight(),footer.getMeasuredHeight(),overlayGap",source)
+        self.assertLess(source.index("footer.addView(actions,"),source.index("footer.addView(attribution,"))
+        self.assertIn("getParent().requestDisallowInterceptTouchEvent(true)",source)
+        self.assertIn("case MotionEvent.ACTION_CANCEL: getParent().requestDisallowInterceptTouchEvent(false)",source)
 
     def test_map_integration(self):
         source = (ROOT / "src/dev/pgrazor/WorldMapDialog.java").read_text(encoding="utf-8")
