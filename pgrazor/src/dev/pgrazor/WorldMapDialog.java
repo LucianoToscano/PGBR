@@ -78,7 +78,6 @@ public final class WorldMapDialog {
         layout.setPadding(pad, pad, pad, pad);
         TextView hint = label(ui, "Blue dot: you. Red pin: destination. Drag to pan; pinch to zoom.", 13);
         hint.setVisibility(View.GONE);
-        layout.addView(hint);
         TextView selected = label(ui, "", 15);
         selected.setTextSize(13);
         selected.setPadding(dp(activity, 4), dp(activity, 3), dp(activity, 4), dp(activity, 3));
@@ -91,7 +90,8 @@ public final class WorldMapDialog {
         routeMode.setVisibility(View.GONE);
         // Internal GPX action, invoked by the single Locais library; not a second navigation button.
         Button savedRoutes=button(ui,"Rotas");
-        layout.addView(selectionRow, 0);
+        layout.addView(selectionRow);
+        layout.addView(hint);
         TextView attribution = label(ui, "", 12);
         attribution.setGravity(Gravity.RIGHT);
         attribution.setTextSize(10);
