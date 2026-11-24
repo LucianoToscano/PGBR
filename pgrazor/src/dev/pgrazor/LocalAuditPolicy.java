@@ -132,6 +132,24 @@ public final class LocalAuditPolicy {
  if(move<1||move>18||!validTypes(a,b))return Double.NaN;
  return Math.pow(1.6,CHART[move-1][a-1]+(b==0?0:CHART[move-1][b-1]));
  }
+ /** Type-only preparation: no inference of Max eligibility, move power, or battle outcome. */
+ public static final class Matchup {
+  public final double outgoing,incoming;
+  Matchup(double outgoing,double incoming){this.outgoing=outgoing;this.incoming=incoming;}
+ }
+ public static Matchup matchup(int own1,int own2,int move,int foe1,int foe2,int foeMove){
+  if(!validTypes(own1,own2)||!validTypes(foe1,foe2))return null;
+  double outgoing=effectiveness(move,foe1,foe2);
+  double incoming=effectiveness(foeMove,own1,own2);
+  if(!Double.isFinite(outgoing)||!Double.isFinite(incoming))return null;
+  return new Matchup(outgoing,incoming);
+ }
+ public enum BudgetState { UNKNOWN, INSUFFICIENT, SUFFICIENT }
+ public static BudgetState maxBudget(int available,int cost){
+  if(available< -1||available>1000000||cost< -1||cost>1000000)throw new IllegalArgumentException("Partículas inválidas");
+  if(available==-1||cost==-1)return BudgetState.UNKNOWN;
+  return available>=cost?BudgetState.SUFFICIENT:BudgetState.INSUFFICIENT;
+ }
  public static final class Estimate {
  public final double effectiveness,damage,perEnergy,energyCost;public final boolean ready;
  Estimate(double e,double d,double cost,boolean r){effectiveness=e;damage=d;perEnergy=d/cost;energyCost=cost;ready=r;}

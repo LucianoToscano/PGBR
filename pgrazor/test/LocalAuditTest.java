@@ -35,6 +35,14 @@ public final class LocalAuditTest {
  check(Math.abs(LocalAuditPolicy.effectiveness(11,5,6)-2.56)<1e-8);
  check(Math.abs(LocalAuditPolicy.effectiveness(11,10,12)-1)<1e-8);
  check(Double.isNaN(LocalAuditPolicy.effectiveness(11,0,0)));
+ var matchup=LocalAuditPolicy.matchup(11,0,11,10,6,10);
+ check(matchup!=null&&Math.abs(matchup.outgoing-2.56)<1e-8&&Math.abs(matchup.incoming-0.625)<1e-8);
+ check(LocalAuditPolicy.matchup(11,11,11,10,6,10)==null);
+ check(LocalAuditPolicy.matchup(11,0,11,10,6,0)==null);
+ check(LocalAuditPolicy.maxBudget(-1,250)==LocalAuditPolicy.BudgetState.UNKNOWN);
+ check(LocalAuditPolicy.maxBudget(249,250)==LocalAuditPolicy.BudgetState.INSUFFICIENT);
+ check(LocalAuditPolicy.maxBudget(250,250)==LocalAuditPolicy.BudgetState.SUFFICIENT);
+ try{LocalAuditPolicy.maxBudget(-2,250);throw new AssertionError();}catch(IllegalArgumentException expected){}
  var a=LocalAuditPolicy.estimate(11,40,70,11,0,10,0,100,100,100);
  var b=LocalAuditPolicy.estimate(1,100,35,11,0,10,0,100,100,100);
  check(a.effectiveness>1&&LocalAuditPolicy.recommend(a,b)==1);

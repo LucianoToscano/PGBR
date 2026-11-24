@@ -8,7 +8,7 @@ final class LocalAuditDialog {
  private LocalAuditDialog(){}
  static void show(Activity a){
   AlertDialog d=new AlertDialog.Builder(MapTheme.wrap(a)).setTitle("Análise local • sem ações no jogo")
-   .setItems(new String[]{"Prévia de proteção da coleção","Simular ataques carregados","Interpretar código de diagnóstico","Avaliar lista de Pokémon","Planejar energia PvP","Interpretar diagnóstico PvP","Planejar alternativas de frutas"},(x,i)->{if(i==0)collection(a);else if(i==1)combat(a);else if(i==2)reason(a);else if(i==3)batch(a);else if(i==4)energyPlan(a);else if(i==5)battleDiagnostic(a);else berryPlan(a);})
+   .setItems(new String[]{"Prévia de proteção da coleção","Simular ataques carregados","Interpretar código de diagnóstico","Avaliar lista de Pokémon","Planejar energia PvP","Interpretar diagnóstico PvP","Planejar alternativas de frutas","Preparar equipe Max (manual)"},(x,i)->{if(i==0)collection(a);else if(i==1)combat(a);else if(i==2)reason(a);else if(i==3)batch(a);else if(i==4)energyPlan(a);else if(i==5)battleDiagnostic(a);else if(i==6)berryPlan(a);else maxPlan(a);})
    .setNegativeButton("Fechar",null).create();present(a,d);
  }
  static void present(Activity a,AlertDialog d){DialogLifecycle.bind(a,d,null);d.setOnShowListener(x->MapTheme.styleButtons(d));d.show();}
@@ -103,6 +103,39 @@ final class LocalAuditDialog {
   present(a,new AlertDialog.Builder(MapTheme.wrap(a)).setTitle("Prévia de coleção em lote").setView(scroll(a,b)).setPositiveButton("Fechar",null).create());
  }
  static void reason(Activity a){LinearLayout b=body(a);EditText code=input(a,b,"reasonCode","12");TextView r=text(a,b,"");action(a,b,"Interpretar",()->{try{r.setText(LocalAuditPolicy.reason(integer(code)));}catch(RuntimeException e){r.setText("Código inválido.");}});present(a,new AlertDialog.Builder(MapTheme.wrap(a)).setTitle("Motivos de proteção").setView(b).setPositiveButton("Fechar",null).create());}
+ static void maxPlan(Activity a){
+  LinearLayout b=body(a);text(a,b,"Preparação manual. Informe os tipos da forma correta, o tipo do golpe Max e um tipo de ataque do chefe que você confirmou. Isto compara apenas multiplicadores de tipo: não calcula dano, nível, habilidades Max, efeitos de equipe ou resultado da batalha.");
+  Spinner f1=select(a,b,"Tipo 1 do chefe",LocalAuditPolicy.TYPES),f2=select(a,b,"Tipo 2 do chefe",LocalAuditPolicy.TYPES),fm=select(a,b,"Tipo do ataque do chefe",LocalAuditPolicy.TYPES);
+  EditText stock=input(a,b,"Partículas disponíveis (-1 desconhecido)","-1"),cost=input(a,b,"Custo informado pelo jogo (-1 desconhecido)","-1");
+  EditText[] names=new EditText[3];Spinner[] own1=new Spinner[3],own2=new Spinner[3],moves=new Spinner[3],eligible=new Spinner[3];
+  for(int i=0;i<3;i++){
+   text(a,b,"Candidato "+(i+1));
+   names[i]=input(a,b,"Nome/forma (vazio para omitir)","");
+   own1[i]=select(a,b,"Tipo 1",LocalAuditPolicy.TYPES);own2[i]=select(a,b,"Tipo 2",LocalAuditPolicy.TYPES);moves[i]=select(a,b,"Tipo do golpe Max",LocalAuditPolicy.TYPES);
+   eligible[i]=select(a,b,"Elegibilidade verificada para esta batalha",new String[]{"Desconhecida","Confirmada","Não elegível"});
+  }
+  TextView result=text(a,b,"");invalidateOnEdit(result,stock,cost);invalidateOnEdit(result,names);
+  invalidateOnSelection(result,f1,f2,fm);invalidateOnSelection(result,own1);invalidateOnSelection(result,own2);invalidateOnSelection(result,moves);invalidateOnSelection(result,eligible);
+  action(a,b,"Revisar preparação",()->{try{
+   LocalAuditPolicy.BudgetState budget=LocalAuditPolicy.maxBudget(integer(stock),integer(cost));
+   StringBuilder out=new StringBuilder("Partículas: "+(budget==LocalAuditPolicy.BudgetState.UNKNOWN?"dados insuficientes":budget==LocalAuditPolicy.BudgetState.INSUFFICIENT?"estoque informado insuficiente":"estoque informado suficiente")+"\n");
+   int present=0;
+   for(int i=0;i<3;i++){
+    String name=names[i].getText().toString().trim();if(name.isEmpty())continue;
+    LocalAuditPolicy.speciesKey(name);present++;
+    int e=eligible[i].getSelectedItemPosition();
+    out.append("\n").append(name).append(": ");
+    if(e!=1){out.append(e==2?"não elegível conforme informado.":"elegibilidade não confirmada.");continue;}
+    LocalAuditPolicy.Matchup match=LocalAuditPolicy.matchup(own1[i].getSelectedItemPosition(),own2[i].getSelectedItemPosition(),moves[i].getSelectedItemPosition(),f1.getSelectedItemPosition(),f2.getSelectedItemPosition(),fm.getSelectedItemPosition());
+    if(match==null){out.append("tipagem incompleta ou inválida.");continue;}
+    out.append(String.format(Locale.forLanguageTag("pt-BR"),"ataque ×%.3f; defesa contra golpe informado ×%.3f",match.outgoing,match.incoming));
+   }
+   if(present==0)out.append("\nNenhum candidato informado.");
+   out.append("\n\nConfira regras e elegibilidade no jogo. Nenhuma equipe foi selecionada e nenhuma partícula foi gasta.");
+   result.setText(out);
+  }catch(IllegalArgumentException invalid){result.setText("Confira nomes, estoque e custo.");}});
+  present(a,new AlertDialog.Builder(MapTheme.wrap(a)).setTitle("Preparação manual Max").setView(scroll(a,b)).setPositiveButton("Fechar",null).create());
+ }
  static void berryPlan(Activity a){
   LinearLayout b=body(a);text(a,b,"Escolha até três frutas em ordem de preferência e informe o estoque que você verificou: -1 desconhecido, 0 indisponível. O painel não lê inventário nem usa frutas.");
   String[] names={"Nenhuma","Fruta Frambo","Fruta Anaba","Fruta Caxi","Fruta Frambo Dourada","Fruta Caxi Prateada"};
