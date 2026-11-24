@@ -285,7 +285,11 @@ final class SettingsPanel {
             result.setAllCaps(false);
             result.setContentDescription("Abrir configuração "+match.name);
             result.setOnClickListener(v->openSearchTarget(match));
-            settingsSearchResults.addView(result,new LinearLayout.LayoutParams(-1,dp(46)));
+            // Allow large fonts and long Portuguese names to wrap instead of clipping.
+            result.setSingleLine(false);
+            result.setEllipsize(null);
+            result.setMinHeight(dp(48));
+            settingsSearchResults.addView(result,new LinearLayout.LayoutParams(-1,-2));
         }
         for(int i=0;i<homeRows.size();i++)
             homeRows.get(i).setVisibility(shownPages.contains(i)?View.VISIBLE:View.GONE);

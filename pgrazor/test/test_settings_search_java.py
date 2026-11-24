@@ -6,6 +6,13 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class SettingsSearchTests(unittest.TestCase):
+    def test_search_result_allows_wrapping(self):
+        panel = (ROOT / "src/dev/pgrazor/SettingsPanel.java").read_text(encoding="utf-8")
+        section = panel.split("for(SettingsSearch.Entry match:matches){", 1)[1].split("for(int i=0;i<homeRows.size();i++)", 1)[0]
+        for statement in ("result.setSingleLine(false)", "result.setEllipsize(null)", "result.setMinHeight(dp(48))", "settingsSearchResults.addView(result,new LinearLayout.LayoutParams(-1,-2))"):
+            self.assertIn(statement, section)
+        self.assertIn("result.setContentDescription(", section)
+
     def test_search_catalogue(self):
         home = Path(os.environ.get('JAVA_HOME', '')) / 'bin'
         suffix = '.exe' if os.name == 'nt' else ''
