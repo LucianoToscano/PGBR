@@ -39,8 +39,8 @@ final class RouteAnchorSnapshot {
                 } else return null;
                 if (p.commaOrObjectEnd()) break;
             }
-            ws();
-            if (at != s.length() || !countSeen || !pointsSeen || count < 0 || count > MAX ||
+            p.end();
+            if (!countSeen || !pointsSeen || count < 0 || count > MAX ||
                     refs == null || refs.length != count) return null;
             return new RouteAnchorSnapshot(refs);
         } catch (RuntimeException invalid) {
@@ -109,6 +109,7 @@ final class RouteAnchorSnapshot {
         void objectStart() { ws(); expect('{'); }
         private void expect(char c) { ws(); if (at >= s.length() || s.charAt(at) != c) throw new IllegalArgumentException(); at++; }
         void colon() { expect(':'); }
+        void end() { ws(); if (at != s.length()) throw new IllegalArgumentException(); }
         boolean commaOrObjectEnd() {
             ws();
             if (at < s.length() && s.charAt(at) == ',') { at++; return false; }
