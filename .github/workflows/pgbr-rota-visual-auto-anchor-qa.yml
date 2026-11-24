@@ -182,7 +182,7 @@ jobs:
           set +e
           python -B tools/check.py > /tmp/check.log 2>&1
           rc=$?
-          echo "::error::$(tail -60 /tmp/check.log | tr '\n' '|')"
+          echo "::error::B64:$(tail -80 /tmp/check.log | base64 -w0)"
           exit $rc
       - name: Testar menu, busca iFlowGo segura e janelas de escolha manual
         run: |
