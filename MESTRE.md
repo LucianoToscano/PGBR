@@ -174,3 +174,12 @@ PGBR-CI-205 integrado após CI completo; PGBR-UI-SMALL candidata de correção e
 - SYS-01: #224 HEAD 1d3f0d7c1442f9255dce6f0a94dc1d6dca1636cb; busca Unicode e resultados adaptáveis. CI 45501436357/45501436477; aceite físico separado.
 - BAT-01: #193 confirmada merged; tela branca Rocket e supereficácia ainda exigem teste autorizado, sem atribuição de causa física.
 - Mantidos 76 IDs e seis concluídos. device_tested=false; provider_connected=false; nenhum APK LT048 confirmado.
+
+### 2026-11-24 — Consolidação das investigações PGSharp/Lua e diagnóstico local FEED-01
+
+- PR #229: corrigidos diagnóstico de campos em registros elegíveis (nulos, demo e expirados), disponibilidade de rank na liga solicitada e consulta OU vazia, com cenários sintéticos em EventFilterEngineTest. CI ainda não confirmado; manter FEED-01 aberto e não afirmar fonte conectada.
+- Arquitetura: preservar SpawnContract, SourceAdapter, SpawnFilters, EventFilterEngine, PresetCodec e SharedBattleOptions; configuração declarativa JSON versionada e validada, sem introduzir VM Lua ou duplicar modelos. Auditar capacidade por fonte, atributos ausentes, proveniência e validade; somente fontes autorizadas. Não inferir gênero a partir de forma, nem preencher IV/nível ausentes.
+- BAT-01/QA-01: Rocket primeiro; comparar gravações e diagnóstico sanitizado da UI própria, identificar fase e camada do clarão, não presumir causa Unity/GPU. #193 permanece candidata, sem teste físico.
+- BAT-02: manter comparação independente e testes locais de tipos, imunidades, dupla tipagem e valores desconhecidos. BAT-03: separar preferências persistentes de contexto efêmero por sessão/conta; estados desconhecidos não equivalem a zero; validar interface própria em cenários sintéticos e no ensaio autorizado. Não ampliar executor de ações do jogo.
+- Referência histórica PGSharp 1.33.0: https://github.com/romainthomas/pgsharp e https://romainthomas.fr/post/21-11-pgsharp-analysis/ ; Lua no PGSharp 1.278.0 segue não comprovada. Arquivo de correlação no Drive: https://drive.google.com/file/d/13gF5iC0aZgEabsnco3o72uIG-CYg4kmU/view . Não importar bytecode proprietário. PvPoke e GoBattleSim como referências de simulação local, licenças a conferir antes de reutilizar código.
+- Nenhum ID encerrado nesta rodada. device_tested=false; provider_connected=false; nenhum APK novo confirmado.
