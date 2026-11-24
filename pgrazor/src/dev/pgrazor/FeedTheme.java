@@ -200,11 +200,15 @@ final class FeedTheme {
     static GradientDrawable mintBlock(Context c) {
         return shape(c, dlgMint(), 0, 12);
     }
-    /** Game primary button: lime-to-teal gradient pill. */
+    /** Neutral primary action: white in light mode, dark card in dark mode. */
     static Drawable dialogPrimaryPill(Context c) {
-        GradientDrawable d = new GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT, new int[]{dlgLime(), dlgTeal()});
-        d.setCornerRadius(dp(c, 100));
-        return new RippleDrawable(ColorStateList.valueOf(0x33ffffff), d, null);
+        GradientDrawable d = shape(c, dlgCard(), 0, 100);
+        d.setStroke(dp(c, 2), dark() ? 0xff73938e : 0xff879e9d);
+        return new RippleDrawable(ColorStateList.valueOf(dark()?0x33ffffff:0x22000000), d, null);
+    }
+    private static ColorStateList dialogActionText(){
+        return new ColorStateList(new int[][]{new int[]{-android.R.attr.state_enabled},new int[]{}},
+            new int[]{dark()?0xffa0b4b0:0xff667b7b,dlgInk()});
     }
     /** Game secondary button: white pill with a 2dp teal outline. */
     static Drawable dialogSecondaryPill(Context c) {
@@ -384,7 +388,7 @@ final class FeedTheme {
         }
         if (view instanceof Button && !(view instanceof CompoundButton)) {
             Button b = (Button)view;
-            b.setBackground(secondaryPill(c)); b.setAllCaps(false); b.setTypeface(bold());
+            b.setBackgroundTintList(null); b.setBackground(secondaryPill(c)); b.setAllCaps(false); b.setTypeface(bold());
             b.setTextColor(new ColorStateList(new int[][]{new int[]{-android.R.attr.state_enabled}, new int[]{}}, new int[]{muted(), value()}));
             b.setStateListAnimator(null); elevate(b, 1.5f);
             b.setMinHeight(dp(c, Size.PILL_HEIGHT_DP)); b.setMinimumHeight(dp(c, Size.PILL_HEIGHT_DP));
@@ -419,7 +423,7 @@ final class FeedTheme {
     /**
      * Dialog chrome and actions in the game's style: white rounded card (unless full screen), centred
      * upper-case slate title with a short hairline, content directly on the card, rounded input boxes,
-     * and stacked pill buttons (gradient primary on top, outlined secondary below).
+     * and stacked neutral pill buttons (raised primary on top, outlined secondary below).
      */
     static void styleButtons(AlertDialog dialog) {
         Window w = dialog.getWindow();
@@ -463,10 +467,11 @@ final class FeedTheme {
             if (b == null) continue;
             b.setAllCaps(true); b.setLetterSpacing(0.12f); b.setTypeface(medium()); b.setTextSize(14); b.setStateListAnimator(null);
             b.setMinHeight(dp(c, 46)); b.setMinimumHeight(dp(c, 46)); b.setPadding(dp(c, 24), 0, dp(c, 24), 0);
+            b.setBackgroundTintList(null);
             if (which == AlertDialog.BUTTON_POSITIVE) {
-                b.setBackground(dialogPrimaryPill(c)); b.setTextColor(Color.WHITE); elevate(b, 2);
+                b.setBackground(dialogPrimaryPill(c)); b.setTextColor(dialogActionText()); elevate(b, 2);
             } else {
-                b.setBackground(dialogSecondaryPill(c)); b.setTextColor(dlgTeal()); b.setElevation(0);
+                b.setBackground(dialogSecondaryPill(c)); b.setTextColor(dialogActionText()); b.setElevation(0);
             }
             // Wide pills make the platform button bar stack them vertically (primary on top), as in the game.
             b.setMinWidth(pillWidth); b.setMinimumWidth(pillWidth);
@@ -608,8 +613,9 @@ final class FeedTheme {
         b.setMinWidth(0); b.setMinimumWidth(0); b.setMinHeight(0); b.setMinimumHeight(0);
         b.setPadding(dp(c, 8), 0, dp(c, 8), 0); b.setTextSize(13.5f); b.setLetterSpacing(0.1f); b.setSingleLine(true);
         b.setAllCaps(true); b.setTypeface(medium()); b.setStateListAnimator(null);
-        if (primary) { b.setBackground(dialogPrimaryPill(c)); b.setTextColor(new ColorStateList(new int[][]{new int[]{-android.R.attr.state_enabled}, new int[]{}}, new int[]{0xccffffff, Color.WHITE})); elevate(b, 2); }
-        else { b.setBackground(dialogSecondaryPill(c)); b.setTextColor(new ColorStateList(new int[][]{new int[]{-android.R.attr.state_enabled}, new int[]{}}, new int[]{dlgDisabled(), dlgTeal()})); b.setElevation(0); }
+        b.setBackgroundTintList(null);
+        if (primary) { b.setBackground(dialogPrimaryPill(c)); b.setTextColor(dialogActionText()); elevate(b, 2); }
+        else { b.setBackground(dialogSecondaryPill(c)); b.setTextColor(dialogActionText()); b.setElevation(0); }
         return b;
     }
 
