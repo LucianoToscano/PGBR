@@ -127,6 +127,35 @@ public final class EventFilterEngineTest {
                 SourceQuery.builder().text("#25").build(), namedRows, NOW);
         check(byDex.kept.size() == 1, "Busca por #Dex funciona");
 
+        // Synthetic regressions: unavailable fields must not appear supported by discarded rows.
+        List<SourceEvent> mixed = new ArrayList<>();
+        mixed.add(null);
+        mixed.add(spawn("unknown", 25, null, 300, NOW + 600_000));
+        mixed.add(spawn("expired-known", 25, 100.0, 300, NOW - 1));
+        mixed.add(SourceEvent.builder("import", "demo-known", SourceEvent.Kind.POKEMON)
+                .coordinates(-23.55, -46.63).ivPercent(100.0).isDemo(true).build());
+        EventFilterEngine.Outcome unavailable = EventFilterEngine.apply(
+                SourceQuery.builder().iv(90.0, 100.0).build(), mixed, NOW);
+        check(unavailable.kept.isEmpty(), "Unknown IV must not match a bound");
+        check(unavailable.unsupported.contains("IV %"), "Discarded rows must not imply available IV");
+        check(!unavailable.appliedLocally.contains("IV %"), "No eligible row carries IV");
+        check(unavailable.expired == 1 && unavailable.demoDropped == 1, "Discard reasons preserved");
+
+        List<SourceEvent> ranks = new ArrayList<>();
+        ranks.add(SourceEvent.builder("import", "ultra-only", SourceEvent.Kind.POKEMON)
+                .pvpUltraRank(1).build());
+        EventFilterEngine.Outcome great = EventFilterEngine.apply(
+                SourceQuery.builder().pvp(SourceQuery.LEAGUE_GREAT, 5).build(), ranks, NOW);
+        check(great.kept.isEmpty() && great.unsupported.contains("rank PvP"),
+                "Ultra-only data cannot satisfy Great League");
+        EventFilterEngine.Outcome ultra = EventFilterEngine.apply(
+                SourceQuery.builder().pvp(SourceQuery.LEAGUE_ULTRA, 5).build(), ranks, NOW);
+        check(ultra.kept.size() == 1 && ultra.appliedLocally.contains("rank PvP"),
+                "Selected league rank is correctly reported");
+        EventFilterEngine.Outcome emptyOr = EventFilterEngine.apply(
+                SourceQuery.builder().andLogic(false).build(), rows, NOW);
+        check(emptyOr.kept.size() == perSource.kept.size(), "Empty OR must not discard all rows");
+
         System.out.println("EventFilterEngineTest: OK");
     }
 }
