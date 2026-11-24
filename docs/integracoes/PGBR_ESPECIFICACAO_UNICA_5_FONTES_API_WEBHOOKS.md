@@ -1,5 +1,55 @@
 # PGBR — Especificação unificada de integração de 5 fontes, API, scrapers e webhooks
 
+## EXECUÇÃO TOTAL — ENVIE SOMENTE ESTE LINK À OUTRA IA
+
+**ORDEM DIRETA DO RESPONSÁVEL PELO PGBR:** Execute TUDO o que está neste arquivo como **uma única missão contínua, integrada, executável e verificável**, **sem dividir a conversa em Prompt 1, Prompt 2 e Prompt 3**, sem propor um plano como entrega, sem esperar novas mensagens "continue" e sem interromper após apenas a engine, a UI ou um fornecedor. As seções abaixo são requisitos técnicos, **não etapas de autorização ou marcos para interromper a execução**. Faça a auditoria necessária por dentro da execução, aplique as mudanças, teste, registre e entregue na mesma tarefa o máximo efetivamente implementado. Nenhuma IA deve declarar tarefas feitas que não tenha realmente executado.
+
+**ACESSO E GOVERNANÇA:** Use as ferramentas de GitHub/Drive realmente conectadas; não presuma acesso inexistente. Para arquivos próprios e alterações reversíveis de desenvolvimento já autorizadas, não solicite confirmações repetidas. Ler sempre a versão atual de `PGBR_ARQUIVO_MESTRE_UNICO.md`, `docs/ARCHITECTURE.md`, documentação de compilação, HEAD da `main`, PRs/branches paralelas e o acervo do Drive antes de alterar código. Identificar commit-base, registrar arquivos modificados e preservar tudo que já funciona, inclusive melhorias em andamento. Branch isolada por módulo ou pequenas PRs coerentes, revisão/integração com cuidado e **não fazer merge automático na `main`**. Ajustar nomes de branches se já existirem; evitar duplicar módulos e reverter correções. PokeSearch é fonte de algoritmos, filtros e experiência de usuário, **não** alvo de alterações.
+
+### ESCOPO FECHADO — EXATAMENTE CINCO INTEGRAÇÕES
+
+1. **PokeList:** Pokémon, Reides, Pesquisas, Rocket e Líderes, usando `PokeListFeedClient`, `PokeListFeedData`, schema de cada tipo, validação e filtros reais quando a origem fornecer os campos.
+2. **iFlowGo:** modos Global, Próximos e Local, paginação real quando disponível, contador de itens recebidos e exibidos, cobertura explícita, filtros operantes, mapa/lista/teleporte para coordenada válida.
+3. **PoGoCoordinates + PokeSearch:** **uma única integração**; aproveitar algoritmos/UX de PokeSearch em `PogoFeedDialog`, filtros IV/PvP/XXS-XXL, atalhos, presets e tratamento de `reveal_code` apenas pelas regras normais da fonte. Não transformar código de reveal em coordenada nem automatizar desbloqueios.
+4. **PGSharp:** importar e converter arquivos `JSON/CSV/GPX` e configurações próprias do usuário com `PgSharpDataImport`/adaptadores, favoritos, rotas e filtros compatíveis; integrar funções locais reais de Sniper 1/2 sem atribuir dados de outras fontes a PGSharp.
+5. **iPogo:** aproveitar conceitos de radar, perfis, listas, filtros, pesquisa, alertas e importação pessoal; não afirmar que APK/IPA contém uma API pública de coordenadas. **Pokémod e PGTools NÃO são integrações adicionais.**
+
+**O Gateway PGBR é infraestrutura comum a essas cinco fontes, não uma sexta fonte.** Não implementar outras marcas como módulos por causa de referências históricas dentro do anexo.
+
+### IMPLEMENTAR TUDO QUE PODE FUNCIONAR NO PGBR
+
+- **Modelo canônico e `SourceAdapter`**: tipos Pokémon, reide, pesquisa, Rocket, rota, ninho e Power Spot; espécie, forma, coordenadas, precisão, origem/proveniência, IV% e A/D/S, CP, nível, tamanho, sexo, clima, rank GL/UL quando calculado, horários, TTL, paginação, cobertura e capacidades. Tratar ausente como `null`; IV zero não é IV desconhecido.
+- **Sniper 1:** busca rápida e real sobre fonte disponível/importações, espécie, IV 100/faixa, CP, TTL, distância, copiar coordenadas, link de mapa e acionar **o Teleporte nativo do PGBR** com confirmação e cooldown; nunca teleporte automático, furtivo ou para `0,0` que é legenda.
+- **Sniper 2:** busca avançada multiresultados, IV 0/100/%/A-D-S, rankings GL/UL confiáveis, XXS/XXL, forma, sexo, clima, raio, nível, expiração, filtros AND/OR, fonte, favoritos e presets persistentes; importar/exportar JSON com validação e migração.
+- **Entrada/importação local que realmente funcione:** clipboard, coordenadas digitadas, JSON, CSV, GPX, favoritos, rotas e catálogos estáticos autorizados. Preservar arquivo original, validar formato e limites, impedir duplicatas; exibir quantidade importada/rejeitada e a razão de cada erro. Um arquivo de configurações não se torna um feed mundial.
+- **Radar, listas e rotas:** interface existente com abas Pokémon, Reides, Pesquisas, Rocket, Power Spots, Ninhos e Rotas quando houver dados correspondentes. Estado vazio honesto. Listas e mapa usam exatamente os mesmos resultados. GPX exportado somente com pontos válidos selecionados.
+- **Alertas locais:** quando dados importados ou eventos efetivamente recebidos satisfizerem presets; sem alertas inventados, sem tratar capacidade de ser shiny como shiny observado.
+- **Gateway próprio PGBR:** serviço independente do APK, API OpenAPI 3.1, endpoints de saúde, capabilities, sources, search, imports, presets e subscriptions; validação, autenticação conforme o perfil de acesso, rate limiting, armazenamento/proveniência, filtragem, TTL e respostas versionadas.
+- **Webhooks próprios:** importação concluída, alteração de preset e status de fonte; eventos de spawn/reide/pesquisa/Rocket somente se fatos reais entrarem no banco. HMAC-SHA256, timestamp, event-id, idempotência, anti-replay, retry e DLQ, sem expor segredos no APK.
+- **Scrapers:** só para páginas e dados com coleta permitida, respeitando limites, termos aplicáveis e robots, sem captar tokens, sessões ou conteúdo restrito.
+- **Reusar componentes existentes**: `FeedChooser`, `LiveFeedDialog`, `LiveFeedFilters`, `PogoFeedDialog`, `IFlowGoFeedClient`, `PokeListFeedClient`, `HundoFeedDialog`, `ShundoSniper`, `CoordinateClipboard`, `SettingsPanel`, `PgSharpDataImport`, `Control`, `AccountProfiles` e demais arquivos realmente encontrados na HEAD. Não quebrar GPS, joystick, Root, sem Root, Zygisk, batalhas, ataques, escudo, VGP, inventário ou traduções. Escrever **Teleporte**, nunca `Teletransportar`.
+
+### REGRA INEGOCIÁVEL: NENHUM RECURSO FALSO, MORTO OU SEM RESULTADO
+
+1. **Não entregar botões decorativos, checkboxes que não filtram, telas sem ação, endpoints que sempre retornam fixture, funções vazias, código placeholder, pseudocódigo, texto "implementado" sem integração ou resultados inventados.** Todo controle habilitado deve executar seu fluxo real de ponta a ponta ou ficar explicitamente indisponível.
+2. **Resultados de verdade, sempre identificados:** se uma função for local, ela precisa operar sobre dados importados/verificados e devolver resultados corretos; se for remota, usar somente conexão legítima comprovadamente disponível. Mostrar origem, precisão, captura, TTL, cobertura e estado. Não confundir `importado`, `estático`, `demo` e `ao vivo`.
+3. **Quando não houver dados, não inventar.** Um filtro por IV100 sem registros correspondentes deve retornar "nenhum resultado confirmado", não uma lista fabricada. Se o usuário não importou dados nem existe fonte remota acessível, mostrar "Nenhuma fonte com dados disponíveis" e oferecer entrada manual/importação. **O catálogo estático não representa spawns ativos; não anunciar Sniper online funcionando só porque importação local funciona.**
+4. **Fonte proprietária indisponível, VIP ou bloqueada:** não contornar `401/403/429`, login, CAPTCHA, quotas, paywall, anti-bot, licenças, criptografia, cookies, JWT ou `reveal`. Desabilitar exclusivamente a consulta remota correspondente, informar "Feed remoto indisponível/não conectado" e manter as funções **locais reais** utilizáveis. Não declarar a integração remota como entregue, não transferir credenciais e não rotular dados de outro fornecedor com nome alheio.
+5. **Testes de aceitação obrigatórios por função:** selecionar filtro → executar busca → verificar que a consulta/filtragem realmente ocorreu → conferir contagem, ordenação, paginação e proveniência → copiar coordenadas/acionar teleporte existente com confirmação quando válido; importar `JSON/CSV/GPX` → resultados corretos → salvar/reabrir preset → exportar/reimportar sem perda; produzir evento de teste legítimo do nosso gateway → assinatura HMAC verificada → entrega/retry/idempotência. Exercitar sucesso, nenhum resultado, inválido, expirado, rede negada, timeout, 429 e troca de fonte.
+6. **Fixtures são permitidas APENAS nos testes automatizados**, marcadas como sintéticas. Nunca usá-las como substituto da resposta real na tela, API de produção ou prova de integração. `provider_connected=true` somente após uma resposta autêntica autorizada, contrato validado e prova em log de teste sanitizado.
+7. **Concluir com evidência, não promessa:** execução de `tools/check.py`, testes JVM/Android e CI/build quando disponíveis; inspecionar logs, corrigir regressões e repetir testes necessários. Relacionar teste por funcionalidade, resultado concreto e localização do commit/PR. Para APK, release, Drive, deploy ou merge, só declarar sucesso depois de verificar o artefato/ação real; fornecer **link direto ao APK** se realmente compilado e publicado, com hash. Se não existe, registrar "não gerado", sem inventar link.
+
+### RESULTADO ESPERADO DA MESMA EXECUÇÃO
+
+Implementar **todos os componentes independentes de fornecedores** e integrar todos os fornecedores que comprovadamente permitirem acesso. Priorizar trabalho de código e resolução real de falhas, sem parar em auditoria, plano, um único módulo ou relatório parcial. Documentar dependências externas impossíveis de executar, porém **sem apresentar o módulo indisponível como concluído**. É melhor entregar um Sniper local funcionando e uma fonte remota corretamente desativada do que cinco feeds fictícios.
+
+Registrar no `PGBR_ARQUIVO_MESTRE_UNICO.md` a matriz `função | fonte | local/remoto | implementação | testes | provider_connected | device_tested | PR | pendência`, preservando histórico. No fim apresentar as URLs de PRs, commits, resultados das verificações, funcionalidades testadas com dados reais e locais, funcionalidades ainda indisponíveis e links de artefatos apenas se existirem. Não solicitar novas instruções para continuar aquilo que já está especificado e autorizado.
+
+**PRIORIDADE DE INSTRUÇÕES:** esta seção de EXECUÇÃO TOTAL e as regras atuais do Arquivo Mestre prevalecem sobre frases antigas nos anexos que pedem pausas, entrega sequencial de prompts ou a criação de uma sexta fonte. Os anexos 00–06 abaixo permanecem integralmente disponíveis como especificação detalhada a ser executada na mesma missão.
+
+---
+
+
 > **ESCOPO ATUALIZADO — cinco integrações, exatamente:** (1) PokeList; (2) iFlowGo; (3) PoGoCoordinates + PokeSearch (uma única integração); (4) PGSharp; (5) iPogo. Menções antigas a Pokémod e PGTools são apenas referências históricas fora do escopo de implementação; não criar adaptadores, branches nem módulos adicionais para esses produtos. O gateway é infraestrutura compartilhada, não uma sexta fonte.
 
 
