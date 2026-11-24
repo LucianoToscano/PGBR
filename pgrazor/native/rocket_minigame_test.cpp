@@ -23,12 +23,13 @@
 struct Header    { void *klass; int alive; };
 struct Transform { void *klass; int alive; float scale[3]; };
 struct GameObject{ void *klass; int alive; int active; };
-struct Collider  { void *klass; int alive; Transform *tr; GameObject *go; };
+struct Collider  { void *klass; int alive; Transform *tr; GameObject *go; float dimensions[3]{}; };
 struct Challenge { void *klass; int alive; uint8_t running; Collider *collider; };
 struct Boxed     { void *klass; uint8_t payload[16]; };
 
 // Class identities (address markers) and MethodInfo*/FieldInfo* markers.
-int mini_tag, bool_tag, vec_tag;
+int mini_tag, bool_tag, vec_tag, sphere_tag, box_tag, float_tag;
+int radius_get_m,radius_set_m,size_get_m,size_set_m;
 int transform_m, gameObject_m, scale_m, active_m, setScale_m, setActive_m, alive_m;
 int collider_f, running_f;
 void *const MINI = &mini_tag, *const BOOL = &bool_tag, *const VEC = &vec_tag;
@@ -98,6 +99,16 @@ void *fake_invoke(void *method, void *obj, void **params, void **exc) {
     if (exc) *exc = nullptr; // no managed exception is simulated in this harness
     if (method == &transform_m)  return static_cast<Collider *>(obj)->tr;
     if (method == &gameObject_m) return static_cast<Collider *>(obj)->go;
+    if (method == &radius_get_m || method == &size_get_m) {
+        const bool sphere=method==&radius_get_m;
+        std::memcpy(g_box_vec.payload,static_cast<Collider *>(obj)->dimensions,sphere?4:12);
+        g_box_vec.klass=sphere?static_cast<void *>(&float_tag):VEC;
+        return &g_box_vec;
+    }
+    if (method == &radius_set_m || method == &size_set_m) {
+        std::memcpy(static_cast<Collider *>(obj)->dimensions,params[0],method==&radius_set_m?4:12);
+        return nullptr;
+    }
     if (method == &scale_m) {
         std::memcpy(g_box_vec.payload, static_cast<Transform *>(obj)->scale, sizeof(float) * 3);
         g_box_vec.klass = VEC; return &g_box_vec;
@@ -133,8 +144,11 @@ int main(int argc, char **argv) {
     auto api = static_cast<const PgrRocketMiniApi *>(core->query_feature(6, 1));
     if (!api || api->version != 1 || api->size != 40) return 4;
 
-    PgrRocketMiniConfig cfg{};
-    cfg.version = 1; cfg.size = sizeof(cfg);
+    PgrRocketMiniConfigV2 ext{};
+    auto &cfg=ext.base;
+    cfg.version = 2; cfg.size = sizeof(ext);
+    ext.sphere={&sphere_tag,&radius_get_m,&radius_set_m,&float_tag};
+    ext.box={&box_tag,&size_get_m,&size_set_m,VEC};
     cfg.update_addr = (void *)&t_update; cfg.exit_addr = (void *)&t_exit;
     cfg.hide_addr = (void *)&t_hide; cfg.destroy_addr = (void *)&t_destroy;
     cfg.transform_method = &transform_m; cfg.gameObject_method = &gameObject_m;
@@ -260,6 +274,22 @@ int main(int argc, char **argv) {
     chA.running = 0;
     api->tick(1);
     if (g_roots != 0 || trA.scale[0] != 2.f || goA.active != 0) return 34;
+
+    // 12) A real shape binding expands only collision geometry, not visual scale.
+    chA.running=1; colA.klass=&sphere_tag; colA.dimensions[0]=2.f;
+    api->update(1,2500); api->tick(1); call_update(&chA,1,method);
+    if(g_roots!=4 || colA.dimensions[0]!=2000.f || trA.scale[0]!=2.f ||
+       trA.scale[1]!=-3.f || trA.scale[2]!=0.5f || goA.active!=1)return 35;
+    chA.running=0; api->tick(1);
+    if(g_roots!=0||colA.dimensions[0]!=2.f||goA.active!=0)return 36;
+    chA.running=1; colA.klass=&box_tag;
+    colA.dimensions[0]=2.f;colA.dimensions[1]=3.f;colA.dimensions[2]=4.f;
+    call_update(&chA,1,method);
+    if(g_roots!=4||colA.dimensions[0]!=2000.f||colA.dimensions[1]!=3000.f||
+       colA.dimensions[2]!=8000.f||trA.scale[2]!=0.5f)return 37;
+    call_exit(&chA,method);
+    if(g_roots!=0||colA.dimensions[0]!=2.f||colA.dimensions[1]!=3.f||
+       colA.dimensions[2]!=4.f||goA.active!=0)return 38;
 
     std::puts("PASS native rocket minigame: real hooks/ABI, proven-tick gating, snapshot "
               "scale/active preserve+1000, no re-snapshot, disable/expiry/change restore, "
