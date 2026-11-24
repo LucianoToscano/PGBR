@@ -83,6 +83,22 @@ class ItemIconAssetsTest(unittest.TestCase):
         self.assertIn('dark() ? 0xff202b39 : 0xffffffff',theme)
         self.assertIn('dark()?0x33ffffff:0x22000000',theme)
 
+    def test_visual_action_consistency_and_icon_status(self):
+        theme=(ROOT/'src/dev/pgrazor/FeedTheme.java').read_text(encoding='utf-8')
+        primary=theme.split('static Drawable dialogPrimaryPill(Context c)',1)[1].split('private static ColorStateList dialogActionText()',1)[0]
+        self.assertIn('shape(c, dlgCard(), 0, 100)',primary)
+        self.assertNotIn('GradientDrawable.Orientation',primary)
+        self.assertEqual(theme.count('b.setBackground(dialogPrimaryPill(c)); b.setTextColor(dialogActionText())'),2)
+        self.assertIn('b.setBackgroundTintList(null)',theme)
+        map_theme=(ROOT/'src/dev/pgrazor/MapTheme.java').read_text(encoding='utf-8')
+        self.assertIn('view.setBackgroundTintList(null)',map_theme)
+        badge=(ROOT/'src/dev/pgrazor/ItemBadge.java').read_text(encoding='utf-8')
+        self.assertIn('Boolean.TRUE.equals(MISSED.get(itemId))',badge)
+        self.assertIn('Boolean.TRUE.equals(WARNED.get(itemId))',badge)
+        self.assertIn('paint.measureText(label)',badge)
+        self.assertIn('metrics.ascent+metrics.descent',badge)
+        self.assertIn('badge.spriteStatus()', (ROOT/'src/dev/pgrazor/LocalAuditDialog.java').read_text(encoding='utf-8'))
+
     def test_verified_assets_and_packagers(self):
         spec=importlib.util.spec_from_file_location("pgbr_build_assets",ROOT/"build.py")
         module=importlib.util.module_from_spec(spec)
