@@ -143,9 +143,10 @@ jobs:
             echo '```' >> "$GITHUB_STEP_SUMMARY"
             tail -120 /tmp/check.log >> "$GITHUB_STEP_SUMMARY"
             echo '```' >> "$GITHUB_STEP_SUMMARY"
-            grep -E 'error:|AssertionError|FAIL:|ERROR:|Error:' /tmp/check.log | head -25 | while read -r line; do
+            grep -E 'error:|AssertionError|FAIL:|ERROR:|Error' /tmp/check.log | head -25 | while read -r line; do
               echo "::error title=check.py::$(echo "$line" | cut -c1-300)"
             done
+            echo "::error title=check.py (fim do log)::$(tail -30 /tmp/check.log | tr '\n' '|' | cut -c1-1500)"
             echo '```'
             tail -60 /tmp/check.log
             echo '```'
