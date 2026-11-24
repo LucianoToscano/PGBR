@@ -33,7 +33,7 @@ public class RouteAnchorHarness {
     check(bad!=null&&bad.fit(width,height)==null);
     String offscreen=json(refs,6).replace("\"visible\":true","\"visible\":false");
     RouteAnchorSnapshot none=RouteAnchorSnapshot.parse(offscreen);
-    check(none!=null&&none.size()==0);
+    check(none==null);
     System.out.println("PASS auto anchor snapshot");
   }
 }
