@@ -1506,6 +1506,8 @@ public final class RootPtBr {
         m.put("Próxima página", "Próxima página");
         m.put("Exportar GPX dos resultados válidos", "Exportar GPX dos resultados válidos");
         m.put("Busca de Pokémon e rastreadores", "Busca de Pokémon e rastreadores");
+        m.put("started, walked once and completed in game before the next.", "iniciada, percorrida uma vez e concluída no jogo antes da próxima.");
+        m.put("Stop the current walk first.", "Interrompa a caminhada atual primeiro.");
         LABELS = Collections.unmodifiableMap(m);
     }
     private RootPtBr() {}

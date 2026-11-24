@@ -89,6 +89,8 @@ public final class GameRoutesTest {
         check(c.acceptSnapshot(snap(STARTED)), "Started snapshot accepted");
         c.tick(true);
         check(engine.routeProgress().active, "Walking the route after start confirmation");
+        check(engine.activeVisualRouteToken()==0&&engine.routeVisualSnapshot(0)==null, "Official route never enters custom visual layer");
+        check(!engine.stopVisualRoute(engine.activeRouteToken()), "Visual cancellation cannot stop official movement");
         stepUntilIdle(engine);
 
         // Endpoint arrival alone is not success; completion is requested only once eligible.

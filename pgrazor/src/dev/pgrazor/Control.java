@@ -1313,6 +1313,19 @@ public final class Control {
         if (!foreground || !canEnable()) engine.pause();
         saveState();
     }
+    /** Map's explicitly requested personal walks; only these opt into the visual snapshot. */
+    public static void walkVisualTo(double latitude,double longitude){
+        gameRoutes.stop("Manual walking started");engine.walkVisualTo(latitude,longitude);
+        if(!foreground||!canEnable())engine.pause();saveState();
+    }
+    public static void walkVisualRoute(double[][] waypoints,boolean loop){
+        gameRoutes.stop("Another route started");engine.walkVisualRoute(waypoints,loop);
+        if(!foreground||!canEnable())engine.pause();saveState();
+    }
+    public static boolean stopVisualWalk(long token){
+        if(gameRoutes.running()||!engine.stopVisualRoute(token))return false;
+        saveState();return true;
+    }
     public static void startAutoWalk(double[][] waypoints,boolean loop) {
         if(!foreground||!canEnable())throw new IllegalArgumentException("Location adapter is not ready");
         gameRoutes.stop("Autowalk started");
