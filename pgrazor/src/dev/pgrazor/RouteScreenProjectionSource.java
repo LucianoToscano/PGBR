@@ -142,20 +142,25 @@ final class RouteScreenProjectionSource implements RouteTraceOverlay.ProjectedFr
             final RouteScreenTracker current=tracker;
             Bitmap bitmap=Bitmap.createBitmap(captureWidth,captureHeight,Bitmap.Config.ARGB_8888);
             try{PixelCopy.request(surface,bitmap,result->{
-                if(closed||result!=PixelCopy.SUCCESS||!available()){bitmap.recycle();busy=false;latest=null;return;}
+                if(closed||result!=PixelCopy.SUCCESS||!available()){bitmap.recycle();busy=false;latest=null;if(!closed&&result!=PixelCopy.SUCCESS){ready=false;toast("Rota Visual: captura interrompida. Recalibre para tentar novamente.");}return;}
                 try{worker.execute(()->{
-                    RouteTraceFrame frame=null;
+                    RouteTraceFrame frame=null;boolean lost=false;
                     try{
                         if(!Thread.currentThread().isInterrupted()){
                             RouteGroundProjection p=current.update(gray(bitmap));
-                            if(p!=null)frame=RouteScreenFrameBuilder.build(p,routePoints,route.looping,route.completedMeters,route.token,
+                            if(p==null)lost=true;
+                            else frame=RouteScreenFrameBuilder.build(p,routePoints,route.looping,route.completedMeters,route.token,
                                 now,viewportWidth,viewportHeight,viewportWidth/(double)captureWidth,viewportHeight/(double)captureHeight);
                         }
-                    }catch(RuntimeException ignored){}finally{bitmap.recycle();}
-                    final RouteTraceFrame next=frame;
-                    main.post(()->{busy=false;if(!closed&&available()&&knownToken==route.token)latest=next;else latest=null;});
+                    }catch(RuntimeException invalid){lost=true;}finally{bitmap.recycle();}
+                    final RouteTraceFrame next=frame;final boolean trackingLost=lost;
+                    main.post(()->{
+                        busy=false;if(closed)return;
+                        if(trackingLost){ready=false;latest=null;toast("Rota Visual: referências perdidas. Recalibre no mapa.");return;}
+                        if(available()&&knownToken==route.token)latest=next;else latest=null;
+                    });
                 });}catch(java.util.concurrent.RejectedExecutionException e){bitmap.recycle();busy=false;latest=null;}
-            },main);}catch(RuntimeException e){bitmap.recycle();busy=false;latest=null;}
+            },main);}catch(RuntimeException e){bitmap.recycle();busy=false;latest=null;ready=false;toast("Rota Visual: captura indisponível.");}
         }
         return latest;
     }
