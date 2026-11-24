@@ -132,6 +132,31 @@ public final class GpxCodecTest {
             throw new AssertionError("Expected rejection: oversized input");
         } catch (IOException expected) { }
 
+        // XML-safe names, including supplementary characters and malformed fallback names.
+        for (String badName : new String[]{"X\uD800", "X\uDC00", "X\uFFFE", "X\uFFFF"}) {
+            try {
+                new GpxRoute(badName, new double[][]{{0,0}});
+                throw new AssertionError("Invalid XML name accepted");
+            } catch (IllegalArgumentException expected) { }
+        }
+        GpxRoute sanitized = GpxCodec.read(new ByteArrayInputStream("<gpx><wpt lat='0' lon='0'/></gpx>".getBytes(StandardCharsets.UTF_8)), "A\uD800B\uFFFE").get(0);
+        check(sanitized.name.equals("A B"), "Invalid fallback characters sanitized");
+        ByteArrayOutputStream unicode = new ByteArrayOutputStream();
+        GpxCodec.write(unicode, new GpxRoute("Trilha \uD83D\uDE00", new double[][]{{0,0}}));
+        check(GpxCodec.read(new ByteArrayInputStream(unicode.toByteArray()), "fallback").get(0).name.equals("Trilha \uD83D\uDE00"), "Supplementary character round-trips");
+
+        // A mathematically valid coordinate can be very long in xsd:decimal form.
+        // Oversized exports must be rejected before even one byte reaches the destination.
+        double[][] extreme = new double[GpxCodec.MAX_POINTS][2];
+        for (int i=0;i<extreme.length;i++) { extreme[i][0]=Double.MIN_VALUE; extreme[i][1]=-Double.MIN_VALUE; }
+        ByteArrayOutputStream untouched = new ByteArrayOutputStream();
+        untouched.write(7);
+        try {
+            GpxCodec.write(untouched, new GpxRoute("Extremo", extreme));
+            throw new AssertionError("Oversized GPX export accepted");
+        } catch (IOException expected) { }
+        check(untouched.size()==1 && untouched.toByteArray()[0]==7, "Oversized export leaves destination untouched");
+
         // --- Round trip: write then read reproduces name and ordered points exactly ---
         double[][] points = {{41.384210, 2.179990}, {-41.5, -2.25}, {0.0, 123.456789}};
         GpxRoute original = new GpxRoute("Trip & <friends>", points);
