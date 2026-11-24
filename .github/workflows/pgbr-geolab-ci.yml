@@ -1,0 +1,41 @@
+name: PGBR GeoLab - QA isolado
+on:
+  pull_request:
+    paths: ['pgrazor/research/geolab/**', '.github/workflows/pgbr-geolab-ci.yml']
+  push:
+    paths: ['pgrazor/research/geolab/**', '.github/workflows/pgbr-geolab-ci.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  qa:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    defaults:
+      run:
+        working-directory: pgrazor/research/geolab
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - run: bash tests/run-host.sh
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.11.1'
+      - run: sdkmanager 'platforms;android-36' 'build-tools;36.0.0' 'ndk;27.3.13750724' 'cmake;3.22.1'
+      - run: gradle --no-daemon :app:assembleDebug
+      - name: Verificar assinatura e SHA-256
+        run: |
+          mkdir -p output
+          cp app/build/outputs/apk/debug/app-debug.apk output/GeoLab-debug.apk
+          "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --verbose output/GeoLab-debug.apk
+          (cd output && sha256sum GeoLab-debug.apk > SHA256SUMS.txt)
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pgbr-geolab-debug-qa
+          path: pgrazor/research/geolab/output/
+          if-no-files-found: error
