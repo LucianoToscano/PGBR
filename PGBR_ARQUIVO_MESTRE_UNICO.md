@@ -2307,3 +2307,12 @@ O proprietário solicitou explicitamente que todos os requisitos, decisões, pri
 ## 24/11/2026 — Compilação QA LT047 solicitada
 
 - Autorização explícita do proprietário para gerar APK. Reconciliação da branch #203 com main `2915b5b15374aff20a141009039d1362e6a106f6`: Mestre já continha o prefixo integral; catálogo recuperado pelo blob da main. Workflow QA dedicado à PR e branch exatas, sem publicação, sem alterar workflow manual histórico, verifica três variantes e hashes. Não declarar geração até artefato real confirmado. `device_tested=false`.
+
+## 24/11/2026 — LT047: QA aprovado e integração #203
+
+- P0-BUILD-LT047: HEAD `4092c29b7d4759bce8864224527e2a0bad72b1f5`, base `2915b5b15374aff20a141009039d1362e6a106f6`; CI 45482026547, governança 45482026278 e QA 45482026778 concluídos com sucesso. Comparação antes do merge: 5 commits à frente, zero atrás. PR #203 integrada com expected_head_sha no merge `7aae7fbbb78f66f5b5ec4bfb0035586d05051663`. Nenhuma branch Arena alterada.
+- Artefato QA confirmado: https://github.com/LucianoToscano/PGBR/actions/runs/45482026778/artifacts/14961904891 ; 205003803 bytes, expira 24/12/2026; digest ZIP sha256:19d942084c5998494c6b71f7685ea380ecdaf9c470ee80371937425a6a5072d2. Job 138757635161 aprovou compilação e verificação cruzada; hashes registrados no log:
+  - PGBR-v0.00.47-LT.apk: 1406a2f4f4fd6e9b16bca45c87404595d6e93031efc6af7a64032c677357dd87
+  - PGBR-v0.00.47-LT-Root.apk: be4eba97b54d39eee480a97f71068499e95b69124a13aca283793ce7cfe7d997
+  - PGBR-v0.00.47-LT-Root-module.zip: dbfe3c088fadd4e84850bc65af05757a317b0f449ccd2089383306c37770cdb8
+- Hashes provenientes do CI, sem rehash independente local. QA não é release pública. Próximo: verificar CI pós-merge, publicação oficial autorizada mediante interface disponível, reconciliar #204 (índice) com main atual e validar novo CI. device_tested=false; rota visual automática permanece isolada. Não sobrescrever versões históricas.
