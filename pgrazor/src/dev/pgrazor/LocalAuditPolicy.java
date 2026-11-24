@@ -77,6 +77,20 @@ public final class LocalAuditPolicy {
  double d=Math.floor(0.5*power*attack/defense*(move==own1||move==own2?1.2:1)*e)+1;
  if(!Double.isFinite(d))return null;return new Estimate(e,d,d/cost,energy>=cost);
  }
+ /** Offline planning with explicit energy bounds; no live battle input. */
+ public static final class EnergyPlan {
+  public final int earliest,latest;public final int[] sequence;
+  EnergyPlan(int a,int b,int[] seq){earliest=a;latest=b;sequence=seq;}
+ }
+ public static EnergyPlan planEnergy(int minimum,int maximum,int gain,int cost,int steps){
+  if(minimum<0||maximum>100||minimum>maximum||gain<1||gain>100||cost<1||cost>100||steps<1||steps>12)throw new IllegalArgumentException("Energia inválida");
+  int earliest=fasts(maximum,gain,cost),latest=fasts(minimum,gain,cost);
+  // Only an exact starting state yields an exact repeated sequence.
+  int[] seq=minimum==maximum?new int[steps]:new int[0];
+  int energy=minimum;for(int i=0;i<seq.length;i++){seq[i]=fasts(energy,gain,cost);energy=Math.min(100,energy+seq[i]*gain)-cost;}
+  return new EnergyPlan(earliest,latest,seq);
+ }
+ private static int fasts(int energy,int gain,int cost){return (Math.max(0,cost-energy)+gain-1)/gain;}
  /** Explicit one-move configuration, never inferred from missing data. */
  public static int recommendSingle(Estimate a){return a!=null&&a.ready?0:-1;}
  public static int recommend(Estimate a,Estimate b){

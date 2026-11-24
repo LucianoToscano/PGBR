@@ -111,6 +111,7 @@ public final class LogExport {
     }
     public static void save(Context context,Uri uri,File file,boolean includeSettings) throws IOException {
         if(uri==null || file==null) throw new IOException("No log or document selected");
+        if(!includeSettings&&Control.trainerPrivacyMode()!=0)throw new IOException("TXT bruto bloqueado no modo de privacidade.");
         try {
             byte[] settings=includeSettings?settingsJson(shareSettings(Control.diagnosticSettings()),Control.engine.speedKmh,new JSONObject()):null;
             MessageDigest written=MessageDigest.getInstance("SHA-256");
@@ -151,6 +152,7 @@ public final class LogExport {
     }
     public static File copyToExternal(Context context,File file,boolean includeSettings) throws IOException {
         if(file==null) throw new IOException("No log is available");
+        if(!includeSettings&&Control.trainerPrivacyMode()!=0)throw new IOException("TXT bruto bloqueado no modo de privacidade.");
         File dir=context.getExternalFilesDir("pgrazor-logs");
         if(dir==null) dir=new File(context.getFilesDir(),"pgrazor-logs/exports");
         if(!dir.isDirectory() && !dir.mkdirs()) throw new IOException("Cannot create export folder");

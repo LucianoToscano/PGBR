@@ -37,6 +37,11 @@ public final class LocalAuditTest {
  check(batch.protectedCount==1&&batch.uncertainCount==1&&batch.matchCount==1&&batch.rejectedLines.equals(Arrays.asList(4,5)));
  check(LocalCollectionPreview.parse("X;1;0;0;0;EVENT=0",99,flags).uncertainCount==1);
  try{LocalCollectionPreview.parse(String.join("\n",Collections.nCopies(501,"X;1;0;0;0;")),99,flags);throw new AssertionError();}catch(IllegalArgumentException expected){}
+ var plan=LocalAuditPolicy.planEnergy(24,24,8,40,4);check(Arrays.equals(plan.sequence,new int[]{2,5,5,5})&&plan.earliest==2&&plan.latest==2);
+ var residual=LocalAuditPolicy.planEnergy(0,0,9,35,4);check(Arrays.equals(residual.sequence,new int[]{4,4,4,4}));
+ var range=LocalAuditPolicy.planEnergy(24,64,8,40,4);check(range.earliest==0&&range.latest==2&&range.sequence.length==0);
+ check(LocalAuditPolicy.planEnergy(100,100,8,40,2).sequence[1]==0);
+ try{LocalAuditPolicy.planEnergy(0,100,0,40,4);throw new AssertionError();}catch(IllegalArgumentException expected){}
  System.out.println("PASS: local audit");
  }
 }
