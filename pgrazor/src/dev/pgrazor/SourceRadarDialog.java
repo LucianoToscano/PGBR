@@ -92,6 +92,7 @@ public final class SourceRadarDialog {
         private final ArrayAdapter<SniperSearch.Result> adapter;
         private final TextView status;
         private final TextView coverage;
+        private final TextView alerts;
         private final Button filterButton;
         private final Button importButton;
         private final Button pageButton;
@@ -155,6 +156,12 @@ public final class SourceRadarDialog {
             coverage.setTextSize(12);
             coverage.setTextColor(MapTheme.muted());
             root.addView(coverage);
+
+            alerts = new TextView(ui);
+            alerts.setTextSize(12);
+            alerts.setTextColor(MapTheme.muted());
+            alerts.setText("Alertas locais: nenhum preset salvo ainda.");
+            root.addView(alerts);
 
             LinearLayout actions = new LinearLayout(ui);
             actions.setOrientation(LinearLayout.HORIZONTAL);
@@ -331,8 +338,36 @@ public final class SourceRadarDialog {
                     text.append("Registros sem coordenada liberada não podem ser copiados ou usados "
                             + "em teleporte.");
                     coverage.setText(text.toString().trim());
+                    evaluateAlerts(completed.items);
                 });
             });
+        }
+
+        /**
+         * Local alerts are evaluated only over rows the device actually received or imported; a preset
+         * with no criteria never fires and a source that answered nothing produces no alert at all.
+         */
+        private void evaluateAlerts(List<SourceEvent> page) {
+            List<PresetCodec.Preset> presets = SourceDataStore.presets(activity);
+            if (presets.isEmpty()) {
+                alerts.setText("Alertas locais: nenhum preset salvo. Crie um filtro em Sniper 2.");
+                return;
+            }
+            List<SourceEvent> real = new ArrayList<>();
+            for (SourceEvent event : store.all()) if (event != null) real.add(event);
+            if (page != null) for (SourceEvent event : page) if (event != null) real.add(event);
+            List<AlertEngine.Alert> found = AlertEngine.evaluate(presets, real, System.currentTimeMillis());
+            if (found.isEmpty()) {
+                alerts.setText("Alertas locais: " + presets.size() + " preset(s) avaliado(s) sobre "
+                        + real.size() + " registro(s) do aparelho — nenhum casa os critérios.");
+                return;
+            }
+            StringBuilder text = new StringBuilder("Alertas locais (").append(found.size()).append("):");
+            for (AlertEngine.Alert alert : found) {
+                text.append('\n').append("• ").append(alert.presetName).append(" — ")
+                        .append(label(alert.event)).append(" · ").append(alert.reason);
+            }
+            alerts.setText(text.toString());
         }
 
         private void updateStatus(String text) {

@@ -1596,15 +1596,15 @@ Foram executadas 18 fixtures C++ host, contratos de tempos/UI e verificação do
 
 | funcao | fonte | local/remoto | implementacao | testes | provider_connected | device_tested | PR | pendencia |
 |---|---|---|---|---|---|---|---|---|
-| Modelo canonico + filtros + presets + alertas | transversal | local | `SourceEvent/Query/Capabilities/Registry`, `EventFilterEngine`, `PresetCodec`, `AlertEngine`, `PgSharpFilterMapping` | `SourceModelTest`, `EventFilterEngineTest`, `PresetCodecTest`, `PgSharpFilterMappingTest` (JVM, auto-pula sem SDK) | n/a | false | #160 | compilar no CI |
-| Sniper 1 e Sniper 2 | todas | local | `SniperSearch`, `SniperDialog` | `SniperSearchTest` (TTL, cooldown, demo) | false | false | #160 | compilar no CI |
-| Importacao pessoal JSON/CSV/GPX/digitado | pgsharp, ipogo, import | local | `LocalEventImport`, `LocalEventStore`, `LocalImportDialog`, `SourceDataStore` | `LocalEventImportTest` (limite, dedupe, rejeicao) | n/a | false | #160 | compilar no CI |
+| Modelo canonico + filtros + presets + alertas | transversal | local | `SourceEvent/Query/Capabilities/Registry`, `EventFilterEngine`, `PresetCodec`, `AlertEngine`, `PgSharpFilterMapping` | `SourceModelTest`, `EventFilterEngineTest`, `PresetCodecTest`, `PgSharpFilterMappingTest` (JVM, no CI com SDK) | n/a | false | #160 | CI 12/12 |
+| Sniper 1 e Sniper 2 | todas | local | `SniperSearch`, `SniperDialog` | `SniperSearchTest` (TTL, cooldown, demo) | false | false | #160 | CI 12/12 |
+| Importacao pessoal JSON/CSV/GPX/digitado | pgsharp, ipogo, import | local | `LocalEventImport`, `LocalEventStore`, `LocalImportDialog`, `SourceDataStore` | `LocalEventImportTest` (limite, dedupe, rejeicao) | n/a | false | #160 | CI 12/12 |
 | PokeList (pokemon, raid, quest, rocket, lider) | pokelist | remoto | `PokeListFeedClient/Data`, `PokeListSourceAdapter` | `FeedSourceEventsTest`, `PokeListFeedDataTest` | **false** | false | #160 | resposta autorizada real |
 | iFlowGo (nearby + global paginado) | iflowgo | remoto | `IFlowGoFeedClient/Data`, `IFlowGoRequestPolicy`, `IFlowGoSourceAdapter` | `IFlowGoFeedDataTest`, `test_iflowgo_request_policy_java` | **false** | false | #160 | resposta autorizada real |
 | PoGoCoordinates + PokeSearch | pogocoordinates | remoto | `PogoFeedData`, `PoGoCoordinatesSourceAdapter` | `FeedSourceEventsTest` (reveal_code) | **false** | false | #160 | resposta autorizada real |
-| PGSharp (import/config/Sniper local) | pgsharp | local | `PgSharpDataImport` + `PgSharpFilterMapping` + adaptador local | `PgSharpFilterMappingTest` | n/a | false | #160 | compilar no CI |
+| PGSharp (import/config/Sniper local) | pgsharp | local | `PgSharpDataImport` + `PgSharpFilterMapping` + adaptador local | `PgSharpFilterMappingTest` | n/a | false | #160 | CI 12/12 |
 | iPogo (radar/perfis/import) | ipogo | local | adaptador local + radar | `SourceAdaptersTest` | **false** (conector nao verificado) | false | #160 | sem API publica |
-| Radar 7 abas + exportar GPX | todas | local | `SourceRadarDialog` | sintaxe + auditoria de referencias | false | false | #160 | compilar no CI |
+| Radar 7 abas + exportar GPX | todas | local | `SourceRadarDialog` | sintaxe + auditoria de referencias + `test_source_ui_wiring.py` | false | false | #160 | CI 12/12 |
 | Gateway OpenAPI 3.1 | pgbr (proprio) | local | `gateway/pgbr_gateway.py` | **45 testes OK** | n/a | false | #160 | deploy/hospedagem |
 | Webhooks HMAC + DLQ | pgbr (proprio) | local | `WebhookDispatcher` | assinatura, replay, retry, DLQ, revogacao OK | n/a | false | #160 | destino real |
 
@@ -1620,6 +1620,45 @@ Foram executadas 18 fixtures C++ host, contratos de tempos/UI e verificação do
 | `python3 -B pgrazor/test/source_layer_reference_audit.py` | **27 arquivos, 1223 referencias verificadas, 0 nao resolvidas** |
 | `python3 -B -m unittest discover -s pgrazor/test -p 'test_*.py'` | 333 testes: 330 ok, 62 pulados, 3 falhas por `javac`/SDK ausente |
 | Parse sintatico (`javalang`) dos 36 arquivos Java novos | sintaxe OK (**nao** e compilacao) |
+| **CI do PR #160 em `aef08b2` (runner Windows + Android SDK 36)** | **12/12 checks verdes**: `Suite real check.py + compilacao Java + Root`, `apk-test`, website, NDK ARM64, governanca/inventario, C++ host, VNext, contract-policy-and-compile, native-pvp-fixture, offline-feed-and-contract, offline-slots-and-contract, translate |
+| `tools/check.py` no CI (runner Windows) | 414 testes, 0 falhas, 1 pulado; Java do aplicativo compilado; instalador Root validado |
+| Artefato QA gerado pelo CI | `PGBR-LT044-PGR040-Root-e-SemRoot-QA` (195 MB, nao expirado) em https://github.com/LucianoToscano/PGBR/actions/runs/45318237097 — **build QA de `aef08b2`, nao release** |
+
+### Atualizacao 24/11/2026 — CI fechado e motores ligados na interface (mesmo PR #160)
+
+A secao acima registrou que nada tinha sido compilado. Isso mudou: o PR #160 passou a ter **12/12 checks verdes**
+em `aef08b2`, incluindo a compilacao completa do Java do aplicativo com Android SDK 36, a validacao do instalador
+Root e o build QA de APK (Root e sem Root). As falhas reais que o CI encontrou, na ordem em que apareceram:
+
+| Falha no CI | Causa real | Correcao | Commit |
+|---|---|---|---|
+| `javac` nao encontrava simbolo em `PokeListFeedData` | parser de feed chamava `LocalEventImport.firstTime`, que esta fora do conjunto compilado dos feeds | `firstTime` local em `PokeListFeedData`; parser de feed autocontido | `2178572` |
+| `0,0 e descartada, nao armazenada` | o construtor de `SourceEvent` aceitava (0,0) | invariante movida para **dentro** do construtor: (0,0)/NaN/fora de faixa vira `UNAVAILABLE` com `lat/lon=null` | `2178572` |
+| `activeCriteria()` esperava 5, veio 6 | novo campo de consulta entrou no resumo | teste passa a afirmar os rotulos, nao a contagem | `6b323eb` |
+| `Um evento valido, foi 0` | fixture JSON do `LocalEventImportTest` fechava o array antes da 3a linha (invalido) | fixture corrigida | `72223ad` |
+| `Ordenado por distancia` | `sniper1/sniper2` so ordenavam quando a *query* tinha centro, ignorando a posicao do aparelho passada pelo chamador | a posicao do chamador vira o centro efetivo; ordenacao por distancia nos dois casos | `66c8625` |
+| `iv-100-rapido-` | slug de preset mantinha acento e traco final | NFD + remocao de marcas, ASCII apenas, sem traco final | `fa8825d` |
+| `Retry-After: '61' != '60'` (gateway) | relogio de parede pode voltar no Windows; `int(janela - negativo) + 1` passava da janela | tempo decorrido limitado em zero e teto igual a janela | `aef08b2` |
+| anotacao de falha vazia no job | o job roda em `windows-2022` com `pwsh`; bloco de diagnostico em `bash` quebrava em 1 s | passo explicitamente `shell: pwsh`, publica o fim do log como anotacao | `1bd092e` |
+
+**Motores que antes so existiam em teste passaram a ser chamados pela interface** (antes: codigo morto):
+
+- `AlertEngine` → `SourceRadarDialog`: a cada pagina recebida, os presets salvos sao avaliados sobre os registros
+  do aparelho **mais** os que acabaram de chegar; o painel mostra `Alertas locais (N)` com preset, registro e motivo,
+  ou `nenhum casa os criterios` / `nenhum preset salvo` quando nao ha match. Preset sem criterio nunca dispara.
+- `PgSharpFilterMapping` → `LocalImportDialog`: colar uma exportacao de filtros do PGSharp (`pokemonFilters`,
+  `questFilters`, `raidFilters`) converte em presets locais, guarda via `SourceDataStore.upsertPreset` e informa
+  `Nenhum teleporte foi feito.` Qualquer outro conteudo (linhas, coordenadas, GPX) continua no importador de eventos.
+- Contrato novo: `pgrazor/test/test_source_ui_wiring.py` (9 testes) garante que as duas ligacoes existem na fonte e
+  que os textos de ausencia/alerta sao os honestos. Auditoria de referencias: **27 arquivos, 1251 referencias, 0 nao resolvidas**.
+
+**Verificacao desta atualizacao:** `test_pgbr_gateway.py` **46 testes OK** (1 novo de relogio voltando);
+`unittest discover` local 409 testes, 1 erro conhecido por `javac` ausente nesta maquina;
+`test_source_ui_wiring.py` 9 OK; auditoria OK; `javalang` OK nos 36 arquivos; CI 12/12 em `aef08b2`.
+
+**Limites que continuam valendo:** `provider_connected=false` em todas as fontes (nenhuma resposta autorizada real);
+`device_tested=false`; o artefato do CI e **build QA**, nao release; `PokeListSourceAdapter`/`IFlowGoSourceAdapter`
+continuam fora do conjunto JVM por depender de `LiveFeedClient` (Android-bound), cobertos por sintaxe + auditoria.
 
 ### Limites explicitos (nao alegar como entregue)
 

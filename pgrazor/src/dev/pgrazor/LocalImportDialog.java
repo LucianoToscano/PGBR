@@ -13,6 +13,7 @@ import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 import java.util.List;
+import org.json.JSONObject;
 
 /**
  * Local entry/import: paste clipboard contents, type coordinates or paste a JSON/CSV/GPX block.
@@ -31,9 +32,9 @@ final class LocalImportDialog {
         root.setPadding(pad, pad, pad, pad);
 
         TextView hint = new TextView(ui);
-        hint.setText("Cole aqui coordenadas (lat, lon), JSON, CSV ou GPX. "
-                + "Os dados ficam no aparelho e são marcados como importação pessoal — "
-                + "não viram feed ao vivo.");
+        hint.setText("Cole aqui coordenadas (lat, lon), JSON, CSV, GPX ou a configuração "
+                + "exportada do PGSharp. Os dados ficam no aparelho e são marcados como importação "
+                + "pessoal — não viram feed ao vivo.");
         hint.setTextSize(13);
         hint.setTextColor(MapTheme.muted());
         root.addView(hint);
@@ -75,6 +76,27 @@ final class LocalImportDialog {
                 confirm.setEnabled(false);
                 final Handler main = new Handler(Looper.getMainLooper());
                 new Thread(() -> {
+                    // A PGSharp export is a filters document, not an events document: it becomes local
+                    // presets instead of rows, and no feed is enabled by it.
+                    final PgSharpFilterMapping.MappingReport mapped = mapPgSharpConfig(text);
+                    if (mapped != null) {
+                        int saved = 0;
+                        for (PresetCodec.Preset preset : mapped.presets)
+                            if (SourceDataStore.upsertPreset(activity, preset) != null) saved++;
+                        final int stored = saved;
+                        main.post(() -> {
+                            if (activity.isFinishing() || activity.isDestroyed()) return;
+                            confirm.setEnabled(true);
+                            report.setText(mapped.summary() + "\nPresets guardados no aparelho: " + stored
+                                    + ". Nenhum teleporte foi feito.");
+                            if (stored > 0) {
+                                Toast.makeText(activity, "Filtros do PGSharp convertidos: " + stored
+                                        + " preset(s) local(is).", Toast.LENGTH_SHORT).show();
+                                if (onImported != null) onImported.run();
+                            }
+                        });
+                        return;
+                    }
                     final LocalEventImport.Report result = LocalEventImport.parse(text,
                             System.currentTimeMillis(), LocalEventImport.IMPORT_SOURCE);
                     final LocalEventStore store = SourceDataStore.events(activity, System.currentTimeMillis());
@@ -111,6 +133,26 @@ final class LocalImportDialog {
             });
         });
         dialog.show();
+    }
+
+    /**
+     * Returns the mapping when {@code text} is a PGSharp filters document, or {@code null} when it is
+     * anything else (rows, coordinates, GPX, invalid JSON). Only the filter families this version
+     * understands are converted; every other key stays in {@code raw_source} and is reported.
+     */
+    private static PgSharpFilterMapping.MappingReport mapPgSharpConfig(String text) {
+        if (text == null) return null;
+        String trimmed = text.trim();
+        if (!trimmed.startsWith("{")) return null;
+        JSONObject document;
+        try {
+            document = new JSONObject(trimmed);
+        } catch (Exception notJson) {
+            return null;
+        }
+        if (!document.has("pokemonFilters") && !document.has("questFilters")
+                && !document.has("raidFilters")) return null;
+        return PgSharpFilterMapping.map(document);
     }
 
     /** Text used by the export-selection action: only rows with valid coordinates. */
