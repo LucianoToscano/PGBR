@@ -1,5 +1,7 @@
 ## PGBR LT045 (v0.00.45-LT) — candidata QA, publicação pendente
 
+- Revisão local: prévia de proteção não destrutiva, explicação de códigos, simulador manual de eficácia/DPE, desenho GPX e traduções. ZIP de compartilhamento passa a usar lista de campos técnicos permitidos; TXT bruto continua privado. Sem alteração de execução de ações do jogo. CI e homologação Android ainda pendentes.
+
 - Integra a candidata #157 (Snipers 1/2, Radar/filtros, Savant Root/PvP, coletor IV100 upstream e refinamento VGP+ #158) sem substituir a política de ataque da LT044.
 - Preserva PT-BR/GPS, Rocket QA6 e prioridade imediata, HUD/mapa/IV, importação local PGSharp e configurações de backup.
 - Os testes especializados da fonte #157 passaram; o resultado de compilação e publicação desta versão deverá ser conferido por commit e hashes. device_tested=false.

@@ -62,10 +62,10 @@ final class RootedLogDialog {
         refresh.setText(dev.pgrazor.PtBr.tr("Refresh"));
         actions.addView(refresh, new LinearLayout.LayoutParams(0, -2, 1));
         Button save = new Button(ui);
-        save.setText(dev.pgrazor.PtBr.tr("Save .txt"));
+        save.setText("TXT bruto (privado)");
         actions.addView(save, new LinearLayout.LayoutParams(0, -2, 1));
         Button bundle=new Button(ui);
-        bundle.setText(dev.pgrazor.PtBr.tr("Save log + settings (.zip)"));
+        bundle.setText("Salvar diagnóstico filtrado (.zip)");
         body.addView(bundle);
 
         Runnable reload = () -> load(hint, text);
@@ -127,7 +127,7 @@ final class RootedLogDialog {
             byte[] bytes = new byte[(int) (input.length() - start)];
             input.readFully(bytes);
             hint.setText(dev.pgrazor.PtBr.tr((start > 0 ? "Showing the latest 64 KiB. " : "")
-                    + "Save exports the current log segment with retained startup diagnostics to this device. ZIP also includes a single-line settings.json; the settings snapshot excludes login tokens, account data and saved locations."));
+                    + "TXT bruto contém o segmento atual e pode incluir dados privados. ZIP filtrado omite mensagens livres, identificadores e preferências não permitidas."));
             text.setText(dev.pgrazor.PtBr.tr(new String(bytes, StandardCharsets.UTF_8)));
         } catch (IOException error) {
             hint.setText(dev.pgrazor.PtBr.tr(""));

@@ -33,14 +33,14 @@ public final class LogActivity extends Activity {
         TextView heading = new TextView(this); heading.setText(dev.pgrazor.PtBr.tr("PGBR · current run")); heading.setTextSize(22); layout.addView(heading);
         ScrollView scroll = new ScrollView(this); text = new TextView(this); text.setTextIsSelectable(true); scroll.addView(text); layout.addView(scroll,new LinearLayout.LayoutParams(-1,0,1));
         Button refresh = new Button(this); refresh.setText(dev.pgrazor.PtBr.tr("Refresh log")); refresh.setOnClickListener(v -> refresh()); layout.addView(refresh);
-        TextView detail=new TextView(this);detail.setText(dev.pgrazor.PtBr.tr("ZIP includes the log and a single-line settings.json snapshot of feature preferences. Login tokens, account data and saved locations are excluded."));layout.addView(detail);
-        Button bundle=new Button(this);bundle.setText(dev.pgrazor.PtBr.tr("Save log + settings (.zip)"));layout.addView(bundle);
+        TextView detail=new TextView(this);detail.setText("ZIP filtrado para compartilhar: inclui somente campos técnicos permitidos. O TXT bruto pode conter dados pessoais; revise antes de enviar.");layout.addView(detail);
+        Button bundle=new Button(this);bundle.setText("Salvar diagnóstico filtrado (.zip)");layout.addView(bundle);
         bundle.setOnClickListener(v -> {
             File file=Control.currentLog();if(file==null)return;
             Intent intent=new Intent(Intent.ACTION_CREATE_DOCUMENT).addCategory(Intent.CATEGORY_OPENABLE).setType("application/zip");
             intent.putExtra(Intent.EXTRA_TITLE,file.getName().replaceFirst("\\.txt$","")+".zip");startActivityForResult(intent,41);
         });
-        Button export = new Button(this); export.setText(dev.pgrazor.PtBr.tr("Save .txt file")); layout.addView(export);
+        Button export = new Button(this); export.setText("Salvar TXT bruto (privado)"); layout.addView(export);
         export.setOnClickListener(v -> {
             File file = Control.currentLog(); if(file == null) return;
             Intent intent = new Intent(Intent.ACTION_CREATE_DOCUMENT).addCategory(Intent.CATEGORY_OPENABLE).setType("text/plain");
