@@ -41,7 +41,7 @@ Este documento registra, item a item, o que está integrado, o que foi verificad
 
 ## Compilação e Publicação LT046
 
-- **Compilação:** workflow `pgbr-lt046-qa.yml` (somente `workflow_dispatch`, sem publicação) — build QA e verificação de SHA-256 registrados no Arquivo Mestre após a execução.
+- **Compilação:** workflow `pgbr-lt046-qa.yml` executado em 24/11/2026 (run `45382217542`, `completed/success`); artefato `PGBR-LT046-Root-e-SemRoot-QA` (id `14914618192`, digest do ZIP `sha256:ca8775edc8015282351286c813b1c9dedf086852a4f771a8d82bb5368110260a`); hashes individuais dentro do artefato. Sem publicação.
 - **Publicação:** **não autorizada** nesta etapa; permanece pendente até build verificado e autorização explícita do proprietário. LT045 continua a pré-release publicada vigente.
 
 ## Regra de atualização
