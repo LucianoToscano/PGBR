@@ -60,6 +60,7 @@ final class MapTheme {
     /** Applies {@link #buttonBackground}; an inset background would otherwise replace the label's padding. */
     static void setButtonBackground(View view) {
         int l = view.getPaddingLeft(), t = view.getPaddingTop(), r = view.getPaddingRight(), b = view.getPaddingBottom();
+        view.setBackgroundTintList(null);
         view.setBackground(buttonBackground(view.getContext()));
         if(view instanceof Button && !(view instanceof CompoundButton))((Button)view).setTextColor(actionTextColors());
         view.setPadding(l, t, r, b);

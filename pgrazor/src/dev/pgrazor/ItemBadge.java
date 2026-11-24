@@ -15,6 +15,7 @@ final class ItemBadge extends View {
     private final int itemId;
     private final Paint paint=new Paint(Paint.ANTI_ALIAS_FLAG|Paint.FILTER_BITMAP_FLAG);
     private final Bitmap itemSprite;
+    private final String spriteStatus;
     // Bound retained memory; evicted bitmaps may still be displayed by existing Views.
     // Never recycle them on eviction. Unknown IDs must not grow a permanent cache.
     private static final int MAX_CACHE_BYTES=8*1024*1024,MAX_NEGATIVE_IDS=512;
@@ -27,10 +28,17 @@ final class ItemBadge extends View {
     ItemBadge(Context context,int itemId){
         super(context);
         this.itemId=itemId;
-        itemSprite=load(context,itemId);
+        synchronized(ItemBadge.class){
+            itemSprite=load(context,itemId);
+            spriteStatus=itemSprite!=null?"Imagem decodificada":
+                Boolean.TRUE.equals(MISSED.get(itemId))?"Arte ausente — desenho alternativo":
+                Boolean.TRUE.equals(WARNED.get(itemId))?"Erro de leitura — desenho alternativo":
+                "Arte não confirmada — desenho alternativo";
+        }
         setImportantForAccessibility(IMPORTANT_FOR_ACCESSIBILITY_NO);
     }
     boolean hasDecodedSprite(){return itemSprite!=null;}
+    String spriteStatus(){return spriteStatus;}
     private static synchronized Bitmap load(Context context,int id){
         if(id<=0||id>999999)return null;
         Bitmap cached=CACHE.get(id);
@@ -154,7 +162,11 @@ final class ItemBadge extends View {
         paint.setStyle(Paint.Style.FILL);paint.setColor(0xff415765);
         paint.setTypeface(android.graphics.Typeface.create("sans-serif-medium",android.graphics.Typeface.NORMAL));
         paint.setTextAlign(Paint.Align.CENTER);
-        paint.setTextSize(itemId<10000?8f:6f);
-        c.drawText(String.valueOf(itemId),0,3f,paint);
+        String label=String.valueOf(itemId);
+        paint.setTextSize(8f);
+        float width=paint.measureText(label);
+        if(width>24f)paint.setTextSize(8f*24f/width);
+        Paint.FontMetrics metrics=paint.getFontMetrics();
+        c.drawText(label,0,-(metrics.ascent+metrics.descent)/2f,paint);
     }
 }
