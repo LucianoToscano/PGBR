@@ -58,6 +58,21 @@ public final class LogExportTest {
         many.append("Registros omitidos: 0\n");
         LocalDiagnosticSummary.Summary limited=LocalDiagnosticSummary.parse(many.toString());
         if(limited.icons.size()!=201||!limited.describe().contains("Mais 1 IDs distintos não exibidos"))throw new AssertionError("Summary display limit");
+        // Test new import limits without mutating profile storage or old archives.
+        JSONObject migration=new JSONObject();
+        migration.put("format",PgSharpDataImport.FORMAT).put("version",1);
+        for(String k:new String[]{"favorites","pokemonFilters","questFilters","raidFilters"})migration.put(k,new org.json.JSONArray());
+        org.json.JSONArray routes=new org.json.JSONArray(),points=new org.json.JSONArray();
+        org.json.JSONArray point=new org.json.JSONArray().put(1).put(2);
+        for(int i=0;i<GpxCodec.MAX_POINTS;i++)points.put(point);
+        for(int i=0;i<GpxCodec.MAX_TOTAL_POINTS/GpxCodec.MAX_POINTS;i++)routes.put(new JSONObject().put("name","R"+i).put("points",points));
+        migration.put("routes",routes);
+        PgSharpDataImport.validateNewImport(migration);
+        routes.put(new JSONObject().put("name","Extra").put("points",new org.json.JSONArray().put(point)));
+        PgSharpDataImport.validate(migration);
+        try{PgSharpDataImport.validateNewImport(migration);throw new AssertionError("Aggregate migration limit");}catch(org.json.JSONException expected){
+            if(!expected.getMessage().contains("Total de pontos"))throw expected;
+        }
         java.nio.file.Path dir=java.nio.file.Files.createTempDirectory("pgbr-export-test");
         File tmp=dir.resolve("current.tmp").toFile(),old=dir.resolve("old.zip").toFile(),dest=dir.resolve("current.zip").toFile();
         try{
