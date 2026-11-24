@@ -136,7 +136,7 @@ public class RouteAnchorHarness {
       refs[k++]=new double[]{lat,lon,u/width,v/height};
     }
     RouteAnchorSnapshot a=RouteAnchorSnapshot.parse(json(refs,6));
-    check(a!=null&&a.size()==6);
+    if(a==null||a.size()!=6)throw new AssertionError("parse="+a+" size="+(a==null?-1:a.size())+" json="+json(refs,6));
     RouteGroundProjection p=a.fit(width,height);
     check(p!=null);
     double[] mid=p.project(refs[2][0],refs[2][1]);
