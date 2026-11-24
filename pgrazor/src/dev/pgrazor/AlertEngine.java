@@ -2,9 +2,9 @@ package dev.pgrazor;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.List;
-import java.util.Set;
 
 /**
  * Local alerts: a preset fires when a row that was actually imported or received matches its
@@ -35,13 +35,25 @@ public final class AlertEngine {
     public static List<Alert> evaluate(List<PresetCodec.Preset> presets, List<SourceEvent> events, long now) {
         List<Alert> alerts = new ArrayList<>();
         if (presets == null || events == null || events.isEmpty()) return Collections.emptyList();
-        Set<String> seen = new HashSet<>();
+        // Resolve repeated observations before filtering or applying the result limit.
+        // A newer expired observation must not resurrect an older copy.
+        Map<String, Map<String, SourceEvent>> bySource = new LinkedHashMap<>();
+        for (SourceEvent event : events) {
+            if (event == null || event.isDemo) continue;
+            Map<String, SourceEvent> byId = bySource.computeIfAbsent(event.sourceId, k -> new LinkedHashMap<>());
+            SourceEvent previous = byId.get(event.eventId);
+            if (previous == null || event.observedAt > previous.observedAt
+                    || (event.observedAt == previous.observedAt && event.retrievedAt >= previous.retrievedAt))
+                byId.put(event.eventId, event);
+        }
+        List<SourceEvent> eligible = new ArrayList<>();
+        for (Map<String, SourceEvent> byId : bySource.values())
+            for (SourceEvent event : byId.values()) if (!event.expired(now)) eligible.add(event);
         for (PresetCodec.Preset preset : presets) {
             if (preset == null || !preset.query.isActive()) continue; // no criteria => no alert
-            EventFilterEngine.Outcome outcome = EventFilterEngine.apply(preset.query, events, now);
+            EventFilterEngine.Outcome outcome = EventFilterEngine.apply(preset.query, eligible, now);
             for (SourceEvent event : outcome.kept) {
                 if (event == null || event.expired(now) || event.isDemo) continue;
-                if (!seen.add(preset.id + "|" + event.sourceId + "|" + event.eventId)) continue;
                 alerts.add(new Alert(preset.id, preset.name, event, reasonFor(preset.query, event)));
             }
         }

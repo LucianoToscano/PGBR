@@ -113,6 +113,20 @@ public final class PresetCodecTest {
         check(alerts.get(0).reason.contains("import"), "Motivo cita a origem");
         check(!"expired".equals(alerts.get(0).event.eventId), "Registro expirado não gera alerta");
 
+        // Repeated observations and expired rows must not consume the preset limit.
+        List<SourceEvent> repeated = new ArrayList<>();
+        repeated.add(event("same", 25, 100.0, 1, NOW + 600_000));
+        repeated.add(SourceEvent.builder("import", "same", SourceEvent.Kind.POKEMON)
+                .pokemonId(25).ivPercent(100.0).observedAt(NOW + 1)
+                .retrievedAt(NOW + 1).expiresAt(NOW - 1).build());
+        repeated.add(event("valid", 25, 100.0, 1, NOW + 600_000));
+        List<PresetCodec.Preset> limited = new ArrayList<>();
+        limited.add(PresetCodec.create("Limitado", SourceQuery.builder()
+                .iv(100.0, 100.0).includeExpired(true).limit(1).build(), NOW));
+        List<AlertEngine.Alert> limitedAlerts = AlertEngine.evaluate(limited, repeated, NOW);
+        check(limitedAlerts.size() == 1 && "valid".equals(limitedAlerts.get(0).event.eventId),
+                "Observação expirada mais recente não ressuscita a antiga nem consome o limite");
+
         // --- shiny is only reported when observed -------------------------------------------
         SourceEvent shinyObserved = SourceEvent.builder("import", "shiny", SourceEvent.Kind.POKEMON)
                 .coordinates(-23.55, -46.63).pokemonId(25).name("Pikachu")
