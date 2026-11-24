@@ -28,33 +28,57 @@ final class LocalAiKeyDialog {
             Button save=new Button(MapTheme.wrap(a)),remove=new Button(MapTheme.wrap(a));
             save.setText("Salvar chave localmente");remove.setText("Remover chave");save.setAllCaps(false);remove.setAllCaps(false);
             MapTheme.setButtonBackground(save);MapTheme.setButtonBackground(remove);
-            b.addView(save);b.addView(remove);save.setEnabled(false);remove.setEnabled(false);
+            b.addView(save);b.addView(remove);
+            final boolean[] busy={false};
+            java.util.function.Consumer<Boolean> enabled=on->{field.setEnabled(on);save.setEnabled(on);remove.setEnabled(on);};
+            enabled.accept(false);
             android.content.Context app=a.getApplicationContext();
+            java.util.function.Supplier<String> statusText=()->{
+                try{return LocalAiKeyVault.configured(app,provider)?"Chave armazenada e legível • não validada pelo provedor":"Nenhuma chave armazenada";}
+                catch(Exception error){return "Cofre indisponível ou inválido.";}
+            };
+            java.util.function.Consumer<String> complete=message->a.runOnUiThread(()->{
+                busy[0]=false;
+                if(!a.isDestroyed()&&!a.isFinishing()&&b.isAttachedToWindow()){
+                    status.setText(message);enabled.accept(true);
+                }
+            });
             Runnable refresh=()->{
-                String message;
-                try{message=LocalAiKeyVault.configured(app,provider)?"Chave armazenada e legível • não validada pelo provedor":"Nenhuma chave armazenada";}
-                catch(Exception error){message="Cofre indisponível ou inválido.";}
-                final String result=message;
-                a.runOnUiThread(()->{if(!a.isDestroyed()&&b.isAttachedToWindow()){status.setText(result);save.setEnabled(true);remove.setEnabled(true);}});
+                if(busy[0])return;
+                busy[0]=true;enabled.accept(false);
+                new Thread(()->complete.accept(statusText.get()),"pgbr-ai-local-status").start();
             };
             save.setOnClickListener(v->{
+                if(busy[0])return;
                 if(rejected[0]){field.setError("Colagem rejeitada. Substitua toda a chave antes de salvar.");return;}
                 android.text.Editable value=field.getText();char[] secret=new char[value.length()];value.getChars(0,value.length(),secret,0);value.clear();
-                save.setEnabled(false);remove.setEnabled(false);
+                busy[0]=true;enabled.accept(false);status.setText("Salvando no cofre local…");
                 new Thread(()->{
-                    try{LocalAiKeyVault.save(app,provider,secret);refresh.run();}
-                    catch(Exception e){a.runOnUiThread(()->{if(b.isAttachedToWindow()){status.setText("Não foi possível salvar a chave.");save.setEnabled(true);remove.setEnabled(true);}});}
+                    String message;
+                    try{LocalAiKeyVault.save(app,provider,secret);message=statusText.get();}
+                    catch(Exception e){message="Não foi possível salvar a chave.";}
                     finally{Arrays.fill(secret,'\0');}
+                    complete.accept(message);
                 },"pgbr-ai-local-save").start();
             });
-            remove.setOnClickListener(v->new AlertDialog.Builder(MapTheme.wrap(a)).setTitle("Remover chave local?")
-                .setMessage("A chave deixará de estar disponível neste cofre. Isso não a revoga no provedor.")
-                .setNegativeButton("Cancelar",null).setPositiveButton("Remover",(dialog,which)->{
-                    field.getText().clear();save.setEnabled(false);remove.setEnabled(false);
-                    new Thread(()->{try{LocalAiKeyVault.remove(app,provider);refresh.run();}catch(Exception e){a.runOnUiThread(()->{if(b.isAttachedToWindow()){status.setText("Não foi possível remover a chave.");save.setEnabled(true);remove.setEnabled(true);}});}},"pgbr-ai-local-remove").start();
-                }).show());
+            remove.setOnClickListener(v->{
+                if(busy[0])return;
+                AlertDialog confirm=new AlertDialog.Builder(MapTheme.wrap(a)).setTitle("Remover chave local?")
+                    .setMessage("A chave deixará de estar disponível neste cofre. Isso não a revoga no provedor.")
+                    .setNegativeButton("Cancelar",null).setPositiveButton("Remover",(dialog,which)->{
+                        if(busy[0]||a.isDestroyed()||a.isFinishing()||!b.isAttachedToWindow())return;
+                        field.getText().clear();busy[0]=true;enabled.accept(false);status.setText("Removendo do cofre local…");
+                        new Thread(()->{
+                            String message;
+                            try{LocalAiKeyVault.remove(app,provider);message=statusText.get();}
+                            catch(Exception e){message="Não foi possível remover a chave.";}
+                            complete.accept(message);
+                        },"pgbr-ai-local-remove").start();
+                    }).create();
+                LocalAuditDialog.presentPrivate(a,confirm);
+            });
             b.addOnAttachStateChangeListener(new android.view.View.OnAttachStateChangeListener(){
-                public void onViewAttachedToWindow(android.view.View view){new Thread(refresh,"pgbr-ai-local-status").start();}
+                public void onViewAttachedToWindow(android.view.View view){refresh.run();}
                 public void onViewDetachedFromWindow(android.view.View view){field.getText().clear();}
             });
         }
