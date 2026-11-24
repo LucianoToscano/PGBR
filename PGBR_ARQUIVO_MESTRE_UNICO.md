@@ -1652,8 +1652,11 @@ Root e o build QA de APK (Root e sem Root). As falhas reais que o CI encontrou, 
 - Contrato novo: `pgrazor/test/test_source_ui_wiring.py` (9 testes) garante que as duas ligacoes existem na fonte e
   que os textos de ausencia/alerta sao os honestos. Auditoria de referencias: **27 arquivos, 1251 referencias, 0 nao resolvidas**.
 
+**CI apos a ligacao:** 12/12 checks verdes tambem em `bd8b1ea` (o commit que liga os dois motores), com o build QA
+`PGBR-LT044-PGR040-Root-e-SemRoot-QA` gerado de novo em https://github.com/LucianoToscano/PGBR/actions/runs/45320713787.
+
 **Verificacao desta atualizacao:** `test_pgbr_gateway.py` **46 testes OK** (1 novo de relogio voltando);
-`unittest discover` local 409 testes, 1 erro conhecido por `javac` ausente nesta maquina;
+`unittest discover` local **410 testes** (344 ok, 65 pulados, 1 erro conhecido por `javac` ausente nesta maquina);
 `test_source_ui_wiring.py` 9 OK; auditoria OK; `javalang` OK nos 36 arquivos; CI 12/12 em `aef08b2`.
 
 **Limites que continuam valendo:** `provider_connected=false` em todas as fontes (nenhuma resposta autorizada real);
