@@ -46,6 +46,13 @@ O release `v0.00.33-LT` é uma **nova identificação de build**, não uma mudan
 - Português brasileiro como idioma prioritário; preservar funcionalidade antes de decisões estéticas.
 - Projeto experimental independente; não se apresentar como afiliado à Niantic, Pokémon Company, PGSharp, Pokémod, iPogo ou outros fornecedores. Créditos e licenças são obrigatórios.
 
+### Checkpoint de continuidade LT046 — 24/11/2026 (PR de GPX e documentação)
+
+- Base imutável: main `305f92bd242bb74fadd6af98203eed3ed2bb90ac` (merge #164); branch `fix/lt046-gpx-segmentos-docs-20261124`. PR #166 em paralelo, sem alteração de seus arquivos de código/fixtures. LT045 publicada, LT046 ainda não publicada, VERSION mantida.
+- Corrigida a perda do identificador dos segmentos quando o nome da trilha alcança o limite de 80 caracteres: `GpxCodec.java` reserva o sufixo antes de truncar o prefixo, sem dividir pares surrogate. Commit 90696c1b3cff39665cfe604c38c6fe58961388a5. `GpxCodecTest.java` cobre nomes distintos, limites, Unicode e round-trip; commit 54188104b4ce978e1b0443fe934023595a41ef4e. Testes adicionados, execução CI ainda pendente.
+- README e ROOTED sincronizados com o recibo LT045 já verificado (commits 3c0da69c011697f3fa769b6c649821211a272c25 e b0412c4d787b1223d8426084085be0c7a6513abf), histórico de versões preservado. Matriz `docs/validation/LT046_HOMOLOGACAO.md` ampliada para a futura sessão única de homologação do proprietário, incluindo etiquetas, filtros, evento, proteção, lifecycle, diagnóstico, Max/MT/frutas, IV/nível e GPX/ícones (f35ec46cf2ce21dd41bb79ede44acf7f24375f61). Nenhum teste físico marcado como aprovado.
+- Sem alterações em execução de jogo, GPS, PokeSearch, credenciais ou provedores, sem novo APK ou publicação. `device_tested=false`; `provider_connected=false`. Aguardar CI exato e revisão de integração sem sobrescrever trabalho paralelo.
+
 <a id="mestre-evidencias"></a>
 ## 2. Hierarquia de evidências e estados
 Use os termos com precisão:
