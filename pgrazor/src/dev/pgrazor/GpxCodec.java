@@ -234,7 +234,7 @@ public final class GpxCodec {
                         boolean split = trackSegments.size() > 1;
                         for (int i = 0; i < trackSegments.size(); i++) {
                             String name = resolveName(trackName);
-                            if (split) name = clip(name + " (segment " + (i + 1) + ")");
+                            if (split) name = segmentName(name, i + 1);
                             routes.add(build(name, trackSegments.get(i)));
                         }
                     }
@@ -332,6 +332,14 @@ public final class GpxCodec {
             int end=GpxRoute.NAME_LIMIT;
             if(Character.isHighSurrogate(trimmed.charAt(end-1)))end--;
             return trimmed.substring(0,end).trim();
+        }
+
+        /** Keep the identifying suffix even when the track name is already at the limit. */
+        private static String segmentName(String name, int number) {
+            String suffix = " (segment " + number + ")";
+            int end = Math.min(name.length(), GpxRoute.NAME_LIMIT - suffix.length());
+            if (end > 0 && Character.isHighSurrogate(name.charAt(end - 1))) end--;
+            return name.substring(0, end).trim() + suffix;
         }
 
         private static String local(String localName, String qName) {
