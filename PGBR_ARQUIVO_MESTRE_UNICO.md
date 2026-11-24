@@ -1847,3 +1847,6 @@ Base main 205ac2105a45dac4821c26b9ff73e66c4097e76a, comparação GitHub antes de
 
 
 - 24/11/2026 — PR #169 integrado em d16c0a9375442f89766ef181db030f58df9d4a14; HEAD 93996065873da9ce5e72a2ff45b1e4293cdc6014, workflows 45370546529 e 45370546494 ambos success; 5/5 jobs do CI geral. Prévia local de coleção validada em CI, não no Android físico nem na coleção real. Sem novo APK, alteração de versão ou release; device_tested=false, provider_connected=false.
+
+
+- LT046 — validação de novos arquivos locais de migração PGSharp, branch fix/lt046-validacao-migracao-local-20261124, base 3f7d26365dd317ec073dd640ec9c35f28ddd91af. Versão precisa ser número 1 sem coerção; nomes de favoritos/rotas precisam ser texto, limites respectivos e Unicode válido; notas sentinela (0,0) preservadas como texto original, nomes de filtros arquivados precisam ser texto. Validação anterior de arquivos já arquivados mantida para compatibilidade. Fixtures de tipos incorretos, limites e notas; nenhuma alteração de armazenamento efetivo, automação, localização, provedores ou APK. CI pendente. Revisão paralela confirmou que o código de importação #129 e a atualização da ordem do canvas do IV #132 já estão presentes na main; não mesclar PRs antigas indiscriminadamente.
