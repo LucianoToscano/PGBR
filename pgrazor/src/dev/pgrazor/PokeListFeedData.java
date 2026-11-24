@@ -84,6 +84,24 @@ final class PokeListFeedData {
         return v >= lo && v <= hi ? v : -1;
     }
     /** Treat known contemporary 10-digit timestamps as seconds and 13-digit as ms. */
+    /** First time field present under any of the aliases; 0 when none is usable. */
+    private static long firstTime(JSONObject row, String... keys) {
+        for (String key : keys) {
+            if (!row.has(key) || row.isNull(key)) continue;
+            Object value = row.opt(key);
+            long raw;
+            if (value instanceof Number) raw = ((Number) value).longValue();
+            else {
+                String text = String.valueOf(value).trim();
+                if (text.isEmpty()) continue;
+                try { raw = Long.parseLong(text); } catch (NumberFormatException notANumber) { continue; }
+            }
+            long converted = epochMs(raw);
+            if (converted > 0) return converted;
+        }
+        return 0L;
+    }
+
     private static long epochMs(long raw) {
         if (raw >= 1_000_000_000L && raw < 10_000_000_000L) return raw * 1000L;
         if (raw >= 1_000_000_000_000L && raw < 10_000_000_000_000L) return raw;
@@ -162,9 +180,9 @@ final class PokeListFeedData {
             id = (dex == null ? "x" : dex.toString()) + ":"
                     + String.format(Locale.US, "%.6f,%.6f", lat, lon);
         }
-        long expires = LocalEventImport.firstTime(row, "endTime", "end_time", "expires_at", "end");
+        long expires = firstTime(row, "endTime", "end_time", "expires_at", "end");
         if (expires > 0 && expires <= now) return null;
-        long observed = LocalEventImport.firstTime(row, "startTime", "start_time", "spawn_at");
+        long observed = firstTime(row, "startTime", "start_time", "spawn_at");
         String name = clean(row.optString("name", ""), 80);
         String rocketType = clean(row.optString("rocket_type", ""), 40);
 

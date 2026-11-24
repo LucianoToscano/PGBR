@@ -90,9 +90,15 @@ public final class SourceEvent {
         pokemonId = b.pokemonId;
         formId = b.formId;
         name = b.name == null ? "" : b.name;
-        coordinatePrecision = b.lat != null && b.lon != null ? b.precision : CoordinatePrecision.UNAVAILABLE;
-        lat = b.lat;
-        lon = b.lon;
+        // The invariant lives here, not in each caller: (0,0), NaN, infinity and out-of-range values
+        // are not coordinates. They become absent (null) with precision UNAVAILABLE, so no row can
+        // ever be offered as a teleport destination by accident.
+        boolean coordinatesValid = validCoordinates(b.lat, b.lon);
+        coordinatePrecision = coordinatesValid
+                ? (b.precision == null ? CoordinatePrecision.EXACT : b.precision)
+                : CoordinatePrecision.UNAVAILABLE;
+        lat = coordinatesValid ? b.lat : null;
+        lon = coordinatesValid ? b.lon : null;
         ivPercent = b.ivPercent;
         ivAtk = b.ivAtk;
         ivDef = b.ivDef;
