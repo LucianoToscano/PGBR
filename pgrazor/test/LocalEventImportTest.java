@@ -105,6 +105,13 @@ public final class LocalEventImportTest {
         check(hundo.imported == 1, "Linha do feed 100% IV inválida rejeitada: " + hundo.imported);
         check(hundo.events.get(0).ivPercent == 100.0, "Feed declara 100% IV");
 
+        check(hundo.events.get(0).expiresAt == NOW + 300_000, "TTL em milissegundos preservado");
+        LocalEventImport.Report precision = LocalEventImport.parse(new JSONObject().put("events", new JSONArray()
+                .put(new JSONObject().put("id", "approx").put("lat", -23.5).put("lon", -46.6).put("coordinate_precision", "approximate"))
+                .put(new JSONObject().put("id", "demo").put("lat", -23.5).put("lon", -46.6).put("origin_kind", "demo_fixture"))).toString(), NOW);
+        check(precision.imported == 1 && precision.rejected == 1 && !precision.events.get(0).isActionable(NOW),
+                "Importação preserva precisão e recusa demo");
+
         // --- GPX export only writes valid points ------------------------------------------
         List<SourceEvent> toExport = java.util.Arrays.asList(
                 SourceEvent.builder("import", "ok", SourceEvent.Kind.ROUTE).coordinates(-23.55, -46.63).name("A").build(),
@@ -127,6 +134,14 @@ public final class LocalEventImportTest {
         check(reopened.size() == 2, "Store recarregada com 2 registros");
         check(fails(() -> reopened.mergeJson("{\"format\":\"outro\"}", NOW)),
                 "Formato desconhecido é recusado");
+        JSONObject damaged = new JSONObject(saved);
+        damaged.getJSONArray("events").put(new JSONObject().put("source_id", "import"))
+                .put(SourceEvent.builder("import", "after", SourceEvent.Kind.ROUTE).coordinates(-23.5, -46.6).build().toJson());
+        LocalEventStore recovered = new LocalEventStore();
+        check(recovered.mergeJson(damaged.toString(), NOW) == 3, "Registro inválido não impede recuperação posterior");
+        check(!recovered.add(SourceEvent.builder("import", "", SourceEvent.Kind.ROUTE).build()), "Identidade vazia recusada");
+        check(fails(() -> recovered.mergeJson(new JSONObject(saved).put("version", 99).toString(), NOW)),
+                "Versão futura não é interpretada como v1");
         SourceEvent dying = SourceEvent.builder("import", "dying", SourceEvent.Kind.POKEMON)
                 .coordinates(-23.55, -46.63).expiresAt(NOW + 1000).build();
         store.add(dying);

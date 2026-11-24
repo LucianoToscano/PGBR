@@ -26,7 +26,7 @@ public final class LocalEventStore {
 
     /** Adds one event; returns {@code false} when the same identity is already stored. */
     public synchronized boolean add(SourceEvent event) {
-        if (event == null) return false;
+        if (event == null || event.sourceId.trim().isEmpty() || event.eventId.trim().isEmpty()) return false;
         String key = key(event);
         if (events.containsKey(key)) return false;
         if (events.size() >= MAX_EVENTS) {
@@ -79,11 +79,7 @@ public final class LocalEventStore {
     }
 
     private static String key(SourceEvent event) {
-        String id = event.eventId == null || event.eventId.isEmpty()
-                ? String.format(java.util.Locale.US, "%.6f,%.6f",
-                        event.lat == null ? 0 : event.lat, event.lon == null ? 0 : event.lon)
-                : event.eventId;
-        return event.sourceId + "|" + id;
+        return event.sourceId.length() + ":" + event.sourceId + event.eventId;
     }
 
     public synchronized String toJson() {
@@ -104,6 +100,8 @@ public final class LocalEventStore {
         JSONObject root = new JSONObject(json);
         if (!STORE_FORMAT.equals(root.optString("format")))
             throw new JSONException("Formato de armazenamento desconhecido");
+        if (root.optInt("version", -1) != STORE_VERSION)
+            throw new JSONException("Versão de armazenamento desconhecida");
         JSONArray rows = root.optJSONArray("events");
         if (rows == null) return 0;
         int added = 0;
@@ -111,9 +109,13 @@ public final class LocalEventStore {
         for (int i = 0; i < limit; i++) {
             JSONObject row = rows.optJSONObject(i);
             if (row == null) continue;
-            SourceEvent event = SourceEvent.fromJson(row);
-            if (event.expired(now)) continue; // stale imports never resurrect
-            if (add(event)) added++;
+            try {
+                SourceEvent event = SourceEvent.fromJson(row);
+                if (event.expired(now)) continue; // stale imports never resurrect
+                if (add(event)) added++;
+            } catch (JSONException invalidRow) {
+                // Keep recovering valid rows; this read does not modify the original document.
+            }
         }
         return added;
     }

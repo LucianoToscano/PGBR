@@ -168,6 +168,10 @@ public final class LocalEventImport {
                 rejections.add(new Rejection(i + 1, "Registro não é um objeto JSON.", String.valueOf(rows.opt(i))));
                 continue;
             }
+            if (row.optBoolean("is_demo", false) || OriginKind.fromWire(row.optString("origin_kind", "")) == OriginKind.SIMULATED_FIXTURE) {
+                rejections.add(new Rejection(i + 1, "Registro demonstrativo não pode ser importado como real.", row.toString()));
+                continue;
+            }
             SourceEvent event = rowToEvent(row, now, sourceId);
             if (event == null) {
                 rejections.add(new Rejection(i + 1, "Registro sem coordenadas válidas.", row.toString()));
@@ -198,8 +202,7 @@ public final class LocalEventImport {
             Integer dex = SourceEvent.integer(row.opt(1));
             Double lat = SourceEvent.coordinate(row.opt(3));
             Double lon = SourceEvent.coordinate(row.opt(4));
-            Long despawn = SourceEvent.integer(row.opt(5)) == null ? null
-                    : Long.valueOf(row.optLong(5, 0L));
+            long despawn = firstTime(new JSONObject().put("expiry", row.opt(5)), "expiry");
             if (id.isEmpty() || dex == null || !SourceEvent.validCoordinates(lat, lon)) {
                 rejections.add(new Rejection(i + 1, "Linha do feed 100% IV inválida.", row.toString()));
                 continue;
@@ -215,7 +218,7 @@ public final class LocalEventImport {
                     .cp(cp == null || cp <= 0 ? null : cp)
                     .level(level == null || level < 1 || level > 50 ? null : level.intValue())
                     .observedAt(now).retrievedAt(now)
-                    .expiresAt(despawn == null ? 0L : despawn.longValue())
+                    .expiresAt(despawn)
                     .dataQuality(SourceEvent.QUALITY_IMPORTED)
                     .note("Importação do feed 100% IV; IV declarado pela fonte.")
                     .build());
@@ -266,6 +269,8 @@ public final class LocalEventImport {
                 .expiresAt(expires)
                 .dataQuality(SourceEvent.QUALITY_IMPORTED)
                 .note("Importação pessoal do usuário; não é feed ao vivo.");
+        if (row.has("coordinate_precision"))
+            builder.precision(SourceEvent.CoordinatePrecision.fromWire(row.optString("coordinate_precision", "")));
         return builder.build();
     }
 
