@@ -11,8 +11,8 @@ public final class LocalCollectionPreview {
   public double ivPercent(){return LocalAuditPolicy.validIv(attack)&&LocalAuditPolicy.validIv(defense)&&LocalAuditPolicy.validIv(stamina)?(attack+defense+stamina)*100.0/45:Double.NaN;}
  }
  public static final class Report {
-  public final List<Row> rows;public final List<Integer> rejectedLines;public final int protectedCount,uncertainCount,matchCount;
-  Report(List<Row> rows,List<Integer> rejected){this.rows=Collections.unmodifiableList(new ArrayList<>(rows));rejectedLines=Collections.unmodifiableList(new ArrayList<>(rejected));int p=0,u=0,k=0;for(Row r:rows){switch(r.decision.status){case PROTECTED:p++;break;case UNCERTAIN:u++;break;case MATCH:k++;break;}}protectedCount=p;uncertainCount=u;matchCount=k;}
+  public final List<Row> rows;public final List<Integer> rejectedLines;public final Map<Integer,String> rejectedReasons;public final int protectedCount,uncertainCount,matchCount;
+  Report(List<Row> rows,Map<Integer,String> rejected){this.rows=Collections.unmodifiableList(new ArrayList<>(rows));rejectedLines=Collections.unmodifiableList(new ArrayList<>(rejected.keySet()));rejectedReasons=Collections.unmodifiableMap(new LinkedHashMap<>(rejected));int p=0,u=0,k=0;for(Row r:rows){switch(r.decision.status){case PROTECTED:p++;break;case UNCERTAIN:u++;break;case MATCH:k++;break;}}protectedCount=p;uncertainCount=u;matchCount=k;}
  }
  /** A null filter represents all statuses; order and source-line identity are preserved. */
  public static List<Row> filtered(Report report,LocalAuditPolicy.Status filter){
@@ -29,24 +29,33 @@ public final class LocalCollectionPreview {
  public static Report parse(String text,int min,Set<LocalAuditPolicy.Flag> enabled){return parse(text,min,enabled,Collections.emptySet());}
  public static Report parse(String text,int min,Set<LocalAuditPolicy.Flag> enabled,Set<String> names){
   if(text==null||text.length()>MAX_CHARS||min<0||min>101||enabled==null||names==null)throw new IllegalArgumentException("Dados acima do limite ou configuração inválida.");
-  List<Row> rows=new ArrayList<>();List<Integer> bad=new ArrayList<>();
+  List<Row> rows=new ArrayList<>();Map<Integer,String> bad=new LinkedHashMap<>();
   String[] lines=text.split("\\r\\n|\\n|\\r",-1);int count=0;
   for(int i=0;i<lines.length;i++){
-   String line=lines[i].trim();if(line.isEmpty())continue;if(++count>MAX_ROWS)throw new IllegalArgumentException("Máximo de 500 registros.");
+   String line=lines[i];if(i==0&&line.startsWith("\uFEFF"))line=line.substring(1);line=line.trim();if(line.isEmpty())continue;if(++count>MAX_ROWS)throw new IllegalArgumentException("Máximo de 500 registros.");
+   String error="Formato: são necessários seis campos separados por ponto e vírgula.";
    try{
     String[] fields=line.split(";",-1);if(fields.length!=6)throw new IllegalArgumentException();
-    String name=fields[0].trim();if(name.isEmpty()||name.length()>80)throw new IllegalArgumentException();
-    LocalAuditPolicy.speciesKey(name);
-    int cp=Integer.parseInt(fields[1].trim()),a=iv(fields[2]),d=iv(fields[3]),s=iv(fields[4]);if(cp<0||cp>100000)throw new IllegalArgumentException();
+    error="Nome de espécie ausente ou inválido.";
+    String name=fields[0].trim();LocalAuditPolicy.speciesKey(name);
+    error="PC inválido: informe um inteiro de 0 a 100000.";
+    int cp=Integer.parseInt(fields[1].trim());if(cp<0||cp>100000)throw new IllegalArgumentException();
+    error="IV inválido: use 0–15, -1 ou ?.";
+    int a=iv(fields[2]),d=iv(fields[3]),s=iv(fields[4]);
     EnumMap<LocalAuditPolicy.Flag,Boolean> observed=new EnumMap<>(LocalAuditPolicy.Flag.class);
     if(!fields[5].trim().isEmpty())for(String fact:fields[5].split(",",-1)){
+      error="Critério inválido: use NOME=1, NOME=0 ou NOME=?.";
       String[] parts=fact.trim().split("=",-1);if(parts.length!=2)throw new IllegalArgumentException();
+      error="Critério não reconhecido.";
       LocalAuditPolicy.Flag f=LocalAuditPolicy.Flag.valueOf(parts[0].trim().toUpperCase(Locale.ROOT));
-      String val=parts[1].trim();if(observed.containsKey(f)||(!val.equals("1")&&!val.equals("0")&&!val.equals("?")))throw new IllegalArgumentException();
+      error="Critério repetido.";if(observed.containsKey(f))throw new IllegalArgumentException();
+      error="Valor de critério inválido: use 1, 0 ou ?.";
+      String val=parts[1].trim();if(!val.equals("1")&&!val.equals("0")&&!val.equals("?"))throw new IllegalArgumentException();
       observed.put(f,val.equals("?")?null:val.equals("1"));
     }
+    error="Não foi possível avaliar o registro.";
     rows.add(new Row(i+1,name,cp,a,d,s,LocalAuditPolicy.withSpeciesProtection(LocalAuditPolicy.preview(a,d,s,min,enabled,observed),name,names)));
-   }catch(IllegalArgumentException invalid){bad.add(i+1);}
+   }catch(IllegalArgumentException invalid){bad.put(i+1,error);}
   }
   return new Report(rows,bad);
  }

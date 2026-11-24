@@ -74,6 +74,12 @@ public final class LocalAuditTest {
  var single=new GpxPreviewGeometry(new GpxRoute("um ponto",new double[][]{{0,0}}));check(single.meters==0&&single.x.length==1&&single.percentForDistance(0)==0);
  var batch=LocalCollectionPreview.parse("Rattata;478;4;4;5;EVENT=1,SHINY=0\nRhyhorn;547;6;6;7;EVENT=0,SHINY=0\nMunna;14;?;6;7;EVENT=?,SHINY=0\ninvalid\nPikachu;606;15;10;10;EVENT=0,EVENT=1",99,flags);
  check(batch.protectedCount==1&&batch.uncertainCount==1&&batch.matchCount==1&&batch.rejectedLines.equals(Arrays.asList(4,5)));
+ check(batch.rejectedReasons.get(4).contains("seis campos")&&batch.rejectedReasons.get(5).equals("Critério repetido."));
+ var malformed=LocalCollectionPreview.parse("\uFEFFX;1;0;0;0;EVENT=0,SHINY=0\nX;bad;0;0;0;\nX;1;16;0;0;\nX;1;0;0;0;UNKNOWN=1\nX;1;0;0;0;EVENT=2",99,flags);
+ check(malformed.matchCount==1&&malformed.rejectedLines.equals(Arrays.asList(2,3,4,5)));
+ check(malformed.rejectedReasons.get(2).startsWith("PC inválido")&&malformed.rejectedReasons.get(3).startsWith("IV inválido")&&malformed.rejectedReasons.get(4).equals("Critério não reconhecido.")&&malformed.rejectedReasons.get(5).startsWith("Valor de critério inválido"));
+ try{malformed.rejectedReasons.clear();throw new AssertionError();}catch(UnsupportedOperationException expected){}
+ try{LocalCollectionPreview.parse(" ".repeat(LocalCollectionPreview.MAX_CHARS+1),99,flags);throw new AssertionError();}catch(IllegalArgumentException expected){}
  check(batch.rows.get(1).sourceLine==2&&Double.isNaN(batch.rows.get(2).ivPercent()));
  check(Math.abs(batch.rows.get(0).ivPercent()-13*100.0/45)<1e-9);
  check(LocalCollectionPreview.page(batch,LocalAuditPolicy.Status.MATCH,0).get(0).sourceLine==2);

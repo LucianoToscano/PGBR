@@ -43,6 +43,7 @@ final class LocalAuditDialog {
   for(CheckBox c:active)c.setOnCheckedChangeListener((v,on)->result.setText("Critérios alterados. Avalie novamente."));
   action(a,b,"Avaliar sem transferir",()->{try{
    int pc=integer(cp),aa=integer(atk),dd=integer(def),ss=integer(sta);if(pc<0||pc>100000||aa< -1||aa>15||dd< -1||dd>15||ss< -1||ss>15||name.getText().toString().trim().isEmpty())throw new IllegalArgumentException();
+   LocalAuditPolicy.speciesKey(name.getText().toString());
    EnumSet<LocalAuditPolicy.Flag> selected=EnumSet.noneOf(LocalAuditPolicy.Flag.class);EnumMap<LocalAuditPolicy.Flag,Boolean> values=new EnumMap<>(LocalAuditPolicy.Flag.class);
    for(int i=0;i<flags.length;i++){if(active[i].isChecked())selected.add(flags[i]);int x=observed[i].getSelectedItemPosition();if(x==1||x==2)values.put(flags[i],x==1);}
    LocalAuditPolicy.Decision decision=LocalAuditPolicy.preview(aa,dd,ss,integer(limit),selected,values);
@@ -58,7 +59,7 @@ final class LocalAuditDialog {
   EditText limit=input(a,b,"IV mínimo para preservar (0–100; 101 desativa só o limite de IV)","99");
   EditText protectedNames=input(a,b,"Espécies adicionais protegidas (nomes exatos separados por vírgulas)","");
   text(a,b,"A lista é adicional aos 20 critérios; formas diferentes precisam de nomes próprios. Não usa dados do jogo.");
-  EditText records=new EditText(MapTheme.wrap(a));records.setMinLines(4);records.setMaxLines(8);records.setHint("Rattata;478;4;4;5;EVENT=1,SHINY=0");records.setFilters(new android.text.InputFilter[]{new android.text.InputFilter.LengthFilter(LocalCollectionPreview.MAX_CHARS)});b.addView(records);
+  EditText records=new EditText(MapTheme.wrap(a));records.setMinLines(4);records.setMaxLines(8);records.setHint("Rattata;478;4;4;5;EVENT=1,SHINY=0");records.setFilters(new android.text.InputFilter[]{new android.text.InputFilter.LengthFilter(LocalCollectionPreview.MAX_CHARS+1)});b.addView(records);
   LocalAuditPolicy.Flag[] flags=LocalAuditPolicy.Flag.values();CheckBox[] active=new CheckBox[flags.length];
   for(int i=0;i<flags.length;i++){CheckBox c=new CheckBox(MapTheme.wrap(a));c.setText("Proteger "+flags[i].label+" ("+flags[i].name()+")");c.setChecked(true);b.addView(c);active[i]=c;}
   Spinner filter=select(a,b,"Mostrar resultados",new String[]{"Todos","Protegidos","Protegidos por incerteza","Correspondem ao filtro"});
@@ -69,6 +70,7 @@ final class LocalAuditDialog {
    if(report[0]==null){result.setText("Avalie a lista para obter os resultados.");return;}
    LocalCollectionPreview.Report r=report[0];int pages=LocalCollectionPreview.pageCount(r,status.get());page[0]=Math.max(0,Math.min(page[0],pages-1));
    StringBuilder out=new StringBuilder("Protegidos: "+r.protectedCount+" | Incertos: "+r.uncertainCount+" | Correspondem: "+r.matchCount+" | Linhas inválidas: "+r.rejectedLines.size()+"\n");
+   if(!r.rejectedLines.isEmpty())out.append("Avaliação parcial: há registros inválidos que não foram classificados. Corrija-os antes de usar esta prévia.\n");
    if(!r.rejectedLines.isEmpty())out.append("Linhas inválidas (não classificadas): ").append(r.rejectedLines).append('\n');
    out.append("Página ").append(page[0]+1).append('/').append(pages).append(" • ").append(evaluatedAt[0]).append(" • PGBR ").append(BuildVersion.NAME).append(" • esquema ").append(LocalAuditPolicy.SCHEMA).append("\n\n");
    List<LocalCollectionPreview.Row> rows=LocalCollectionPreview.page(r,status.get(),page[0]);
@@ -93,10 +95,19 @@ final class LocalAuditDialog {
   });
   action(a,b,"Avaliar lista sem transferir",()->{
    report[0]=null;page[0]=0;
+   if(records.length()>LocalCollectionPreview.MAX_CHARS){result.setText("A lista ultrapassa o limite e pode ter sido cortada. Substitua por lotes completos menores; nenhum registro foi avaliado.");return;}
    try{
     EnumSet<LocalAuditPolicy.Flag> selected=EnumSet.noneOf(LocalAuditPolicy.Flag.class);for(int i=0;i<flags.length;i++)if(active[i].isChecked())selected.add(flags[i]);
     report[0]=LocalCollectionPreview.parse(records.getText().toString(),integer(limit),selected,LocalAuditPolicy.protectedNames(protectedNames.getText().toString()));evaluatedAt[0]=new java.util.Date().toString();render.run();
    }catch(IllegalArgumentException invalid){result.setText("Confira os limites e o formato da lista.");}
+  });
+  action(a,b,"Consultar motivos das linhas inválidas",()->{
+   if(report[0]==null){result.setText("Avalie uma lista válida primeiro.");return;}
+   StringBuilder errors=new StringBuilder();
+   for(Map.Entry<Integer,String> entry:report[0].rejectedReasons.entrySet())errors.append("Linha ").append(entry.getKey()).append(": ").append(entry.getValue()).append('\n');
+   if(errors.length()==0)errors.append("Nenhuma linha inválida.");
+   LinearLayout detail=body(a);text(a,detail,errors.toString());
+   present(a,new AlertDialog.Builder(MapTheme.wrap(a)).setTitle("Diagnóstico da importação").setView(scroll(a,detail)).setPositiveButton("Fechar",null).create());
   });
   action(a,b,"Página anterior",()->{if(report[0]!=null&&page[0]>0){page[0]--;render.run();}});
   action(a,b,"Próxima página",()->{if(report[0]!=null&&page[0]+1<LocalCollectionPreview.pageCount(report[0],status.get())){page[0]++;render.run();}});
