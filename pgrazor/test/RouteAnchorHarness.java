@@ -28,7 +28,7 @@ public class RouteAnchorHarness {
     check(RouteAnchorSnapshot.parse(json(refs,6).replace("\"kind\"","\"bad\""))==null);
     double[][] broken=refs.clone();
     for(int i=0;i<broken.length;i++)broken[i]=refs[i].clone();
-    broken[5][2]+=10.0/width;
+    broken[5][2]+=10.0;
     RouteAnchorSnapshot bad=RouteAnchorSnapshot.parse(json(broken,6));
     check(bad!=null&&bad.fit(width,height)==null);
     String offscreen=json(refs,6).replace("\"visible\":true","\"visible\":false");
