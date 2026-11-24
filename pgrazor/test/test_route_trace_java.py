@@ -107,6 +107,14 @@ class RouteTraceTest(unittest.TestCase):
                             str(harness)], check=True, timeout=30)
             subprocess.run([str(runtime), "-cp", tmp, "RouteTraceHarness"], check=True, timeout=30)
 
+    def test_ground_projection(self):
+        compiler, runtime = java_tools()
+        with tempfile.TemporaryDirectory() as tmp:
+            subprocess.run([str(compiler), "-encoding", "UTF-8", "-d", tmp,
+                            str(ROOT / "src/dev/pgrazor/RouteGroundProjection.java"),
+                            str(ROOT / "test/ProjectionTest.java")], check=True, timeout=30)
+            subprocess.run([str(runtime), "-cp", tmp, "ProjectionTest"], check=True, timeout=30)
+
     def test_overlay_boundaries(self):
         overlay=(ROOT / "src/dev/pgrazor/RouteTraceOverlay.java").read_text(encoding="utf-8")
         view=(ROOT / "src/dev/pgrazor/RouteTraceView.java").read_text(encoding="utf-8")
