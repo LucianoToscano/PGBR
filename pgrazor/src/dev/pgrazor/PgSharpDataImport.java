@@ -53,7 +53,14 @@ final class PgSharpDataImport {
             "Registro inválido em " + name + ": " + (i+1));
         return array;
     }
+    // Keep existing archives readable; stricter aggregate budget applies to new imports only.
     static void validate(JSONObject root) throws JSONException {
+        validate(root,false);
+    }
+    static void validateNewImport(JSONObject root) throws JSONException {
+        validate(root,true);
+    }
+    private static void validate(JSONObject root,boolean boundAggregate) throws JSONException {
         check(root!=null && FORMAT.equals(root.optString("format")), "Arquivo não é uma migração PGSharp do PGBR");
         check(root.optInt("version",-1)==1, "Versão de migração incompatível");
         JSONArray favorites=bounded(root,"favorites",200);
@@ -70,11 +77,14 @@ final class PgSharpDataImport {
             check(Double.isFinite(lat)&&Math.abs(lat)<=90&&Double.isFinite(lon)&&Math.abs(lon)<=180,
                 "Coordenadas fora de intervalo");
         }
+        long totalPoints=0;
         for(int i=0;i<routes.length();i++){
             JSONObject route=routes.getJSONObject(i);
             check(route.has("name"),"Rota sem nome");
             JSONArray points=route.getJSONArray("points");
             check(points.length()>0 && points.length()<=GpxCodec.MAX_POINTS,"Rota sem pontos ou excessiva");
+            totalPoints+=points.length();
+            if(boundAggregate)check(totalPoints<=GpxCodec.MAX_TOTAL_POINTS,"Total de pontos das rotas excede o limite de importação");
             for(int j=0;j<points.length();j++){
                 JSONArray row=points.getJSONArray(j);
                 check(row.length()>=2 && row.get(0) instanceof Number && row.get(1) instanceof Number,
@@ -110,7 +120,7 @@ final class PgSharpDataImport {
 
     /** Validate and preflight the complete request before touching any profile storage. */
     static synchronized Report importData(Context context, JSONObject root) throws Exception {
-        validate(root);
+        validateNewImport(root);
         SavedPlaces places=new SavedPlaces(context);
         SavedPlaces.Snapshot before=places.read();
         if(before.damaged)throw new IOException("Há favoritos danificados. Exporte um backup antes de importar.");

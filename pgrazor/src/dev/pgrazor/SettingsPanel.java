@@ -1112,6 +1112,7 @@ final class SettingsPanel {
         launch(owner,"Copiar diagnóstico do Ataque Inteligente",()->{
             String diagnosis=Control.smartAttackNativeJson();
             if(diagnosis.isEmpty())diagnosis=Control.smartAttackNativeStatus();
+            else diagnosis=Control.smartAttackNativeStatus()+"\nRegistro técnico da última observação (não é confirmação de batalha atual):\n"+diagnosis;
             android.content.ClipboardManager clipboard=(android.content.ClipboardManager)
                 activity.getSystemService(android.content.Context.CLIPBOARD_SERVICE);
             if(clipboard!=null){

@@ -7,6 +7,9 @@ public final class LocalAuditTest {
  var data=new EnumMap<LocalAuditPolicy.Flag,Boolean>(LocalAuditPolicy.Flag.class);
  data.put(LocalAuditPolicy.Flag.EVENT,true);data.put(LocalAuditPolicy.Flag.SHINY,false);
  check(LocalAuditPolicy.reason(12).equals("Pokémon de evento"));
+ check(LocalAuditPolicy.battleReason("actor-unknown").contains("não identificado"));
+ check(LocalAuditPolicy.battleReason("unavailable-pair").contains("Não prova"));
+ check(LocalAuditPolicy.battleReason("secret-input").equals("Motivo não reconhecido; preserve o código técnico para análise."));
  check(LocalAuditPolicy.preview(4,4,5,99,flags,data).status==LocalAuditPolicy.Status.PROTECTED);
  data.put(LocalAuditPolicy.Flag.EVENT,false);
  check(LocalAuditPolicy.preview(4,4,5,99,flags,data).status==LocalAuditPolicy.Status.MATCH);
@@ -22,16 +25,33 @@ public final class LocalAuditTest {
   int v=f==LocalAuditPolicy.Flag.HUNDO?15:f==LocalAuditPolicy.Flag.NUNDO?0:4;
   check(LocalAuditPolicy.preview(v,v,v,99,EnumSet.of(f),facts).status==LocalAuditPolicy.Status.PROTECTED);
   check(LocalAuditPolicy.preview(-1,-1,-1,99,EnumSet.of(f),Collections.emptyMap()).status==LocalAuditPolicy.Status.UNCERTAIN);
+  if(f!=LocalAuditPolicy.Flag.HUNDO&&f!=LocalAuditPolicy.Flag.NUNDO){
+   facts.put(f,false);
+   check(LocalAuditPolicy.preview(4,4,4,101,EnumSet.of(f),facts).status==LocalAuditPolicy.Status.MATCH);
+   facts.put(f,null);
+   check(LocalAuditPolicy.preview(4,4,4,101,EnumSet.of(f),facts).status==LocalAuditPolicy.Status.UNCERTAIN);
+  }
  }
  var contradictory=new EnumMap<LocalAuditPolicy.Flag,Boolean>(LocalAuditPolicy.Flag.class);
  contradictory.put(LocalAuditPolicy.Flag.HUNDO,true);
  check(LocalAuditPolicy.preview(4,4,5,99,EnumSet.noneOf(LocalAuditPolicy.Flag.class),contradictory).status==LocalAuditPolicy.Status.UNCERTAIN);
+ check(LocalAuditPolicy.preview(-1,14,15,101,EnumSet.noneOf(LocalAuditPolicy.Flag.class),contradictory).reasons.contains("Marcação IV 100% contradiz o IV parcial informado"));
+ contradictory.clear();contradictory.put(LocalAuditPolicy.Flag.NUNDO,true);
+ check(LocalAuditPolicy.preview(1,-1,0,101,EnumSet.noneOf(LocalAuditPolicy.Flag.class),contradictory).reasons.contains("Marcação IV 0% contradiz o IV parcial informado"));
  contradictory.clear();contradictory.put(LocalAuditPolicy.Flag.XXL,true);contradictory.put(LocalAuditPolicy.Flag.XXS,true);
  check(LocalAuditPolicy.preview(4,4,5,99,EnumSet.noneOf(LocalAuditPolicy.Flag.class),contradictory).status==LocalAuditPolicy.Status.UNCERTAIN);
  check(LocalAuditPolicy.preview(15,15,15,99,EnumSet.noneOf(LocalAuditPolicy.Flag.class),contradictory).status==LocalAuditPolicy.Status.PROTECTED);
  check(Math.abs(LocalAuditPolicy.effectiveness(11,5,6)-2.56)<1e-8);
  check(Math.abs(LocalAuditPolicy.effectiveness(11,10,12)-1)<1e-8);
  check(Double.isNaN(LocalAuditPolicy.effectiveness(11,0,0)));
+ var matchup=LocalAuditPolicy.matchup(11,0,11,10,6,10);
+ check(matchup!=null&&Math.abs(matchup.outgoing-2.56)<1e-8&&Math.abs(matchup.incoming-0.625)<1e-8);
+ check(LocalAuditPolicy.matchup(11,11,11,10,6,10)==null);
+ check(LocalAuditPolicy.matchup(11,0,11,10,6,0)==null);
+ check(LocalAuditPolicy.maxBudget(-1,250)==LocalAuditPolicy.BudgetState.UNKNOWN);
+ check(LocalAuditPolicy.maxBudget(249,250)==LocalAuditPolicy.BudgetState.INSUFFICIENT);
+ check(LocalAuditPolicy.maxBudget(250,250)==LocalAuditPolicy.BudgetState.SUFFICIENT);
+ try{LocalAuditPolicy.maxBudget(-2,250);throw new AssertionError();}catch(IllegalArgumentException expected){}
  var a=LocalAuditPolicy.estimate(11,40,70,11,0,10,0,100,100,100);
  var b=LocalAuditPolicy.estimate(1,100,35,11,0,10,0,100,100,100);
  check(a.effectiveness>1&&LocalAuditPolicy.recommend(a,b)==1);
@@ -51,12 +71,32 @@ public final class LocalAuditTest {
  check(g.meters>22000&&g.meters<22500&&g.width<1);
  check(Math.abs(g.positionAt(g.meters/2)[0]-g.width/2)<1e-8);
  check(g.positionAt(0)[0]==g.x[0]&&g.positionAt(g.meters)[0]==g.x[1]);
+ check(g.distanceForPercent(100)==g.meters&&g.distanceForPercent(0)==0);
+ check(g.percentForDistance(g.meters)==100&&g.percentForDistance(g.meters*0.999)==99);
+ check(g.distanceFromKm(1.234)==1234.0);
+ try{g.distanceFromKm(Double.POSITIVE_INFINITY);throw new AssertionError();}catch(IllegalArgumentException expected){}
+ try{g.distanceFromKm(g.meters/1000+1);throw new AssertionError();}catch(IllegalArgumentException expected){}
+ try{g.distanceForPercent(101);throw new AssertionError();}catch(IllegalArgumentException expected){}
  var repeated=new GpxPreviewGeometry(new GpxRoute("repetido",new double[][]{{0,0},{0,0},{0,1},{0,1}}));
  check(Math.abs(repeated.positionAt(repeated.meters/2)[0]-0.5)<1e-8);
  try{g.positionAt(Double.NaN);throw new AssertionError();}catch(IllegalArgumentException expected){}
- var single=new GpxPreviewGeometry(new GpxRoute("um ponto",new double[][]{{0,0}}));check(single.meters==0&&single.x.length==1);
+ var single=new GpxPreviewGeometry(new GpxRoute("um ponto",new double[][]{{0,0}}));check(single.meters==0&&single.x.length==1&&single.percentForDistance(0)==0);
  var batch=LocalCollectionPreview.parse("Rattata;478;4;4;5;EVENT=1,SHINY=0\nRhyhorn;547;6;6;7;EVENT=0,SHINY=0\nMunna;14;?;6;7;EVENT=?,SHINY=0\ninvalid\nPikachu;606;15;10;10;EVENT=0,EVENT=1",99,flags);
  check(batch.protectedCount==1&&batch.uncertainCount==1&&batch.matchCount==1&&batch.rejectedLines.equals(Arrays.asList(4,5)));
+ check(batch.rejectedReasons.get(4).contains("seis campos")&&batch.rejectedReasons.get(5).equals("Critério repetido."));
+ var malformed=LocalCollectionPreview.parse("\uFEFFX;1;0;0;0;EVENT=0,SHINY=0\nX;bad;0;0;0;\nX;1;16;0;0;\nX;1;0;0;0;UNKNOWN=1\nX;1;0;0;0;EVENT=2",99,flags);
+ check(malformed.matchCount==1&&malformed.rejectedLines.equals(Arrays.asList(2,3,4,5)));
+ check(malformed.rejectedReasons.get(2).startsWith("PC inválido")&&malformed.rejectedReasons.get(3).startsWith("IV inválido")&&malformed.rejectedReasons.get(4).equals("Critério não reconhecido.")&&malformed.rejectedReasons.get(5).startsWith("Valor de critério inválido"));
+ try{malformed.rejectedReasons.clear();throw new AssertionError();}catch(UnsupportedOperationException expected){}
+ try{LocalCollectionPreview.parse(" ".repeat(LocalCollectionPreview.MAX_CHARS+1),99,flags);throw new AssertionError();}catch(IllegalArgumentException expected){}
+ Thread.currentThread().interrupt();
+ try{LocalCollectionPreview.parse("X;1;0;0;0;",99,flags);throw new AssertionError("Canceled collection preview");}
+ catch(java.util.concurrent.CancellationException expected){}finally{Thread.interrupted();}
+ var sparse=LocalCollectionPreview.parse("\r\n".repeat(30000)+"X;1;0;0;0;EVENT=0,SHINY=0\r\n\rY;1;0;0;0;EVENT=0,SHINY=0\n",99,flags);
+ check(sparse.matchCount==2&&sparse.rows.get(0).sourceLine==30001&&sparse.rows.get(1).sourceLine==30003);
+ check(LocalCollectionPreview.parse("\n".repeat(LocalCollectionPreview.MAX_CHARS),99,flags).rows.isEmpty());
+ check(LocalCollectionPreview.parse("X;1;0;0;0;EVENT=0,SHINY=0;extra",99,flags).rejectedLines.equals(Arrays.asList(1)));
+ check(LocalCollectionPreview.parse("X;1;0;0;0;EVENT=0=1",99,flags).rejectedLines.equals(Arrays.asList(1)));
  check(batch.rows.get(1).sourceLine==2&&Double.isNaN(batch.rows.get(2).ivPercent()));
  check(Math.abs(batch.rows.get(0).ivPercent()-13*100.0/45)<1e-9);
  check(LocalCollectionPreview.page(batch,LocalAuditPolicy.Status.MATCH,0).get(0).sourceLine==2);
@@ -65,6 +105,30 @@ public final class LocalAuditTest {
  check(LocalCollectionPreview.page(many,LocalAuditPolicy.Status.PROTECTED,0).isEmpty());
  try{LocalCollectionPreview.page(many,null,3);throw new AssertionError();}catch(IllegalArgumentException expected){}
  check(LocalCollectionPreview.parse("X;1;0;0;0;EVENT=0",99,flags).uncertainCount==1);
+ var protectedNames=LocalAuditPolicy.protectedNames("Mew; Pikachu, MEW");
+ check(protectedNames.size()==2);
+ check(LocalAuditPolicy.protectedNames("Pok\u00E9mon,Poke\u0301mon").size()==1);
+ try{LocalAuditPolicy.protectedNames("Mew\uDB40\uDC01");throw new AssertionError();}catch(IllegalArgumentException expected){}
+ try{LocalAuditPolicy.tagCatalog("Mew\uD800");throw new AssertionError();}catch(IllegalArgumentException expected){}
+ check(LocalAuditPolicy.tagCatalog("Mew\uD83D\uDE00").size()==1);
+ var custom=LocalCollectionPreview.parse("mew;1;0;0;0;SPECIES=0\nMewtwo;1;0;0;0;SPECIES=0\nPikachu;1;?;0;0;",101,EnumSet.noneOf(LocalAuditPolicy.Flag.class),protectedNames);
+ check(custom.protectedCount==2&&custom.matchCount==1&&custom.rows.get(2).decision.reasons.contains("IV não confirmado"));
+ check(LocalAuditPolicy.preview(15,15,15,101,EnumSet.of(LocalAuditPolicy.Flag.HUNDO),Collections.emptyMap()).status==LocalAuditPolicy.Status.PROTECTED);
+ check(LocalAuditPolicy.preview(15,15,15,101,EnumSet.noneOf(LocalAuditPolicy.Flag.class),Collections.emptyMap()).status==LocalAuditPolicy.Status.MATCH);
+ check(LocalAuditPolicy.tagCatalog("PvP\r\nRaro\npvp\nA, B").equals(Arrays.asList("PvP","Raro","A, B")));
+ check(LocalAuditPolicy.reviewTags(Collections.singleton("PvP"),Collections.singleton("pvp"),false)==LocalAuditPolicy.TagObservation.MATCH);
+ check(LocalAuditPolicy.reviewTags(Collections.singleton("PvP"),Collections.emptySet(),false)==LocalAuditPolicy.TagObservation.UNKNOWN);
+ check(LocalAuditPolicy.reviewTags(Collections.singleton("PvP"),Collections.emptySet(),true)==LocalAuditPolicy.TagObservation.NO_MATCH);
+ check(LocalAuditPolicy.reviewTags(Collections.emptySet(),Collections.emptySet(),true)==LocalAuditPolicy.TagObservation.UNKNOWN);
+ check(LocalAuditPolicy.reviewTags(Collections.singleton("A, B"),Collections.singleton("A"),true)==LocalAuditPolicy.TagObservation.NO_MATCH);
+ try{LocalAuditPolicy.tagCatalog(String.join("\n",Collections.nCopies(201,"X")));throw new AssertionError();}catch(IllegalArgumentException expected){}
+ check(LocalAuditPolicy.reviewStock(new int[]{0,2,3}).index==1);
+ check(LocalAuditPolicy.reviewStock(new int[]{-1,2}).earlierUnknown);
+ check(LocalAuditPolicy.reviewStock(new int[]{0,-1}).index==-1&&LocalAuditPolicy.reviewStock(new int[]{0,-1}).earlierUnknown);
+ check(!LocalAuditPolicy.reviewStock(new int[]{3,-1}).earlierUnknown);
+ try{LocalAuditPolicy.reviewStock(new int[]{2,-2});throw new AssertionError();}catch(IllegalArgumentException expected){}
+
+ check(LocalCollectionPreview.parse("X;1;0;0;0;EVENT=0,SHINY=0\rY;1;0;0;0;EVENT=0,SHINY=0",99,flags).matchCount==2);
  try{LocalCollectionPreview.parse(String.join("\n",Collections.nCopies(501,"X;1;0;0;0;")),99,flags);throw new AssertionError();}catch(IllegalArgumentException expected){}
  var plan=LocalAuditPolicy.planEnergy(24,24,8,40,4);check(Arrays.equals(plan.sequence,new int[]{2,5,5,5})&&plan.earliest==2&&plan.latest==2);
  var residual=LocalAuditPolicy.planEnergy(0,0,9,35,4);check(Arrays.equals(residual.sequence,new int[]{4,4,4,4}));

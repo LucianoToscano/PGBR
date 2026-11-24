@@ -1,0 +1,827 @@
+{
+  "schema": 1,
+  "baseline_commit": "a197dcfb9f82f9027f2fd675edb96ae6623e1613",
+  "source_scope": "Drive metadata only; filename and size are not proof of identical bytes, semantic correctness, or redistribution rights",
+  "drive_numeric_folder": "https://drive.google.com/drive/folders/1T_6fA8H4XagTNaDijaD52XKSSNVKjVDn",
+  "drive_named_folder": "https://drive.google.com/drive/folders/16gmB22ZdMjyeTlpQ2JHcoEPzisOKwSeA",
+  "counts": {
+    "total": 37,
+    "numeric": 33,
+    "same_size": 27,
+    "different_size": 6,
+    "without_numeric": 4
+  },
+  "items": [
+    {
+      "id": 1,
+      "filename": "item-1.png",
+      "git_blob_sha1": "e8a639dd5f5f8b860e9b28319b97378bbf959765",
+      "bytes": 26184,
+      "drive_numeric_candidates": [],
+      "drive_named_reference": {
+        "filename": "poke-ball.png",
+        "bytes": 26184,
+        "same_size": true,
+        "status": "metadata_only_not_byte_or_visual_verified"
+      },
+      "comparison": {
+        "status": "byte_identical",
+        "reference_filename": "poke-ball.png",
+        "method": "complete base64-normalized byte comparison"
+      }
+    },
+    {
+      "id": 2,
+      "filename": "item-2.png",
+      "git_blob_sha1": "7119733fe98a3dfc8874bd43931661e3bd2b4b37",
+      "bytes": 29945,
+      "drive_numeric_candidates": [],
+      "drive_named_reference": {
+        "filename": "great-ball.png",
+        "bytes": 29945,
+        "same_size": true,
+        "status": "metadata_only_not_byte_or_visual_verified"
+      },
+      "comparison": {
+        "status": "byte_identical",
+        "reference_filename": "great-ball.png",
+        "method": "complete base64-normalized byte comparison"
+      }
+    },
+    {
+      "id": 3,
+      "filename": "item-3.png",
+      "git_blob_sha1": "bd375c73b5fc582264dd7c624430e927d33cc1be",
+      "bytes": 29367,
+      "drive_numeric_candidates": [],
+      "drive_named_reference": {
+        "filename": "ultra-ball.png",
+        "bytes": 29367,
+        "same_size": true,
+        "status": "metadata_only_not_byte_or_visual_verified"
+      },
+      "comparison": {
+        "status": "byte_identical",
+        "reference_filename": "ultra-ball.png",
+        "method": "complete base64-normalized byte comparison"
+      }
+    },
+    {
+      "id": 101,
+      "filename": "item-101.png",
+      "git_blob_sha1": "1d9734da7a979e9686495fa13d84513aa9f5934b",
+      "bytes": 35593,
+      "drive_numeric_candidates": [
+        {
+          "filename": "Item_0101.png",
+          "size": 34828,
+          "same_size": false
+        }
+      ],
+      "drive_named_reference": {
+        "filename": "potion.png",
+        "bytes": 39445,
+        "same_size": false,
+        "status": "metadata_only_not_byte_or_visual_verified"
+      },
+      "comparison": {
+        "status": "visual_match_distinct_bytes",
+        "numeric_bytes_equal": false,
+        "named_bytes_equal": false,
+        "visual_observation": "same item identity; different framing and resolution; existing PNG retained"
+      }
+    },
+    {
+      "id": 102,
+      "filename": "item-102.png",
+      "git_blob_sha1": "9db75737f3ec84b4541b71ebe78a02b89df2cdf6",
+      "bytes": 34411,
+      "drive_numeric_candidates": [
+        {
+          "filename": "Item_0102.png",
+          "size": 31378,
+          "same_size": false
+        }
+      ],
+      "drive_named_reference": {
+        "filename": "super-potion.png",
+        "bytes": 36835,
+        "same_size": false,
+        "status": "metadata_only_not_byte_or_visual_verified"
+      },
+      "comparison": {
+        "status": "visual_match_distinct_bytes",
+        "numeric_bytes_equal": false,
+        "named_bytes_equal": false,
+        "visual_observation": "same item identity; different framing and resolution; existing PNG retained"
+      }
+    },
+    {
+      "id": 103,
+      "filename": "item-103.png",
+      "git_blob_sha1": "4674fba9246f8dcd5fb8ecb57e6b2991ef066ec3",
+      "bytes": 36151,
+      "drive_numeric_candidates": [
+        {
+          "filename": "Item_0103.png",
+          "size": 32203,
+          "same_size": false
+        }
+      ],
+      "drive_named_reference": {
+        "filename": "hyper-potion.png",
+        "bytes": 37095,
+        "same_size": false,
+        "status": "metadata_only_not_byte_or_visual_verified"
+      },
+      "comparison": {
+        "status": "visual_match_distinct_bytes",
+        "numeric_bytes_equal": false,
+        "named_bytes_equal": false,
+        "visual_observation": "same item identity; different framing and resolution; existing PNG retained"
+      }
+    },
+    {
+      "id": 104,
+      "filename": "item-104.png",
+      "git_blob_sha1": "501b4ad02ee9567014a5b92b83ab2e698d22c381",
+      "bytes": 53443,
+      "drive_numeric_candidates": [
+        {
+          "filename": "Item_0104.png",
+          "size": 51778,
+          "same_size": false
+        }
+      ],
+      "drive_named_reference": {
+        "filename": "max-potion.png",
+        "bytes": 55956,
+        "same_size": false,
+        "status": "metadata_only_not_byte_or_visual_verified"
+      },
+      "comparison": {
+        "status": "visual_match_distinct_bytes",
+        "numeric_bytes_equal": false,
+        "named_bytes_equal": false,
+        "visual_observation": "same item identity; different framing and resolution; existing PNG retained"
+      }
+    },
+    {
+      "id": 201,
+      "filename": "item-201.png",
+      "git_blob_sha1": "10c51623eab20295514727cc04853054b80bccce",
+      "bytes": 16261,
+      "drive_numeric_candidates": [
+        {
+          "filename": "Item_0201.png",
+          "size": 12173,
+          "same_size": false
+        }
+      ],
+      "drive_named_reference": {
+        "filename": "revive.png",
+        "bytes": 15555,
+        "same_size": false,
+        "status": "metadata_only_not_byte_or_visual_verified"
+      },
+      "comparison": {
+        "status": "visual_match_distinct_bytes",
+        "numeric_bytes_equal": false,
+        "named_bytes_equal": false,
+        "visual_observation": "same item identity; different framing and resolution; existing PNG retained"
+      }
+    },
+    {
+      "id": 202,
+      "filename": "item-202.png",
+      "git_blob_sha1": "be6a0ea94d3a08002436bb263701d7b5ec7bc910",
+      "bytes": 24085,
+      "drive_numeric_candidates": [
+        {
+          "filename": "Item_0202.png",
+          "size": 23136,
+          "same_size": false
+        }
+      ],
+      "drive_named_reference": {
+        "filename": "max-revive.png",
+        "bytes": 27804,
+        "same_size": false,
+        "status": "metadata_only_not_byte_or_visual_verified"
+      },
+      "comparison": {
+        "status": "visual_match_distinct_bytes",
+        "numeric_bytes_equal": false,
+        "named_bytes_equal": false,
+        "visual_observation": "same item identity; different framing and resolution; existing PNG retained"
+      }
+    },
+    {
+      "id": 301,
+      "filename": "item-301.png",
+      "git_blob_sha1": "f6062da05f351c347658bc5cdf5de5807e9af739",
+      "bytes": 67371,
+      "drive_numeric_candidates": [],
+      "drive_named_reference": {
+        "status": "ambiguous_generic_egg",
+        "candidates": [
+          {
+            "filename": "egg-7km.png",
+            "bytes": 5916
+          },
+          {
+            "filename": "egg-5km.png",
+            "bytes": 28769
+          },
+          {
+            "filename": "egg-2km.png",
+            "bytes": 27651
+          },
+          {
+            "filename": "egg-12km.png",
+            "bytes": 5886
+          },
+          {
+            "filename": "egg-10km.png",
+            "bytes": 29314
+          }
+        ]
+      },
+      "comparison": {
+        "status": "visual_match_distinct_bytes",
+        "reference_filename": "lucky-egg.png",
+        "reference_bytes": 37243,
+        "named_bytes_equal": false,
+        "visual_observation": "Ovo da Sorte azul brilhante; referência histórica ITEM_LUCKY_EGG=301; não é ovo de incubação",
+        "id_reference": "https://github.com/Armax/Pokemon-GO-node-api/blob/master/items.json"
+      }
+    },
+    {
+      "id": 401,
+      "filename": "item-401.png",
+      "git_blob_sha1": "f0668003d4ced6c1eedc894f98666ab515c6a082",
+      "bytes": 69689,
+      "drive_numeric_candidates": [
+        {
+          "filename": "Item_0401.png",
+          "size": 69689,
+          "same_size": true
+        }
+      ],
+      "comparison": {
+        "status": "byte_identical",
+        "reference_filename": "Item_0401.png",
+        "method": "complete base64-normalized byte comparison"
+      }
+    },
+    {
+      "id": 701,
+      "filename": "item-701.png",
+      "git_blob_sha1": "c95f55df85294d7e40d00535a820c90e8346347f",
+      "bytes": 54614,
+      "drive_numeric_candidates": [
+        {
+          "filename": "Item_0701.png",
+          "size": 54614,
+          "same_size": true
+        }
+      ],
+      "comparison": {
+        "status": "byte_identical",
+        "reference_filename": "Item_0701.png",
+        "method": "complete base64-normalized byte comparison"
+      }
+    },
+    {
+      "id": 702,
+      "filename": "item-702.png",
+      "git_blob_sha1": "ad68318301cbf3e10a19fb01cd011facd778fcd5",
+      "bytes": 40396,
+      "drive_numeric_candidates": [
+        {
+          "filename": "Item_0702.png",
+          "size": 40396,
+          "same_size": true
+        }
+      ],
+      "comparison": {
+        "status": "byte_identical",
+        "reference_filename": "Item_0702.png",
+        "method": "complete base64-normalized byte comparison"
+      }
+    },
+    {
+      "id": 703,
+      "filename": "item-703.png",
+      "git_blob_sha1": "e072f425fd7a80e7d3a6cbe99083df62f073bf6c",
+      "bytes": 42308,
+      "drive_numeric_candidates": [
+        {
+          "filename": "Item_0703.png",
+          "size": 42308,
+          "same_size": true
+        }
+      ],
+      "comparison": {
+        "status": "byte_identical",
+        "reference_filename": "Item_0703.png",
+        "method": "complete base64-normalized byte comparison"
+      }
+    },
+    {
+      "id": 704,
+      "filename": "item-704.png",
+      "git_blob_sha1": "c5fff2847545ce137484c0d0d28a4c4041d7547f",
+      "bytes": 26043,
+      "drive_numeric_candidates": [
+        {
+          "filename": "Item_0704.png",
+          "size": 26043,
+          "same_size": true
+        }
+      ],
+      "comparison": {
+        "status": "byte_identical",
+        "reference_filename": "Item_0704.png",
+        "method": "complete base64-normalized byte comparison"
+      }
+    },
+    {
+      "id": 705,
+      "filename": "item-705.png",
+      "git_blob_sha1": "951bc5a23cce36ab85491d26fb3b546a86ef4bdd",
+      "bytes": 49222,
+      "drive_numeric_candidates": [
+        {
+          "filename": "Item_0705.png",
+          "size": 49222,
+          "same_size": true
+        }
+      ],
+      "comparison": {
+        "status": "byte_identical",
+        "reference_filename": "Item_0705.png",
+        "method": "complete base64-normalized byte comparison"
+      }
+    },
+    {
+      "id": 706,
+      "filename": "item-706.png",
+      "git_blob_sha1": "66a562714413c31654d5b376007e50b1c3372ddb",
+      "bytes": 43710,
+      "drive_numeric_candidates": [
+        {
+          "filename": "Item_0706.png",
+          "size": 43710,
+          "same_size": true
+        }
+      ],
+      "comparison": {
+        "status": "byte_identical",
+        "reference_filename": "Item_0706.png",
+        "method": "complete base64-normalized byte comparison"
+      }
+    },
+    {
+      "id": 707,
+      "filename": "item-707.png",
+      "git_blob_sha1": "70ad98e60cbb284b1c41d6b7af7020b204661551",
+      "bytes": 51721,
+      "drive_numeric_candidates": [
+        {
+          "filename": "Item_0707.png",
+          "size": 51721,
+          "same_size": true
+        }
+      ],
+      "comparison": {
+        "status": "byte_identical",
+        "reference_filename": "Item_0707.png",
+        "method": "complete base64-normalized byte comparison"
+      }
+    },
+    {
+      "id": 1201,
+      "filename": "item-1201.png",
+      "git_blob_sha1": "af03930b8b754121649f1b59004a562427571540",
+      "bytes": 24021,
+      "drive_numeric_candidates": [
+        {
+          "filename": "Item_1201.png",
+          "size": 24021,
+          "same_size": true
+        }
+      ],
+      "comparison": {
+        "status": "byte_identical",
+        "reference_filename": "Item_1201.png",
+        "method": "complete base64-normalized byte comparison"
+      }
+    },
+    {
+      "id": 1202,
+      "filename": "item-1202.png",
+      "git_blob_sha1": "e8347bb1c63d8af3a62aad7f669a986a4bd796c8",
+      "bytes": 25882,
+      "drive_numeric_candidates": [
+        {
+          "filename": "Item_1202.png",
+          "size": 25882,
+          "same_size": true
+        }
+      ],
+      "comparison": {
+        "status": "byte_identical",
+        "reference_filename": "Item_1202.png",
+        "method": "complete base64-normalized byte comparison"
+      }
+    },
+    {
+      "id": 1203,
+      "filename": "item-1203.png",
+      "git_blob_sha1": "31a05e5c8afca43cde04cd3298f5e5648bd72f86",
+      "bytes": 37844,
+      "drive_numeric_candidates": [
+        {
+          "filename": "Item_1203.png",
+          "size": 37844,
+          "same_size": true
+        }
+      ],
+      "comparison": {
+        "status": "byte_identical",
+        "reference_filename": "Item_1203.png",
+        "method": "complete base64-normalized byte comparison"
+      }
+    },
+    {
+      "id": 1204,
+      "filename": "item-1204.png",
+      "git_blob_sha1": "3db6ddaa737beef182935d0379dcd41acf71bb9c",
+      "bytes": 37094,
+      "drive_numeric_candidates": [
+        {
+          "filename": "Item_1204.png",
+          "size": 37094,
+          "same_size": true
+        }
+      ],
+      "comparison": {
+        "status": "byte_identical",
+        "reference_filename": "Item_1204.png",
+        "method": "complete base64-normalized byte comparison"
+      }
+    },
+    {
+      "id": 1301,
+      "filename": "item-1301.png",
+      "git_blob_sha1": "fc5545cd333490d4bdaec76758e8ce37a05b93dd",
+      "bytes": 32333,
+      "drive_numeric_candidates": [
+        {
+          "filename": "Item_1301.png",
+          "size": 32333,
+          "same_size": true
+        }
+      ],
+      "comparison": {
+        "status": "byte_identical",
+        "reference_filename": "Item_1301.png",
+        "method": "complete base64-normalized byte comparison"
+      }
+    },
+    {
+      "id": 1350,
+      "filename": "item-1350.png",
+      "git_blob_sha1": "77d023c63fc63528fb52e6bd2958829f64a6bf1f",
+      "bytes": 57450,
+      "drive_numeric_candidates": [
+        {
+          "filename": "item_1350.png",
+          "size": 57450,
+          "same_size": true
+        }
+      ],
+      "comparison": {
+        "status": "byte_identical",
+        "reference_filename": "item_1350.png",
+        "method": "complete base64-normalized byte comparison"
+      }
+    },
+    {
+      "id": 1351,
+      "filename": "item-1351.png",
+      "git_blob_sha1": "b53957f2f58a130f6a718b86b54247a699256012",
+      "bytes": 59918,
+      "drive_numeric_candidates": [
+        {
+          "filename": "item_1351.png",
+          "size": 59918,
+          "same_size": true
+        }
+      ],
+      "comparison": {
+        "status": "byte_identical",
+        "reference_filename": "item_1351.png",
+        "method": "complete base64-normalized byte comparison"
+      }
+    },
+    {
+      "id": 1401,
+      "filename": "item-1401.png",
+      "git_blob_sha1": "2184d5819519bb9148796f957b270a625544f9bd",
+      "bytes": 33407,
+      "drive_numeric_candidates": [
+        {
+          "filename": "Item_1401.png",
+          "size": 33407,
+          "same_size": true
+        }
+      ],
+      "comparison": {
+        "status": "byte_identical",
+        "reference_filename": "Item_1401.png",
+        "method": "complete base64-normalized byte comparison"
+      }
+    },
+    {
+      "id": 1402,
+      "filename": "item-1402.png",
+      "git_blob_sha1": "a8fdc11038854f908eadb8cf53c09d5513efe8ea",
+      "bytes": 34288,
+      "drive_numeric_candidates": [
+        {
+          "filename": "Item_1402.png",
+          "size": 34288,
+          "same_size": true
+        }
+      ],
+      "comparison": {
+        "status": "byte_identical",
+        "reference_filename": "Item_1402.png",
+        "method": "complete base64-normalized byte comparison"
+      }
+    },
+    {
+      "id": 1403,
+      "filename": "item-1403.png",
+      "git_blob_sha1": "d53d64e7091221fd6860d41450bb35d14937a9bc",
+      "bytes": 34417,
+      "drive_numeric_candidates": [
+        {
+          "filename": "Item_1403.png",
+          "size": 34417,
+          "same_size": true
+        }
+      ],
+      "comparison": {
+        "status": "byte_identical",
+        "reference_filename": "Item_1403.png",
+        "method": "complete base64-normalized byte comparison"
+      }
+    },
+    {
+      "id": 1404,
+      "filename": "item-1404.png",
+      "git_blob_sha1": "0bf3c16329ffb92db6e42941892b0c85ec261b9b",
+      "bytes": 54726,
+      "drive_numeric_candidates": [
+        {
+          "filename": "Item_1404.png",
+          "size": 54726,
+          "same_size": true
+        }
+      ],
+      "comparison": {
+        "status": "byte_identical",
+        "reference_filename": "Item_1404.png",
+        "method": "complete base64-normalized byte comparison"
+      }
+    },
+    {
+      "id": 1406,
+      "filename": "item-1406.png",
+      "git_blob_sha1": "923cec62d6612f9bb6ab719a3d2f335ba502f80e",
+      "bytes": 56541,
+      "drive_numeric_candidates": [
+        {
+          "filename": "Item_1406.png",
+          "size": 56541,
+          "same_size": true
+        }
+      ],
+      "comparison": {
+        "status": "byte_identical",
+        "reference_filename": "Item_1406.png",
+        "method": "complete base64-normalized byte comparison"
+      }
+    },
+    {
+      "id": 1408,
+      "filename": "item-1408.png",
+      "git_blob_sha1": "ae8f9ab4c1d83b9dc8d1213ae7cd7e9b601623da",
+      "bytes": 32542,
+      "drive_numeric_candidates": [
+        {
+          "filename": "Item_1408.png",
+          "size": 32542,
+          "same_size": true
+        }
+      ],
+      "comparison": {
+        "status": "byte_identical",
+        "reference_filename": "Item_1408.png",
+        "method": "complete base64-normalized byte comparison"
+      }
+    },
+    {
+      "id": 1600,
+      "filename": "item-1600.png",
+      "git_blob_sha1": "46c941e26fd18e37c7d2a6f95f6d93eab79f402a",
+      "bytes": 68379,
+      "drive_numeric_candidates": [
+        {
+          "filename": "item_1600.png",
+          "size": 68379,
+          "same_size": true
+        }
+      ],
+      "comparison": {
+        "status": "byte_identical",
+        "reference_filename": "item_1600.png",
+        "method": "complete base64-normalized byte comparison"
+      }
+    },
+    {
+      "id": 1601,
+      "filename": "item-1601.png",
+      "git_blob_sha1": "a5abc411ae192ffe0b0d9ba967464a2cc4d7eb08",
+      "bytes": 56473,
+      "drive_numeric_candidates": [
+        {
+          "filename": "item_1601.png",
+          "size": 56473,
+          "same_size": true
+        }
+      ],
+      "comparison": {
+        "status": "byte_identical",
+        "reference_filename": "item_1601.png",
+        "method": "complete base64-normalized byte comparison"
+      }
+    },
+    {
+      "id": 1602,
+      "filename": "item-1602.png",
+      "git_blob_sha1": "ec1444ee97209be34416226b2ae22cf374f8a1c3",
+      "bytes": 51118,
+      "drive_numeric_candidates": [
+        {
+          "filename": "item_1602.png",
+          "size": 51118,
+          "same_size": true
+        }
+      ],
+      "comparison": {
+        "status": "byte_identical",
+        "reference_filename": "item_1602.png",
+        "method": "complete base64-normalized byte comparison"
+      }
+    },
+    {
+      "id": 1606,
+      "filename": "item-1606.png",
+      "git_blob_sha1": "089bfa66a26f8254e28469d3b6a316fc204c49fc",
+      "bytes": 52309,
+      "drive_numeric_candidates": [
+        {
+          "filename": "item_1606.png",
+          "size": 52309,
+          "same_size": true
+        }
+      ],
+      "comparison": {
+        "status": "byte_identical",
+        "reference_filename": "item_1606.png",
+        "method": "complete base64-normalized byte comparison"
+      }
+    },
+    {
+      "id": 1607,
+      "filename": "item-1607.png",
+      "git_blob_sha1": "bd573aae155d2d1553dcf8f0d840cafc7fd681ff",
+      "bytes": 53126,
+      "drive_numeric_candidates": [
+        {
+          "filename": "item_1607.png",
+          "size": 53126,
+          "same_size": true
+        }
+      ],
+      "comparison": {
+        "status": "byte_identical",
+        "reference_filename": "item_1607.png",
+        "method": "complete base64-normalized byte comparison"
+      }
+    },
+    {
+      "id": 1609,
+      "filename": "item-1609.png",
+      "git_blob_sha1": "64bd67aaab921f4a4f78934111463ec271eff40c",
+      "bytes": 5631,
+      "drive_numeric_candidates": [
+        {
+          "filename": "Item_1609.png",
+          "size": 5631,
+          "same_size": true
+        }
+      ],
+      "comparison": {
+        "status": "byte_identical",
+        "reference_filename": "Item_1609.png",
+        "method": "complete base64-normalized byte comparison"
+      }
+    }
+  ],
+  "unmapped_named_candidates": [
+    {
+      "filename": "max-particles.png",
+      "bytes": 114424,
+      "status": "historical_enum_reference_only_not_current_semantics_or_rights_verified",
+      "candidate_id": 1506
+    },
+    {
+      "filename": "link-holder.png",
+      "bytes": 11847,
+      "status": "historical_enum_reference_only_not_current_semantics_or_rights_verified",
+      "candidate_id": 1411
+    },
+    {
+      "filename": "link-charges.png",
+      "bytes": 17503,
+      "status": "historical_enum_reference_only_not_current_semantics_or_rights_verified",
+      "candidate_id": 1410
+    },
+    {
+      "filename": "explorer-gadget.png",
+      "bytes": 153787,
+      "status": "reference_only_no_verified_id_or_rights"
+    },
+    {
+      "filename": "silver-bottle-cap.png",
+      "bytes": 16333,
+      "status": "historical_enum_reference_only_not_current_semantics_or_rights_verified",
+      "candidate_id": 304
+    },
+    {
+      "filename": "max-particle-pack.png",
+      "bytes": 55700,
+      "status": "historical_enum_reference_only_not_current_semantics_or_rights_verified",
+      "candidate_id": 1507
+    },
+    {
+      "filename": "gold-bottle-cap.png",
+      "bytes": 54034,
+      "status": "historical_enum_reference_only_not_current_semantics_or_rights_verified",
+      "candidate_id": 305
+    },
+    {
+      "filename": "safari-ball.png",
+      "bytes": 38985,
+      "status": "reference_only_no_verified_id_or_rights"
+    },
+    {
+      "filename": "premier-ball.png",
+      "bytes": 34504,
+      "status": "historical_enum_reference_only_not_current_semantics_or_rights_verified",
+      "candidate_id": 5
+    },
+    {
+      "filename": "beast-ball.png",
+      "bytes": 56164,
+      "status": "historical_enum_reference_only_not_current_semantics_or_rights_verified",
+      "candidate_id": 6
+    },
+    {
+      "filename": "master-ball.png",
+      "bytes": 31086,
+      "status": "historical_enum_reference_only_not_current_semantics_or_rights_verified",
+      "candidate_id": 4
+    }
+  ],
+  "follow_up": {
+    "named_balls_same_size": 3,
+    "potion_revive_named_different_size": 6,
+    "generic_egg_unresolved": 0,
+    "byte_comparison": "37 existing IDs compared using complete binary responses; 30 identical, seven distinct binaries visually matching",
+    "action": "Preserve current PNGs; Lucky Egg identified; new assets require provenance and redistribution rights.",
+    "binary_audit": {
+      "baseline": "c8b43c71e99b082f0e6b619cf5c4868357458d0c",
+      "byte_identical": 30,
+      "visual_match_distinct_bytes": 7,
+      "unresolved": 0,
+      "assets_replaced": 0
+    },
+    "enum_reference": "https://gist.github.com/notmarek/b755025ba26dfe2b73ffd6a641a73feb"
+  }
+}

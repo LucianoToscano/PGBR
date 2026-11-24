@@ -913,7 +913,13 @@ public final class Control {
     private static volatile String smartAttackNativeStatus=
         "Motor: sem diagnóstico de batalha. A opção no menu não confirma execução nativa.";
     private static volatile String smartAttackNativeJson="";
-    public static String smartAttackNativeStatus(){return smartAttackNativeStatus;}
+    private static volatile long smartAttackNativeAt=-1;
+    public static String smartAttackNativeStatus(){
+        long at=smartAttackNativeAt;
+        if(at<0)return smartAttackNativeStatus;
+        long age=SystemClock.elapsedRealtime()-at;
+        return (age<0?"Última observação; tempo inválido":age>5000?"Última observação antiga ("+(age/1000)+" s); não confirma batalha atual":"Última observação ("+age+" ms); não confirma execução atual")+"\n"+smartAttackNativeStatus;
+    }
     public static String smartAttackNativeJson(){return smartAttackNativeJson;}
     // Independent timing options: only indices 0..2 are selectable; legacy 3 migrates to default.
     // Defaults intentionally replace LT038's fixed 1.7 s shield / 2.3 s fainted choice.
@@ -938,7 +944,7 @@ public final class Control {
         smartAttack=on;
         smartAttackNativeStatus="Preferência "+(on?"ON":"OFF")+
             " salva no menu; aguardando confirmação do motor na próxima batalha.";
-        smartAttackNativeJson="";
+        smartAttackNativeJson="";smartAttackNativeAt=-1;
         // Retain the legacy PvP preference without modifying fast/charged/shield bits.
         pvpBattleOptions=PvpBattleMode.update(pvpBattleOptions,PvpBattleMode.PREFER_SUPER,on);
         saveSettings();
@@ -1702,6 +1708,7 @@ public final class Control {
                     pvpBattleOptions,PvpBattleMode.PREFER_SUPER,smartAttack);
                 pvpBattleReady=false;
                 pvpBattleStatus="Assistente PvP indisponível: aguardando controlador compatível";
+                smartAttackNativeAt=-1;smartAttackNativeJson="";smartAttackNativeStatus="Motor: sem diagnóstico após recarregar preferências." ;
                 itemTransferEnabled=Boolean.parseBoolean(p.getProperty("itemTransfer","false"));
                 itemRules=p.getProperty("itemRules","");itemLimits=p.getProperty("itemLimits","");itemCatalog=p.getProperty("itemCatalog","");
                 if(!validItemRules(itemRules)||!validItemRules(itemLimits)){itemTransferEnabled=false;itemRules="";itemLimits="";}
@@ -2006,6 +2013,7 @@ public final class Control {
                         "\nCharge: "+b.optString("chargeTier","unknown")+chargeState+
                         " | Charge2: "+b.optString("charge2Tier","unknown")+charge2State;
                     smartAttackNativeJson=detail;
+                    smartAttackNativeAt=SystemClock.elapsedRealtime();
                 }else if(b.has("pvpExecutorReady")){
                     pvpBattleReady=b.optBoolean("pvpExecutorReady",false);
                     String battleMode="training".equals(b.optString("mode","pvp"))
