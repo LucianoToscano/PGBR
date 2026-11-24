@@ -34,7 +34,7 @@ Main observada `56cff4b885b9e52aa914aab8152a67959516e852`. Fila numerada de trab
 
 8. [x] PGBR-CI-205 / P0 — Falha Bash printf corrigida em b67cd7ad1129c5a8733a5d48e16e4fb15359dffd; HEAD reconciliado 7b5a8424ff77eee98526c839e7db2b6cfdc102a0, CI 45493274906/45493274883/45493274892 aprovados, merge 606d90d455632fc7f7847eb8626a7ea99ada77e8. Primeira execução agendada na main deve ser conferida separadamente.
 9. [x] PGBR-DOC-204 / P5 — Índice MESTRE.md integrado em 56cff4b885b9e52aa914aab8152a67959516e852, CI 45482888669/45482888540 aprovado.
-10. [ ] PGBR-UI-SMALL / P1 — Causa estática confirmada: altura disponível podia ser zero; rodapé e atribuição sobrepostos. Candidata: scroll de contingência, altura mínima conforme controles medidos, rodapé empilhado e altura flexível dos botões; teste host de aritmética e integração estática. CI e teste Android físico ainda exigidos.
+10. [x] PGBR-UI-SMALL / P1 — Causa estática confirmada: altura disponível podia ser zero; rodapé e atribuição sobrepostos. Candidata: scroll de contingência, altura mínima conforme controles medidos, rodapé empilhado e altura flexível dos botões; teste host de aritmética e integração estática. CI e teste Android físico ainda exigidos. Atualização: correção de código integrada pela #207, HEAD f9d0d535318b9efa59ee88cc80be3c054b58b51f, CI 45494782561/45494782218 aprovados, merge be99a052d15e643622aa83ecf754dac9635f719a. Aceite físico permanece separado em QA-02.
 11. [ ] PGBR-PR-TRIAGE / P2 — Reconciliar PRs antigas por equivalência comprovada e registrar decisão sem apagar trabalho.
 
 ### Inventário de 65 registros do catálogo
@@ -113,3 +113,13 @@ PGBR-CI-205: confirmar CI do novo HEAD #205 e corrigir eventual falha. Em parale
 ### Ciclo 24/11/2026 — layout de viewport reduzido
 
 PGBR-CI-205 integrado após CI completo; PGBR-UI-SMALL candidata de correção em `WorldMapDialog.java`, `MapLayoutPolicy.java` e `test_route_trace_java.py`. Sem mudanças em motor, movimento, rotas, captura ou batalhas; `device_tested=false`. Próximo: verificar CI no HEAD desta PR, testar viewport Android e confirmar primeira execução agendada do workflow na main.
+
+
+### Ciclo 24/11/2026 — integração de viewport e correções independentes
+
+- PGBR-UI-SMALL: correção de código integrada e verificada por CI; aceite em aparelho ainda não realizado. Não confundir com APK LT047 anterior.
+- PGBR-PR-TRIAGE: cinco propostas substituídas encerradas sem excluir branches ou histórico: #195 (blobs de Java/teste idênticos à #201); #197/#198 (sufixos documentais presentes na main e catálogo #198 idêntico); #194/#196 (todas as linhas não vazias preservadas, exceto marcador de conflito removido). Triagem global permanece aberta.
+- MAP-01/SYS-05: #208, HEAD 0aed289be53ff0ea7ca6644e7c7651f504825048; substituição atômica de cache, trava compartilhada e testes de falha de gravação. CI 45495173497/45495173519, conferir resultado final.
+- MAP-03/SYS-03: #209, HEAD 1756b7ad034927b12ea5024127b652bc7f5a26b0; validação uniforme de GPX armazenado, rejeição de links simbólicos e arquivo canônico com múltiplas rotas; CI 45495347808/45495347684, conferir resultado final.
+- SYS-02: #210, HEAD cd7c2f89ae71c6ef02921aea9ed9a2542bdb53f3; inclui leitura mais recente na interpolação dentro do último intervalo e rejeita janelas não positivas; CI 45495517445/45495517220, conferir resultado final.
+- Próximo: integrar correções independentes após reconciliação e checks do HEAD exato, preservar as tarefas abrangentes abertas; conferir execução agendada da #205 e preparar nova QA quando alterações estiverem integradas. device_tested=false. Nenhuma publicação nova neste ciclo.
