@@ -156,12 +156,17 @@ public final class GpxCodecTest {
             throw new AssertionError("Oversized GPX export accepted");
         } catch (IOException expected) { }
         check(untouched.size()==1 && untouched.toByteArray()[0]==7, "Oversized export leaves destination untouched");
+        try {
+            GpxCodec.encode(new GpxRoute("Extremo", extreme));
+            throw new AssertionError("Oversized preflight accepted");
+        } catch (IOException expected) { }
 
         // --- Round trip: write then read reproduces name and ordered points exactly ---
         double[][] points = {{41.384210, 2.179990}, {-41.5, -2.25}, {0.0, 123.456789}};
         GpxRoute original = new GpxRoute("Trip & <friends>", points);
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         GpxCodec.write(out, original);
+        check(java.util.Arrays.equals(out.toByteArray(),GpxCodec.encode(original)), "Preflight and stream exports match");
         List<GpxRoute> back = GpxCodec.read(new ByteArrayInputStream(out.toByteArray()), "ignored");
         check(back.size() == 1, "Written GPX reads back as one route");
         check(back.get(0).name.equals("Trip & <friends>"), "Name escaping round-trips");
