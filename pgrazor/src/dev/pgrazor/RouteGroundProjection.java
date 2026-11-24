@@ -68,7 +68,9 @@ public final class RouteGroundProjection {
         return false;
     }
     public double[] project(double lat,double lon) {
-        double[] p=local(lat,lon);
+        return projectLocal(local(lat,lon));
+    }
+    private double[] projectLocal(double[] p) {
         if(!inside(p))throw new IllegalArgumentException("Outside calibrated reference hull");
         double x=p[0],y=p[1],w=h[6]*x+h[7]*y+1;
         if(!(w>1e-6))throw new IllegalArgumentException("Behind projection plane");
@@ -77,4 +79,38 @@ public final class RouteGroundProjection {
             throw new IllegalArgumentException("Outside bounded viewport");
         return new double[]{u,v};
     }
+    /** Local planar clipping against the union of triangles covering the calibrated convex hull.
+     * Long legs and ambiguous longitude wraps are refused instead of inventing an alignment.
+     * Returns [fractionStart,fractionEnd,pixelXStart,pixelYStart,pixelXEnd,pixelYEnd].
+     */
+    public double[] clipSegment(double latA,double lonA,double latB,double lonB) {
+        if(!valid(latA,lonA)||!valid(latB,lonB))return null;
+        double[] a=unboundedLocal(latA,lonA),b=unboundedLocal(latB,lonB);
+        if(Math.hypot(a[0]-b[0],a[1]-b[1])>20)return null;
+        double low=2,high=-1;
+        for(int i=0;i<4;i++)for(int j=i+1;j<4;j++)for(int k=j+1;k<4;k++){
+            double[] u=anchors[i],v=anchors[j],w=anchors[k];double area=cross(u,v,w);
+            if(Math.abs(area)<1e-10)continue;
+            double lo=0,hi=1;double[][] tri={u,v,w};
+            for(int side=0;side<3&&lo<=hi;side++){
+                double[] q=tri[side],t=tri[(side+1)%3];
+                double f=cross(q,t,a)/area,g=cross(q,t,b)/area;
+                if(f<0&&g<0){lo=1;hi=0;break;}
+                if(f<0)lo=Math.max(lo,f/(f-g));
+                else if(g<0)hi=Math.min(hi,f/(f-g));
+            }
+            if(lo<=hi){low=Math.min(low,lo);high=Math.max(high,hi);}
+        }
+        if(high-low<=1e-10)return null;
+        try{
+            double[] p=projectLocal(new double[]{a[0]+(b[0]-a[0])*low,a[1]+(b[1]-a[1])*low});
+            double[] q=projectLocal(new double[]{a[0]+(b[0]-a[0])*high,a[1]+(b[1]-a[1])*high});
+            return new double[]{low,high,p[0],p[1],q[0],q[1]};
+        }catch(IllegalArgumentException invalid){return null;}
+    }
+    private double[] unboundedLocal(double lat,double lon) {
+        double dl=lon-lon0;if(dl>180)dl-=360;else if(dl< -180)dl+=360;
+        return new double[]{R*Math.toRadians(dl)*cos0/MAX_METERS,R*Math.toRadians(lat-lat0)/MAX_METERS};
+    }
+
 }
