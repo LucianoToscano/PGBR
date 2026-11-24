@@ -40,8 +40,7 @@ public final class GameRoutesDialog {
         int pad = MapTheme.dp(ctx, 18);
         layout.setPadding(pad, MapTheme.dp(ctx, 8), pad, 0);
 
-        layout.addView(label(ctx, "Walk eligible in-game Routes automatically, shortest total walk first. Each Route is "
-            + "started, walked once and completed in game before the next.", 13));
+        layout.addView(label(ctx, "Percorre as Rotas oficiais disponíveis no jogo, começando pela menor distância total. Cada rota é iniciada, percorrida e concluída no jogo antes da próxima. Independente dos percursos GPX próprios.", 13));
 
         LinearLayout countRow = new LinearLayout(ctx);
         countRow.setOrientation(LinearLayout.HORIZONTAL);

@@ -58,6 +58,7 @@ public class RouteTraceHarness {
     MotionEngine.RouteVisualSnapshot progressed=e.routeVisualSnapshot(direct.token);
     check(progressed.newPoints==null&&Math.abs(progressed.completedMeters-5)<1e-4&&progressed.legFraction>.4&&progressed.legFraction<.5);
     e.walkVisualRoute(new double[][]{{0,.001}},false);
+    check(e.routeVisualSnapshot(0).newPoints.length==2&&e.activeRouteToken()!=0);
     check(!e.stopVisualRoute(direct.token)&&e.walking);
     check(e.stopVisualRoute(e.activeVisualRouteToken())&&!e.walking&&e.routeVisualSnapshot(0)==null);
     e.walkVisualTo(0,.0001);e.walkRoute(new double[][]{{0,.002}},false);
@@ -153,6 +154,7 @@ class RouteTraceTest(unittest.TestCase):
         self.assertIn("Control::vgpMapVisible", pad)
         self.assertIn("screenRouteSource.close()", pad)
         self.assertIn("Control.engine.activeVisualRouteToken()",pad)
+        self.assertIn("allowed&&!Control.gameRoutesRunning()",pad)
         self.assertIn("Control.walkVisualTo(lat, lon)",pad)
         self.assertIn("Control.walkVisualRoute(waypoints, loop)",pad)
         official=(ROOT / "src/dev/pgrazor/GameRoutesController.java").read_text(encoding="utf-8")

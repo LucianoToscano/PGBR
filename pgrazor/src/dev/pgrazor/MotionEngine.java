@@ -119,7 +119,7 @@ public final class MotionEngine {
         if(token==0) return null;
         if(visualOrigin!=null){
             double length=angle(unit(visualOrigin[0],visualOrigin[1]),unit(route[0][0],route[0][1]))*EARTH_RADIUS_METERS;
-            double left=routeProgress().remainingMeters;
+            double left=Math.max(0,Math.min(length,routeProgress().remainingMeters));
             double completed=Math.max(0,Math.min(length,length-left));
             return new RouteVisualSnapshot(token,knownToken==token?null:new double[][]{visualOrigin.clone(),route[0].clone()},1,2,
                 length>0?completed/length:0,left,length,completed,false,!enabled||speedKmh==0,false);
@@ -179,7 +179,9 @@ public final class MotionEngine {
     }
     /** Explicit local custom route or imported GPX; no changes to movement ownership. */
     public synchronized void walkVisualRoute(double[][] waypoints,boolean loop){
+        double[] origin={latitude,longitude};
         walkRoute(waypoints,loop);visualRoute=true;
+        if(route.length==1&&!loop)visualOrigin=origin;
     }
     /** Validate/copy the entire route before replacing any current movement; a one-shot route. */
     public synchronized void walkRoute(double[][] waypoints) { walkRoute(waypoints, false); }
