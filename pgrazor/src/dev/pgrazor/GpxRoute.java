@@ -23,8 +23,11 @@ public final class GpxRoute {
         name = name.trim();
         if (name.isEmpty()) throw new IllegalArgumentException("Enter a name for this route.");
         if (name.length() > NAME_LIMIT) throw new IllegalArgumentException("Route names can contain at most " + NAME_LIMIT + " characters.");
-        for (int i = 0; i < name.length(); i++)
-            if (Character.isISOControl(name.charAt(i))) throw new IllegalArgumentException("Use a name without line breaks or control characters.");
+        for (int i = 0; i < name.length();) {
+            int cp = name.codePointAt(i);
+            if (!validNameCodePoint(cp)) throw new IllegalArgumentException("Use a name without control or invalid XML characters.");
+            i += Character.charCount(cp);
+        }
         if (points == null) throw new IllegalArgumentException("A route needs points.");
         if (points.length == 0) throw new IllegalArgumentException("A route needs at least one point.");
         if (points.length > GpxCodec.MAX_POINTS) throw new IllegalArgumentException("Routes can contain at most " + GpxCodec.MAX_POINTS + " points.");
@@ -39,6 +42,14 @@ public final class GpxRoute {
         }
         this.name = name;
         this.points = copy;
+    }
+
+    /** XML 1.0-safe route name characters, excluding all ISO controls. */
+    static boolean validNameCodePoint(int cp) {
+        return !Character.isISOControl(cp) &&
+            ((cp >= 0x20 && cp <= 0xD7FF) ||
+             (cp >= 0xE000 && cp <= 0xFFFD) ||
+             (cp >= 0x10000 && cp <= 0x10FFFF));
     }
 
     /** Number of points in the route. */

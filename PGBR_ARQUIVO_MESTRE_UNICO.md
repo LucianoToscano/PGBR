@@ -53,6 +53,10 @@ O release `v0.00.33-LT` é uma **nova identificação de build**, não uma mudan
 - README e ROOTED sincronizados com o recibo LT045 já verificado (commits 3c0da69c011697f3fa769b6c649821211a272c25 e b0412c4d787b1223d8426084085be0c7a6513abf), histórico de versões preservado. Matriz `docs/validation/LT046_HOMOLOGACAO.md` ampliada para a futura sessão única de homologação do proprietário, incluindo etiquetas, filtros, evento, proteção, lifecycle, diagnóstico, Max/MT/frutas, IV/nível e GPX/ícones (f35ec46cf2ce21dd41bb79ede44acf7f24375f61). Nenhum teste físico marcado como aprovado.
 - Sem alterações em execução de jogo, GPS, PokeSearch, credenciais ou provedores, sem novo APK ou publicação. `device_tested=false`; `provider_connected=false`. Aguardar CI exato e revisão de integração sem sobrescrever trabalho paralelo.
 
+### Checkpoint LT046 — integridade de exportação GPX (24/11/2026)
+
+- Branch fix/lt046-gpx-export-validacao-20261124; base 0d29f3c1e0db08945b3299a3f0413a973004ee65 (merge #170). Validação de nomes compatíveis com XML 1.0, preservando pares Unicode válidos e saneando nomes de fallback inválidos. Exportação GPX verifica limite de 2 MB antes da escrita, inclusive para coordenadas decimais extremas, sem reduzir precisão nem copiar a matriz inteira de pontos. Fixtures de Unicode, round-trip e preservação do destino em exportação excessiva. CI e homologação física pendentes. Sem alteração de localização, jogo, automação, APK ou release.
+
 <a id="mestre-evidencias"></a>
 ## 2. Hierarquia de evidências e estados
 Use os termos com precisão:
