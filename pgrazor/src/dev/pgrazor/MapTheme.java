@@ -49,10 +49,10 @@ final class MapTheme {
      * by side keep a visible gap instead of merging into one block.
      */
     static android.graphics.drawable.Drawable buttonBackground(Context c) {
-        GradientDrawable fill = rounded(c, dark() ? 0xff202b39 : 0xffedf2f6, 9);
+        GradientDrawable fill = rounded(c, dark() ? 0xff202b39 : 0xffffffff, 9);
         fill.setStroke(dp(c, 1), dark() ? 0xff3a4d63 : 0xffc9d5df);
         int inset = dp(c, 2);
-        return new RippleDrawable(ColorStateList.valueOf(0x3345e1ba), new android.graphics.drawable.InsetDrawable(fill, inset), null);
+        return new RippleDrawable(ColorStateList.valueOf(dark()?0x33ffffff:0x22000000), new android.graphics.drawable.InsetDrawable(fill, inset), null);
     }
 
     /** Applies {@link #buttonBackground}; an inset background would otherwise replace the label's padding. */
@@ -85,11 +85,11 @@ final class MapTheme {
         }
     }
 
-    /** Accent the dialog's action buttons so Teleport / Walk here / Done stay obvious. */
+    /** Neutral dialog text; state switches retain their existing semantic accent. */
     static void styleButtons(AlertDialog dialog) {
         for (int which : new int[]{AlertDialog.BUTTON_POSITIVE, AlertDialog.BUTTON_NEGATIVE, AlertDialog.BUTTON_NEUTRAL}) {
             Button b = dialog.getButton(which);
-            if (b != null) { b.setTextColor(accent()); b.setAllCaps(false); }
+            if (b != null) { b.setTextColor(new ColorStateList(new int[][]{new int[]{-android.R.attr.state_enabled},new int[]{}},new int[]{muted(),ink()})); b.setAllCaps(false); }
         }
     }
 

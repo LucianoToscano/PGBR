@@ -30,6 +30,7 @@ final class ItemBadge extends View {
         itemSprite=load(context,itemId);
         setImportantForAccessibility(IMPORTANT_FOR_ACCESSIBILITY_NO);
     }
+    boolean hasDecodedSprite(){return itemSprite!=null;}
     private static synchronized Bitmap load(Context context,int id){
         if(id<=0||id>999999)return null;
         Bitmap cached=CACHE.get(id);

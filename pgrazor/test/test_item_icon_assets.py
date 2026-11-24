@@ -1,6 +1,9 @@
 """Verify original item sprites are bundled for all three Android installation paths."""
 from pathlib import Path
 import importlib.util
+import hashlib
+import json
+import re
 import struct
 import zlib
 import unittest
@@ -45,6 +48,23 @@ class ItemIconAssetsTest(unittest.TestCase):
                 break
             cursor=end
         self.assertTrue(seen_header and seen_data and seen_end,name)
+
+    def test_drive_reference_inventory_and_gallery(self):
+        data=json.loads((ROOT.parent/'docs/validation/LT046_ITEM_ICON_REFERENCE.json').read_text(encoding='utf-8'))
+        self.assertEqual({row['id'] for row in data['items']},EXPECTED)
+        self.assertEqual(data['counts']['total'],len(EXPECTED))
+        for row in data['items']:
+            payload=(ROOT/'assets/item-icons'/row['filename']).read_bytes()
+            self.assertEqual(len(payload),row['bytes'])
+            self.assertEqual(hashlib.sha1(b'blob '+str(len(payload)).encode()+b'\0'+payload).hexdigest(),row['git_blob_sha1'])
+        source=(ROOT/'src/dev/pgrazor/LocalAuditDialog.java').read_text(encoding='utf-8')
+        ids=re.search(r'GALLERY_IDS=\{([0-9,]+)\}',source).group(1)
+        self.assertEqual(set(map(int,ids.split(','))),EXPECTED)
+        self.assertIn('badge.hasDecodedSprite()',source)
+        self.assertIn('int pageSize=9',source)
+        theme=(ROOT/'src/dev/pgrazor/MapTheme.java').read_text(encoding='utf-8')
+        self.assertIn('dark() ? 0xff202b39 : 0xffffffff',theme)
+        self.assertIn('dark()?0x33ffffff:0x22000000',theme)
 
     def test_verified_assets_and_packagers(self):
         spec=importlib.util.spec_from_file_location("pgbr_build_assets",ROOT/"build.py")

@@ -8,7 +8,7 @@ final class LocalAuditDialog {
  private LocalAuditDialog(){}
  static void show(Activity a){
   AlertDialog d=new AlertDialog.Builder(MapTheme.wrap(a)).setTitle("Análise local • sem ações no jogo")
-   .setItems(new String[]{"Prévia de proteção da coleção","Simular ataques carregados","Interpretar código de diagnóstico","Avaliar lista de Pokémon","Planejar energia PvP","Interpretar diagnóstico PvP","Planejar alternativas de frutas","Preparar equipe Max (manual)","Resumir diagnóstico filtrado","Conferir etiquetas (manual)"},(x,i)->{if(i==0)collection(a);else if(i==1)combat(a);else if(i==2)reason(a);else if(i==3)batch(a);else if(i==4)energyPlan(a);else if(i==5)battleDiagnostic(a);else if(i==6)berryPlan(a);else if(i==7)maxPlan(a);else if(i==8)summarize(a);else tagReview(a);})
+   .setItems(new String[]{"Prévia de proteção da coleção","Simular ataques carregados","Interpretar código de diagnóstico","Avaliar lista de Pokémon","Planejar energia PvP","Interpretar diagnóstico PvP","Planejar alternativas de frutas","Preparar equipe Max (manual)","Resumir diagnóstico filtrado","Conferir etiquetas (manual)","Conferir ícones instalados"},(x,i)->{if(i==0)collection(a);else if(i==1)combat(a);else if(i==2)reason(a);else if(i==3)batch(a);else if(i==4)energyPlan(a);else if(i==5)battleDiagnostic(a);else if(i==6)berryPlan(a);else if(i==7)maxPlan(a);else if(i==8)summarize(a);else if(i==9)tagReview(a);else itemGallery(a);})
    .setNegativeButton("Fechar",null).create();present(a,d);
  }
  static void present(Activity a,AlertDialog d){DialogLifecycle.bind(a,d,null);d.setOnShowListener(x->MapTheme.styleButtons(d));d.show();}
@@ -121,6 +121,28 @@ final class LocalAuditDialog {
   present(a,new AlertDialog.Builder(MapTheme.wrap(a)).setTitle("Prévia de coleção em lote").setView(scroll(a,b)).setPositiveButton("Fechar",null).create());
  }
  static void reason(Activity a){LinearLayout b=body(a);EditText code=numeric(a,b,"Código do diagnóstico (reasonCode)","12",false,false);TextView r=text(a,b,"");invalidateOnEdit(r,code);action(a,b,"Interpretar",()->{try{r.setText(LocalAuditPolicy.reason(integer(code)));}catch(RuntimeException e){r.setText("Código inválido.");}});present(a,new AlertDialog.Builder(MapTheme.wrap(a)).setTitle("Motivos de proteção").setView(scroll(a,b)).setPositiveButton("Fechar",null).create());}
+ static final int[] GALLERY_IDS={1,2,3,101,102,103,104,201,202,301,401,701,702,703,704,705,706,707,1201,1202,1203,1204,1301,1350,1351,1401,1402,1403,1404,1406,1408,1600,1601,1602,1606,1607,1609};
+ static void itemGallery(Activity a){
+  LinearLayout b=body(a);text(a,b,"Conferência visual dos ícones já empacotados. Compare pelo ID com o catálogo autorizado. Imagem decodificada não comprova identidade visual. Nenhum inventário é lido.");
+  LinearLayout gallery=body(a);b.addView(gallery);
+  TextView pageLabel=text(a,b,"");int[] page={0};int pageSize=9;
+  Runnable render=()->{
+   gallery.removeAllViews();
+   int pages=(GALLERY_IDS.length+pageSize-1)/pageSize;
+   pageLabel.setText("Página "+(page[0]+1)+"/"+pages+" • "+GALLERY_IDS.length+" IDs");
+   for(int i=page[0]*pageSize;i<Math.min(GALLERY_IDS.length,(page[0]+1)*pageSize);i++){
+    int id=GALLERY_IDS[i];LinearLayout row=new LinearLayout(MapTheme.wrap(a));row.setGravity(android.view.Gravity.CENTER_VERTICAL);
+    ItemBadge badge=new ItemBadge(MapTheme.wrap(a),id);
+    row.addView(badge,new LinearLayout.LayoutParams(MapTheme.dp(a,48),MapTheme.dp(a,48)));
+    TextView label=new TextView(MapTheme.wrap(a));label.setText("ID "+id+" • "+(badge.hasDecodedSprite()?"Imagem decodificada":"Arte alternativa / ausente"));
+    row.addView(label,new LinearLayout.LayoutParams(0,-2,1));gallery.addView(row);
+   }
+  };
+  action(a,b,"Página anterior",()->{if(page[0]>0){page[0]--;render.run();}});
+  action(a,b,"Próxima página",()->{if((page[0]+1)*pageSize<GALLERY_IDS.length){page[0]++;render.run();}});
+  render.run();
+  present(a,new AlertDialog.Builder(MapTheme.wrap(a)).setTitle("Conferência visual de itens").setView(scroll(a,b)).setPositiveButton("Fechar",null).create());
+ }
  static void tagReview(Activity a){
   LinearLayout b=body(a);text(a,b,"Informe os nomes das etiquetas, um por linha. Selecione as protegidas e as observadas no Pokémon. Não lê etiquetas do jogo, não altera a coleção e não executa ações.");
   EditText source=new EditText(MapTheme.wrap(a));source.setMinLines(3);source.setMaxLines(6);source.setHint("Uma etiqueta por linha");b.addView(source);
