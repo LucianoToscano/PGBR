@@ -61,6 +61,99 @@ final class IFlowGoFeedClient {
         return doFetch(endpoint, false, true);
     }
 
+    /** Nearby query expressed in canonical events, keeping the layer (spawns or raids) explicit. */
+    IFlowGoFeedData.EventPage fetchEvents(double lat, double lon, double radiusKm, boolean raids)
+            throws Exception {
+        if (!Double.isFinite(lat) || !Double.isFinite(lon) || lat < -90 || lat > 90
+                || lon < -180 || lon > 180)
+            throw new LiveFeedClient.FeedException("Coordenadas inválidas para iFlowGo.");
+        cancelled = false;
+        final double radius;
+        try { radius = IFlowGoRequestPolicy.nearbyRadiusKm(radiusKm); }
+        catch (IllegalArgumentException invalid) {
+            throw new LiveFeedClient.FeedException("Raio inválido para busca iFlowGo.");
+        }
+        String query = "?lat=" + enc(String.format(Locale.US, "%.6f", lat))
+                + "&lon=" + enc(String.format(Locale.US, "%.6f", lon))
+                + "&radius_km=" + enc(String.format(Locale.US, "%.1f", radius))
+                + "&layers=" + (raids ? "raids" : "spawns")
+                + "&limit=200";
+        return doFetchEvents(ENDPOINT + query, raids, false);
+    }
+
+    /**
+     * One page of the global search in canonical events. The page number is validated so a crafted
+     * cursor can never request an unbounded crawl; {@code hasMore} still comes from the response.
+     */
+    IFlowGoFeedData.EventPage fetchGlobalPage(int dexId, int page) throws Exception {
+        cancelled = false;
+        final String dexQuery;
+        try {
+            dexQuery = IFlowGoRequestPolicy.globalSpeciesQuery(dexId);
+            if (page < 1 || page > IFlowGoRequestPolicy.MAX_GLOBAL_PAGES)
+                throw new IllegalArgumentException("Invalid page");
+        } catch (IllegalArgumentException invalid) {
+            throw new LiveFeedClient.FeedException(
+                    "Página inválida para busca global iFlowGo (1 a "
+                            + IFlowGoRequestPolicy.MAX_GLOBAL_PAGES + ").");
+        }
+        String endpoint = "https://pokecoords.iflowgo.com/iflowgopokecoords/api/v1/pokemon-search"
+                + "?page=" + page + dexQuery;
+        return doFetchEvents(endpoint, false, true);
+    }
+
+    private IFlowGoFeedData.EventPage doFetchEvents(String target, boolean raids, boolean global)
+            throws Exception {
+        HttpURLConnection conn = (HttpURLConnection) new URL(target).openConnection();
+        active = conn;
+        try {
+            conn.setConnectTimeout(TIMEOUT_MS);
+            conn.setReadTimeout(TIMEOUT_MS);
+            conn.setInstanceFollowRedirects(false);
+            conn.setRequestMethod("GET");
+            conn.setRequestProperty("User-Agent", "PGBR/0.00.25 (+https://github.com/LucianoToscano/PGBR)");
+            conn.setRequestProperty("Accept", "application/json");
+            int status = conn.getResponseCode();
+            if (status == 401 || status == 403)
+                throw new LiveFeedClient.FeedException(
+                        "iFlowGo recusou acesso (HTTP " + status
+                                + "). Necessária autorização do fornecedor.", status, 0);
+            if (status == 429)
+                throw new LiveFeedClient.FeedException(
+                        "iFlowGo: limite de consultas. Respeitando intervalo informado.",
+                        status, retryAfter(conn));
+            if (status < 200 || status >= 300)
+                throw new LiveFeedClient.FeedException(
+                        "iFlowGo indisponível (HTTP " + status + ").", status, 0);
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            try (InputStream in = conn.getInputStream()) {
+                byte[] buf = new byte[8192];
+                int n;
+                while ((n = in.read(buf)) != -1) {
+                    if (cancelled || Thread.currentThread().isInterrupted())
+                        throw new LiveFeedClient.FeedException("Busca iFlowGo cancelada.");
+                    if (out.size() + n > MAX_BYTES)
+                        throw new LiveFeedClient.FeedException("iFlowGo: resposta excedeu o limite.");
+                    out.write(buf, 0, n);
+                }
+            }
+            JSONObject payload;
+            try { payload = new JSONObject(new String(out.toByteArray(), StandardCharsets.UTF_8)); }
+            catch (Exception e) { throw new LiveFeedClient.FeedException("iFlowGo retornou JSON inválido."); }
+            try {
+                return IFlowGoFeedData.parseEvents(payload, System.currentTimeMillis(), raids, global);
+            } catch (Exception e) {
+                throw new LiveFeedClient.FeedException("iFlowGo retornou campos desconhecidos nesta versão.");
+            }
+        } catch (IOException e) {
+            if (cancelled) throw new LiveFeedClient.FeedException("Busca iFlowGo cancelada.");
+            throw new LiveFeedClient.FeedException("Não foi possível acessar iFlowGo. Verifique a rede.");
+        } finally {
+            conn.disconnect();
+            if (active == conn) active = null;
+        }
+    }
+
     private LiveFeedData.Snapshot doFetch(String target, boolean raids, boolean global) throws Exception {
         HttpURLConnection conn = (HttpURLConnection) new URL(target).openConnection();
         active = conn;

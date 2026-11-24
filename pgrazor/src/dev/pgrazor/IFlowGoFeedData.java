@@ -3,6 +3,7 @@ package dev.pgrazor;
 import java.text.ParsePosition;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
@@ -156,5 +157,119 @@ final class IFlowGoFeedData {
     private static void append(StringBuilder b, String text) {
         if (b.length() > 0) b.append(" · ");
         b.append(text);
+    }
+
+    // ---------------------------------------------------------------------------------------------
+    // Canonical events with honest pagination. `pokemon-search` returns {items,total,total_pages,
+    // page_size}: hasMore is copied from the response, never assumed, so a single 25-row page can
+    // never be presented as a worldwide sweep.
+    // ---------------------------------------------------------------------------------------------
+
+    static final class EventPage {
+        final List<SourceEvent> events;
+        final boolean hasMore;
+        final Integer totalKnown, totalPages, pageSize, page;
+        final int received, rejected;
+        final String note;
+        EventPage(List<SourceEvent> events, boolean hasMore, Integer totalKnown, Integer totalPages,
+                  Integer pageSize, Integer page, int received, int rejected, String note) {
+            this.events = Collections.unmodifiableList(new ArrayList<>(events));
+            this.hasMore = hasMore;
+            this.totalKnown = totalKnown;
+            this.totalPages = totalPages;
+            this.pageSize = pageSize;
+            this.page = page;
+            this.received = received;
+            this.rejected = rejected;
+            this.note = note == null ? "" : note;
+        }
+    }
+
+    static EventPage parseEvents(JSONObject body, long now, boolean raidsOnly, boolean global)
+            throws JSONException {
+        if (body == null) throw new JSONException("iFlowGo: resposta vazia");
+        String group = raidsOnly ? "raids" : "spawns";
+        JSONArray rows = global ? body.optJSONArray("items") : body.optJSONArray(group);
+        if (rows == null) throw new JSONException("iFlowGo: campo " + (global ? "items" : group) + " ausente");
+        List<SourceEvent> out = new ArrayList<>();
+        Set<String> ids = new HashSet<>();
+        int received = Math.min(rows.length(), MAX_ROWS), rejected = 0;
+        for (int i = 0; i < received; i++) {
+            JSONObject o = rows.optJSONObject(i);
+            if (o == null) { rejected++; continue; }
+            double lat = o.optDouble("lat", Double.NaN);
+            double lon = o.optDouble("lon", Double.NaN);
+            if (!validCoord(lat, lon)) { rejected++; continue; }
+            SourceEvent event = raidsOnly ? raidEvent(o, lat, lon, now) : spawnEvent(o, lat, lon, now);
+            if (event == null) { rejected++; continue; }
+            if (!ids.add(event.eventId)) { rejected++; continue; }
+            out.add(event);
+        }
+        boolean hasMore = global && body.optInt("total_pages", 0) > Math.max(1, body.optInt("page", 1));
+        Integer total = body.has("total") && !body.isNull("total") ? Integer.valueOf(body.optInt("total", 0)) : null;
+        Integer totalPages = body.has("total_pages") && !body.isNull("total_pages")
+                ? Integer.valueOf(body.optInt("total_pages", 0)) : null;
+        Integer pageSize = body.has("page_size") && !body.isNull("page_size")
+                ? Integer.valueOf(body.optInt("page_size", 0)) : null;
+        Integer page = body.has("page") && !body.isNull("page")
+                ? Integer.valueOf(body.optInt("page", 1)) : Integer.valueOf(1);
+        String note = global
+                ? "Fonte: iFlowGo · busca global · página " + page
+                  + (totalPages == null ? " (total de páginas não informado)" : " de " + totalPages)
+                  + (total == null ? "" : " · " + total + " resultados declarados pela fonte")
+                  + (hasMore ? "" : " · fim da paginação informada")
+                : "Fonte: iFlowGo · consulta por área (raio limitado pela fonte).";
+        if (rejected > 0) note += " " + rejected + " registro(s) sem coordenada/expiração válida.";
+        return new EventPage(out, hasMore, total, totalPages, pageSize, page, received, rejected, note);
+    }
+
+    private static SourceEvent spawnEvent(JSONObject o, double lat, double lon, long now) {
+        int dex = number(o, "pokemon_id", 1, 1025);
+        if (dex < 1) return null;
+        long expires = isoMs(o.optString("expires_at", ""));
+        if (expires > 0 && expires <= now) return null;
+        int cp = number(o, "cp", 0, 20000);
+        int level = number(o, "level", 1, 55);
+        int atk = number(o, "attack_iv", 0, 15);
+        int def = number(o, "defense_iv", 0, 15);
+        int sta = number(o, "stamina_iv", 0, 15);
+        int gender = number(o, "gender", 0, 3);
+        Double iv = o.has("percent_iv") && !o.isNull("percent_iv")
+                ? o.optDouble("percent_iv", Double.NaN) : null;
+        if (iv != null && (!Double.isFinite(iv) || iv < 0 || iv > 100)) iv = null;
+        return SourceEvent.builder("iflowgo", key(o, "spawn", dex, lat, lon), SourceEvent.Kind.POKEMON)
+                .originKind(OriginKind.LIVE_EXTERNAL)
+                .coordinates(lat, lon).pokemonId(dex).name("#" + dex)
+                .cp(cp < 0 ? null : cp).level(level < 0 ? null : level)
+                .ivPercent(iv).ivAtk(atk < 0 ? null : atk).ivDef(def < 0 ? null : def)
+                .ivSta(sta < 0 ? null : sta)
+                .gender(gender < 0 ? null : (gender == 1 ? "MALE" : gender == 2 ? "FEMALE" : "GENDERLESS"))
+                .observedAt(now).retrievedAt(now).expiresAt(expires)
+                .dataQuality(SourceEvent.QUALITY_PROVIDER_CLAIMED)
+                .coverage("iFlowGo · raio limitado; não é cobertura mundial")
+                .note(expires == 0 ? "Expiração não informada pela fonte." : "")
+                .build();
+    }
+
+    private static SourceEvent raidEvent(JSONObject o, double lat, double lon, long now) {
+        long ends = isoMs(o.optString("raid_end_at", ""));
+        if (ends <= now) return null;
+        long hatch = isoMs(o.optString("raid_battle_at", ""));
+        int boss = number(o, "raid_pokemon_id", 1, 1025);
+        int tier = number(o, "raid_level", 1, 20);
+        boolean egg = hatch > now;
+        boolean bossLive = hatch > 0 && !egg && boss > 0;
+        String name = clean(o.optString("gym_name", ""), 90);
+        return SourceEvent.builder("iflowgo", key(o, "raid", boss, lat, lon), SourceEvent.Kind.RAID)
+                .originKind(OriginKind.LIVE_EXTERNAL)
+                .coordinates(lat, lon).name(name.isEmpty() ? "Ginásio" : name)
+                .pokemonId(bossLive ? boss : null)
+                .level(tier < 0 ? null : tier)
+                .observedAt(now).retrievedAt(now).expiresAt(ends)
+                .dataQuality(SourceEvent.QUALITY_PROVIDER_CLAIMED)
+                .coverage("iFlowGo · camada de reides da consulta por área")
+                .note(egg ? "Ovo de reide (ainda não eclodiu)." : (bossLive ? "Chefe confirmado pela fonte."
+                        : "Reide sem chefe confirmado."))
+                .build();
     }
 }
