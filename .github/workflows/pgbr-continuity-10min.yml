@@ -42,6 +42,39 @@ jobs:
           [[ "$master" =~ ^[0-9a-f]{40}$ ]]
           issues=$(gh api --paginate "repos/$REPO/issues?state=open&per_page=100" | jq -s '[.[][] | select(has("pull_request") | not)] | length')
           prs=$(gh api --paginate "repos/$REPO/pulls?state=open&per_page=100" | jq -s '[.[][]] | length')
+          queue=$(mktemp)
+          trap 'rm -f "$queue"' EXIT
+          gh api "repos/$REPO/contents/MESTRE.md?ref=$sha" --jq '.content' | base64 --decode > "$queue"
+          # Validate stable numbered IDs; only IDs and counts enter the report.
+          queue_report=$(python3 - "$queue" <<'PY'
+          import pathlib, re, sys
+          def parse(raw):
+              rows=[]
+              for line in raw.splitlines():
+                  if not re.match(r'^\d+\.\s+\[',line):
+                      continue
+                  match=re.match(r'^(\d+)\.\s+\[([ xX])\]\s+([A-Z][A-Z0-9-]*)(?=\s|$)',line)
+                  if not match:
+                      raise ValueError("Linha numerada da fila inválida")
+                  rows.append((int(match[1]),match[2].lower()=="x",match[3]))
+              if not rows or [r[0] for r in rows]!=list(range(1,len(rows)+1)) or len({r[2] for r in rows})!=len(rows):
+                  raise ValueError("Fila vazia, numeração descontínua ou ID repetido")
+              return rows
+          assert parse("1. [x] TEST-01 — concluído\n2. [ ] TEST-02 — aberto")==[(1,True,"TEST-01"),(2,False,"TEST-02")]
+          for bad in ("", "1. [ ] TEST-01\n3. [x] TEST-02", "1. [ ] TEST-01\n2. [x] TEST-01"):
+              try:
+                  parse(bad)
+              except ValueError:
+                  pass
+              else:
+                  raise RuntimeError("Teste de integridade da fila falhou")
+          rows=parse(pathlib.Path(sys.argv[1]).read_text(encoding="utf-8"))
+          pending=[r[2] for r in rows if not r[1]]
+          print(f"- Itens no MESTRE.md: {len(rows)}; concluídos: {len(rows)-len(pending)}; abertos: {len(pending)}")
+          print("- Primeiros IDs abertos na ordem da fila: "+(", ".join(pending[:10]) or "nenhum"))
+          print("- Fila sem itens abertos não comprova homologação ou publicação.")
+          PY
+          )
           missing=0
           {
             printf '# Continuidade PGBR\n\n'
@@ -49,6 +82,7 @@ jobs:
             printf -- '- [Arquivo Mestre nesta HEAD](https://github.com/%s/blob/%s/PGBR_ARQUIVO_MESTRE_UNICO.md), blob `%s`\n' "$REPO" "$sha" "$master"
             printf -- '- [Issues abertas](https://github.com/%s/issues): %s\n' "$REPO" "$issues"
             printf -- '- [PRs abertas](https://github.com/%s/pulls): %s\n' "$REPO" "$prs"
+            printf '\n## Fila numerada do MESTRE.md na mesma HEAD\n\n%s\n' "$queue_report"
             printf '\n## CI da HEAD (não equivale a teste físico)\n\n'
             for workflow in pgbr-codigo-ci.yml pgbr-auditoria-mestre.yml; do
               runs=$(gh api "repos/$REPO/actions/workflows/$workflow/runs?branch=main&head_sha=$sha&per_page=100")
