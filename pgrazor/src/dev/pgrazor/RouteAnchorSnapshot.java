@@ -44,6 +44,7 @@ final class RouteAnchorSnapshot {
                     refs == null || refs.length != count) return null;
             return new RouteAnchorSnapshot(refs);
         } catch (RuntimeException invalid) {
+            invalid.printStackTrace();
             return null;
         }
     }
