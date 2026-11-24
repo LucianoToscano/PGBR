@@ -17,7 +17,7 @@ public final class LocalEventImportTest {
         String canonical = "{\"format\":\"PGBR events\",\"version\":1,\"events\":["
                 + "{\"source_id\":\"import\",\"event_id\":\"e1\",\"kind\":\"pokemon\",\"origin_kind\":\"personal_import\","
                 + "\"latitude\":-23.55,\"longitude\":-46.63,\"pokemon_id\":25,\"iv_percent\":100.0,\"cp\":500,\"level\":20},"
-                + "{\"source_id\":\"import\",\"event_id\":\"e1\",\"kind\":\"pokemon\",\"latitude\":-23.55,\"longitude\":-46.63}]"
+                + "{\"source_id\":\"import\",\"event_id\":\"e1\",\"kind\":\"pokemon\",\"latitude\":-23.55,\"longitude\":-46.63}"
                 + ",{\"latitude\":0,\"longitude\":0}]}";
         LocalEventImport.Report json = LocalEventImport.parse(canonical, NOW);
         check(json.imported == 1, "Um evento válido, foi " + json.imported);
