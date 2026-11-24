@@ -144,8 +144,12 @@ public final class SavedPlaces {
         if (read().damaged) {
             try {
                 String raw = preferences.getString("places", "[]");
-                if (raw != null && raw.length() <= JSON_LIMIT) editor.putString("recovered-from", raw);
-            } catch (ClassCastException ignored) { }
+                if (raw == null || raw.length() > JSON_LIMIT)
+                    throw new IOException("Locais danificados: original preservado; recuperação necessária.");
+                editor.putString("recovered-from", raw);
+            } catch (ClassCastException invalidType) {
+                throw new IOException("Locais danificados: tipo inválido; original preservado.", invalidType);
+            }
         }
         if (!editor.putString("places", encoded).commit()) throw new IOException("Could not save places to device storage. Please retry.");
     }
