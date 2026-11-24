@@ -5,7 +5,7 @@ import unittest
 ROOT=Path(__file__).resolve().parents[2]
 class Lt039ReleaseContract(unittest.TestCase):
     def test_version_and_release_workflow(self):
-        self.assertIn((ROOT/"pgrazor/VERSION").read_text(encoding="utf-8").strip(),("0.00.39-LT","0.00.40-LT","0.00.41-LT","0.00.42-LT","0.00.43-LT","0.00.44-LT","0.00.45-LT","0.00.46-LT"))
+        self.assertIn((ROOT/"pgrazor/VERSION").read_text(encoding="utf-8").strip(),("0.00.39-LT","0.00.40-LT","0.00.41-LT","0.00.42-LT","0.00.43-LT","0.00.44-LT","0.00.45-LT","0.00.46-LT","0.00.47-LT"))
         w=(ROOT/".github/workflows/pgbr-lt039-release.yml").read_text(encoding="utf-8")
         for text in ("PGRAZOR_VERSION: v0.00.39-LT","--tag v0.00.39-LT",
             "PGBR-v0.00.39-LT.apk","PGBR-v0.00.39-LT-Root.apk",

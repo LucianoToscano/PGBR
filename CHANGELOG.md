@@ -1,3 +1,9 @@
+## PGBR LT047 (0.00.47-LT) — candidata consolidada
+
+- Numeração exclusiva para distinguir o novo código da QA experimental LT046.
+- Integra #201 (layout compacto, filtros recolhíveis e coordenadas inferiores), preservando #188/#189/#193; CI do HEAD #201 aprovado.
+- Rota visual automática #199 não integrada; homologação física e publicação não comprovadas.
+
 ## PGBR LT046 (0.00.46-LT) — candidata em verificação de build (não publicada)
 
 - **Preparação e build QA (24/11/2026):** VERSION elevado para `0.00.46-LT`; novo workflow `pgbr-lt046-qa.yml` (somente `workflow_dispatch`, sem publicação) e contrato `test_lt046_release_contract.py` fail-closed; notas em `docs/releases/v0.00.46-LT.md`. PR #175 (`01b067e`) mesclada; build QA `45382217542` `completed/success`; artefato `PGBR-LT046-Root-e-SemRoot-QA` (id `14914618192`, digest do ZIP sha256:ca8775edc8015282351286c813b1c9dedf086852a4f771a8d82bb5368110260a). Hashes individuais dentro do artefato. Nenhuma tag/APK/release LT046 existe; publicação não autorizada nesta etapa.

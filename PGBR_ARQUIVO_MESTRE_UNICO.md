@@ -2199,3 +2199,8 @@ Atuar como engenharia Android Java/C++/JNI/Unity/IL2CPP, Python, APIs, UI, banco
 
 - Capturas físicas recebidas: menu antigo de Mapa Mundial e Pontos de interesse, mapa comprimido, coordenadas superiores; traçado não demonstrado. No diálogo exibido, projeção automática desmarcada e nenhum percurso ativo; não se conclui causa da ausência de linha. Não publicar imagens ou dados da conta.
 - Branch independente `fix/lt046-layout-reconciliado-issue200`, base `611e5855665d331369c40facbbc9971a04f2d7b0`. Os blobs de WorldMapDialog.java e test_route_trace_java.py na base original #195 eram idênticos aos da main; portados exatamente os dois blobs do HEAD #195, sem alterar motores ou outros módulos. Limpeza apenas do marcador solitário `<<<<<<< HEAD` neste Mestre, preservando todas as linhas de conteúdo. CI sobre a nova revisão obrigatório; device_tested=false. PR #199 experimental permanece isolada. [Issue #200](https://github.com/LucianoToscano/PGBR/issues/200).
+
+
+## 24/11/2026 — Identificação LT047
+
+- PR #201 integrada em 8c644bc33d06d8772b939a0f07b94d4de5f8a542 após CI 45479212037 (5/5 jobs) e 45479212042 aprovados. Nova candidata 0.00.47-LT separa a futura compilação dos QA LT046 anteriores. Contratos históricos preservados, admitindo especificamente a nova versão. Não há comprovação de APK LT047 publicado nem de teste físico; protótipo #199 não incluído.
