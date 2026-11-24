@@ -69,7 +69,7 @@ final class RouteTraceView extends View {
         canvas.drawPath(remaining,paint);
         paint.setColor(style.color(style.showProgress?style.completed:style.remaining));
         canvas.drawPath(completed,paint);
-        if(style.showMarkers){marker(canvas,0,0xff168fea);marker(canvas,geometry.size()-1,0xffe2574f);}
+        if(style.showMarkers){if(geometry.startMarker)marker(canvas,0,0xff168fea);if(geometry.endMarker)marker(canvas,geometry.size()-1,0xffe2574f);}
     }
 
     private void marker(Canvas canvas,int index,int color) {
