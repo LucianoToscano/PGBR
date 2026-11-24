@@ -59,7 +59,9 @@ final class LocalDiagnosticSummary {
         checkCanceled();
         String[] lines=raw.split("\\r\\n|\\n|\\r",-1);
         if(lines.length>MAX_LINES)throw new IllegalArgumentException("Excesso de registros.");
-        int end=lines.length-1;while(end>0&&lines[end].trim().isEmpty())end--;
+        int end=lines.length-1;while(end>0&&lines[end].trim().isEmpty()){checkCanceled();end--;}
+        // Permit only a single UTF-8 BOM at the beginning of a copied filtered file.
+        if(lines[0].startsWith("\uFEFF"))lines[0]=lines[0].substring(1);
         if(end<1||!HEADER.equals(lines[0]))throw new IllegalArgumentException("Use apenas o arquivo diagnostico.txt filtrado.");
         Matcher footer=FOOTER.matcher(lines[end]);if(!footer.matches())throw new IllegalArgumentException("Diagnóstico incompleto: rodapé ausente.");
         int omitted=Integer.parseInt(footer.group(1)),records=0,unknown=0,other=0;

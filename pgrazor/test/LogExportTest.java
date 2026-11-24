@@ -51,6 +51,10 @@ public final class LogExportTest {
         LocalDiagnosticSummary.Summary summary=LocalDiagnosticSummary.parse(safe);
         LocalDiagnosticSummary.Summary crlf=LocalDiagnosticSummary.parse(safe.replace("\n","\r\n"));
         if(crlf.records!=summary.records||crlf.omitted!=summary.omitted||!crlf.icons.equals(summary.icons))throw new AssertionError("CRLF summary");
+        LocalDiagnosticSummary.Summary bom=LocalDiagnosticSummary.parse("\uFEFF"+safe);
+        if(bom.records!=summary.records||bom.omitted!=summary.omitted||!bom.icons.equals(summary.icons)||!bom.battle.equals(summary.battle)||!bom.transfers.equals(summary.transfers))throw new AssertionError("BOM summary parity");
+        try{LocalDiagnosticSummary.parse("\uFEFF\uFEFF"+safe);throw new AssertionError("Duplicate BOM accepted");}catch(IllegalArgumentException expected){}
+        try{LocalDiagnosticSummary.parse("\uFEFF"+raw);throw new AssertionError("Raw diagnostic with BOM accepted");}catch(IllegalArgumentException expected){}
         if(summary.records!=5||summary.omitted!=1||summary.unclassified!=1||summary.transfers.get(12)!=1||summary.battle.get("actor-unknown")!=1||summary.icons.get(708)!=1||summary.icons.get(1401)!=1)throw new AssertionError("Filtered diagnostic summary");
         if(summary.describe().contains("private-example")||summary.describe().contains("secret-example")||!summary.describe().contains("não Pokémon únicos"))throw new AssertionError("Summary privacy or caveat");
         try{LocalDiagnosticSummary.parse(safe.substring(0,safe.indexOf("Registros omitidos:")));throw new AssertionError("Truncated diagnostic");}catch(IllegalArgumentException expected){}

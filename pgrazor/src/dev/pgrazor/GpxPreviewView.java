@@ -50,17 +50,19 @@ final class GpxPreviewView extends View {
   android.widget.Button apply=new android.widget.Button(MapTheme.wrap(a));apply.setText("Exibir distância");apply.setAllCaps(false);apply.setTextColor(MapTheme.ink());MapTheme.setButtonBackground(apply);box.addView(apply);
   android.widget.Button finish=new android.widget.Button(MapTheme.wrap(a));finish.setText("Exibir percurso completo");finish.setAllCaps(false);finish.setTextColor(MapTheme.ink());MapTheme.setButtonBackground(finish);box.addView(finish);
   final boolean[] syncing={false};
+  final String[] displayedDistance={""};
   java.util.function.DoubleConsumer update=distance->{
    v.setDistance(distance);syncing[0]=true;
    try{seek.setProgress(v.geo.percentForDistance(distance));}finally{syncing[0]=false;}
    // Round down to the displayed precision so reapplying the field never exceeds route length.
-   km.setText(java.math.BigDecimal.valueOf(distance/1000).setScale(6,java.math.RoundingMode.DOWN).toPlainString().replace('.',','));
+   displayedDistance[0]=java.math.BigDecimal.valueOf(distance/1000).setScale(6,java.math.RoundingMode.DOWN).toPlainString().replace('.',',');
+   if(!displayedDistance[0].contentEquals(km.getText()))km.setText(displayedDistance[0]);
    km.setError(null);
    String progress=v.geo.meters==0?"Sem extensão mensurável":String.format(Locale.forLanguageTag("pt-BR"),"%.2f%%",100*(distance/v.geo.meters));
    summary.setText(String.format(Locale.forLanguageTag("pt-BR"),"%d pontos • %.3f km\nPrévia: %s • %.3f km • restam %.3f km\nVerde: início • Laranja: fim • Azul: trecho percorrido\nProgresso ilustrativo, sem movimentação.",route.size(),v.geo.meters/1000,progress,distance/1000,(v.geo.meters-distance)/1000));
   };
   seek.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){public void onProgressChanged(SeekBar s,int p,boolean user){if(user&&!syncing[0])update.accept(v.geo.distanceForPercent(p));}public void onStartTrackingTouch(SeekBar s){}public void onStopTrackingTouch(SeekBar s){}});
-  apply.setOnClickListener(x->{try{update.accept(v.geo.distanceFromKm(Double.parseDouble(km.getText().toString().trim().replace(',','.'))));}catch(IllegalArgumentException invalid){km.setError("Informe uma distância válida dentro da rota.");}});
+  apply.setOnClickListener(x->{try{String entered=km.getText().toString().trim();update.accept(entered.equals(displayedDistance[0])?v.distance:v.geo.distanceFromKm(Double.parseDouble(entered.replace(',','.'))));}catch(IllegalArgumentException invalid){km.setError("Informe uma distância válida dentro da rota.");}});
   finish.setOnClickListener(x->update.accept(v.geo.meters));
   update.accept(0);
   android.widget.ScrollView scroll=new android.widget.ScrollView(MapTheme.wrap(a));scroll.addView(box);
