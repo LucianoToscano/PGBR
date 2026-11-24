@@ -1,4 +1,19 @@
-## PGBR LT045 (v0.00.45-LT) — candidata QA, publicação pendente
+## PGBR LT046 — candidata em desenvolvimento (não publicada)
+
+- PR #164, base LT045 publicada: proteção local individual/em lote, etiquetas e espécies informadas manualmente, motivos de rejeição por linha, invalidação de resultados e planejamento local de frutas, energia, eficácia e preparação Max.
+- Prévia GPX por distância e percentual; limites agregados de pontos em GPX e novas importações JSON; compatibilidade com arquivos históricos.
+- Exportações locais verificadas por SHA-256 antes de concluir; resumo de diagnósticos filtrados, sem inferir Pokémon únicos nem execução de ações.
+- Cache de sprites limitado, validação estrutural dos PNGs, controles acessíveis, teclado adequado ao campo, diálogos roláveis e data PT-BR com fuso.
+- CI do commit c2f389e aprovado 3/3; revisões posteriores dependem de CI do HEAD exato. [Matriz de homologação](docs/validation/LT046_HOMOLOGACAO.md). Não há APK LT046 nem homologação física confirmada. O arquivo VERSION permanece LT045 até a preparação de entrega.
+
+## PGBR LT045 (v0.00.45-LT) — pré-release QA publicada (24/11/2026)
+- **Publicação QA confirmada:** 2026-11-24T06:03:08Z (UTC); merge #163, 205ac2105a45dac4821c26b9ff73e66c4097e76a. [Release](https://github.com/LucianoToscano/PGBR/releases/tag/v0.00.45-LT). Assets e digests conferidos na API:
+  - [PGBR-v0.00.45-LT-Root-module.zip](https://github.com/LucianoToscano/PGBR/releases/download/v0.00.45-LT/PGBR-v0.00.45-LT-Root-module.zip) — sha256:b6772c06d24ef78429c0e2028896dcf2c94bb3f27ddcc3d7a3d99ca1075814dc
+  - [PGBR-v0.00.45-LT-Root.apk](https://github.com/LucianoToscano/PGBR/releases/download/v0.00.45-LT/PGBR-v0.00.45-LT-Root.apk) — sha256:b45b23853b6a433fe6011307e4c455169ad06e6fe423d1fb3d12344f5b5abc32
+  - [PGBR-v0.00.45-LT.apk](https://github.com/LucianoToscano/PGBR/releases/download/v0.00.45-LT/PGBR-v0.00.45-LT.apk) — sha256:88d232fcb8f7a1ec70fd0ea5b3581fd4d2cf0895a54e1dabe757c9cac9868b9e
+  - [SHA256SUMS.txt](https://github.com/LucianoToscano/PGBR/releases/download/v0.00.45-LT/SHA256SUMS.txt) — sha256:5f31b4ba701041a556c18e6771087c8b1f0b273de536d869d5e162e81e9bbba8
+- `device_tested=false`; `provider_connected=false`. Não é release estável.
+
 
 - Prévia local: evidências contraditórias explicitadas; comparação de ataques por eficiência, dano, duração PvE e PS restantes sem escudo. Nenhuma ação executada pelo simulador.
 
