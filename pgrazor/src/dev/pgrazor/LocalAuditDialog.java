@@ -176,6 +176,22 @@ final class LocalAuditDialog {
  }
  static void itemGallery(Activity a){
   LinearLayout b=body(a);text(a,b,"Conferência visual dos ícones já empacotados. Compare pelo ID com o catálogo autorizado. Imagem decodificada não comprova identidade visual. Nenhum inventário é lido.");
+  EditText lookup=numeric(a,b,"Consultar ID de catálogo (1–999999)","",false,false);
+  LinearLayout inspected=body(a);b.addView(inspected);
+  lookup.addTextChangedListener(new android.text.TextWatcher(){
+   public void beforeTextChanged(CharSequence s,int start,int count,int after){}
+   public void onTextChanged(CharSequence s,int start,int before,int count){inspected.removeAllViews();}
+   public void afterTextChanged(android.text.Editable e){}
+  });
+  action(a,b,"Conferir ID informado",()->{
+   inspected.removeAllViews();
+   try{
+    int id=integer(lookup);if(id<1||id>999999)throw new IllegalArgumentException();
+    ItemBadge badge=new ItemBadge(MapTheme.wrap(a),id);
+    inspected.addView(badge,new LinearLayout.LayoutParams(MapTheme.dp(a,56),MapTheme.dp(a,56)));
+    text(a,inspected,galleryLabel(id)+" • ID "+id+" • "+(badge.hasDecodedSprite()?"Imagem decodificada; confira a identidade":"Arte alternativa / ausente; não atribua outro ID por semelhança"));
+   }catch(IllegalArgumentException invalid){text(a,inspected,"Informe um ID válido de catálogo.");}
+  });
   LinearLayout gallery=body(a);b.addView(gallery);
   TextView pageLabel=text(a,b,"");int[] page={0};int pageSize=9;
   Button[] navigation=new Button[2];
@@ -284,7 +300,7 @@ final class LocalAuditDialog {
  }
  static void maxPlan(Activity a){
   LinearLayout b=body(a);text(a,b,"Preparação manual. Informe os tipos da forma correta, o tipo do golpe Max e um tipo de ataque do chefe que você confirmou. Isto compara apenas multiplicadores de tipo: não calcula dano, nível, habilidades Max, efeitos de equipe ou resultado da batalha.");
-  Spinner f1=select(a,b,"Tipo 1 do chefe",LocalAuditPolicy.TYPES),f2=select(a,b,"Tipo 2 do chefe",LocalAuditPolicy.TYPES),fm=select(a,b,"Tipo do ataque do chefe",LocalAuditPolicy.TYPES);
+  Spinner f1=select(a,b,"Tipo 1 do chefe",LocalAuditPolicy.TYPES),f2=select(a,b,"Tipo 2 do chefe",LocalAuditPolicy.TYPES),fm=select(a,b,"Tipo do ataque do chefe (Nenhum = desconhecido)",LocalAuditPolicy.TYPES);
   EditText stock=numeric(a,b,"Partículas disponíveis (-1 desconhecido)","-1",false,true),cost=numeric(a,b,"Custo informado pelo jogo (-1 desconhecido)","-1",false,true);
   EditText[] names=new EditText[3];Spinner[] own1=new Spinner[3],own2=new Spinner[3],moves=new Spinner[3],eligible=new Spinner[3];
   for(int i=0;i<3;i++){
@@ -305,9 +321,9 @@ final class LocalAuditDialog {
     int e=eligible[i].getSelectedItemPosition();
     out.append("\n").append(name).append(": ");
     if(e!=1){out.append(e==2?"não elegível conforme informado.":"elegibilidade não confirmada.");continue;}
-    LocalAuditPolicy.Matchup match=LocalAuditPolicy.matchup(own1[i].getSelectedItemPosition(),own2[i].getSelectedItemPosition(),moves[i].getSelectedItemPosition(),f1.getSelectedItemPosition(),f2.getSelectedItemPosition(),fm.getSelectedItemPosition());
-    if(match==null){out.append("tipagem incompleta ou inválida.");continue;}
-    out.append(String.format(Locale.forLanguageTag("pt-BR"),"ataque ×%.3f; defesa contra golpe informado ×%.3f",match.outgoing,match.incoming));
+    LocalAuditPolicy.Matchup match=LocalAuditPolicy.partialMatchup(own1[i].getSelectedItemPosition(),own2[i].getSelectedItemPosition(),moves[i].getSelectedItemPosition(),f1.getSelectedItemPosition(),f2.getSelectedItemPosition(),fm.getSelectedItemPosition());
+    out.append("Ataque: ").append(Double.isFinite(match.outgoing)?String.format(Locale.forLanguageTag("pt-BR"),"×%.3f",match.outgoing):"não confirmado");
+    out.append("; dano recebido por tipo: ").append(Double.isFinite(match.incoming)?String.format(Locale.forLanguageTag("pt-BR"),"×%.3f",match.incoming):"não confirmado");
    }
    if(present==0)out.append("\nNenhum candidato informado.");
    out.append("\n\nConfira regras e elegibilidade no jogo. Nenhuma equipe foi selecionada e nenhuma partícula foi gasta.");
