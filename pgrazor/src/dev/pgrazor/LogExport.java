@@ -45,7 +45,7 @@ public final class LogExport {
         return clean;
     }
     private static final java.util.regex.Pattern LOG_LINE=java.util.regex.Pattern.compile("^(?:\\[retained-context\\] )?(\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}(?:Z|[+-]\\d{2}:\\d{2})) \\[([a-z-]{1,40})\\] (.*)$");
-    private static final java.util.Set<String> SAFE_KINDS=new java.util.HashSet<>(java.util.Arrays.asList("transfer-kept","battle-action","runtime-gates","state-activation","panel-closed","disconnected","heartbeat-expired","route","game-routes","vgp","smart-battle","auto-raid","export-start","export-complete","export-error","log-recovery"));
+    private static final java.util.Set<String> SAFE_KINDS=new java.util.HashSet<>(java.util.Arrays.asList("transfer-kept","battle-action","runtime-gates","state-activation","panel-closed","disconnected","heartbeat-expired","route","game-routes","vgp","smart-battle","auto-raid","export-start","export-complete","export-error","log-recovery","item-icon-missing","item-icon-error"));
     private static final String[] SAFE_BOOLS={"smartAttackEnabled","classifierBound","chargeSeen","charge2Seen","chargeReady","charge2Ready","pvpExecutorReady","pvpObserved","vsSeekerPvPProbeReady","pvpTypeProbeReady"};
     private static final String[] SAFE_ENUMS={"smartAttackMode","actorIdentity","decision","reason","chargeTier","charge2Tier","mode","pvpScene","actorProbe"};
     private static final java.util.Set<String> SAFE_VALUES=new java.util.HashSet<>(java.util.Arrays.asList("rocket","pvp","training","unknown","not-observed","known","verified","hold","selected","select","off","on","super","neutral","normal","resisted","actor-unknown","actor-refresh","stale-effect","unknown-effect","unverified-slots","unavailable-pair","only-one-ready","effectiveness","known-super","hub","preparation","candidate","training-entry","scope-ended","vnext-closed","battle-ended","excluded-pve-scope"));
@@ -63,11 +63,18 @@ public final class LogExport {
             if(!m.matches()||!SAFE_KINDS.contains(m.group(2))){omitted++;continue;}
             JSONObject safe=new JSONObject();
             try{
+                // Item icon messages use a fixed leading catalog ID, never a player identifier.
+                // Discard the rest, including any path or exception message.
+                if("item-icon-missing".equals(m.group(2))||"item-icon-error".equals(m.group(2))){
+                    java.util.regex.Matcher id=java.util.regex.Pattern.compile("^id=([1-9][0-9]{0,5})(?:$| .*)").matcher(m.group(3));
+                    if(id.matches())safe.put("itemId",Integer.parseInt(id.group(1)));
+                }else{
                 JSONObject data=new JSONObject(m.group(3));
                 for(String key:SAFE_BOOLS){Object v=data.opt(key);if(v instanceof Boolean)safe.put(key,v);}
                 for(String key:SAFE_ENUMS){Object v=data.opt(key);if(v instanceof String&&SAFE_VALUES.contains(v))safe.put(key,v);}
                 for(String key:new String[]{"reasonCode","chargeCount","species","cp"}){
                     Object v=data.opt(key);if(v instanceof Number){double x=((Number)v).doubleValue();if(Double.isFinite(x)&&x==Math.rint(x)&&x>=0&&x<=100000)safe.put(key,(int)x);}
+                }
                 }
             }catch(JSONException ignored){}
             out.append(m.group(1)).append(" [").append(m.group(2)).append("] ").append(safe.toString()).append('\n');

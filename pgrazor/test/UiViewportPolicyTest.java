@@ -101,6 +101,6 @@ public final class UiViewportPolicyTest {
         }
     }
     private static void near(float actual,float expected){
-        if(Math.abs(actual-expected)>.001f)throw new AssertionError("safe control position: "+actual+" != "+expected);
+        if(!Float.isFinite(actual)||!Float.isFinite(expected)||Math.abs(actual-expected)>.001f)throw new AssertionError("safe control position: "+actual+" != "+expected);
     }
 }
