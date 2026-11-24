@@ -57,10 +57,15 @@ O release `v0.00.33-LT` é uma **nova identificação de build**, não uma mudan
 
 - Branch fix/lt046-gpx-export-validacao-20261124; base 0d29f3c1e0db08945b3299a3f0413a973004ee65 (merge #170). Validação de nomes compatíveis com XML 1.0, preservando pares Unicode válidos e saneando nomes de fallback inválidos. Exportação GPX verifica limite de 2 MB antes da escrita, inclusive para coordenadas decimais extremas, sem reduzir precisão nem copiar a matriz inteira de pontos. Fixtures de Unicode, round-trip e preservação do destino em exportação excessiva. CI e homologação física pendentes. Sem alteração de localização, jogo, automação, APK ou release.
 
-<a id="mestre-evidencias"></a>
 ### Checkpoint LT046 — cofre e consolidação QA (24/11/2026)
 
-- Base ed3684a7d24f98d3154b8cd001ea7f78cf0ed730; #171 merge 15d5e270e4c6a8e297b22b54aac296a7a0fd1851 e #172 merge ed3684a7d24f98d3154b8cd001ea7f78cf0ed730, CI geral 5/5 em cada HEAD. Changelog e matriz de homologação atualizados com referências de CI #166–#172. Revisão da janela de cofre local: operações serializadas por provedor no diálogo, campo e botões desabilitados durante consulta/salvamento/remoção, confirmação protegida e callbacks ignorados após Activity encerrada. Testes de ligação adicionados; novo CI pendente. Nenhuma conexão externa, alteração de jogo ou APK; teste físico pendente.
+- Base ed3684a7d24f98d3154b8cd001ea7f78cf0ed730; #171 merge 15d5e270e4c6a8e297b22b54aac296a7a0fd1851 e #172 merge ed3684a7d24f98d3154b8cd001ea7f78cf0ed730, CI geral 5/5 em cada HEAD. Changelog e matriz de homologação atualizados com referências de CI #166–#172. Revisão da janela de cofre local: operações serializadas por provedor no diálogo, campo e botões desabilitados durante consulta/salvamento/remoção, confirmação protegida e callbacks ignorados após Activity encerrada. Testes de ligação adicionados; CI pós-merge em 5f05c96566e0ea0cfac3080a407d296c0dcc93ba (PR #173) aprovado. Nenhuma conexão externa, alteração de jogo ou APK; teste físico pendente.
+
+### Checkpoint LT046 — interface, contexto PvP/VGP+ e preparação Max (24/11/2026)
+
+- Branch fix/lt046-interface-diagnostico-max-20261124, base ed3684a7d24f98d3154b8cd001ea7f78cf0ed730. Galeria local consulta ID exato informado, sem atribuir identidade por semelhança; invalida a inspeção ao editar. Resumo filtrado separa ausência/erro por ID e contabiliza eventos de contexto permitidos (vgp, panel-closed, heartbeat-expired etc.) sem inferir duração ou causa. Preparação Max calcula componentes ofensivo e defensivo independentemente, mantendo desconhecido quando faltam dados; nenhuma seleção ou execução de batalha. Fixtures e verificações de ligação; CI do PR #174 (7bc99533683c3abdea1ecb53dd58eb5aea1933ab) aprovado 6/6. Não adiciona arte não verificada nem resolve comportamento real de PvP/VGP+/Max; teste físico e identificação de IDs faltantes continuam necessários.
+
+<a id="mestre-evidencias"></a>
 
 ## 2. Hierarquia de evidências e estados
 Use os termos com precisão:

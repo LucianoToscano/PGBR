@@ -15,13 +15,16 @@ final class LocalDiagnosticSummary {
     private static final Set<String> BATTLE_REASONS=Collections.unmodifiableSet(new HashSet<>(Arrays.asList("actor-unknown","actor-refresh","stale-effect","unknown-effect","unverified-slots","unavailable-pair","only-one-ready","effectiveness","known-super","off")));
     private static final Set<String> OTHER=Collections.unmodifiableSet(new HashSet<>(Arrays.asList("runtime-gates","state-activation","panel-closed","disconnected","heartbeat-expired","route","game-routes","vgp","smart-battle","auto-raid","export-start","export-complete","export-error","log-recovery")));
     static final class Summary {
-        final Map<Integer,Integer> transfers,icons;
-        final Map<String,Integer> battle;
+        final Map<Integer,Integer> transfers,icons,missingIcons,errorIcons;
+        final Map<String,Integer> battle,observedEvents;
         final int omitted,records,unclassified,other;
-        Summary(Map<Integer,Integer> transfers,Map<Integer,Integer> icons,Map<String,Integer> battle,int omitted,int records,int unclassified,int other){
+        Summary(Map<Integer,Integer> transfers,Map<Integer,Integer> icons,Map<Integer,Integer> missingIcons,Map<Integer,Integer> errorIcons,Map<String,Integer> battle,Map<String,Integer> observedEvents,int omitted,int records,int unclassified,int other){
             this.transfers=Collections.unmodifiableMap(new TreeMap<>(transfers));
             this.icons=Collections.unmodifiableMap(new TreeMap<>(icons));
             this.battle=Collections.unmodifiableMap(new TreeMap<>(battle));
+            this.missingIcons=Collections.unmodifiableMap(new TreeMap<>(missingIcons));
+            this.errorIcons=Collections.unmodifiableMap(new TreeMap<>(errorIcons));
+            this.observedEvents=Collections.unmodifiableMap(new TreeMap<>(observedEvents));
             this.omitted=omitted;this.records=records;this.unclassified=unclassified;this.other=other;
         }
         String describe(){
@@ -32,11 +35,14 @@ final class LocalDiagnosticSummary {
             out.append("\nMotivos observados de combate:\n");
             if(battle.isEmpty())out.append("Nenhum motivo classificado.\n");
             for(Map.Entry<String,Integer> e:battle.entrySet())out.append(e.getKey()).append(": ").append(e.getValue()).append(" — ").append(LocalAuditPolicy.battleReason(e.getKey())).append('\n');
+            out.append("\nEventos de contexto (sem inferir causa, duração ou êxito):\n");
+            if(observedEvents.isEmpty())out.append("Nenhum evento de contexto reconhecido.\n");
+            for(Map.Entry<String,Integer> e:observedEvents.entrySet())out.append(e.getKey()).append(": ").append(e.getValue()).append('\n');
             out.append("\nÍcones ausentes ou com erro (ID de catálogo):\n");
             if(icons.isEmpty())out.append("Nenhum ID confirmado.\n");
             List<Map.Entry<Integer,Integer>> ranked=new ArrayList<>(icons.entrySet());
             ranked.sort((a,b)->{int n=Integer.compare(b.getValue(),a.getValue());return n!=0?n:Integer.compare(a.getKey(),b.getKey());});
-            for(int i=0;i<Math.min(ranked.size(),MAX_DISPLAY_ICONS);i++){Map.Entry<Integer,Integer> e=ranked.get(i);out.append(e.getKey()).append(": ").append(e.getValue()).append('\n');}
+            for(int i=0;i<Math.min(ranked.size(),MAX_DISPLAY_ICONS);i++){Map.Entry<Integer,Integer> e=ranked.get(i);out.append(e.getKey()).append(": ").append(e.getValue()).append(" (ausentes: ").append(missingIcons.getOrDefault(e.getKey(),0)).append("; erros: ").append(errorIcons.getOrDefault(e.getKey(),0)).append(")\n");}
             if(ranked.size()>MAX_DISPLAY_ICONS)out.append("Mais ").append(ranked.size()-MAX_DISPLAY_ICONS).append(" IDs distintos não exibidos. Total de IDs: ").append(ranked.size()).append('\n');
             return out.append("\nContagens não confirmam ação executada, causa individual, ausência de falhas ou funcionamento no aparelho. A exportação pode omitir campos e conter contexto repetido.").toString();
         }
@@ -65,7 +71,7 @@ final class LocalDiagnosticSummary {
         if(end<1||!HEADER.equals(lines[0]))throw new IllegalArgumentException("Use apenas o arquivo diagnostico.txt filtrado.");
         Matcher footer=FOOTER.matcher(lines[end]);if(!footer.matches())throw new IllegalArgumentException("Diagnóstico incompleto: rodapé ausente.");
         int omitted=Integer.parseInt(footer.group(1)),records=0,unknown=0,other=0;
-        Map<Integer,Integer> transfers=new TreeMap<>(),icons=new TreeMap<>();Map<String,Integer> battle=new TreeMap<>();
+        Map<Integer,Integer> transfers=new TreeMap<>(),icons=new TreeMap<>(),missingIcons=new TreeMap<>(),errorIcons=new TreeMap<>();Map<String,Integer> battle=new TreeMap<>(),observedEvents=new TreeMap<>();
         for(int i=1;i<end;i++){
             checkCanceled();records++;
             if(lines[i].length()>4200){unknown++;continue;}
@@ -78,11 +84,14 @@ final class LocalDiagnosticSummary {
                 }else if("battle-action".equals(kind)){
                     Object reason=data.opt("reason");if(!(reason instanceof String)||!BATTLE_REASONS.contains(reason))unknown++;else increment(battle,(String)reason);
                 }else if("item-icon-missing".equals(kind)||"item-icon-error".equals(kind)){
-                    Integer n=number(data.opt("itemId"),1,999999);if(n==null)unknown++;else increment(icons,n);
-                }else if(OTHER.contains(kind))other++;else unknown++;
+                    Integer n=number(data.opt("itemId"),1,999999);if(n==null)unknown++;else{
+                        increment(icons,n);
+                        increment("item-icon-missing".equals(kind)?missingIcons:errorIcons,n);
+                    }
+                }else if(OTHER.contains(kind)){other++;increment(observedEvents,kind);}else unknown++;
             }catch(JSONException e){unknown++;}
         }
-        return new Summary(transfers,icons,battle,omitted,records,unknown,other);
+        return new Summary(transfers,icons,missingIcons,errorIcons,battle,observedEvents,omitted,records,unknown,other);
     }
     private static Integer number(Object v,int min,int max){
         if(!(v instanceof Number))return null;

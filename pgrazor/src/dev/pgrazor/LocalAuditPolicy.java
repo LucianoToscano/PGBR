@@ -175,6 +175,11 @@ public final class LocalAuditPolicy {
   if(!Double.isFinite(outgoing)||!Double.isFinite(incoming))return null;
   return new Matchup(outgoing,incoming);
  }
+ /** Independent known components: missing boss move must not erase a valid offensive type comparison.
+  * NaN means unknown/invalid; never infer a neutral multiplier from missing facts. */
+ public static Matchup partialMatchup(int own1,int own2,int move,int foe1,int foe2,int foeMove){
+  return new Matchup(effectiveness(move,foe1,foe2),effectiveness(foeMove,own1,own2));
+ }
  public enum BudgetState { UNKNOWN, INSUFFICIENT, SUFFICIENT }
  public static BudgetState maxBudget(int available,int cost){
   if(available< -1||available>1000000||cost< -1||cost>1000000)throw new IllegalArgumentException("Partículas inválidas");
