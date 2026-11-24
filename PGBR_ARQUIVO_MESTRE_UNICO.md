@@ -2316,3 +2316,10 @@ O proprietário solicitou explicitamente que todos os requisitos, decisões, pri
   - PGBR-v0.00.47-LT-Root.apk: be4eba97b54d39eee480a97f71068499e95b69124a13aca283793ce7cfe7d997
   - PGBR-v0.00.47-LT-Root-module.zip: dbfe3c088fadd4e84850bc65af05757a317b0f449ccd2089383306c37770cdb8
 - Hashes provenientes do CI, sem rehash independente local. QA não é release pública. Próximo: verificar CI pós-merge, publicação oficial autorizada mediante interface disponível, reconciliar #204 (índice) com main atual e validar novo CI. device_tested=false; rota visual automática permanece isolada. Não sobrescrever versões históricas.
+
+
+## 24/11/2026 — Continuidade de engenharia a cada 10 minutos
+
+- Pedido do proprietário: complementar a automação ChatGPT de uma hora com GitHub Actions a cada dez minutos; manter o executor horário existente e não interferir em arena/. Base `6d31c30c94bd29d68189799b1fa01a0fc42f5872`, branch `maintenance/pgbr-continuity-10min-20261124`, workflow `.github/workflows/pgbr-continuity-10min.yml`, commit `c1eacd92fcde05a8305238bca1d63272089054a0`.
+- O fluxo programado (`*/10 * * * *`) e manual verifica a HEAD da main, existência e blob do Mestre canônico, contagem de issues e PRs abertas e estado dos workflows existentes de código e governança para a HEAD. Resumo disponível no Actions. Recupera apenas CI sem execução registrada, com nova verificação da HEAD e contagem, sem repetir CI falho automaticamente. Permissões mínimas; recuperação de CI restrita à main, fora de PR; concorrência serializada. Nenhuma alteração em código do aplicativo, branches arena/, VERSION, assinatura, APK ou releases.
+- Agendamento só entra em vigor na branch padrão após integração, sujeito à disponibilidade/atrasos do GitHub Actions. Não é agente de IA: não interpreta semanticamente todo o Mestre, não corrige código sozinho nem faz merge/release. Integração com executor de IA externo requer conexão autorizada e configuração próprias, sem reutilizar credenciais expostas. Teste de execução do novo fluxo e integração ainda não comprovados neste checkpoint; `device_tested=false` permanece.
