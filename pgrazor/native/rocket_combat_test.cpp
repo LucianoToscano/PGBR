@@ -752,14 +752,14 @@ int scenario(int n) {
       if(sc.vgest.tapped!=1||sc.vcharge.tapped||sc.vc2.tapped)return 85;
       break;
     }
-    case 42: { // Confirmed Charge2 is the only ready move; fire it without delay.
+    case 42: { // Confirmed SUPER Charge2 is the only ready move; fire it without delay.
       api->update(2,2500,tid);api->tick(tid,0);
       api->observe(PGR_RC_OBS_PVP_SCOPE_ENTER,&sc.vui,0,tid);
       api->observe(PGR_RC_OBS_VNEXT_UPDATE,&sc.vui,0,tid);
       sc.vc2.button=&sc.vbutton;sc.vcharge.vcharged=0;
       using namespace pgr_charge_effect_ui;
-      api->observe(PGR_RC_OBS_CHARGE,&sc.vcharge,pack({Slot::FIRST,Tier::SUPER,41}),tid);
-      api->observe(PGR_RC_OBS_CHARGE,&sc.vc2,pack({Slot::SECOND,Tier::RESISTED,41}),tid);
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vcharge,pack({Slot::FIRST,Tier::RESISTED,41}),tid);
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vc2,pack({Slot::SECOND,Tier::SUPER,41}),tid);
       pgrazor_rc_direct_smart_attack(1);
       api->tick(tid,0);
       if(sc.vcharge.tapped||sc.vc2.tapped!=1)return 86;
