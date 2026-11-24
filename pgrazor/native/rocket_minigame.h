@@ -67,6 +67,20 @@ struct PgrRocketMiniConfig {
 static_assert(sizeof(PgrRocketMiniConfig) == 184,
               "PgrRocketMiniConfig layout must match the JS adapter writer");
 
+// Optional v2 config tail. The v1 table and 184-byte config remain compatible.
+// Each shape binding must be complete and validated by the native host.
+struct PgrRocketMiniShape {
+    void *klass;
+    void *get_size;
+    void *set_size;
+    void *value_class;
+};
+struct PgrRocketMiniConfigV2 {
+    PgrRocketMiniConfig base; // version=2, size=sizeof(PgrRocketMiniConfigV2)
+    PgrRocketMiniShape sphere, box;
+};
+static_assert(sizeof(PgrRocketMiniConfigV2) == 248, "v2 config layout");
+
 // Status codes (0 == success). Shared spirit with the other feature headers.
 enum {
     PGR_RMINI_OK = 0,

@@ -196,7 +196,7 @@ int main() {
   assert(!allowed.hold&&allowed.index==1);
   guarded[1].ready=false;
   allowed=admit_display(true,5050,guarded,2);
-  assert(!allowed.hold&&allowed.index==0&&allowed.reason==DisplayReason::ONLY_ONE_READY); // ready neutral is immediate
+  assert(allowed.hold&&allowed.index==-1&&allowed.reason==DisplayReason::ONLY_ONE_READY); // reserve for confirmed super
   guarded[1].ready=true;
   allowed=admit_display(true,5300,guarded,2);
   assert(allowed.hold&&allowed.index==-1&&allowed.reason==DisplayReason::STALE_EFFECT);
@@ -220,8 +220,8 @@ int main() {
   guarded[0].ready=false;
   allowed=admit_display(true,5320,guarded,2);
   assert(!allowed.hold&&allowed.index==1); // equal tier: use ready one
-  // Full READY policy matrix with valid, same-batch samples:
-  // never wait on a higher-ranked but not-ready charged move.
+  // READY policy: reserve for confirmed SUPER, preserve immediate fallback
+  // when neither move is SUPER and classifications are known.
   guarded[0].ready=true;
   guarded[0].sample.tier=Tier::RESISTED;
   guarded[1].sample.tier=Tier::NEUTRAL;
@@ -231,7 +231,7 @@ int main() {
   guarded[0].sample.tier=Tier::NEUTRAL;
   guarded[1].sample.tier=Tier::SUPER;
   allowed=admit_display(true,5320,guarded,2);
-  assert(!allowed.hold&&allowed.index==0); // neutral ready, super charging
+  assert(allowed.hold&&allowed.index==-1); // neutral ready, super charging
   guarded[0].ready=false;
   guarded[1].ready=true;
   allowed=admit_display(true,5320,guarded,2);

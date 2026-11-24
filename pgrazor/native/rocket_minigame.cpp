@@ -22,7 +22,8 @@ typedef void (*UpdateFn)(void *, int64_t, void *);
 typedef void (*LifeFn)(void *, void *);
 
 std::mutex g_install_mutex;                    // serialises install() and publishes originals
-PgrRocketMiniConfig g_cfg{};                   // validated copy, published under the mutex
+PgrRocketMiniConfig g_cfg{};
+PgrRocketMiniShape g_sphere{}, g_box{};                   // validated copy, published under the mutex
 bool g_install_failed = false;                 // sticky; guarded by g_install_mutex
 
 std::atomic<int>     g_active{0};          // fully installed and live
@@ -45,6 +46,10 @@ struct MiniState {
     void *go;          // gchandle
     float scale[3];
     int   active;
+    void *collider; // optional shape-only path, separately rooted
+    PgrRocketMiniShape shape;
+    float dimensions[3];
+    float enlarged[3];
 };
 MiniState g_mini{};
 bool g_have_mini = false;
@@ -115,6 +120,55 @@ void set_active(void *go, int on) {
     inv(g_cfg.setActive_method, go, params);
 }
 
+// Resolve exact collider geometry only; never change unrelated renderers or
+// global camera/shader state. Unsupported collider classes retain v1 behavior.
+bool prepare_shape(void *collider, const float scale[3], MiniState &snap) {
+    const bool sphere = g_sphere.klass && exact(collider, g_sphere.klass);
+    const auto shape = sphere ? g_sphere : g_box;
+    if (!shape.klass || !exact(collider, shape.klass)) return false;
+    // Keep a root across all subsequent invocations.
+    void *h = g_cfg.root(collider, 0);
+    if (!h) return false;
+    void *boxed = inv(shape.get_size, g_cfg.target(h), nullptr);
+    const float *v = exact(boxed, shape.value_class) ?
+        static_cast<const float *>(g_cfg.object_unbox(boxed)) : nullptr;
+    bool ok = v != nullptr;
+    float dims[3]{}, enlarged[3]{};
+    const int n = sphere ? 1 : 3;
+    for (int i=0; i<n && ok; ++i) {
+        dims[i] = v[i];
+        if (!std::isfinite(dims[i]) || dims[i] <= 0.f) ok=false;
+    }
+    // Match the prior expansion in local units while leaving the transform alone.
+    // A zero or extremely small scale cannot be compensated safely.
+    float factors[3]{};
+    for (int i=0; i<3 && ok; ++i) {
+        const float a=std::fabs(scale[i]);
+        if (a < 0.001f) { ok=false; break; }
+        factors[i]=1000.f*std::fmax(a,1.f)/a;
+    }
+    if (ok && sphere) {
+        // SphereCollider uses the largest magnitude scale axis.
+        const float old_max=std::fmax(std::fabs(scale[0]),std::fmax(std::fabs(scale[1]),std::fabs(scale[2])));
+        factors[0]=1000.f*std::fmax(old_max,1.f)/old_max;
+    }
+    for (int i=0; i<n && ok; ++i) {
+        enlarged[i]=dims[i]*factors[i];
+        if (!std::isfinite(enlarged[i]) || enlarged[i] > 1000000.f) ok=false;
+    }
+    if (!ok) { g_cfg.free_root(h); return false; }
+    snap.collider=h; snap.shape=shape;
+    std::memcpy(snap.dimensions,dims,sizeof(dims));
+    std::memcpy(snap.enlarged,enlarged,sizeof(enlarged));
+    return true;
+}
+void set_dimensions(const MiniState &snap, const float *v) {
+    void *obj=g_cfg.target(snap.collider);
+    if (!exact(obj,snap.shape.klass) || !obj_alive(obj)) return;
+    void *args[]={const_cast<float *>(v)};
+    inv(snap.shape.set_size,obj,args);
+}
+
 // Snapshot is detached before any restoring call so a SetActive-driven re-entry cannot
 // see a half-restored state (it sees g_have_mini == false, intentionally). Handles are
 // freed only after the restore calls complete. Restore runs regardless of the failed
@@ -130,8 +184,10 @@ void do_restore() {
     g_restore_pending.store(0);
     void *transform = g_cfg.target(snap.transform);
     void *go = g_cfg.target(snap.go);
-    if (transform && obj_alive(transform)) set_scale(transform, snap.scale);
+    if (snap.collider) set_dimensions(snap, snap.dimensions);
+    else if (transform && obj_alive(transform)) set_scale(transform, snap.scale);
     if (go && obj_alive(go)) set_active(go, snap.active);
+    if (snap.collider) g_cfg.free_root(snap.collider);
     g_cfg.free_root(snap.challenge);
     g_cfg.free_root(snap.transform);
     g_cfg.free_root(snap.go);
@@ -149,7 +205,12 @@ void do_collect(void *challenge) {
     // running: read like present(challenge, running_field, 1) -> non-zero byte.
     uint8_t running = 0;
     g_cfg.field_get_value(challenge, g_cfg.running_field, &running);
-    if (running == 0) return;
+    if (running == 0) {
+        // Update can end the challenge before a lifecycle callback is delivered.
+        // Do not leave an enlarged visual object alive until the policy lease expires.
+        if (g_have_mini && g_cfg.target(g_mini.challenge) == challenge) do_restore();
+        return;
+    }
 
     // A different challenge means the previous one is stale: restore it first.
     if (g_have_mini && g_cfg.target(g_mini.challenge) != challenge) do_restore();
@@ -199,6 +260,16 @@ void do_collect(void *challenge) {
         }
 
         // Snapshot fully valid -> publish (g_have_mini last).
+        g_mini = {};
+        // Re-read the rooted challenge's collider after the managed calls above.
+        void *current_collider=nullptr;
+        g_cfg.field_get_value(g_cfg.target(ch_h),g_cfg.collider_field,&current_collider);
+        if (current_collider) prepare_shape(current_collider,sc,g_mini);
+        if (g_failed.load()) {
+            if (g_mini.collider) g_cfg.free_root(g_mini.collider);
+            g_cfg.free_root(ch_h); g_cfg.free_root(tr_h); g_cfg.free_root(go_h);
+            g_busy.store(0); return;
+        }
         g_mini.challenge = ch_h;
         g_mini.transform = tr_h;
         g_mini.go = go_h;
@@ -213,14 +284,25 @@ void do_collect(void *challenge) {
         if (a < 1.0f) a = 1.0f;
         scaled[i] = a * 1000.0f;
     }
-    set_scale(g_cfg.target(g_mini.transform), scaled);
+    if (g_mini.collider) set_dimensions(g_mini,g_mini.enlarged);
+    else set_scale(g_cfg.target(g_mini.transform), scaled);
     set_active(g_cfg.target(g_mini.go), 1);
     g_busy.store(0);
 }
 
 void maybe_restore_on_thread() {
-    if (g_have_mini && (g_restore_pending.load() || !native_allowed() ||
-        !obj_alive(g_cfg.target(g_mini.challenge)))) do_restore();
+    if (!g_have_mini) return;
+    if (g_restore_pending.load() || !native_allowed()) { do_restore(); return; }
+    void *challenge = g_cfg.target(g_mini.challenge);
+    if (!exact(challenge, g_cfg.mini_class) || !obj_alive(challenge)) {
+        do_restore();
+        return;
+    }
+    // The verified running field is also a lifecycle boundary when Exit/Hide
+    // arrives late or not at all. Restore on the proven Unity thread.
+    uint8_t running = 0;
+    g_cfg.field_get_value(challenge, g_cfg.running_field, &running);
+    if (running == 0) do_restore();
 }
 
 // --- original publication ---------------------------------------------------------
@@ -304,18 +386,33 @@ int api_install(const PgrRocketMiniConfig *cfg) {
     std::lock_guard<std::mutex> lk(g_install_mutex);
     if (g_install_failed) return PGR_RMINI_ERR_HOOK_FAILED; // never re-patch after a partial failure
 
-    if (cfg->version != 1 || cfg->size != sizeof(PgrRocketMiniConfig) || !config_pointers_ok(cfg))
-        return PGR_RMINI_ERR_BAD_CONFIG;
+    const bool v1=cfg->version==1 && cfg->size==sizeof(PgrRocketMiniConfig);
+    const bool v2=cfg->version==2 && cfg->size==sizeof(PgrRocketMiniConfigV2);
+    if ((!v1 && !v2) || !config_pointers_ok(cfg)) return PGR_RMINI_ERR_BAD_CONFIG;
+    PgrRocketMiniShape sphere{},box{};
+    if(v2) {
+        const auto *ext=reinterpret_cast<const PgrRocketMiniConfigV2 *>(cfg);
+        sphere=ext->sphere; box=ext->box;
+        auto valid=[](const PgrRocketMiniShape &s) {
+            return (!s.klass && !s.get_size && !s.set_size && !s.value_class) ||
+                   (s.klass && s.get_size && s.set_size && s.value_class);
+        };
+        if(!valid(sphere)||!valid(box)||(sphere.klass&&sphere.klass==box.klass))
+            return PGR_RMINI_ERR_BAD_CONFIG;
+    }
 
     if (g_active.load(std::memory_order_acquire)) {
         // Hooks live for the process lifetime: an identical repeat is a no-op success, a
         // different config is refused.
-        return std::memcmp(&g_cfg, cfg, sizeof(g_cfg)) == 0
+        return std::memcmp(&g_cfg, cfg, sizeof(g_cfg)) == 0 &&
+               std::memcmp(&g_sphere,&sphere,sizeof(sphere))==0 &&
+               std::memcmp(&g_box,&box,sizeof(box))==0
                    ? PGR_RMINI_OK
                    : PGR_RMINI_ERR_ALREADY_BOUND;
     }
 
     g_cfg = *cfg; // publish before any callback can read it (still under the mutex)
+    g_sphere=sphere; g_box=box;
     g_have_mini = false;
     g_failed.store(0);
     g_policy_on.store(0);

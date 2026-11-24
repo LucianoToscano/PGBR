@@ -164,9 +164,13 @@ inline DisplayAdmission admit_display(bool enabled,uint64_t now,
   if(ranking.index<0)return {-1,true,ranking.reason};
   const int best=ranking.index,other=1-best;
   if(items[best].ready)return {best,false,ranking.reason};
-  // Immediate charged-action policy: use the only READY classified move
-  // without waiting for a higher-ranked move to gain energy. Preserve the
-  // verified slot binding, per-tick action gates, and user-configured cadence.
+  // Smart ON: reserve energy for a confirmed SUPER move rather than
+  // repeatedly spending it on a weaker charge. Equal tiers and comparisons
+  // without a SUPER move retain the immediate-ready policy. No fixed delay;
+  // the best slot may fire as soon as it becomes ready.
+  if(items[best].sample.tier==pgr_charge_effect_ui::Tier::SUPER &&
+     items[other].sample.tier!=pgr_charge_effect_ui::Tier::SUPER)
+    return {-1,true,DisplayReason::ONLY_ONE_READY};
   // An UNKNOWN/hidden classification does not become NEUTRAL by fallback.
   if(items[other].ready &&
      items[other].sample.tier!=pgr_charge_effect_ui::Tier::UNKNOWN)

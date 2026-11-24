@@ -1094,6 +1094,31 @@ bool install_hook_group(const HookEntry *entries, size_t count) {
     return true;
 }
 
+// Optional exact Unity shape metadata; no hardcoded address or guessed field.
+// A missing binding does not alter the existing v1 behavior.
+PgrRocketMiniShape resolve_mini_shape(const char *name,const char *property,const char *value_ns,const char *value_name,const char *value_type) {
+ const auto *api=api_table<PgrMetaApi>(pgrazor_runtime_metadata_api(1));
+ const auto *boot=api_table<PgrBootApi>(pgrazor_runtime_bootstrap_api(1));
+ PgrBootBinding binding{};
+ if(!api||!api->resolve_class||!api->validate_method||!boot||!boot->snapshot||
+    boot->snapshot(&binding)!=PGR_BOOT_OK)return {};
+ auto klass=[&](const char *ns,const char *n)->void*{
+  PgrMetaClassQuery q{};q.version=1;q.size=sizeof(q);q.name_space=ns;q.name=n;q.canonical_match=PGR_MD_MATCH_EXACT;
+  PgrMetaClassResult r{};return api->resolve_class(&q,&r)==0?const_cast<void*>(r.klass):nullptr;
+ };
+ void *owner=klass("UnityEngine",name),*value=klass(value_ns,value_name);
+ if(!owner||!value)return {};
+ auto method=[&](const char *n,const char *ret,const char *param)->void*{
+  PgrMetaMethodQuery q{};q.version=1;q.size=sizeof(q);q.owner=owner;q.name=n;q.return_type=ret;
+  q.param_count=param?1:0;q.param_types[0]=param;q.return_match=q.param_match[0]=PGR_MD_MATCH_EXACT;
+  PgrMetaMethodResult r{};return api->validate_method(&q,&r)==0?const_cast<void*>(r.method):nullptr;
+ };
+ char get[32]{},set[32]{};
+ std::snprintf(get,sizeof(get),"get_%s",property);std::snprintf(set,sizeof(set),"set_%s",property);
+ void *getter=method(get,value_type,nullptr),*setter=method(set,"System.Void",value_type);
+ return getter&&setter?PgrRocketMiniShape{owner,getter,setter,value}:PgrRocketMiniShape{};
+}
+
 bool install_gym_next(){
  if(g_gym_next_ready)return true;
  const auto *api=api_table<PgrMetaApi>(pgrazor_runtime_metadata_api(1));
@@ -1265,9 +1290,13 @@ bool configure_and_install_rocket(uint64_t tid) {
             }
         }
         if (!mini_collision) {
-            PgrRocketMiniConfig mn_cfg{};
-            mn_cfg.version           = 1;
-            mn_cfg.size              = sizeof(mn_cfg);
+            PgrRocketMiniConfigV2 extended{};
+            auto &mn_cfg=extended.base;
+            extended.sphere=resolve_mini_shape("SphereCollider","radius","System","Single","System.Single");
+            extended.box=resolve_mini_shape("BoxCollider","size","UnityEngine","Vector3","UnityEngine.Vector3");
+            const bool shape_ready=extended.sphere.klass||extended.box.klass;
+            mn_cfg.version           = shape_ready?2:1;
+            mn_cfg.size              = shape_ready?sizeof(extended):sizeof(mn_cfg);
             mn_cfg.update_addr       = md_h(H_RK_MN_UPDATE_CODE);
             mn_cfg.exit_addr         = md_h(H_RK_MN_EXIT_CODE);
             mn_cfg.hide_addr         = md_h(H_RK_MN_HIDE_CODE);
