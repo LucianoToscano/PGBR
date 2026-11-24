@@ -18,29 +18,20 @@ public class RouteAnchorHarness {
   public static void main(String[] args) {
     int width=400,height=800;
     double[][] refs={ref(0,0),ref(1,0),ref(0,1),ref(1,1),ref(.3,.4),ref(.8,.6)};
-    double[][] normal=new double[6][4];
-    for(int i=0;i<6;i++)normal[i]=new double[]{refs[i][0],refs[i][1],refs[i][2]/width,refs[i][3]/height};
-    double[][] pixels=new double[6][4];
-    for(int i=0;i<6;i++)pixels[i]=new double[]{refs[i][0],refs[i][1],refs[i][2],refs[i][3]};
-    try { RouteGroundProjection direct=new RouteGroundProjection(pixels,width,height); System.out.println("DIRECT_OK "+direct); }
-    catch(IllegalArgumentException e) { System.out.println("DIRECT_FAIL "+e.getMessage()); }
-    RouteAnchorSnapshot a=RouteAnchorSnapshot.parse(json(normal,6));
+    RouteAnchorSnapshot a=RouteAnchorSnapshot.parse(json(refs,6));
     check(a!=null&&a.size()==6);
-    for(int i=0;i<a.size();i++){double[] rr=a.reference(i);System.out.println("PARSED "+i+" "+rr[0]+" "+rr[1]+" "+rr[2]+" "+rr[3]);}
     RouteGroundProjection p=a.fit(width,height);
-    for(int i=0;i<6;i++)System.out.println("REF "+i+" "+normal[i][0]+" "+normal[i][1]+" "+normal[i][2]+" "+normal[i][3]);
-    System.out.println("FIT "+(p==null?"null":"ok"));
     check(p!=null);
     double[] q=ref(.6,.7),s=p.project(q[0],q[1]);
     check(Math.hypot(q[2]-s[0],q[3]-s[1])<2);
-    check(RouteAnchorSnapshot.parse(json(normal,7))==null);
-    check(RouteAnchorSnapshot.parse(json(normal,6).replace("\"kind\"","\"bad\""))==null);
-    double[][] broken=normal.clone();
-    for(int i=0;i<broken.length;i++)broken[i]=normal[i].clone();
+    check(RouteAnchorSnapshot.parse(json(refs,7))==null);
+    check(RouteAnchorSnapshot.parse(json(refs,6).replace("\"kind\"","\"bad\""))==null);
+    double[][] broken=refs.clone();
+    for(int i=0;i<broken.length;i++)broken[i]=refs[i].clone();
     broken[5][2]+=10.0/width;
     RouteAnchorSnapshot bad=RouteAnchorSnapshot.parse(json(broken,6));
     check(bad!=null&&bad.fit(width,height)==null);
-    String offscreen=json(normal,6).replace("\"visible\":true","\"visible\":false");
+    String offscreen=json(refs,6).replace("\"visible\":true","\"visible\":false");
     RouteAnchorSnapshot none=RouteAnchorSnapshot.parse(offscreen);
     check(none!=null&&none.size()==0);
     System.out.println("PASS auto anchor snapshot");
