@@ -1,0 +1,27 @@
+import dev.pgrazor.*;
+import java.util.*;
+public class ScreenProjectionTest {
+  static void check(boolean ok,String msg){if(!ok)throw new AssertionError(msg);}
+  static void near(double a,double b,double tol){check(Math.abs(a-b)<=tol,a+" != "+b);}
+  static final int W=320,H=240;
+  static double[] ref(double x,double y){return new double[]{y*.001,x*.001,45+200*x,40+150*y};}
+  static int[] image(){int[] p=new int[W*H];Random r=new Random(17);for(int i=0;i<p.length;i++)p[i]=r.nextInt(256);return p;}
+  static int[] shift(int[] a,int dx,int dy){int[] b=new int[a.length];for(int y=0;y<H;y++)for(int x=0;x<W;x++){int xx=x-dx,yy=y-dy;if(xx>=0&&xx<W&&yy>=0&&yy<H)b[y*W+x]=a[yy*W+xx];}return b;}
+  public static void main(String[] args){
+    double[][] refs={ref(0,0),ref(1,0),ref(0,1),ref(1,1),ref(.3,.4),ref(.8,.6)};
+    int[] a=image();RouteScreenTracker tracker=new RouteScreenTracker(a,W,H,refs);
+    RouteGroundProjection p=tracker.update(shift(a,5,7));check(p!=null,"translation");
+    double[] q=p.project(.0005,.0005);near(q[0],150,1e-5);near(q[1],122,1e-5);
+    double[] c=p.clipSegment(.0005,-.0005,.0005,.0015);check(c!=null,"clip through hull");near(c[0],.25,1e-8);near(c[1],.75,1e-8);near(c[2],50,1e-5);near(c[4],250,1e-5);
+    check(p.clipSegment(.002,0,.002,.001)==null,"outside hull");
+    RouteTraceFrame frame=RouteScreenFrameBuilder.build(p,new double[][]{{.0005,-.0005},{.0005,.0015}},false,111.195,1,1000,640,480,2,2);
+    check(frame!=null,"build");check(!frame.geometry.startMarker&&!frame.geometry.endMarker,"clipped markers");
+    ArrayList<Boolean> progress=new ArrayList<>();frame.geometry.drawSegments(frame.completedMeters,(x1,y1,x2,y2,done)->progress.add(done));check(progress.equals(Arrays.asList(true,false)),"progress at clipped leg");
+    RouteTraceFrame pieces=RouteScreenFrameBuilder.build(p,new double[][]{{.0002,.0002},{.0002,.0008},{.003,.0008},{.003,.0002},{.0008,.0002},{.0008,.0008}},false,0,1,1000,W,H,1,1);
+    check(pieces!=null,"disconnected pieces");int[] n={0};pieces.geometry.drawSegments(0,(x1,y1,x2,y2,done)->n[0]++);check(n[0]==4,"no bridge: "+n[0]);
+    double[][] longRoute=new double[5000][2];for(int i=0;i<5000;i++){longRoute[i][0]=.0005;longRoute[i][1]=.0001+.0008*i/4999.0;}
+    RouteTraceFrame longFrame=RouteScreenFrameBuilder.build(p,longRoute,true,0,1,1000,W,H,1,1);check(longFrame!=null&&longFrame.geometry.size()==10000,"5000 point loop");
+    check(tracker.update(new int[W*H])==null,"blank screen rejected");check(tracker.update(a)==null,"loss latched");
+    System.out.println("PASS: translation, clipping, disconnected segments, progress, 5000-point loop, lost landmarks");
+  }
+}
