@@ -20,6 +20,8 @@ public final class SavedPlaces {
     public static final int NAME_LIMIT = 100;
     public static final String[] CATEGORIES=Entry.CATEGORIES;
     private static final int JSON_LIMIT = 64 * 1024;
+    // Multiple dialogs/importers can open separate instances for the same profile.
+    private static final Object LOCK = new Object();
     private final SharedPreferences preferences;
 
     public static final class Entry {
@@ -60,7 +62,7 @@ public final class SavedPlaces {
 
     public SavedPlaces(Context context) { preferences = AccountProfiles.preferences(context.getApplicationContext(),"pgrazor-saved-places-v1"); }
 
-    public synchronized Snapshot read() {
+    public Snapshot read() { synchronized (LOCK) {
         List<Entry> entries = new ArrayList<>();
         boolean damaged = false;
         try {
@@ -82,18 +84,18 @@ public final class SavedPlaces {
             }
         } catch (JSONException | ClassCastException e) { damaged = true; }
         return new Snapshot(entries, damaged);
-    }
+    } }
 
-    public synchronized void add(Entry entry) throws IOException {
+    public void add(Entry entry) throws IOException { synchronized (LOCK) {
         List<Entry> entries = new ArrayList<>(read().entries);
         if (entries.size() >= LIMIT) throw new IllegalArgumentException("Você atingiu o limite de 200 favoritos. Exclua um antes de adicionar outro.");
         for (Entry existing : entries) if (existing.name.equalsIgnoreCase(entry.name)) throw new IllegalArgumentException("A place with this name already exists. Choose another name.");
         entries.add(entry);
         write(entries);
-    }
+    } }
 
     /** Import an all-or-nothing list, retaining existing entries and skipping repeated names (distinct labels may share a location). */
-    synchronized int merge(List<Entry> additions) throws IOException {
+    int merge(List<Entry> additions) throws IOException { synchronized (LOCK) {
         Snapshot snapshot=read();
         if(snapshot.damaged)throw new IOException("Existing favorites are damaged.");
         List<Entry> merged=new ArrayList<>(snapshot.entries);
@@ -109,21 +111,21 @@ public final class SavedPlaces {
         if(merged.size()>LIMIT)throw new IOException("Too many saved places");
         if(added>0)write(merged);
         return added;
-    }
+    } }
 
     /** Roll back an importer without deleting favorites that existed before the import. */
-    synchronized void restoreSnapshot(Snapshot snapshot) throws IOException {
+    void restoreSnapshot(Snapshot snapshot) throws IOException { synchronized (LOCK) {
         if(snapshot==null||snapshot.damaged)throw new IOException("Invalid favorites rollback");
         write(new ArrayList<>(snapshot.entries));
-    }
+    } }
 
-    public synchronized boolean remove(String id) throws IOException {
+    public boolean remove(String id) throws IOException { synchronized (LOCK) {
         List<Entry> entries = new ArrayList<>(read().entries);
         boolean removed = false;
         for (int i = entries.size() - 1; i >= 0; i--) if (entries.get(i).id.equals(id)) { entries.remove(i); removed = true; }
         if (removed) write(entries);
         return removed;
-    }
+    } }
 
     private void write(List<Entry> entries) throws IOException {
         JSONArray array = new JSONArray();
