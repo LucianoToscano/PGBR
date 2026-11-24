@@ -53,7 +53,20 @@ final class PgSharpDataImport {
             "Registro inválido em " + name + ": " + (i+1));
         return array;
     }
-    // Keep existing archives readable; stricter aggregate budget applies to new imports only.
+    /** Do not let JSONObject.getString coerce numbers, booleans, null or objects into names. */
+    private static void validateName(JSONObject object,int limit,boolean note) throws JSONException {
+        Object value=object.opt("name");
+        check(value instanceof String,"Nome precisa ser texto");
+        if(note)return; // Sentinel rows are retained as original notes, never destinations.
+        String name=((String)value).trim();
+        check(!name.isEmpty()&&name.length()<=limit,"Nome vazio ou acima do limite");
+        for(int i=0;i<name.length();){
+            int cp=name.codePointAt(i);
+            check(!Character.isISOControl(cp)&&Character.getType(cp)!=Character.SURROGATE,"Nome com caractere inválido");
+            i+=Character.charCount(cp);
+        }
+    }
+    // Keep existing archives readable; stricter validation applies to new imports only.
     static void validate(JSONObject root) throws JSONException {
         validate(root,false);
     }
@@ -63,6 +76,10 @@ final class PgSharpDataImport {
     private static void validate(JSONObject root,boolean boundAggregate) throws JSONException {
         check(root!=null && FORMAT.equals(root.optString("format")), "Arquivo não é uma migração PGSharp do PGBR");
         check(root.optInt("version",-1)==1, "Versão de migração incompatível");
+        if(boundAggregate){
+            Object version=root.opt("version");
+            check(version instanceof Number&&((Number)version).doubleValue()==1.0,"Versão de migração incompatível");
+        }
         JSONArray favorites=bounded(root,"favorites",200);
         JSONArray routes=bounded(root,"routes",100);
         JSONArray pokemon=bounded(root,"pokemonFilters",500);
@@ -76,11 +93,13 @@ final class PgSharpDataImport {
             double lat=f.getDouble("lat"), lon=f.getDouble("lng");
             check(Double.isFinite(lat)&&Math.abs(lat)<=90&&Double.isFinite(lon)&&Math.abs(lon)<=180,
                 "Coordenadas fora de intervalo");
+            if(boundAggregate)validateName(f,SavedPlaces.NAME_LIMIT,lat==0.0&&lon==0.0);
         }
         long totalPoints=0;
         for(int i=0;i<routes.length();i++){
             JSONObject route=routes.getJSONObject(i);
             check(route.has("name"),"Rota sem nome");
+            if(boundAggregate)validateName(route,GpxRoute.NAME_LIMIT,false);
             JSONArray points=route.getJSONArray("points");
             check(points.length()>0 && points.length()<=GpxCodec.MAX_POINTS,"Rota sem pontos ou excessiva");
             totalPoints+=points.length();
@@ -95,8 +114,11 @@ final class PgSharpDataImport {
             }
         }
         for(JSONArray list:new JSONArray[]{pokemon,quests,raids})
-            for(int i=0;i<list.length();i++)
-                check(list.getJSONObject(i).has("name"),"Filtro sem nome");
+            for(int i=0;i<list.length();i++){
+                JSONObject filter=list.getJSONObject(i);
+                check(filter.has("name"),"Filtro sem nome");
+                if(boundAggregate)check(filter.opt("name") instanceof String,"Nome do filtro precisa ser texto");
+            }
     }
 
     static JSONObject stored(Context context) {

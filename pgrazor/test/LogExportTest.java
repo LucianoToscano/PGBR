@@ -83,6 +83,28 @@ public final class LogExportTest {
         try{PgSharpDataImport.validateNewImport(migration);throw new AssertionError("Aggregate migration limit");}catch(org.json.JSONException expected){
             if(!expected.getMessage().contains("Total de pontos"))throw expected;
         }
+        // New imports reject coerced JSON types before any storage changes.
+        JSONObject typed=new JSONObject();
+        typed.put("format",PgSharpDataImport.FORMAT).put("version",1);
+        for(String k:new String[]{"favorites","routes","pokemonFilters","questFilters","raidFilters"})typed.put(k,new org.json.JSONArray());
+        for(Object wrongVersion:new Object[]{"1",1.5,true,JSONObject.NULL}){
+            typed.put("version",wrongVersion);
+            try{PgSharpDataImport.validateNewImport(typed);throw new AssertionError("Invalid version accepted");}catch(org.json.JSONException expected){}
+        }
+        typed.put("version",1);
+        for(Object wrongName:new Object[]{123,true,JSONObject.NULL,new JSONObject(),"","X".repeat(81),"bad\nname"}){
+            typed.put("routes",new org.json.JSONArray().put(new JSONObject().put("name",wrongName).put("points",new org.json.JSONArray().put(point))));
+            PgSharpDataImport.validate(typed); // Legacy archive stays readable.
+            try{PgSharpDataImport.validateNewImport(typed);throw new AssertionError("Invalid route name accepted");}catch(org.json.JSONException expected){}
+        }
+        typed.put("routes",new org.json.JSONArray().put(new JSONObject().put("name","Rota válida").put("points",new org.json.JSONArray().put(point))));
+        typed.put("favorites",new org.json.JSONArray().put(new JSONObject().put("name","Nota original\nsegunda linha").put("lat",0).put("lng",0)));
+        PgSharpDataImport.validateNewImport(typed);
+        typed.put("favorites",new org.json.JSONArray().put(new JSONObject().put("name",123).put("lat",1).put("lng",2)));
+        try{PgSharpDataImport.validateNewImport(typed);throw new AssertionError("Coerced favorite name accepted");}catch(org.json.JSONException expected){}
+        typed.put("favorites",new org.json.JSONArray());
+        typed.put("pokemonFilters",new org.json.JSONArray().put(new JSONObject().put("name",JSONObject.NULL)));
+        try{PgSharpDataImport.validateNewImport(typed);throw new AssertionError("Null filter name accepted");}catch(org.json.JSONException expected){}
         java.nio.file.Path dir=java.nio.file.Files.createTempDirectory("pgbr-export-test");
         File tmp=dir.resolve("current.tmp").toFile(),old=dir.resolve("old.zip").toFile(),dest=dir.resolve("current.zip").toFile();
         try{
