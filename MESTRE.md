@@ -56,7 +56,7 @@ Main observada `56cff4b885b9e52aa914aab8152a67959516e852`. Fila numerada de trab
 26. [ ] CAP-01 — Captura, Quick Catch, Hunt/Farm/Transfer. F/P: Control, CatchOutcomeController, VgpController, release/mestre. Critério: Preservar interface e preferências; revisar feedback, Lenta 3s, estados e proteção; testar em fixtures sem ampliar automação do jogo. Prioridade original: P0.
 27. [ ] VGP-01 — VGP+. I/P: LT045, VgpController; etiquetas/raridade #133 pendentes. Critério: Classificação e etiquetas locais; status correto, não confundir dado desconhecido com ausência; preservar proteção e compatibilidade. Prioridade original: P0.
 28. [ ] FEED-01 — Sniper 1/2, Radar, Savant, coletor IV100. I/P: LT045 QA; SourceQuery, LiveFeedClient/Data/Filters/Dialog. Critério: Identificação e filtros de catálogo; rótulo de fonte/idade/ausência; nenhum feed privado ou coordenadas ao vivo presumidas. Provedor autorizado obrigatório. Prioridade original: P1/B.
-29. [ ] BAT-01 — Rocket: tela branca carregado. P: #193 HEAD 955eb76aaf9c48e1a25d0f51f741608fe8fa002f, ainda não merged na consulta. Critério: Prioridade Rocket por ser fluxo compartilhado; documentar fase, comparar registros e visibilidade em ensaio autorizado; investigar material/overlay próprio e regressão sem remover função; efeito discreto somente em UI própria; nenhuma causa comprovada. Prioridade original: P0.
+29. [ ] BAT-01 — Rocket: tela branca carregado. P: #193 HEAD 955eb76aaf9c48e1a25d0f51f741608fe8fa002f, integrada na main; correção candidata sem homologação física. Critério: Prioridade Rocket por ser fluxo compartilhado; documentar fase, comparar registros e visibilidade em ensaio autorizado; investigar material/overlay próprio e regressão sem remover função; efeito discreto somente em UI própria; nenhuma causa comprovada. Prioridade original: P0.
 30. [ ] BAT-02 — Supereficaz e Ataque Inteligente. P: #193 candidata, política local e matriz. Critério: Validar types/moves como referência independente; simulações de tipo simples/duplo, resistências, metadados desconhecidos, dois carregados; separar recomendação local da execução real. Prioridade original: P0.
 31. [ ] BAT-03 — PvP e treinamento. P: política local, testes, #90/#105. Critério: Simulador, recomendação de equipes, diagnóstico de lifecycle/rearme; não declarar executor homologado. Prioridade original: P0.
 32. [ ] BAT-04 — Reides e ginásios. F/P: arquitetura, runtime e histórico LT; API RaidBoss/Pokebattler. Critério: Central de chefes, counters, tipos, clima, custos, equipe manual; avisos de agenda e disponibilidade. Prioridade original: P2.
@@ -107,7 +107,9 @@ Main observada `56cff4b885b9e52aa914aab8152a67959516e852`. Fila numerada de trab
 
 ### Próxima ação executável
 
-SYS-07/QA-02: LT048 identificada na main, #215–#218 integradas após CI aprovado. Verificar documentação e integridade da revisão consolidada; não anunciar APK sem compilação autorizada e verificada. Retomar fila original de P0/P1 e separar evidência física. PGBR-PR-TRIAGE: confirmar CI da reconciliação documental #182 antes de considerar encerramento por substituição.
+SYS-07/QA-02: conferir CI de #222–#224, integrar somente HEADs aprovadas, manter matriz LT048 e recibos de cada revisão. #182 já encerrada por substituição com preservação de registros. Continuar requisitos P0 abertos; não confundir LT048 identificada com APK entregue.
+
+Registro anterior (histórico): SYS-07/QA-02: LT048 identificada na main, #215–#218 integradas após CI aprovado. Verificar documentação e integridade da revisão consolidada; não anunciar APK sem compilação autorizada e verificada. Retomar fila original de P0/P1 e separar evidência física. PGBR-PR-TRIAGE: confirmar CI da reconciliação documental #182 antes de considerar encerramento por substituição.
 
 Registro anterior (histórico): SYS-07/QA-02: conferir CI dos HEADs #215 (LT048), #216 (diagnóstico) e #217 (Locais); integrar apenas mudanças aprovadas e não conflitantes. Confirmar proveniência e processo de compilação autorizado antes de nova entrega; não reutilizar como LT048 o artefato QA LT047 14961904891. Retomar fila aberta pela prioridade original e preservar histórico, incluindo aceite físico separado.
 
@@ -160,3 +162,15 @@ PGBR-CI-205 integrado após CI completo; PGBR-UI-SMALL candidata de correção e
 - #184 encerrada após verificar três blobs idênticos, Mestre preservado e nenhuma linha nova ausente nos quatro arquivos divergentes; comentário 7145898538. Oito PRs substituídas encerradas no total, sem apagar histórico.
 - #182: #183 integrada com a mesma finalidade de separação, API posterior explícita e testes de token/isolamento. Recuperado recibo histórico original (duas linhas não presentes na main); não reintroduzir código antigo. Manter #182 aberta até validação da recuperação documental e decisão registrada.
 - 76 IDs, seis encerrados. device_tested=false; provider_connected=false; nenhum APK novo confirmado.
+
+
+### Ciclo 24/11/2026 — integridade e continuidade LT048
+
+- #219 integrada em d34434d9a96618d496b71618bc5c1db8fd42477d; CI 45499028422/45499028123 aprovados. #182 encerrada após comprovar recuperação de todas as linhas históricas adicionadas; comentário 7146134197. Nove propostas substituídas encerradas, sem apagar branches.
+- MAP-02/SYS-03: #220 integrada em 80c3854dc68468c21da99951527b692a46b43129; CI 45499596415/45499596408 aprovados. Preserva original danificado quando backup inviável.
+- SYS-07/SYS-08: #221 integrada em b1b4a579409f5972bb3b87833a531d9080a04740; CI 45500290845/45500290820/45500290817 aprovados. Auditoria da fila numerada na HEAD exata; não é executor IA.
+- INV-01/DATA-02: #222 HEAD 3a5427c5c80847c5b488fae7f11e6217116ef200; sintaxe reparada após falha 45500723980. Nova auditoria 45501102327 aprovada; código 45501103417 em validação na consulta.
+- COL-02: #223 HEAD 698d8a672e51616c36f3b8bbcfba5fc54bdb2915; proteção positiva IV extremo na prévia local. CI 45501246673/45501246674; sem alteração de transferência.
+- SYS-01: #224 HEAD 1d3f0d7c1442f9255dce6f0a94dc1d6dca1636cb; busca Unicode e resultados adaptáveis. CI 45501436357/45501436477; aceite físico separado.
+- BAT-01: #193 confirmada merged; tela branca Rocket e supereficácia ainda exigem teste autorizado, sem atribuição de causa física.
+- Mantidos 76 IDs e seis concluídos. device_tested=false; provider_connected=false; nenhum APK LT048 confirmado.
