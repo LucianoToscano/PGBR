@@ -16,6 +16,13 @@ public final class LocalAuditTest {
  check(LocalAuditPolicy.preview(15,15,14,99,EnumSet.noneOf(LocalAuditPolicy.Flag.class),data).status==LocalAuditPolicy.Status.MATCH);
  check(LocalAuditPolicy.preview(-1,15,15,99,flags,data).status==LocalAuditPolicy.Status.UNCERTAIN);
  check(LocalAuditPolicy.preview(0,0,0,99,EnumSet.of(LocalAuditPolicy.Flag.NUNDO),data).status==LocalAuditPolicy.Status.PROTECTED);
+ // Every optional protection must preserve a positive observation, and absent facts remain uncertain.
+ for(LocalAuditPolicy.Flag f:LocalAuditPolicy.Flag.values()){
+  var facts=new EnumMap<LocalAuditPolicy.Flag,Boolean>(LocalAuditPolicy.Flag.class);facts.put(f,true);
+  int v=f==LocalAuditPolicy.Flag.HUNDO?15:f==LocalAuditPolicy.Flag.NUNDO?0:4;
+  check(LocalAuditPolicy.preview(v,v,v,99,EnumSet.of(f),facts).status==LocalAuditPolicy.Status.PROTECTED);
+  check(LocalAuditPolicy.preview(-1,-1,-1,99,EnumSet.of(f),Collections.emptyMap()).status==LocalAuditPolicy.Status.UNCERTAIN);
+ }
  var contradictory=new EnumMap<LocalAuditPolicy.Flag,Boolean>(LocalAuditPolicy.Flag.class);
  contradictory.put(LocalAuditPolicy.Flag.HUNDO,true);
  check(LocalAuditPolicy.preview(4,4,5,99,EnumSet.noneOf(LocalAuditPolicy.Flag.class),contradictory).status==LocalAuditPolicy.Status.UNCERTAIN);
@@ -53,7 +60,7 @@ public final class LocalAuditTest {
  check(batch.rows.get(1).sourceLine==2&&Double.isNaN(batch.rows.get(2).ivPercent()));
  check(Math.abs(batch.rows.get(0).ivPercent()-13*100.0/45)<1e-9);
  check(LocalCollectionPreview.page(batch,LocalAuditPolicy.Status.MATCH,0).get(0).sourceLine==2);
- var many=LocalCollectionPreview.parse(String.join("\\n",Collections.nCopies(51,"X;1;0;0;0;EVENT=0,SHINY=0")),99,flags);
+ var many=LocalCollectionPreview.parse(String.join("\n",Collections.nCopies(51,"X;1;0;0;0;EVENT=0,SHINY=0")),99,flags);
  check(LocalCollectionPreview.pageCount(many,null)==3&&LocalCollectionPreview.page(many,null,2).size()==1&&LocalCollectionPreview.page(many,null,2).get(0).sourceLine==51);
  check(LocalCollectionPreview.page(many,LocalAuditPolicy.Status.PROTECTED,0).isEmpty());
  try{LocalCollectionPreview.page(many,null,3);throw new AssertionError();}catch(IllegalArgumentException expected){}

@@ -26,7 +26,7 @@ final class LocalAuditDialog {
   LocalAuditPolicy.Flag[] flags=LocalAuditPolicy.Flag.values();Spinner[] observed=new Spinner[flags.length];CheckBox[] active=new CheckBox[flags.length];
   for(int i=0;i<flags.length;i++){CheckBox c=new CheckBox(MapTheme.wrap(a));c.setText("Proteger: "+flags[i].label);c.setChecked(true);b.addView(c);active[i]=c;observed[i]=select(a,b,"Dado observado",new String[]{"Desconhecido","Sim","Não"});}
   TextView result=text(a,b,"");action(a,b,"Avaliar sem transferir",()->{try{
-   int pc=integer(cp),aa=integer(atk),dd=integer(def),ss=integer(sta);if(pc<0||name.getText().toString().trim().isEmpty())throw new IllegalArgumentException();
+   int pc=integer(cp),aa=integer(atk),dd=integer(def),ss=integer(sta);if(pc<0||pc>100000||aa< -1||aa>15||dd< -1||dd>15||ss< -1||ss>15||name.getText().toString().trim().isEmpty())throw new IllegalArgumentException();
    EnumSet<LocalAuditPolicy.Flag> selected=EnumSet.noneOf(LocalAuditPolicy.Flag.class);EnumMap<LocalAuditPolicy.Flag,Boolean> values=new EnumMap<>(LocalAuditPolicy.Flag.class);
    for(int i=0;i<flags.length;i++){if(active[i].isChecked())selected.add(flags[i]);int x=observed[i].getSelectedItemPosition();if(x!=0)values.put(flags[i],x==1);}
    LocalAuditPolicy.Decision decision=LocalAuditPolicy.preview(aa,dd,ss,integer(limit),selected,values);
@@ -46,7 +46,7 @@ final class LocalAuditDialog {
   Spinner filter=select(a,b,"Mostrar resultados",new String[]{"Todos","Protegidos","Protegidos por incerteza","Correspondem ao filtro"});
   TextView result=text(a,b,"");
   LocalCollectionPreview.Report[] report={null};int[] page={0};String[] evaluatedAt={""};
-  java.util.function.Supplier<LocalAuditPolicy.Status> status=()->filter.getSelectedItemPosition()==0?null:LocalAuditPolicy.Status.values()[filter.getSelectedItemPosition()-1];
+  java.util.function.Supplier<LocalAuditPolicy.Status> status=()->filter.getSelectedItemPosition()<=0?null:LocalAuditPolicy.Status.values()[filter.getSelectedItemPosition()-1];
   Runnable render=()->{
    if(report[0]==null){result.setText("Avalie a lista para obter os resultados.");return;}
    LocalCollectionPreview.Report r=report[0];int pages=LocalCollectionPreview.pageCount(r,status.get());page[0]=Math.max(0,Math.min(page[0],pages-1));
