@@ -38,7 +38,7 @@ class ConsolidationIntegrityTest(unittest.TestCase):
         # LT032 workflow remains preserved as historical QA evidence, while a
         # real release may increment pgrazor/VERSION without invalidating history.
         current=(ROOT/'pgrazor/VERSION').read_text(encoding='utf-8').strip()
-        self.assertIn(current,('0.00.32-LT','0.00.33-LT','0.00.34-LT','0.00.35-LT','0.00.36-LT','0.00.37-LT','0.00.38-LT','0.00.39-LT','0.00.40-LT','0.00.41-LT','0.00.42-LT','0.00.43-LT','0.00.44-LT','0.00.45-LT','0.00.46-LT','0.00.47-LT'))
+        self.assertIn(current,('0.00.32-LT','0.00.33-LT','0.00.34-LT','0.00.35-LT','0.00.36-LT','0.00.37-LT','0.00.38-LT','0.00.39-LT','0.00.40-LT','0.00.41-LT','0.00.42-LT','0.00.43-LT','0.00.44-LT','0.00.45-LT','0.00.46-LT','0.00.47-LT','0.00.48-LT'))
         if current=='0.00.33-LT':
             new=(ROOT/'.github/workflows/pgbr-lt033-release.yml').read_text(encoding='utf-8')
             self.assertIn('PGRAZOR_VERSION: v0.00.33-LT',new)

@@ -1,3 +1,9 @@
+## PGBR LT048 (0.00.48-LT) — candidata de consolidação
+
+- Viewport responsivo (#207), cache atômico (#208), integridade GPX (#209), estatísticas (#210) e proteção do índice de contas (#213), integrados com CI aprovado.
+- #212 recupera recibos e regra de aceite visual Rocket.
+- Identificação e matriz QA incrementais; compilação, assinatura e publicação LT048 ainda não comprovadas.
+
 ## PGBR LT047 (0.00.47-LT) — candidata consolidada
 
 - Numeração exclusiva para distinguir o novo código da QA experimental LT046.

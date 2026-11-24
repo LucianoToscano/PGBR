@@ -6,7 +6,7 @@ ROOT = Path(__file__).resolve().parents[2]
 
 class Lt042ReleaseContract(unittest.TestCase):
     def test_candidate_version_and_immutable_prior_release(self):
-        self.assertIn((ROOT / "pgrazor/VERSION").read_text(encoding="utf-8").strip(), ("0.00.42-LT","0.00.43-LT","0.00.44-LT","0.00.45-LT","0.00.46-LT","0.00.47-LT"))
+        self.assertIn((ROOT / "pgrazor/VERSION").read_text(encoding="utf-8").strip(), ("0.00.42-LT","0.00.43-LT","0.00.44-LT","0.00.45-LT","0.00.46-LT","0.00.47-LT","0.00.48-LT"))
         release = (ROOT / ".github/workflows/pgbr-lt042-release.yml").read_text(encoding="utf-8")
         for text in ("PGRAZOR_VERSION: v0.00.42-LT", "--tag v0.00.42-LT",
                      "PGBR-v0.00.42-LT.apk", "PGBR-v0.00.42-LT-Root.apk",
