@@ -69,6 +69,24 @@ public final class MotionEngine {
     private boolean visualReturning; // presentation only: last-to-first leg of a loop
     private boolean plannedRoute;
     private long routeGeneration;
+    // Presentation ownership is independent of the original planned-route token.
+    private long visualToken;
+    private double[] visualOrigin;
+    private double visualDirectMeters;
+    public synchronized long visualRouteToken(){return walking&&visualToken==routeGeneration?visualToken:0;}
+    /** Called only by explicit personal walk/GPX entry points, never by official Routes. */
+    public synchronized void markOwnVisualRoute(){
+        if(!walking)return;
+        visualToken=routeGeneration;
+        if(route.length==1&&!looping){
+            visualOrigin=new double[]{latitude,longitude};
+            visualDirectMeters=routeProgress().remainingMeters;
+        }
+    }
+    public synchronized boolean stopOwnVisualRoute(long token){
+        if(token==0||token!=visualRouteToken())return false;
+        stop();return true;
+    }
     /** Nonzero only for an active planned route, including a one-stop GPX/Autowalk. */
     public synchronized long activeRouteToken() {return walking&&plannedRoute?routeGeneration:0;}
     /** Retains ownership after arrival; changes on cancellation or replacement. */
@@ -110,8 +128,15 @@ public final class MotionEngine {
         }
     }
     public synchronized RouteVisualSnapshot routeVisualSnapshot(long knownToken) {
-        long token=activeRouteToken();
+        long token=visualRouteToken();
         if(token==0) return null;
+        if(visualOrigin!=null){
+            double remaining=Math.max(0,Math.min(visualDirectMeters,routeProgress().remainingMeters));
+            double done=visualDirectMeters-remaining;
+            double fraction=visualDirectMeters>0?done/visualDirectMeters:0;
+            double[][] points=knownToken==token?null:new double[][]{visualOrigin.clone(),route[0].clone()};
+            return new RouteVisualSnapshot(token,points,1,2,fraction,remaining,visualDirectMeters,done,false,!enabled||speedKmh==0,false);
+        }
         double[][] copy=null;
         if(knownToken!=token) {
             copy=new double[route.length][];
@@ -177,7 +202,7 @@ public final class MotionEngine {
         double[] legs=new double[copy.length];
         for(int i=copy.length-2;i>=0;i--)legs[i]=legs[i+1]
             +angle(unit(copy[i][0],copy[i][1]),unit(copy[i+1][0],copy[i+1][1]))*EARTH_RADIUS_METERS;
-        resetIdle();route=copy; remainingLegMeters=legs; visitedStops=0; visualReturning=false; looping=loop;plannedRoute=true;routeGeneration++;
+        resetIdle();visualToken=0;visualOrigin=null;visualDirectMeters=0;route=copy; remainingLegMeters=legs; visitedStops=0; visualReturning=false; looping=loop;plannedRoute=true;routeGeneration++;
         targetLatitude=route[0][0]; targetLongitude=route[0][1];
         east = north = 0;
         enabled = true;
@@ -198,7 +223,7 @@ public final class MotionEngine {
         if (Math.hypot(east, north) > 0.05)
             bearing = (Math.toDegrees(Math.atan2(east, north)) + 360) % 360;
     }
-    private void clearRoute() { plannedRoute=false;routeGeneration++;walking=false; route=new double[0][]; remainingLegMeters=new double[0]; visitedStops=0; visualReturning=false; looping=false; }
+    private void clearRoute() { visualToken=0;visualOrigin=null;visualDirectMeters=0;plannedRoute=false;routeGeneration++;walking=false; route=new double[0][]; remainingLegMeters=new double[0]; visitedStops=0; visualReturning=false; looping=false; }
     public synchronized void stop() { resetIdle();clearRoute(); east = north = 0; }
     /** Camera invalidation stops manual velocity without cancelling a walk or its arrival ownership. */
     public synchronized void stopManualMotion() { east = north = 0; }

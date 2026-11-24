@@ -119,7 +119,7 @@ public final class WorldMapDialog {
         }
         layout.addView(layers);
         CheckBox trace=new CheckBox(ui);
-        trace.setText("Traçado GPX no Mapa Mundial");
+        trace.setText("Rota Visual • caminhada e GPX próprios");
         trace.setTextSize(13);
         trace.setChecked(preferences.getBoolean("routeTraceEnabled",false));
         TextView traceSummary=label(ui,"",12);

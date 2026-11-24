@@ -22,6 +22,8 @@ public class RouteTraceHarness {
     MotionEngine e=new MotionEngine(); e.position(0,0); e.speed(3.6);
     check(e.routeVisualSnapshot(0)==null);
     e.walkRoute(new double[][]{{0,0},{0,.0001},{0,.0002}},false);
+    check(e.routeVisualSnapshot(0)==null); // official/shared engine path is never visual by default
+    e.markOwnVisualRoute();
     MotionEngine.RouteVisualSnapshot a=e.routeVisualSnapshot(0);
     check(a!=null && a.visited==1 && a.total==3 && a.newPoints.length==3 && Math.abs(a.legFraction)<1e-8);
     a.newPoints[1][1]=999;
@@ -33,10 +35,12 @@ public class RouteTraceHarness {
     e.speed(0); check(e.routeVisualSnapshot(c.token).paused);
     e.stop(); check(e.routeVisualSnapshot(c.token)==null);
     e.speed(3.6); e.position(0,0); e.walkRoute(new double[][]{{0,0},{0,.000001}},true);
+    e.markOwnVisualRoute();
     MotionEngine.RouteVisualSnapshot loop=e.routeVisualSnapshot(c.token);
     check(loop!=null && loop.looping && loop.newPoints!=null && loop.token!=c.token);
     e.step(.25); check(e.routeVisualSnapshot(loop.token)!=null);
     e.stop(); e.position(0,0); e.walkRoute(new double[][]{{0,0},{0,.00001}},true);
+    e.markOwnVisualRoute();
     MotionEngine.RouteVisualSnapshot start=e.routeVisualSnapshot(0);
     check(!start.returning && start.routeMeters>2.2 && start.routeMeters<2.3);
     for(int i=0;i<5;i++) e.step(.25);
@@ -46,7 +50,12 @@ public class RouteTraceHarness {
     for(int i=0;i<4;i++)e.step(.25);
     MotionEngine.RouteVisualSnapshot lap=e.routeVisualSnapshot(start.token);
     check(!lap.returning && lap.completedMeters<.1 && lap.visited==1);
-    e.stop(); e.walkTo(0,.0001); check(e.routeVisualSnapshot(0)==null);
+    e.stop(); e.position(0,0); e.walkTo(0,.0001); check(e.routeVisualSnapshot(0)==null);
+    e.markOwnVisualRoute(); MotionEngine.RouteVisualSnapshot direct=e.routeVisualSnapshot(0);
+    check(direct!=null&&direct.newPoints.length==2&&direct.visited==1&&direct.routeMeters>11&&e.activeRouteToken()==0);
+    e.step(.25);check(e.routeVisualSnapshot(direct.token).completedMeters>0);
+    e.walkRoute(new double[][]{{0,0},{0,.0002}},false);
+    check(e.routeVisualSnapshot(0)==null&&!e.stopOwnVisualRoute(direct.token)&&e.activeRouteToken()!=0);
     e.stop(); e.position(0,0); e.walkRoute(new double[][]{{0,0},{0,.000001}},false);
     e.step(.25); check(e.routeVisualSnapshot(0)==null);
   }

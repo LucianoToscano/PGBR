@@ -697,7 +697,7 @@ public final class Pad {
         boolean allowed=prefs.getBoolean("routeTraceEnabled",false)&&!overlaysHidden&&
             !settings.isVisible()&&!(quickMenu!=null&&quickMenu.isShowing())&&
             !Control.catchScreenVisible()&&!blackShown;
-        visualRouteOverlay.refresh(allowed,Control.engine.activeRouteToken(),RouteTraceSettings.read(prefs));
+        visualRouteOverlay.refresh(allowed&&!Control.gameRoutesRunning(),Control.engine.visualRouteToken(),RouteTraceSettings.read(prefs));
     }
     private void refresh() {
         applyMapScale();

@@ -90,6 +90,11 @@ public final class Control {
         gameRoutes.start(count); saveState();
     }
     public static void stopGameRoutes() { gameRoutes.stop("Stopped"); saveState(); }
+    /** Explicit UI cancellation of a personal walk, not of another automation. */
+    public static boolean stopPersonalVisualWalk(long token){
+        if(gameRoutes.running()||!engine.stopOwnVisualRoute(token))return false;
+        saveState();return true;
+    }
     public static void tickGameRoutes() {
         gameRoutes.tick(hostLive()&&canEnable());
         String status=gameRoutes.status();
@@ -1301,7 +1306,7 @@ public final class Control {
     }
     public static void walkTo(double latitude, double longitude) {
         gameRoutes.stop("Manual walking started");
-        engine.walkTo(latitude, longitude);
+        synchronized(engine){engine.walkTo(latitude, longitude);engine.markOwnVisualRoute();}
         if (!foreground || !canEnable()) engine.pause();
         saveState();
     }
@@ -1309,7 +1314,7 @@ public final class Control {
     /** As {@link #walkRoute(double[][])}, but a looping route repeats from its first stop; same lifecycle/save/readiness. */
     public static void walkRoute(double[][] waypoints, boolean loop) {
         gameRoutes.stop("Another route started");
-        engine.walkRoute(waypoints, loop);
+        synchronized(engine){engine.walkRoute(waypoints, loop);engine.markOwnVisualRoute();}
         if (!foreground || !canEnable()) engine.pause();
         saveState();
     }

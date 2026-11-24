@@ -40,8 +40,7 @@ public final class GameRoutesDialog {
         int pad = MapTheme.dp(ctx, 18);
         layout.setPadding(pad, MapTheme.dp(ctx, 8), pad, 0);
 
-        layout.addView(label(ctx, "Walk eligible in-game Routes automatically, shortest total walk first. Each Route is "
-            + "started, walked once and completed in game before the next.", 13));
+        layout.addView(label(ctx, "Percorre as Rotas oficiais disponíveis no jogo, começando pela menor distância total. Cada rota é iniciada, percorrida e concluída no jogo antes da próxima. Independente dos percursos GPX próprios.", 13));
 
         LinearLayout countRow = new LinearLayout(ctx);
         countRow.setOrientation(LinearLayout.HORIZONTAL);
@@ -101,12 +100,17 @@ public final class GameRoutesDialog {
             Control.setGameRoutesPlanning(true); // renew the native discovery stream while visible
             boolean ready = Control.gameRoutesReady(), running = Control.gameRoutesRunning();
             String reward=Control.gameRoutesLastReward();
-            status.setText(dev.pgrazor.PtBr.tr((ready ? Control.gameRoutesStatus() : "Waiting for Route support…")
+            String currentStatus=ready?Control.gameRoutesStatus():"Waiting for Route support…";
+            long personalToken=Control.engine.visualRouteToken();
+            if("Stop the current walk first.".equals(currentStatus))currentStatus=personalToken!=0?"Encerre a caminhada pessoal pelo botão abaixo antes de iniciar uma Rota oficial.":"Encerre o percurso atual antes de iniciar uma Rota oficial.";
+            status.setText(dev.pgrazor.PtBr.tr((currentStatus)
                 +(reward.isEmpty()?"":"\nLast rewards received: "+reward)));
             nearby.setText(dev.pgrazor.PtBr.tr(describeNearby(Control.gameRoutesSnapshot())));
             Button start = dialog.getButton(AlertDialog.BUTTON_POSITIVE);
             if (start != null) start.setEnabled(ready && !running);
-            dialog.getButton(AlertDialog.BUTTON_NEUTRAL).setEnabled(running);
+            Button stop=dialog.getButton(AlertDialog.BUTTON_NEUTRAL);
+            stop.setEnabled(running||personalToken!=0);
+            stop.setText(!running&&personalToken!=0?"Parar caminhada atual":"Parar");
             main.removeCallbacks(poll);
             main.postDelayed(poll, 1000);
         }
@@ -126,6 +130,9 @@ public final class GameRoutesDialog {
 
         private void stop() {
             if (closed) return;
+            if(!Control.gameRoutesRunning()){
+                Control.stopPersonalVisualWalk(Control.engine.visualRouteToken());poll();return;
+            }
             Control.stopGameRoutes();
             Toast.makeText(activity, dev.pgrazor.PtBr.tr("Route automation stopped."), Toast.LENGTH_SHORT).show();
             poll();
