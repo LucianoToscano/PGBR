@@ -33,7 +33,7 @@ import org.json.JSONObject;
  * confirmed completions, never claims endpoint arrival is success (completion is requested only when
  * native reports eligibility and is counted only when native reports {@code acquiredReward}), never
  * blind-retries a timed-out async request, and never auto-resumes after a cancellation, pause, lost
- * host lease or manual takeover.</p>
+ * host lease or manual takeover. An explicit resume requires a fresh matching in-game route and a local checkpoint.</p>
  */
 final class GameRoutesController {
     static final int DEFAULT_MAX_COMPLETIONS = 5;
@@ -87,7 +87,9 @@ final class GameRoutesController {
     private int completions;
     private String lastReward="", pendingReward="";
     private String selectedId; private boolean selectedReversed; private double[][] selectedPoints;
-    private long ownedToken; private int ownedTotal;
+    private long ownedToken; private int ownedTotal, ownedOffset;
+    // Local checkpoint, not a server session identifier or confirmed game progress.
+    private String recovery="";
     private int seq; private int outstandingSeq = -1; private String outstandingAction = ""; private long requestDeadline;
 
     GameRoutesController(MotionEngine engine, LongSupplier monotonic, LongSupplier wallClock) {
@@ -103,6 +105,47 @@ final class GameRoutesController {
     String takeRewardNotice() { synchronized(lock) { String value=pendingReward; pendingReward=""; return value; } }
     String snapshot() { synchronized (lock) { return rawSnapshot; } }
     String mapSnapshot(){synchronized(lock){return ready&&freshSnapshot()?rawSnapshot:"";}}
+    boolean watchingRecovery(){synchronized(lock){return !recovery.isEmpty()||(hasCurrent&&current!=null&&!current.acquiredReward);}}
+    boolean blocksAutomaticSpin(){synchronized(lock){return running||watchingRecovery();}}
+    String checkpoint(){synchronized(lock){captureRecovery();return recovery;}}
+    void restoreCheckpoint(String encoded){synchronized(lock){
+        recovery=encoded!=null&&encoded.length()<=4096?encoded:"";
+        current=null;hasCurrent=false;snapshotReceived=false;rawSnapshot="";routes=new RouteInfo[0];
+    }}
+    private static String fingerprint(double[][] points){
+        try{java.security.MessageDigest md=java.security.MessageDigest.getInstance("SHA-256");java.nio.ByteBuffer b=java.nio.ByteBuffer.allocate(16);
+            for(double[] p:points){b.clear();b.putDouble(p[0]).putDouble(p[1]);md.update(b.array());}
+            StringBuilder out=new StringBuilder();for(byte v:md.digest())out.append(String.format(java.util.Locale.ROOT,"%02x",v&255));return out.toString();
+        }catch(java.security.NoSuchAlgorithmException impossible){throw new IllegalStateException(impossible);}
+    }
+    private void captureRecovery(){
+        if(!running||phase!=Phase.TRAVERSE||selectedPoints==null||ownedToken==0||engine.routeGeneration()!=ownedToken)return;
+        CurrentRoute c=freshCurrent();if(c==null||!c.started||c.acquiredReward||c.isCompleting||!c.id.equals(selectedId)||c.reversed!=selectedReversed)return;
+        synchronized(engine){
+            if(engine.routeGeneration()!=ownedToken)return;
+            MotionEngine.RouteProgress p=engine.routeProgress();if(p.total!=ownedTotal)return;
+            try{JSONObject o=new JSONObject();o.put("id",selectedId);o.put("reversed",selectedReversed);o.put("geometry",fingerprint(selectedPoints));o.put("next",Math.min(selectedPoints.length-1,ownedOffset+p.visited));o.put("lat",engine.latitude);o.put("lon",engine.longitude);recovery=o.toString();}catch(JSONException ignored){}
+        }
+    }
+    private JSONObject recoveryForCurrent(){
+        if(running||!ready||!freshSnapshot()||engine.walking||engine.speedKmh<=0||recovery.isEmpty())return null;
+        CurrentRoute c=freshCurrent();if(c==null||!c.started||c.paused||c.acquiredReward||c.isCompleting)return null;
+        try{JSONObject o=new JSONObject(recovery);if(!c.id.equals(o.optString("id"))||c.reversed!=o.optBoolean("reversed"))return null;
+            RouteInfo r=routeById(c.id);if(r==null)return null;double[][] pts=c.reversed?reversed(r.points):copy(r.points);int next=o.optInt("next",-1);
+            double lat=o.optDouble("lat",Double.NaN),lon=o.optDouble("lon",Double.NaN);
+            if(next<0||next>=pts.length||!fingerprint(pts).equals(o.optString("geometry"))||!Double.isFinite(lat)||!Double.isFinite(lon)||Math.abs(lat)>90||Math.abs(lon)>180||distance(new double[]{lat,lon})>25)return null;
+            return o;
+        }catch(JSONException malformed){return null;}
+    }
+    boolean canResume(){synchronized(lock){return recoveryForCurrent()!=null;}}
+    boolean resume(){synchronized(lock){
+        JSONObject o=recoveryForCurrent();if(o==null){status="Rota anterior indisponível ou não confirmada pelo jogo.";return false;}
+        RouteInfo r=routeById(current.id);selectedId=r.id;selectedReversed=current.reversed;selectedPoints=selectedReversed?reversed(r.points):copy(r.points);
+        int next=current.completedWalk?selectedPoints.length-1:o.optInt("next",-1);
+        pending.clear();visited.clear();completions=0;maxCompletions=1;running=true;ownedOffset=next;
+        if(!issueWalk(java.util.Arrays.copyOfRange(selectedPoints,next,selectedPoints.length))){halt("Could not resume Route walk.");return false;}
+        phase=Phase.TRAVERSE;status="Continuando a rota ativa confirmada pelo jogo…";return true;
+    }}
 
     /**
      * A compact, immutable JSON description of the active run for the details UI. Everything is copied
@@ -134,8 +177,8 @@ final class GameRoutesController {
                     // Local walking progress only — never the game's completion state.
                     MotionEngine.RouteProgress p = engine.routeProgress();
                     if (ownedToken != 0 && engine.activeRouteToken() == ownedToken && p.total > 0) {
-                        o.put("walkVisited", Math.min(p.visited, p.total));
-                        o.put("walkTotal", p.total);
+                        o.put("walkVisited", Math.min(ownedOffset+p.visited,ownedOffset+p.total));
+                        o.put("walkTotal", ownedOffset+p.total);
                     }
                 }
             } catch (JSONException ignored) { /* fixed keys with finite numbers never throw */ }
@@ -175,6 +218,7 @@ final class GameRoutesController {
                         cur.optBoolean("inRangeOfEnd"), cur.optBoolean("isCompleting"), cur.optBoolean("reversed"));
                     hasCurrent = true;
                 }
+                if(!recovery.isEmpty())try{JSONObject saved=new JSONObject(recovery);if(current==null||current.acquiredReward||!current.id.equals(saved.optString("id"))||current.reversed!=saved.optBoolean("reversed"))recovery="";}catch(JSONException bad){recovery="";}
                 rawSnapshot = json == null ? "" : json;
                 snapshotAt = monotonic.getAsLong(); snapshotReceived=true;
                 return true;
@@ -220,7 +264,7 @@ final class GameRoutesController {
                 status = "A game Route is already active. Finish or cancel it first."; return;
             }
             maxCompletions = max <= 0 ? DEFAULT_MAX_COMPLETIONS : Math.min(max, MAX_COMPLETIONS_CAP);
-            pending.clear(); completions = 0; visited.clear(); running = true; selectedId = null; selectedPoints = null;
+            pending.clear(); completions = 0; visited.clear(); running = true; selectedId = null; selectedPoints = null;recovery="";ownedOffset=0;
             status = "Selecting a route…";
             selectNext();
         }
@@ -265,7 +309,7 @@ final class GameRoutesController {
             }
         }
         if (best == null) { finish("No eligible routes available."); return; }
-        selectedId = best.id; selectedReversed = bestReversed;
+        selectedId = best.id; selectedReversed = bestReversed;ownedOffset=0;
         selectedPoints = bestReversed ? reversed(best.points) : copy(best.points);
         status = "Walking to the start of " + label(best) + "…";
         if (!issueWalk(new double[][]{selectedPoints[0]})) { halt("Could not walk to the route start."); return; }
@@ -323,7 +367,7 @@ final class GameRoutesController {
     }
 
     private void requestCompletion() {
-        engine.stop(); ownedToken=engine.routeGeneration(); ownedTotal=0;
+        recovery="";engine.stop(); ownedToken=engine.routeGeneration(); ownedTotal=0;
         queue("complete",selectedId,null);
         requestDeadline=monotonic.getAsLong()+REQUEST_TIMEOUT_MS;
         status="Requesting route completion…";phase=Phase.AWAIT_COMPLETE;
@@ -377,9 +421,10 @@ final class GameRoutesController {
     private void finish(String message) { halt(message); }
 
     private void halt(String message) {
+        captureRecovery();
         // Release movement only if we still own it, so we never cancel a manual takeover.
         if (ownedToken != 0 && engine.activeRouteToken() == ownedToken) engine.stop();
-        ownedToken = 0; ownedTotal = 0; pending.clear(); outstandingSeq=-1; running = false; phase = Phase.IDLE; status = message;
+        ownedToken = 0; ownedTotal = 0;ownedOffset=0; pending.clear(); outstandingSeq=-1; running = false; phase = Phase.IDLE; status = message;
     }
 
     private void queue(String action, String id, Boolean reversed) {

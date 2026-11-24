@@ -216,7 +216,7 @@ public final class ShundoSniper {
     'dev/pgrazor/SmartCatchSettings.java': '''package dev.pgrazor;
 public final class SmartCatchSettings {
  private static final SmartCatchPreferences prefs=new SmartCatchPreferences();
- public static boolean gymSpinActive(){return prefs.enabled()&&prefs.spinGyms()&&Control.vgpEnabled();}
+ public static boolean gymSpinActive(){return prefs.enabled()&&prefs.spinGyms()&&Control.vgpEnabled()&&!Control.vgpCooldownPaused();}
  public static String config(){return prefs.config();}
  static int speed(){return prefs.speed();}
  static boolean shinyOnly(){return prefs.shinyOnly();}
@@ -325,7 +325,7 @@ class ControlJavaTests(unittest.TestCase):
             tested = subprocess.run([str(runtime), '-cp', str(classes), 'dev.pgrazor.VgpControllerTest'],
                                     capture_output=True, text=True, timeout=15)
             self.assertEqual(tested.returncode, 0, tested.stdout + tested.stderr)
-            self.assertIn('PASS: VGP simple manual toggle', tested.stdout)
+            self.assertIn('PASS: VGP optional cooldown action gate, manual intent, background off, native readiness and marker bounds', tested.stdout)
             tested = subprocess.run([str(runtime), '-cp', str(classes), 'dev.pgrazor.CooldownTest'],
                                     capture_output=True, text=True, timeout=15)
             self.assertEqual(tested.returncode, 0, tested.stdout + tested.stderr)

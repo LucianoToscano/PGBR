@@ -27,7 +27,7 @@ import java.util.function.BooleanSupplier;
 /**
  * Explicit opt-in screen-based calibration for a visible, non-protected SurfaceView in this activity.
  * No hooks, native game calls, simulated touches, screenshot files or network.
- * Recalibration is required when image landmarks cease matching.
+ * Landmark loss hides the trace; later frames can recover near the last verified positions.
  */
 final class RouteScreenProjectionSource implements RouteTraceOverlay.ProjectedFrameSource {
     private final Activity activity;
@@ -142,7 +142,7 @@ final class RouteScreenProjectionSource implements RouteTraceOverlay.ProjectedFr
             final RouteScreenTracker current=tracker;
             Bitmap bitmap=Bitmap.createBitmap(captureWidth,captureHeight,Bitmap.Config.ARGB_8888);
             try{PixelCopy.request(surface,bitmap,result->{
-                if(closed||result!=PixelCopy.SUCCESS||!available()){bitmap.recycle();busy=false;latest=null;if(!closed&&result!=PixelCopy.SUCCESS){ready=false;toast("Rota Visual: captura interrompida. Recalibre para tentar novamente.");}return;}
+                if(closed||result!=PixelCopy.SUCCESS||!available()){bitmap.recycle();busy=false;latest=null;return;}
                 try{worker.execute(()->{
                     RouteTraceFrame frame=null;boolean lost=false;
                     try{
@@ -156,11 +156,11 @@ final class RouteScreenProjectionSource implements RouteTraceOverlay.ProjectedFr
                     final RouteTraceFrame next=frame;final boolean trackingLost=lost;
                     main.post(()->{
                         busy=false;if(closed)return;
-                        if(trackingLost){ready=false;latest=null;toast("Rota Visual: referências perdidas. Recalibre no mapa.");return;}
+                        if(trackingLost){latest=null;return;}
                         if(available()&&knownToken==route.token)latest=next;else latest=null;
                     });
                 });}catch(java.util.concurrent.RejectedExecutionException e){bitmap.recycle();busy=false;latest=null;}
-            },main);}catch(RuntimeException e){bitmap.recycle();busy=false;latest=null;ready=false;toast("Rota Visual: captura indisponível.");}
+            },main);}catch(RuntimeException e){bitmap.recycle();busy=false;latest=null;}
         }
         return latest;
     }

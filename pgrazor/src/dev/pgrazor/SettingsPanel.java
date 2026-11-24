@@ -71,6 +71,7 @@ final class SettingsPanel {
     private Switch evolveTransferSwitch;
     private Button evolveTransferStages, evolveTransferMode, evolveTransferList;
     // Boolean settings use proper switches.
+    private Switch vgpCooldownProtection;
     private Switch idleWalkSwitch, locationSwitch, vgpSwitch, joystickSwitch, cooldownSwitch, localTimeSwitch, encounterCounterSwitch, encounterOverlaySwitch, spawnSwitch, autoTransferSwitch,
         quickSpinSwitch, berrySwitch, quickSummarySwitch, curveSwitch, alwaysHitSwitch, arSwitch, transferOverlaySwitch, catchChanceSwitch, autoBallSwitch, autoThrowSwitch, autoThrowMapSwitch, skipCutscenesSwitch, routeGiftSwitch,
         batteryResSwitch, batteryFpsSwitch, batteryQualitySwitch;
@@ -955,7 +956,7 @@ final class SettingsPanel {
         vgpSwitch.setOnCheckedChangeListener((b,checked)->{if(checked!=Control.vgpOverlay())Control.setVgpOverlay(checked);host.refresh();});
         caption(vgpC,"Exibir o botão não inicia a automação. Use Iniciar VGP+ abaixo "
                 + "ou toque no ícone flutuante no mapa e confirme. "
-                + "Sem temporizador e sem pausa por cooldown estimado.");
+                + "A proteção opcional usa a espera estimada já exibida no mapa.");
         vgpStartStopButton=launch(vgpC,"Iniciar VGP+",()->{
             if(Control.vgpEnabled()){
                 Control.setVgpEnabled(false);host.refresh();return;
@@ -982,6 +983,10 @@ final class SettingsPanel {
                 if(bit==4&&box.isChecked()&&Build.VERSION.SDK_INT>=33&&activity.checkSelfPermission("android.permission.POST_NOTIFICATIONS")!=android.content.pm.PackageManager.PERMISSION_GRANTED)activity.requestPermissions(new String[]{"android.permission.POST_NOTIFICATIONS"},7301);
             });
         }
+        vgpCooldownProtection=switchRow(vgpC,"Stop on cooldown (estimated)");
+        vgpCooldownProtection.setChecked(Control.vgpStopOnCooldown());
+        vgpCooldownProtection.setOnCheckedChangeListener((button,checked)->{Control.setVgpStopOnCooldown(checked);host.refresh();});
+        caption(vgpC,"Pausa novas capturas e giros no cooldown vermelho e libera quando a espera estimada termina, se o VGP+ continuar ligado. Não garante proteção contra penalidades.");
         Switch accidentalTap=switchRow(vgpC,"Evitar toque acidental no VGP+");
         accidentalTap.setChecked(Control.vgpTapProtection());
         accidentalTap.setOnCheckedChangeListener((button,checked)->Control.setVgpTapProtection(checked));
@@ -1009,7 +1014,7 @@ final class SettingsPanel {
         routeGiftSwitch.setOnCheckedChangeListener((v,checked)->{
             if(checked!=Control.routeGiftExchange())Control.setRouteGiftExchange(checked);
         });
-        caption(mateo,"Opcional: durante uma Rota, troca o presente com Mateo usando os comandos normais do jogo. Não negocia Pokémon e não ativa outras automações.");
+        caption(mateo,"Opcional: troca o presente com Mateo. Durante uma Rota oficial monitorada, Giro Rápido, VGP+ e giros de ginásio do VGP+ ficam bloqueados; nenhuma ação de giro é solicitada na conclusão da rota. Ações já enviadas não podem ser canceladas.");
 
         // ----- Inventory (opens its modal directly) -----
         LinearLayout itemsC = group(page, "Items"); summaryGated.add((View)itemsC.getParent());
@@ -1693,6 +1698,7 @@ final class SettingsPanel {
 
     private void refreshVgpStatus() {
         vgpSwitch.setChecked(Control.vgpOverlay());
+        if(vgpCooldownProtection!=null)vgpCooldownProtection.setChecked(Control.vgpStopOnCooldown());
         if(vgpStartStopButton!=null){
             vgpStartStopButton.setText(dev.pgrazor.PtBr.tr(
                 Control.vgpEnabled() ? "Parar VGP+" : "Iniciar VGP+"));

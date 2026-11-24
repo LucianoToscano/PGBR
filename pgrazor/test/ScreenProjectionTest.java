@@ -50,7 +50,11 @@ public class ScreenProjectionTest {
     double[][] longRoute=new double[5000][2];for(int i=0;i<5000;i++){longRoute[i][0]=.0005;longRoute[i][1]=.0001+.0008*i/4999.0;}
     RouteTraceFrame longFrame=RouteScreenFrameBuilder.build(p,longRoute,true,0,1,1000,W,H,1,1);check(longFrame!=null&&longFrame.geometry.size()==10000,"5000 point loop");
     transformed(a,refs,8,1);transformed(a,refs,0,1.1);
-    check(tracker.update(new int[W*H])==null,"blank screen rejected");check(tracker.update(a)==null,"loss latched");
+    check(tracker.update(new int[W*H])==null,"blank screen rejected");
+    check(tracker.update(new int[W*H])==null,"repeated loss remains hidden");
+    RouteGroundProjection recovered=tracker.update(shift(a,5,7));
+    check(recovered!=null,"recover when last verified landmarks return");
+    double[] after=recovered.project(.0005,.0005);near(after[0],150,1e-5);near(after[1],122,1e-5);
     System.out.println("PASS: translation, rotation, zoom, perspective progress, clipping, disconnected segments, progress, 5000-point loop, lost landmarks");
   }
 }

@@ -108,7 +108,7 @@ public final class GameRoutesDialog {
                 +(reward.isEmpty()?"":"\nLast rewards received: "+reward)));
             nearby.setText(dev.pgrazor.PtBr.tr(describeNearby(Control.gameRoutesSnapshot())));
             Button start = dialog.getButton(AlertDialog.BUTTON_POSITIVE);
-            if (start != null) start.setEnabled(ready && !running);
+            if (start != null){start.setEnabled(ready && !running);start.setText(dev.pgrazor.PtBr.tr(Control.canResumeGameRoutes()?"Continuar rota anterior":"Start walking routes"));}
             dialog.getButton(AlertDialog.BUTTON_NEUTRAL).setEnabled(running||visualToken!=0);
             main.removeCallbacks(poll);
             main.postDelayed(poll, 1000);
@@ -116,6 +116,9 @@ public final class GameRoutesDialog {
 
         private void start() {
             if (closed) return;
+            if(Control.canResumeGameRoutes()){
+                new AlertDialog.Builder(MapTheme.wrap(activity)).setTitle("Continuar rota anterior?").setMessage("Confirme que a rota ainda ativa no jogo é a mesma que você interrompeu. O PGBR continua do último ponto local salvo, sem solicitar nova rota. O jogo confirma o progresso e a recompensa.").setNegativeButton("Cancelar",null).setPositiveButton("Continuar",(d,w)->{if(closed)return;try{Control.resumeGameRoutes();}catch(IllegalArgumentException e){Toast.makeText(activity,e.getMessage(),Toast.LENGTH_SHORT).show();}if(Control.gameRoutesRunning())dialog.dismiss();else poll();}).show();return;
+            }
             int count;
             try { count = Integer.parseInt(countField.getText().toString().trim()); }
             catch (NumberFormatException e) { countField.setError("Enter 1–" + MAX_COMPLETIONS); return; }
