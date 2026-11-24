@@ -107,7 +107,9 @@ Main observada `56cff4b885b9e52aa914aab8152a67959516e852`. Fila numerada de trab
 
 ### Próxima ação executável
 
-PGBR-CI-205: confirmar CI do novo HEAD #205 e corrigir eventual falha. Em paralelo, QA LT047 real disponível em https://github.com/LucianoToscano/PGBR/actions/runs/45482026778/artifacts/14961904891 ; publicação ainda distinta. Testar layout em condições de tamanho reduzido e preservar o estado das tarefas anteriores. O executor agendado deve retomar desta fila e manter IDs, evidências e histórico de cada ciclo.
+SYS-07/QA-02: conferir CI dos HEADs #215 (LT048), #216 (diagnóstico) e #217 (Locais); integrar apenas mudanças aprovadas e não conflitantes. Confirmar proveniência e processo de compilação autorizado antes de nova entrega; não reutilizar como LT048 o artefato QA LT047 14961904891. Retomar fila aberta pela prioridade original e preservar histórico, incluindo aceite físico separado.
+
+Registro anterior (histórico): PGBR-CI-205: confirmar CI do novo HEAD #205 e corrigir eventual falha. Em paralelo, QA LT047 real disponível em https://github.com/LucianoToscano/PGBR/actions/runs/45482026778/artifacts/14961904891 ; publicação ainda distinta. Testar layout em condições de tamanho reduzido e preservar o estado das tarefas anteriores. O executor agendado deve retomar desta fila e manter IDs, evidências e histórico de cada ciclo.
 
 
 ### Ciclo 24/11/2026 — layout de viewport reduzido
@@ -134,3 +136,14 @@ PGBR-CI-205 integrado após CI completo; PGBR-UI-SMALL candidata de correção e
 - SYS-03: #213 HEAD 50b658ef8b7f1829e60a12ac1045fcc415f2c3c7, validação do índice local de contas; auditoria 45496180632 aprovada, código 45496180585 em execução na consulta. Não declarar integrada antes de confirmação.
 - PGBR-RELEASE-047: recibo histórico acrescentado às notas LT047; artefato original não expirado, hashes individuais registrados pelo CI. Nenhuma nova compilação ou publicação neste ciclo. A próxima QA deve incluir as correções integradas e distinguir sua revisão do artefato LT047 anterior.
 - Próximo: validar #213 e integrar somente se checks e comparação de arquivos confirmarem ausência de conflito. Preparar versão seguinte para QA consolidada e retomar requisitos abertos. device_tested=false.
+
+
+### Ciclo 24/11/2026 — preparação LT048 e integridade local
+
+- SYS-03: #213 integrada em b5da9b91c71e72303a5b0cb1aefbba94d5581561; CI 45496180585/45496180632 aprovados. Índice inválido não é reinicializado; validação em aparelho separada.
+- #214 integrada em 6a044d6fd0e943c82ff4888bd388a8d6f5d0e26a; CI 45496827365/45496827406 aprovados. Recibo histórico QA LT047 preservado.
+- SYS-07/QA-02: #215 HEAD 51ffc47afb8235abe10fbbe04f1d3ce0be02e5b5. Identificação candidata LT048, 15 contratos históricos e 10 casos incrementais de homologação; CI 45497444322/45497444474. Sem nova compilação ou publicação confirmada.
+- SYS-03/QA-02: #216 HEAD 70add17a5e07a71cbc8d4b5d8aed1db92add6d1e. Limites de diagnóstico filtrado e validação antes de abrir destino; CI 45497730735/45497730714. Sem garantia de atomicidade de provedor externo.
+- MAP-02/SYS-03: #217 HEAD 6004cf1857c0a8fee8fa06c3eb1576ed4dabdf11. Trava compartilhada no mesmo processo para mutações de Locais; testes concorrentes, CI 45497948852/45497948863. Transações entre processos e importações multi-etapas fora do escopo.
+- PGBR-PR-TRIAGE: #184 comparada com main; VgpController.java, VgpControllerTest.java e test_vgp_appearance_two_choices.py têm blobs idênticos. Outros quatro arquivos diferem; não encerrar a PR sem reconciliar diferenças e Mestre histórico.
+- Os 76 IDs e seis itens marcados permanecem. Não confundir correção parcial com conclusão de todos os requisitos. device_tested=false.
