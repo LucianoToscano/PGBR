@@ -30,6 +30,7 @@ public class RouteTraceHarness {
     check(c.newPoints==null && c.legFraction>.4 && c.legFraction<.5 && c.remainingMeters<a.remainingMeters);
     check(Math.abs(c.completedMeters-5)<1e-4 && Math.abs(c.routeMeters-c.completedMeters-c.remainingMeters)<1e-4);
     check(e.routeVisualSnapshot(0).newPoints[1][1]==.0001);
+    check(e.setVisualRoutePaused(c.token,true)); double before=e.longitude; e.step(.25); check(e.longitude==before&&e.metersPerSecond()==0&&e.routeVisualSnapshot(c.token).paused&&e.speedKmh==3.6);check(!e.setVisualRoutePaused(c.token+1,false));check(e.setVisualRoutePaused(c.token,false));e.step(.25);check(e.longitude>before);
     e.speed(0); check(e.routeVisualSnapshot(c.token).paused);
     e.stop(); check(e.routeVisualSnapshot(c.token)==null);
     e.speed(3.6); e.position(0,0); e.walkVisualRoute(new double[][]{{0,0},{0,.000001}},true);
@@ -49,7 +50,7 @@ public class RouteTraceHarness {
     e.stop(); e.position(0,0); e.walkTo(0,.0001); check(e.routeVisualSnapshot(0)==null);
     e.walkRoute(new double[][]{{0,0},{0,.0001}},false);
     long ordinary=e.activeRouteToken();check(ordinary!=0&&e.activeVisualRouteToken()==0&&e.routeVisualSnapshot(0)==null);
-    check(!e.stopVisualRoute(ordinary)&&e.walking);
+    check(!e.stopVisualRoute(ordinary)&&!e.setVisualRoutePaused(ordinary,true)&&e.walking);
     e.stop();e.position(0,0);e.walkVisualTo(0,.0001);
     MotionEngine.RouteVisualSnapshot direct=e.routeVisualSnapshot(0);
     check(direct!=null&&direct.total==2&&direct.visited==1&&direct.newPoints.length==2&&e.activeRouteToken()==0);

@@ -115,7 +115,7 @@ public final class WorldMapDialog {
         layerScroll.setHorizontalScrollBarEnabled(false);
         for(int i=0;i<names.length;i++){
             final int bit=1<<i;CheckBox toggle=new CheckBox(ui);toggle.setText(dev.pgrazor.PtBr.tr(names[i]));toggle.setTextSize(13);
-            boolean enabled=preferences.getBoolean(names[i],false);if(enabled)map.setPoiLayer(bit,true);toggle.setChecked(enabled);
+            boolean enabled=preferences.getBoolean(names[i],i==3&&preferences.getBoolean("Stops",false));if(enabled)map.setPoiLayer(bit,true);toggle.setChecked(enabled);
             final String key=names[i];toggle.setOnCheckedChangeListener((b,on)->{map.setPoiLayer(bit,on);preferences.edit().putBoolean(key,on).apply();map.refreshPois();});
             layers.addView(toggle,new LinearLayout.LayoutParams(-2,-2));
         }
@@ -159,6 +159,16 @@ public final class WorldMapDialog {
         layout.map = mapFrame;
         layout.addView(mapFrame,new LinearLayout.LayoutParams(-1,dp(activity,240)));
         layout.addView(selected);
+        LinearLayout walkControls=new LinearLayout(ui);Button pauseWalk=button(ui,"Pausar"),stopWalk=button(ui,"Parar percurso");
+        walkControls.addView(pauseWalk,new LinearLayout.LayoutParams(0,dp(activity,48),1));
+        walkControls.addView(stopWalk,new LinearLayout.LayoutParams(0,dp(activity,48),1));layout.addView(walkControls);
+        map.setActiveWalkControls(walkControls,pauseWalk,stopWalk);
+        pauseWalk.setOnClickListener(v->{long token=map.displayedWalkToken;MotionEngine.RouteVisualSnapshot state=Control.engine.routeVisualSnapshot(token);
+            if(state==null||state.token!=token||Control.gameRoutesRunning())return;
+            if(!Control.engine.setVisualRoutePaused(token,!state.paused))Toast.makeText(activity,"Escolha uma velocidade de caminhada maior que zero para continuar.",Toast.LENGTH_SHORT).show();
+            else Control.saveState();map.refreshWalkControls();});
+        stopWalk.setOnClickListener(v->{long token=map.displayedWalkToken;if(token==0)return;
+            new AlertDialog.Builder(ui).setTitle("Encerrar percurso personalizado?").setMessage("Somente este percurso será interrompido.").setNegativeButton("Cancelar",null).setPositiveButton("Parar",(d,w)->{Control.stopVisualWalk(token);map.refreshWalkControls();}).show();});
         CheckBox loop = new CheckBox(ui); loop.setText(dev.pgrazor.PtBr.tr("Loop route")); loop.setTextSize(13);
         loop.setContentDescription(dev.pgrazor.PtBr.tr("Repeat the route from the first stop after the last")); loop.setVisibility(View.GONE);
         LinearLayout routeTools = new LinearLayout(ui);
@@ -181,7 +191,7 @@ public final class WorldMapDialog {
         pin.setOnClickListener(v -> { map.centerSelection(); CoordinateClipboard.copy(activity, map.latitude, map.longitude, "Pin location copied"); });
         copyRow.addView(current, new LinearLayout.LayoutParams(0, dp(activity, 48), 1));
         copyRow.addView(pin, new LinearLayout.LayoutParams(0, dp(activity, 48), 1));
-        Button savePin=button(ui,"Salvar");savePin.setOnClickListener(v->places.openLibrary());
+        Button savePin=button(ui,"Salvar");savePin.setOnClickListener(v->places.showSave(null));
         copyRow.addView(savePin,new LinearLayout.LayoutParams(0,dp(activity,48),1));
         layout.addView(copyRow);
         LinearLayout actions = new LinearLayout(ui);
@@ -402,23 +412,39 @@ public final class WorldMapDialog {
                 }
             });
         }
-        private void showLibrary(SavedPlaces.Snapshot snapshot) {
+        private void showLibrary(SavedPlaces.Snapshot snapshot) {showLibrary(snapshot,"");}
+        private void showLibrary(SavedPlaces.Snapshot snapshot,String query) {
+            String needle=query.trim().toLowerCase(Locale.ROOT);
+            List<SavedPlaces.Entry> filtered=new ArrayList<>();
+            for(SavedPlaces.Entry e:snapshot.entries)if((e.name+" "+e.category).toLowerCase(Locale.ROOT).contains(needle))filtered.add(e);
             AlertDialog.Builder builder = new AlertDialog.Builder(ui).setTitle(dev.pgrazor.PtBr.tr("Saved places (" + snapshot.entries.size() + "/" + SavedPlaces.LIMIT + ")"))
                 .setNegativeButton(dev.pgrazor.PtBr.tr("Close"), null).setPositiveButton(dev.pgrazor.PtBr.tr("Save selected"), null);
+            builder.setNeutralButton("Buscar",null);
             final AlertDialog[] holder = new AlertDialog[1];
-            if (snapshot.entries.isEmpty()) builder.setMessage(dev.pgrazor.PtBr.tr(snapshot.damaged ? "Saved places could not be read. You can save new destinations here." : "No saved places yet. Save the selected map destination to find it again later."));
+            if(filtered.isEmpty()&&!snapshot.entries.isEmpty())builder.setMessage("Nenhum favorito corresponde à busca: "+query);
+            else if (snapshot.entries.isEmpty()) builder.setMessage(dev.pgrazor.PtBr.tr(snapshot.damaged ? "Saved places could not be read. You can save new destinations here." : "No saved places yet. Save the selected map destination to find it again later."));
             else {
-                List<SavedPlaces.Entry> ordered=new ArrayList<>(snapshot.entries);
+                List<SavedPlaces.Entry> ordered=new ArrayList<>(filtered);
                 ordered.sort(java.util.Comparator.comparing((SavedPlaces.Entry e)->e.category).thenComparing(e->e.name,String.CASE_INSENSITIVE_ORDER));
                 String[] names = new String[ordered.size()];
+                LocalTimeClock clock=new LocalTimeClock();long now=System.currentTimeMillis();
                 for (int i = 0; i < names.length; i++) {
                     SavedPlaces.Entry entry = ordered.get(i);
-                    names[i] = String.format(Locale.US, "%s • %s\n%.6f, %.6f", entry.category,entry.name, entry.latitude, entry.longitude);
+                    String detail=clock.label(entry.latitude,entry.longitude,now,true,Locale.forLanguageTag("pt-BR"));
+                    if(Control.locationKnown())detail+=String.format(Locale.forLanguageTag("pt-BR")," • %.0f m",distanceMeters(Control.currentLatitude(),Control.currentLongitude(),entry.latitude,entry.longitude));
+                    if(Control.locationKnown()&&Cooldown.hasHistory())detail+=" • espera est. "+((Cooldown.remainingAt(entry.latitude,entry.longitude)+59999)/60000)+" min";
+                    names[i]=String.format(Locale.US,"%s • %s\n%.6f, %.6f\n%s",entry.category,entry.name,entry.latitude,entry.longitude,detail);
                 }
                 ChoiceList.attach(holder[0] = builder.create(), names, which -> showPlace(ordered.get(which)));
             }
             if (holder[0] == null) holder[0] = builder.create();
-            holder[0].setOnShowListener(d -> holder[0].getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> showSave(holder[0])));
+            holder[0].setOnShowListener(d -> {
+                holder[0].getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> showSave(holder[0]));
+                holder[0].getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener(v->{
+                    EditText field=new EditText(ui);field.setSingleLine(true);field.setHint("Nome ou categoria");field.setText(query);
+                    AlertDialog search=new AlertDialog.Builder(ui).setTitle("Buscar favoritos").setView(field).setNegativeButton("Cancelar",null).setPositiveButton("Buscar",(x,y)->{if(closed)return;holder[0].dismiss();showLibrary(snapshot,field.getText().toString());}).create();show(search);
+                });
+            });
             show(holder[0]);
             if (snapshot.damaged && !snapshot.entries.isEmpty()) Toast.makeText(activity, dev.pgrazor.PtBr.tr("Some saved places could not be read. Valid entries are shown."), Toast.LENGTH_LONG).show();
         }
@@ -445,7 +471,7 @@ public final class WorldMapDialog {
                         store().add(entry);
                         main.post(() -> {
                             if (!closed && dialog.isShowing()) {
-                                dialog.dismiss(); library.dismiss(); Toast.makeText(activity, "Saved " + entry.name, Toast.LENGTH_SHORT).show(); openLibrary();
+                                dialog.dismiss(); if(library!=null)library.dismiss(); Toast.makeText(activity, "Saved " + entry.name, Toast.LENGTH_SHORT).show(); openLibrary();
                             }
                         });
                     } catch (IOException | RuntimeException e) {
@@ -536,6 +562,10 @@ public final class WorldMapDialog {
         private boolean traceEnabled, draftLoop;
         void setDraftLoop(boolean loop){draftLoop=loop;invalidate();}
         private TextView traceSummary;
+        private final LocalTimeClock destinationClock=new LocalTimeClock();
+        private LinearLayout walkControls;private Button pauseWalk,stopWalk;private long displayedWalkToken;
+        void setActiveWalkControls(LinearLayout controls,Button pause,Button stop){walkControls=controls;pauseWalk=pause;stopWalk=stop;refreshWalkControls();}
+        private void refreshWalkControls(){if(walkControls==null)return;long token=Control.engine.activeVisualRouteToken();MotionEngine.RouteVisualSnapshot state=token==0?null:Control.engine.routeVisualSnapshot(token);displayedWalkToken=state==null?0:state.token;walkControls.setVisibility(state==null||Control.gameRoutesRunning()?View.GONE:View.VISIBLE);if(state!=null)pauseWalk.setText(state.paused?"Retomar":"Pausar");}
         private String traceLabel="";
         private final Paint tracePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         private RouteTraceStyle traceStyle=RouteTraceStyle.defaults();
@@ -568,6 +598,7 @@ public final class WorldMapDialog {
                     traceState.routeMeters>0?100*traceState.completedMeters/traceState.routeMeters:0,
                     traceState.completedMeters/1000,traceState.routeMeters/1000,traceState.remainingMeters/1000,
                     traceState.looping?" • circular":"");
+                if(traceState!=null&&Control.engine.speedKmh>0){long sec=(long)Math.ceil(traceState.remainingMeters/(Control.engine.speedKmh/3.6));label+=String.format(Locale.US," • ETA %d:%02d",sec/60,sec%60);}
                 else label="Nenhum percurso ativo.";
             }
             if(!label.equals(traceLabel)){traceSummary.setText(label);traceLabel=label;}
@@ -585,7 +616,7 @@ public final class WorldMapDialog {
         private final Runnable locationRefresh = new Runnable() {
             public void run() {
                 if(closed) return;
-                refreshTrace();updateSelection();
+                refreshTrace();updateSelection();refreshWalkControls();
                 invalidate(); // Refresh the live player marker without requesting new tiles.
                 postDelayed(this, 250);
             }
@@ -636,6 +667,7 @@ public final class WorldMapDialog {
             String info=String.format(Locale.US,"Local selecionado: %.6f, %.6f",latitude,longitude);
             if(Control.locationKnown())info+=String.format(Locale.forLanguageTag("pt-BR"),"\nDistância: %.0f m",distanceMeters(Control.currentLatitude(),Control.currentLongitude(),latitude,longitude));
             if(Control.locationKnown()&&Cooldown.hasHistory()){long seconds=(Cooldown.remainingAt(latitude,longitude)+999)/1000;info+=String.format(Locale.US," • Cooldown est.: %d:%02d:%02d",seconds/3600,seconds/60%60,seconds%60);}else info+=" • Cooldown: sem estimativa";
+            info+="\nHorário local: "+destinationClock.label(latitude,longitude,System.currentTimeMillis(),true,Locale.forLanguageTag("pt-BR"));
             if(!info.contentEquals(selectionLabel.getText()))selectionLabel.setText(info);
         }
         private double displayedTileSize() { return (zoom == 0 ? Math.max(1, Math.min(getWidth(), getHeight())) : tileSize)*zoomScale; }

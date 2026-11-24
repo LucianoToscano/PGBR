@@ -137,7 +137,7 @@ final class MapPoiLayer {
             if (point.optBoolean("egg")) { paint.setColor(Color.rgb(65, 45, 85)); canvas.drawCircle(x + radius * .8f, y + radius * .8f, radius * .45f, paint); paint.setColor(Color.WHITE); paint.setTextAlign(Paint.Align.CENTER); paint.setTextSize(radius * .65f); canvas.drawText("E", x + radius * .8f, y + radius * 1.02f, paint); }
         } else if (stop) {
             Bitmap stopIcon = loadIcon("stop.png");
-            boolean rocket = rocketName(point, now) != null;
+            boolean rocket = (layers & 8) != 0 && rocketName(point, now) != null;
             if (stopIcon != null && stopIcon.getWidth() > 0 && stopIcon.getHeight() > 0) {
                 // PokeMiners pokestop_near art, aspect-fit within the marker diameter and centred; no white backing or halo.
                 float scale = Math.min(2 * radius / stopIcon.getWidth(), 2 * radius / stopIcon.getHeight());
@@ -236,7 +236,7 @@ final class MapPoiLayer {
         for(int i=0;i<pois.length();i++){JSONObject p=pois.optJSONObject(i);if(p==null||!poiVisible(p,now))continue;double lat=p.optDouble("lat",Double.NaN),lon=p.optDouble("lon",Double.NaN);if(Double.isFinite(lat)&&Double.isFinite(lon)&&Math.abs(lat)<=90&&Math.abs(lon)<=180)rows.add(p);}
         final boolean known=Control.locationKnown();final double lat=Control.currentLatitude(),lon=Control.currentLongitude();
         if(known)rows.sort(java.util.Comparator.comparingDouble(p->WorldMapDialog.distanceMeters(lat,lon,p.optDouble("lat"),p.optDouble("lon"))));
-        int count=Math.min(200,rows.size());String[] labels=new String[count];for(int i=0;i<count;i++){JSONObject p=rows.get(i);String line=dev.pgrazor.PtBr.tr(poiShortLabel(p));if(known)line+=String.format(Locale.forLanguageTag("pt-BR")," • %.0f m",WorldMapDialog.distanceMeters(lat,lon,p.optDouble("lat"),p.optDouble("lon")));if(p.optLong("raidEnd")>now)line+=" • "+countdown(p.optLong("raidEnd")-now);labels[i]=line;}
+        int count=Math.min(200,rows.size());String[] labels=new String[count];for(int i=0;i<count;i++){JSONObject p=rows.get(i);String line=dev.pgrazor.PtBr.tr(poiShortLabel(p));int boss=p.optInt("boss",0);if(p.optLong("raidEnd")>now&&boss>0&&!p.optBoolean("egg")){String name=bossName(boss);line+=" • "+(name==null?"#"+boss:name);}if(known)line+=String.format(Locale.forLanguageTag("pt-BR")," • %.0f m",WorldMapDialog.distanceMeters(lat,lon,p.optDouble("lat"),p.optDouble("lon")));if(p.optLong("raidEnd")>now)line+=" • "+countdown(p.optLong("raidEnd")-now);labels[i]=line;}
         AlertDialog.Builder b=new AlertDialog.Builder(dialogContext).setTitle("Recursos próximos ("+count+"/"+rows.size()+")").setNegativeButton("Fechar",null);
         AlertDialog d=count==0?b.setMessage("Nenhum recurso disponível nas camadas selecionadas.").create():ChoiceList.attach(b.create(),labels,i->showPoiDetails(rows.get(i)));
         registerPoiDialog(d);d.show();
