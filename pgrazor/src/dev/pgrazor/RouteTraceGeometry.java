@@ -24,7 +24,7 @@ public final class RouteTraceGeometry {
     private RouteTraceGeometry(double[] x,double[] y,double[] meters,boolean[] connected,
                                double total,boolean startMarker,boolean endMarker) {
         if (x == null || y == null || meters == null || x.length != y.length ||
-            x.length != meters.length || x.length < 2 || x.length > (connected==null?MAX_POINTS:MAX_POINTS*2) ||
+            x.length != meters.length || x.length < 2 || x.length > (connected==null?MAX_POINTS:MAX_POINTS*2+1) ||
             (connected!=null&&(connected.length!=x.length||connected[0])) || !Double.isFinite(total)||total<0)
             throw new IllegalArgumentException("Invalid route geometry");
         this.x = x.clone(); this.y = y.clone(); this.meters = meters.clone();
