@@ -98,12 +98,13 @@ public final class MotionEngine {
         public final long token;
         public final double[][] newPoints;
         public final int visited, total;
-        public final double legFraction, remainingMeters;
+        public final double legFraction, remainingMeters, routeMeters, completedMeters;
         public final boolean looping, paused;
         private RouteVisualSnapshot(long token,double[][] points,int visited,int total,
-                double fraction,double remaining,boolean looping,boolean paused) {
+                double fraction,double remaining,double routeMeters,double completedMeters,boolean looping,boolean paused) {
             this.token=token; this.newPoints=points; this.visited=visited; this.total=total;
             this.legFraction=fraction; this.remainingMeters=remaining;
+            this.routeMeters=routeMeters; this.completedMeters=completedMeters;
             this.looping=looping; this.paused=paused;
         }
     }
@@ -122,8 +123,10 @@ public final class MotionEngine {
             double left=progress.remainingMeters-remainingLegMeters[visitedStops];
             if(length>0) fraction=Math.max(0,Math.min(1,1-left/length));
         }
+        double total=remainingLegMeters[0];
+        double completed=visitedStops==0?0:Math.max(0,Math.min(total,total-progress.remainingMeters));
         return new RouteVisualSnapshot(token,copy,visitedStops,route.length,fraction,
-                progress.remainingMeters,looping,!enabled||speedKmh==0);
+                progress.remainingMeters,total,completed,looping,!enabled||speedKmh==0);
     }
 
     private static void validatePosition(double lat, double lon) {
