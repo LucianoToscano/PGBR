@@ -32,11 +32,14 @@ jobs:
       - name: Executar harness ancoras com saida anotada
         shell: bash
         run: |
+          set +e
           mkdir -p /tmp/anchor-classes
           javac -encoding UTF-8 -d /tmp/anchor-classes pgrazor/src/dev/pgrazor/RouteGroundProjection.java pgrazor/src/dev/pgrazor/RouteAnchorSnapshot.java pgrazor/test/RouteAnchorHarness.java 2>&1 | tee /tmp/javac.log
-          if [ ${PIPESTATUS[0]} -ne 0 ]; then sed 's/^/::error::/' /tmp/javac.log; exit 1; fi
+          rc=${PIPESTATUS[0]}
+          if [ $rc -ne 0 ]; then sed 's/^/::error::/' /tmp/javac.log; exit 1; fi
           java -cp /tmp/anchor-classes dev.pgrazor.RouteAnchorHarness 2>&1 | tee /tmp/java.log
-          if [ ${PIPESTATUS[0]} -ne 0 ]; then sed 's/^/::error::/' /tmp/java.log; exit 1; fi
+          rc=${PIPESTATUS[0]}
+          if [ $rc -ne 0 ]; then sed 's/^/::error::/' /tmp/java.log; exit 1; fi
       - name: Testar allowlist do motor compartilhado (Rocket, PvP, treino)
         run: |
           g++ -std=c++17 -Wall -Wextra -Werror -I pgrazor/native pgrazor/native/battle_target_policy_test.cpp -o /tmp/battle_target_policy_test
