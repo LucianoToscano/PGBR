@@ -44,6 +44,15 @@ public final class LogExportTest {
         String safe=new String(LogExport.shareLog(new ByteArrayInputStream(raw.getBytes(StandardCharsets.UTF_8))),StandardCharsets.UTF_8);
         if(safe.contains("secret-example")||safe.contains("private-example")||!safe.contains("\"reasonCode\":12")||!safe.contains("actor-unknown"))throw new AssertionError("Log privacy");
         if(!safe.contains("\"itemId\":708")||!safe.contains("\"itemId\":1401")||safe.contains("999999999"))throw new AssertionError("Icon diagnostic privacy");
+        LocalDiagnosticSummary.Summary summary=LocalDiagnosticSummary.parse(safe);
+        if(summary.records!=5||summary.omitted!=1||summary.unclassified!=1||summary.transfers.get(12)!=1||summary.battle.get("actor-unknown")!=1||summary.icons.get(708)!=1||summary.icons.get(1401)!=1)throw new AssertionError("Filtered diagnostic summary");
+        if(summary.describe().contains("private-example")||summary.describe().contains("secret-example")||!summary.describe().contains("não Pokémon únicos"))throw new AssertionError("Summary privacy or caveat");
+        try{LocalDiagnosticSummary.parse(safe.substring(0,safe.indexOf("Registros omitidos:")));throw new AssertionError("Truncated diagnostic");}catch(IllegalArgumentException expected){}
+        try{LocalDiagnosticSummary.parse(raw);throw new AssertionError("Raw diagnostic accepted");}catch(IllegalArgumentException expected){}
+        String invalid=LocalDiagnosticSummary.HEADER+"\n2026-11-24T01:10:00.000-03:00 [transfer-kept] {\"reasonCode\":\"12\"}\n"
+          +"2026-11-24T01:10:00.000-03:00 [battle-action] {\"reason\":\"secret-example\"}\nRegistros omitidos: 0\n";
+        LocalDiagnosticSummary.Summary bad=LocalDiagnosticSummary.parse(invalid);
+        if(bad.unclassified!=2||!bad.transfers.isEmpty()||!bad.battle.isEmpty()||bad.describe().contains("secret-example"))throw new AssertionError("Untrusted values");
         java.nio.file.Path dir=java.nio.file.Files.createTempDirectory("pgbr-export-test");
         File tmp=dir.resolve("current.tmp").toFile(),old=dir.resolve("old.zip").toFile(),dest=dir.resolve("current.zip").toFile();
         try{

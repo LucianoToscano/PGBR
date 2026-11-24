@@ -8,7 +8,7 @@ final class LocalAuditDialog {
  private LocalAuditDialog(){}
  static void show(Activity a){
   AlertDialog d=new AlertDialog.Builder(MapTheme.wrap(a)).setTitle("Análise local • sem ações no jogo")
-   .setItems(new String[]{"Prévia de proteção da coleção","Simular ataques carregados","Interpretar código de diagnóstico","Avaliar lista de Pokémon","Planejar energia PvP","Interpretar diagnóstico PvP","Planejar alternativas de frutas","Preparar equipe Max (manual)"},(x,i)->{if(i==0)collection(a);else if(i==1)combat(a);else if(i==2)reason(a);else if(i==3)batch(a);else if(i==4)energyPlan(a);else if(i==5)battleDiagnostic(a);else if(i==6)berryPlan(a);else maxPlan(a);})
+   .setItems(new String[]{"Prévia de proteção da coleção","Simular ataques carregados","Interpretar código de diagnóstico","Avaliar lista de Pokémon","Planejar energia PvP","Interpretar diagnóstico PvP","Planejar alternativas de frutas","Preparar equipe Max (manual)","Resumir diagnóstico filtrado"},(x,i)->{if(i==0)collection(a);else if(i==1)combat(a);else if(i==2)reason(a);else if(i==3)batch(a);else if(i==4)energyPlan(a);else if(i==5)battleDiagnostic(a);else if(i==6)berryPlan(a);else if(i==7)maxPlan(a);else summarize(a);})
    .setNegativeButton("Fechar",null).create();present(a,d);
  }
  static void present(Activity a,AlertDialog d){DialogLifecycle.bind(a,d,null);d.setOnShowListener(x->MapTheme.styleButtons(d));d.show();}
@@ -59,12 +59,16 @@ final class LocalAuditDialog {
   EditText limit=input(a,b,"IV mínimo para preservar (0–100; 101 desativa só o limite de IV)","99");
   EditText protectedNames=input(a,b,"Espécies adicionais protegidas (nomes exatos separados por vírgulas)","");
   text(a,b,"A lista é adicional aos 20 critérios; formas diferentes precisam de nomes próprios. Não usa dados do jogo.");
-  EditText records=new EditText(MapTheme.wrap(a));records.setMinLines(4);records.setMaxLines(8);records.setHint("Rattata;478;4;4;5;EVENT=1,SHINY=0");records.setFilters(new android.text.InputFilter[]{new android.text.InputFilter.LengthFilter(LocalCollectionPreview.MAX_CHARS+1)});b.addView(records);
+  EditText records=new EditText(MapTheme.wrap(a));records.setMinLines(4);records.setMaxLines(8);records.setHint("Rattata;478;4;4;5;EVENT=1,SHINY=0");b.addView(records);
   LocalAuditPolicy.Flag[] flags=LocalAuditPolicy.Flag.values();CheckBox[] active=new CheckBox[flags.length];
   for(int i=0;i<flags.length;i++){CheckBox c=new CheckBox(MapTheme.wrap(a));c.setText("Proteger "+flags[i].label+" ("+flags[i].name()+")");c.setChecked(true);b.addView(c);active[i]=c;}
   Spinner filter=select(a,b,"Mostrar resultados",new String[]{"Todos","Protegidos","Protegidos por incerteza","Correspondem ao filtro"});
   TextView result=text(a,b,"");
-  LocalCollectionPreview.Report[] report={null};int[] page={0};String[] evaluatedAt={""};
+  LocalCollectionPreview.Report[] report={null};int[] page={0};String[] evaluatedAt={""};final boolean[] oversized={false};
+  records.setFilters(new android.text.InputFilter[]{(incoming,start,end,dest,ds,de)->{
+   if((long)dest.length()-(de-ds)+(end-start)>LocalCollectionPreview.MAX_CHARS){oversized[0]=true;report[0]=null;page[0]=0;records.setError("Lista grande demais. Use lotes menores.");return dest.subSequence(ds,de);}
+   if(ds==0&&de==dest.length()){oversized[0]=false;records.setError(null);}return null;
+  }});
   java.util.function.Supplier<LocalAuditPolicy.Status> status=()->filter.getSelectedItemPosition()<=0?null:LocalAuditPolicy.Status.values()[filter.getSelectedItemPosition()-1];
   Runnable render=()->{
    if(report[0]==null){result.setText("Avalie a lista para obter os resultados.");return;}
@@ -95,7 +99,7 @@ final class LocalAuditDialog {
   });
   action(a,b,"Avaliar lista sem transferir",()->{
    report[0]=null;page[0]=0;
-   if(records.length()>LocalCollectionPreview.MAX_CHARS){result.setText("A lista ultrapassa o limite e pode ter sido cortada. Substitua por lotes completos menores; nenhum registro foi avaliado.");return;}
+   if(oversized[0]||records.length()>LocalCollectionPreview.MAX_CHARS){result.setText("Colagem rejeitada por tamanho. Substitua todo o conteúdo por um lote completo menor; nenhum registro foi avaliado.");return;}
    try{
     EnumSet<LocalAuditPolicy.Flag> selected=EnumSet.noneOf(LocalAuditPolicy.Flag.class);for(int i=0;i<flags.length;i++)if(active[i].isChecked())selected.add(flags[i]);
     report[0]=LocalCollectionPreview.parse(records.getText().toString(),integer(limit),selected,LocalAuditPolicy.protectedNames(protectedNames.getText().toString()));evaluatedAt[0]=new java.util.Date().toString();render.run();
@@ -114,6 +118,27 @@ final class LocalAuditDialog {
   present(a,new AlertDialog.Builder(MapTheme.wrap(a)).setTitle("Prévia de coleção em lote").setView(scroll(a,b)).setPositiveButton("Fechar",null).create());
  }
  static void reason(Activity a){LinearLayout b=body(a);EditText code=input(a,b,"reasonCode","12");TextView r=text(a,b,"");action(a,b,"Interpretar",()->{try{r.setText(LocalAuditPolicy.reason(integer(code)));}catch(RuntimeException e){r.setText("Código inválido.");}});present(a,new AlertDialog.Builder(MapTheme.wrap(a)).setTitle("Motivos de proteção").setView(b).setPositiveButton("Fechar",null).create());}
+ static void summarize(Activity a){
+  LinearLayout b=body(a);text(a,b,"Abra o ZIP filtrado, extraia diagnostico.txt e cole seu conteúdo completo. Não cole o TXT bruto. A análise é local e não envia nem executa nada.");
+  EditText source=new EditText(MapTheme.wrap(a));source.setMinLines(4);source.setMaxLines(8);
+  source.setHint("Conteúdo de diagnostico.txt");
+  // Reject an oversized replacement completely, instead of silently truncating it.
+  final boolean[] rejected={false};
+  source.setFilters(new android.text.InputFilter[]{(incoming,start,end,dest,ds,de)->{
+   if((long)dest.length()-(de-ds)+(end-start)>LocalDiagnosticSummary.MAX_CHARS){
+    rejected[0]=true;source.setError("Diagnóstico grande demais; use uma exportação menor.");return dest.subSequence(ds,de);
+   }
+   // Require a complete replacement/clear after a rejected paste, not an edit of stale contents.
+   if(ds==0&&de==dest.length()){rejected[0]=false;source.setError(null);}
+   return null;
+  }});
+  b.addView(source);TextView result=text(a,b,"");invalidateOnEdit(result,source);
+  action(a,b,"Resumir registros",()->{try{
+    if(rejected[0])throw new IllegalArgumentException("Substitua todo o conteúdo após a colagem rejeitada.");
+    result.setText(LocalDiagnosticSummary.parse(source.getText().toString()).describe());
+   }catch(IllegalArgumentException invalid){result.setText(invalid.getMessage());}});
+  present(a,new AlertDialog.Builder(MapTheme.wrap(a)).setTitle("Resumo local de diagnóstico").setView(scroll(a,b)).setPositiveButton("Fechar",null).create());
+ }
  static void maxPlan(Activity a){
   LinearLayout b=body(a);text(a,b,"Preparação manual. Informe os tipos da forma correta, o tipo do golpe Max e um tipo de ataque do chefe que você confirmou. Isto compara apenas multiplicadores de tipo: não calcula dano, nível, habilidades Max, efeitos de equipe ou resultado da batalha.");
   Spinner f1=select(a,b,"Tipo 1 do chefe",LocalAuditPolicy.TYPES),f2=select(a,b,"Tipo 2 do chefe",LocalAuditPolicy.TYPES),fm=select(a,b,"Tipo do ataque do chefe",LocalAuditPolicy.TYPES);
