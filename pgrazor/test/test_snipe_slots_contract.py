@@ -20,7 +20,7 @@ class SnipeSlotsContractTests(unittest.TestCase):
         cls.hundo = (SRC / "HundoFeedData.java").read_text(encoding="utf-8")
 
     def test_previous_feed_choices_keep_their_indices(self):
-        for previous_index in range(6):
+        for previous_index in range(5):
             with self.subTest(index=previous_index):
                 self.assertIn(f"which == {previous_index}", self.menu)
         for item in (
@@ -29,11 +29,10 @@ class SnipeSlotsContractTests(unittest.TestCase):
             "LiveFeedDialog.show(activity)",
             "PogoFeedDialog.show(activity)",
             "HundoFeedDialog.show(activity)",
-            "PgSharpFeedDialog.show(activity)",
         ):
             with self.subTest(item=item):
                 self.assertIn(item, self.menu)
-        self.assertIn("which == 6", self.menu)
+        self.assertIn("which == 5) SnipeSlotsDialog.show(activity)", self.menu)
         self.assertIn("SnipeSlotsDialog.show(activity)", self.menu)
 
     def test_two_slots_stay_independent(self):
