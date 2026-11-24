@@ -9,6 +9,8 @@ public final class SmartCatchPreferences {
     private int ball=1, berry, highCp=1500, highLevel=30, grade=3, autoBallTarget=75, variety, speed;
     private String candySpecies="",catchSpecies="";
     private boolean rareCustom;
+    private String catchTags="",candyTags="";
+    private int tagBerry=705;
     private int rareMask=17,rareIvMin=90,rareBerry=706;
     private static final int[] BERRIES={0,701,703,705,706,708};
 
@@ -36,6 +38,29 @@ public final class SmartCatchPreferences {
         for(int id:ids){if(out.length()>0)out.append(',');out.append(id);}
         return out.toString();
     }
+    public static String normalizeTags(String value){
+        if(value==null||value.length()>512)throw new IllegalArgumentException("Use até 8 etiquetas.");
+        if(value.trim().isEmpty())return "";
+        String[] names=value.split(",",-1);
+        if(names.length>8)throw new IllegalArgumentException("Use até 8 etiquetas.");
+        java.util.LinkedHashSet<String> unique=new java.util.LinkedHashSet<>();
+        for(String part:names){
+            String name=part.trim();
+            if(name.isEmpty()||name.getBytes(java.nio.charset.StandardCharsets.UTF_8).length>32)throw new IllegalArgumentException("Nome de etiqueta inválido (até 32 bytes).");
+            for(int i=0;i<name.length();i++)if(Character.isISOControl(name.charAt(i)))throw new IllegalArgumentException("Nome contém caractere de controle.");
+            unique.add(name);
+        }
+        return String.join(",",unique);
+    }
+    private static String encodeTags(String names){
+        StringBuilder out=new StringBuilder();
+        if(names.isEmpty())return "";
+        for(String name:names.split(",")){
+            if(out.length()>0)out.append(',');
+            for(byte b:name.getBytes(java.nio.charset.StandardCharsets.UTF_8)){int n=b&255;out.append("0123456789abcdef".charAt(n>>>4)).append("0123456789abcdef".charAt(n&15));}
+        }
+        return out.toString();
+    }
     public synchronized void read(Properties p){
         enabled=flag(p,"Enabled",false);ball=number(p,"Ball",1,1,3);
         berry=number(p,"Berry",0,0,708);if(!validBerry(berry))berry=0;
@@ -45,6 +70,9 @@ public final class SmartCatchPreferences {
         rareCustom=flag(p,"RareCustom",false);rareMask=number(p,"RareMask",17,0,31);
         rareIvMin=number(p,"RareIvMin",90,1,100);rareBerry=number(p,"RareBerry",706,0,708);
         if(!validBerry(rareBerry))rareBerry=706;
+        tagBerry=number(p,"TagBerry",705,0,708);if(!validBerry(tagBerry))tagBerry=705;
+        try{catchTags=normalizeTags(p.getProperty("smartCatchCatchTags",""));}catch(IllegalArgumentException invalid){catchTags="";enabled=false;}
+        try{candyTags=normalizeTags(p.getProperty("smartCatchCandyTags",""));}catch(IllegalArgumentException invalid){candyTags="";enabled=false;}
         String spin=p.getProperty("smartCatchSpinGyms");
         if(spin==null)spin=p.getProperty("gymAutomationSpin");
         spinGyms="true".equals(spin);
@@ -65,6 +93,8 @@ public final class SmartCatchPreferences {
         p.setProperty("smartCatchRareMask",String.valueOf(rareMask));
         p.setProperty("smartCatchRareIvMin",String.valueOf(rareIvMin));
         p.setProperty("smartCatchRareBerry",String.valueOf(rareBerry));
+        p.setProperty("smartCatchCatchTags",catchTags);p.setProperty("smartCatchCandyTags",candyTags);
+        p.setProperty("smartCatchTagBerry",String.valueOf(tagBerry));
     }
     public synchronized String config(){
         // Version 2 adds auto ball and its target before the species list; version 3 appends the
@@ -75,6 +105,12 @@ public final class SmartCatchPreferences {
         String q=query==null?"":query.trim().toLowerCase(java.util.Locale.US);
         if(q.startsWith("#"))q=q.substring(1).trim();
         return q.isEmpty()||String.valueOf(id).contains(q)||(name!=null&&name.toLowerCase(java.util.Locale.US).contains(q));
+    }
+    public synchronized String catchTags(){return catchTags;}
+    public synchronized String candyTags(){return candyTags;}
+    public synchronized int tagBerry(){return tagBerry;}
+    public synchronized String tagConfig(){
+        return !enabled||(catchTags.isEmpty()&&candyTags.isEmpty())?"":";"+rareMask+";"+rareIvMin+";"+rareBerry+";"+(rareCustom?1:0)+";"+encodeTags(catchTags)+";"+encodeTags(candyTags)+";"+tagBerry;
     }
     public synchronized boolean rareCustom(){return rareCustom;}
     public synchronized int rareMask(){return rareMask;}
@@ -103,6 +139,7 @@ public final class SmartCatchPreferences {
     /** Validates a complete prospective snapshot before replacing any state. */
     public synchronized void set(String suffix,String value){
         if(suffix==null||value==null)throw new IllegalArgumentException("Setting key and value are required.");
+        if("CatchTags".equals(suffix)||"CandyTags".equals(suffix))value=normalizeTags(value);
         Properties p=new Properties();write(p);p.setProperty("smartCatch"+suffix,value);
         SmartCatchPreferences candidate=new SmartCatchPreferences();candidate.read(p);
         Properties normalized=new Properties();candidate.write(normalized);

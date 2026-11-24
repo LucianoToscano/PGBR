@@ -133,6 +133,9 @@ void pure_tests(){
  s.rare_mask=16;s.rare_iv_min=95;pgr_smart_decide(&s,false,42,true,100,10,25,&d);assert(d.ball==2);
  pgr_smart_decide(&s,false,43,true,100,10,25,&d);assert(d.ball==3);
  assert(!parse("8;1;2;0;1;0;0;3;1;0;75;;;0;0;0;0;32;90;708").enabled);
+ s=parse("9;1;2;0;1;0;0;3;1;0;75;;;0;0;0;0;8;90;708;0;646f636573;7261726f73;705");
+ assert(s.enabled&&!s.rare_custom&&std::string(s.catch_tags)=="646f636573"&&std::string(s.candy_tags)=="7261726f73"&&s.tag_berry==705);
+ assert(!parse("9;1;2;0;1;0;0;3;1;0;75;;;0;0;0;0;8;90;708;0;xyz;;705").enabled);
  s=parse("6;1;2;0;1;1500;30;3;1;0;75;25;415;2;1;2");
  // Version 7: catch only shinies appended; version 6 means off.
  assert(!s.shiny_only);

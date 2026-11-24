@@ -63,6 +63,9 @@
 #include "ar_values.h"
 #include "catch_chance.h"
 #include "tm_shortcut.h"
+#include "tag_catch.h"
+extern void pgr_tag_catch_tick(uint64_t,const PgrSharedMetadataOutput*) __attribute__((weak));
+extern void pgr_tag_catch_stop(uint64_t) __attribute__((weak));
 // Host fixtures need not link the optional UI shortcut module.
 extern void pgr_tm_tick(uint64_t,const PgrSharedMetadataOutput*,bool) __attribute__((weak));
 extern void pgr_tm_stop(uint64_t) __attribute__((weak));
@@ -2564,6 +2567,8 @@ static int api_tick(uint64_t proven_tid) {
   // 1. Berries tick, resume & event drain
   pump_berry_events_and_resume(os_tid, 0);
 
+  if(pgr_tag_catch_tick&&!raid_block&&!bird_block&&rem_lease>0)pgr_tag_catch_tick(os_tid,&g_md);
+  else if(pgr_tag_catch_stop)pgr_tag_catch_stop(os_tid);
   // 2. VGP controller tick & transfer handoff
   if(!map_block&&!pgr_map_auto_throw_active())tick_vgp_controller(os_tid, now, rem_lease);
 
@@ -2633,6 +2638,7 @@ static int api_stop(uint64_t proven_tid) {
       pgr_incense_guard_stop(tid);
       pgr_gym_stop(tid);
       pgr_evolution_stop(tid);
+      if(pgr_tag_catch_stop)pgr_tag_catch_stop(tid);
       pgr_evolve_transfer_stop(tid);
       pgr_heal_stop(tid);
       pgr_shundo_stop(tid);

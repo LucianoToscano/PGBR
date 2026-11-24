@@ -383,6 +383,8 @@ public final class Control {
         if(base.startsWith("4;"))base="7;"+base.substring(2);
         Application app=hostApplication;
         String wire=base+";"+(app!=null&&dev.pgrazor.events.EventSettings.wildVgpSafari(app)?1:0)+";"+SmartCatchSettings.speed()+";"+(SmartCatchSettings.shinyOnly()?1:0);
+        String tags=SmartCatchSettings.tagConfig();
+        if(!tags.isEmpty()&&wire.startsWith("7;"))return "9;"+wire.substring(2)+tags;
         String rare=SmartCatchSettings.rareConfig();
         return !rare.isEmpty()&&wire.startsWith("7;")?"8;"+wire.substring(2)+rare:wire;
     }

@@ -21,7 +21,7 @@ public final class SmartCatchPreferencesTest {
         eq("4;1;3;708;0;10000;50;0;0;1;85;1,25,2000;;0",p.config());
         p.set("CatchSpecies"," 415,415 ");eq("415",p.catchSpecies());eq("4;1;3;708;0;10000;50;0;0;1;85;1,25,2000;415;0",p.config());
         p.set("CatchSpecies","");eq("",p.catchSpecies());p.set("CatchSpecies","415,25");eq("4;1;3;708;0;10000;50;0;0;1;85;1,25,2000;25,415;0",p.config());
-        Properties saved=new Properties();p.write(saved);eq(20,saved.size());eq("false",saved.getProperty("smartCatchShinyOnly"));p.set("ShinyOnly","true");eq(true,p.shinyOnly());try{p.set("ShinyOnly","yes");throw new AssertionError("shiny-only yes accepted");}catch(IllegalArgumentException expected){}eq(true,p.shinyOnly());p.set("ShinyOnly","false");eq("0",saved.getProperty("smartCatchSpeed"));
+        Properties saved=new Properties();p.write(saved);eq(23,saved.size());eq("false",saved.getProperty("smartCatchShinyOnly"));p.set("ShinyOnly","true");eq(true,p.shinyOnly());try{p.set("ShinyOnly","yes");throw new AssertionError("shiny-only yes accepted");}catch(IllegalArgumentException expected){}eq(true,p.shinyOnly());p.set("ShinyOnly","false");eq("0",saved.getProperty("smartCatchSpeed"));
         p.set("Speed","2");eq(2,p.speed());try{p.set("Speed","3");throw new AssertionError("speed 3 accepted");}catch(IllegalArgumentException expected){}eq(2,p.speed());p.set("Speed","0");eq("25,415",saved.getProperty("smartCatchCatchSpecies"));
         SmartCatchPreferences restored=new SmartCatchPreferences();restored.read(saved);eq(p.config(),restored.config());eq(true,restored.spinGyms());
         Properties legacy=new Properties();legacy.setProperty("gymAutomationSpin","true");
@@ -53,6 +53,11 @@ public final class SmartCatchPreferencesTest {
         eq(";8;95;708",p.rareConfig());reject(()->p.set("RareMask","32"));reject(()->p.set("RareIvMin","0"));reject(()->p.set("RareBerry","707"));
         Properties rareSaved=new Properties();p.write(rareSaved);restored.read(rareSaved);eq(p.rareConfig(),restored.rareConfig());
         restored.read(new Properties());eq("",restored.rareConfig());
+        p.set("Enabled","true");p.set("CatchTags"," doces, raros, doces ");p.set("CandyTags","ação");p.set("TagBerry","705");
+        eq("doces,raros",p.catchTags());eq("ação",p.candyTags());eq(";8;95;708;1;646f636573,7261726f73;61c3a7c3a36f;705",p.tagConfig());
+        reject(()->p.set("CatchTags","a,,b"));reject(()->p.set("TagBerry","707"));reject(()->p.set("CandyTags","a,b,c,d,e,f,g,h,i"));
+        Properties tagsSaved=new Properties();p.write(tagsSaved);restored.read(tagsSaved);eq(p.tagConfig(),restored.tagConfig());
+        restored.read(new Properties());eq("",restored.tagConfig());
         System.out.println("SmartCatchPreferences: "+checks+" checks passed");
     }
 }

@@ -28,6 +28,7 @@ public final class SmartCatchSettings {
     static int speed(){return preferences.speed();}
     static boolean shinyOnly(){return preferences.shinyOnly();}
     static String rareConfig(){return preferences.rareConfig();}
+    static String tagConfig(){return preferences.tagConfig();}
     static String candySpecies(){return preferences.candySpecies();}
     static void setCandySpecies(String value){set("CandySpecies",value);}
     static String catchSpecies(){return preferences.catchSpecies();}
@@ -88,6 +89,11 @@ public final class SmartCatchSettings {
         gymSpin.setOnCheckedChangeListener((v,on)->{if(on!=preferences.spinGyms())set("SpinGyms",on);});
         TextView candy=button(options,"Candy species (Pinap): "+count(preferences.candySpecies(),"None"));
         candy.setOnClickListener(v->SmartCatchSpeciesDialog.show(activity,()->candy.setText(dev.pgrazor.PtBr.tr("Candy species (Pinap): "+count(preferences.candySpecies(),"None")))));
+        TextView tagHelp=new TextView(ui);tagHelp.setText("Etiquetas: informe os nomes exatos criados no jogo, separados por vírgula. A seleção abrange as famílias dos Pokémon etiquetados e respeita os filtros de espécie e Shiny. Se uma etiqueta estiver ausente ou a leitura não terminar, a captura fica bloqueada.");options.addView(tagHelp);
+        tagInput(activity,options,"Capturar famílias das etiquetas","CatchTags",preferences.catchTags());
+        tagInput(activity,options,"Fruta nas famílias das etiquetas","CandyTags",preferences.candyTags());
+        int tagBerryIndex=0;for(int i=0;i<BERRIES.length;i++)if(BERRIES[i]==preferences.tagBerry())tagBerryIndex=i;
+        row(activity,options,"Fruta para etiquetas",BERRY_NAMES,tagBerryIndex,index->{set("TagBerry",BERRIES[index]);});
         CheckBox shinyOnly=new CheckBox(ui);shinyOnly.setText(dev.pgrazor.PtBr.tr("Catch only shinies"));shinyOnly.setChecked(preferences.shinyOnly());options.addView(shinyOnly);
         TextView shinyOnlyHelp=new TextView(ui);shinyOnlyHelp.setText(dev.pgrazor.PtBr.tr("VGP+ still opens every Pokémon to see whether it is shiny, but throws only at shinies and leaves the rest on the map. Each one it opens counts as an encounter."));options.addView(shinyOnlyHelp);
         shinyOnly.setOnCheckedChangeListener((v,on)->{if(on!=preferences.shinyOnly())set("ShinyOnly",on);});
@@ -126,6 +132,17 @@ public final class SmartCatchSettings {
             DialogLifecycle.bind(a,d,null);d.setOnShowListener(x->MapTheme.styleButtons(d));d.show();
         });
         return button;
+    }
+    private static void tagInput(Activity a,LinearLayout body,String title,String key,String initial){
+        TextView b=button(body,title+": "+(initial.isEmpty()?"Nenhuma":initial));String[] current={initial};
+        b.setOnClickListener(v->{
+            EditText edit=new EditText(MapTheme.wrap(a));edit.setSingleLine(true);edit.setHint("Ex.: doces, raros");edit.setText(current[0]);
+            AlertDialog d=new AlertDialog.Builder(MapTheme.wrap(a)).setTitle(title).setView(edit).setPositiveButton("Salvar",null).setNegativeButton("Cancelar",null).create();
+            DialogLifecycle.bind(a,d,null);d.setOnShowListener(x->{MapTheme.style(edit);MapTheme.styleButtons(d);d.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(w->{
+                try{String names=SmartCatchPreferences.normalizeTags(edit.getText().toString());set(key,names);current[0]=names;b.setText(title+": "+(names.isEmpty()?"Nenhuma":names));d.dismiss();}
+                catch(IllegalArgumentException invalid){edit.setError(invalid.getMessage());}
+            });});d.show();
+        });
     }
     private static void input(Activity a,LinearLayout body,String title,String initial,Value save,boolean numeric){
         TextView button=button(body,title+": "+(initial.isEmpty()?"None":initial));final String[] current={initial};
