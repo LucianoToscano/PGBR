@@ -9,8 +9,8 @@ import java.util.function.IntSupplier;
 
 /**
  * Original-style Virtual GO Plus: a manual ON/OFF state, optional notifications
- * and map marker. It does not consult or respond to the application's estimated
- * cooldown countdown. The native layer retains response timeouts and protection
+ * and map marker. Control gates new actions on the optional estimated cooldown
+ * without changing manual intent. The native layer retains response timeouts and protection
  * against duplicate, unconfirmed catch/spin operations.
  */
 final class VgpController {
@@ -51,7 +51,7 @@ final class VgpController {
         save.run();
     }
     /**
-     * VGP is started/stopped manually, with no countdown or cooldown pause.
+     * VGP intent is started/stopped manually; the action gate is separate.
      * The game must be in foreground and the overlay enabled to start.
      */
     void setEnabled(boolean value) {

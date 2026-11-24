@@ -30,6 +30,7 @@ public class RouteTraceHarness {
     check(c.newPoints==null && c.legFraction>.4 && c.legFraction<.5 && c.remainingMeters<a.remainingMeters);
     check(Math.abs(c.completedMeters-5)<1e-4 && Math.abs(c.routeMeters-c.completedMeters-c.remainingMeters)<1e-4);
     check(e.routeVisualSnapshot(0).newPoints[1][1]==.0001);
+    check(e.setVisualRoutePaused(c.token,true)); double before=e.longitude; e.step(.25); check(e.longitude==before&&e.metersPerSecond()==0&&e.routeVisualSnapshot(c.token).paused&&e.speedKmh==3.6);check(!e.setVisualRoutePaused(c.token+1,false));check(e.setVisualRoutePaused(c.token,false));e.step(.25);check(e.longitude>before);
     e.speed(0); check(e.routeVisualSnapshot(c.token).paused);
     e.stop(); check(e.routeVisualSnapshot(c.token)==null);
     e.speed(3.6); e.position(0,0); e.walkVisualRoute(new double[][]{{0,0},{0,.000001}},true);
@@ -49,7 +50,7 @@ public class RouteTraceHarness {
     e.stop(); e.position(0,0); e.walkTo(0,.0001); check(e.routeVisualSnapshot(0)==null);
     e.walkRoute(new double[][]{{0,0},{0,.0001}},false);
     long ordinary=e.activeRouteToken();check(ordinary!=0&&e.activeVisualRouteToken()==0&&e.routeVisualSnapshot(0)==null);
-    check(!e.stopVisualRoute(ordinary)&&e.walking);
+    check(!e.stopVisualRoute(ordinary)&&!e.setVisualRoutePaused(ordinary,true)&&e.walking);
     e.stop();e.position(0,0);e.walkVisualTo(0,.0001);
     MotionEngine.RouteVisualSnapshot direct=e.routeVisualSnapshot(0);
     check(direct!=null&&direct.total==2&&direct.visited==1&&direct.newPoints.length==2&&e.activeRouteToken()==0);
@@ -166,6 +167,10 @@ class RouteTraceTest(unittest.TestCase):
         screen=(ROOT / "src/dev/pgrazor/RouteScreenProjectionSource.java").read_text(encoding="utf-8")
         for token in ["PixelCopy.request(surface", "matches.size()!=1", "mapVisible.getAsBoolean()", "if(n[0]!=6)", "RouteScreenTracker", "RouteScreenFrameBuilder.build", "bitmap.recycle()", "worker.shutdown()", "routeVisualSnapshot(knownToken)", "trackingLost", "ready=false"]:
             self.assertIn(token, screen)
+        self.assertIn("if(trackingLost){latest=null;return;}", screen)
+        self.assertNotIn("Recalibre", screen)
+        tracker=(ROOT / "src/dev/pgrazor/RouteScreenTracker.java").read_text(encoding="utf-8")
+        self.assertNotIn("lost=true", tracker)
         for forbidden in ["NativeCore", "Runtime.getRuntime", "java.net.", "FileOutputStream", ".walkRoute(", ".teleport(", ".input("]:
             self.assertNotIn(forbidden, screen)
         settings=(ROOT / "src/dev/pgrazor/SettingsPanel.java").read_text(encoding="utf-8")
@@ -174,6 +179,42 @@ class RouteTraceTest(unittest.TestCase):
 
         for forbidden in ["Control.", "MotionEngine", "NativeCore", "System.load", "inject"]:
             self.assertNotIn(forbidden, overlay)
+
+    def test_map_intelligent_controls(self):
+        source=(ROOT/"src/dev/pgrazor/WorldMapDialog.java").read_text(encoding="utf-8")
+        for token in ["map.zoom(1)","map.zoom(-1)","map.centerCurrentLocation()","map.poiLayer.openNearbyList()","Cooldown.remainingAt(latitude,longitude)","Collections.reverse(draft)","SavedPlaces.CATEGORIES","layout.addView(selected)"]:
+            self.assertIn(token,source)
+        poi=(ROOT/"src/dev/pgrazor/MapPoiLayer.java").read_text(encoding="utf-8")
+        self.assertIn("((layers & 8) != 0 && rocketName(point,now)!=null)",poi)
+        self.assertIn("void openNearbyList()",poi)
+        for token in ["mapFavorites","mapImportedPower","mapOfficialRoutes","event.isActionable(now)","drawOfficialRoutes(canvas)","Control.setMapRoutesOpen(false)","gameRoutesMapSnapshot()","setVisualRoutePaused(token"]:
+            self.assertIn(token,source)
+        controller=(ROOT/"src/dev/pgrazor/GameRoutesController.java").read_text(encoding="utf-8")
+        self.assertIn("ready&&freshSnapshot()?rawSnapshot",controller)
+
+    def test_map_library_and_coordinates_layout(self):
+        source=(ROOT/"src/dev/pgrazor/WorldMapDialog.java").read_text(encoding="utf-8")
+        self.assertEqual(source.count("layout.addView(selectionRow)"),1)
+        self.assertNotIn("layout.addView(libraryTabs)",source)
+        self.assertNotIn("Button savePin=",source)
+        self.assertIn('Button saved=button(ui,"Locais")',source)
+        self.assertNotIn("selectionRow.addView(savedRoutes",source)
+        self.assertIn('String[] tabNames={"Favoritos","Pontos","Rotas","Eventos"}',source)
+        self.assertIn("indicators[i].setBackgroundColor",source)
+        self.assertIn("setMultiChoiceItems",source)
+        self.assertIn("CoordinateClipboard.copy(activity,lat,lon",source)
+        self.assertIn("new GpxStore(activity).list()",source)
+        quick=(ROOT/"src/dev/pgrazor/QuickMenu.java").read_text(encoding="utf-8")
+        self.assertIn('row(MAP, "Locais", true, listener::onLocations',quick)
+        self.assertNotIn('row(FAVORITES, "Favorites"',quick)
+        self.assertNotIn('row(MAP, "Hotspots"',quick)
+        self.assertIn("Button gpx = route == null ? null : savedRoutes",source)
+        self.assertIn("layout.addView(status);\n        layout.addView(selected);\n        layout.addView(copyRow);",source)
+        self.assertIn('info+="\\n"+CoordinateClipboard.text(latitude,longitude)',source)
+        self.assertIn("new String[]{local,distance,CoordinateClipboard.text(lat,lon)}",source)
+        points=(ROOT/"src/dev/pgrazor/HotspotsDialog.java").read_text(encoding="utf-8")
+        self.assertIn("coordinates.setText(CoordinateClipboard.text(spot.latitude,spot.longitude))",points)
+        self.assertLess(points.index("card.addView(tags)"),points.index("card.addView(coordinates)"))
 
     def test_map_integration(self):
         source = (ROOT / "src/dev/pgrazor/WorldMapDialog.java").read_text(encoding="utf-8")

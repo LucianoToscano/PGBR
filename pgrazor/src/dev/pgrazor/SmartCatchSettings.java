@@ -23,7 +23,7 @@ public final class SmartCatchSettings {
     public static void write(Properties p){preferences.write(p);}
     public static String config(){return preferences.config();}
     /** Gym-disc spinning follows VGP's actual run/cooldown gate, not catch availability. */
-    public static boolean gymSpinActive(){return preferences.enabled()&&preferences.spinGyms()&&Control.vgpEnabled();}
+    public static boolean gymSpinActive(){return preferences.enabled()&&preferences.spinGyms()&&Control.vgpEnabled()&&!Control.vgpCooldownPaused();}
     public static String normalizeSpecies(String value){return SmartCatchPreferences.normalizeSpecies(value);}
     static int speed(){return preferences.speed();}
     static boolean shinyOnly(){return preferences.shinyOnly();}

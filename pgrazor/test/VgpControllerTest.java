@@ -3,7 +3,7 @@ package dev.pgrazor;
 /**
  * Runs real Control VGP policy to exercise VgpController state transitions; the Android shells and
  * the controllable Cooldown clock are supplied by test_control_java.py. It proves
- * that the clock cannot stop/start VGP, while foreground and manual-state gates remain active.
+ * that cooldown gates new actions without clearing manual intent or foreground gates.
  */
 public final class VgpControllerTest {
     private static void check(boolean value,String message) { if(!value)throw new AssertionError(message); }
@@ -39,17 +39,16 @@ public final class VgpControllerTest {
         Control.event("gym-spin","{\"message\":\"Gym spun\"}");
         check(Control.vgpStatus().equals("Ready"),"Late gym spin status ignored when VGP+ gym spin is disabled");
 
-        // Old settings may still contain the removed cooldown option.
-        // Neither an active global cooldown nor the legacy setter may stop VGP.
+        // Protection defaults on and does not clear manual intent.
+        check(Control.vgpStopOnCooldown(),"Cooldown protection defaults on");
         Control.setVgpStopOnCooldown(true);
-        check(!Control.vgpStopOnCooldown(),"Deprecated stop-on-cooldown option remains disabled");
         Cooldown.remaining=900000;
         Control.setVgpStatus("Ready");
-        check(Control.vgpEnabled(),"Cooldown clock must not disable manually started VGP");
+        check(Control.vgpEnabled()&&Control.vgpCooldownPaused(),"Cooldown pauses actions, not manual intent");
         Control.setVgpEnabled(false);
         check(!Control.vgpEnabled(),"Manual OFF stops VGP immediately");
         Control.setVgpEnabled(true);
-        check(Control.vgpEnabled(),"Manual ON succeeds despite estimated cooldown");
+        check(Control.vgpEnabled()&&Control.vgpCooldownPaused(),"Manual ON records intent while cooldown is active");
 
         // Background switches VGP off with its own reason and never auto-resumes.
         Cooldown.remaining=0;
@@ -120,9 +119,23 @@ public final class VgpControllerTest {
         Control.setVgpReady(true,"Ready");
         Cooldown.remaining=600000;
         Control.setVgpEnabled(true);
-        check(Control.vgpAllowed() && Control.vgpEnabled(),
-                "Estimated global cooldown does not gate VGP permission");
+        check(!Control.vgpAllowed()&&Control.vgpEnabled()&&Control.vgpCooldownPaused(),"Red cooldown blocks new VGP actions");
+        check(Control.vgpDiagnosticStatus().contains("cooldown estimado"),"Cooldown pause is visible");
+        SmartCatchSettings.read(spin);
+        check(!SmartCatchSettings.gymSpinActive(),"Red cooldown pauses VGP gym disc option");
+        Cooldown.remaining=0;
+        check(Control.vgpAllowed()&&Control.vgpEnabled(),"Green cooldown resumes armed VGP");
+        check(SmartCatchSettings.gymSpinActive(),"Green cooldown permits VGP gym disc option again");
+        SmartCatchSettings.read(new java.util.Properties());
+        Cooldown.remaining=600000;
+        check(!Control.vgpAllowed(),"New cooldown pauses again");
+        Control.setVgpEnabled(false);Cooldown.remaining=0;
+        check(!Control.vgpAllowed()&&!Control.vgpEnabled(),"Manual OFF prevents automatic resumption");
+        Cooldown.remaining=600000;Control.setVgpEnabled(true);Control.setVgpStopOnCooldown(false);
+        check(Control.vgpAllowed()&&!Control.vgpCooldownPaused(),"Optional protection off preserves prior behavior");
+        Control.setVgpStopOnCooldown(true);Control.setVgpOverlay(false);Cooldown.remaining=0;
+        check(!Control.vgpAllowed()&&!Control.vgpEnabled(),"Hiding overlay prevents resume");
 
-        System.out.println("PASS: VGP simple manual toggle, no cooldown gate, background off, native readiness and marker bounds");
+        System.out.println("PASS: VGP optional cooldown action gate, manual intent, background off, native readiness and marker bounds");
     }
 }

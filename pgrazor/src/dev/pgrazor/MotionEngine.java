@@ -69,7 +69,9 @@ public final class MotionEngine {
     private boolean visualReturning; // presentation only: last-to-first leg of a loop
     private boolean plannedRoute;
     // Visual ownership is independent from movement ownership. Game Routes and other callers never opt in.
-    private boolean visualRoute;
+    private boolean visualRoute,visualPaused;
+    /** Pauses only the explicitly selected personal route; does not mutate global speed. */
+    public synchronized boolean setVisualRoutePaused(long token,boolean paused){if(token==0||token!=activeVisualRouteToken()||!enabled)return false;if(!paused&&speedKmh<=0)return false;visualPaused=paused;return true;}
     private double[] visualOrigin;
     private long routeGeneration;
     public synchronized long activeVisualRouteToken(){return walking&&visualRoute?routeGeneration:0;}
@@ -122,7 +124,7 @@ public final class MotionEngine {
             double left=Math.max(0,Math.min(length,routeProgress().remainingMeters));
             double completed=Math.max(0,Math.min(length,length-left));
             return new RouteVisualSnapshot(token,knownToken==token?null:new double[][]{visualOrigin.clone(),route[0].clone()},1,2,
-                length>0?completed/length:0,left,length,completed,false,!enabled||speedKmh==0,false);
+                length>0?completed/length:0,left,length,completed,false,!enabled||speedKmh==0||visualPaused,false);
         }
         double[][] copy=null;
         if(knownToken!=token) {
@@ -151,7 +153,7 @@ public final class MotionEngine {
             completed=Math.max(0,Math.min(total,total-remaining));
         }
         return new RouteVisualSnapshot(token,copy,returning?route.length:visitedStops,route.length,fraction,
-                remaining,total,completed,looping,!enabled||speedKmh==0,returning);
+                remaining,total,completed,looping,!enabled||speedKmh==0||visualPaused,returning);
     }
 
     private static void validatePosition(double lat, double lon) {
@@ -200,7 +202,7 @@ public final class MotionEngine {
         double[] legs=new double[copy.length];
         for(int i=copy.length-2;i>=0;i--)legs[i]=legs[i+1]
             +angle(unit(copy[i][0],copy[i][1]),unit(copy[i+1][0],copy[i+1][1]))*EARTH_RADIUS_METERS;
-        resetIdle();route=copy; remainingLegMeters=legs; visitedStops=0; visualReturning=false; looping=loop;plannedRoute=true;visualRoute=false;visualOrigin=null;routeGeneration++;
+        resetIdle();route=copy; remainingLegMeters=legs; visitedStops=0; visualReturning=false; looping=loop;plannedRoute=true;visualRoute=false;visualPaused=false;visualOrigin=null;routeGeneration++;
         targetLatitude=route[0][0]; targetLongitude=route[0][1];
         east = north = 0;
         enabled = true;
@@ -221,13 +223,14 @@ public final class MotionEngine {
         if (Math.hypot(east, north) > 0.05)
             bearing = (Math.toDegrees(Math.atan2(east, north)) + 360) % 360;
     }
-    private void clearRoute() { plannedRoute=false;visualRoute=false;visualOrigin=null;routeGeneration++;walking=false; route=new double[0][]; remainingLegMeters=new double[0]; visitedStops=0; visualReturning=false; looping=false; }
+    private void clearRoute() { plannedRoute=false;visualRoute=false;visualPaused=false;visualOrigin=null;routeGeneration++;walking=false; route=new double[0][]; remainingLegMeters=new double[0]; visitedStops=0; visualReturning=false; looping=false; }
     public synchronized void stop() { resetIdle();clearRoute(); east = north = 0; }
     /** Camera invalidation stops manual velocity without cancelling a walk or its arrival ownership. */
     public synchronized void stopManualMotion() { east = north = 0; }
     public synchronized void pause() { enabled = false; stop(); }
     public synchronized double metersPerSecond() {
         if(idleWalkingActive())return idleSpeed();
+        if(visualRoute&&visualPaused)return 0;
         return enabled ? speedKmh / 3.6 * (walking ? 1 : Math.hypot(east, north)) : 0;
     }
     public synchronized void step(double seconds) {
@@ -235,6 +238,7 @@ public final class MotionEngine {
         if (!Double.isFinite(seconds) || seconds <= 0) return;
         if(idleEligible()){stepIdle(Math.min(seconds,.25));return;}
         resetIdle();
+        if(visualRoute&&visualPaused)return;
         // Avoid jumps after a stalled UI frame or suspended app.
         double distance = metersPerSecond() * Math.min(seconds, 0.25) / EARTH_RADIUS_METERS;
         if (walking) {

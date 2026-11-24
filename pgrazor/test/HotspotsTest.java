@@ -3,7 +3,10 @@ import java.util.HashSet;
 public class HotspotsTest {
     static void check(boolean value){if(!value)throw new AssertionError();}
     public static void main(String[] args){
-        check(Hotspots.ALL.size()==14);
+        check(Hotspots.ALL.size()==64);
+        check(Hotspots.ALL.stream().anyMatch(p->p.countryCode.equals("KI")&&p.matches(Hotspots.Category.PRIMEIRO_FUSO)));
+        check(Hotspots.ALL.stream().anyMatch(p->p.countryCode.equals("AS")&&p.matches(Hotspots.Category.ULTIMO_FUSO)));
+        HashSet<String> coordinates=new HashSet<>();for(Hotspots.Spot p:Hotspots.ALL){check(CooldownState.valid(p.latitude,p.longitude));check(coordinates.add(p.latitude+","+p.longitude));check(!p.categories.isEmpty());}
         double[][] expected={{21.291100,-157.843600},{37.808600,-122.409800},{19.43585,-99.14434},{41.918776,-87.635437},{40.753751,-73.983537},{-23.5864600,-46.6581793},{64.175642,-51.737517},{51.5080,-0.1281},{41.659268,-0.892103},{38.462677,27.217599},{25.074792,55.130958},{25.0480,121.5168},{35.729503,139.710900},{-41.282348,174.767127}};
         HashSet<String> names=new HashSet<>();
         for(int i=0;i<14;i++){

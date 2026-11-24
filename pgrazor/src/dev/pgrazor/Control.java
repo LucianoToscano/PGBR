@@ -43,7 +43,7 @@ public final class Control {
         AutoRaid.reset();
         AutoMaxBattle.reset();
         GiftBatchSettings.reset();
-        gameRoutes.stop("Account switch"); gameRoutesPlanning=false; gameRoutes.setPlanning(false); autoWalkPlanning=false;
+        gameRoutes.stop("Account switch"); gameRoutesPlanning=false;mapRoutesOpen=false; gameRoutes.setPlanning(false); autoWalkPlanning=false;
         vgp.suspend();
         mapTapEpoch++; invalidateQuickBallOutcome();
         engine.stop(); saveState();
@@ -66,10 +66,12 @@ public final class Control {
     public static final MotionEngine engine = new MotionEngine();
     private static final GameRoutesController gameRoutes = new GameRoutesController(
         engine, SystemClock::elapsedRealtime, System::currentTimeMillis);
-    private static volatile boolean gameRoutesPlanning;
+    private static volatile boolean gameRoutesPlanning,mapRoutesOpen;
     private static String gameRoutesLastStatus="";
     private static volatile String gameRoutesReadiness="Waiting for Route support";
-    public static void setGameRoutesPlanning(boolean open) { gameRoutesPlanning=open; gameRoutes.setPlanning(open); }
+    public static void setGameRoutesPlanning(boolean open) { gameRoutesPlanning=open; gameRoutes.setPlanning(open||mapRoutesOpen); }
+    public static void setMapRoutesOpen(boolean open){mapRoutesOpen=open;gameRoutes.setPlanning(gameRoutesPlanning||open);}
+    public static String gameRoutesMapSnapshot(){return hostLive()?gameRoutes.mapSnapshot():"";}
     public static boolean gameRoutesReady() { return gameRoutes.ready(); }
     public static boolean gameRoutesRunning() { return gameRoutes.running(); }
     public static String gameRoutesStatus() { return gameRoutes.ready()?gameRoutes.status():gameRoutesReadiness; }
@@ -78,7 +80,10 @@ public final class Control {
     public static String takeGameRoutesRewardNotice() { return gameRoutes.takeRewardNotice(); }
     public static String gameRoutesDetails() { return gameRoutes.details(); }
     public static String gameRoutesCommand() { return gameRoutes.command(); }
-    public static boolean gameRoutesAllowed() { return hostLive() && desiredEnabled && (gameRoutesPlanning || gameRoutes.running()); }
+    public static boolean gameRoutesAllowed() { return hostLive() && desiredEnabled && (gameRoutesPlanning || mapRoutesOpen || gameRoutes.running()||gameRoutes.watchingRecovery()); }
+    public static boolean canResumeGameRoutes(){return hostLive()&&canEnable()&&gameRoutes.canResume();}
+    public static void resumeGameRoutes(){if(!hostLive()||!canEnable())throw new IllegalArgumentException("Location adapter is not ready");gameRoutes.resume();saveState();}
+    public static boolean routeAutomaticSpinBlocked(){return gameRoutes.blocksAutomaticSpin();}
     public static void setGameRoutesReady(boolean value,String reason) {
         gameRoutesReadiness=reason==null||reason.isEmpty()?"Waiting for Route support":reason;
         gameRoutes.setReady(value);
@@ -188,7 +193,8 @@ public final class Control {
     public static String giftStatus(){return giftStatus;}
     public static boolean giftsAllowed(){return giftsReady&&quickSummaryReady()&&hostLive();}
     private static volatile boolean vgpEnabled,vgpReady,vgpOverlay;
-    /** Persistent safety preference; when armed a live cooldown keeps VGP off. */
+    /** Saved preference; the cooldown gates new actions, never clears manual ON intent. */
+    private static volatile boolean vgpStopOnCooldown=true;
     // Protect the floating VGP icon from accidental activation (runtime automation is unaffected).
     private static volatile boolean vgpTapProtection=true;
     private static volatile int vgpOptions=3;
@@ -261,14 +267,13 @@ public final class Control {
     public static void setVgpBackgroundOpacity(int percent){vgpBackgroundOpacity=Math.max(0,Math.min(100,percent));saveSettings();}
     public static int vgpIconSize(){return vgpIconSize;}
     public static void setVgpIconSize(int value){vgpIconSize=Math.max(28,Math.min(72,value));saveSettings();}
-    /** Legacy API retained for older modules. VGP no longer stops on estimated cooldown. */
-    public static boolean vgpStopOnCooldown(){return false;}
+    public static boolean vgpStopOnCooldown(){return vgpStopOnCooldown;}
+    public static boolean vgpCooldownPaused(){return vgpEnabled()&&vgpStopOnCooldown&&Cooldown.remaining()>0;}
     public static boolean vgpTapProtection(){return vgpTapProtection;}
     public static void setVgpTapProtection(boolean value){if(vgpTapProtection!=value){vgpTapProtection=value;saveSettings();}}
-    /** User-controlled start/stop; no dependency on estimated cooldown. */
+    /** Manual intent is independent of the estimated cooldown permission gate. */
     public static void setVgpEnabled(boolean value){vgp.setEnabled(value);}
-    /** Legacy compatibility setter: always disabled, intentionally not persisted. */
-    public static void setVgpStopOnCooldown(boolean value){}
+    public static void setVgpStopOnCooldown(boolean value){if(vgpStopOnCooldown!=value){vgpStopOnCooldown=value;saveSettings();}}
     public static void setVgpOptions(int value){vgpOptions=value&7;saveSettings();}
     public static void setVgpReady(boolean ready,String status){vgpReady=ready;vgp.setStatus(status);}
     public static void setVgpStatus(String status){vgp.setStatus(status);}
@@ -296,6 +301,8 @@ public final class Control {
         // readiness checks. Quick Catch summary and auto-transfer are optional,
         // independent features: they must not veto Pokémon/Stop scanning.
         if(!vgpReady)return "VGP aguardando: mecanismo nativo indisponível. "+vgp.status();
+        if(vgpCooldownPaused())return "VGP pausada por cooldown estimado. Retoma quando a espera terminar, se continuar ligada.";
+        if(routeAutomaticSpinBlocked())return "VGP pausada durante Rota oficial monitorada para evitar giros automáticos.";
         if(ShundoSniper.active())return "VGP aguardando: Shundo Sniper tem prioridade.";
         if(AutoRaid.running())return "VGP aguardando: Auto Raid tem prioridade.";
         String nativeState=vgp.status();
@@ -336,11 +343,11 @@ public final class Control {
     public static boolean vgpTargetSpin(){return vgp.targetSpin();}
 
     public static boolean vgpAllowed(){
-        if(!locationKnown())return false;
+        if(!locationKnown()||routeAutomaticSpinBlocked())return false;
         // VGP owns native inventory checks and action-gate checks independently.
         // itemAccessAllowed() also requires Quick Catch summary and auto-transfer
         // readiness, neither of which is a prerequisite for VGP capture/spin.
-        return vgpEnabled&&vgpReady&&hostLive()
+        return vgpEnabled&&vgpReady&&hostLive()&&!vgpCooldownPaused()
                 &&!ShundoSniper.active()&&!AutoRaid.running()&&!AutoMaxBattle.running();
     }  // Shundo Sniper and Auto Raid still pause VGP+
     public static void vgpResult(String action,boolean success){vgp.result(action,success);}
@@ -586,7 +593,7 @@ public final class Control {
     public static String quickSpinStatus() { return quickSpinStatus; }
     public static void setQuickSpinEnabled(boolean value) { quickSpinEnabled=value; saveSettings(); event("quick-spin-setting",value?"ON":"OFF"); }
     public static void setQuickSpinReady(boolean value,String status) { quickSpinReady=value; quickSpinStatus=status; }
-    public static boolean quickSpinAllowed() { return quickSpinEnabled && quickSpinReady && quickSummaryReady() && hostLive(); }
+    public static boolean quickSpinAllowed() { return quickSpinEnabled && quickSpinReady && quickSummaryReady() && hostLive()&&!routeAutomaticSpinBlocked(); }
     private static volatile boolean cameraSteeringConfigured;
     private static final CameraHeadingState cameraHeading = new CameraHeadingState();
     private static final Handler main = new Handler(Looper.getMainLooper());
@@ -600,7 +607,8 @@ public final class Control {
         detail -> event("map-throw-toast",detail));
     private static final Object stateLock = new Object();
     private static final Object logLock = new Object();
-    private static AtomicFile stateFile, settingsFile;
+    private static AtomicFile stateFile, settingsFile,routeRecoveryFile;
+    private static String lastRouteRecovery="";
     private static String lastSaved;
     private static long lastCheckpoint;
     private static boolean stateWriteFailed;
@@ -1340,7 +1348,7 @@ public final class Control {
     public static void suspendForBackground() {
         EternatusRouteRunner.stop("O aplicativo deixou o primeiro plano.");
         gameRoutes.stop("App left foreground; check the active in-game Route before restarting");
-        gameRoutesPlanning=false;gameRoutes.setPlanning(false);
+        gameRoutesPlanning=false;mapRoutesOpen=false;gameRoutes.setPlanning(false);
         requestInteractionStop();
         OneShotAutomation.reset();
         AutoRaid.reset();
@@ -1374,6 +1382,7 @@ public final class Control {
             FileOutputStream out = null;
             StrictMode.ThreadPolicy policy = StrictMode.allowThreadDiskWrites();
             try {
+                saveRouteRecovery();
                 String encoded = LocationState.capture(engine, desiredEnabled).encode();
                 if (encoded.equals(lastSaved)) return;
                 out = stateFile.startWrite();
@@ -1387,9 +1396,20 @@ public final class Control {
             } finally { StrictMode.setThreadPolicy(policy); }
         }
     }
+    private static void saveRouteRecovery(){
+        if(routeRecoveryFile==null)return;String encoded=gameRoutes.checkpoint();if(encoded.equals(lastRouteRecovery))return;FileOutputStream out=null;
+        try{out=routeRecoveryFile.startWrite();out.write(encoded.getBytes(StandardCharsets.UTF_8));routeRecoveryFile.finishWrite(out);lastRouteRecovery=encoded;}catch(IOException|RuntimeException e){if(out!=null)routeRecoveryFile.failWrite(out);event("route-recovery-save-error",e.toString());}
+    }
+    private static void loadRouteRecovery(Application app){
+        routeRecoveryFile=new AtomicFile(AccountProfiles.file(app,"pgrazor-route-recovery-v1.txt"));String encoded="";
+        StrictMode.ThreadPolicy policy=StrictMode.allowThreadDiskReads();
+        try(FileInputStream in=routeRecoveryFile.openRead()){ByteArrayOutputStream data=new ByteArrayOutputStream();byte[] b=new byte[1024];int n;while((n=in.read(b))!=-1){if(data.size()+n>4096)throw new IOException("Oversized route checkpoint");data.write(b,0,n);}encoded=new String(data.toByteArray(),StandardCharsets.UTF_8);}catch(FileNotFoundException absent){}catch(IOException|RuntimeException e){event("route-recovery-load-error",e.toString());}finally{StrictMode.setThreadPolicy(policy);}
+        lastRouteRecovery=encoded;gameRoutes.restoreCheckpoint(encoded);
+    }
     private static void loadState(Application app) {
         synchronized (stateLock) {
             stateFile = new AtomicFile(AccountProfiles.file(app, "pgrazor-location-state-v1.txt"));
+            loadRouteRecovery(app);
             LocationState state = LocationState.defaults();
             String source = "defaults";
             StrictMode.ThreadPolicy policy = StrictMode.allowThreadDiskReads();
@@ -1670,6 +1690,7 @@ public final class Control {
                 incubateLongest=Boolean.parseBoolean(p.getProperty("incubateLongest","false"));
                 vgpEnabled=false;vgp.clearTarget();
                 vgpOverlay=Boolean.parseBoolean(p.getProperty("vgpOverlay","false"));
+                vgpStopOnCooldown=!"false".equals(p.getProperty("vgpStopOnCooldown","true"));
                 try{int legacy=Integer.parseInt(p.getProperty("vgpIconStyle","0"));vgpIconStyle=legacy>=0&&legacy<=3?legacy:0;}
                 catch(NumberFormatException ignored){vgpIconStyle=0;}
                 try{vgpIconSize=Math.max(28,Math.min(72,Integer.parseInt(p.getProperty("vgpIconSize","48"))));}
@@ -1899,6 +1920,7 @@ public final class Control {
         p.setProperty("spawnBooster",String.valueOf(spawnBooster));
         p.setProperty("giftOptions",String.valueOf(giftOptions));
         p.setProperty("vgpOverlay",String.valueOf(vgpOverlay));
+        p.setProperty("vgpStopOnCooldown",String.valueOf(vgpStopOnCooldown));
         p.setProperty("vgpIconStyle",String.valueOf(vgpIconStyle));
         p.setProperty("vgpIconSize",String.valueOf(vgpIconSize));
         p.setProperty("vgpIconOpacity",String.valueOf(vgpIconOpacity));

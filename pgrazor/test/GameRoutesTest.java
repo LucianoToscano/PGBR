@@ -19,7 +19,7 @@ public final class GameRoutesTest {
             "{\"id\":\"B\",\"reversible\":false,\"cooldownFinishMs\":0,\"points\":[[0.02,0.0],[0.03,0.0]]}]";
         return "{" + routes + (current == null ? ",\"current\":null" : "," + current) + "}";
     }
-    private static final String STARTED = "\"current\":{\"id\":\"A\",\"started\":true}";
+    private static final String STARTED = "\"current\":{\"id\":\"A\",\"started\":true,\"reversed\":true}";
     private static final String ELIGIBLE = "\"current\":{\"id\":\"A\",\"started\":true,\"completedWalk\":true,\"inRangeOfEnd\":true}";
     private static final String REWARD = "\"current\":{\"id\":\"A\",\"acquiredReward\":true}";
 
@@ -40,6 +40,7 @@ public final class GameRoutesTest {
         cameraInvalidationPreservesArrival();
         lostHostLeaseStops();
         refusesOverActiveRoute();
+        recoversCheckpointWithoutNewStart();
         asyncTimeoutStops();
         System.out.println("PASS: game-routes lifecycle, reversal, cooldown, malformed, takeover, host, active, timeout");
     }
@@ -176,6 +177,11 @@ public final class GameRoutesTest {
         check(!c.running(), "Does not start over an active game Route");
         check(c.status().toLowerCase().contains("finish") || c.status().toLowerCase().contains("cancel"),
             "Asks the user to finish or cancel first");
+    }
+
+    private static void recoversCheckpointWithoutNewStart() throws Exception {
+        MotionEngine e=new MotionEngine();e.position(0,0);e.speed(30);GameRoutesController c=new GameRoutesController(e,()->0L,()->0L);c.setReady(true);c.acceptSnapshot(snap(null));c.start(1);c.tick(true);lastCommand(c);c.acceptSnapshot(snap(STARTED));c.tick(true);for(int i=0;i<60;i++)e.step(.25);String saved=c.checkpoint();check(!saved.isEmpty(),"Local checkpoint saved");double lat=e.latitude,lon=e.longitude;c.stop("Interrupted");check(c.blocksAutomaticSpin(),"Interruption retains spin protection while route active");
+        MotionEngine restored=new MotionEngine();restored.position(lat,lon);restored.speed(30);GameRoutesController next=new GameRoutesController(restored,()->0L,()->0L);next.restoreCheckpoint(saved);next.setReady(true);check(!next.canResume(),"No resume without fresh game state");next.acceptSnapshot(snap(STARTED));check(next.canResume()&&next.resume(),"Explicit matching checkpoint resume");check(next.command().isEmpty()&&restored.walking,"Resumes without submitting start");check(next.blocksAutomaticSpin(),"Known active route blocks automated spins");next.stop("Interrupted");next.acceptSnapshot(snap(null));check(!next.canResume()&&!next.blocksAutomaticSpin(),"Cancelled game session cannot resume");
     }
 
     /** An async start request that the game never confirms times out without a blind retry. */
