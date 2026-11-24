@@ -48,6 +48,12 @@ public final class LocalAuditTest {
  check(matchup!=null&&Math.abs(matchup.outgoing-2.56)<1e-8&&Math.abs(matchup.incoming-0.625)<1e-8);
  check(LocalAuditPolicy.matchup(11,11,11,10,6,10)==null);
  check(LocalAuditPolicy.matchup(11,0,11,10,6,0)==null);
+ var partial=LocalAuditPolicy.partialMatchup(11,0,11,10,6,0);
+ check(Math.abs(partial.outgoing-2.56)<1e-8&&Double.isNaN(partial.incoming));
+ var reverse=LocalAuditPolicy.partialMatchup(11,0,0,10,6,10);
+ check(Double.isNaN(reverse.outgoing)&&Math.abs(reverse.incoming-0.625)<1e-8);
+ var invalid=LocalAuditPolicy.partialMatchup(11,11,11,10,10,10);
+ check(Double.isNaN(invalid.outgoing)&&Double.isNaN(invalid.incoming));
  check(LocalAuditPolicy.maxBudget(-1,250)==LocalAuditPolicy.BudgetState.UNKNOWN);
  check(LocalAuditPolicy.maxBudget(249,250)==LocalAuditPolicy.BudgetState.INSUFFICIENT);
  check(LocalAuditPolicy.maxBudget(250,250)==LocalAuditPolicy.BudgetState.SUFFICIENT);
