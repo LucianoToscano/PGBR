@@ -123,11 +123,21 @@ public final class WorldMapDialog {
         trace.setTextSize(13);
         trace.setChecked(preferences.getBoolean("routeTraceEnabled",false));
         TextView traceSummary=label(ui,"",12);
-        layout.addView(trace);
+        LinearLayout traceTools=new LinearLayout(ui);
+        traceTools.addView(trace,new LinearLayout.LayoutParams(0,-2,1));
+        Button traceOptions=button(ui,"Aparência");
+        traceOptions.setContentDescription("Configurar aparência do percurso");
+        traceOptions.setEnabled(trace.isChecked());
+        traceTools.addView(traceOptions,new LinearLayout.LayoutParams(dp(activity,100),dp(activity,48)));
+        layout.addView(traceTools);
         layout.addView(traceSummary);
+        map.setTraceStyle(RouteTraceSettings.read(preferences));
+        traceOptions.setOnClickListener(v->RouteTraceSettings.show(activity,preferences,
+            ()->map.setTraceStyle(RouteTraceSettings.read(preferences))));
         map.setTraceEnabled(trace.isChecked(),traceSummary);
         trace.setOnCheckedChangeListener((v,on)->{
             preferences.edit().putBoolean("routeTraceEnabled",on).apply();
+            traceOptions.setEnabled(on);
             map.setTraceEnabled(on,traceSummary);
         });
         TextView coverage=label(ui,"Nearby locations loaded by the game",12);layout.addView(coverage);map.setPoiStatus(coverage);
@@ -499,6 +509,11 @@ public final class WorldMapDialog {
         private TextView traceSummary;
         private String traceLabel="";
         private final Paint tracePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        private RouteTraceStyle traceStyle=RouteTraceStyle.defaults();
+
+        void setTraceStyle(RouteTraceStyle style) {
+            traceStyle=style;refreshTrace();invalidate();
+        }
 
         void setTraceEnabled(boolean enabled,TextView summary) {
             traceEnabled=enabled;traceSummary=summary;
@@ -516,7 +531,7 @@ public final class WorldMapDialog {
             if(traceSummary==null)return;
             String label="";
             if(traceEnabled) {
-                if(!route.isEmpty()) label="Prévia: branco = caminho planejado; azul = percorrido após iniciar.";
+                if(!route.isEmpty()) label=traceStyle.showPreview?"Prévia: caminho planejado (sem progresso real).":"Prévia: estilo original.";
                 else if(traceState!=null) label=String.format(Locale.forLanguageTag("pt-BR"),
                     "%s • %d/%d pontos • %.0f%% • %.2f/%.2f km • %.2f km restantes%s",
                     traceState.paused?"Pausado":traceState.visited==0?"Aproximação ao início / retorno":"Em andamento",
@@ -527,7 +542,7 @@ public final class WorldMapDialog {
                 else label="Nenhum percurso ativo.";
             }
             if(!label.equals(traceLabel)){traceSummary.setText(label);traceLabel=label;}
-            int visibility=traceEnabled?View.VISIBLE:View.GONE;
+            int visibility=traceEnabled&&traceStyle.showSummary?View.VISIBLE:View.GONE;
             if(traceSummary.getVisibility()!=visibility)traceSummary.setVisibility(visibility);
         }
 
@@ -688,6 +703,7 @@ public final class WorldMapDialog {
         private void drawRoute(Canvas canvas,boolean markers) {
             List<double[]> shown=route.isEmpty()&&traceEnabled?activeTrace:route;
             boolean active=traceEnabled&&route.isEmpty()&&traceState!=null;
+            boolean styled=traceEnabled&&(active||traceStyle.showPreview);
             if(shown.isEmpty() || getWidth()<=0 || getHeight()<=0)return;
             double pixels=world();float radius=Math.max(11,tileSize/20f);
             int saved=canvas.save();
@@ -705,24 +721,24 @@ public final class WorldMapDialog {
                     double end=start+MapProjection.deltaX(pointX,previousX)*pixels;
                     double startY=getHeight()/2.0+(MapProjection.y(previous[0])-centerY)*pixels;
                     int first=(int)Math.ceil(-Math.max(start,end)/pixels),last=(int)Math.floor((getWidth()-Math.min(start,end))/pixels);
-                    if(traceEnabled && (Math.max(y,startY)<-radius || Math.min(y,startY)>getHeight()+radius)) continue;
+                    if(styled && (Math.max(y,startY)<-radius || Math.min(y,startY)>getHeight()+radius)) continue;
                     paint.setColor(Color.rgb(25,103,190));
                     for(int repeat=first;repeat<=last && repeat<first+32;repeat++) {
                         float sx=(float)(start+repeat*pixels),ex=(float)(end+repeat*pixels);
-                        if(!traceEnabled)canvas.drawLine(sx,(float)startY,ex,(float)y,paint);
+                        if(!styled)canvas.drawLine(sx,(float)startY,ex,(float)y,paint);
                         else {
-                            double fraction=active?(i<traceState.visited?1:i==traceState.visited?traceState.legFraction:0):0;
+                            double fraction=active&&traceStyle.showProgress?(i<traceState.visited?1:i==traceState.visited?traceState.legFraction:0):0;
                             drawTraceSegment(canvas,sx,(float)startY,ex,(float)y,fraction);
                         }
                     }
                 }
-                if(markers && (!traceEnabled || i==0 || i==shown.size()-1 || shown.size()<=50)) {
+                if(markers && (!styled || (traceStyle.showMarkers && (i==0 || i==shown.size()-1 || shown.size()<=50)))) {
                     int first=(int)Math.ceil((-radius-x)/pixels),last=(int)Math.floor((getWidth()+radius-x)/pixels);
                     for(int repeat=first;repeat<=last && repeat<first+32;repeat++) {
                         float shownX=(float)(x+repeat*pixels),shownY=(float)y;
                         if(shownY < -radius || shownY > getHeight()+radius)continue;
                         paint.setColor(Color.WHITE);canvas.drawCircle(shownX,shownY,radius+2,paint);
-                        paint.setColor(traceEnabled && i==shown.size()-1 && i!=0 ? 0xffe2574f : Color.rgb(25,103,190));canvas.drawCircle(shownX,shownY,radius,paint);
+                        paint.setColor(styled && i==shown.size()-1 && i!=0 ? 0xffe2574f : Color.rgb(25,103,190));canvas.drawCircle(shownX,shownY,radius,paint);
                         paint.setTextSize(radius*1.1f);paint.setTextAlign(Paint.Align.CENTER);paint.setColor(Color.WHITE);
                         Paint.FontMetrics font=paint.getFontMetrics();canvas.drawText(Integer.toString(i+1),shownX,shownY-(font.ascent+font.descent)/2,paint);
                     }
@@ -733,16 +749,16 @@ public final class WorldMapDialog {
 
         /** Geographic wrapping is handled by drawRoute; this only paints the local segment. */
         private void drawTraceSegment(Canvas canvas,float x1,float y1,float x2,float y2,double fraction) {
-            float width=dp(getContext(),5);
+            float width=dp(getContext(),traceStyle.width);
             tracePaint.setStrokeCap(Paint.Cap.ROUND);
             tracePaint.setStrokeWidth(width+dp(getContext(),2));
-            tracePaint.setColor(0xff394653);
+            tracePaint.setColor(traceStyle.color(0xff394653));
             canvas.drawLine(x1,y1,x2,y2,tracePaint);
             tracePaint.setStrokeWidth(width);
-            tracePaint.setColor(0xffeeeeee);
+            tracePaint.setColor(traceStyle.color(traceStyle.remaining));
             canvas.drawLine(x1,y1,x2,y2,tracePaint);
             if(fraction>0) {
-                tracePaint.setColor(0xff168fea);
+                tracePaint.setColor(traceStyle.color(traceStyle.completed));
                 canvas.drawLine(x1,y1,(float)(x1+(x2-x1)*fraction),(float)(y1+(y2-y1)*fraction),tracePaint);
             }
         }
