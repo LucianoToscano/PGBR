@@ -150,7 +150,7 @@ extern "C" int pgr_smart_parse_settings(const char *text,size_t len,PgrSmartSett
  if(v3&&!species_list(parts[12],s.catch_species,s.catch_count))return 0;
  if(v4&&!number(parts[13],0,3,s.variety))return 0;
  if(v5&&!number(parts[14],0,1,s.mighty_safari))return 0;
- if(v6&&!number(parts[15],0,2,s.speed))return 0;
+ if(v6&&!number(parts[15],0,3,s.speed))return 0;
  if(v7&&!number(parts[16],0,1,s.shiny_only))return 0;
  if(v8){
   if(!number(parts[17],0,255,s.rare_mask)||!number(parts[18],1,100,s.rare_iv_min)||

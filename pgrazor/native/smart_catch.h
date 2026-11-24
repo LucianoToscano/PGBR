@@ -143,7 +143,7 @@ struct PgrSmartSettings {
   int32_t  catch_species[PGR_SMART_MAX_SPECIES];  // ascending, de-duplicated National Dex ids (1..2000)
   int32_t  variety;        // throw variety (version 4): 0 off, 1 Excellent & Great, 2 + Nice, 3 + a plain throw
   int32_t  mighty_safari;  // version 5: prefer owned, offered Safari Balls for Mighty Pokemon only
-  int32_t  speed;          // version 6: catch pacing, 0 normal, 1 fast, 2 fastest
+  int32_t  speed;          // version 6: catch pacing, 0 normal, 1 fast, 2 fastest, 3 slow
   int32_t  shiny_only;     // version 7: encounter as usual, but only a shiny is thrown at
   int32_t  rare_custom, rare_mask, rare_iv_min, rare_berry; // v8 opt-in; legacy premium retained
   char catch_tags[529], candy_tags[529]; // v9 exact UTF-8 names encoded as hex
@@ -152,9 +152,9 @@ struct PgrSmartSettings {
 
 // Pacing for a catch speed (out-of-range values pace as normal). The throw wait is base plus a
 // jitter in [0, jitter); rescan is the delay before the next map scan once a catch has resolved.
-static inline uint64_t pgr_smart_throw_base_ms(int speed) { return speed == 2 ? 500 : speed == 1 ? 800 : 1200; }
+static inline uint64_t pgr_smart_throw_base_ms(int speed) { return speed == 3 ? 2700 : speed == 2 ? 500 : speed == 1 ? 800 : 1200; }
 static inline uint64_t pgr_smart_throw_jitter_ms(int speed) { return speed == 2 ? 201 : speed == 1 ? 401 : 601; }
-static inline uint64_t pgr_smart_rescan_ms(int speed) { return speed == 2 ? 1000 : speed == 1 ? 1500 : 2500; }
+static inline uint64_t pgr_smart_rescan_ms(int speed) { return speed == 3 ? 3000 : speed == 2 ? 1000 : speed == 1 ? 1500 : 2500; }
 
 // Catch-only list: an empty list catches every species.
 static inline bool pgr_smart_catch_wanted(const PgrSmartSettings *s, int species) {

@@ -79,7 +79,7 @@ public final class SettingsBackupRules {
             if(key.equals("smartCatchHighCp")){require(n>=0&&n<=10000,"Invalid high CP threshold");continue;}
             if(key.equals("smartCatchHighLevel")){require(n>=0&&n<=50,"Invalid high level threshold");continue;}
             if(key.equals("autoBallTarget")||key.equals("smartCatchAutoBallTarget")){require(n>=1&&n<=99,"Invalid auto ball target");continue;}
-            if(key.equals("smartCatchSpeed")){require(n>=0&&n<=2,"Invalid smart catch speed");continue;}
+            if(key.equals("smartCatchSpeed")){require(n>=0&&n<=3,"Invalid smart catch speed");continue;}
             if(key.equals("smartCatchGrade")){require(n>=0&&n<=3,"Invalid smart catch throw grade");continue;}
             if(key.equals("throwVariety")||key.equals("smartCatchVariety")){require(n>=0&&n<=3,"Invalid throw variety");continue;}
             if(key.equals("smartHealWhen")){require(n>=0&&n<=2,"Invalid smart healing schedule");continue;}

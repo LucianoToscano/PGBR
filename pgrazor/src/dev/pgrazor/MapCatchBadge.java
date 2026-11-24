@@ -18,7 +18,7 @@ final class MapCatchBadge extends View {
     void refresh(boolean visible) {
         label = visible ? Control.mapCatchLabel() : "";
         setVisibility(label.isEmpty() ? GONE : VISIBLE);
-        setContentDescription("Map Auto Throw: " + label);
+        setContentDescription("Captura no mapa: " + PtBr.tr(label));
         if (!label.isEmpty()) invalidate();
     }
     @Override protected void onDraw(Canvas canvas) {
@@ -39,7 +39,8 @@ final class MapCatchBadge extends View {
         }
         paint.setStyle(Paint.Style.FILL); paint.setColor(tint); paint.setTextSize(9);
         paint.setTypeface(Typeface.DEFAULT_BOLD); paint.setTextAlign(Paint.Align.CENTER);
-        canvas.drawText(label,27,48,paint);
+        String shown=PtBr.tr(label);float measured=paint.measureText(shown);if(measured>48)paint.setTextSize(9*48/measured);
+        canvas.drawText(shown,27,48,paint);
         canvas.restore();
     }
 }
