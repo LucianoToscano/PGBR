@@ -216,6 +216,21 @@ class RouteTraceTest(unittest.TestCase):
         self.assertIn("coordinates.setText(CoordinateClipboard.text(spot.latitude,spot.longitude))",points)
         self.assertLess(points.index("card.addView(tags)"),points.index("card.addView(coordinates)"))
 
+    def test_world_map_compact_chrome(self):
+        source=(ROOT/"src/dev/pgrazor/WorldMapDialog.java").read_text(encoding="utf-8")
+        for token in ["filterPanel.setVisibility(View.GONE)", "selectionRow.addView(search, 0,",
+                      "selectionRow.addView(filters,", "filterPanel.addView(layerScroll)",
+                      "filterPanel.addView(traceTools)", "filterPanel.addView(traceSummary)",
+                      "filterPanel.addView(coverage)", "mapFrame.addView(actions,actionParams)",
+                      "mapFrame.addView(attribution,attributionParams)",
+                      "hint.setVisibility(editing?View.VISIBLE:View.GONE)", "map.getLayoutParams().height = available"]:
+            self.assertIn(token,source)
+        for forbidden in ["layout.addView(layerScroll)", "layout.addView(traceTools)",
+                          "layout.addView(actions)", "layout.addView(attribution)"]:
+            self.assertNotIn(forbidden,source)
+        self.assertLess(source.index("layout.addView(selectionRow)"),source.index("layout.addView(mapFrame"))
+        self.assertLess(source.index("layout.addView(mapFrame"),source.index("layout.addView(selected)"))
+
     def test_map_integration(self):
         source = (ROOT / "src/dev/pgrazor/WorldMapDialog.java").read_text(encoding="utf-8")
         for token in ["routeVisualSnapshot(traceToken)", "routeTraceEnabled", "activeTrace=Collections.emptyList()", "drawTraceSegment(canvas", "traceState.legFraction", "traceState.completedMeters", "Prévia: caminho planejado"]:
