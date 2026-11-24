@@ -248,6 +248,7 @@ public final class WorldMapDialog {
             this.activity=activity;this.ui=ui;this.map=map;this.mode=mode;this.hint=hint;this.loop=loop;
             this.add=add;this.undo=undo;this.stops=stops;this.gpx=gpx;this.clearRoute=clearRoute;this.listener=listener;this.hasWalk=hasWalk;
             clearRoute.setOnClickListener(v -> clearDraft());
+            loop.setOnCheckedChangeListener((v,on)->map.setDraftLoop(on));
             mode.setOnClickListener(v -> {editing=!editing;if(editing)maybeLoadPending();refresh();});
             add.setOnClickListener(v -> {if(editing)addStop();else map.worldView();});
             undo.setOnClickListener(v -> {if(editing)undo();else map.centerSelection();});
@@ -505,7 +506,8 @@ public final class WorldMapDialog {
         private List<double[]> activeTrace = Collections.emptyList();
         private MotionEngine.RouteVisualSnapshot traceState;
         private long traceToken;
-        private boolean traceEnabled;
+        private boolean traceEnabled, draftLoop;
+        void setDraftLoop(boolean loop){draftLoop=loop;invalidate();}
         private TextView traceSummary;
         private String traceLabel="";
         private final Paint tracePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -534,7 +536,7 @@ public final class WorldMapDialog {
                 if(!route.isEmpty()) label=traceStyle.showPreview?"Prévia: caminho planejado (sem progresso real).":"Prévia: estilo original.";
                 else if(traceState!=null) label=String.format(Locale.forLanguageTag("pt-BR"),
                     "%s • %d/%d pontos • %.0f%% • %.2f/%.2f km • %.2f km restantes%s",
-                    traceState.paused?"Pausado":traceState.visited==0?"Aproximação ao início / retorno":"Em andamento",
+                    traceState.paused?"Pausado":traceState.returning?"Retorno ao início":traceState.visited==0?"Aproximação ao início":"Em andamento",
                     traceState.visited,traceState.total,
                     traceState.routeMeters>0?100*traceState.completedMeters/traceState.routeMeters:0,
                     traceState.completedMeters/1000,traceState.routeMeters/1000,traceState.remainingMeters/1000,
@@ -709,8 +711,10 @@ public final class WorldMapDialog {
             int saved=canvas.save();
             if(zoom==0)canvas.clipRect((float)((getWidth()-pixels)/2),(float)((getHeight()-pixels)/2),(float)((getWidth()+pixels)/2),(float)((getHeight()+pixels)/2));
             paint.setStyle(Paint.Style.FILL);paint.setStrokeWidth(Math.max(2,tileSize/90f));
-            for(int i=0;i<shown.size();i++) {
-                double[] point=shown.get(i);
+            boolean closes=styled&&shown.size()>1&&(active?traceState.looping:draftLoop);
+            int count=shown.size()+(!markers&&closes?1:0);
+            for(int i=0;i<count;i++) {
+                double[] point=shown.get(i%shown.size());
                 double pointX=MapProjection.x(point[1]);
                 double x=getWidth()/2.0+MapProjection.deltaX(pointX,centerX)*pixels;
                 double y=getHeight()/2.0+(MapProjection.y(point[0])-centerY)*pixels;
@@ -727,7 +731,11 @@ public final class WorldMapDialog {
                         float sx=(float)(start+repeat*pixels),ex=(float)(end+repeat*pixels);
                         if(!styled)canvas.drawLine(sx,(float)startY,ex,(float)y,paint);
                         else {
-                            double fraction=active&&traceStyle.showProgress?(i<traceState.visited?1:i==traceState.visited?traceState.legFraction:0):0;
+                            double fraction=0;
+                            if(active&&traceStyle.showProgress) {
+                                if(i==shown.size()) fraction=traceState.returning?traceState.legFraction:0;
+                                else fraction=traceState.returning||i<traceState.visited?1:i==traceState.visited?traceState.legFraction:0;
+                            }
                             drawTraceSegment(canvas,sx,(float)startY,ex,(float)y,fraction);
                         }
                     }
