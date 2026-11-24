@@ -11,6 +11,7 @@
 #include "runtime_bootstrap.h"
 #include "runtime_host.h"
 #include "trainer_privacy_ui.h"
+#include "tm_shortcut.h"
 
 namespace {
 
@@ -66,7 +67,20 @@ jint JNICALL jni_trainer_privacy_status(JNIEnv *, jclass) {
     return pgrazor_trainer_privacy_status();
 }
 
+jlongArray JNICALL jni_tm_state(JNIEnv *env,jclass){
+    PgrTmRow rows[3]{};uint64_t token=pgr_tm_state(rows);
+    jlong values[13]={static_cast<jlong>(token)};
+    for(int i=0;i<3;i++){values[1+i*4]=rows[i].visible;values[2+i*4]=static_cast<jlong>(rows[i].x*1000000);values[3+i*4]=static_cast<jlong>(rows[i].y*1000000);values[4+i*4]=rows[i].count;}
+    auto result=env->NewLongArray(13);if(result)env->SetLongArrayRegion(result,0,13,values);return result;
+}
+jboolean JNICALL jni_tm_use(JNIEnv *,jclass,jint row,jlong token){
+    return token>0&&pgr_tm_request(row,static_cast<uint64_t>(token))?JNI_TRUE:JNI_FALSE;
+}
+void JNICALL jni_tm_allowed(JNIEnv *,jclass,jboolean allowed){pgr_tm_set_allowed(allowed==JNI_TRUE);}
 const JNINativeMethod kMethods[] = {
+    {const_cast<char *>("tmState"),const_cast<char *>("()[J"),reinterpret_cast<void *>(&jni_tm_state)},
+    {const_cast<char *>("tmUse"),const_cast<char *>("(IJ)Z"),reinterpret_cast<void *>(&jni_tm_use)},
+    {const_cast<char *>("tmAllowed"),const_cast<char *>("(Z)V"),reinterpret_cast<void *>(&jni_tm_allowed)},
     {const_cast<char *>("apiVersion"), const_cast<char *>("()I"),
      reinterpret_cast<void *>(&jni_api_version)},
     {const_cast<char *>("policySelfcheck"), const_cast<char *>("()I"),

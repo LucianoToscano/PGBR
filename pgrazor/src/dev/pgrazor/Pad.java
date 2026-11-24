@@ -33,6 +33,7 @@ public final class Pad {
     private final Rect appliedVgpWindowBounds=new Rect();
     private LinearLayout joystickOverlay;
     private BerryOverlay encounterBerry;
+    private TmShortcutOverlay tmShortcuts;
     private TextView cooldownTimer;
     // Small draggable overlay showing the local wall-clock time at the spoofed coordinates (not device time).
     private LocalTimeOverlay localTime;
@@ -222,6 +223,7 @@ public final class Pad {
         FrameLayout.LayoutParams joyLayout=new FrameLayout.LayoutParams(dp(Control.joystickSizeDp()),-2,Gravity.LEFT|Gravity.BOTTOM);joyLayout.leftMargin=dp(16);joyLayout.bottomMargin=dp(96);overlays.addView(joystickOverlay,joyLayout);
 
         // Compact catching-berry overlay; the popup chooses owned berries and Off.
+        tmShortcuts=new TmShortcutOverlay(activity,overlays);
         encounterBerry=new BerryOverlay(activity,this::refresh);
         FrameLayout.LayoutParams berryLayout=new FrameLayout.LayoutParams(dp(90),dp(50),Gravity.RIGHT|Gravity.CENTER_VERTICAL);berryLayout.rightMargin=dp(10);overlays.addView(encounterBerry,berryLayout);encounterBerry.setVisibility(View.GONE);
 
@@ -705,6 +707,7 @@ public final class Pad {
         if(localTime!=null){localTime.refresh(Control.hudLabelVisible(Control.HUD_LOCALTIME)&&!overlaysHidden&&!settings.isVisible()&&!(quickMenu!=null&&quickMenu.isShowing()));if(localTimeDrag!=null&&localTime.getVisibility()==View.VISIBLE)localTimeDrag.refreshBounds();}
         if (lastEnabled != Control.engine.enabled) { lastEnabled = Control.engine.enabled; stick.invalidate(); }
         if(encounterBerry!=null)encounterBerry.refresh();
+        if(tmShortcuts!=null)tmShortcuts.refresh(!overlaysHidden&&!settings.isVisible()&&!(quickMenu!=null&&quickMenu.isShowing())&&Control.itemAccessAllowed()&&!Control.catchScreenVisible());
         if(quickMenu!=null)quickMenu.onRefresh();
         // The hidden panel is GONE; openSettings() refreshes it immediately after show().
         if(settings.isVisible())settings.refresh();
@@ -934,6 +937,7 @@ public final class Pad {
         if(shundoDrag!=null){shundoDrag.detach();shundoDrag=null;}if(shundoOverlay!=null){shundoOverlay.close();overlays.removeView(shundoOverlay);shundoOverlay=null;}
         if(gymAutomationStatus!=null){overlays.removeView(gymAutomationStatus);gymAutomationStatus=null;}
         if(gymFeedOverlay!=null){gymFeedOverlay.close();overlays.removeView(gymFeedOverlay);gymFeedOverlay=null;}
+        if(tmShortcuts!=null){tmShortcuts.close();tmShortcuts=null;}
         settings.close();if(hideOverlaysDialog!=null)hideOverlaysDialog.dismiss();
         parent.removeView(settings.view());overlays.removeView(launcher);overlays.removeView(joystickOverlay);if(encounterBerry!=null){encounterBerry.close();overlays.removeView(encounterBerry);}if(cooldownTimer!=null)overlays.removeView(cooldownTimer);if(vgpToggle!=null)overlays.removeView(vgpToggle);if(vgpActivity!=null)overlays.removeView(vgpActivity);if(vgpMarker!=null)overlays.removeView(vgpMarker);if(mapCatchBadge!=null){overlays.removeView(mapCatchBadge);mapCatchBadge=null;}if(transferToggle!=null)overlays.removeView(transferToggle);if(gameRoutesOverlay!=null){gameRoutesOverlay.close();overlays.removeView(gameRoutesOverlay);}
         parent.removeView(overlays);if(unhideWatcher!=null)parent.removeView(unhideWatcher);

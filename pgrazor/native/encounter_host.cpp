@@ -62,6 +62,10 @@
 #include "smart_battle.h"
 #include "ar_values.h"
 #include "catch_chance.h"
+#include "tm_shortcut.h"
+// Host fixtures need not link the optional UI shortcut module.
+extern void pgr_tm_tick(uint64_t,const PgrSharedMetadataOutput*,bool) __attribute__((weak));
+extern void pgr_tm_stop(uint64_t) __attribute__((weak));
 #include "incense_guard.h"
 #include "vgp_incense.h"
 #include "pvp_keep.h"
@@ -2577,6 +2581,7 @@ static int api_tick(uint64_t proven_tid) {
   pgr_smart_battle_tick(os_tid, &g_md);
   pgr_ar_values_tick(os_tid, &g_md);
   pgr_catch_chance_tick(os_tid, &g_md);
+  if(pgr_tm_tick)pgr_tm_tick(os_tid,&g_md,!raid_block&&!bird_block&&rem_lease>0);
   pgr_auto_throw_tick(os_tid, &g_md, raid_block);
   if(!raid_block){
     pgr_remote_gym_tick(os_tid, &g_md);
@@ -2607,6 +2612,7 @@ static int api_stop(uint64_t proven_tid) {
   if (!tid || (proven_tid && proven_tid != tid)) return PGR_EH_RETRY;
   g_stopped = true;
   if (tid != 0) {
+    if(pgr_tm_stop)pgr_tm_stop(tid);
     pgr_auto_raid_stop(tid);
     pgr_map_auto_throw_stop();
     if (g_berries && (g_active_caps & PGR_EH_CAP_BERRIES)) {

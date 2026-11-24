@@ -2,6 +2,8 @@
 #include "hook_engine.h"
 #include "runtime_bootstrap.h"
 #include "pvp_keep.h"
+// Optional observer; isolated IV fixtures do not link the TM module.
+extern "C" void pgr_tm_note_panel(void *) __attribute__((weak));
 #include <dlfcn.h>
 
 #include <atomic>
@@ -1409,6 +1411,8 @@ void hook_owned(void *self, void *proto, const void *method) {
           entry_stop_serial == g_stop_serial.load(std::memory_order_acquire)) {
         g_pending_apply_gen = entry_apply_gen;
         g_pending_apply_valid = true;
+        if(pgr_tm_note_panel && field_ptr(panel_root.target(),g_cfg.f_panel_displayed)==proto_root.target())
+          pgr_tm_note_panel(panel_root.target());
         capture_owned(panel_root.target(), proto_root.target(), tid);
         g_pending_apply_gen = 0;
         g_pending_apply_valid = false;
