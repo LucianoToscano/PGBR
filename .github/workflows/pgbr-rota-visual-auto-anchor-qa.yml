@@ -33,8 +33,7 @@ jobs:
         shell: bash
         run: |
           mkdir -p /tmp/anchor-classes
-          python3 -c "import re;s=open('pgrazor/test/test_route_trace_java.py').read();m=re.search(r'ANCHOR_HARNESS = r\"\"\"(.*?)\"\"\"',s,re.S);open('/tmp/RouteAnchorHarness.java','w').write(m.group(1))"
-          javac -encoding UTF-8 -d /tmp/anchor-classes pgrazor/src/dev/pgrazor/RouteGroundProjection.java pgrazor/src/dev/pgrazor/RouteAnchorSnapshot.java /tmp/RouteAnchorHarness.java 2>&1 | tee /tmp/javac.log
+          javac -encoding UTF-8 -d /tmp/anchor-classes pgrazor/src/dev/pgrazor/RouteGroundProjection.java pgrazor/src/dev/pgrazor/RouteAnchorSnapshot.java pgrazor/test/RouteAnchorHarness.java 2>&1 | tee /tmp/javac.log
           if [ ${PIPESTATUS[0]} -ne 0 ]; then sed 's/^/::error::/' /tmp/javac.log; exit 1; fi
           java -cp /tmp/anchor-classes dev.pgrazor.RouteAnchorHarness 2>&1 | tee /tmp/java.log
           if [ ${PIPESTATUS[0]} -ne 0 ]; then sed 's/^/::error::/' /tmp/java.log; exit 1; fi
