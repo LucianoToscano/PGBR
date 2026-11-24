@@ -598,8 +598,8 @@ public final class WorldMapDialog {
                     traceState.routeMeters>0?100*traceState.completedMeters/traceState.routeMeters:0,
                     traceState.completedMeters/1000,traceState.routeMeters/1000,traceState.remainingMeters/1000,
                     traceState.looping?" • circular":"");
-                if(traceState!=null&&Control.engine.speedKmh>0){long sec=(long)Math.ceil(traceState.remainingMeters/(Control.engine.speedKmh/3.6));label+=String.format(Locale.US," • ETA %d:%02d",sec/60,sec%60);}
                 else label="Nenhum percurso ativo.";
+                if(route.isEmpty()&&traceState!=null&&Control.engine.speedKmh>0&&!traceState.paused){long sec=(long)Math.ceil(traceState.remainingMeters/(Control.engine.speedKmh/3.6));label+=String.format(Locale.US," • ETA %d:%02d",sec/60,sec%60);}
             }
             if(!label.equals(traceLabel)){traceSummary.setText(label);traceLabel=label;}
             int visibility=traceEnabled&&traceStyle.showSummary?View.VISIBLE:View.GONE;
