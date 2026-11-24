@@ -72,8 +72,7 @@ class ItemIconAssetsTest(unittest.TestCase):
         self.assertTrue(all(not by_id[i]['drive_named_reference']['same_size'] for i in (101,102,103,104,201,202)))
         expansion=json.loads((ROOT.parent/"docs/validation/LT046_ITEM_ICON_EXPANSION.json").read_text(encoding="utf-8"))
         expanded={row["id"]:row for row in expansion["items"]}
-        # A dictionary would silently collapse duplicate IDs. Reject ambiguity before
-        # comparing binary receipts, and require the ID-exact inventory path.
+        # Reject ambiguous receipts before mapping IDs or checking hashes.
         self.assertEqual(len(by_id),len(data["items"]))
         self.assertEqual(len(expanded),len(expansion["items"]))
         for row in data["items"]:
@@ -87,151 +86,11 @@ class ItemIconAssetsTest(unittest.TestCase):
         receipts=expansion["items"]+expansion["named"]
         self.assertEqual(len({row["path"] for row in receipts}),len(receipts))
         for row in expansion["named"]:
-            self.assertRegex(row["path"],r'^pgrazor/assets/map-icons/[a-z0-9-]+\.png
-            expected=expanded.get(row["id"],row)
-            payload=(ROOT/"assets/item-icons"/row["filename"]).read_bytes()
-            self.assertEqual(len(payload),expected["bytes"])
-            self.assertEqual(hashlib.sha1(b"blob "+str(len(payload)).encode()+b"\0"+payload).hexdigest(),expected["git_blob_sha1"])
-        for row in expansion["items"]+expansion["named"]:
-            payload=(ROOT.parent/row["path"]).read_bytes()
-            self.assertEqual(len(payload),row["bytes"])
-            self.assertEqual(hashlib.sha1(b"blob "+str(len(payload)).encode()+b"\0"+payload).hexdigest(),row["git_blob_sha1"])
-            self.assert_png_integrity(payload,row["path"])
-        self.assertEqual(expanded[401]["source"],"incense.png")
-        self.assertEqual(expanded[406]["source"],"daily-adventure-incense.png")
-        self.assertIn("stardust.png",{row["source"] for row in expansion["named"]})
-        source=(ROOT/'src/dev/pgrazor/LocalAuditDialog.java').read_text(encoding='utf-8')
-        ids=re.search(r'GALLERY_IDS=\{([0-9,]+)\}',source).group(1)
-        self.assertEqual(set(map(int,ids.split(','))),EXPECTED|set(expanded))
-        self.assertIn('badge.hasDecodedSprite()',source)
-        self.assertIn('int pageSize=9',source)
-        theme=(ROOT/'src/dev/pgrazor/MapTheme.java').read_text(encoding='utf-8')
-        self.assertIn('dark() ? 0xff202b39 : 0xffffffff',theme)
-        self.assertIn('dark()?0x33ffffff:0x22000000',theme)
-
-    def test_visual_action_consistency_and_icon_status(self):
-        theme=(ROOT/'src/dev/pgrazor/FeedTheme.java').read_text(encoding='utf-8')
-        primary=theme.split('static Drawable dialogPrimaryPill(Context c)',1)[1].split('private static ColorStateList dialogActionText()',1)[0]
-        self.assertIn('shape(c, dlgCard(), 0, 100)',primary)
-        self.assertNotIn('GradientDrawable.Orientation',primary)
-        self.assertEqual(theme.count('b.setBackground(dialogPrimaryPill(c)); b.setTextColor(dialogActionText())'),2)
-        self.assertIn('b.setBackgroundTintList(null)',theme)
-        map_theme=(ROOT/'src/dev/pgrazor/MapTheme.java').read_text(encoding='utf-8')
-        self.assertIn('view.setBackgroundTintList(null)',map_theme)
-        badge=(ROOT/'src/dev/pgrazor/ItemBadge.java').read_text(encoding='utf-8')
-        self.assertIn('Boolean.TRUE.equals(MISSED.get(itemId))',badge)
-        self.assertIn('Boolean.TRUE.equals(WARNED.get(itemId))',badge)
-        self.assertIn('paint.measureText(label)',badge)
-        self.assertIn('metrics.ascent+metrics.descent',badge)
-        self.assertIn('badge.spriteStatus()', (ROOT/'src/dev/pgrazor/LocalAuditDialog.java').read_text(encoding='utf-8'))
-
-    def test_verified_assets_and_packagers(self):
-        spec=importlib.util.spec_from_file_location("pgbr_build_assets",ROOT/"build.py")
-        module=importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(module)
-        icons=module.item_icon_assets()
-        expansion=json.loads((ROOT.parent/"docs/validation/LT046_ITEM_ICON_EXPANSION.json").read_text(encoding="utf-8"))
-        self.assertEqual(set(icons),{"item-%d.png"%i for i in EXPECTED|{r["id"] for r in expansion["items"]}})
-        self.assertIn("stardust.png",module.map_icon_assets())
-        self.assertIn("daily-adventure-incense.png",module.map_icon_assets())
-        for package in ("build.py","nonroot.py","rooted.py"):
-            self.assertIn("map_icon_assets()", (ROOT/package).read_text(encoding="utf-8"))
-        feed=(ROOT/"src/dev/pgrazor/PogoFeedIcons.java").read_text(encoding="utf-8")
-        self.assertIn('"stardust".equals(e.questRewardKind)',feed)
-        self.assertIn('"pgrazor/item-icons/item-"+e.questItemId+".png"',feed)
-        for name in ("AutomationPanel.java","SettingsPanel.java"):
-            self.assertIn("ItemBadge.decorate(",(ROOT/"src/dev/pgrazor"/name).read_text(encoding="utf-8"))
-        for name,path in icons.items():
-            self.assertGreater(path.stat().st_size,100)
-            self.assert_png_integrity(path.read_bytes(),name)
-        for package in ("build.py","nonroot.py","rooted.py"):
-            self.assertIn("item_icon_assets()", (ROOT/package).read_text(encoding="utf-8"))
-        badge=(ROOT/"src/dev/pgrazor/ItemBadge.java").read_text(encoding="utf-8")
-        self.assertIn('"pgrazor/item-icons/item-"+id+".png"',badge)
-        # No fallback may invent a Potion/Revive/Egg for an unrelated item.
-        self.assertNotIn("itemId>=100&&itemId<200",badge)
-        self.assertNotIn("itemId>=200&&itemId<300",badge)
-        self.assertNotIn("itemId>=300&&itemId<400",badge)
-        self.assertIn("itemId>=101&&itemId<=104",badge)
-        self.assertIn("itemId==201||itemId==202",badge)
-        self.assertIn("itemId==301",badge)
-if __name__=="__main__":
-    unittest.main()
-)
+            self.assertIsNotNone(re.fullmatch(r"pgrazor/assets/map-icons/[a-z0-9-]+\.png",row["path"]))
         for row in data["items"]+receipts:
             self.assertIs(type(row["bytes"]),int)
             self.assertGreater(row["bytes"],100)
-            self.assertRegex(row["git_blob_sha1"],r'^[0-9a-f]{40}
-            expected=expanded.get(row["id"],row)
-            payload=(ROOT/"assets/item-icons"/row["filename"]).read_bytes()
-            self.assertEqual(len(payload),expected["bytes"])
-            self.assertEqual(hashlib.sha1(b"blob "+str(len(payload)).encode()+b"\0"+payload).hexdigest(),expected["git_blob_sha1"])
-        for row in expansion["items"]+expansion["named"]:
-            payload=(ROOT.parent/row["path"]).read_bytes()
-            self.assertEqual(len(payload),row["bytes"])
-            self.assertEqual(hashlib.sha1(b"blob "+str(len(payload)).encode()+b"\0"+payload).hexdigest(),row["git_blob_sha1"])
-            self.assert_png_integrity(payload,row["path"])
-        self.assertEqual(expanded[401]["source"],"incense.png")
-        self.assertEqual(expanded[406]["source"],"daily-adventure-incense.png")
-        self.assertIn("stardust.png",{row["source"] for row in expansion["named"]})
-        source=(ROOT/'src/dev/pgrazor/LocalAuditDialog.java').read_text(encoding='utf-8')
-        ids=re.search(r'GALLERY_IDS=\{([0-9,]+)\}',source).group(1)
-        self.assertEqual(set(map(int,ids.split(','))),EXPECTED|set(expanded))
-        self.assertIn('badge.hasDecodedSprite()',source)
-        self.assertIn('int pageSize=9',source)
-        theme=(ROOT/'src/dev/pgrazor/MapTheme.java').read_text(encoding='utf-8')
-        self.assertIn('dark() ? 0xff202b39 : 0xffffffff',theme)
-        self.assertIn('dark()?0x33ffffff:0x22000000',theme)
-
-    def test_visual_action_consistency_and_icon_status(self):
-        theme=(ROOT/'src/dev/pgrazor/FeedTheme.java').read_text(encoding='utf-8')
-        primary=theme.split('static Drawable dialogPrimaryPill(Context c)',1)[1].split('private static ColorStateList dialogActionText()',1)[0]
-        self.assertIn('shape(c, dlgCard(), 0, 100)',primary)
-        self.assertNotIn('GradientDrawable.Orientation',primary)
-        self.assertEqual(theme.count('b.setBackground(dialogPrimaryPill(c)); b.setTextColor(dialogActionText())'),2)
-        self.assertIn('b.setBackgroundTintList(null)',theme)
-        map_theme=(ROOT/'src/dev/pgrazor/MapTheme.java').read_text(encoding='utf-8')
-        self.assertIn('view.setBackgroundTintList(null)',map_theme)
-        badge=(ROOT/'src/dev/pgrazor/ItemBadge.java').read_text(encoding='utf-8')
-        self.assertIn('Boolean.TRUE.equals(MISSED.get(itemId))',badge)
-        self.assertIn('Boolean.TRUE.equals(WARNED.get(itemId))',badge)
-        self.assertIn('paint.measureText(label)',badge)
-        self.assertIn('metrics.ascent+metrics.descent',badge)
-        self.assertIn('badge.spriteStatus()', (ROOT/'src/dev/pgrazor/LocalAuditDialog.java').read_text(encoding='utf-8'))
-
-    def test_verified_assets_and_packagers(self):
-        spec=importlib.util.spec_from_file_location("pgbr_build_assets",ROOT/"build.py")
-        module=importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(module)
-        icons=module.item_icon_assets()
-        expansion=json.loads((ROOT.parent/"docs/validation/LT046_ITEM_ICON_EXPANSION.json").read_text(encoding="utf-8"))
-        self.assertEqual(set(icons),{"item-%d.png"%i for i in EXPECTED|{r["id"] for r in expansion["items"]}})
-        self.assertIn("stardust.png",module.map_icon_assets())
-        self.assertIn("daily-adventure-incense.png",module.map_icon_assets())
-        for package in ("build.py","nonroot.py","rooted.py"):
-            self.assertIn("map_icon_assets()", (ROOT/package).read_text(encoding="utf-8"))
-        feed=(ROOT/"src/dev/pgrazor/PogoFeedIcons.java").read_text(encoding="utf-8")
-        self.assertIn('"stardust".equals(e.questRewardKind)',feed)
-        self.assertIn('"pgrazor/item-icons/item-"+e.questItemId+".png"',feed)
-        for name in ("AutomationPanel.java","SettingsPanel.java"):
-            self.assertIn("ItemBadge.decorate(",(ROOT/"src/dev/pgrazor"/name).read_text(encoding="utf-8"))
-        for name,path in icons.items():
-            self.assertGreater(path.stat().st_size,100)
-            self.assert_png_integrity(path.read_bytes(),name)
-        for package in ("build.py","nonroot.py","rooted.py"):
-            self.assertIn("item_icon_assets()", (ROOT/package).read_text(encoding="utf-8"))
-        badge=(ROOT/"src/dev/pgrazor/ItemBadge.java").read_text(encoding="utf-8")
-        self.assertIn('"pgrazor/item-icons/item-"+id+".png"',badge)
-        # No fallback may invent a Potion/Revive/Egg for an unrelated item.
-        self.assertNotIn("itemId>=100&&itemId<200",badge)
-        self.assertNotIn("itemId>=200&&itemId<300",badge)
-        self.assertNotIn("itemId>=300&&itemId<400",badge)
-        self.assertIn("itemId>=101&&itemId<=104",badge)
-        self.assertIn("itemId==201||itemId==202",badge)
-        self.assertIn("itemId==301",badge)
-if __name__=="__main__":
-    unittest.main()
-)
+            self.assertIsNotNone(re.fullmatch(r"[0-9a-f]{40}",row["git_blob_sha1"]))
         for row in data["items"]:
             expected=expanded.get(row["id"],row)
             payload=(ROOT/"assets/item-icons"/row["filename"]).read_bytes()
