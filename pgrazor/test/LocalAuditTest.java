@@ -7,6 +7,9 @@ public final class LocalAuditTest {
  var data=new EnumMap<LocalAuditPolicy.Flag,Boolean>(LocalAuditPolicy.Flag.class);
  data.put(LocalAuditPolicy.Flag.EVENT,true);data.put(LocalAuditPolicy.Flag.SHINY,false);
  check(LocalAuditPolicy.reason(12).equals("Pokémon de evento"));
+ check(LocalAuditPolicy.battleReason("actor-unknown").contains("não identificado"));
+ check(LocalAuditPolicy.battleReason("unavailable-pair").contains("Não prova"));
+ check(LocalAuditPolicy.battleReason("secret-input").equals("Motivo não reconhecido; preserve o código técnico para análise."));
  check(LocalAuditPolicy.preview(4,4,5,99,flags,data).status==LocalAuditPolicy.Status.PROTECTED);
  data.put(LocalAuditPolicy.Flag.EVENT,false);
  check(LocalAuditPolicy.preview(4,4,5,99,flags,data).status==LocalAuditPolicy.Status.MATCH);

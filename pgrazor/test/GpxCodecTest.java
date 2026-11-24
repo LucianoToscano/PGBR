@@ -109,6 +109,7 @@ public final class GpxCodecTest {
         for(int i=0;i<=GpxCodec.MAX_TOTAL_POINTS;i++)tooMany.append("<wpt lat='0' lon='0'/>");
         rejects("aggregate point limit",tooMany.append("</gpx>").toString());
         rejects("foreign root namespace","<gpx xmlns='urn:unrelated'><wpt lat='0' lon='0'/></gpx>");
+        check(read("<gpx><rte><name>"+" ".repeat(150)+"Trilha</name><rtept lat='0' lon='0'/></rte></gpx>").get(0).name.equals("Trilha"),"Leading whitespace does not consume name budget");
         // --- Limit: input larger than MAX_BYTES is rejected before parsing ---
         try {
             GpxCodec.read(new ByteArrayInputStream(new byte[GpxCodec.MAX_BYTES + 1]), "Fallback");

@@ -8,7 +8,7 @@ final class LocalAuditDialog {
  private LocalAuditDialog(){}
  static void show(Activity a){
   AlertDialog d=new AlertDialog.Builder(MapTheme.wrap(a)).setTitle("Análise local • sem ações no jogo")
-   .setItems(new String[]{"Prévia de proteção da coleção","Simular ataques carregados","Interpretar código de diagnóstico","Avaliar lista de Pokémon","Planejar energia PvP"},(x,i)->{if(i==0)collection(a);else if(i==1)combat(a);else if(i==2)reason(a);else if(i==3)batch(a);else energyPlan(a);})
+   .setItems(new String[]{"Prévia de proteção da coleção","Simular ataques carregados","Interpretar código de diagnóstico","Avaliar lista de Pokémon","Planejar energia PvP","Interpretar diagnóstico PvP"},(x,i)->{if(i==0)collection(a);else if(i==1)combat(a);else if(i==2)reason(a);else if(i==3)batch(a);else if(i==4)energyPlan(a);else battleDiagnostic(a);})
    .setNegativeButton("Fechar",null).create();present(a,d);
  }
  static void present(Activity a,AlertDialog d){DialogLifecycle.bind(a,d,null);d.setOnShowListener(x->MapTheme.styleButtons(d));d.show();}
@@ -101,6 +101,13 @@ final class LocalAuditDialog {
   present(a,new AlertDialog.Builder(MapTheme.wrap(a)).setTitle("Prévia de coleção em lote").setView(scroll(a,b)).setPositiveButton("Fechar",null).create());
  }
  static void reason(Activity a){LinearLayout b=body(a);EditText code=input(a,b,"reasonCode","12");TextView r=text(a,b,"");action(a,b,"Interpretar",()->{try{r.setText(LocalAuditPolicy.reason(integer(code)));}catch(RuntimeException e){r.setText("Código inválido.");}});present(a,new AlertDialog.Builder(MapTheme.wrap(a)).setTitle("Motivos de proteção").setView(b).setPositiveButton("Fechar",null).create());}
+ static void battleDiagnostic(Activity a){
+  LinearLayout b=body(a);text(a,b,"Selecione o código do diagnóstico que você observou. A descrição é informativa e não executa ataques.");
+  String[] codes={"actor-unknown","actor-refresh","stale-effect","unknown-effect","unverified-slots","unavailable-pair","only-one-ready","effectiveness","known-super","off"};
+  Spinner reason=select(a,b,"Motivo técnico",codes);TextView result=text(a,b,"");invalidateOnSelection(result,reason);
+  action(a,b,"Interpretar",()->{int i=reason.getSelectedItemPosition();result.setText(i<0||i>=codes.length?"Selecione um motivo.":LocalAuditPolicy.battleReason(codes[i]));});
+  present(a,new AlertDialog.Builder(MapTheme.wrap(a)).setTitle("Diagnóstico PvP — interpretação local").setView(b).setPositiveButton("Fechar",null).create());
+ }
  static void energyPlan(Activity a){
   LinearLayout b=body(a);text(a,b,"Planejamento manual, sem executar ataques. Informe o ganho do ágil e o custo do carregado de acordo com os dados PvP da forma correta. Energia residual é preservada.");
   EditText min=input(a,b,"Energia mínima estimada (0–100)","0"),max=input(a,b,"Energia máxima estimada (0–100)","0"),gain=input(a,b,"Energia por ataque ágil",""),cost=input(a,b,"Custo do carregado","");

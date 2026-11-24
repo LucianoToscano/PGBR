@@ -211,8 +211,11 @@ public final class GpxCodec {
 
         @Override public void characters(char[] chars, int start, int length) {
             if (captureName != 0 && nameText != null && "name".equals(stack.peek())) {
+                int end=start+length;
+                // Trim leading whitespace before the bound, preserving short valid names.
+                while(start<end&&nameText.length()==0&&(chars[start]<=32||Character.isISOControl(chars[start])))start++;
                 int remaining=GpxRoute.NAME_LIMIT+1-nameText.length();
-                if(remaining>0)nameText.append(chars,start,Math.min(length,remaining));
+                if(remaining>0)nameText.append(chars,start,Math.min(end-start,remaining));
             }
         }
 
@@ -325,7 +328,10 @@ public final class GpxCodec {
         private static String clip(String text) {
             String trimmed = text.trim();
             if (trimmed.isEmpty()) trimmed = "Imported route";
-            return trimmed.length() > GpxRoute.NAME_LIMIT ? trimmed.substring(0, GpxRoute.NAME_LIMIT).trim() : trimmed;
+            if(trimmed.length()<=GpxRoute.NAME_LIMIT)return trimmed;
+            int end=GpxRoute.NAME_LIMIT;
+            if(Character.isHighSurrogate(trimmed.charAt(end-1)))end--;
+            return trimmed.substring(0,end).trim();
         }
 
         private static String local(String localName, String qName) {

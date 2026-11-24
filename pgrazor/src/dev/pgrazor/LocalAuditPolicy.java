@@ -49,6 +49,22 @@ public final class LocalAuditPolicy {
  case 18:return "Proteção PvP";case 19:return "IV 0%";case 20:return "Fantasia";default:return "Motivo desconhecido ("+code+")";
  }
  }
+ public static String battleReason(String code){
+  if(code==null)return "Motivo não informado.";
+  switch(code){
+   case "actor-unknown":return "Adversário não identificado. A observação não permite confirmar a eficácia.";
+   case "actor-refresh":return "Identidade do adversário mudou ou está sendo revalidada.";
+   case "stale-effect":return "Classificação antiga ou fora da mesma janela de observação.";
+   case "unknown-effect":return "Eficácia de pelo menos um ataque não confirmada.";
+   case "unverified-slots":return "Associação entre os dois botões e suas classificações não confirmada.";
+   case "unavailable-pair":return "Par de carregados não confirmado. Não prova que haja dois ataques.";
+   case "only-one-ready":return "Somente um ataque disponível ou nenhum pronto para a política atual; confira a energia e a classificação.";
+   case "effectiveness":return "Classificação por eficácia disponível; não prova execução ou dano.";
+   case "known-super":return "Há classificação supereficaz confirmada; a outra pode ser desconhecida.";
+   case "off":return "Preferência de Ataque Inteligente desligada.";
+   default:return "Motivo não reconhecido; preserve o código técnico para análise.";
+  }
+ }
  public static final String[] TYPES={"Nenhum","Normal","Lutador","Voador","Venenoso","Terrestre","Pedra","Inseto","Fantasma","Aço","Fogo","Água","Planta","Elétrico","Psíquico","Gelo","Dragão","Sombrio","Fada"};
  private static final int[][] CHART={{  0,  0,  0,  0,  0, -1,  0, -2, -1,  0,  0,  0,  0,  0,  0,  0,  0,  0},
 {  1,  0, -1, -1,  0,  1, -1, -2,  1,  0,  0,  0,  0, -1,  1,  0,  1, -1},
