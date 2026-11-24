@@ -516,11 +516,13 @@ public final class WorldMapDialog {
             if(traceSummary==null)return;
             String label="";
             if(traceEnabled) {
-                if(!route.isEmpty()) label="Prévia: branco = restante; azul = percorrido (rota ainda não iniciada).";
+                if(!route.isEmpty()) label="Prévia: branco = caminho planejado; azul = percorrido após iniciar.";
                 else if(traceState!=null) label=String.format(Locale.forLanguageTag("pt-BR"),
-                    "%s • %d/%d pontos • %.2f km restantes%s",
-                    traceState.paused?"Pausado":traceState.visited==0?"Aproximação ao início":"Em andamento",
-                    traceState.visited,traceState.total,traceState.remainingMeters/1000,
+                    "%s • %d/%d pontos • %.0f%% • %.2f/%.2f km • %.2f km restantes%s",
+                    traceState.paused?"Pausado":traceState.visited==0?"Aproximação ao início / retorno":"Em andamento",
+                    traceState.visited,traceState.total,
+                    traceState.routeMeters>0?100*traceState.completedMeters/traceState.routeMeters:0,
+                    traceState.completedMeters/1000,traceState.routeMeters/1000,traceState.remainingMeters/1000,
                     traceState.looping?" • circular":"");
                 else label="Nenhum percurso ativo.";
             }
@@ -703,6 +705,7 @@ public final class WorldMapDialog {
                     double end=start+MapProjection.deltaX(pointX,previousX)*pixels;
                     double startY=getHeight()/2.0+(MapProjection.y(previous[0])-centerY)*pixels;
                     int first=(int)Math.ceil(-Math.max(start,end)/pixels),last=(int)Math.floor((getWidth()-Math.min(start,end))/pixels);
+                    if(traceEnabled && (Math.max(y,startY)<-radius || Math.min(y,startY)>getHeight()+radius)) continue;
                     paint.setColor(Color.rgb(25,103,190));
                     for(int repeat=first;repeat<=last && repeat<first+32;repeat++) {
                         float sx=(float)(start+repeat*pixels),ex=(float)(end+repeat*pixels);
@@ -784,6 +787,7 @@ public final class WorldMapDialog {
             removeCallbacks(locationRefresh);
             if (closed) return;
             closed = true;
+            traceState=null;traceToken=0;activeTrace=Collections.emptyList();traceSummary=null;
             poiLayer.close();
             tiles.close();
         }
