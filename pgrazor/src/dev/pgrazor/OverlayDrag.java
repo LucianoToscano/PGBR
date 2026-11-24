@@ -27,7 +27,7 @@ public final class OverlayDrag implements View.OnTouchListener {
     private final int threshold, gap;
     private final View.OnLayoutChangeListener parentLayout, viewLayout, followerLayout;
     private float downX, downY, originX, originY;
-    private boolean moved, dragging;
+    private boolean moved, dragging, resetPending;
 
     static OverlayDrag attach(ViewGroup parent, View view, String key) { return new OverlayDrag(parent, view, null, key); }
     static OverlayDrag attach(ViewGroup parent, View view, View follower, String key) { return new OverlayDrag(parent, view, follower, key); }
@@ -42,7 +42,7 @@ public final class OverlayDrag implements View.OnTouchListener {
         view.setElevation(8 * density);
         view.post(() -> { int[] xy = new int[2]; view.getLocationOnScreen(xy); Control.event("overlay-layout", key + " x=" + xy[0] + " y=" + xy[1] + " w=" + view.getWidth() + " h=" + view.getHeight() + " enabled=" + view.isEnabled()); });
         // Restore when the handle is (re)laid out: first show, a visibility flip, or a rotation.
-        viewLayout = (v, l, t, r, b, ol, ot, or, ob) -> applySaved();
+        viewLayout = (v, l, t, r, b, ol, ot, or, ob) -> { if(resetPending)applyDefault();else applySaved(); };
         view.addOnLayoutChangeListener(viewLayout);
         // A rotation or window resize relays out the parent; re-apply to the new bounds.
         parentLayout = (v, l, t, r, b, ol, ot, or, ob) -> { if (r - l != or - ol || b - t != ob - ot) applySaved(); };
@@ -76,15 +76,30 @@ public final class OverlayDrag implements View.OnTouchListener {
 
     /** Pull the saved fraction back onto the current bounds; a no-op until the user first drags. */
     private void applySaved() {
+        if (resetPending){applyDefault();return;}
         if (dragging || !prefs.contains(key + ".fx")) return;
         int w = visualWidth(view), h = visualHeight(view);
         if (w == 0 || h == 0 || parent.getWidth() == 0 || parent.getHeight() == 0) return;
         android.graphics.Rect safe=dragBounds();
-        view.setX(clampX(safe.left+Math.max(0,safe.width()-w)*clampUnit(prefs.getFloat(key+".fx",0f))));
-        view.setY(clampY(safe.top+Math.max(0,safe.height()-h)*clampUnit(prefs.getFloat(key+".fy",0f))));
+        view.setX(clampX(safe.left+Math.max(0,safe.width()-w)*savedFraction(key+".fx")));
+        view.setY(clampY(safe.top+Math.max(0,safe.height()-h)*savedFraction(key+".fy")));
         positionFollower();
     }
 
+    private float savedFraction(String name){
+        try{return clampUnit(prefs.getFloat(name,0f));}catch(ClassCastException invalid){return 0f;}
+    }
+    /** Reset only this overlay's position, without changing its feature or other preferences. */
+    void resetPosition(){
+        dragging=false;moved=false;view.setPressed(false);
+        prefs.edit().remove(key+".fx").remove(key+".fy").apply();
+        resetPending=true;view.setTranslationX(0);view.setTranslationY(0);
+        applyDefault();
+    }
+    private void applyDefault(){
+        if(view.getVisibility()!=View.VISIBLE||view.getWidth()==0||view.getHeight()==0||parent.getWidth()==0||parent.getHeight()==0)return;
+        resetPending=false;view.setX(clampX(view.getLeft()));view.setY(clampY(view.getTop()));positionFollower();
+    }
     private void save() {
         android.graphics.Rect safe=dragBounds();
         int trackW=safe.width()-visualWidth(view),trackH=safe.height()-visualHeight(view);

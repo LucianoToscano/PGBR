@@ -4,6 +4,9 @@ public final class UiViewportPolicyTest {
     public static void main(String[] args){
         testLauncherAndJoystick();
         testVgpCornerAlignment();
+        near(UiViewportPolicy.clamp(Float.NaN,20,300,40),20);
+        near(UiViewportPolicy.clamp(Float.POSITIVE_INFINITY,20,300,40),20);
+        near(UiViewportPolicy.resizePosition(Float.NaN,20,300,40,30,400,60),30);
         int cases=0;
         for(int widthDp:new int[]{240,280,320,360,412,600,840})
         for(int heightDp:new int[]{240,320,480,640,960})

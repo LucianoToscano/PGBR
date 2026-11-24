@@ -33,6 +33,7 @@ final class SettingsPanel {
         void openMap();
         /** Open the coordinates & speed editor (tied to engine/joystick state Pad owns). */
         void editLocation();
+        default void resetOverlayPositions(){}
     }
 
     private final Activity activity;
@@ -1372,6 +1373,10 @@ final class SettingsPanel {
                 .setMultiChoiceItems(names,chosen,(dialog,index,checked)->chosen[index]=checked)
                 .setPositiveButton("Salvar",(dialog,which)->prefs.edit().putBoolean("threeFingerHide",chosen[0]).putBoolean("hideWarningDisabled",chosen[1]).apply())
                 .setNegativeButton("Cancelar",null).create();
+            DialogLifecycle.bind(activity,d,null);d.setOnShowListener(x->MapTheme.styleButtons(d));d.show();
+        });
+        launch(appearance,"Restaurar posição dos elementos flutuantes",()->{
+            AlertDialog d=new AlertDialog.Builder(dialogContext()).setTitle("Restaurar posições").setMessage("Restaurar as posições originais dos elementos arrastáveis desta conta? Os tamanhos, imagens, opacidade e configurações das funções serão mantidos.").setPositiveButton("Restaurar",(dialog,which)->host.resetOverlayPositions()).setNegativeButton("Cancelar",null).create();
             DialogLifecycle.bind(activity,d,null);d.setOnShowListener(x->MapTheme.styleButtons(d));d.show();
         });
         visualSlider(appearance,"Tamanho dos ícones dos menus",16,40,Control.menuIconSizeDp(),value->{

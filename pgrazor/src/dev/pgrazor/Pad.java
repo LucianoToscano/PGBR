@@ -204,6 +204,7 @@ public final class Pad {
             public void setJoystickVisible(boolean visible){ stick.release(true); Control.setJoystickVisible(visible); joystickOverlay.setVisibility(visible?View.VISIBLE:View.GONE); }
             public void openMap(){ openWorldMap(); }
             public void editLocation(){ edit(); }
+            public void resetOverlayPositions(){ Pad.this.resetOverlayPositions(); }
         });
 
         stick = new Stick(host);
@@ -503,6 +504,11 @@ public final class Pad {
         return "Manual encounter transfer: "+state+". Tap to "+(keep?"use normal transfer rules":"keep manual catches")+". Drag to reposition.";
     }
 
+    private void resetOverlayPositions(){
+        for(OverlayDrag drag:new OverlayDrag[]{cooldownDrag,localTimeDrag,vgpDrag,transferDrag,gameRoutesDrag,gymFeedDrag,shundoDrag,encounterDrag,shinyDrag,catchChanceDrag,buddyEmotionDrag,automationDrag})
+            if(drag!=null)drag.resetPosition();
+        refresh();
+    }
     private void applyMapScale(){
         if(launcher==null||launcher.getWidth()==0||parent.getWidth()==0)return;
         Rect safe=UiViewport.bounds(parent);
@@ -668,7 +674,7 @@ public final class Pad {
         refreshLauncherAppearance();
         refreshJoystickAppearance();
         refreshGymAppearance();
-        if(encounterBadge!=null){String count=!Control.encounterOverlay()||settings.isVisible()||(quickMenu!=null&&quickMenu.isShowing())?"":EncounterCounter.label();
+        if(encounterBadge!=null){String count=!Control.encounterOverlay()||overlaysHidden||settings.isVisible()||(quickMenu!=null&&quickMenu.isShowing())?"":EncounterCounter.label();
             encounterBadge.setVisibility(count.isEmpty()||!Control.hudLabelVisible(Control.HUD_ENCOUNTERS)?View.GONE:View.VISIBLE);
             if(!count.isEmpty()){setTextIfChanged(encounterBadge,count);if(encounterDrag!=null)encounterDrag.refreshBounds();}}
         if(shinyMark!=null){boolean mark=ShinyScanner.targetVisible()&&!settings.isVisible();shinyMark.setVisibility(mark?View.VISIBLE:View.GONE);
@@ -701,7 +707,7 @@ public final class Pad {
         String routeReward=Control.takeGameRoutesRewardNotice();
         if(!routeReward.isEmpty()&&!overlaysHidden)Toast.makeText(activity,routeReward,Toast.LENGTH_LONG).show();
         if(gameRoutesOverlay!=null)gameRoutesOverlay.refresh(!settings.isVisible()&&!(quickMenu!=null&&quickMenu.isShowing()));
-        if(cooldownTimer!=null){cooldownTimer.setVisibility(Control.hudLabelVisible(Control.HUD_COOLDOWN)&&Control.cooldownOverlay()?View.VISIBLE:View.GONE);setTextIfChanged(cooldownTimer,Cooldown.compactLabel());cooldownTimer.setContentDescription(Cooldown.label());}
+        if(cooldownTimer!=null){cooldownTimer.setVisibility(Control.hudLabelVisible(Control.HUD_COOLDOWN)&&Control.cooldownOverlay()&&!overlaysHidden&&!settings.isVisible()&&!(quickMenu!=null&&quickMenu.isShowing())?View.VISIBLE:View.GONE);setTextIfChanged(cooldownTimer,Cooldown.compactLabel());cooldownTimer.setContentDescription(Cooldown.label());}
         // The view combines this Pad-side gate with Control.localTimeOverlay()/desiredEnabled() and its own throttle;
         // a false gate (settings open, quick menu up, or overlays hidden) stops its clock work entirely.
         if(localTime!=null){localTime.refresh(Control.hudLabelVisible(Control.HUD_LOCALTIME)&&!overlaysHidden&&!settings.isVisible()&&!(quickMenu!=null&&quickMenu.isShowing()));if(localTimeDrag!=null&&localTime.getVisibility()==View.VISIBLE)localTimeDrag.refreshBounds();}
