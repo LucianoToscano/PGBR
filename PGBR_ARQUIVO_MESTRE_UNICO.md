@@ -58,6 +58,10 @@ O release `v0.00.33-LT` é uma **nova identificação de build**, não uma mudan
 - Branch fix/lt046-gpx-export-validacao-20261124; base 0d29f3c1e0db08945b3299a3f0413a973004ee65 (merge #170). Validação de nomes compatíveis com XML 1.0, preservando pares Unicode válidos e saneando nomes de fallback inválidos. Exportação GPX verifica limite de 2 MB antes da escrita, inclusive para coordenadas decimais extremas, sem reduzir precisão nem copiar a matriz inteira de pontos. Fixtures de Unicode, round-trip e preservação do destino em exportação excessiva. CI e homologação física pendentes. Sem alteração de localização, jogo, automação, APK ou release.
 
 <a id="mestre-evidencias"></a>
+### Checkpoint LT046 — interface, contexto PvP/VGP+ e preparação Max (24/11/2026)
+
+- Branch fix/lt046-interface-diagnostico-max-20261124, base ed3684a7d24f98d3154b8cd001ea7f78cf0ed730. Galeria local consulta ID exato informado, sem atribuir identidade por semelhança; invalida a inspeção ao editar. Resumo filtrado separa ausência/erro por ID e contabiliza eventos de contexto permitidos (vgp, panel-closed, heartbeat-expired etc.) sem inferir duração ou causa. Preparação Max calcula componentes ofensivo e defensivo independentemente, mantendo desconhecido quando faltam dados; nenhuma seleção ou execução de batalha. Fixtures e verificações de ligação; CI novo pendente. Não adiciona arte não verificada nem resolve comportamento real de PvP/VGP+/Max; teste físico e identificação de IDs faltantes continuam necessários.
+
 ## 2. Hierarquia de evidências e estados
 Use os termos com precisão:
 1. **Planejado** — requisito/decisão, sem código integrado.
