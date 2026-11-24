@@ -188,6 +188,19 @@ class RouteTraceTest(unittest.TestCase):
         controller=(ROOT/"src/dev/pgrazor/GameRoutesController.java").read_text(encoding="utf-8")
         self.assertIn("ready&&freshSnapshot()?rawSnapshot",controller)
 
+    def test_map_library_and_coordinates_layout(self):
+        source=(ROOT/"src/dev/pgrazor/WorldMapDialog.java").read_text(encoding="utf-8")
+        self.assertEqual(source.count("layout.addView(selectionRow)"),1)
+        self.assertNotIn("layout.addView(libraryTabs)",source)
+        self.assertNotIn("Button savePin=",source)
+        self.assertIn("Button gpx = route == null ? null : savedRoutes",source)
+        self.assertIn("layout.addView(status);\n        layout.addView(selected);\n        layout.addView(copyRow);",source)
+        self.assertIn('info+="\\n"+CoordinateClipboard.text(latitude,longitude)',source)
+        self.assertIn("detail,CoordinateClipboard.text(entry.latitude,entry.longitude)",source)
+        points=(ROOT/"src/dev/pgrazor/HotspotsDialog.java").read_text(encoding="utf-8")
+        self.assertIn("coordinates.setText(CoordinateClipboard.text(spot.latitude,spot.longitude))",points)
+        self.assertLess(points.index("card.addView(tags)"),points.index("card.addView(coordinates)"))
+
     def test_map_integration(self):
         source = (ROOT / "src/dev/pgrazor/WorldMapDialog.java").read_text(encoding="utf-8")
         for token in ["routeVisualSnapshot(traceToken)", "routeTraceEnabled", "activeTrace=Collections.emptyList()", "drawTraceSegment(canvas", "traceState.legFraction", "traceState.completedMeters", "Prévia: caminho planejado"]:

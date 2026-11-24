@@ -58,7 +58,9 @@ public final class HotspotsDialog {
                     android.widget.ImageView image=new android.widget.ImageView(ui);image.setImageBitmap(bitmap);image.setContentDescription(c.label);image.setScaleType(android.widget.ImageView.ScaleType.FIT_CENTER);
                     tags.addView(image,new LinearLayout.LayoutParams(MapTheme.dp(ui,24),MapTheme.dp(ui,24)));
                 }
-                card.addView(tags);card.setClickable(true);card.setFocusable(true);card.setOnClickListener(v->{dialog.dismiss();selection.select(spot);});rows.addView(card);
+                card.addView(tags);
+                TextView coordinates=new TextView(ui);coordinates.setText(CoordinateClipboard.text(spot.latitude,spot.longitude));coordinates.setTextSize(13);coordinates.setTextColor(MapTheme.muted());
+                card.addView(coordinates);card.setClickable(true);card.setFocusable(true);card.setOnClickListener(v->{dialog.dismiss();selection.select(spot);});rows.addView(card);
             }
             for(int j=0;j<labels.size();j++)labels.get(j).setText(pointLabel(visible.get(j),now,hours24));
         };
