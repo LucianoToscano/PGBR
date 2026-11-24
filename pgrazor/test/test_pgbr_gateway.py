@@ -61,6 +61,17 @@ class GatewayAuthTests(unittest.TestCase):
         self.assertEqual(third[2]["Retry-After"], "60")
         self.assertEqual(third[1]["error"]["code"], "rate_limited")
 
+    def test_rate_limit_never_exceeds_the_window_when_the_clock_steps_back(self):
+        limiter = gw.RateLimiter(limit=1, window_seconds=60)
+        allowed, _ = limiter.check("ip", now=1_000.0)
+        self.assertTrue(allowed)
+        # A wall clock that steps backwards must not advertise a wait longer than the window.
+        for now in (1_000.0, 999.9, 990.0):
+            allowed, retry = limiter.check("ip", now=now)
+            self.assertFalse(allowed)
+            self.assertGreaterEqual(retry, 1)
+            self.assertLessEqual(retry, 60, "Retry-After acima da janela: %d" % retry)
+
 
 class GatewaySourceTests(unittest.TestCase):
     def setUp(self):

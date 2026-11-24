@@ -40,6 +40,7 @@ import base64
 import hashlib
 import hmac
 import json
+import math
 import os
 import re
 import ssl
@@ -586,9 +587,12 @@ class RateLimiter:
             window_start = now - self.window
             hits = [stamp for stamp in self._hits.get(key, []) if stamp > window_start]
             if len(hits) >= self.limit:
-                retry = int(self.window - (now - hits[0])) + 1
+                # Elapsed is clamped at zero: the wall clock can step backwards between two calls,
+                # and a negative elapsed would otherwise advertise Retry-After longer than the window.
+                elapsed = max(0.0, now - hits[0])
+                retry = int(math.ceil(self.window - elapsed))
                 self._hits[key] = hits
-                return False, max(1, retry)
+                return False, max(1, min(self.window, retry))
             hits.append(now)
             self._hits[key] = hits
             return True, 0
