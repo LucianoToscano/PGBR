@@ -1009,7 +1009,7 @@ final class SettingsPanel {
         routeGiftSwitch.setOnCheckedChangeListener((v,checked)->{
             if(checked!=Control.routeGiftExchange())Control.setRouteGiftExchange(checked);
         });
-        caption(mateo,"Opcional: durante uma Rota, troca o presente com Mateo usando os comandos normais do jogo. Não negocia Pokémon e não ativa outras automações.");
+        caption(mateo,"Opcional: troca o presente com Mateo. Durante uma Rota oficial monitorada, Giro Rápido, VGP+ e giros de ginásio do VGP+ ficam bloqueados; nenhuma ação de giro é solicitada na conclusão da rota. Ações já enviadas não podem ser canceladas.");
 
         // ----- Inventory (opens its modal directly) -----
         LinearLayout itemsC = group(page, "Items"); summaryGated.add((View)itemsC.getParent());

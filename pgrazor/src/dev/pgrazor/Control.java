@@ -78,7 +78,10 @@ public final class Control {
     public static String takeGameRoutesRewardNotice() { return gameRoutes.takeRewardNotice(); }
     public static String gameRoutesDetails() { return gameRoutes.details(); }
     public static String gameRoutesCommand() { return gameRoutes.command(); }
-    public static boolean gameRoutesAllowed() { return hostLive() && desiredEnabled && (gameRoutesPlanning || gameRoutes.running()); }
+    public static boolean gameRoutesAllowed() { return hostLive() && desiredEnabled && (gameRoutesPlanning || gameRoutes.running()||gameRoutes.watchingRecovery()); }
+    public static boolean canResumeGameRoutes(){return hostLive()&&canEnable()&&gameRoutes.canResume();}
+    public static void resumeGameRoutes(){if(!hostLive()||!canEnable())throw new IllegalArgumentException("Location adapter is not ready");gameRoutes.resume();saveState();}
+    public static boolean routeAutomaticSpinBlocked(){return gameRoutes.blocksAutomaticSpin();}
     public static void setGameRoutesReady(boolean value,String reason) {
         gameRoutesReadiness=reason==null||reason.isEmpty()?"Waiting for Route support":reason;
         gameRoutes.setReady(value);
@@ -296,6 +299,7 @@ public final class Control {
         // readiness checks. Quick Catch summary and auto-transfer are optional,
         // independent features: they must not veto Pokémon/Stop scanning.
         if(!vgpReady)return "VGP aguardando: mecanismo nativo indisponível. "+vgp.status();
+        if(routeAutomaticSpinBlocked())return "VGP pausada durante Rota oficial monitorada para evitar giros automáticos.";
         if(ShundoSniper.active())return "VGP aguardando: Shundo Sniper tem prioridade.";
         if(AutoRaid.running())return "VGP aguardando: Auto Raid tem prioridade.";
         String nativeState=vgp.status();
@@ -336,7 +340,7 @@ public final class Control {
     public static boolean vgpTargetSpin(){return vgp.targetSpin();}
 
     public static boolean vgpAllowed(){
-        if(!locationKnown())return false;
+        if(!locationKnown()||routeAutomaticSpinBlocked())return false;
         // VGP owns native inventory checks and action-gate checks independently.
         // itemAccessAllowed() also requires Quick Catch summary and auto-transfer
         // readiness, neither of which is a prerequisite for VGP capture/spin.
@@ -586,7 +590,7 @@ public final class Control {
     public static String quickSpinStatus() { return quickSpinStatus; }
     public static void setQuickSpinEnabled(boolean value) { quickSpinEnabled=value; saveSettings(); event("quick-spin-setting",value?"ON":"OFF"); }
     public static void setQuickSpinReady(boolean value,String status) { quickSpinReady=value; quickSpinStatus=status; }
-    public static boolean quickSpinAllowed() { return quickSpinEnabled && quickSpinReady && quickSummaryReady() && hostLive(); }
+    public static boolean quickSpinAllowed() { return quickSpinEnabled && quickSpinReady && quickSummaryReady() && hostLive()&&!routeAutomaticSpinBlocked(); }
     private static volatile boolean cameraSteeringConfigured;
     private static final CameraHeadingState cameraHeading = new CameraHeadingState();
     private static final Handler main = new Handler(Looper.getMainLooper());
@@ -600,7 +604,8 @@ public final class Control {
         detail -> event("map-throw-toast",detail));
     private static final Object stateLock = new Object();
     private static final Object logLock = new Object();
-    private static AtomicFile stateFile, settingsFile;
+    private static AtomicFile stateFile, settingsFile,routeRecoveryFile;
+    private static String lastRouteRecovery="";
     private static String lastSaved;
     private static long lastCheckpoint;
     private static boolean stateWriteFailed;
@@ -1374,6 +1379,7 @@ public final class Control {
             FileOutputStream out = null;
             StrictMode.ThreadPolicy policy = StrictMode.allowThreadDiskWrites();
             try {
+                saveRouteRecovery();
                 String encoded = LocationState.capture(engine, desiredEnabled).encode();
                 if (encoded.equals(lastSaved)) return;
                 out = stateFile.startWrite();
@@ -1387,9 +1393,20 @@ public final class Control {
             } finally { StrictMode.setThreadPolicy(policy); }
         }
     }
+    private static void saveRouteRecovery(){
+        if(routeRecoveryFile==null)return;String encoded=gameRoutes.checkpoint();if(encoded.equals(lastRouteRecovery))return;FileOutputStream out=null;
+        try{out=routeRecoveryFile.startWrite();out.write(encoded.getBytes(StandardCharsets.UTF_8));routeRecoveryFile.finishWrite(out);lastRouteRecovery=encoded;}catch(IOException|RuntimeException e){if(out!=null)routeRecoveryFile.failWrite(out);event("route-recovery-save-error",e.toString());}
+    }
+    private static void loadRouteRecovery(Application app){
+        routeRecoveryFile=new AtomicFile(AccountProfiles.file(app,"pgrazor-route-recovery-v1.txt"));String encoded="";
+        StrictMode.ThreadPolicy policy=StrictMode.allowThreadDiskReads();
+        try(FileInputStream in=routeRecoveryFile.openRead()){ByteArrayOutputStream data=new ByteArrayOutputStream();byte[] b=new byte[1024];int n;while((n=in.read(b))!=-1){if(data.size()+n>4096)throw new IOException("Oversized route checkpoint");data.write(b,0,n);}encoded=new String(data.toByteArray(),StandardCharsets.UTF_8);}catch(FileNotFoundException absent){}catch(IOException|RuntimeException e){event("route-recovery-load-error",e.toString());}finally{StrictMode.setThreadPolicy(policy);}
+        lastRouteRecovery=encoded;gameRoutes.restoreCheckpoint(encoded);
+    }
     private static void loadState(Application app) {
         synchronized (stateLock) {
             stateFile = new AtomicFile(AccountProfiles.file(app, "pgrazor-location-state-v1.txt"));
+            loadRouteRecovery(app);
             LocationState state = LocationState.defaults();
             String source = "defaults";
             StrictMode.ThreadPolicy policy = StrictMode.allowThreadDiskReads();

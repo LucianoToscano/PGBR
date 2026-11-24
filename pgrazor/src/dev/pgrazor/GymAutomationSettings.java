@@ -46,8 +46,8 @@ public final class GymAutomationSettings {
     public static void init(Context context) {}
     public static void read(Properties p){synchronized(lock){preferences.read(p);guardReason="";backendStatus="";status="Gym automation off";}}
     public static void write(Properties p){preferences.write(p);}
-    public static String config(){stopForCooldown();return preferences.config(SmartCatchSettings.gymSpinActive());}
-    public static boolean enabled(){stopForCooldown();return (preferences.running()&&(preferences.deploy()||preferences.feed()))||SmartCatchSettings.gymSpinActive();}
+    public static String config(){stopForCooldown();return preferences.config(SmartCatchSettings.gymSpinActive()&&!Control.routeAutomaticSpinBlocked());}
+    public static boolean enabled(){stopForCooldown();return (preferences.running()&&(preferences.deploy()||preferences.feed()))||(SmartCatchSettings.gymSpinActive()&&!Control.routeAutomaticSpinBlocked());}
     public static boolean running(){stopForCooldown();return preferences.running();}
     public static boolean feedEnabled(){stopForCooldown();return preferences.effectiveFeed();}
     public static boolean deployEnabled(){stopForCooldown();return preferences.effectiveDeploy();}
