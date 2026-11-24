@@ -14,12 +14,14 @@ class Lt042ReleaseContract(unittest.TestCase):
                      "SHA256SUMS.txt", "tools/verify_release.py",
                      "pgrazor/nonroot.py", "pgrazor/rooted.py", "native-pvp-fixture:",
                      "test_pvp_settings_ui.py", "test_iflowgo_request_policy_java.py",
-                     "workflow_dispatch:", "branches: [main]",
+                     "workflow_dispatch:", "github.ref == 'refs/heads/main'",
                      "gh release view", "gh release create", "--prerelease",
                      "--latest=false"):
             with self.subTest(text=text):
                 self.assertIn(text, release)
-        self.assertIn("'.github/workflows/pgbr-lt042-release.yml'", release)
+        # Historical release may only be reproduced manually; retain the publication guard.
+        self.assertNotIn("  push:", release)
+        self.assertNotIn("      - 'pgrazor/VERSION'", release)
         self.assertIn("charge_effect_ui_test.cpp", release)
         self.assertIn("smart_attack_priority_test.cpp", release)
         self.assertNotIn("PGBR-v0.00.41-LT.apk", release)

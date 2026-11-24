@@ -111,7 +111,8 @@ enum HookSlot : unsigned {
     HK_GYM_NEXT_PRESS = 42,
     HK_GYM_NEXT_LEAVE = 43,
     HK_GYM_NEXT_DISMISS = 44,
-    HK_COUNT           = 45
+    HK_PVP_VSSEEKER_ENTER = 45,
+    HK_COUNT           = 46
 };
 
 constexpr size_t kEventCap     = 256;
@@ -1144,6 +1145,8 @@ bool install_shared_vnext_hook() {
     return true;
 }
 
+#include "pvp_vsseeker_probe.inc"
+
 bool configure_and_install_rocket(uint64_t tid) {
     if (g_md.optional[OPT_ROCKET] != PGR_SHARED_OPT_AVAILABLE) return false;
 
@@ -1231,6 +1234,12 @@ bool configure_and_install_rocket(uint64_t tid) {
     if (!install_shared_vnext_hook()) {
         return false;
     }
+
+    // Optional Savant-derived corroboration; failure leaves Rocket/PvP unchanged.
+    const bool vsseeker_ready=install_optional_vsseeker_probe();
+    queue_event(PGR_CBH_EV_BATTLE_ACTION,0,0,tid,
+      vsseeker_ready?R"({"vsSeekerPvPProbeReady":true})":
+                     R"({"vsSeekerPvPProbeReady":false})");
 
     // Configure & install Feature 6 (Rocket Particle Minigame) if available.
     g_rocket_mini = api_table<PgrRocketMiniApi>(pgrazor_rocket_minigame_api(1));

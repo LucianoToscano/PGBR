@@ -37,4 +37,10 @@ jobs:
       - name: Install Android JSON SDK sources
         run: sdkmanager "sources;android-36"
       - name: Run existing feed parsers and new 100% IV synthetic fixtures
-        run: python -B -m unittest discover -s pgrazor/test -p 'test_live_feed_java.py' -v
+        run: |
+          set -o pipefail
+          python -B -m unittest discover -s pgrazor/test -p 'test_live_feed_java.py' -v 2>&1 | tee /tmp/qa.log || {
+            { echo '### Falha no parser do feed'; echo '```'; grep -E "DIAG |Error|FAIL|Traceback|ERROR in" /tmp/qa.log | head -80; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+            echo "::error title=Feed QA::$(grep -m1 -E 'DIAG .*ERROR in|AssertionError|FAIL' /tmp/qa.log | cut -c1-900)"
+            exit 1
+          }

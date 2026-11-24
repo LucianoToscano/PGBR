@@ -1516,6 +1516,53 @@ Foram executadas 18 fixtures C++ host, contratos de tempos/UI e verificação do
 - A nova pré-release LT044, se for validada e publicada, deve conter PT-BR/GPS, Rocket QA6, mapa/HUD/IV, PGSharp local e prioridade imediata confirmada por CI da PR #150; continua `device_tested=false`. Não afirmar integração dos Snipers #115/#118/#121, Radar #114, Savant #135 ou VGP/MT de forks.
 - **Status inicial desta reconciliação:** merge/release e hashes ainda não concluídos neste registro; conferir GitHub Actions, source SHA e assets reais depois da publicação.
 
+### 23/11/2026 — Correção preventiva de workflow histórico LT042 (isolada)
+
+- O merge LT044 `cbd4c69daad4e526bed7a1328925b3f82fdea56c` disparou indevidamente o fluxo antigo LT042 (`45289777398`), porque `.github/workflows/pgbr-lt042-release.yml` ainda monitorava `push main` e `pgrazor/VERSION`.
+- Na branch de manutenção `fix/freeze-lt042-legacy-workflow-20261123`, o workflow LT042 mantém apenas `workflow_dispatch` para reprodução forense. O código de compilação, as credenciais, a verificação de asset/tag imutável e os fluxos LT043/LT044 permanecem preservados sem alterações. Isso não interfere na release LT044 em execução.
+- **Ainda não é merge nesta etapa**; exige revisão/CI da PR dedicada e registro do resultado final. Não considerar a execução LT042 um downgrade de APK instalado; nenhum asset LT042 foi sobrescrito.
+
+### 23/11/2026 — LT044 QA publicada, assinatura e integridade verificadas
+
+- **Release real:** https://github.com/LucianoToscano/PGBR/releases/tag/v0.00.44-LT , publicada em 23/11/2026 às 23:45:41Z como `prerelease=true` e `draft=false`, com tag alvo e fonte exata do build `cbd4c69daad4e526bed7a1328925b3f82fdea56c` (merge PR #151). `device_tested=false` — ausência de homologação Android físico.
+- **Workflow de publicação:** https://github.com/LucianoToscano/PGBR/actions/runs/45289777425 , estado `completed/success`; testes nativos e compilação Android + Root, `tools/verify_release.py`, SHA256SUMS e upload de seis assets aprovados. PR #151 integrou 21 arquivos de #148 sobre #150, sem reverter o motor Rocket QA6; código CI #45289108755 `success` (5/5) e governança #45289108790 `success`.
+- **APK sem Root:** https://github.com/LucianoToscano/PGBR/releases/download/v0.00.44-LT/PGBR-v0.00.44-LT.apk — 188855619 bytes, SHA256 `012b230da3f7fe91dd5657bcb6e5ffee02e1dd6403d99422f35a66c823ceeb72`.
+- **Instalador Root:** https://github.com/LucianoToscano/PGBR/releases/download/v0.00.44-LT/PGBR-v0.00.44-LT-Root.apk — 8385230 bytes, SHA256 `6d90932d0513141453afde2b1e4686c8e3fc82a57e1fe668a8b38d67298ccdde`.
+- **Módulo Zygisk:** https://github.com/LucianoToscano/PGBR/releases/download/v0.00.44-LT/PGBR-v0.00.44-LT-Root-module.zip — 8297706 bytes, SHA256 `ffc177fe9a5b22d0615ec6ef746ce3e33c5f43478759eb82fd8e4aac0f39ae39`.
+- **Manifesto SHA256:** https://github.com/LucianoToscano/PGBR/releases/download/v0.00.44-LT/SHA256SUMS.txt . GitHub declarou os `digest sha256:` correspondentes em cada asset; o workflow validou a integridade cruzada.
+- **Incluído:** base LT043 Rocket QA6, mapa/HUD/IV, importação PGSharp local (não um feed ativo), sessão Max preparatória; PT-BR/GPS defensivo #146; Ataque Inteligente com carregado classificado pronto imediatamente #150. **Não incluído:** #115/#118/#121 Snipers, #108/#111/#114 feeds, #135 Savant, #133 VGP etiqueta/raros, #134 MT; permanecem listados na issue #144. Rocket/PvP pode bloquear carregado se o alvo/metadados forem `UNKNOWN`, e outros PvE não têm seleção tipada universal; não alegar correção funcional sem teste real.
+- **Governança:** a LT043 e LT042 continuam imutáveis; #148 encerrada como substituída por #151; PR de manutenção LT042 #153 isola correção de workflow histórico sem alterar a tag LT044.
+
+
+
+## 23/11/2026 — Recuperação dos Snipers dos chats paralelos (candidata isolada; NÃO na LT044)
+
+- **Origem auditada:** PR #115 / PR #121 (`audit/pgbr-regressions-20261122-2020`, commit `a31768b6f7a6fff305d5fffeb43956ebda76fdc0`), base antiga `b355def7f6693b4d7f88c802b6ea40df018f0490`. Branch própria pós-LT044 `integration/lt045-sniper-regressions-20261123` preserva LT044 mais recente sem sobrescrever PRs originais; código da PR #118 PokeList Partner será objeto de reconciliação própria, não copiado às cegas.
+- **Comparação por blob do ancestral com a LT044 candidata:** 118 caminhos alterados, 109 sem modificações concorrentes, 9 com conflito: CHANGELOG, Mestre, README, docs/ROOTED, IFlowGoFeedClient, LiveFeedDialog, SettingsBackupRules, test_iflowgo_wiring, test_selector_wiring. O workflow antigo de publicação LT041 da PR #121 foi deliberadamente **excluído** por publicar tag antiga e não deve ser reaplicado.
+- **Reconciliação proposta:** preservar contrato `IFlowGoRequestPolicy` de raio e filtro remoto de espécie em cada página global, manter paginação/snipers, bloqueio de Global raids e Dex inválido; preservar grupo PGSharp, favoritos 200/100, `mapTapTeleportNoAsk` ao adicionar validação `root.has` segura de backup. Não mexer em joystick, ação de Carregado, VGP, tela branca, assinatura e perfis pessoais.
+- **Estado:** código em auditoria e QA, **nenhum merge na main e nenhum APK LT045**. Não afirmar Snipers 1/2 com coordenadas reais até feed HTTPS autorizado e teste físico. Origem e conflitos registrados em `docs/AUDITORIA_SNIPERS_POS_LT044_2026-11-23.md` e [issue #144](https://github.com/LucianoToscano/PGBR/issues/144); `device_tested=false`.
+
+
+## 23/11/2026 — Coletor hundo-feed upstream (candidato separado pós-LT044)
+- Base `cbd4c69daad4e526bed7a1328925b3f82fdea56c`; branch `feat/upstream-hundo-feed-post-lt044-20261123`. Fonte PGRazor `0bae6ebc6dfa6b2bac52152940037b45ca7aa9fb`. Comparação confirmou que o coletor legado PGBR só diferia no User-Agent, mantido na integração. Provedor legado continua padrão; PoGoCoordinates apenas opt-in autorizado. Mapa aproximado separado do feed exato, expiração/dedupe/cache, HTTP 429 e testes offline herdados; nenhum token/servidor privado acessado, nenhum deploy ou APK novo. Testes CI pendentes. Painel de checkpoints issue #154; Snipers #149 e demais trabalhos paralelos não alterados.
+
+
+## 23/11/2026 — Savant Root/PvP reconciliado pós-LT044 (QA pendente)
+- Base `cbd4c69daad4e526bed7a1328925b3f82fdea56c`, origem PR #135 `d1cb27b3fb846e136f2c6ffa87448cb41a3a5a7e`. 11 caminhos de código/testes/docs, `combat_host.cpp` e `tools/native_host_tests.py` com aplicação contextual preservando QA6. Probe VsSeeker opcional com Hub/VNext e exclusões PvE; guard Root via companion, fail-closed se estado desconhecido. Teste Android Root ausente/desabilitado/ativo e Magisk/KSU/APatch pendente; possível bloqueio de injeção quando companion indisponível. CI pendente; issue #154. Não homologar nem misturar Snipers #149.
+
+## 23/11/2026 BRT — Integração de candidatos pós-LT044 sem sobrescrita (QA)
+- Base `7c2d8199d698fb29d0f812e992d10ebe7db2b22e` após PR #153 (LT042 congelada, recibo LT044 registrado). União de 131 blobs sem colisão: #149 114, #155 6, #156 11; único conflito documental resolvido por anexar adendos originais ao Mestre atual. Pais Git preservam fontes #149 `29ac3192d2751e170ab19415b8d45d4d0e0494b6`, #155 `62ee1b6c03f8450dd6a535b12e6f476aa07be976`, #156 `d8caf204c1b19313389069e9c970a225b03067cf`. O código Rocket QA6/LT044 não foi substituído. Checkpoints #154. Esta árvore é candidata em QA, não release nem merge na main; #152 documentação e #118 PokeList Partner ainda separados. Pokematrix MT/VGP tags/frutas e compatibilidade Root real pendentes, sem falsa homologação. `device_tested=false`.
+
+
+## 23/11/2026 — Pokematrix: adaptação visual isolada VGP+ (QA)
+- Base `7c2d8199d698fb29d0f812e992d10ebe7db2b22e`, fonte conceitual `hugoalves6/PGRazor_Pokematrix@de777d2b9` (MIT). `SettingsUi.OptionList` agrupa opções e descrições no VGP+, sem divisória entre opção e seu texto, preservando tema PT-BR, estados, listeners e regras de captura. Aplicação local em `SmartCatchSettings.java`; teste de contrato em `test_pokematrix_layout_contract.py`. CI/Android pendentes. Não equivale a portar tags, frutas manuais ou TM. Issue #154 acompanha. Não modificar captura para implantar apenas visual.
+
+
+### 23/11/2026 BRT — Reconciliação e auditoria de regressões pós-LT044
+- PR #157: união de #149, #155 e #156, base main `7c2d8199d698fb29d0f812e992d10ebe7db2b22e`; 131 blobs não conflitantes e histórico preservado. Os sete workflows especializados concluíram com sucesso (Snipers, radar, PGSharp, Hundo offline e governança); CI geral inicial falhou somente no stub TeleportDialog: faltava interface Remember do contrato LT044. Stub corrigido em `08e2da8e1e9a399f4d30452816282d427a2d4841`, sem remover teste ou alterar execução do diálogo. Nova validação necessária.
+- PR #158: layout VGP+ aprovado no CI geral e governança; integrado à candidata por três blobs independentes e adendo documental. Não implica port completo de regras de captura do Pokematrix.
+- Pendências Pokematrix: #134 MT requer vínculo da solicitação ao Pokémon/painel/geração, expiração e verificação de estoque antes da confirmação nativa (fork guarda só linha da UI). #133 VGP+ requer opt-in compatível com filtros antigos, cache por conta, trabalho limitado por tick e IV confirmado; fork exclui Nundo real ao exigir soma de IV > 0. Frutas manuais precisam validar encontro e estoque e preservar prioridades existentes. Não ativar sem implementação e testes; preservar Safari, premium/shiny, espécies e ciclo de vida. Auditoria não equivale à implementação. Sem teste físico Android, sem deploy do coletor, sem nova release publicada neste registro. Acompanhamento: issue #154.
+
 ## 24/11/2026 — Especificacao unica de 5 fontes: camada canonica, Radar/Snipers e gateway proprio (candidata QA, PR #160)
 
 - **Base e branche:** `main` em `cbd4c69daad4e526bed7a1328925b3f82fdea56c` (LT044 QA); trabalho na branch unica da sessao `arena/20f54cfa-pgbr`, aberta na [PR #160](https://github.com/LucianoToscano/PGBR/pull/160) **sem merge para `main`** e sem auto-merge. A especificacao pede branch isolada por modulo; a sessao de trabalho aceita uma unica branch, por isso a separacao por modulo foi registrada em **commits isolados** dentro da mesma PR (links abaixo) e nao em PRs separadas.

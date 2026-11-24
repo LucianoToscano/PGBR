@@ -13,6 +13,10 @@
 // The flag is read once per process start, so flipping it only takes effect at
 // the game's next cold start -- no reboot and no module toggle in the manager.
 #include <android/log.h>
+#include "peer_guard.h"
+#include <cerrno>
+#include <poll.h>
+#include <sys/socket.h>
 #include <fcntl.h>
 #include <jni.h>
 #include <stdlib.h>
@@ -30,6 +34,32 @@ namespace {
 
 constexpr const char *kPackage = "com.nianticlabs.pokemongo";
 constexpr size_t kMaxBlob = 256u << 20;
+
+// Zygote cannot reliably access other modules under SELinux. Query fixed
+// paths in the registered root companion; no caller-supplied paths/commands.
+// Missing/invalid/timeout responses always keep this runtime off.
+pgbr_root_peer::Kind classify(const char*path){
+    struct stat st{};
+    if(lstat(path,&st)!=0)return errno==ENOENT?pgbr_root_peer::Kind::missing:pgbr_root_peer::Kind::unknown;
+    if(S_ISREG(st.st_mode))return pgbr_root_peer::Kind::file;
+    if(S_ISDIR(st.st_mode))return pgbr_root_peer::Kind::directory;
+    return pgbr_root_peer::Kind::unknown;
+}
+void peer_companion(int client){
+    const unsigned char allowed=pgbr_root_peer::permits(classify)?1:0;
+    (void)send(client,&allowed,sizeof allowed,MSG_NOSIGNAL);
+}
+bool peer_allows_injection(zygisk::Api*api){
+    const int client=api->connectCompanion();
+    if(client<0)return false;
+    pollfd ready{client,POLLIN,0};
+    unsigned char allowed=0;
+    const bool ok=poll(&ready,1,1500)==1 && (ready.revents&POLLIN) &&
+        recv(client,&allowed,sizeof allowed,MSG_DONTWAIT)==sizeof allowed &&
+        allowed==1;
+    close(client);
+    return ok;
+}
 
 struct Blob {
     unsigned char *data = nullptr;
@@ -107,6 +137,11 @@ public:
             target_ = false;
             return;
         }
+        if (!peer_allows_injection(api_)) {
+            LOGE("PGBR Root injection disabled: PGSavant active or peer state unknown");
+            target_ = false;
+            return;
+        }
         if (dir < 0 || !read_at(dir, "pgrazor/classes.dex", dex_) ||
             !read_at(dir, "pgrazor/payload.zip", payload_)) {
             LOGE("module payload missing or unreadable");
@@ -173,3 +208,4 @@ private:
 }  // namespace
 
 REGISTER_ZYGISK_MODULE(Loader)
+REGISTER_ZYGISK_COMPANION(peer_companion)

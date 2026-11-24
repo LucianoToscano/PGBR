@@ -24,15 +24,22 @@ public final class HundoFeedData {
     private static final long MAX_REMAINING_MS = 24 * 60 * 60_000L;
     public static final int MAX_RESULTS = 10_000;
     private static final int MAX_ROWS_INSPECTED = 50_000;
+    /**
+     * IV asserted by this feed schema for every row it returns. It is the provider's claim inherited
+     * from the {"v":1,"hundos":[...]} format, NOT a value re-read from a game encounter.
+     */
+    public static final int FEED_CLAIMED_IV = 100;
 
     public static final class Entry {
         public final String encounterId;
         public final int dex, form, cp;
+        /** Provider-asserted IV; {@link #FEED_CLAIMED_IV} for this schema, -1 when not stated. */
+        public final int iv;
         public final double level, lat, lon;
         public final long despawnMs;
 
         Entry(String encounterId, int dex, int form, double lat, double lon,
-              long despawnMs, int cp, double level) {
+              long despawnMs, int cp, double level, int iv) {
             this.encounterId = encounterId;
             this.dex = dex;
             this.form = form;
@@ -41,6 +48,7 @@ public final class HundoFeedData {
             this.despawnMs = despawnMs;
             this.cp = cp;
             this.level = level;
+            this.iv = iv;
         }
 
         public boolean expired(long now) { return despawnMs <= now; }
@@ -100,7 +108,7 @@ public final class HundoFeedData {
             double level = row.length() > 7 ? row.optDouble(7, Double.NaN) : Double.NaN;
             if (!Double.isFinite(level) || level < 1 || level > 50) level = Double.NaN;
             seen.add(id);
-            result.add(new Entry(id, dex, form, lat, lon, despawn, cp, level));
+            result.add(new Entry(id, dex, form, lat, lon, despawn, cp, level, FEED_CLAIMED_IV));
         }
         return new Snapshot(result, fetched, interval);
     }

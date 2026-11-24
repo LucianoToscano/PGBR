@@ -45,13 +45,42 @@ final class IFlowGoFeedData {
 
     /** The world endpoint returns {items:[...], total:n}; item fields match nearby spawns. */
     static LiveFeedData.Snapshot parseGlobal(JSONObject body, long now) throws JSONException {
+        return parseGlobal(body, now, 1, 1, 0);
+    }
+
+    /**
+     * One page of the global search, with the note stating exactly which pages are on screen.
+     *
+     * <p>The note is the contract with the user: it must never imply worldwide coverage. When
+     * {@code pagesShown < pagesAvailable} it says so, and the dialog explains that more results exist
+     * and how to narrow the search to reach them.
+     */
+    static LiveFeedData.Snapshot parseGlobal(JSONObject body, long now, int page,
+                                             int pagesShown, int pagesAvailable)
+            throws JSONException {
         if (body == null || body.optJSONArray("items") == null)
             throw new JSONException("iFlowGo global: campo items ausente");
         LiveFeedData.Snapshot parsed = parse(
                 new JSONObject().put("spawns", body.getJSONArray("items")), now, false);
-        String note = "Fonte: iFlowGo · busca global (primeira página; cobertura e limites "
-                + "da fonte). Resultados filtrados no aparelho.";
-        return new LiveFeedData.Snapshot(parsed.entries, now, 60, note);
+        StringBuilder note = new StringBuilder("Fonte: iFlowGo · busca global · ");
+        if (pagesAvailable <= 0) {
+            note.append("página ").append(page).append(" de total desconhecido. ");
+        } else {
+            note.append("páginas ").append(pagesShown).append(" de ").append(pagesAvailable)
+                .append(" · ").append(parsed.entries.size()).append(" registros nesta página. ");
+        }
+        if (pagesAvailable > pagesShown)
+            note.append("Existem mais resultados além destas páginas: estreite a busca ")
+                .append("(espécie ou #Dex) para alcançá-los. ");
+        note.append("Cobertura e limites são da fonte; resultados filtrados no aparelho.");
+        return new LiveFeedData.Snapshot(parsed.entries, now, 60, note.toString());
+    }
+
+    /** Whether another page exists, from the server's own total and the page size we asked for. */
+    static boolean hasNextPage(JSONObject body, int page, int pageSize) {
+        if (body == null) return false;
+        int total = number(body, "total", 0, Integer.MAX_VALUE);
+        return total > 0 && (long) page * pageSize < total;
     }
 
     private static LiveFeedData.Entry spawn(JSONObject o, double lat, double lon, long now) {
