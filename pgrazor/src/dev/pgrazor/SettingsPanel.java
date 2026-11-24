@@ -1059,7 +1059,7 @@ final class SettingsPanel {
                 refreshRocket();
             });
         }
-        caption(pvpBattleC,"Ataque ágil, carregado e escudo são compartilhados com Rocket. O executor VNext PvP é experimental; a escolha supereficaz do segundo golpe ainda não está integrada.");
+        caption(pvpBattleC,"Ataque ágil, carregado e escudo são compartilhados com Rocket. A prioridade de eficácia VNext reutiliza o motor Rocket quando os dois botões são identificados. Experimental: requer validação em aparelho.");
         pvpBattleStatus=caption(pvpBattleC,"");
 
         LinearLayout gymC = group(battleC, "Gyms");
@@ -1113,7 +1113,7 @@ final class SettingsPanel {
             refreshSmartAttackNativeStatus();
         });
         caption(owner,"O motor da Equipe GO Rocket decide qual carregado usar: Super eficaz > Normal > Pouco eficaz. Liga GO, duelos e treinamento reconhecidos reutilizam o mesmo motor, sem outro executor de ataques. "+
-            "Quando ambos estão prontos e identificados, escolhe Super eficaz > Normal > Pouco eficaz. Se apenas um carregado classificado está pronto, utiliza-o sem esperar o mais forte carregar. Um rótulo oculto não é tratado como Normal. "+
+            "Quando há um golpe Super eficaz confirmado, reserva energia para ele e usa-o assim que estiver pronto. Sem golpe Super eficaz confirmado, mantém a seleção imediata entre golpes classificados. Um rótulo oculto não é tratado como Normal. "+
             "Com Ataque Inteligente ligado, se dois carregados existem mas os dados estiverem incompletos ou vencidos, nenhum carregado automático será acionado até uma classificação válida; o Ágil pode continuar normalmente. "+
             "Para voltar à ordem original do primeiro carregado pronto, desligue Ataque Inteligente. "+
             "O Ágil não pertence a um lado da tela. Experimental: requer teste real em aparelho.");
