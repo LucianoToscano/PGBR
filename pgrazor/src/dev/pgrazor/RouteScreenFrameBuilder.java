@@ -20,8 +20,8 @@ public final class RouteScreenFrameBuilder {
         for(double[] p:points)if(p==null||p.length!=2||!Double.isFinite(p[0])||!Double.isFinite(p[1])||
                 Math.abs(p[0])>90||Math.abs(p[1])>180)return null;
         int legs=points.length-1+(loop?1:0),n=0;
-        double[] x=new double[legs*2],y=new double[legs*2],m=new double[legs*2];
-        boolean[] connect=new boolean[legs*2];
+        double[] x=new double[legs*2+1],y=new double[legs*2+1],m=new double[legs*2+1];
+        boolean[] connect=new boolean[legs*2+1];
         double total=0;boolean first=false,last=false;
         for(int i=0;i<legs;i++){
             double[] a=points[i],b=points[(i+1)%points.length];
@@ -29,11 +29,21 @@ public final class RouteScreenFrameBuilder {
             if(d<=1e-8)continue;
             double[] c=projection.clipSegment(a[0],a[1],b[0],b[1]);
             if(c!=null){
-                x[n]=c[2]*sx;y[n]=c[3]*sy;m[n]=total+d*c[0];
-                x[n+1]=c[4]*sx;y[n+1]=c[5]*sy;m[n+1]=total+d*c[1];connect[n+1]=true;
                 if(n==0)first=i==0&&c[0]<1e-8;
+                x[n]=c[2]*sx;y[n]=c[3]*sy;m[n]=total+d*c[0];n++;
+                double end=total+d*c[1];
+                // Split before projection, not by linear screen distance: perspective changes scale along a leg.
+                if(completedMeters>m[n-1]&&completedMeters<end){
+                    double t=(completedMeters-total)/d,dl=b[1]-a[1];
+                    if(dl>180)dl-=360;else if(dl< -180)dl+=360;
+                    double lon=a[1]+dl*t;if(lon>180)lon-=360;else if(lon< -180)lon+=360;
+                    try{
+                        double[] split=projection.project(a[0]+(b[0]-a[0])*t,lon);
+                        x[n]=split[0]*sx;y[n]=split[1]*sy;m[n]=completedMeters;connect[n]=true;n++;
+                    }catch(IllegalArgumentException invalid){return null;}
+                }
+                x[n]=c[4]*sx;y[n]=c[5]*sy;m[n]=end;connect[n]=true;n++;
                 last=i==legs-1&&c[1]>1-1e-8;
-                n+=2;
             }
             total+=d;
         }
