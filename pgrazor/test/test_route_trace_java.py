@@ -21,7 +21,7 @@ public class RouteTraceHarness {
   static void testSnapshot() {
     MotionEngine e=new MotionEngine(); e.position(0,0); e.speed(3.6);
     check(e.routeVisualSnapshot(0)==null);
-    e.walkRoute(new double[][]{{0,0},{0,.0001},{0,.0002}},false);
+    e.walkVisualRoute(new double[][]{{0,0},{0,.0001},{0,.0002}},false);
     MotionEngine.RouteVisualSnapshot a=e.routeVisualSnapshot(0);
     check(a!=null && a.visited==1 && a.total==3 && a.newPoints.length==3 && Math.abs(a.legFraction)<1e-8);
     a.newPoints[1][1]=999;
@@ -32,11 +32,11 @@ public class RouteTraceHarness {
     check(e.routeVisualSnapshot(0).newPoints[1][1]==.0001);
     e.speed(0); check(e.routeVisualSnapshot(c.token).paused);
     e.stop(); check(e.routeVisualSnapshot(c.token)==null);
-    e.speed(3.6); e.position(0,0); e.walkRoute(new double[][]{{0,0},{0,.000001}},true);
+    e.speed(3.6); e.position(0,0); e.walkVisualRoute(new double[][]{{0,0},{0,.000001}},true);
     MotionEngine.RouteVisualSnapshot loop=e.routeVisualSnapshot(c.token);
     check(loop!=null && loop.looping && loop.newPoints!=null && loop.token!=c.token);
     e.step(.25); check(e.routeVisualSnapshot(loop.token)!=null);
-    e.stop(); e.position(0,0); e.walkRoute(new double[][]{{0,0},{0,.00001}},true);
+    e.stop(); e.position(0,0); e.walkVisualRoute(new double[][]{{0,0},{0,.00001}},true);
     MotionEngine.RouteVisualSnapshot start=e.routeVisualSnapshot(0);
     check(!start.returning && start.routeMeters>2.2 && start.routeMeters<2.3);
     for(int i=0;i<5;i++) e.step(.25);
@@ -46,8 +46,23 @@ public class RouteTraceHarness {
     for(int i=0;i<4;i++)e.step(.25);
     MotionEngine.RouteVisualSnapshot lap=e.routeVisualSnapshot(start.token);
     check(!lap.returning && lap.completedMeters<.1 && lap.visited==1);
-    e.stop(); e.walkTo(0,.0001); check(e.routeVisualSnapshot(0)==null);
-    e.stop(); e.position(0,0); e.walkRoute(new double[][]{{0,0},{0,.000001}},false);
+    e.stop(); e.position(0,0); e.walkTo(0,.0001); check(e.routeVisualSnapshot(0)==null);
+    e.walkRoute(new double[][]{{0,0},{0,.0001}},false);
+    long ordinary=e.activeRouteToken();check(ordinary!=0&&e.activeVisualRouteToken()==0&&e.routeVisualSnapshot(0)==null);
+    check(!e.stopVisualRoute(ordinary)&&e.walking);
+    e.stop();e.position(0,0);e.walkVisualTo(0,.0001);
+    MotionEngine.RouteVisualSnapshot direct=e.routeVisualSnapshot(0);
+    check(direct!=null&&direct.total==2&&direct.visited==1&&direct.newPoints.length==2&&e.activeRouteToken()==0);
+    check(direct.newPoints[0][1]==0&&direct.newPoints[1][1]==.0001);
+    for(int i=0;i<20;i++)e.step(.25);
+    MotionEngine.RouteVisualSnapshot progressed=e.routeVisualSnapshot(direct.token);
+    check(progressed.newPoints==null&&Math.abs(progressed.completedMeters-5)<1e-4&&progressed.legFraction>.4&&progressed.legFraction<.5);
+    e.walkVisualRoute(new double[][]{{0,.001}},false);
+    check(!e.stopVisualRoute(direct.token)&&e.walking);
+    check(e.stopVisualRoute(e.activeVisualRouteToken())&&!e.walking&&e.routeVisualSnapshot(0)==null);
+    e.walkVisualTo(0,.0001);e.walkRoute(new double[][]{{0,.002}},false);
+    check(e.routeVisualSnapshot(0)==null&&e.activeRouteToken()!=0);
+    e.stop(); e.position(0,0); e.walkVisualRoute(new double[][]{{0,0},{0,.000001}},false);
     e.step(.25); check(e.routeVisualSnapshot(0)==null);
   }
   public static void main(String[] args) {
@@ -137,6 +152,15 @@ class RouteTraceTest(unittest.TestCase):
         self.assertIn("source.calibrate(()->", pad)
         self.assertIn("Control::vgpMapVisible", pad)
         self.assertIn("screenRouteSource.close()", pad)
+        self.assertIn("Control.engine.activeVisualRouteToken()",pad)
+        self.assertIn("Control.walkVisualTo(lat, lon)",pad)
+        self.assertIn("Control.walkVisualRoute(waypoints, loop)",pad)
+        official=(ROOT / "src/dev/pgrazor/GameRoutesController.java").read_text(encoding="utf-8")
+        self.assertNotIn("walkVisual",official)
+        self.assertIn("engine.walkRoute(pts, false)",official)
+        dialog=(ROOT / "src/dev/pgrazor/GameRoutesDialog.java").read_text(encoding="utf-8")
+        self.assertIn("setEnabled(running||visualToken!=0)",dialog)
+        self.assertIn("Control.stopVisualWalk(token)",dialog)
         screen=(ROOT / "src/dev/pgrazor/RouteScreenProjectionSource.java").read_text(encoding="utf-8")
         for token in ["PixelCopy.request(surface", "matches.size()!=1", "mapVisible.getAsBoolean()", "if(n[0]!=6)", "RouteScreenTracker", "RouteScreenFrameBuilder.build", "bitmap.recycle()", "worker.shutdown()", "routeVisualSnapshot(knownToken)", "trackingLost", "ready=false"]:
             self.assertIn(token, screen)

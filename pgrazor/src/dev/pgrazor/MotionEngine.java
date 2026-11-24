@@ -68,7 +68,12 @@ public final class MotionEngine {
     private boolean looping;
     private boolean visualReturning; // presentation only: last-to-first leg of a loop
     private boolean plannedRoute;
+    // Visual ownership is independent from movement ownership. Game Routes and other callers never opt in.
+    private boolean visualRoute;
+    private double[] visualOrigin;
     private long routeGeneration;
+    public synchronized long activeVisualRouteToken(){return walking&&visualRoute?routeGeneration:0;}
+    public synchronized boolean stopVisualRoute(long token){if(token==0||token!=activeVisualRouteToken())return false;stop();return true;}
     /** Nonzero only for an active planned route, including a one-stop GPX/Autowalk. */
     public synchronized long activeRouteToken() {return walking&&plannedRoute?routeGeneration:0;}
     /** Retains ownership after arrival; changes on cancellation or replacement. */
@@ -110,8 +115,15 @@ public final class MotionEngine {
         }
     }
     public synchronized RouteVisualSnapshot routeVisualSnapshot(long knownToken) {
-        long token=activeRouteToken();
+        long token=activeVisualRouteToken();
         if(token==0) return null;
+        if(visualOrigin!=null){
+            double length=angle(unit(visualOrigin[0],visualOrigin[1]),unit(route[0][0],route[0][1]))*EARTH_RADIUS_METERS;
+            double left=routeProgress().remainingMeters;
+            double completed=Math.max(0,Math.min(length,length-left));
+            return new RouteVisualSnapshot(token,knownToken==token?null:new double[][]{visualOrigin.clone(),route[0].clone()},1,2,
+                length>0?completed/length:0,left,length,completed,false,!enabled||speedKmh==0,false);
+        }
         double[][] copy=null;
         if(knownToken!=token) {
             copy=new double[route.length][];
@@ -160,6 +172,15 @@ public final class MotionEngine {
     public synchronized void walkTo(double lat, double lon) {
         walkRoute(new double[][]{{lat,lon}});plannedRoute=false;
     }
+    /** Explicit local visual request; the movement itself remains the original single-target walk. */
+    public synchronized void walkVisualTo(double lat,double lon){
+        double[] origin={latitude,longitude};
+        walkTo(lat,lon);visualRoute=true;visualOrigin=origin;
+    }
+    /** Explicit local custom route or imported GPX; no changes to movement ownership. */
+    public synchronized void walkVisualRoute(double[][] waypoints,boolean loop){
+        walkRoute(waypoints,loop);visualRoute=true;
+    }
     /** Validate/copy the entire route before replacing any current movement; a one-shot route. */
     public synchronized void walkRoute(double[][] waypoints) { walkRoute(waypoints, false); }
     /** As {@link #walkRoute(double[][])}, but a looping route repeats from its first stop after the last. */
@@ -177,7 +198,7 @@ public final class MotionEngine {
         double[] legs=new double[copy.length];
         for(int i=copy.length-2;i>=0;i--)legs[i]=legs[i+1]
             +angle(unit(copy[i][0],copy[i][1]),unit(copy[i+1][0],copy[i+1][1]))*EARTH_RADIUS_METERS;
-        resetIdle();route=copy; remainingLegMeters=legs; visitedStops=0; visualReturning=false; looping=loop;plannedRoute=true;routeGeneration++;
+        resetIdle();route=copy; remainingLegMeters=legs; visitedStops=0; visualReturning=false; looping=loop;plannedRoute=true;visualRoute=false;visualOrigin=null;routeGeneration++;
         targetLatitude=route[0][0]; targetLongitude=route[0][1];
         east = north = 0;
         enabled = true;
@@ -198,7 +219,7 @@ public final class MotionEngine {
         if (Math.hypot(east, north) > 0.05)
             bearing = (Math.toDegrees(Math.atan2(east, north)) + 360) % 360;
     }
-    private void clearRoute() { plannedRoute=false;routeGeneration++;walking=false; route=new double[0][]; remainingLegMeters=new double[0]; visitedStops=0; visualReturning=false; looping=false; }
+    private void clearRoute() { plannedRoute=false;visualRoute=false;visualOrigin=null;routeGeneration++;walking=false; route=new double[0][]; remainingLegMeters=new double[0]; visitedStops=0; visualReturning=false; looping=false; }
     public synchronized void stop() { resetIdle();clearRoute(); east = north = 0; }
     /** Camera invalidation stops manual velocity without cancelling a walk or its arrival ownership. */
     public synchronized void stopManualMotion() { east = north = 0; }

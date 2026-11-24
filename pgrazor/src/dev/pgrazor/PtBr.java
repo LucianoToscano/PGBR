@@ -677,6 +677,8 @@ public final class PtBr {
         m.put("Completing the Route", "Concluindo a rota");
         m.put("Idle", "Parado");
         m.put("Walk eligible in-game Routes automatically, shortest total walk first. Each Route is ", "Percorre automaticamente rotas disponíveis no jogo, começando pelas de menor distância total. Cada rota é ");
+        m.put("started, walked once and completed in game before the next.", "iniciada, percorrida uma vez e concluída no jogo antes da próxima.");
+        m.put("Stop the current walk first.", "Interrompa a caminhada atual primeiro.");
         m.put("Max completions (1–", "Máximo de conclusões (1–");
         m.put("Waiting for Route support…", "Aguardando suporte a rotas…");
         m.put("Walk Routes", "Percorrer rotas");

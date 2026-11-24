@@ -697,7 +697,7 @@ public final class Pad {
         boolean allowed=prefs.getBoolean("routeTraceEnabled",false)&&!overlaysHidden&&
             !settings.isVisible()&&!(quickMenu!=null&&quickMenu.isShowing())&&
             !Control.catchScreenVisible()&&!blackShown;
-        visualRouteOverlay.refresh(allowed,Control.engine.activeRouteToken(),RouteTraceSettings.read(prefs));
+        visualRouteOverlay.refresh(allowed,Control.engine.activeVisualRouteToken(),RouteTraceSettings.read(prefs));
     }
     private void refresh() {
         applyMapScale();
@@ -905,7 +905,7 @@ public final class Pad {
         }, (lat, lon) -> {
             if (!Control.canEnable()) { Toast.makeText(activity,dev.pgrazor.PtBr.tr("Location adapter is not ready"),Toast.LENGTH_SHORT).show(); return false; }
             try {
-                stick.release(); Control.walkTo(lat, lon);
+                stick.release(); Control.walkVisualTo(lat, lon);
                 Control.event("walk-started", String.format(Locale.US,"targetLat=%.7f targetLon=%.7f speedKmh=%.2f",lat,lon,Control.engine.speedKmh));
                 if (!Control.engine.walking) Control.event("walk-arrived", "Already at selected destination");
                 refresh(); return true;
@@ -913,7 +913,7 @@ public final class Pad {
         }, (waypoints, loop) -> {
             if (!Control.canEnable()) { Toast.makeText(activity,dev.pgrazor.PtBr.tr("Location adapter is not ready"),Toast.LENGTH_SHORT).show(); return false; }
             try {
-                stick.release(true); Control.walkRoute(waypoints, loop);
+                stick.release(true); Control.walkVisualRoute(waypoints, loop);
                 MotionEngine.RouteProgress progress=Control.engine.routeProgress();
                 Control.event("route-started", String.format(Locale.US,"stops=%d visited=%d remainingMeters=%.2f speedKmh=%.2f loop=%s",progress.total,progress.visited,progress.remainingMeters,Control.engine.speedKmh,loop));
                 refresh(); return true;
@@ -962,7 +962,7 @@ public final class Pad {
     private boolean quickWalk(double latitude,double longitude) {
         if(!Control.canEnable()){Toast.makeText(activity,dev.pgrazor.PtBr.tr("Location adapter is not ready"),Toast.LENGTH_SHORT).show();return false;}
         try {
-            stick.release();Control.walkTo(latitude,longitude);
+            stick.release();Control.walkVisualTo(latitude,longitude);
             Control.event("quick-walk",String.format(Locale.US,"lat=%.7f lon=%.7f",latitude,longitude));
             refresh();return true;
         } catch(IllegalArgumentException error){Toast.makeText(activity,dev.pgrazor.PtBr.tr("Select valid coordinates"),Toast.LENGTH_SHORT).show();return false;}

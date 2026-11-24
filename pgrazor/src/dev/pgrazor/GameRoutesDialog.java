@@ -101,12 +101,16 @@ public final class GameRoutesDialog {
             Control.setGameRoutesPlanning(true); // renew the native discovery stream while visible
             boolean ready = Control.gameRoutesReady(), running = Control.gameRoutesRunning();
             String reward=Control.gameRoutesLastReward();
-            status.setText(dev.pgrazor.PtBr.tr((ready ? Control.gameRoutesStatus() : "Waiting for Route support…")
+            long visualToken=Control.engine.activeVisualRouteToken();
+            String current=ready?Control.gameRoutesStatus():"Waiting for Route support…";
+            if(ready&&!running&&visualToken!=0)current="Há um percurso personalizado ativo. Toque em Parar para encerrá-lo antes de iniciar uma rota do jogo.";
+            else if(ready&&!running&&!Control.engine.walking&&"Stop the current walk first.".equals(current))current="Caminhada encerrada. Você pode tentar iniciar uma rota do jogo.";
+            status.setText(dev.pgrazor.PtBr.tr(current
                 +(reward.isEmpty()?"":"\nLast rewards received: "+reward)));
             nearby.setText(dev.pgrazor.PtBr.tr(describeNearby(Control.gameRoutesSnapshot())));
             Button start = dialog.getButton(AlertDialog.BUTTON_POSITIVE);
             if (start != null) start.setEnabled(ready && !running);
-            dialog.getButton(AlertDialog.BUTTON_NEUTRAL).setEnabled(running);
+            dialog.getButton(AlertDialog.BUTTON_NEUTRAL).setEnabled(running||visualToken!=0);
             main.removeCallbacks(poll);
             main.postDelayed(poll, 1000);
         }
@@ -126,9 +130,18 @@ public final class GameRoutesDialog {
 
         private void stop() {
             if (closed) return;
-            Control.stopGameRoutes();
-            Toast.makeText(activity, dev.pgrazor.PtBr.tr("Route automation stopped."), Toast.LENGTH_SHORT).show();
-            poll();
+            if(Control.gameRoutesRunning()){
+                Control.stopGameRoutes();
+                Toast.makeText(activity, dev.pgrazor.PtBr.tr("Route automation stopped."), Toast.LENGTH_SHORT).show();
+                poll();return;
+            }
+            final long token=Control.engine.activeVisualRouteToken();if(token==0){poll();return;}
+            new AlertDialog.Builder(MapTheme.wrap(activity)).setTitle("Interromper percurso personalizado?")
+                .setMessage("Somente o percurso atual do mapa ou GPX será encerrado. Nenhuma rota do jogo será alterada.")
+                .setNegativeButton("Cancelar",null).setPositiveButton("Interromper",(d,w)->{
+                    if(!closed&&Control.stopVisualWalk(token))Toast.makeText(activity,"Percurso personalizado encerrado.",Toast.LENGTH_SHORT).show();
+                    if(!closed)poll();
+                }).show();
         }
 
         void close() {
