@@ -28,6 +28,7 @@ public final class LogExport {
             for(String key:new TreeSet<>(preferences.stringPropertyNames()))settings.put(key,preferences.getProperty(key));
             JSONObject root=new JSONObject();
             root.put("format","PGBR diagnostic settings");root.put("version",1);
+            root.put("appVersion",BuildVersion.NAME);
             root.put("capturedAtEpochMs",System.currentTimeMillis());
             root.put("speedKmh",speedKmh);root.put("settings",settings);
             root.put("preferences",groups);
@@ -48,6 +49,9 @@ public final class LogExport {
     private static final String[] SAFE_BOOLS={"smartAttackEnabled","classifierBound","chargeSeen","charge2Seen","chargeReady","charge2Ready","pvpExecutorReady","pvpObserved","vsSeekerPvPProbeReady","pvpTypeProbeReady"};
     private static final String[] SAFE_ENUMS={"smartAttackMode","actorIdentity","decision","reason","chargeTier","charge2Tier","mode","pvpScene","actorProbe"};
     private static final java.util.Set<String> SAFE_VALUES=new java.util.HashSet<>(java.util.Arrays.asList("rocket","pvp","training","unknown","not-observed","known","verified","hold","selected","select","off","on","super","neutral","normal","resisted","actor-unknown","actor-refresh","stale-effect","unknown-effect","unverified-slots","unavailable-pair","only-one-ready","effectiveness","known-super","hub","preparation","candidate","training-entry","scope-ended","vnext-closed","battle-ended","excluded-pve-scope"));
+    static String displayLog(byte[] bytes,boolean privateMode)throws IOException{
+        return new String(privateMode?shareLog(new ByteArrayInputStream(bytes)):bytes,StandardCharsets.UTF_8);
+    }
     static byte[] shareLog(InputStream input)throws IOException{
         // Read bounded bytes, then discard all non-allowlisted free text.
         ByteArrayOutputStream raw=new ByteArrayOutputStream();byte[] buffer=new byte[8192];int n;

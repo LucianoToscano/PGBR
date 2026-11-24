@@ -43,6 +43,7 @@ public final class LogActivity extends Activity {
         Button export = new Button(this); export.setText("Salvar TXT bruto (privado)"); layout.addView(export);
         export.setOnClickListener(v -> {
             File file = Control.currentLog(); if(file == null) return;
+            if(Control.trainerPrivacyMode()!=0){Toast.makeText(this,"Desative o modo de privacidade para exportar TXT bruto. Use o ZIP filtrado.",Toast.LENGTH_LONG).show();return;}
             Intent intent = new Intent(Intent.ACTION_CREATE_DOCUMENT).addCategory(Intent.CATEGORY_OPENABLE).setType("text/plain");
             intent.putExtra(Intent.EXTRA_TITLE,file.getName()); startActivityForResult(intent,40);
         });
@@ -55,7 +56,7 @@ public final class LogActivity extends Activity {
         try (RandomAccessFile input = new RandomAccessFile(file,"r")) {
             long start = Math.max(0,input.length()-65536); input.seek(start);
             byte[] bytes = new byte[(int)(input.length()-start)]; input.readFully(bytes);
-            text.setText(dev.pgrazor.PtBr.tr((start>0 ? "Showing latest 64 KiB. Export saves the current log segment, including retained startup diagnostics.\n" : "") + new String(bytes,StandardCharsets.UTF_8)));
+            text.setText(dev.pgrazor.PtBr.tr((start>0 ? "Showing latest 64 KiB. Export saves the current log segment, including retained startup diagnostics.\n" : "") + LogExport.displayLog(bytes,Control.trainerPrivacyMode()!=0)));
         } catch(IOException error) { text.setText(dev.pgrazor.PtBr.tr("Cannot read log: "+error.getMessage())); }
     }
     protected void onActivityResult(int request,int result,Intent data) {
@@ -63,6 +64,7 @@ public final class LogActivity extends Activity {
         if(settingsBackup!=null){settingsBackup.result(request,result,data);return;}
         if((request!=40&&request!=41) || result!=RESULT_OK || data==null || data.getData()==null || Control.currentLog()==null) return;
         try {
+            if(request==40&&Control.trainerPrivacyMode()!=0){Toast.makeText(this,"TXT bruto bloqueado no modo de privacidade.",Toast.LENGTH_LONG).show();return;}
             LogExport.save(this,data.getData(),Control.currentLog(),request==41);
             Toast.makeText(this,request==41?"Log and settings saved":"Log saved",Toast.LENGTH_SHORT).show();
         } catch(IOException error) { Toast.makeText(this,"Save failed: "+error.getMessage(),Toast.LENGTH_LONG).show(); }

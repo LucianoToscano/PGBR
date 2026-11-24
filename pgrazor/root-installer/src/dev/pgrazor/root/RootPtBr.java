@@ -13,6 +13,7 @@ public final class RootPtBr {
     static {
         Map<String, String> m = new HashMap<>();
         m.put("Map", "Mapa");
+        m.put("Stopped: movement was taken over.", "Rota interrompida: outro controle assumiu o movimento.");
         m.put("Walking speed", "Velocidade de caminhada");
         m.put("Autowalk", "Caminhada automática");
         m.put("In-game Routes", "Rotas do jogo");

@@ -83,6 +83,7 @@ final class RootedLogDialog {
         View.OnClickListener export = v -> {
             File file = Control.currentLog();
             if (file == null) { Toast.makeText(activity, dev.pgrazor.PtBr.tr("No log file to save"), Toast.LENGTH_SHORT).show(); return; }
+            if(v==save&&Control.trainerPrivacyMode()!=0){Toast.makeText(activity,"Use o ZIP filtrado no modo de privacidade.",Toast.LENGTH_LONG).show();return;}
             save.setEnabled(false);
             bundle.setEnabled(false);
             boolean includeSettings=v==bundle;
@@ -128,7 +129,7 @@ final class RootedLogDialog {
             input.readFully(bytes);
             hint.setText(dev.pgrazor.PtBr.tr((start > 0 ? "Showing the latest 64 KiB. " : "")
                     + "TXT bruto contém o segmento atual e pode incluir dados privados. ZIP filtrado omite mensagens livres, identificadores e preferências não permitidas."));
-            text.setText(dev.pgrazor.PtBr.tr(new String(bytes, StandardCharsets.UTF_8)));
+            text.setText(dev.pgrazor.PtBr.tr(LogExport.displayLog(bytes,Control.trainerPrivacyMode()!=0)));
         } catch (IOException error) {
             hint.setText(dev.pgrazor.PtBr.tr(""));
             text.setText(dev.pgrazor.PtBr.tr("Cannot read log: " + error.getMessage()));
