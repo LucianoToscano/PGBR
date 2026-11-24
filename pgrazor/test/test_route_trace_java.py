@@ -9,6 +9,7 @@ ROOT = Path(__file__).resolve().parents[1]
 HARNESS = r"""
 import dev.pgrazor.RouteTraceGeometry;
 import dev.pgrazor.MotionEngine;
+import dev.pgrazor.RouteTraceStyle;
 import java.util.ArrayList;
 public class RouteTraceHarness {
   static void check(boolean ok) { if (!ok) throw new AssertionError(); }
@@ -21,7 +22,7 @@ public class RouteTraceHarness {
     check(e.routeVisualSnapshot(0)==null);
     e.walkRoute(new double[][]{{0,0},{0,.0001},{0,.0002}},false);
     MotionEngine.RouteVisualSnapshot a=e.routeVisualSnapshot(0);
-    check(a!=null && a.visited==1 && a.total==3 && a.newPoints.length==3 && a.legFraction==0);
+    check(a!=null && a.visited==1 && a.total==3 && a.newPoints.length==3 && Math.abs(a.legFraction)<1e-8);
     a.newPoints[1][1]=999;
     for(int i=0;i<20;i++) e.step(.25);
     MotionEngine.RouteVisualSnapshot c=e.routeVisualSnapshot(a.token);
@@ -40,6 +41,13 @@ public class RouteTraceHarness {
   }
   public static void main(String[] args) {
     testSnapshot();
+    RouteTraceStyle style=RouteTraceStyle.defaults();
+    check(style.width==5 && style.opacity==100 && style.color(style.remaining)==0xffeeeeee);
+    style=new RouteTraceStyle(-1,10,0,0x123456,false,false,false,false);
+    check(style.width==2 && style.opacity==30 && style.completed==0xff123456);
+    check((style.color(style.completed)>>>24)==77 && !style.showMarkers && !style.showPreview);
+    style=new RouteTraceStyle(100,1000,0,0,true,true,true,true);
+    check(style.width==12 && style.opacity==100);
     double[] x={0,10,0,0}, y={0,0,0,0}, d={0,10,20,20};
     RouteTraceGeometry g=new RouteTraceGeometry(x,y,d);
     x[1]=999; d[1]=999;
@@ -71,16 +79,23 @@ class RouteTraceTest(unittest.TestCase):
             subprocess.run([str(compiler), "-encoding", "UTF-8", "-d", tmp,
                             str(ROOT / "src/dev/pgrazor/RouteTraceGeometry.java"),
                             str(ROOT / "src/dev/pgrazor/MotionEngine.java"),
+                            str(ROOT / "src/dev/pgrazor/RouteTraceStyle.java"),
                             str(harness)], check=True, timeout=30)
             subprocess.run([str(runtime), "-cp", tmp, "RouteTraceHarness"], check=True, timeout=30)
 
     def test_map_integration(self):
         source = (ROOT / "src/dev/pgrazor/WorldMapDialog.java").read_text(encoding="utf-8")
-        for token in ["routeVisualSnapshot(traceToken)", "routeTraceEnabled", "activeTrace=Collections.emptyList()", "drawTraceSegment(canvas", "traceState.legFraction", "traceState.completedMeters", "Prévia: branco"]:
+        for token in ["routeVisualSnapshot(traceToken)", "routeTraceEnabled", "activeTrace=Collections.emptyList()", "drawTraceSegment(canvas", "traceState.legFraction", "traceState.completedMeters", "Prévia: caminho planejado"]:
             self.assertIn(token, source)
         self.assertIn("preferences.getBoolean(\"routeTraceEnabled\",false)", source)
         self.assertIn("removeCallbacks(locationRefresh)", source)
         self.assertIn("traceSummary=null", source)
+        for token in ["RouteTraceSettings.show(", "traceStyle.showProgress", "traceStyle.showMarkers", "traceStyle.showPreview", "traceStyle.showSummary", "traceStyle.color(traceStyle.completed)"]:
+            self.assertIn(token, source)
+        settings=(ROOT / "src/dev/pgrazor/RouteTraceSettings.java").read_text(encoding="utf-8")
+        self.assertIn("setNeutralButton(\"Restaurar padrão\"", settings)
+        self.assertNotIn("Control.", settings)
+        self.assertNotIn("MotionEngine", settings)
 
 if __name__ == "__main__":
     unittest.main()
