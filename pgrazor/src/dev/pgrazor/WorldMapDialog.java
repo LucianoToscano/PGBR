@@ -74,34 +74,50 @@ public final class WorldMapDialog {
         Context ui = MapTheme.wrap(activity); // themed chrome; the map view itself keeps the real Activity
         ResponsiveLayout layout = new ResponsiveLayout(activity);
         layout.setOrientation(LinearLayout.VERTICAL);
-        int pad = dp(activity, 12);
+        int pad = dp(activity, 6);
         layout.setPadding(pad, pad, pad, pad);
         TextView hint = label(ui, "Blue dot: you. Red pin: destination. Drag to pan; pinch to zoom.", 13);
+        hint.setVisibility(View.GONE);
         layout.addView(hint);
         TextView selected = label(ui, "", 15);
-        selected.setPadding(0, dp(activity, 8), 0, dp(activity, 8));
+        selected.setTextSize(13);
+        selected.setPadding(dp(activity, 4), dp(activity, 3), dp(activity, 4), dp(activity, 3));
         LinearLayout selectionRow = new LinearLayout(ui);
         selectionRow.setGravity(Gravity.CENTER_VERTICAL);
         // Selection panel is below the map, next to destination actions.
         Button saved=button(ui,"Locais");
-        selectionRow.addView(saved,new LinearLayout.LayoutParams(0,dp(activity,48),1));
+        selectionRow.addView(saved,new LinearLayout.LayoutParams(dp(activity,68),dp(activity,48)));
         Button routeMode = button(ui, "Voltar ao mapa");
         routeMode.setVisibility(View.GONE);
         // Internal GPX action, invoked by the single Locais library; not a second navigation button.
         Button savedRoutes=button(ui,"Rotas");
-        layout.addView(selectionRow);
+        layout.addView(selectionRow, 0);
         TextView attribution = label(ui, "", 12);
         attribution.setGravity(Gravity.RIGHT);
-        attribution.setPadding(0, 0, 0, dp(activity, 6));
+        attribution.setTextSize(10);
+        attribution.setPadding(dp(activity,4), dp(activity,2), dp(activity,4), dp(activity,2));
+        attribution.setBackgroundColor(MapTheme.surface());
         attribution.setText(dev.pgrazor.PtBr.tr(Html.fromHtml("© <a href=\"https://www.openstreetmap.org/copyright\">OpenStreetMap contributors</a>", Html.FROM_HTML_MODE_LEGACY)));
         attribution.setMovementMethod(LinkMovementMethod.getInstance());
-        layout.addView(attribution);
         TextView status = label(ui, "Loading map…", 12);
         MapView map = new MapView(activity, latitude, longitude, selected, status);
         final AlertDialog[] hotspotsDialog = {null}, cooldownDialog = {null};
 
-        Button search = button(ui, "Search places, addresses or coordinates");
-        layout.addView(search, 0, new LinearLayout.LayoutParams(-1, dp(activity, 48)));
+        Button search = button(ui, "Buscar local ou coordenadas");
+        search.setContentDescription("Buscar lugares, endereços ou coordenadas");
+        selectionRow.addView(search, 0, new LinearLayout.LayoutParams(0, dp(activity, 48), 1));
+        Button filters = button(ui, "Filtros");
+        filters.setContentDescription("Mostrar filtros, camadas e aparência do mapa");
+        selectionRow.addView(filters,new LinearLayout.LayoutParams(dp(activity,68),dp(activity,48)));
+        LinearLayout filterPanel=new LinearLayout(ui);
+        filterPanel.setOrientation(LinearLayout.VERTICAL);
+        filterPanel.setVisibility(View.GONE);
+        layout.addView(filterPanel);
+        filters.setOnClickListener(v->{boolean open=filterPanel.getVisibility()!=View.VISIBLE;
+            filterPanel.setVisibility(open?View.VISIBLE:View.GONE);
+            filters.setText(open?"Fechar":"Filtros");
+            filters.setContentDescription(open?"Recolher filtros do mapa":"Mostrar filtros, camadas e aparência do mapa");
+        });
         final AlertDialog[] searchDialog = {null};
         search.setOnClickListener(v -> {
             if(searchDialog[0]!=null && searchDialog[0].isShowing()) return;
@@ -120,7 +136,7 @@ public final class WorldMapDialog {
             layers.addView(toggle,new LinearLayout.LayoutParams(-2,-2));
         }
         layerScroll.addView(layers,new android.widget.FrameLayout.LayoutParams(-2,-2));
-        layout.addView(layerScroll);
+        filterPanel.addView(layerScroll);
         CheckBox trace=new CheckBox(ui);
         trace.setText("Rota Visual • caminhada e GPX próprios");
         trace.setTextSize(13);
@@ -132,8 +148,8 @@ public final class WorldMapDialog {
         traceOptions.setContentDescription("Configurar aparência do percurso");
         traceOptions.setEnabled(trace.isChecked());
         traceTools.addView(traceOptions,new LinearLayout.LayoutParams(dp(activity,100),dp(activity,48)));
-        layout.addView(traceTools);
-        layout.addView(traceSummary);
+        filterPanel.addView(traceTools);
+        filterPanel.addView(traceSummary);
         map.setTraceStyle(RouteTraceSettings.read(preferences));
         traceOptions.setOnClickListener(v->RouteTraceSettings.show(activity,preferences,
             ()->map.setTraceStyle(RouteTraceSettings.read(preferences))));
@@ -143,7 +159,7 @@ public final class WorldMapDialog {
             traceOptions.setEnabled(on);
             map.setTraceEnabled(on,traceSummary);
         });
-        TextView coverage=label(ui,"Nearby locations loaded by the game",12);layout.addView(coverage);map.setPoiStatus(coverage);
+        TextView coverage=label(ui,"Nearby locations loaded by the game",12);filterPanel.addView(coverage);map.setPoiStatus(coverage);
         map.refreshPois();
         PlaceUi places = new PlaceUi(activity, ui, map, saved);
         CheckBox favoriteLayer=new CheckBox(ui);favoriteLayer.setText("Favoritos");favoriteLayer.setTextSize(13);
@@ -165,6 +181,8 @@ public final class WorldMapDialog {
         for(Button b:new Button[]{plus,minus,locate,radar})floating.addView(b,new LinearLayout.LayoutParams(dp(activity,48),dp(activity,48)));
         android.widget.FrameLayout.LayoutParams floatParams=new android.widget.FrameLayout.LayoutParams(-2,-2,Gravity.TOP|Gravity.RIGHT);floatParams.setMargins(0,dp(activity,4),dp(activity,4),0);
         mapFrame.addView(floating,floatParams);
+        android.widget.FrameLayout.LayoutParams attributionParams=new android.widget.FrameLayout.LayoutParams(-2,-2,Gravity.BOTTOM|Gravity.RIGHT);
+        mapFrame.addView(attribution,attributionParams);
         layout.map = mapFrame;
         layout.addView(mapFrame,new LinearLayout.LayoutParams(-1,dp(activity,240)));
         LinearLayout walkControls=new LinearLayout(ui);Button pauseWalk=button(ui,"Pausar"),stopWalk=button(ui,"Parar percurso");
@@ -190,7 +208,7 @@ public final class WorldMapDialog {
         layout.addView(routeTools);
         // Copy without moving the map or changing the selected destination.
         LinearLayout copyRow = new LinearLayout(ui);
-        Button current=button(ui,"Copiar minha localização"), pin=button(ui,"Copiar coordenadas");
+        Button current=button(ui,"Copiar minha posição"), pin=button(ui,"Copiar destino");
         current.setContentDescription("Copiar coordenadas da localização atual");
         pin.setContentDescription("Copiar coordenadas do destino selecionado");
         current.setOnClickListener(v -> {
@@ -208,7 +226,9 @@ public final class WorldMapDialog {
         for (Button b : row) actions.addView(b, new LinearLayout.LayoutParams(0, dp(activity, 48), 1));
         globe.setOnClickListener(v -> map.worldView());
         center.setOnClickListener(v -> map.centerSelection()); retry.setOnClickListener(v -> map.retry());
-        layout.addView(actions);
+        android.widget.FrameLayout.LayoutParams actionParams=new android.widget.FrameLayout.LayoutParams(-1,dp(activity,44),Gravity.BOTTOM);
+        actionParams.setMargins(dp(activity,2),0,dp(activity,2),dp(activity,20));
+        mapFrame.addView(actions,actionParams);
         layout.addView(status);
         layout.addView(selected);
         layout.addView(copyRow);
@@ -307,6 +327,7 @@ public final class WorldMapDialog {
             boolean big=draft.size()>LIMIT;
             mode.setText("Voltar ao mapa");mode.setVisibility(editing?View.VISIBLE:View.GONE);
             mode.setContentDescription("Sair do editor sem iniciar o percurso");
+            hint.setVisibility(editing?View.VISIBLE:View.GONE);
             hint.setText(dev.pgrazor.PtBr.tr(!editing ? "Blue dot: you. Red pin: destination. Tap to select; drag to pan."
                 : big ? "GPX route: "+draft.size()+" stops. Tap Start to walk it in order."
                 : "Route: "+draft.size()+"/"+LIMIT+" stops. Tap map, then Add stop."));
@@ -658,7 +679,7 @@ public final class WorldMapDialog {
     private static final class ResponsiveLayout extends LinearLayout {
         View map;
         final int maximumMapHeight;
-        ResponsiveLayout(Activity activity) { super(activity); maximumMapHeight = dp(activity, 420); }
+        ResponsiveLayout(Activity activity) { super(activity); maximumMapHeight = dp(activity, 640); }
         protected void onMeasure(int widthSpec, int heightSpec) {
             if (map != null) {
                 int reserved = getPaddingTop() + getPaddingBottom();
