@@ -9,3 +9,5 @@ O pacote local anterior v0.1.1 passou em 24/11/2026: geração+filtro 629307/s (
 
 ## Correção de CI — 24/11/2026
 O run 45339773695 falhou com código 127 (`sdkmanager: command not found`) antes da compilação Android. O workflow passa a preparar o SDK com a mesma ação fixada por SHA da main, instalar e verificar os componentes antes de `assembleDebug`. Não altera fonte do laboratório ou APK oficial. Novo CI a confirmar; homologação física continua pendente.
+
+- Segunda revisão: run 45345176318/job 138277893433 encontrou o sdkmanager, mas a configuração padrão da ação solicitou o pacote legado `tools`, indisponível. O parâmetro `packages: platform-tools` replica exatamente os jobs aprovados da main; SDK, NDK e CMake continuam obrigatórios, com as mesmas versões e verificações. CI novo pendente.
