@@ -32,10 +32,18 @@ class AutoAnchorSchemaTest(unittest.TestCase):
 
     def test_native_reader_is_gated_and_owned(self):
         host = (ROOT / "native/encounter_host.cpp").read_text(encoding="utf-8")
-        self.assertIn("bval(39) > 0", host)
+        self.assertIn("bval(g_direct_transport ? 41 : 39) > 0", host)
         self.assertIn("if (!g_route_anchors_allowed || !g_map_anchor || !lease_ms) return;", host)
-        self.assertIn("transport_emit_op(59, nullptr, 0, args, 1);", host)
+        self.assertIn("const uint32_t opcode = g_direct_transport ? 60u : 59u;", host)
         self.assertIn("if (!fresh) g_route_anchors_allowed = false;", host)
+        header = (ROOT / "native/runtime_transport.h").read_text(encoding="utf-8")
+        self.assertIn("PGR_TRANSPORT_FRAME_VERSION   = 23,", header)
+        self.assertIn("PGR_TRANSPORT_BOOLS           = 42,", header)
+        self.assertIn("PGR_TRANSPORT_ACTIONS         = 61,", header)
+        direct = (ROOT / "src/dev/pgrazor/NativeRuntimeTransport.java").read_text(encoding="utf-8")
+        self.assertIn("FRAME_VERSION = 23", direct)
+        self.assertIn("ACTION_COUNT = 61", direct)
+        self.assertIn('"setMapAnchorSnapshot:String:void"', direct)
         self.assertIn("install_map_anchor_leaf();", host)
         control = (ROOT / "src/dev/pgrazor/Control.java").read_text(encoding="utf-8")
         for token in ["public static boolean routeAnchorsAllowed()", "public static void setMapAnchorSnapshot(",

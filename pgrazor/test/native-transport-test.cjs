@@ -58,16 +58,29 @@ function fixture(){
 const f=fixture(),{control}=f.bridge;
 for(const group of ['BOOL_READERS','INT_READERS','DOUBLE_READERS','STRING_READERS','PULSE_READERS','ACTIONS']){
  const current=javaArray(group);
- if(group==='BOOL_READERS'){assert.equal(current.pop(),'gymRepeatEnabled','v20 native-only gym repeat setting');assert.equal(current.pop(),'eventBoxesAllowed','v2 native-only collector gate');}
- if(group==='ACTIONS')assert.equal(current.pop(),'setShinyTarget:boolean,double,double:void','v21 native-only shiny marker action');
+ if(group==='BOOL_READERS'){
+  // The direct JNI schema appends three native-only booleans; the Frida schema keeps only the
+  // route-anchor gate, at the first free index after the legacy readers.
+  assert.equal(current.pop(),'routeAnchorsAllowed','v23 read-only route anchor gate');
+  assert.equal(current.pop(),'gymRepeatEnabled','v20 native-only gym repeat setting');
+  assert.equal(current.pop(),'eventBoxesAllowed','v2 native-only collector gate');
+  current.push('routeAnchorsAllowed');
+ }
+ if(group==='ACTIONS'){
+  // Direct JNI appends setShinyTarget at 59 and the anchor snapshot at 60; Frida keeps only
+  // the anchor action, at the first free index after vgpResult.
+  assert.equal(current.pop(),'setMapAnchorSnapshot:String:void','v23 read-only route anchor action');
+  assert.equal(current.pop(),'setShinyTarget:boolean,double,double:void','v21 native-only shiny marker action');
+  current.push('setMapAnchorSnapshot:String:void');
+ }
  assert.deepEqual(Array.from(f.schema[group]),current,group+' stable research adapter wire order');
 }
 const names=[...f.schema.BOOL_READERS,...f.schema.INT_READERS,...f.schema.DOUBLE_READERS,...f.schema.STRING_READERS,'accountCommandSnapshot'];
 const oldReaders=legacy.match(/const readers='([^']+)'/)[1].split(' ').concat('accountCommandSnapshot');
-assert.equal(names.length,57);assert.deepEqual([...names].sort(),oldReaders.sort());
+assert.equal(names.length,58);assert.deepEqual([...names].sort(),oldReaders.sort());
 assert.deepEqual(Array.from(f.schema.PULSE_READERS),legacy.match(/const pulses='([^']+)'/)[1].split(' '));
 assert.deepEqual(Array.from(f.schema.ACTIONS,s=>s.split(':')[0]),legacy.match(/const actions='([^']+)'/)[1].split(' '));
-assert.equal(f.schema.PULSE_READERS.length,3);assert.equal(f.schema.ACTIONS.length,59);
+assert.equal(f.schema.PULSE_READERS.length,3);assert.equal(f.schema.ACTIONS.length,60);
 for(const name of [...names,...f.schema.PULSE_READERS,...Array.from(f.schema.ACTIONS,s=>s.split(':')[0])])assert.equal(typeof control[name],'function',name);
 f.schema.BOOL_READERS.forEach((name,id)=>assert.equal(control[name](),!!(id%2)));
 f.schema.INT_READERS.forEach((name,id)=>assert.equal(control[name](),-100-id));

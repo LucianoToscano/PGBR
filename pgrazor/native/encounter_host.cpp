@@ -1306,9 +1306,11 @@ static void publish_map_anchors(uint64_t tid, uint64_t lease_ms) {
   anchors[pos++] = '}';
   anchors[pos] = '\0';
 
-  // Appended action at the END of the compiled schema (opcode 59): existing opcodes never shift.
+  // The Frida schema appends this action at 59; the direct JNI transport already reserves 59 for
+  // setShinyTarget and appends it at 60. No existing opcode changes in either transport.
+  const uint32_t opcode = g_direct_transport ? 60u : 59u;
   const char *args[1] = {anchors};
-  transport_emit_op(59, nullptr, 0, args, 1);
+  transport_emit_op(opcode, nullptr, 0, args, 1);
   emit_event("map-anchors", anchors);
 }
 
@@ -1478,7 +1480,7 @@ static void sync_from_transport(uint64_t tid) {
   next_opts.item_access_allowed = (active > 0 && bval(16) > 0) ? 1u : 0u;
   next_opts.item_transfer_enabled = (active > 0 && bval(17) > 0) ? 1u : 0u;
   next_opts.map_poi_allowed = (active > 0 && bval(21) > 0) ? 1u : 0u;
-  g_route_anchors_allowed = (active > 0 && bval(39) > 0);
+  g_route_anchors_allowed = (active > 0 && bval(g_direct_transport ? 41 : 39) > 0);
   next_opts.transfer_keep_all = (bval(35) > 0) ? 1u : 0u;
   next_opts.vgp_allowed = (active > 0 && bval(36) > 0) ? 1u : 0u;
   next_opts.vgp_enabled = (bval(37) > 0) ? 1u : 0u;
