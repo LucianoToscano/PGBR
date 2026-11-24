@@ -1838,3 +1838,6 @@ Base main 205ac2105a45dac4821c26b9ff73e66c4097e76a, comparação GitHub antes de
 
 
 - LT046 — revisão de segurança do cofre da prévia independente, branch fix/lt046-cofre-limites-20261124, base c64706a1b33c00159462bb8a39eab9003c8cc5fe. Limite exato do envelope AES-GCM (545 bytes); leitura limitada a 546 bytes mesmo após alteração de tamanho, sem readAllBytes; limpeza dos buffers. Valida bytes ASCII permitidos também na criptografia e após autenticação/decriptação, rejeita envelope nulo ou fora dos limites; fixtures de limite, envelope adulterado/legado autenticado com credencial inválida e vínculo do cofre. Não altera formato válido nem incorpora chaves reais, chamadas de rede ou cliente do jogo. CI novo e teste AndroidKeyStore físico pendentes; sem APK/release.
+
+
+- 24/11/2026 — PR #168 integrado em 233577a1b49fc27c438b6db0eeb4aa5901bbf215; HEAD 6621079991b5f36fb52c090a183e6065be1c0ecc, workflows 45368218108 e 45368218049 ambos success; 5/5 jobs do CI geral. Correção do cofre local aprovada no CI, não no Android físico. Sem conexão externa ou alteração de versão/APK. device_tested=false, provider_connected=false.
