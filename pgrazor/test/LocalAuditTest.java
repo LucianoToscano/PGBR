@@ -33,6 +33,10 @@ public final class LocalAuditTest {
  check(Math.abs(repeated.positionAt(repeated.meters/2)[0]-0.5)<1e-8);
  try{g.positionAt(Double.NaN);throw new AssertionError();}catch(IllegalArgumentException expected){}
  var single=new GpxPreviewGeometry(new GpxRoute("um ponto",new double[][]{{0,0}}));check(single.meters==0&&single.x.length==1);
+ var batch=LocalCollectionPreview.parse("Rattata;478;4;4;5;EVENT=1,SHINY=0\nRhyhorn;547;6;6;7;EVENT=0,SHINY=0\nMunna;14;?;6;7;EVENT=?,SHINY=0\ninvalid\nPikachu;606;15;10;10;EVENT=0,EVENT=1",99,flags);
+ check(batch.protectedCount==1&&batch.uncertainCount==1&&batch.matchCount==1&&batch.rejectedLines.equals(Arrays.asList(4,5)));
+ check(LocalCollectionPreview.parse("X;1;0;0;0;EVENT=0",99,flags).uncertainCount==1);
+ try{LocalCollectionPreview.parse(String.join("\n",Collections.nCopies(501,"X;1;0;0;0;")),99,flags);throw new AssertionError();}catch(IllegalArgumentException expected){}
  System.out.println("PASS: local audit");
  }
 }

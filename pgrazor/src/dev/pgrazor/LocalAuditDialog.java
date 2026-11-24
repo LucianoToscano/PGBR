@@ -8,7 +8,7 @@ final class LocalAuditDialog {
  private LocalAuditDialog(){}
  static void show(Activity a){
   AlertDialog d=new AlertDialog.Builder(MapTheme.wrap(a)).setTitle("Análise local • sem ações no jogo")
-   .setItems(new String[]{"Prévia de proteção da coleção","Simular ataques carregados","Interpretar código de diagnóstico"},(x,i)->{if(i==0)collection(a);else if(i==1)combat(a);else reason(a);})
+   .setItems(new String[]{"Prévia de proteção da coleção","Simular ataques carregados","Interpretar código de diagnóstico","Avaliar lista de Pokémon"},(x,i)->{if(i==0)collection(a);else if(i==1)combat(a);else if(i==2)reason(a);else batch(a);})
    .setNegativeButton("Fechar",null).create();present(a,d);
  }
  static void present(Activity a,AlertDialog d){DialogLifecycle.bind(a,d,null);d.setOnShowListener(x->MapTheme.styleButtons(d));d.show();}
@@ -35,6 +35,26 @@ final class LocalAuditDialog {
    result.setText(name.getText()+" • PC "+pc+" • IV "+iv+"\n"+state+"\n"+String.join("\n",decision.reasons)+"\n"+new java.util.Date()+" • PGBR "+BuildVersion.NAME+" • esquema "+LocalAuditPolicy.SCHEMA);
   }catch(RuntimeException invalid){result.setText("Confira os campos e os limites.");}});
   present(a,new AlertDialog.Builder(MapTheme.wrap(a)).setTitle("Prévia local de filtros").setView(scroll(a,b)).setPositiveButton("Fechar",null).create());
+ }
+ static void batch(Activity a){
+  LinearLayout b=body(a);
+  text(a,b,"Cole até 500 registros de uma fonte autorizada, um por linha. Formato: espécie;PC;IV ataque;IV defesa;IV PS;critérios. Use ? para desconhecido; critérios no formato EVENT=1,SHINY=0. Ausência de informação não significa falso. Não lê a coleção nem transfere Pokémon.");
+  EditText limit=input(a,b,"IV mínimo para preservar (%)","99");
+  EditText records=new EditText(MapTheme.wrap(a));records.setMinLines(4);records.setMaxLines(8);records.setHint("Rattata;478;4;4;5;EVENT=1,SHINY=0");records.setFilters(new android.text.InputFilter[]{new android.text.InputFilter.LengthFilter(LocalCollectionPreview.MAX_CHARS)});b.addView(records);
+  LocalAuditPolicy.Flag[] flags=LocalAuditPolicy.Flag.values();CheckBox[] active=new CheckBox[flags.length];
+  for(int i=0;i<flags.length;i++){CheckBox c=new CheckBox(MapTheme.wrap(a));c.setText("Proteger "+flags[i].label+" ("+flags[i].name()+")");c.setChecked(true);b.addView(c);active[i]=c;}
+  TextView result=text(a,b,"");action(a,b,"Avaliar lista sem transferir",()->{try{
+   EnumSet<LocalAuditPolicy.Flag> selected=EnumSet.noneOf(LocalAuditPolicy.Flag.class);for(int i=0;i<flags.length;i++)if(active[i].isChecked())selected.add(flags[i]);
+   LocalCollectionPreview.Report report=LocalCollectionPreview.parse(records.getText().toString(),integer(limit),selected);
+   StringBuilder out=new StringBuilder("Protegidos: "+report.protectedCount+" | Incertos: "+report.uncertainCount+" | Correspondem: "+report.matchCount+" | Linhas inválidas: "+report.rejectedLines.size()+"\n");
+   if(!report.rejectedLines.isEmpty())out.append("Linhas ignoradas: ").append(report.rejectedLines).append('\n');
+   int shown=0;for(LocalCollectionPreview.Row row:report.rows){
+    if(shown++==50){out.append("Outros resultados contabilizados; visualização limitada a 50.\n");break;}
+    out.append(row.species).append(" • PC ").append(row.cp).append(" • ").append(row.decision.status==LocalAuditPolicy.Status.PROTECTED?"Protegido":row.decision.status==LocalAuditPolicy.Status.UNCERTAIN?"Incerto":"Corresponde ao filtro").append('\n').append(String.join(", ",row.decision.reasons)).append("\n\n");
+   }
+   result.setText(out.toString());
+  }catch(IllegalArgumentException invalid){result.setText("Confira os limites e o formato da lista.");}});
+  present(a,new AlertDialog.Builder(MapTheme.wrap(a)).setTitle("Prévia de coleção em lote").setView(scroll(a,b)).setPositiveButton("Fechar",null).create());
  }
  static void reason(Activity a){LinearLayout b=body(a);EditText code=input(a,b,"reasonCode","12");TextView r=text(a,b,"");action(a,b,"Interpretar",()->{try{r.setText(LocalAuditPolicy.reason(integer(code)));}catch(RuntimeException e){r.setText("Código inválido.");}});present(a,new AlertDialog.Builder(MapTheme.wrap(a)).setTitle("Motivos de proteção").setView(b).setPositiveButton("Fechar",null).create());}
  static void combat(Activity a){

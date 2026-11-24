@@ -1736,3 +1736,5 @@ continuam fora do conjunto JVM por depender de `LiveFeedClient` (Android-bound),
 - Prévia GPX: distância acumulada por segmento, interpolação por distância e controle de progresso explicitamente ilustrativo; caminho base cacheado por tamanho de viewport, marcadores de início/fim e trecho selecionado, sem alterar posição do aparelho nem comandos de movimentação. Testes de antimeridiano, pontos repetidos e distância inválida. Sem APK.
 
 - CI 45332703952 revelou argumento Canvas em vez de Paint nos marcadores GPX. Corrigidos todos os drawCircle após a ampliação da prévia. CI anterior foi substituído pela revisão; resultado do HEAD a verificar.
+
+- Prévia de coleção em lote: importação por colagem de até 500 registros de origem fornecida pelo jogador, critérios tri-state, validação de linhas, contagem por decisão e detalhes limitados a 50 por tela. Rejeita registros contraditórios, sem inferir ausência de raridade; nenhum acesso à coleção ou transferência. Fixtures sintéticas acrescentadas. Sem APK.
