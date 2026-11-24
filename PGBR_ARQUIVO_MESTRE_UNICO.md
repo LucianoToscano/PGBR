@@ -1732,3 +1732,5 @@ continuam fora do conjunto JVM por depender de `LiveFeedClient` (Android-bound),
 - CI 45332217047: 429 testes, duas falhas e um skip; CI 45332216951 falhou na compilação Java. Corrigido escape de newline do LogExport; contrato técnico de interrupção de rota restaurado e tradução aplicada somente em PtBr e glossário. Sem alteração das ações do jogo. Reexecução necessária.
 
 - Complemento: sincronização da tradução de rota no instalador Root (mesmo glossário); versão do app no snapshot compartilhável; exibição de logs filtrada quando privacidade está ativa e bloqueio da exportação TXT bruto nas interfaces Root/sem Root enquanto ativo. Não altera identificação, autenticação ou telas externas. Sem APK.
+
+- Prévia GPX: distância acumulada por segmento, interpolação por distância e controle de progresso explicitamente ilustrativo; caminho base cacheado por tamanho de viewport, marcadores de início/fim e trecho selecionado, sem alterar posição do aparelho nem comandos de movimentação. Testes de antimeridiano, pontos repetidos e distância inválida. Sem APK.

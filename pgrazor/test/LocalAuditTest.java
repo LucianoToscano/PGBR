@@ -27,6 +27,11 @@ public final class LocalAuditTest {
  var c=LocalAuditPolicy.estimate(1,100,35,11,0,10,0,100,100,0);check(LocalAuditPolicy.recommend(a,c)==0&&LocalAuditPolicy.recommendSingle(c)==-1);
  var g=new GpxPreviewGeometry(new GpxRoute("teste",new double[][]{{0,179.9},{0,-179.9}}));
  check(g.meters>22000&&g.meters<22500&&g.width<1);
+ check(Math.abs(g.positionAt(g.meters/2)[0]-g.width/2)<1e-8);
+ check(g.positionAt(0)[0]==g.x[0]&&g.positionAt(g.meters)[0]==g.x[1]);
+ var repeated=new GpxPreviewGeometry(new GpxRoute("repetido",new double[][]{{0,0},{0,0},{0,1},{0,1}}));
+ check(Math.abs(repeated.positionAt(repeated.meters/2)[0]-0.5)<1e-8);
+ try{g.positionAt(Double.NaN);throw new AssertionError();}catch(IllegalArgumentException expected){}
  var single=new GpxPreviewGeometry(new GpxRoute("um ponto",new double[][]{{0,0}}));check(single.meters==0&&single.x.length==1);
  System.out.println("PASS: local audit");
  }
