@@ -137,6 +137,9 @@ public final class PogoFeedData {
         public final Attrs attrs;
         /** Pokesearch reveal code for a row whose coordinates are not known yet; null otherwise. */
         public final String revealCode;
+        /** Typed reward presentation only; unknown legacy records keep the generic icon. */
+        public final String questRewardKind;
+        public final int questItemId;
 
         /** Backwards-compatible overload (no team/raid metadata) kept for existing call sites and tests. */
         public Entry(String id, Kind kind, String name, String details, double lat, double lon,
@@ -163,6 +166,15 @@ public final class PogoFeedData {
                      int dexId, int cp, double level, double iv, long expiresAt, boolean hasStats,
                      int team, long raidHatchAt, boolean raidBossLive, boolean personalShiny, Attrs attrs,
                      String revealCode) {
+            this(id,kind,name,details,lat,lon,dexId,cp,level,iv,expiresAt,hasStats,team,raidHatchAt,raidBossLive,personalShiny,attrs,revealCode,"",-1);
+        }
+
+        public Entry(String id, Kind kind, String name, String details, double lat, double lon,
+                     int dexId, int cp, double level, double iv, long expiresAt, boolean hasStats,
+                     int team, long raidHatchAt, boolean raidBossLive, boolean personalShiny, Attrs attrs,
+                     String revealCode, String questRewardKind, int questItemId) {
+            this.questRewardKind = kind == Kind.QUEST && ("stardust".equals(questRewardKind) || "item".equals(questRewardKind)) ? questRewardKind : "";
+            this.questItemId = "item".equals(this.questRewardKind) && questItemId > 0 && questItemId <= 999999 ? questItemId : -1;
             this.revealCode = revealCode;
             this.id = id;
             this.kind = kind;
@@ -195,6 +207,7 @@ public final class PogoFeedData {
                     .put(attrs.atkIv).put(attrs.defIv).put(attrs.staIv)
                     .put(attrs.pvpGreatRank).put(attrs.pvpUltraRank).put(attrs.pvpLittleRank));
             if (revealCode != null) o.put("code", revealCode);
+            if (!questRewardKind.isEmpty()) { o.put("questRewardKind",questRewardKind); o.put("questItemId",questItemId); }
             return o;
         }
 
@@ -211,7 +224,7 @@ public final class PogoFeedData {
                         o.optInt("cp", -1), o.optDouble("level", -1), o.optDouble("iv", -1), o.optLong("exp", 0),
                         o.optBoolean("stats", false), o.optInt("team", 0), o.optLong("hatch", 0),
                         o.optBoolean("bossLive", false), o.optBoolean("shiny", false), attrs,
-                        code.isEmpty() ? null : code);
+                        code.isEmpty() ? null : code, o.optString("questRewardKind",""), o.optInt("questItemId",-1));
             } catch (Exception e) { return null; }
         }
 
@@ -221,7 +234,7 @@ public final class PogoFeedData {
         /** Copy of this row with revealed coordinates (and no pending reveal code). */
         public Entry withCoords(double newLat, double newLon) {
             return new Entry(id, kind, name, details, newLat, newLon, dexId, cp, level, iv, expiresAt, hasStats,
-                    team, raidHatchAt, raidBossLive, personalShiny, attrs, null);
+                    team, raidHatchAt, raidBossLive, personalShiny, attrs, null, questRewardKind, questItemId);
         }
 
         /**
@@ -250,7 +263,7 @@ public final class PogoFeedData {
             Attrs a = new Attrs(attrs.form, attrs.costume, attrs.gender, attrs.size, attrs.atkIv, attrs.defIv,
                     attrs.staIv, gl, ul, attrs.pvpLittleRank);
             return new Entry(id, kind, name, join(rest), lat, lon, dexId, cp, level, iv, expiresAt, hasStats,
-                    team, raidHatchAt, raidBossLive, personalShiny, a, revealCode);
+                    team, raidHatchAt, raidBossLive, personalShiny, a, revealCode, questRewardKind, questItemId);
         }
 
         private static List<String> splitDetails(String d) {

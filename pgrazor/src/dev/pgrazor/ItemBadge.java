@@ -38,6 +38,18 @@ final class ItemBadge extends View {
         setImportantForAccessibility(IMPORTANT_FOR_ACCESSIBILITY_NO);
     }
     boolean hasDecodedSprite(){return itemSprite!=null;}
+    /** Decorative, exact-ID icon for a labelled action; preserve the action/listener. */
+    static void decorate(android.widget.TextView label,int id){
+        Bitmap bitmap=load(label.getContext(),id);
+        if(bitmap==null)return;
+        android.graphics.drawable.BitmapDrawable icon=new android.graphics.drawable.BitmapDrawable(label.getResources(),bitmap);
+        int size=MapTheme.dp(label.getContext(),28);
+        int w=bitmap.getWidth(),h=bitmap.getHeight();
+        float scale=size/(float)Math.max(w,h);
+        icon.setBounds(0,0,Math.max(1,Math.round(w*scale)),Math.max(1,Math.round(h*scale)));
+        label.setCompoundDrawablesRelative(icon,null,null,null);
+        label.setCompoundDrawablePadding(MapTheme.dp(label.getContext(),6));
+    }
     String spriteStatus(){return spriteStatus;}
     private static synchronized Bitmap load(Context context,int id){
         if(id<=0||id>999999)return null;
