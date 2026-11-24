@@ -102,7 +102,7 @@ final class LocalImportDialog {
                         Toast.makeText(activity, "Área de transferência vazia.", Toast.LENGTH_SHORT).show();
                         return;
                     }
-                    CharSequence text = clip.getItemAt(0).coerceText(activity);
+                    CharSequence text = clip.getItemAt(0).getText();
                     if (text != null) input.setText(text);
                 } catch (Exception error) {
                     Toast.makeText(activity, "Não foi possível ler a área de transferência.",

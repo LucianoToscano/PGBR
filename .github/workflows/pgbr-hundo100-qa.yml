@@ -41,6 +41,8 @@ jobs:
           set -o pipefail
           python -B -m unittest discover -s pgrazor/test -p 'test_live_feed_java.py' -v 2>&1 | tee /tmp/qa.log || {
             { echo '### Falha no parser do feed'; echo '```'; grep -E "DIAG |Error|FAIL|Traceback|ERROR in" /tmp/qa.log | head -80; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
-            echo "::error title=Feed QA::$(grep -m1 -E 'DIAG .*ERROR in|AssertionError|FAIL' /tmp/qa.log | cut -c1-900)"
+            grep -E 'error:|AssertionError|Exception|FAIL:' /tmp/qa.log | head -25 | while read -r line; do
+              echo "::error title=Feed QA::$(echo "$line" | cut -c1-300)"
+            done
             exit 1
           }

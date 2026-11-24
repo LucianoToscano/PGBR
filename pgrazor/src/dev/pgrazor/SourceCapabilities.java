@@ -52,7 +52,7 @@ public final class SourceCapabilities {
     public final boolean supportsPagination;
     public final boolean liveFeedAvailable;
     public final boolean supportsWebhook;
-    public final CoordinatePrecision defaultCoordinatePrecision;
+    public final SourceEvent.CoordinatePrecision defaultCoordinatePrecision;
     public final String coverage;
     public final String attribution;
     public final long lastVerifiedAt;
@@ -62,7 +62,7 @@ public final class SourceCapabilities {
     private SourceCapabilities(String sourceId, Status status, OriginKind originKind,
                                boolean supportsRemoteSearch, boolean supportsPagination,
                                boolean liveFeedAvailable, boolean supportsWebhook,
-                               CoordinatePrecision defaultCoordinatePrecision, String coverage,
+                               SourceEvent.CoordinatePrecision defaultCoordinatePrecision, String coverage,
                                String attribution, long lastVerifiedAt, String note,
                                Map<String, Support> filters) {
         this.sourceId = sourceId;
@@ -151,7 +151,7 @@ public final class SourceCapabilities {
         private boolean supportsPagination;
         private boolean liveFeedAvailable;
         private boolean supportsWebhook;
-        private CoordinatePrecision precision = SourceEvent.CoordinatePrecision.EXACT;
+        private SourceEvent.CoordinatePrecision precision = SourceEvent.CoordinatePrecision.EXACT;
         private String coverage = "";
         private String attribution = "";
         private long lastVerifiedAt;
