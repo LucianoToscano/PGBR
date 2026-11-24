@@ -29,7 +29,7 @@ public final class LocalCollectionPreview {
  public static Report parse(String text,int min,Set<LocalAuditPolicy.Flag> enabled){
   if(text==null||text.length()>MAX_CHARS||min<0||min>100||enabled==null)throw new IllegalArgumentException("Dados acima do limite ou configuração inválida.");
   List<Row> rows=new ArrayList<>();List<Integer> bad=new ArrayList<>();
-  String[] lines=text.split("\\r?\\n",-1);int count=0;
+  String[] lines=text.split("\\r\\n|\\n|\\r",-1);int count=0;
   for(int i=0;i<lines.length;i++){
    String line=lines[i].trim();if(line.isEmpty())continue;if(++count>MAX_ROWS)throw new IllegalArgumentException("Máximo de 500 registros.");
    try{

@@ -18,6 +18,20 @@ final class LocalAuditDialog {
  static EditText input(Activity a,LinearLayout b,String title,String initial){text(a,b,title);EditText e=new EditText(MapTheme.wrap(a));e.setSingleLine(true);e.setText(initial);b.addView(e);return e;}
  static Spinner select(Activity a,LinearLayout b,String title,String[] values){text(a,b,title);Spinner s=new Spinner(MapTheme.wrap(a));ArrayAdapter<String> ad=new ArrayAdapter<>(a,android.R.layout.simple_spinner_item,values);ad.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);s.setAdapter(ad);b.addView(s);return s;}
  static void action(Activity a,LinearLayout b,String title,Runnable f){Button v=new Button(MapTheme.wrap(a));v.setText(title);v.setTextColor(MapTheme.ink());MapTheme.setButtonBackground(v);v.setAllCaps(false);v.setOnClickListener(x->f.run());b.addView(v);}
+ static void invalidateOnEdit(TextView result,EditText... fields){
+  android.text.TextWatcher w=new android.text.TextWatcher(){
+   public void beforeTextChanged(CharSequence s,int start,int count,int after){}
+   public void onTextChanged(CharSequence s,int start,int before,int count){result.setText("Dados alterados. Calcule novamente.");}
+   public void afterTextChanged(android.text.Editable e){}
+  };
+  for(EditText f:fields)f.addTextChangedListener(w);
+ }
+ static void invalidateOnSelection(TextView result,Spinner... fields){
+  for(Spinner f:fields)f.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener(){
+   public void onItemSelected(AdapterView<?> p,android.view.View v,int position,long id){result.setText("Dados alterados. Calcule novamente.");}
+   public void onNothingSelected(AdapterView<?> p){result.setText("Seleção não confirmada. Calcule novamente.");}
+  });
+ }
  static int integer(EditText e){return Integer.parseInt(e.getText().toString().trim());}
  static double decimal(EditText e){return Double.parseDouble(e.getText().toString().trim().replace(',','.'));}
  static void collection(Activity a){
@@ -25,10 +39,12 @@ final class LocalAuditDialog {
   EditText name=input(a,b,"Espécie",""),cp=input(a,b,"PC",""),atk=input(a,b,"IV ataque (0–15 ou -1 desconhecido)","-1"),def=input(a,b,"IV defesa","-1"),sta=input(a,b,"IV PS","-1"),limit=input(a,b,"IV mínimo para preservar (%)","99");
   LocalAuditPolicy.Flag[] flags=LocalAuditPolicy.Flag.values();Spinner[] observed=new Spinner[flags.length];CheckBox[] active=new CheckBox[flags.length];
   for(int i=0;i<flags.length;i++){CheckBox c=new CheckBox(MapTheme.wrap(a));c.setText("Proteger: "+flags[i].label);c.setChecked(true);b.addView(c);active[i]=c;observed[i]=select(a,b,"Dado observado",new String[]{"Desconhecido","Sim","Não"});}
-  TextView result=text(a,b,"");action(a,b,"Avaliar sem transferir",()->{try{
+  TextView result=text(a,b,"");invalidateOnEdit(result,name,cp,atk,def,sta,limit);invalidateOnSelection(result,observed);
+  for(CheckBox c:active)c.setOnCheckedChangeListener((v,on)->result.setText("Critérios alterados. Avalie novamente."));
+  action(a,b,"Avaliar sem transferir",()->{try{
    int pc=integer(cp),aa=integer(atk),dd=integer(def),ss=integer(sta);if(pc<0||pc>100000||aa< -1||aa>15||dd< -1||dd>15||ss< -1||ss>15||name.getText().toString().trim().isEmpty())throw new IllegalArgumentException();
    EnumSet<LocalAuditPolicy.Flag> selected=EnumSet.noneOf(LocalAuditPolicy.Flag.class);EnumMap<LocalAuditPolicy.Flag,Boolean> values=new EnumMap<>(LocalAuditPolicy.Flag.class);
-   for(int i=0;i<flags.length;i++){if(active[i].isChecked())selected.add(flags[i]);int x=observed[i].getSelectedItemPosition();if(x!=0)values.put(flags[i],x==1);}
+   for(int i=0;i<flags.length;i++){if(active[i].isChecked())selected.add(flags[i]);int x=observed[i].getSelectedItemPosition();if(x==1||x==2)values.put(flags[i],x==1);}
    LocalAuditPolicy.Decision decision=LocalAuditPolicy.preview(aa,dd,ss,integer(limit),selected,values);
    String state=decision.status==LocalAuditPolicy.Status.PROTECTED?"Protegido":decision.status==LocalAuditPolicy.Status.UNCERTAIN?"Protegido por incerteza":"Corresponde ao filtro";
    String iv=LocalAuditPolicy.validIv(aa)&&LocalAuditPolicy.validIv(dd)&&LocalAuditPolicy.validIv(ss)?String.format(Locale.forLanguageTag("pt-BR"),"%.2f%%",(aa+dd+ss)*100.0/45):"Desconhecido";
@@ -88,7 +104,7 @@ final class LocalAuditDialog {
  static void energyPlan(Activity a){
   LinearLayout b=body(a);text(a,b,"Planejamento manual, sem executar ataques. Informe o ganho do ágil e o custo do carregado de acordo com os dados PvP da forma correta. Energia residual é preservada.");
   EditText min=input(a,b,"Energia mínima estimada (0–100)","0"),max=input(a,b,"Energia máxima estimada (0–100)","0"),gain=input(a,b,"Energia por ataque ágil",""),cost=input(a,b,"Custo do carregado","");
-  TextView result=text(a,b,"");action(a,b,"Calcular",()->{try{
+  TextView result=text(a,b,"");invalidateOnEdit(result,min,max,gain,cost);action(a,b,"Calcular",()->{try{
    LocalAuditPolicy.EnergyPlan p=LocalAuditPolicy.planEnergy(integer(min),integer(max),integer(gain),integer(cost),4);
    String ready=p.latest==0?"Pronto com certeza":p.earliest==0?"Pode estar pronto; energia incerta":"Ainda não pronto";
    result.setText(ready+"\nÁgeis restantes: "+p.earliest+(p.earliest==p.latest?"":" a "+p.latest)+(p.sequence.length==0?"\nSequência exata indisponível: energia inicial incerta.":"\nÁgeis para os próximos 4 carregados: "+Arrays.toString(p.sequence)));
@@ -106,7 +122,9 @@ final class LocalAuditDialog {
   CheckBox single=new CheckBox(MapTheme.wrap(a));single.setText("Confirmo que existe somente um carregado");b.addView(single);
   Spinner[] type=new Spinner[2];EditText[] power=new EditText[2],cost=new EditText[2],duration=new EditText[2];
   for(int i=0;i<2;i++){type[i]=select(a,b,"Tipo carregado "+(i+1),LocalAuditPolicy.TYPES);power[i]=input(a,b,"Potência "+(i+1),"");cost[i]=input(a,b,"Energia exigida "+(i+1),"");duration[i]=input(a,b,"Duração do golpe em segundos (PvE) "+(i+1),"");}
-  TextView result=text(a,b,"");action(a,b,"Comparar",()->{try{
+  TextView result=text(a,b,"");invalidateOnEdit(result,atk,def,energy,targetHp);invalidateOnEdit(result,power);invalidateOnEdit(result,cost);invalidateOnEdit(result,duration);
+  invalidateOnSelection(result,mode,objective,u1,u2,f1,f2);invalidateOnSelection(result,type);single.setOnCheckedChangeListener((v,on)->result.setText("Dados alterados. Compare novamente."));
+  action(a,b,"Comparar",()->{try{
    LocalAuditPolicy.Estimate[] e=new LocalAuditPolicy.Estimate[2];StringBuilder out=new StringBuilder(mode.getSelectedItemPosition()==0?"PvP\n":"PvE\n");
    for(int i=0;i<(single.isChecked()?1:2);i++){e[i]=LocalAuditPolicy.estimate(type[i].getSelectedItemPosition(),decimal(power[i]),decimal(cost[i]),u1.getSelectedItemPosition(),u2.getSelectedItemPosition(),f1.getSelectedItemPosition(),f2.getSelectedItemPosition(),decimal(atk),decimal(def),decimal(energy));if(e[i]==null)throw new IllegalArgumentException();out.append(String.format(Locale.forLanguageTag("pt-BR"),"Carregado %d: ×%.3f • %s • dano estimado %.0f • DPE %.2f • %s%n",i+1,e[i].effectiveness,e[i].effectiveness>1.001?"Super eficaz":e[i].effectiveness<0.999?"Pouco eficaz":"Neutro",e[i].damage,e[i].perEnergy,e[i].ready?"Pronto":"Sem energia"));}
    LocalAuditPolicy.Objective goal=LocalAuditPolicy.Objective.values()[objective.getSelectedItemPosition()];

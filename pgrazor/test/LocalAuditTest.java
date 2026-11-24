@@ -65,6 +65,7 @@ public final class LocalAuditTest {
  check(LocalCollectionPreview.page(many,LocalAuditPolicy.Status.PROTECTED,0).isEmpty());
  try{LocalCollectionPreview.page(many,null,3);throw new AssertionError();}catch(IllegalArgumentException expected){}
  check(LocalCollectionPreview.parse("X;1;0;0;0;EVENT=0",99,flags).uncertainCount==1);
+ check(LocalCollectionPreview.parse("X;1;0;0;0;EVENT=0,SHINY=0\rY;1;0;0;0;EVENT=0,SHINY=0",99,flags).matchCount==2);
  try{LocalCollectionPreview.parse(String.join("\n",Collections.nCopies(501,"X;1;0;0;0;")),99,flags);throw new AssertionError();}catch(IllegalArgumentException expected){}
  var plan=LocalAuditPolicy.planEnergy(24,24,8,40,4);check(Arrays.equals(plan.sequence,new int[]{2,5,5,5})&&plan.earliest==2&&plan.latest==2);
  var residual=LocalAuditPolicy.planEnergy(0,0,9,35,4);check(Arrays.equals(residual.sequence,new int[]{4,4,4,4}));
