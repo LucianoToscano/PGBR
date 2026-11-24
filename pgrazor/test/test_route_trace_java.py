@@ -35,6 +35,16 @@ public class RouteTraceHarness {
     MotionEngine.RouteVisualSnapshot loop=e.routeVisualSnapshot(c.token);
     check(loop!=null && loop.looping && loop.newPoints!=null && loop.token!=c.token);
     e.step(.25); check(e.routeVisualSnapshot(loop.token)!=null);
+    e.stop(); e.position(0,0); e.walkRoute(new double[][]{{0,0},{0,.00001}},true);
+    MotionEngine.RouteVisualSnapshot start=e.routeVisualSnapshot(0);
+    check(!start.returning && start.routeMeters>2.2 && start.routeMeters<2.3);
+    for(int i=0;i<5;i++) e.step(.25);
+    MotionEngine.RouteVisualSnapshot back=e.routeVisualSnapshot(start.token);
+    check(back.returning && back.visited==2 && back.legFraction>0 && back.legFraction<1);
+    check(Math.abs(back.completedMeters-1.25)<1e-4);
+    for(int i=0;i<4;i++)e.step(.25);
+    MotionEngine.RouteVisualSnapshot lap=e.routeVisualSnapshot(start.token);
+    check(!lap.returning && lap.completedMeters<.1 && lap.visited==1);
     e.stop(); e.walkTo(0,.0001); check(e.routeVisualSnapshot(0)==null);
     e.stop(); e.position(0,0); e.walkRoute(new double[][]{{0,0},{0,.000001}},false);
     e.step(.25); check(e.routeVisualSnapshot(0)==null);
@@ -90,7 +100,7 @@ class RouteTraceTest(unittest.TestCase):
         self.assertIn("preferences.getBoolean(\"routeTraceEnabled\",false)", source)
         self.assertIn("removeCallbacks(locationRefresh)", source)
         self.assertIn("traceSummary=null", source)
-        for token in ["RouteTraceSettings.show(", "traceStyle.showProgress", "traceStyle.showMarkers", "traceStyle.showPreview", "traceStyle.showSummary", "traceStyle.color(traceStyle.completed)"]:
+        for token in ["RouteTraceSettings.show(", "traceStyle.showProgress", "traceStyle.showMarkers", "traceStyle.showPreview", "traceStyle.showSummary", "traceStyle.color(traceStyle.completed)", "traceState.returning", "map.setDraftLoop(on)"]:
             self.assertIn(token, source)
         settings=(ROOT / "src/dev/pgrazor/RouteTraceSettings.java").read_text(encoding="utf-8")
         self.assertIn("setNeutralButton(\"Restaurar padrão\"", settings)
