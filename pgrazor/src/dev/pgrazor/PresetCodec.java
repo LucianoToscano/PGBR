@@ -220,16 +220,23 @@ public final class PresetCodec {
         return ids;
     }
 
-    /** Stable, filesystem-safe slug used for preset file names and ids. */
+    /**
+     * Stable, filesystem-safe slug used for preset file names and ids: ASCII letters and digits
+     * only, accents removed (NFD + combining marks dropped), separators collapsed and no trailing
+     * dash, so "IV 100% Rápido!" and "IV 100% Rapido" produce the same id.
+     */
     public static String slug(String value) {
         if (value == null) return "preset";
-        String low = value.trim().toLowerCase(Locale.ROOT);
+        String decomposed = java.text.Normalizer.normalize(value, java.text.Normalizer.Form.NFD)
+                .replaceAll("\\p{M}+", "");
+        String low = decomposed.trim().toLowerCase(Locale.ROOT);
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < low.length() && sb.length() < 48; i++) {
             char c = low.charAt(i);
-            if (Character.isLetterOrDigit(c)) sb.append(c);
+            if (c < 128 && Character.isLetterOrDigit(c)) sb.append(c);
             else if (sb.length() > 0 && sb.charAt(sb.length() - 1) != '-') sb.append('-');
         }
+        while (sb.length() > 0 && sb.charAt(sb.length() - 1) == '-') sb.setLength(sb.length() - 1);
         if (sb.length() == 0) sb.append("preset");
         return sb.toString();
     }
