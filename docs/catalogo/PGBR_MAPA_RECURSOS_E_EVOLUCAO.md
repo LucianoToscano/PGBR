@@ -175,3 +175,22 @@ O proprietário solicitou como exemplos de blocos: destinos/coordenação de eta
 - Cada passo possui estado de simulação, resultado, erro e evidência; progressão depende do resultado confirmado, não de mera espera. Operações de edição e execução simulada isoladas. Sem loops infinitos; falhas não são convertidas em sucesso.
 - Checkpoint local atômico, retomada de simulação explícita, nenhuma retomada automática em conta real; cancelar preserva dados; logs sanitizados. Testar zero, limites, desconhecido, cancelamento, reinício, evento expirado, troca de perfil, falha de armazenamento, concorrência e timeout.
 - Integração futura somente mediante autorização comprovada: rever capacidades e contratos com runtime existente; não copiar lógica de eventos em macro genérica sem comparação. Preservar PokeSearch, Rotas oficiais, regras do jogo e proteções existentes. Nenhuma ação ou conexão nova foi implementada neste registro.
+
+
+### 8.4. Refinamento de UX: biblioteca de blocos predefinidos (referência de cenas inteligentes)
+Referência visual enviada pelo proprietário: painel inferior arredondado “Adic. Tarefa”, lista vertical de categorias com ícone semântico, título, exemplo curto e chevron; categoria abre configuração própria. Preservar o design PGBR em PT-BR, claro/escuro, sem copiar marca ou recursos gráficos de terceiros. Tela principal da macro: nome, lista ordenada de cartões, botão + Adicionar tarefa, reordenar por arrastar ou botões acessíveis, editar/duplicar/excluir, salvar e prévia. Cada cartão mostra resumo dos parâmetros, não uma tela inteira de opções. Funções conhecidas devem ter contratos tipados, disponibilidade explícita e versão; o editor não é gravador de toques, não aceita comandos arbitrários.
+
+| Categoria de bloco solicitada | Configuração de interface (planejamento ou fixture sintética) |
+|---|---|
+| Localização / destino (pedido: Teleporte) | Coordenadas ou Local salvo; validação de formato e prévia no mapa próprio, sem movimentação real no simulador |
+| Captura | Todos ou espécie específica; seletor de espécie e forma quando aplicável; Shiny: indiferente / somente brilhante / somente não brilhante; quantidade-alvo |
+| Poképaradas | Quantidade-alvo, inclusive zero para pular |
+| Missões | Objetivo, recompensa esperada, confirmação do usuário |
+| Tempo de espera | Duração em segundos/minutos, cancelável; contagem regressiva simulada |
+| Condição de estado | Mapa disponível, restrição vigente, dados suficientes; desconhecido não significa liberado |
+| Notificação | Mensagem local, consentimento de notificações |
+| Rotina salva | Referência versionada a outra macro; impedir ciclos; no primeiro incremento, expandir só blocos de planejamento/simulação |
+
+O modo Shiny precisa de três estados para distinguir “não filtrar” de “excluir brilhantes”; nunca presumir que brilho esteja disponível antes da observação. Quantidade zero pula a etapa. Não habilitar ações reais de terceiros por um seletor de interface. O editor e os contratos são propostas, não implementados.
+
+Referência comparativa PGTools (consulta pública de 24/11/2026): https://pgtools.net/wsoo.php e https://pgtools.net/downloads/auto-catchMEU (trechos indexados; página direta sem conteúdo legível na consulta); guia comunitário https://hackmd.io/@lokey0905/pokemongo. Identificados módulos especializados PaC, PaS, PaH e configuração por função. Não confirmado editor visual universal equivalente ao da imagem, nem código interno/contratos ou licença de reaproveitamento. Usar comparação de organização e UX somente, sem importar configurações privadas, copiar implementação ou reproduzir exploração de falhas. Cada tipo de bloco deve mapear a um catálogo de capacidades; primeiro incremento offline, com ações reais condicionadas às interfaces autorizadas e revisão das regras do serviço.
