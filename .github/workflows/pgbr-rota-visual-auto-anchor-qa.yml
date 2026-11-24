@@ -165,13 +165,7 @@ jobs:
       - name: Auditoria de integridade dos modulos preservados
         run: python -B pgrazor/test/test_lt032_consolidation.py
       - name: Testar codigo PGBR apos preparar ferramentas DEX
-        shell: bash
-        run: |
-          set +e
-          python -B tools/check.py > /tmp/check.log 2>&1
-          rc=$?
-          echo "::error::B64:$(tail -120 /tmp/check.log | base64 -w0)"
-          exit $rc
+        run: python -B tools/check.py
       - name: Testar menu, busca iFlowGo segura e janelas de escolha manual
         run: |
           python -B pgrazor/test/test_iflowgo_request_policy_java.py
