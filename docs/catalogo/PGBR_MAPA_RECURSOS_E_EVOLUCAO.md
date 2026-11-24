@@ -144,3 +144,34 @@ P0 = regressão/segurança; P1 = consolidação; P2 = produto novo; P3 = pesquis
 - Toda fonte externa deve permitir uso, ter contrato quando necessário, timeout, backoff, rate limit, cache e status de indisponibilidade. Nunca confundir catálogo estático com encontro/IV/coord ao vivo. Nenhum novo acesso privado, bypass ou integração de execução automatizada de jogo.
 - PR pequena por família, checar dependências e HEAD, não modificar arena/ nem resolver histórico automaticamente. Testes host/fixtures, CI exato, build assinado, homologação física e publicação são evidências distintas. Toda entrega registra ID(s) deste catálogo no Mestre único, incluindo commit, arquivos, resultados e lacunas.
 - Atualizar o catálogo por diff e manter histórico no Mestre; propostas novas são N até existir código; nunca anunciar funcionalidade com base somente em nomes de classes ou arquivos. Revisão por família antes de cada release. Nenhum teste de dispositivo ou build executado nesta auditoria documental.
+
+
+## 8. Ampliação solicitada pelo proprietário — Central de Automações e Macros
+Registro de requisitos e estudo de viabilidade, não implementação. Separar a biblioteca de rotinas da execução no jogo; no primeiro incremento, editor, planejamento manual e simulador offline com ambiente sintético. Qualquer integração real requer interface autorizada, regras do serviço e revisão independente; não usar macros para explorar falhas, burlar restrições ou presumir disponibilidade de ações.
+
+### 8.1. O que já existe (código consultado na base 21badfd1a10e8a569c0f0e9dff8bbb4cbdb8c9d6)
+| ID | Recurso | Evidência | Encaminhamento |
+|---|---|---|---|
+| AUTO-03 | Eternatus | EternatusRouteRunner.java; events/EventPanel.java; AGENTS | Preservar coordenador e progresso por resgate confirmado; catalogar modelo sazonal e regressões, não reescrever |
+| AUTO-04 | Halloween | events/EventSettings.java (HALLOWEEN_2026), EventPanel; histórico PR #67 | Perfil sazonal e validade; fixtures históricas não provam evento real |
+| AUTO-05 | Safari / Área Selvagem | EventSettings (GO_WILD_NOVEMBER_2026), Control; histórico PR #67 | Reutilizar apresentação e preferências existentes; catálogo de bônus, itens e elegibilidade |
+| AUTO-06 | Auto-Raid / batalha de reides | AutoRaid.java, SettingsPanel.java, Control | Código presente com ciclo de sessão; distinguir planejamento de execução; revisar regressões de status e cancelamento, sem declarar homologação |
+| AUTO-07 | Caçador de Shundo | ShundoSniper.java; SettingsPanel (Experimental) | Preservar recurso e registrar dependência de fontes autorizadas; planejamento e filtros de catálogo, sem prometer encontro ou IV real |
+| AUTO-08 | Outras automações legadas | OneShotAutomation.java; Control; VgpController | Inventário de funcionalidades e limites, conflitos de sessão, pausa, encerramento e isolamento de perfil |
+| AUTO-09 | Editor de macros | N | Criar sequências de cartões editáveis, biblioteca, duplicação, importação/exportação versionada e prévia |
+| AUTO-10 | Motor de macros | N | Simulador offline, fluxo sequencial, condições, repetição limitada, interrupção, timeout, registros e teste de recuperação |
+| AUTO-11 | Templates de eventos | N | Modelos por evento, revisão/validade/fuso, checklist, planejamento de itens, pesquisa, reides e espécies; sem ativar evento expirado |
+| AUTO-12 | Rotinas de reides e falhas | P/N | Pedido de automatizar um “bug das reides” registrado sem detalhes identificadores; classificar como investigação de defeito, reprodução em ambiente autorizado e correção, não macro operacional de exploração |
+| AUTO-13 | Biblioteca e histórico | N | Favoritos, nome, descrição, revisão, execução simulada, exportação sem credenciais/locais privados, status e motivo de interrupção |
+| AUTO-14 | Permissões e QA | N | Capacidades explícitas, teste sem conta real, pausa/stop, sem concorrência destrutiva, sem ação desconhecida |
+
+### 8.2. Requisitos de UX do editor
+Central “Automações” com abas Modelos de Eventos, Rotinas, Minhas Macros, Histórico; botão +, duplicar, ordenar e editar. Cartões de ação/condição com parâmetros, prévia e reordenação; estados Rascunho, Validada em simulação, Em execução simulada, Pausada, Aguardando confirmação, Concluída, Falha/Cancelada. Separar modelos oficiais de modelos do usuário. Presets de consulta existentes não são macros já implementadas.
+
+O proprietário solicitou como exemplos de blocos: destinos/coordenação de etapas, ações de Poképarada com contagem 0–3, captura próxima 0–5, filtro espécie ou brilhante, missão e recompensa, nova etapa geográfica, espera de mapa e cooldown. Registrar intenção para planejamento, checklist manual e testes sintéticos: 0 = pular; contagem positiva é objetivo/teto, não garantia; condições desconhecidas pausam. Não implementar execução automatizada dessas ações em serviço de terceiro sem interface autorizada e revisão de termos. Para cooldown, respeitar restrição e estado desconhecido; não inferir janela para evasão. Para destinos, usar prévia de mapa/locais e dados sintéticos no simulador. Não automatizar exploração de bugs.
+
+### 8.3. Contrato de dados e critérios
+- Macro: ID estável, nome, versão do esquema, descrição, perfil, revisão, template opcional, passos tipados, condições, timeout e política de cancelamento; importação valida tamanho, esquema e tipos, sem script arbitrário.
+- Cada passo possui estado de simulação, resultado, erro e evidência; progressão depende do resultado confirmado, não de mera espera. Operações de edição e execução simulada isoladas. Sem loops infinitos; falhas não são convertidas em sucesso.
+- Checkpoint local atômico, retomada de simulação explícita, nenhuma retomada automática em conta real; cancelar preserva dados; logs sanitizados. Testar zero, limites, desconhecido, cancelamento, reinício, evento expirado, troca de perfil, falha de armazenamento, concorrência e timeout.
+- Integração futura somente mediante autorização comprovada: rever capacidades e contratos com runtime existente; não copiar lógica de eventos em macro genérica sem comparação. Preservar PokeSearch, Rotas oficiais, regras do jogo e proteções existentes. Nenhuma ação ou conexão nova foi implementada neste registro.
