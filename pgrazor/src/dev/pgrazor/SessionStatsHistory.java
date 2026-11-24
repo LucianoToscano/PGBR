@@ -82,12 +82,19 @@ public final class SessionStatsHistory {
     }
     /** The change over the {@code windowMs} up to the newest reading, or null with no reading yet. */
     public synchronized Change change(long windowMs) {
-        if (latest == null || samples.isEmpty()) return null;
+        if (windowMs <= 0 || latest == null || samples.isEmpty()) return null;
         long start = latestAt - windowMs;
         double[] before = null, after = null;
         for (double[] s : samples.values()) {
             if ((long) s[0] <= start) before = s;
             else { after = s; break; }
+        }
+        // The newest reading may be newer than the first reading retained in its five-minute slot.
+        // Include it as the right endpoint when a short window starts within that final slot.
+        if (after == null && before != null && latestAt > start) {
+            after = new double[COUNT + 1];
+            after[0] = latestAt;
+            System.arraycopy(latest, 0, after, 1, COUNT);
         }
         double[] base = new double[COUNT];
         long covered;
