@@ -6,7 +6,6 @@ import android.util.LruCache;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
@@ -25,6 +24,8 @@ final class MapTileCache {
     private static final long CACHE_LIMIT = 64L * 1024 * 1024;
     private static final int TILE_BYTE_LIMIT = 512 * 1024;
 
+    // All picker instances share the same cache directory; trimming must not race a write or read.
+    private static final Object DISK_LOCK = new Object();
     private final File directory;
     private final AtomicInteger writes = new AtomicInteger();
 
@@ -34,42 +35,48 @@ final class MapTileCache {
     void remember(String key, Bitmap bitmap) { MEMORY.put(key, bitmap); }
 
     void ensureDirectory() throws IOException {
-        if (!directory.isDirectory() && !directory.mkdirs()) throw new IOException("Cannot create map cache");
+        if (!directory.isDirectory() && !directory.mkdirs() && !directory.isDirectory()) throw new IOException("Cannot create map cache");
     }
 
     /** Fresh on-disk tile decoded to a bitmap, or null when missing/stale; a corrupt file is dropped. */
     Bitmap readDisk(String key) throws IOException {
-        File file = new File(directory, key + ".png");
-        if (file.isFile() && System.currentTimeMillis() - file.lastModified() < CACHE_TTL) {
-            try (InputStream stream = new FileInputStream(file)) { return decode(readBounded(stream)); }
-            catch (IOException e) { file.delete(); }
+        synchronized (DISK_LOCK) {
+            File file = new File(directory, key + ".png");
+            if (file.isFile() && System.currentTimeMillis() - file.lastModified() < CACHE_TTL) {
+                try (InputStream stream = new FileInputStream(file)) { return decode(readBounded(stream)); }
+                catch (IOException e) { file.delete(); }
+            }
+            return null;
         }
-        return null;
     }
 
     /** Persist raw tile bytes through a temporary file, then bound disk use. A disk failure never discards a usable tile. */
     void writeDisk(String key, byte[] bytes) {
-        File file = new File(directory, key + ".png");
-        File temporary = new File(directory, key + ".part");
-        try {
-            try (FileOutputStream out = new FileOutputStream(temporary)) { out.write(bytes); }
-            if (file.exists()) file.delete();
-            if (!temporary.renameTo(file)) temporary.delete();
-            // Bound disk use even if the user keeps changing viewport before a batch finishes; listing and
-            // sorting the whole directory after every tile slowed loading, so only every 32nd write.
-            if (writes.incrementAndGet() % 32 == 0) trim();
-        } catch (IOException e) { temporary.delete(); }
+        if (bytes == null || bytes.length == 0 || bytes.length > TILE_BYTE_LIMIT) return;
+        synchronized (DISK_LOCK) {
+            File file = new File(directory, key + ".png");
+            try {
+                MapTileDiskStore.replace(file, bytes);
+                // Bound disk use even if the viewport changes before a batch finishes.
+                if (writes.incrementAndGet() % 32 == 0) trim();
+            } catch (IOException ignored) { /* Preserve the previous tile; the decoded bitmap remains usable. */ }
+        }
     }
 
     /** Evict the oldest files until within the byte and count ceilings. */
-    synchronized void trim() {
-        File[] files = directory.listFiles(); if (files == null) return;
-        Arrays.sort(files, Comparator.comparingLong(File::lastModified));
-        long total = 0; for (File file : files) total += file.length();
-        int remaining = files.length;
-        for (File file : files) {
-            if (total <= CACHE_LIMIT && remaining <= 1024) break;
-            long length = file.length(); if (file.delete()) { total -= length; remaining--; }
+    void trim() {
+        synchronized (DISK_LOCK) {
+            // Restrict eviction to tile cache files, including orphaned temporary files after a crash.
+            File[] files = directory.listFiles(file -> file.isFile() &&
+                (file.getName().endsWith(".png") || file.getName().endsWith(".part")));
+            if (files == null) return;
+            Arrays.sort(files, Comparator.comparingLong(File::lastModified));
+            long total = 0; for (File file : files) total += file.length();
+            int remaining = files.length;
+            for (File file : files) {
+                if (total <= CACHE_LIMIT && remaining <= 1024) break;
+                long length = file.length(); if (file.delete()) { total -= length; remaining--; }
+            }
         }
     }
 
