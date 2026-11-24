@@ -84,6 +84,10 @@ class LocalAuditTests(unittest.TestCase):
         panel=source.split(' static String galleryLabel(int id){',1)[1].split(' static void tagReview(Activity a){',1)[0]
         self.assertIn('case 301:return "Ovo da Sorte"',panel)
         self.assertIn('default:return "Item"',panel)
+        self.assertIn('Consultar ID de catálogo',panel)
+        self.assertIn('id<1||id>999999',panel)
+        self.assertIn('inspected.removeAllViews()',panel)
+        self.assertIn('LocalAuditPolicy.partialMatchup(',source)
         self.assertIn('navigation[0].setEnabled(page[0]>0)',panel)
         self.assertIn('navigation[1].setEnabled(page[0]+1<pages)',panel)
         theme=(ROOT/'src/dev/pgrazor/MapTheme.java').read_text(encoding='utf-8')

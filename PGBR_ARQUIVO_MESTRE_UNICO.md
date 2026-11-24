@@ -53,14 +53,39 @@ O release `v0.00.33-LT` é uma **nova identificação de build**, não uma mudan
 - README e ROOTED sincronizados com o recibo LT045 já verificado (commits 3c0da69c011697f3fa769b6c649821211a272c25 e b0412c4d787b1223d8426084085be0c7a6513abf), histórico de versões preservado. Matriz `docs/validation/LT046_HOMOLOGACAO.md` ampliada para a futura sessão única de homologação do proprietário, incluindo etiquetas, filtros, evento, proteção, lifecycle, diagnóstico, Max/MT/frutas, IV/nível e GPX/ícones (f35ec46cf2ce21dd41bb79ede44acf7f24375f61). Nenhum teste físico marcado como aprovado.
 - Sem alterações em execução de jogo, GPS, PokeSearch, credenciais ou provedores, sem novo APK ou publicação. `device_tested=false`; `provider_connected=false`. Aguardar CI exato e revisão de integração sem sobrescrever trabalho paralelo.
 
+### Checkpoint LT046 — preparação de build QA 0.00.46-LT (24/11/2026, sessão arena)
+
+- Base `ed3684a7d24f98d3154b8cd001ea7f78cf0ed730` (merge #172). PR #173 mesclada via GitHub em `5f05c96` (24/11/2026 10:44 UTC), CI 6/6 success (`45374098860`/`45374098817`). PRs #174 (HEAD `7bc9953`, CI 6/6 `45374762685`/`45374762335`) e #165 GeoLab (HEAD `a9d67a3`, CI 3/3 `45373978316`/`45373978363`/`45373978395`) com conflito restrito a este Mestre, reconciliadas localmente com ambos os registros preservados e código integral intacto; integradas por esta sessão.
+- VERSION `pgrazor/VERSION` → `0.00.46-LT`; User-Agent do adaptador de feed atualizado; `tools/check.py` contrato `test_lt046_release_contract.py` novo e fail-closed (QA sem `gh release`, sem push/PR); workflow `pgbr-lt046-qa.yml` (somente `workflow_dispatch`) compila e verifica as três variantes **sem publicar**. Notas `docs/releases/v0.00.46-LT.md`; matriz `docs/validation/LT046_ITENS_PARCIAIS_20261124.md` registra itens parciais/pendentes e condições de desbloqueio. Publicação LT046 **não autorizada**; LT045 permanece a pré-release publicada.
+- PRs antigas de Snipers/Radar/PvP/Max (#86, #90, #105, #108, #111, #118, #119, #121, #129, #131, #132, #133, #134, #135, #139, #140, #144, #149, #152, #154, #161) permanecem abertas e não foram mescladas; gates de integração seletiva registrados no Mestre e na matriz de parciais. `device_tested=false`; `provider_connected=false`.
+
 ### Checkpoint LT046 — integridade de exportação GPX (24/11/2026)
 
 - Branch fix/lt046-gpx-export-validacao-20261124; base 0d29f3c1e0db08945b3299a3f0413a973004ee65 (merge #170). Validação de nomes compatíveis com XML 1.0, preservando pares Unicode válidos e saneando nomes de fallback inválidos. Exportação GPX verifica limite de 2 MB antes da escrita, inclusive para coordenadas decimais extremas, sem reduzir precisão nem copiar a matriz inteira de pontos. Fixtures de Unicode, round-trip e preservação do destino em exportação excessiva. CI e homologação física pendentes. Sem alteração de localização, jogo, automação, APK ou release.
 
-<a id="mestre-evidencias"></a>
+<<<<<<< HEAD
 ### Checkpoint LT046 — cofre e consolidação QA (24/11/2026)
 
-- Base ed3684a7d24f98d3154b8cd001ea7f78cf0ed730; #171 merge 15d5e270e4c6a8e297b22b54aac296a7a0fd1851 e #172 merge ed3684a7d24f98d3154b8cd001ea7f78cf0ed730, CI geral 5/5 em cada HEAD. Changelog e matriz de homologação atualizados com referências de CI #166–#172. Revisão da janela de cofre local: operações serializadas por provedor no diálogo, campo e botões desabilitados durante consulta/salvamento/remoção, confirmação protegida e callbacks ignorados após Activity encerrada. Testes de ligação adicionados; novo CI pendente. Nenhuma conexão externa, alteração de jogo ou APK; teste físico pendente.
+- Base ed3684a7d24f98d3154b8cd001ea7f78cf0ed730; #171 merge 15d5e270e4c6a8e297b22b54aac296a7a0fd1851 e #172 merge ed3684a7d24f98d3154b8cd001ea7f78cf0ed730, CI geral 5/5 em cada HEAD. Changelog e matriz de homologação atualizados com referências de CI #166–#172. Revisão da janela de cofre local: operações serializadas por provedor no diálogo, campo e botões desabilitados durante consulta/salvamento/remoção, confirmação protegida e callbacks ignorados após Activity encerrada. Testes de ligação adicionados; CI pós-merge em 5f05c96566e0ea0cfac3080a407d296c0dcc93ba (PR #173) aprovado. Nenhuma conexão externa, alteração de jogo ou APK; teste físico pendente.
+
+### Checkpoint LT046 — interface, contexto PvP/VGP+ e preparação Max (24/11/2026)
+
+- Branch fix/lt046-interface-diagnostico-max-20261124, base ed3684a7d24f98d3154b8cd001ea7f78cf0ed730. Galeria local consulta ID exato informado, sem atribuir identidade por semelhança; invalida a inspeção ao editar. Resumo filtrado separa ausência/erro por ID e contabiliza eventos de contexto permitidos (vgp, panel-closed, heartbeat-expired etc.) sem inferir duração ou causa. Preparação Max calcula componentes ofensivo e defensivo independentemente, mantendo desconhecido quando faltam dados; nenhuma seleção ou execução de batalha. Fixtures e verificações de ligação; CI do PR #174 (7bc99533683c3abdea1ecb53dd58eb5aea1933ab) aprovado 6/6. Não adiciona arte não verificada nem resolve comportamento real de PvP/VGP+/Max; teste físico e identificação de IDs faltantes continuam necessários.
+
+### 24/11/2026 — GeoLab v0.1.1 (pesquisa isolada)
+- Branch `research/geolab-isolated-20261124`; base `205ac2105a45dac4821c26b9ff73e66c4097e76a`; commit de implementação `25f68f50c2dd20e51cefb213a48e70bb00959f78`.
+- Novo subprojeto `pgrazor/research/geolab/`: socketpair privado C++/JNI, parser JSON limitado, malha sintética, predicados concorrentes, callback, simulador HTTP loopback e leitura explícita de regras Drive OAuth. APK de laboratório separado; nenhuma mudança no runtime de produção, Zygisk, GPS, RPC ou PokeSearch.
+- Workflow `.github/workflows/pgbr-geolab-ci.yml`: testes host, build Android debug, verificação de assinatura e SHA-256, artefato de QA sem publicação automática.
+- Pacote local anterior v0.1.1 retestado: PASS JNI/JSON/grid/predicados/callbacks/POST local/deduplicação/limites; 629307 entidades/s geração+filtro e 98424 entidades/s JNI+JSON+filtro. Não são resultados do HEAD GitHub nem Android físico. CI da branch, Drive real e homologação Android pendentes; `device_tested=false`. Não altera versão oficial nem releases existentes.
+
+- GeoLab #165: erro comprovado no workflow isolado 45339773695/job 138260353809, sdkmanager ausente (127). Adicionada ação de preparação Android fixada no mesmo SHA da CI principal, instalação explícita no SDK root e validação de SDK/NDK/CMake/apksigner. Mantida execução de testes host, build debug isolado, assinatura e SHA. Correção nesta branch de pesquisa, sem integrar ao APK PGBR e sem publicação. Novo CI pendente. Não houve teste físico.
+
+- GeoLab #165: run 45345176318/job 138277893433 falhou na ação setup-android porque o default `tools platform-tools` solicita o pacote legado `tools`. Conferidos action.yml no SHA fixado e configuração dos jobs aprovados na main: definida opção `packages: platform-tools` e desativado apenas o log verboso das licenças do SDK (não a validação). Mantidos todos os requisitos, testes, assinatura, SHA e build isolado. Novo CI pendente, sem homologação física ou publicação.
+
+- CI do HEAD 55e01d8b25ee76d957a36aa41043535d930e5b24: workflows 45347410768, 45347410791 e 45347410890 aprovados. Artefato de laboratório separado (debug): https://github.com/LucianoToscano/PGBR/actions/runs/45347410791/artifacts/14898842315. Reconciliação com main 0d29f3c1e0db08945b3299a3f0413a973004ee65 preserva o subprojeto e workflow originais; novo CI obrigatório antes de merge. Não é APK de produção nem homologação física; Drive real não validado.
+- Reconciliação 24/11/2026 (sessão arena): HEAD do PR #165 `a9d67a3706a149209677dee521b188bb2aad6c07` (CI 3/3 verde: 45373978316/45373978363/45373978395) fundido à main com o GeoLab mantido isolado em `pgrazor/research/geolab/` — nada incluído no APK de produção, workflow isolado `pgbr-geolab-ci.yml`. Merge autorizado pelo proprietário; `device_tested=false`; Drive real não validado; sem publicação.
+
+<a id="mestre-evidencias"></a>
 
 ## 2. Hierarquia de evidências e estados
 Use os termos com precisão:
@@ -1864,3 +1889,11 @@ Base main 205ac2105a45dac4821c26b9ff73e66c4097e76a, comparação GitHub antes de
 
 
 - 24/11/2026 — PR #170 integrado em 0d29f3c1e0db08945b3299a3f0413a973004ee65; HEAD e948047eb16820c673e7d193082435c5d0ef09af, workflows 45371840759 e 45371840647 success, 5/5 jobs gerais. PR #171 reconciliado com main preservando ambos os registros e os commits originais; nova execução de CI necessária. Sem APK/release; device_tested=false, provider_connected=false.
+
+
+- 24/11/2026 — PR #171 integrado em 15d5e270e4c6a8e297b22b54aac296a7a0fd1851; HEAD 02ea34acd97d05972a119bf9ce39fe6a282fd78b; CI 45372949115, 45372949324, 45372949127 success. PR #172 integrado em ed3684a7d24f98d3154b8cd001ea7f78cf0ed730; HEAD e113addf35b8927941a0a726e126d38429bc27fd; CI 45373080938, 45373081108 success. Ambos CI geral 5/5. GeoLab HEAD d5c77fc2142efb71e438ca72a9b4b3b9af195345 aprovado 3/3 (45373418055, 45373418042, 45373417875); conflito documental reconciliado sobre os merges mais recentes. Novo CI necessário para HEAD reconciliado. Sem APK de produção LT046, device_tested=false, provider_connected=false.
+## 24/11/2026 — Preparação de build QA LT046 (sessão arena)
+
+- Mesclagens: PR #173 (`62e82bc`) integrada em `5f05c96` (CI pós-merge da `main` a confirmar). PRs #174 e #165 reconciliadas por merge local nesta sessão (`cdd869c`, `d4c0abf`), conflito restrito a este Mestre; código dos PRs preservado integralmente. PR de sessão a partir da branch `arena/2b79b2f9-pgbr` contém a preparação `0.00.46-LT` (VERSION, workflow QA, contrato, notas, CHANGELOG/README/ROOTED e esta entrada).
+- Build QA: workflow `pgbr-lt046-qa.yml` pronto para disparo manual na `main` após o merge do PR de preparação. Resultado, HEADs e SHA-256 das três variantes serão registrados aqui após a execução. Nenhuma publicação; LT045 imutável; GeoLab isolado e fora do APK; `device_tested=false`.
+- Itens parciais mantidos parciais com desbloqueio documentado: PvP/VGP+ (#90, #105, #133, #134), Batalha Max (sessão completa), Snipers/Radar (fontes autorizadas; #121/#149 divergentes), Integrações externas (contrato/operador obrigatório). Regressões não detectadas em revisão; nenhum recurso do jogo foi alterado nesta rodada.

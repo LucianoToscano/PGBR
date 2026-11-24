@@ -1,0 +1,5 @@
+cmake_minimum_required(VERSION 3.22.1)
+project(geolab LANGUAGES CXX)
+add_library(geolab_pipe SHARED pipe.cpp)
+target_compile_features(geolab_pipe PRIVATE cxx_std_17)
+target_compile_options(geolab_pipe PRIVATE -Wall -Wextra -Werror -fvisibility=hidden)

@@ -63,6 +63,12 @@ public final class LogExportTest {
           +"2026-11-24T01:10:00.000-03:00 [battle-action] {\"reason\":\"secret-example\"}\nRegistros omitidos: 0\n";
         LocalDiagnosticSummary.Summary bad=LocalDiagnosticSummary.parse(invalid);
         if(bad.unclassified!=2||!bad.transfers.isEmpty()||!bad.battle.isEmpty()||bad.describe().contains("secret-example"))throw new AssertionError("Untrusted values");
+        if(summary.missingIcons.get(708)!=1||summary.errorIcons.get(1401)!=1||summary.errorIcons.containsKey(708))throw new AssertionError("Separate icon failure kinds");
+        String context=LocalDiagnosticSummary.HEADER+"\n2026-11-24T01:10:00.000-03:00 [vgp] {}\n"
+            +"2026-11-24T01:10:01.000-03:00 [panel-closed] {\"ignored\":\"secret-example\"}\n"
+            +"2026-11-24T01:10:02.000-03:00 [heartbeat-expired] {}\nRegistros omitidos: 0\n";
+        LocalDiagnosticSummary.Summary observed=LocalDiagnosticSummary.parse(context);
+        if(observed.other!=3||observed.observedEvents.get("vgp")!=1||observed.observedEvents.get("panel-closed")!=1||observed.observedEvents.get("heartbeat-expired")!=1||observed.describe().contains("secret-example"))throw new AssertionError("Context event counts and privacy");
         StringBuilder many=new StringBuilder(LocalDiagnosticSummary.HEADER).append('\n');
         for(int i=1;i<=201;i++)many.append("2026-11-24T01:10:00.000-03:00 [item-icon-error] {\"itemId\":").append(i).append("}\n");
         many.append("Registros omitidos: 0\n");
