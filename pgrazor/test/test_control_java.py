@@ -216,6 +216,7 @@ public final class SmartCatchSettings {
  public static String config(){return prefs.config();}
  static int speed(){return prefs.speed();}
  static boolean shinyOnly(){return prefs.shinyOnly();}
+ static String rareConfig(){return prefs.rareConfig();}
  public static void read(java.util.Properties p){prefs.read(p);}
  public static void write(java.util.Properties p){prefs.write(p);}
 }''',

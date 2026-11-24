@@ -27,6 +27,7 @@ public final class SmartCatchSettings {
     public static String normalizeSpecies(String value){return SmartCatchPreferences.normalizeSpecies(value);}
     static int speed(){return preferences.speed();}
     static boolean shinyOnly(){return preferences.shinyOnly();}
+    static String rareConfig(){return preferences.rareConfig();}
     static String candySpecies(){return preferences.candySpecies();}
     static void setCandySpecies(String value){set("CandySpecies",value);}
     static String catchSpecies(){return preferences.catchSpecies();}
@@ -49,8 +50,29 @@ public final class SmartCatchSettings {
             set("AutoBallTarget",next);autoTarget.setText(dev.pgrazor.PtBr.tr("VGP+ auto ball target: "+next+"%"));});
         int berryIndex=0;for(int i=0;i<BERRIES.length;i++)if(BERRIES[i]==preferences.berry())berryIndex=i;
         row(activity,options,"Standard berry",BERRY_NAMES,berryIndex,index->{set("Berry",BERRIES[index]);});
-        CheckBox special=new CheckBox(ui);special.setText(dev.pgrazor.PtBr.tr("Shiny or IV ≥90%: Ultra Ball + Golden Razz"));special.setChecked(preferences.premium());options.addView(special);
+        CheckBox special=new CheckBox(ui);special.setText("Regra premium: Ultra Ball + fruta");special.setChecked(preferences.premium());options.addView(special);
         special.setOnCheckedChangeListener((v,on)->{set("Premium",on);});
+        TextView legacyHelp=new TextView(ui);legacyHelp.setText("Padrão: Shiny ou IV ≥90%, com Fruta Frambo Dourada. Personalize abaixo sem alterar os filtros de espécies ou somente Shiny.");options.addView(legacyHelp);
+        CheckBox customRare=new CheckBox(ui);customRare.setText("Personalizar critérios de raridade");customRare.setChecked(preferences.rareCustom());options.addView(customRare);
+        LinearLayout rareOptions=new SettingsUi.OptionList(ui);options.addView(rareOptions);
+        TextView rareCriteria=button(rareOptions,"Critérios de raridade: "+Integer.bitCount(preferences.rareMask()));
+        String[] rareNames={"Shiny","IV 100% (Hundo)","Shiny 100% (Shundo)","IV 0% (Nundo)","IV mínimo"};
+        rareCriteria.setOnClickListener(v->{
+            boolean[] selected=new boolean[rareNames.length];int mask=preferences.rareMask();
+            for(int i=0;i<selected.length;i++)selected[i]=(mask&(1<<i))!=0;
+            AlertDialog d=new AlertDialog.Builder(MapTheme.wrap(activity)).setTitle("Critérios de raridade")
+                .setMultiChoiceItems(rareNames,selected,(dialog,index,checked)->selected[index]=checked)
+                .setPositiveButton("Salvar",(dialog,which)->{int next=0;for(int i=0;i<selected.length;i++)if(selected[i])next|=1<<i;
+                    set("RareMask",next);rareCriteria.setText("Critérios de raridade: "+Integer.bitCount(next));})
+                .setNegativeButton("Cancelar",null).create();
+            DialogLifecycle.bind(activity,d,null);d.setOnShowListener(x->MapTheme.styleButtons(d));d.show();
+        });
+        input(activity,rareOptions,"IV mínimo de raridade (1–100)",String.valueOf(preferences.rareIvMin()),value->{int n=bounded(value,100);if(n==0)throw new IllegalArgumentException("Use um valor de 1 a 100.");set("RareIvMin",n);},true);
+        int rareBerryIndex=0;for(int i=0;i<BERRIES.length;i++)if(BERRIES[i]==preferences.rareBerry())rareBerryIndex=i;
+        row(activity,rareOptions,"Fruta para Pokémon raro",BERRY_NAMES,rareBerryIndex,index->set("RareBerry",BERRIES[index]));
+        TextView rareHelp=new TextView(ui);rareHelp.setText("Os IVs precisam vir de um encontro confirmado; dados ausentes não contam como Nundo. O estoque e as regras Safari continuam sendo verificados.");rareOptions.addView(rareHelp);
+        customRare.setOnCheckedChangeListener((v,on)->{if(on!=preferences.rareCustom())set("RareCustom",on);rareOptions.setVisibility(on?android.view.View.VISIBLE:android.view.View.GONE);});
+        rareOptions.setVisibility(preferences.rareCustom()?android.view.View.VISIBLE:android.view.View.GONE);
         input(activity,options,"High CP threshold (0–10000)",String.valueOf(preferences.highCp()),value->{int n=bounded(value,10000);set("HighCp",n);},true);
         input(activity,options,"High level threshold (0–50)",String.valueOf(preferences.highLevel()),value->{int n=bounded(value,50);set("HighLevel",n);},true);
         TextView rating=row(activity,options,"Throw rating",new String[]{"Default","Nice","Great","Excellent"},preferences.grade(),index->{set("Grade",index);});

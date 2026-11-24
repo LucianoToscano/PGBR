@@ -382,7 +382,9 @@ public final class Control {
         String base=SmartCatchSettings.config();
         if(base.startsWith("4;"))base="7;"+base.substring(2);
         Application app=hostApplication;
-        return base+";"+(app!=null&&dev.pgrazor.events.EventSettings.wildVgpSafari(app)?1:0)+";"+SmartCatchSettings.speed()+";"+(SmartCatchSettings.shinyOnly()?1:0);
+        String wire=base+";"+(app!=null&&dev.pgrazor.events.EventSettings.wildVgpSafari(app)?1:0)+";"+SmartCatchSettings.speed()+";"+(SmartCatchSettings.shinyOnly()?1:0);
+        String rare=SmartCatchSettings.rareConfig();
+        return !rare.isEmpty()&&wire.startsWith("7;")?"8;"+wire.substring(2)+rare:wire;
     }
     public static String gymAutomationConfig(){return GymAutomationSettings.config();}
     public static String buddyEmotionConfig(){return BuddyEmotionSettings.config();}

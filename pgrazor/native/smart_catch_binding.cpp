@@ -38,6 +38,7 @@ void diagnostic(const char *name,int rc){
 struct SpawnFreshState {
   uint64_t owner = 0;
   void *class_wildmap = nullptr;       // exact WildMapPokemon class (identity gate)
+  void *class_wild_proto = nullptr;
   void *f_wild_proto = nullptr;        // WildMapPokemon.eluo -> WildPokemonProto (ref)
   void *f_last_modified = nullptr;     // WildPokemonProto.LastModifiedMs (long)
   void *f_time_till_hidden = nullptr;  // WildPokemonProto.TimeTillHiddenMs (int)
@@ -177,6 +178,25 @@ bool capture_base(void *target,uint64_t owner,double base[4]){
   void *response=nullptr;read(target,incense?incense->f_response:map_encounter,&response);
   if(!response||klass(response)!=(incense?incense->class_response:encounter_class))return false;
   return pgr_catch_chance_base(response,base);
+}
+
+void *confirmed_rare_proto(void *target,uint64_t owner){
+  if(!g_bound||!target||owner!=g_fresh.owner||owner!=uint64_t(gettid()))return nullptr;
+  auto klass=reinterpret_cast<void*(*)(void*)>(g_fresh.object_get_class);
+  auto read=reinterpret_cast<void(*)(void*,void*,void*)>(g_fresh.field_get_value);
+  void *target_class=klass(target);
+  const PgrVgpIncense *incense=pgr_vgp_kind(target_class);
+  if(target_class!=g_fresh.class_wildmap&&!incense)return nullptr;
+  void *response=nullptr;read(target,incense?incense->f_response:map_encounter,&response);
+  if(!response||klass(response)!=(incense?incense->class_response:encounter_class))return nullptr;
+  int status=0;read(response,incense?incense->f_result:encounter_status,&status);
+  if(status!=(incense?incense->success:encounter_success))return nullptr;
+  void *pokemon=nullptr;read(response,incense?incense->f_pokemon:encounter_pokemon,&pokemon);
+  if(!incense){
+    if(!pokemon||klass(pokemon)!=g_fresh.class_wild_proto||!g_fresh.f_wild_pokemon)return nullptr;
+    void *nested=nullptr;read(pokemon,g_fresh.f_wild_pokemon,&nested);pokemon=nested;
+  }
+  return pokemon&&klass(pokemon)==g_fresh.class_pokemon_proto?pokemon:nullptr;
 }
 
 bool safari_offered(void *target,uint64_t owner,int item){
@@ -374,6 +394,7 @@ int pgr_smart_ensure_bound(uint64_t owner) {
 
   g_fresh.owner = owner;
   g_fresh.class_wildmap = b.class_wildmap;
+  g_fresh.class_wild_proto = class_wild_proto;
   g_fresh.f_wild_proto = f_wild_proto;
   g_fresh.f_last_modified = f_last;
   g_fresh.f_time_till_hidden = f_hidden;
@@ -384,6 +405,7 @@ int pgr_smart_ensure_bound(uint64_t owner) {
   g_fresh.field_get_value = rt.field_get_value;
   g_bound = true;
   pgr_smart_set_capture_source(capture_base);
+  pgr_smart_set_rare_source(confirmed_rare_proto);
   // Optional event support: resolve names and field types without adding a
   // mandatory game-version offset that could disable all ordinary VGP+ catches.
   void *item_enum=nullptr,*strong=nullptr;int32_t wild_ball=0;

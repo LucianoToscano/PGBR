@@ -21,6 +21,7 @@ std::atomic<uint64_t> owner_tid{0};
 thread_local bool (*admission_guard)(void *)=nullptr;
 thread_local void *admission_context=nullptr;
 bool (*capture_source)(void *,uint64_t,double[4])=nullptr;
+void *(*rare_source)(void *,uint64_t)=nullptr;
 void *safari_strong_field=nullptr;
 int safari_item=0;
 bool (*safari_source)(void *,uint64_t,int)=nullptr;
@@ -94,6 +95,7 @@ unsigned params(void *m){return reinterpret_cast<unsigned(*)(void*)>(b.method_ge
 
 void pgr_smart_set_admission_guard(bool (*guard)(void *),void *context){admission_guard=guard;admission_context=context;}
 void pgr_smart_set_capture_source(bool (*source)(void *,uint64_t,double[4])){capture_source=source;}
+void pgr_smart_set_rare_source(void *(*source)(void *,uint64_t)){rare_source=source;}
 void pgr_smart_set_safari_source(void *strong,int item,bool (*source)(void *,uint64_t,int)){
  const bool valid=strong&&source&&item>5&&item<256;
  safari_strong_field=valid?strong:nullptr;safari_item=valid?item:0;safari_source=valid?source:nullptr;
@@ -122,8 +124,9 @@ extern "C" int pgr_smart_parse_settings(const char *text,size_t len,PgrSmartSett
  *out={};out->ball=1;out->premium=1;out->high_cp=1500;out->high_level=30;out->grade=3;out->curve=1;out->auto_target=75;
  if(!text||len>PGR_SMART_CONFIG_MAX)return 0;
  std::vector<std::string> parts;size_t start=0;
- for(size_t i=0;i<=len;++i)if(i==len||text[i]==';'){parts.emplace_back(text+start,i-start);start=i+1;if(parts.size()>17)return 0;}
- const bool v7=parts.size()==17&&parts[0]=="7";
+ for(size_t i=0;i<=len;++i)if(i==len||text[i]==';'){parts.emplace_back(text+start,i-start);start=i+1;if(parts.size()>20)return 0;}
+ const bool v8=parts.size()==20&&parts[0]=="8";
+ const bool v7=v8||(parts.size()==17&&parts[0]=="7");
  const bool v6=v7||(parts.size()==16&&parts[0]=="6");
  const bool v5=v6||(parts.size()==15&&parts[0]=="5");
  const bool v4=v5||(parts.size()==14&&parts[0]=="4");
@@ -142,6 +145,11 @@ extern "C" int pgr_smart_parse_settings(const char *text,size_t len,PgrSmartSett
  if(v5&&!number(parts[14],0,1,s.mighty_safari))return 0;
  if(v6&&!number(parts[15],0,2,s.speed))return 0;
  if(v7&&!number(parts[16],0,1,s.shiny_only))return 0;
+ if(v8){
+  if(!number(parts[17],0,31,s.rare_mask)||!number(parts[18],1,100,s.rare_iv_min)||
+     !number(parts[19],0,708,s.rare_berry)||(s.rare_berry&&!berry_valid(s.rare_berry)))return 0;
+  s.rare_custom=1;
+ }
  *out=s;return 0;
 }
 extern "C" int pgr_smart_variety_grade(int variety,uint32_t random){
@@ -161,7 +169,11 @@ extern "C" void pgr_smart_decide(const PgrSmartSettings *s,bool shiny,int iv_sum
  if(!out)return;*out={};if(!s||!s->enabled)return;
  out->enabled=true;out->ball=s->auto_ball?1:s->ball;  // auto ball replaces the standard ball
  out->berry=s->berry;out->grade=s->grade;out->curve=s->curve!=0;
- if(s->premium&&(shiny||(iv_valid&&iv_sum>=41&&iv_sum<=45))){out->ball=3;out->berry=706;return;}
+ const bool known=iv_valid&&iv_sum>=0&&iv_sum<=45;
+ const bool rare=s->rare_custom?((s->rare_mask&1&&shiny)||(known&&((s->rare_mask&2&&iv_sum==45)||
+    (s->rare_mask&4&&shiny&&iv_sum==45)||(s->rare_mask&8&&iv_sum==0)||
+    (s->rare_mask&16&&iv_sum*100>=s->rare_iv_min*45)))):(shiny||(known&&iv_sum>=41));
+ if(s->premium&&rare){out->ball=3;out->berry=s->rare_custom?s->rare_berry:706;return;}
  if((s->high_cp>0&&cp>=s->high_cp)||(s->high_level>0&&level_half>=2*s->high_level))out->ball=3;
  if(std::binary_search(s->species,s->species+s->species_count,species))out->berry=705;
 }
@@ -214,7 +226,21 @@ extern "C" int pgr_smart_plan(void *target,void *itemBag,uint64_t owner,PgrSmart
    }
   }
  }
- pgr_smart_decide(&settings,shiny,atk+def+sta,atk>=0&&atk<=15&&def>=0&&def<=15&&sta>=0&&sta<=15,cp,level_half,species,out);
+ bool rule_shiny=shiny, rule_iv=atk>=0&&atk<=15&&def>=0&&def<=15&&sta>=0&&sta<=15;
+ int rule_sum=rule_iv?atk+def+sta:0;
+ if(settings.rare_custom){
+  // The map proto may carry default zero IVs. Opt-in rules use the exact successful response instead.
+  rule_shiny=false;rule_iv=false;rule_sum=0;
+  Root confirmed(rare_source?rare_source(map.get(),owner):nullptr);
+  if(confirmed.h&&exact(confirmed.get(),b.class_pokemon_proto)&&field<int>(confirmed.get(),b.f_proto_id)==species&&field<int>(confirmed.get(),b.f_proto_cp)>0){
+   const int a=field<int>(confirmed.get(),b.f_proto_atk),d=field<int>(confirmed.get(),b.f_proto_def),s=field<int>(confirmed.get(),b.f_proto_sta);
+   rule_iv=a>=0&&a<=15&&d>=0&&d<=15&&s>=0&&s<=15;
+   if(rule_iv)rule_sum=a+d+s;
+   void *appearance=field<void*>(confirmed.get(),b.f_proto_display);
+   rule_shiny=appearance&&exact(appearance,b.class_display_proto)&&field<uint8_t>(appearance,b.f_display_shiny)!=0;
+  }
+ }
+ pgr_smart_decide(&settings,rule_shiny,rule_sum,rule_iv,cp,level_half,species,out);
  // Throw variety: this throw's rating, picked before auto ball so its chance uses the same one.
  if(settings.variety)out->grade=pgr_smart_variety_grade(settings.variety,random32());
  bool use_safari=false,offered=false;int safari_stock=-1;

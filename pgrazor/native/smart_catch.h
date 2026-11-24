@@ -9,6 +9,8 @@ void pgr_smart_set_admission_guard(bool (*guard)(void *), void *context);
 // offered) with the server's per-ball capture probability from the target's encounter response, on the
 // owner thread. With no source, or when it returns false, plan() keeps the rule-chosen ball.
 void pgr_smart_set_capture_source(bool (*source)(void *target, uint64_t owner, double base[4]));
+// Optional confirmed encounter proto, borrowed on the owner thread; caller roots it immediately.
+void pgr_smart_set_rare_source(void *(*source)(void *target, uint64_t owner));
 // Optional, owner-thread-only binding. Missing support leaves regular catching
 // available. The source checks the target's own confirmed response, not manual UI.
 void pgr_smart_set_safari_source(void *strong_field, int item,
@@ -111,6 +113,7 @@ enum PgrSmartStatus {
 // Parsed Smart Catcher settings (transport index 7). Format, exactly as emitted by
 // SmartCatchSettings.config():
 //   "7;enabled;ball;berry;premium;highCp;highLevel;grade;curve;autoBall;autoTarget;<candy ids>;<catch ids>;variety;mightySafari;speed;shinyOnly"
+// Version 8 appends rareMask (shiny=1,hundo=2,shundo=4,nundo=8,IV threshold=16), rareIvMin, rareBerry.
 // Version 6 omits shinyOnly (defaults off).
 // Version 5 omits speed (defaults to normal); version 4 also omits mightySafari (defaults off).
 // The version-3 form (without throw variety), the version-2 form (without the catch-only list) and the version-1 form (also without
@@ -136,6 +139,7 @@ struct PgrSmartSettings {
   int32_t  mighty_safari;  // version 5: prefer owned, offered Safari Balls for Mighty Pokemon only
   int32_t  speed;          // version 6: catch pacing, 0 normal, 1 fast, 2 fastest
   int32_t  shiny_only;     // version 7: encounter as usual, but only a shiny is thrown at
+  int32_t  rare_custom, rare_mask, rare_iv_min, rare_berry; // v8 opt-in; legacy premium retained
 };
 
 // Pacing for a catch speed (out-of-range values pace as normal). The throw wait is base plus a
