@@ -20,6 +20,22 @@ public final class GpxPreviewGeometry {
  }
  /** Distance-based preview only. Does not read or change device location. */
  public double distanceAt(int index){return cumulative[index];}
+ public double distanceForPercent(int percent){
+  if(percent<0||percent>100)throw new IllegalArgumentException("Percentual inválido");
+  return meters*(percent/100.0);
+ }
+ public int percentForDistance(double distance){
+  if(!Double.isFinite(distance)||distance<0||distance>meters)throw new IllegalArgumentException("Distância inválida");
+  if(meters==0)return 0;
+  if(distance==meters)return 100;
+  return Math.min(99,(int)Math.floor(100*(distance/meters)));
+ }
+ public double distanceFromKm(double km){
+  if(!Double.isFinite(km)||km<0)throw new IllegalArgumentException("Distância inválida");
+  double d=km*1000;
+  if(!Double.isFinite(d)||d>meters+1e-6)throw new IllegalArgumentException("Distância além do percurso");
+  return Math.min(meters,d);
+ }
  public double[] positionAt(double distance){
   if(!Double.isFinite(distance)||distance<0||distance>meters)throw new IllegalArgumentException("Distância inválida");
   if(distance==0)return new double[]{x[0],y[0]};

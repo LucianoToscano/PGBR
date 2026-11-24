@@ -43,6 +43,8 @@ import java.math.BigDecimal;
 public final class GpxCodec {
     /** Largest number of points accepted in a single route. */
     public static final int MAX_POINTS = 5000;
+    public static final int MAX_ROUTES = 256;
+    public static final int MAX_TOTAL_POINTS = 50000;
     /** Largest accepted input, in bytes. */
     public static final int MAX_BYTES = 2 * 1024 * 1024;
 
@@ -172,6 +174,7 @@ public final class GpxCodec {
         private List<double[]> routePoints;           // non-null while inside a <rte>
         private String trackName, routeName;
 
+        private int totalPoints;
         private int captureName;                      // 0 none, 1 trk name, 2 rte name
         private StringBuilder nameText;
 
@@ -183,6 +186,7 @@ public final class GpxCodec {
             if(stack.isEmpty() && !"gpx".equals(element))throw new SAXException("Expected a GPX document.");
             if(stack.size()>128)throw new SAXException("GPX nesting is too deep.");
             boolean knownNamespace=uri==null||uri.isEmpty()||uri.equals("http://www.topografix.com/GPX/1/1")||uri.equals("http://www.topografix.com/GPX/1/0");
+            if(stack.isEmpty()&&!knownNamespace)throw new SAXException("Unsupported GPX namespace.");
             if(!knownNamespace || !(stack.isEmpty() ||
                 ((element.equals("trk")||element.equals("rte")||element.equals("wpt"))&&"gpx".equals(parent)) ||
                 (element.equals("trkseg")&&"trk".equals(parent)) ||
@@ -195,7 +199,7 @@ public final class GpxCodec {
                 case "rte": routeName = null; routePoints = new ArrayList<>(); break;
                 case "trkpt": if (segment != null) add(segment, attributes); break;
                 case "rtept": if (routePoints != null) add(routePoints, attributes); break;
-                case "wpt": waypoints.add(raw(attributes)); break;
+                case "wpt": countPoint();waypoints.add(raw(attributes)); break;
                 case "name":
                     if ("trk".equals(parent)) { captureName = 1; nameText = new StringBuilder(); }
                     else if ("rte".equals(parent)) { captureName = 2; nameText = new StringBuilder(); }
@@ -206,14 +210,23 @@ public final class GpxCodec {
         }
 
         @Override public void characters(char[] chars, int start, int length) {
-            if (captureName != 0 && nameText != null) nameText.append(chars, start, length);
+            if (captureName != 0 && nameText != null && "name".equals(stack.peek())) {
+                int end=start+length;
+                // Trim leading whitespace before the bound, preserving short valid names.
+                while(start<end&&nameText.length()==0&&(chars[start]<=32||Character.isISOControl(chars[start])))start++;
+                int remaining=GpxRoute.NAME_LIMIT+1-nameText.length();
+                if(remaining>0)nameText.append(chars,start,Math.min(end-start,remaining));
+            }
         }
 
         @Override public void endElement(String uri, String localName, String qName) throws SAXException {
             String element = stack.peek();
             switch (element) {
                 case "trkseg":
-                    if (segment != null && !segment.isEmpty()) trackSegments.add(segment);
+                    if (segment != null && !segment.isEmpty()) {
+                        if(routes.size()+trackSegments.size()>=MAX_ROUTES)throw new SAXException("Too many GPX routes.");
+                        trackSegments.add(segment);
+                    }
                     segment = null;
                     break;
                 case "trk":
@@ -228,7 +241,10 @@ public final class GpxCodec {
                     trackSegments = null;
                     break;
                 case "rte":
-                    if (routePoints != null && !routePoints.isEmpty()) routes.add(build(resolveName(routeName), routePoints));
+                    if (routePoints != null && !routePoints.isEmpty()) {
+                        if(routes.size()>=MAX_ROUTES)throw new SAXException("Too many GPX routes.");
+                        routes.add(build(resolveName(routeName), routePoints));
+                    }
                     routePoints = null;
                     break;
                 case "name":
@@ -253,7 +269,11 @@ public final class GpxCodec {
             return Collections.unmodifiableList(routes);
         }
 
+        private void countPoint() throws SAXException {
+            if(++totalPoints>MAX_TOTAL_POINTS)throw new SAXException("Too many GPX points in one file.");
+        }
         private void add(List<double[]> target, Attributes attributes) throws SAXException {
+            countPoint();
             target.add(toSaxCoordinate(attributes));
             if (target.size() > MAX_POINTS) throw new SAXException("A route may contain at most " + MAX_POINTS + " points.");
         }
@@ -308,7 +328,10 @@ public final class GpxCodec {
         private static String clip(String text) {
             String trimmed = text.trim();
             if (trimmed.isEmpty()) trimmed = "Imported route";
-            return trimmed.length() > GpxRoute.NAME_LIMIT ? trimmed.substring(0, GpxRoute.NAME_LIMIT).trim() : trimmed;
+            if(trimmed.length()<=GpxRoute.NAME_LIMIT)return trimmed;
+            int end=GpxRoute.NAME_LIMIT;
+            if(Character.isHighSurrogate(trimmed.charAt(end-1)))end--;
+            return trimmed.substring(0,end).trim();
         }
 
         private static String local(String localName, String qName) {

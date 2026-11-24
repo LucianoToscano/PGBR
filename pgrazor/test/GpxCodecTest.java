@@ -98,6 +98,18 @@ public final class GpxCodecTest {
         big.append("</trkseg></trk></gpx>");
         rejects("over the point cap", big.toString());
 
+        // Aggregate bounds: many tiny routes cannot overwhelm the chooser.
+        StringBuilder manyRoutes=new StringBuilder("<gpx>");
+        for(int i=0;i<=GpxCodec.MAX_ROUTES;i++)manyRoutes.append("<rte><rtept lat='0' lon='0'/></rte>");
+        rejects("too many routes",manyRoutes.append("</gpx>").toString());
+        StringBuilder manySegments=new StringBuilder("<gpx><trk>");
+        for(int i=0;i<=GpxCodec.MAX_ROUTES;i++)manySegments.append("<trkseg><trkpt lat='0' lon='0'/></trkseg>");
+        rejects("too many segments",manySegments.append("</trk></gpx>").toString());
+        StringBuilder tooMany=new StringBuilder("<gpx>");
+        for(int i=0;i<=GpxCodec.MAX_TOTAL_POINTS;i++)tooMany.append("<wpt lat='0' lon='0'/>");
+        rejects("aggregate point limit",tooMany.append("</gpx>").toString());
+        rejects("foreign root namespace","<gpx xmlns='urn:unrelated'><wpt lat='0' lon='0'/></gpx>");
+        check(read("<gpx><rte><name>"+" ".repeat(150)+"Trilha</name><rtept lat='0' lon='0'/></rte></gpx>").get(0).name.equals("Trilha"),"Leading whitespace does not consume name budget");
         // --- Limit: input larger than MAX_BYTES is rejected before parsing ---
         try {
             GpxCodec.read(new ByteArrayInputStream(new byte[GpxCodec.MAX_BYTES + 1]), "Fallback");

@@ -3,9 +3,9 @@ import java.util.*;
 /** Local advice only. No action or network API. */
 public final class LocalAuditPolicy {
  private LocalAuditPolicy(){}
- public static final int SCHEMA=2;
+ public static final int SCHEMA=3;
  public enum Flag {
- SHINY("shiny"),HUNDO("IV 100%"),NUNDO("IV 0%"),LEGENDARY("lendário"),MYTHICAL("mítico"),ULTRA("Ultra Criatura"),
+ SHINY("brilhante (shiny)"),HUNDO("IV 100%"),NUNDO("IV 0%"),LEGENDARY("lendário"),MYTHICAL("mítico"),ULTRA("Ultra Criatura"),
  LUCKY("sortudo"),FAVORITE("favorito"),SHADOW("sombrio"),PURIFIED("purificado"),COSTUME("fantasia"),EVENT("evento"),BACKGROUND("fundo especial"),
  XXL("XXL"),XXS("XXS"),LEGACY("ataque exclusivo ou legado"),PVP("relevante para PvP"),TAG("etiqueta protegida"),RESEARCH("pesquisa especial"),SPECIES("espécie protegida");
  public final String label;Flag(String label){this.label=label;}
@@ -17,10 +17,10 @@ public final class LocalAuditPolicy {
  }
  public static boolean validIv(int n){return n>=0&&n<=15;}
  public static Decision preview(int a,int d,int s,int min,Set<Flag> enabled,Map<Flag,Boolean> observed){
- if(min<0||min>100||enabled==null||observed==null)throw new IllegalArgumentException("Configuração inválida");
+ if(min<0||min>101||enabled==null||observed==null)throw new IllegalArgumentException("Configuração inválida");
  List<String> reasons=new ArrayList<>(),unknown=new ArrayList<>();
  boolean iv=validIv(a)&&validIv(d)&&validIv(s);
- if(!iv)unknown.add("IV não confirmado");else if((a+d+s)*100>=min*45)reasons.add("IV acima ou igual ao limite");
+ if(!iv)unknown.add("IV não confirmado");else if(min<=100&&(a+d+s)*100>=min*45)reasons.add("IV acima ou igual ao limite");
  // Contradictions are uncertainty even if the optional protection is disabled.
  if(iv){
   if(observed.get(Flag.HUNDO)!=null&&observed.get(Flag.HUNDO)!=(a+d+s==45))unknown.add("Marcação IV 100% contradiz o IV informado");
@@ -39,6 +39,72 @@ public final class LocalAuditPolicy {
  if(status==Status.MATCH)reasons.add("Corresponde ao filtro; nenhuma transferência executada.");
  reasons.addAll(unknown);return new Decision(status,reasons);
  }
+ /** A separately selected exact species-name list is an additional protection, not a replacement
+  * for the imported SPECIES observation or any other criterion. No fuzzy/form matching. */
+ public static Decision withSpeciesProtection(Decision base,String species,Set<String> names){
+  Objects.requireNonNull(base);Objects.requireNonNull(names);
+  if(!names.contains(speciesKey(species)))return base;
+  List<String> reasons=new ArrayList<>();
+  reasons.add("Espécie na lista personalizada de proteção");
+  if(base.status!=Status.MATCH)reasons.addAll(base.reasons);
+  return new Decision(Status.PROTECTED,reasons);
+ }
+ static String speciesKey(String name){
+  if(name==null||name.trim().isEmpty()||name.length()>80)throw new IllegalArgumentException("Nome de espécie inválido");
+  for(int i=0;i<name.length();i++)if(Character.isISOControl(name.charAt(i))||Character.getType(name.charAt(i))==Character.FORMAT)throw new IllegalArgumentException("Nome de espécie inválido");
+  return java.text.Normalizer.normalize(name.trim(),java.text.Normalizer.Form.NFC).toLowerCase(Locale.ROOT);
+ }
+ public static Set<String> protectedNames(String text){
+  if(text==null||text.length()>20000)throw new IllegalArgumentException("Lista de espécies inválida");
+  Set<String> result=new LinkedHashSet<>();
+  int count=0;
+  for(String name:text.split("[,;\\r\\n]",-1)){
+   if(name.trim().isEmpty())continue;
+   if(++count>200)throw new IllegalArgumentException("Máximo de 200 espécies");
+   result.add(speciesKey(name.trim()));
+  }
+  return Collections.unmodifiableSet(result);
+ }
+ /** Manual tag catalogue. Each line represents one exact name; no inference from missing data. */
+ public static List<String> tagCatalog(String raw){
+  if(raw==null||raw.length()>20000)throw new IllegalArgumentException("Catálogo de etiquetas inválido");
+  LinkedHashMap<String,String> unique=new LinkedHashMap<>();int count=0;
+  for(String line:raw.split("\\r\\n|\\n|\\r",-1)){
+   String name=line.trim();if(name.isEmpty())continue;
+   if(++count>200)throw new IllegalArgumentException("Máximo de 200 etiquetas");
+   String key=speciesKey(name);if(!unique.containsKey(key))unique.put(key,name);
+  }
+  return Collections.unmodifiableList(new ArrayList<>(unique.values()));
+ }
+ public enum TagObservation { MATCH, NO_MATCH, UNKNOWN }
+ public static TagObservation reviewTags(Set<String> protectedTags,Set<String> observedTags,boolean complete){
+  Objects.requireNonNull(protectedTags);Objects.requireNonNull(observedTags);
+  if(protectedTags.size()>200||observedTags.size()>200)throw new IllegalArgumentException("Limite de etiquetas");
+  Set<String> selected=new HashSet<>();
+  for(String tag:protectedTags)selected.add(speciesKey(tag));
+  Set<String> observed=new HashSet<>();
+  for(String tag:observedTags)observed.add(speciesKey(tag));
+  if(selected.isEmpty())return TagObservation.UNKNOWN;
+  for(String key:observed)if(selected.contains(key))return TagObservation.MATCH;
+  return complete?TagObservation.NO_MATCH:TagObservation.UNKNOWN;
+ }
+ /** Manual stock review only: first confirmed available item in the supplied order.
+  * -1 is unknown stock, 0 is unavailable, and a positive value is available.
+  * An unknown earlier choice is explicitly reported; no action or inventory read. */
+ public static final class StockAdvice {
+  public final int index;public final boolean earlierUnknown;
+  StockAdvice(int index,boolean earlierUnknown){this.index=index;this.earlierUnknown=earlierUnknown;}
+ }
+ public static StockAdvice reviewStock(int[] counts){
+  if(counts==null||counts.length<1||counts.length>5)throw new IllegalArgumentException("Lista inválida");
+  for(int count:counts)if(count< -1||count>100000)throw new IllegalArgumentException("Estoque inválido");
+  boolean unknown=false;
+  for(int i=0;i<counts.length;i++){
+   if(counts[i]>0)return new StockAdvice(i,unknown);
+   if(counts[i]<0)unknown=true;
+  }
+  return new StockAdvice(-1,unknown);
+ }
  public static String reason(int code){
  switch(code){
  case 0:return "Corresponde ao filtro";case 1:return "Proteção geral ativa";case 2:return "Lista de espécies inválida";
@@ -48,6 +114,22 @@ public final class LocalAuditPolicy {
  case 13:return "Fundo especial";case 14:return "XXS";case 15:return "XXL";case 16:return "Contrato inválido";case 17:return "Limite inválido";
  case 18:return "Proteção PvP";case 19:return "IV 0%";case 20:return "Fantasia";default:return "Motivo desconhecido ("+code+")";
  }
+ }
+ public static String battleReason(String code){
+  if(code==null)return "Motivo não informado.";
+  switch(code){
+   case "actor-unknown":return "Adversário não identificado. A observação não permite confirmar a eficácia.";
+   case "actor-refresh":return "Identidade do adversário mudou ou está sendo revalidada.";
+   case "stale-effect":return "Classificação antiga ou fora da mesma janela de observação.";
+   case "unknown-effect":return "Eficácia de pelo menos um ataque não confirmada.";
+   case "unverified-slots":return "Associação entre os dois botões e suas classificações não confirmada.";
+   case "unavailable-pair":return "Par de carregados não confirmado. Não prova que haja dois ataques.";
+   case "only-one-ready":return "Somente um ataque disponível ou nenhum pronto para a política atual; confira a energia e a classificação.";
+   case "effectiveness":return "Classificação por eficácia disponível; não prova execução ou dano.";
+   case "known-super":return "Há classificação supereficaz confirmada; a outra pode ser desconhecida.";
+   case "off":return "Preferência de Ataque Inteligente desligada.";
+   default:return "Motivo não reconhecido; preserve o código técnico para análise.";
+  }
  }
  public static final String[] TYPES={"Nenhum","Normal","Lutador","Voador","Venenoso","Terrestre","Pedra","Inseto","Fantasma","Aço","Fogo","Água","Planta","Elétrico","Psíquico","Gelo","Dragão","Sombrio","Fada"};
  private static final int[][] CHART={{  0,  0,  0,  0,  0, -1,  0, -2, -1,  0,  0,  0,  0,  0,  0,  0,  0,  0},
@@ -72,6 +154,24 @@ public final class LocalAuditPolicy {
  public static double effectiveness(int move,int a,int b){
  if(move<1||move>18||!validTypes(a,b))return Double.NaN;
  return Math.pow(1.6,CHART[move-1][a-1]+(b==0?0:CHART[move-1][b-1]));
+ }
+ /** Type-only preparation: no inference of Max eligibility, move power, or battle outcome. */
+ public static final class Matchup {
+  public final double outgoing,incoming;
+  Matchup(double outgoing,double incoming){this.outgoing=outgoing;this.incoming=incoming;}
+ }
+ public static Matchup matchup(int own1,int own2,int move,int foe1,int foe2,int foeMove){
+  if(!validTypes(own1,own2)||!validTypes(foe1,foe2))return null;
+  double outgoing=effectiveness(move,foe1,foe2);
+  double incoming=effectiveness(foeMove,own1,own2);
+  if(!Double.isFinite(outgoing)||!Double.isFinite(incoming))return null;
+  return new Matchup(outgoing,incoming);
+ }
+ public enum BudgetState { UNKNOWN, INSUFFICIENT, SUFFICIENT }
+ public static BudgetState maxBudget(int available,int cost){
+  if(available< -1||available>1000000||cost< -1||cost>1000000)throw new IllegalArgumentException("Partículas inválidas");
+  if(available==-1||cost==-1)return BudgetState.UNKNOWN;
+  return available>=cost?BudgetState.SUFFICIENT:BudgetState.INSUFFICIENT;
  }
  public static final class Estimate {
  public final double effectiveness,damage,perEnergy,energyCost;public final boolean ready;
