@@ -1,3 +1,15 @@
+## PGBR LT045 (v0.00.45-LT) — candidata QA, publicação pendente
+
+- Prévia local: evidências contraditórias explicitadas; comparação de ataques por eficiência, dano, duração PvE e PS restantes sem escudo. Nenhuma ação executada pelo simulador.
+
+- Revisão local: prévia de proteção não destrutiva, explicação de códigos, simulador manual de eficácia/DPE, desenho GPX e traduções. ZIP de compartilhamento passa a usar lista de campos técnicos permitidos; TXT bruto continua privado. Sem alteração de execução de ações do jogo. CI e homologação Android ainda pendentes.
+
+- Integra a candidata #157 (Snipers 1/2, Radar/filtros, Savant Root/PvP, coletor IV100 upstream e refinamento VGP+ #158) sem substituir a política de ataque da LT044.
+- Preserva PT-BR/GPS, Rocket QA6 e prioridade imediata, HUD/mapa/IV, importação local PGSharp e configurações de backup.
+- Os testes especializados da fonte #157 passaram; o resultado de compilação e publicação desta versão deverá ser conferido por commit e hashes. device_tested=false.
+- Snipers/Radar dependem de fontes autorizadas e dados reais; coletor IV100 não foi implantado. O guard Root pode bloquear quando o companion está indisponível; PvP precisa de teste físico. VGP+ por etiquetas, raridades, frutas manuais, atalhos MT e execução da sessão Max continuam não implementados ou não homologados. Não tratar configuração preparatória como ação funcional.
+- A LT044 e demais tags são imutáveis. Publicação somente após merge aprovado, verificação dos três artefatos e SHA256.
+
 ## PGBR LT044 (v0.00.44-LT) — pré-release QA publicada (23/11/2026)
 
 - PT-BR das telas dos chats paralelos e terminologia Teleporte (#101), preservando novas mensagens de rollback de backup da LT043.

@@ -33,6 +33,7 @@ final class SettingsPanel {
         void openMap();
         /** Open the coordinates & speed editor (tied to engine/joystick state Pad owns). */
         void editLocation();
+        default void resetOverlayPositions(){}
     }
 
     private final Activity activity;
@@ -1364,6 +1365,20 @@ final class SettingsPanel {
         caption(battery, "Turns off shadows, fog, water reflections, grass in encounters, HDR and anti-aliasing, and shows less far detail.");
 
         LinearLayout appearance=group(page,"Personalização dos ícones e fundos");
+        launch(appearance,"Gesto de três dedos e aviso de ocultação",()->{
+            android.content.SharedPreferences prefs=AccountProfiles.preferences(activity,"pgrazor-overlays");
+            String[] names={"Permitir ocultar com três dedos","Não mostrar aviso de ocultação"};
+            boolean[] chosen={prefs.getBoolean("threeFingerHide",false),prefs.getBoolean("hideWarningDisabled",false)};
+            AlertDialog d=new AlertDialog.Builder(dialogContext()).setTitle("Controles visuais")
+                .setMultiChoiceItems(names,chosen,(dialog,index,checked)->chosen[index]=checked)
+                .setPositiveButton("Salvar",(dialog,which)->prefs.edit().putBoolean("threeFingerHide",chosen[0]).putBoolean("hideWarningDisabled",chosen[1]).apply())
+                .setNegativeButton("Cancelar",null).create();
+            DialogLifecycle.bind(activity,d,null);d.setOnShowListener(x->MapTheme.styleButtons(d));d.show();
+        });
+        launch(appearance,"Restaurar posição dos elementos flutuantes",()->{
+            AlertDialog d=new AlertDialog.Builder(dialogContext()).setTitle("Restaurar posições").setMessage("Restaurar as posições originais dos elementos arrastáveis desta conta? Os tamanhos, imagens, opacidade e configurações das funções serão mantidos.").setPositiveButton("Restaurar",(dialog,which)->host.resetOverlayPositions()).setNegativeButton("Cancelar",null).create();
+            DialogLifecycle.bind(activity,d,null);d.setOnShowListener(x->MapTheme.styleButtons(d));d.show();
+        });
         visualSlider(appearance,"Tamanho dos ícones dos menus",16,40,Control.menuIconSizeDp(),value->{
             Control.setMenuIconSizeDp(value);host.refresh();});
         launch(appearance,"Ícone do menu principal: PGBR / PGEterna / Personalizado",()->{
@@ -1423,6 +1438,7 @@ final class SettingsPanel {
 
         // ----- Diagnostics (status plumbing kept out of everyday settings) -----
         LinearLayout diag = section(page, "Diagnostics", false);
+        launch(diag, "Análise local de filtros e ataques", () -> LocalAuditDialog.show(activity));
         state = caption(diag, Control.connection);
         for(TextView status:new TextView[]{steeringStatus,spawnStatus,quickSummaryStatus,transferStatus,quickSpinStatus,buddyStatus,giftStatus,itemStatus,rocketStatus,battleStatus,quickBallStatus}){
             ((ViewGroup)status.getParent()).removeView(status);diag.addView(status);

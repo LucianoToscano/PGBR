@@ -707,4 +707,58 @@ public final class PogoFeedData {
         }
         return sb.toString().trim();
     }
+
+    // ---------------------------------------------------------------------------------------------
+    // Canonical projection. A row whose coordinates are locked behind a reveal_code keeps
+    // coordinate_precision=unavailable and null lat/lon: the PGBR never turns a reveal code into a
+    // coordinate, never enumerates codes and never offers teleport for such a row.
+    // ---------------------------------------------------------------------------------------------
+
+    public static java.util.List<SourceEvent> toSourceEvents(Snapshot snapshot, long now) {
+        java.util.List<SourceEvent> out = new ArrayList<>();
+        if (snapshot == null) return out;
+        for (Entry entry : snapshot.entries) {
+            if (entry == null) continue;
+            Double lat = Double.isFinite(entry.lat) ? Double.valueOf(entry.lat) : null;
+            Double lon = Double.isFinite(entry.lon) ? Double.valueOf(entry.lon) : null;
+            boolean locked = !SourceEvent.validCoordinates(lat, lon);
+            SourceEvent.Builder builder = SourceEvent.builder("pogocoordinates", entry.id, canonicalKind(entry.kind))
+                    .originKind(OriginKind.LIVE_EXTERNAL)
+                    .pokemonId(entry.dexId > 0 ? Integer.valueOf(entry.dexId) : null)
+                    .name(entry.name)
+                    .ivPercent(entry.hasStats && entry.iv >= 0 ? Double.valueOf(entry.iv) : null)
+                    .cp(entry.hasStats && entry.cp >= 0 ? Integer.valueOf(entry.cp) : null)
+                    .level(entry.hasStats && entry.level >= 0 ? Integer.valueOf((int) Math.rint(entry.level)) : null)
+                    .ivAtk(entry.hasStats && entry.attrs.atkIv >= 0 ? Integer.valueOf(entry.attrs.atkIv) : null)
+                    .ivDef(entry.hasStats && entry.attrs.defIv >= 0 ? Integer.valueOf(entry.attrs.defIv) : null)
+                    .ivSta(entry.hasStats && entry.attrs.staIv >= 0 ? Integer.valueOf(entry.attrs.staIv) : null)
+                    .formId(entry.attrs.form >= 0 ? Integer.valueOf(entry.attrs.form) : null)
+                    .pvpGreatRank(entry.attrs.pvpGreatRank >= 1 ? Integer.valueOf(entry.attrs.pvpGreatRank) : null)
+                    .pvpUltraRank(entry.attrs.pvpUltraRank >= 1 ? Integer.valueOf(entry.attrs.pvpUltraRank) : null)
+                    // Only the account's own My Shinies rows are an observed shiny; a search flag is not.
+                    .shinyObserved(entry.personalShiny ? Boolean.TRUE : null)
+                    .observedAt(now).retrievedAt(now).expiresAt(entry.expiresAt)
+                    .dataQuality(SourceEvent.QUALITY_PROVIDER_CLAIMED)
+                    .coverage("PoGoCoordinates · resultados com ou sem coordenada liberada")
+                    .note(locked && entry.revealCode != null
+                            ? "Localização não liberada: a fonte devolveu apenas reveal_code."
+                            : "");
+            if (!locked) builder.coordinates(lat, lon);
+            else builder.precision(SourceEvent.CoordinatePrecision.UNAVAILABLE);
+            out.add(builder.build());
+        }
+        return out;
+    }
+
+    private static SourceEvent.Kind canonicalKind(Kind kind) {
+        if (kind == null) return SourceEvent.Kind.POKEMON;
+        switch (kind) {
+            case RAID: return SourceEvent.Kind.RAID;
+            case QUEST: return SourceEvent.Kind.QUEST;
+            case ROCKET: return SourceEvent.Kind.ROCKET;
+            case STATION: return SourceEvent.Kind.POWERSPOT;
+            case STOP: return SourceEvent.Kind.QUEST;
+            default: return SourceEvent.Kind.POKEMON;
+        }
+    }
 }

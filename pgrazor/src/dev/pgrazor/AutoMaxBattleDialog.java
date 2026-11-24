@@ -31,21 +31,21 @@ public final class AutoMaxBattleDialog {
         body.addView(description);
         TextView status=new TextView(ui);body.addView(status);
         TextView safety=new TextView(ui);
-        safety.setText("SEGURANÇA: ataques automáticos Max temporariamente indisponíveis. O motor ainda não confirma o tipo da batalha. A sessão não altera os ataques globais.");
+        safety.setText("A sessão só executa ações após confirmar o escopo Max nativo e termina ao sair, perder a conexão ou trocar de conta. Não altera os ataques globais.");
         body.addView(safety);
 
         CheckBox quick=new CheckBox(ui);quick.setText("Ataque Ágil automático");body.addView(quick);
         CheckBox charged=new CheckBox(ui);charged.setText("Ataque Carregado automático");body.addView(charged);
         CheckBox maxAttack=new CheckBox(ui);maxAttack.setText("Ataque Max automático");body.addView(maxAttack);
-        CheckBox dodge=new CheckBox(ui);dodge.setText("Esquiva automática");body.addView(dodge);
-        int saved=Control.battleOptions()&AutoMaxBattle.OPTION_MASK;
+        CheckBox dodge=new CheckBox(ui);dodge.setText("Esquiva e movimento para orbes");body.addView(dodge);
+        int saved=AutoMaxBattle.running()?AutoMaxBattle.selectedMask():Control.battleOptions()&AutoMaxBattle.OPTION_MASK;
         if(saved==0)saved=AutoMaxBattle.OPTION_MASK;
         quick.setChecked((saved&AutoMaxBattle.QUICK)!=0);
         charged.setChecked((saved&AutoMaxBattle.CHARGED)!=0);
         maxAttack.setChecked((saved&AutoMaxBattle.MAX_ATTACK)!=0);
         dodge.setChecked((saved&AutoMaxBattle.DODGE)!=0);
 
-        Button start=new Button(ui);start.setAllCaps(false);start.setText("Preparar sessão (sem automação)");body.addView(start);
+        Button start=new Button(ui);start.setAllCaps(false);start.setText("Iniciar sessão Max");body.addView(start);
         Button stop=new Button(ui);stop.setAllCaps(false);stop.setText("Encerrar sessão");body.addView(stop);
         View[] options={quick,charged,maxAttack,dodge};
         Runnable update=()->{
@@ -72,9 +72,11 @@ public final class AutoMaxBattleDialog {
         AlertDialog dialog=new AlertDialog.Builder(ui)
             .setTitle("Batalha Max Automática — Sessão").setView(scroll)
             .setPositiveButton("Concluir",null).create();
-        DialogLifecycle.bind(activity,dialog,null);
+        android.os.Handler handler=new android.os.Handler(android.os.Looper.getMainLooper());
+        Runnable poll=new Runnable(){public void run(){if(dialog.isShowing()){update.run();handler.postDelayed(this,500);}}};
+        DialogLifecycle.bind(activity,dialog,()->handler.removeCallbacks(poll));
         dialog.setOnShowListener(unused->{
-            MapTheme.style(body);MapTheme.styleButtons(dialog);
+            MapTheme.style(body);MapTheme.styleButtons(dialog);handler.post(poll);
             if(dialog.getWindow()!=null)dialog.getWindow().setBackgroundDrawable(new ColorDrawable(MapTheme.surface()));
         });
         dialog.show();

@@ -84,6 +84,24 @@ final class PokeListFeedData {
         return v >= lo && v <= hi ? v : -1;
     }
     /** Treat known contemporary 10-digit timestamps as seconds and 13-digit as ms. */
+    /** First time field present under any of the aliases; 0 when none is usable. */
+    private static long firstTime(JSONObject row, String... keys) {
+        for (String key : keys) {
+            if (!row.has(key) || row.isNull(key)) continue;
+            Object value = row.opt(key);
+            long raw;
+            if (value instanceof Number) raw = ((Number) value).longValue();
+            else {
+                String text = String.valueOf(value).trim();
+                if (text.isEmpty()) continue;
+                try { raw = Long.parseLong(text); } catch (NumberFormatException notANumber) { continue; }
+            }
+            long converted = epochMs(raw);
+            if (converted > 0) return converted;
+        }
+        return 0L;
+    }
+
     private static long epochMs(long raw) {
         if (raw >= 1_000_000_000L && raw < 10_000_000_000L) return raw * 1000L;
         if (raw >= 1_000_000_000_000L && raw < 10_000_000_000_000L) return raw;
@@ -93,5 +111,155 @@ final class PokeListFeedData {
         if (value == null) return "";
         String cleaned = value.replaceAll("[\\p{Cntrl}]+", " ").trim();
         return cleaned.length() <= length ? cleaned : cleaned.substring(0, length);
+    }
+
+    // ---------------------------------------------------------------------------------------------
+    // Canonical events (the five PokeList categories). The historical APK schema exposes
+    // type=pokemon|raid|quest|rocket|rocket_leader; each is parsed into its own kind so a quest can
+    // never be rendered as a spawn. Fields are read through aliases because the published contract
+    // is preliminary; anything absent stays null instead of being invented.
+    // ---------------------------------------------------------------------------------------------
+
+    enum Category {
+        POKEMON("pokemon"), RAID("raid"), QUEST("quest"), ROCKET("rocket"), ROCKET_LEADER("rocket_leader");
+        final String wire;
+        Category(String wire) { this.wire = wire; }
+        static Category fromWire(String value) {
+            for (Category category : values()) if (category.wire.equals(value)) return category;
+            return null;
+        }
+    }
+
+    /** Canonical rows plus the honest counts the radar needs (received vs usable). */
+    static final class EventPage {
+        final java.util.List<SourceEvent> events;
+        final int received, rejected;
+        final String note;
+        EventPage(java.util.List<SourceEvent> events, int received, int rejected, String note) {
+            this.events = java.util.Collections.unmodifiableList(new java.util.ArrayList<>(events));
+            this.received = received;
+            this.rejected = rejected;
+            this.note = note == null ? "" : note;
+        }
+    }
+
+    static EventPage parseEvents(JSONObject body, long now, Category category) throws JSONException {
+        if (body == null) throw new JSONException("PokeList retornou dados vazios");
+        Category resolved = category == null ? Category.POKEMON : category;
+        String type = body.optString("type", resolved.wire);
+        Category declared = Category.fromWire(type);
+        if (declared != null && declared != resolved)
+            throw new JSONException("PokeList devolveu o tipo " + type + " quando se pediu " + resolved.wire);
+        JSONArray raw = body.optJSONArray("pokemons");
+        if (raw == null) throw new JSONException("PokeList: campo pokemons ausente na resposta");
+        java.util.List<SourceEvent> out = new java.util.ArrayList<>();
+        java.util.Set<String> keys = new java.util.HashSet<>();
+        int received = Math.min(raw.length(), MAX_RESULTS), rejected = 0;
+        for (int i = 0; i < received; i++) {
+            JSONObject row = raw.optJSONObject(i);
+            if (row == null) { rejected++; continue; }
+            SourceEvent event = toEvent(row, now, resolved);
+            if (event == null) { rejected++; continue; }
+            if (!keys.add(event.eventId)) { rejected++; continue; }
+            out.add(event);
+        }
+        String note = "Fonte: PokeList / Moonani · categoria " + resolved.wire
+                + " · cobertura: apenas o que a resposta devolveu"
+                + (raw.length() > MAX_RESULTS ? " (limitado a " + MAX_RESULTS + ")" : "")
+                + (rejected > 0 ? " · " + rejected + " registro(s) sem coordenada/expiração válida" : "");
+        return new EventPage(out, received, rejected, note);
+    }
+
+    private static SourceEvent toEvent(JSONObject row, long now, Category category) throws JSONException {
+        Double lat = SourceEvent.coordinate(row.opt("latitude"));
+        Double lon = SourceEvent.coordinate(row.opt("longitude"));
+        if (!SourceEvent.validCoordinates(lat, lon)) return null;
+        String id = clean(row.optString("id", ""), 90);
+        if (id.isEmpty()) {
+            Integer dex = SourceEvent.integer(row.opt("number"));
+            id = (dex == null ? "x" : dex.toString()) + ":"
+                    + String.format(Locale.US, "%.6f,%.6f", lat, lon);
+        }
+        long expires = firstTime(row, "endTime", "end_time", "expires_at", "end");
+        if (expires > 0 && expires <= now) return null;
+        long observed = firstTime(row, "startTime", "start_time", "spawn_at");
+        String name = clean(row.optString("name", ""), 80);
+        String rocketType = clean(row.optString("rocket_type", ""), 40);
+
+        switch (category) {
+            case RAID: {
+                Integer boss = SourceEvent.integer(row.opt("number"));
+                if (boss == null) boss = SourceEvent.integer(row.opt("pokemon_id"));
+                if (boss == null) boss = SourceEvent.integer(row.opt("boss"));
+                Integer tier = SourceEvent.integer(row.opt("level"));
+                if (tier == null) tier = SourceEvent.integer(row.opt("raid_level"));
+                return SourceEvent.builder("pokelist", id, SourceEvent.Kind.RAID)
+                        .originKind(OriginKind.LIVE_EXTERNAL)
+                        .coordinates(lat, lon).name(name.isEmpty() ? "Ginásio" : name)
+                        .pokemonId(boss == null || boss < 1 || boss > 1025 ? null : boss)
+                        .level(tier == null || tier < 1 || tier > 20 ? null : tier)
+                        .observedAt(observed > 0 ? observed : now).retrievedAt(now).expiresAt(expires)
+                        .dataQuality(SourceEvent.QUALITY_PROVIDER_CLAIMED)
+                        .coverage("PokeList · reides por área (contrato preliminar)")
+                        .note("Reide declarada pela PokeList; nível/chefe somente quando informados.")
+                        .build();
+            }
+            case QUEST: {
+                String reward = clean(row.optString("reward", ""), 60);
+                if (reward.isEmpty()) reward = clean(row.optString("quest", ""), 60);
+                return SourceEvent.builder("pokelist", id, SourceEvent.Kind.QUEST)
+                        .originKind(OriginKind.LIVE_EXTERNAL)
+                        .coordinates(lat, lon).name(name.isEmpty() ? "Poképarada" : name)
+                        .observedAt(observed > 0 ? observed : now).retrievedAt(now).expiresAt(expires)
+                        .dataQuality(SourceEvent.QUALITY_PROVIDER_CLAIMED)
+                        .coverage("PokeList · pesquisas por área (contrato preliminar)")
+                        .note(reward.isEmpty() ? "Pesquisa sem recompensa informada."
+                                : "Recompensa: " + reward)
+                        .build();
+            }
+            case ROCKET:
+            case ROCKET_LEADER: {
+                return SourceEvent.builder("pokelist", id, SourceEvent.Kind.ROCKET)
+                        .originKind(OriginKind.LIVE_EXTERNAL)
+                        .coordinates(lat, lon).name(name.isEmpty()
+                                ? (rocketType.isEmpty() ? "Invasão Rocket" : rocketType) : name)
+                        .observedAt(observed > 0 ? observed : now).retrievedAt(now).expiresAt(expires)
+                        .dataQuality(SourceEvent.QUALITY_PROVIDER_CLAIMED)
+                        .coverage("PokeList · Rocket/líderes por área (contrato preliminar)")
+                        .note(category == Category.ROCKET_LEADER
+                                ? "Líder Rocket declarado pela fonte" + (rocketType.isEmpty() ? "." : ": " + rocketType)
+                                : (rocketType.isEmpty() ? "Invasão Rocket declarada pela fonte."
+                                        : "Invasão Rocket: " + rocketType))
+                        .build();
+            }
+            default: {
+                Integer dex = SourceEvent.integer(row.opt("number"));
+                if (dex == null) dex = SourceEvent.integer(row.opt("pokemon_id"));
+                if (dex == null || dex < 1 || dex > 1025) return null;
+                int cp = number(row, "cp", 0, 20000);
+                int level = number(row, "level", 0, 55);
+                int atk = number(row, "attack", 0, 15);
+                int def = number(row, "defense", 0, 15);
+                int hp = number(row, "hp", 0, 15);
+                Double iv = row.has("iv") && !row.isNull("iv") ? row.optDouble("iv", -1) : null;
+                if (iv != null && (!Double.isFinite(iv) || iv < 0 || iv > 100)) iv = null;
+                int form = number(row, "form", 0, 100000);
+                // A source shiny flag is not proof that this account's encounter is shiny.
+                return SourceEvent.builder("pokelist", id, SourceEvent.Kind.POKEMON)
+                        .originKind(OriginKind.LIVE_EXTERNAL)
+                        .coordinates(lat, lon).pokemonId(dex).name(name.isEmpty() ? "#" + dex : name)
+                        .cp(cp < 0 ? null : cp).level(level < 0 ? null : level)
+                        .ivPercent(iv).ivAtk(atk < 0 ? null : atk)
+                        .ivDef(def < 0 ? null : def).ivSta(hp < 0 ? null : hp)
+                        .formId(form < 0 ? null : form)
+                        .gender(SourceEvent.normalizeGender(row.opt("gender")))
+                        .size(SourceEvent.normalizeSize(row.opt("size")))
+                        .observedAt(observed > 0 ? observed : now).retrievedAt(now).expiresAt(expires)
+                        .dataQuality(SourceEvent.QUALITY_PROVIDER_CLAIMED)
+                        .coverage("PokeList · consulta por espécie/área (contrato preliminar)")
+                        .note("Spawn declarado pela PokeList; shiny da fonte não é shiny confirmado.")
+                        .build();
+            }
+        }
     }
 }

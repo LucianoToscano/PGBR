@@ -33,16 +33,17 @@ public final class LogActivity extends Activity {
         TextView heading = new TextView(this); heading.setText(dev.pgrazor.PtBr.tr("PGBR · current run")); heading.setTextSize(22); layout.addView(heading);
         ScrollView scroll = new ScrollView(this); text = new TextView(this); text.setTextIsSelectable(true); scroll.addView(text); layout.addView(scroll,new LinearLayout.LayoutParams(-1,0,1));
         Button refresh = new Button(this); refresh.setText(dev.pgrazor.PtBr.tr("Refresh log")); refresh.setOnClickListener(v -> refresh()); layout.addView(refresh);
-        TextView detail=new TextView(this);detail.setText(dev.pgrazor.PtBr.tr("ZIP includes the log and a single-line settings.json snapshot of feature preferences. Login tokens, account data and saved locations are excluded."));layout.addView(detail);
-        Button bundle=new Button(this);bundle.setText(dev.pgrazor.PtBr.tr("Save log + settings (.zip)"));layout.addView(bundle);
+        TextView detail=new TextView(this);detail.setText("ZIP filtrado para compartilhar: inclui somente campos técnicos permitidos. O TXT bruto pode conter dados pessoais; revise antes de enviar.");layout.addView(detail);
+        Button bundle=new Button(this);bundle.setText("Salvar diagnóstico filtrado (.zip)");layout.addView(bundle);
         bundle.setOnClickListener(v -> {
             File file=Control.currentLog();if(file==null)return;
             Intent intent=new Intent(Intent.ACTION_CREATE_DOCUMENT).addCategory(Intent.CATEGORY_OPENABLE).setType("application/zip");
             intent.putExtra(Intent.EXTRA_TITLE,file.getName().replaceFirst("\\.txt$","")+".zip");startActivityForResult(intent,41);
         });
-        Button export = new Button(this); export.setText(dev.pgrazor.PtBr.tr("Save .txt file")); layout.addView(export);
+        Button export = new Button(this); export.setText("Salvar TXT bruto (privado)"); layout.addView(export);
         export.setOnClickListener(v -> {
             File file = Control.currentLog(); if(file == null) return;
+            if(Control.trainerPrivacyMode()!=0){Toast.makeText(this,"Desative o modo de privacidade para exportar TXT bruto. Use o ZIP filtrado.",Toast.LENGTH_LONG).show();return;}
             Intent intent = new Intent(Intent.ACTION_CREATE_DOCUMENT).addCategory(Intent.CATEGORY_OPENABLE).setType("text/plain");
             intent.putExtra(Intent.EXTRA_TITLE,file.getName()); startActivityForResult(intent,40);
         });
@@ -55,7 +56,7 @@ public final class LogActivity extends Activity {
         try (RandomAccessFile input = new RandomAccessFile(file,"r")) {
             long start = Math.max(0,input.length()-65536); input.seek(start);
             byte[] bytes = new byte[(int)(input.length()-start)]; input.readFully(bytes);
-            text.setText(dev.pgrazor.PtBr.tr((start>0 ? "Showing latest 64 KiB. Export saves the current log segment, including retained startup diagnostics.\n" : "") + new String(bytes,StandardCharsets.UTF_8)));
+            text.setText(dev.pgrazor.PtBr.tr((start>0 ? "Showing latest 64 KiB. Export saves the current log segment, including retained startup diagnostics.\n" : "") + LogExport.displayLog(bytes,Control.trainerPrivacyMode()!=0)));
         } catch(IOException error) { text.setText(dev.pgrazor.PtBr.tr("Cannot read log: "+error.getMessage())); }
     }
     protected void onActivityResult(int request,int result,Intent data) {
@@ -63,6 +64,7 @@ public final class LogActivity extends Activity {
         if(settingsBackup!=null){settingsBackup.result(request,result,data);return;}
         if((request!=40&&request!=41) || result!=RESULT_OK || data==null || data.getData()==null || Control.currentLog()==null) return;
         try {
+            if(request==40&&Control.trainerPrivacyMode()!=0){Toast.makeText(this,"TXT bruto bloqueado no modo de privacidade.",Toast.LENGTH_LONG).show();return;}
             LogExport.save(this,data.getData(),Control.currentLog(),request==41);
             Toast.makeText(this,request==41?"Log and settings saved":"Log saved",Toast.LENGTH_SHORT).show();
         } catch(IOException error) { Toast.makeText(this,"Save failed: "+error.getMessage(),Toast.LENGTH_LONG).show(); }

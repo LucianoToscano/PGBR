@@ -27,6 +27,9 @@ public final class SmartCatchSettings {
     public static String normalizeSpecies(String value){return SmartCatchPreferences.normalizeSpecies(value);}
     static int speed(){return preferences.speed();}
     static boolean shinyOnly(){return preferences.shinyOnly();}
+    static String rareConfig(){return preferences.rareConfig();}
+    static String tagConfig(){return preferences.tagConfig();}
+    static boolean manualBerry(){return preferences.manualBerry();}
     static String candySpecies(){return preferences.candySpecies();}
     static void setCandySpecies(String value){set("CandySpecies",value);}
     static String catchSpecies(){return preferences.catchSpecies();}
@@ -49,8 +52,29 @@ public final class SmartCatchSettings {
             set("AutoBallTarget",next);autoTarget.setText(dev.pgrazor.PtBr.tr("VGP+ auto ball target: "+next+"%"));});
         int berryIndex=0;for(int i=0;i<BERRIES.length;i++)if(BERRIES[i]==preferences.berry())berryIndex=i;
         row(activity,options,"Standard berry",BERRY_NAMES,berryIndex,index->{set("Berry",BERRIES[index]);});
-        CheckBox special=new CheckBox(ui);special.setText(dev.pgrazor.PtBr.tr("Shiny or IV ≥90%: Ultra Ball + Golden Razz"));special.setChecked(preferences.premium());options.addView(special);
+        CheckBox special=new CheckBox(ui);special.setText("Regra premium: Ultra Ball + fruta");special.setChecked(preferences.premium());options.addView(special);
         special.setOnCheckedChangeListener((v,on)->{set("Premium",on);});
+        TextView legacyHelp=new TextView(ui);legacyHelp.setText("Padrão: Shiny ou IV ≥90%, com Fruta Frambo Dourada. Personalize abaixo sem alterar os filtros de espécies ou somente Shiny.");options.addView(legacyHelp);
+        CheckBox customRare=new CheckBox(ui);customRare.setText("Personalizar critérios de raridade");customRare.setChecked(preferences.rareCustom());options.addView(customRare);
+        LinearLayout rareOptions=new SettingsUi.OptionList(ui);options.addView(rareOptions);
+        TextView rareCriteria=button(rareOptions,"Critérios de raridade: "+Integer.bitCount(preferences.rareMask()));
+        String[] rareNames={"Shiny","IV 100% (Hundo)","Shiny 100% (Shundo)","IV 0% (Nundo)","IV mínimo","Lendário, mítico ou Ultra Beast","Fantasia","Fundo especial"};
+        rareCriteria.setOnClickListener(v->{
+            boolean[] selected=new boolean[rareNames.length];int mask=preferences.rareMask();
+            for(int i=0;i<selected.length;i++)selected[i]=(mask&(1<<i))!=0;
+            AlertDialog d=new AlertDialog.Builder(MapTheme.wrap(activity)).setTitle("Critérios de raridade")
+                .setMultiChoiceItems(rareNames,selected,(dialog,index,checked)->selected[index]=checked)
+                .setPositiveButton("Salvar",(dialog,which)->{int next=0;for(int i=0;i<selected.length;i++)if(selected[i])next|=1<<i;
+                    set("RareMask",next);rareCriteria.setText("Critérios de raridade: "+Integer.bitCount(next));})
+                .setNegativeButton("Cancelar",null).create();
+            DialogLifecycle.bind(activity,d,null);d.setOnShowListener(x->MapTheme.styleButtons(d));d.show();
+        });
+        input(activity,rareOptions,"IV mínimo de raridade (1–100)",String.valueOf(preferences.rareIvMin()),value->{int n=bounded(value,100);if(n==0)throw new IllegalArgumentException("Use um valor de 1 a 100.");set("RareIvMin",n);},true);
+        int rareBerryIndex=0;for(int i=0;i<BERRIES.length;i++)if(BERRIES[i]==preferences.rareBerry())rareBerryIndex=i;
+        row(activity,rareOptions,"Fruta para Pokémon raro",BERRY_NAMES,rareBerryIndex,index->set("RareBerry",BERRIES[index]));
+        TextView rareHelp=new TextView(ui);rareHelp.setText("Os IVs precisam vir de um encontro confirmado; dados ausentes não contam como Nundo. O estoque e as regras Safari continuam sendo verificados.");rareOptions.addView(rareHelp);
+        customRare.setOnCheckedChangeListener((v,on)->{if(on!=preferences.rareCustom())set("RareCustom",on);rareOptions.setVisibility(on?android.view.View.VISIBLE:android.view.View.GONE);});
+        rareOptions.setVisibility(preferences.rareCustom()?android.view.View.VISIBLE:android.view.View.GONE);
         input(activity,options,"High CP threshold (0–10000)",String.valueOf(preferences.highCp()),value->{int n=bounded(value,10000);set("HighCp",n);},true);
         input(activity,options,"High level threshold (0–50)",String.valueOf(preferences.highLevel()),value->{int n=bounded(value,50);set("HighLevel",n);},true);
         TextView rating=row(activity,options,"Throw rating",new String[]{"Default","Nice","Great","Excellent"},preferences.grade(),index->{set("Grade",index);});
@@ -66,6 +90,13 @@ public final class SmartCatchSettings {
         gymSpin.setOnCheckedChangeListener((v,on)->{if(on!=preferences.spinGyms())set("SpinGyms",on);});
         TextView candy=button(options,"Candy species (Pinap): "+count(preferences.candySpecies(),"None"));
         candy.setOnClickListener(v->SmartCatchSpeciesDialog.show(activity,()->candy.setText(dev.pgrazor.PtBr.tr("Candy species (Pinap): "+count(preferences.candySpecies(),"None")))));
+        TextView tagHelp=new TextView(ui);tagHelp.setText("Etiquetas: informe os nomes exatos criados no jogo, separados por vírgula. A seleção abrange as famílias dos Pokémon etiquetados e respeita os filtros de espécie e Shiny. Se uma etiqueta estiver ausente ou a leitura não terminar, a captura fica bloqueada.");options.addView(tagHelp);
+        tagInput(activity,options,"Capturar famílias das etiquetas","CatchTags",preferences.catchTags());
+        tagInput(activity,options,"Fruta nas famílias das etiquetas","CandyTags",preferences.candyTags());
+        int tagBerryIndex=0;for(int i=0;i<BERRIES.length;i++)if(BERRIES[i]==preferences.tagBerry())tagBerryIndex=i;
+        row(activity,options,"Fruta para etiquetas",BERRY_NAMES,tagBerryIndex,index->{set("TagBerry",BERRIES[index]);});
+        CheckBox manual=new CheckBox(ui);manual.setText("Aplicar frutas de raridade e etiquetas ao lançar manualmente");manual.setChecked(preferences.manualBerry());options.addView(manual);manual.setOnCheckedChangeListener((v,on)->set("ManualBerry",on));
+        TextView manualHelp=new TextView(ui);manualHelp.setText("Requer Auto Frutas ativo e uma prioridade normal configurada. A fruta especial tem preferência quando disponível; senão a ordem de estoque normal é preservada. Não lança bola automaticamente.");options.addView(manualHelp);
         CheckBox shinyOnly=new CheckBox(ui);shinyOnly.setText(dev.pgrazor.PtBr.tr("Catch only shinies"));shinyOnly.setChecked(preferences.shinyOnly());options.addView(shinyOnly);
         TextView shinyOnlyHelp=new TextView(ui);shinyOnlyHelp.setText(dev.pgrazor.PtBr.tr("VGP+ still opens every Pokémon to see whether it is shiny, but throws only at shinies and leaves the rest on the map. Each one it opens counts as an encounter."));options.addView(shinyOnlyHelp);
         shinyOnly.setOnCheckedChangeListener((v,on)->{if(on!=preferences.shinyOnly())set("ShinyOnly",on);});
@@ -104,6 +135,17 @@ public final class SmartCatchSettings {
             DialogLifecycle.bind(a,d,null);d.setOnShowListener(x->MapTheme.styleButtons(d));d.show();
         });
         return button;
+    }
+    private static void tagInput(Activity a,LinearLayout body,String title,String key,String initial){
+        TextView b=button(body,title+": "+(initial.isEmpty()?"Nenhuma":initial));String[] current={initial};
+        b.setOnClickListener(v->{
+            EditText edit=new EditText(MapTheme.wrap(a));edit.setSingleLine(true);edit.setHint("Ex.: doces, raros");edit.setText(current[0]);
+            AlertDialog d=new AlertDialog.Builder(MapTheme.wrap(a)).setTitle(title).setView(edit).setPositiveButton("Salvar",null).setNegativeButton("Cancelar",null).create();
+            DialogLifecycle.bind(a,d,null);d.setOnShowListener(x->{MapTheme.style(edit);MapTheme.styleButtons(d);d.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(w->{
+                try{String names=SmartCatchPreferences.normalizeTags(edit.getText().toString());set(key,names);current[0]=names;b.setText(title+": "+(names.isEmpty()?"Nenhuma":names));d.dismiss();}
+                catch(IllegalArgumentException invalid){edit.setError(invalid.getMessage());}
+            });});d.show();
+        });
     }
     private static void input(Activity a,LinearLayout body,String title,String initial,Value save,boolean numeric){
         TextView button=button(body,title+": "+(initial.isEmpty()?"None":initial));final String[] current={initial};

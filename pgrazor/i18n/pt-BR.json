@@ -5,6 +5,7 @@
   "notes": "Glossário inicial PT-BR para textos exibidos ao usuário. Preservar identificadores técnicos, nomes de serviços e strings de protocolo.",
   "translations": {
     "Previous": "Anterior",
+    "Stopped: movement was taken over.": "Rota interrompida: outro controle assumiu o movimento.",
     "Next": "Próxima",
     "Add action at current location": "Registrar ação neste local",
     "Record action here": "Registrar ação neste local",
@@ -1480,6 +1481,22 @@
     "Raid ended.": "Reide encerrada.",
     "unavailable": "indisponível",
     " (reversible)": " (reversível)",
-    "Not caught - broke free": "Não capturado — escapou da Pokébola"
+    "Not caught - broke free": "Não capturado — escapou da Pokébola",
+    "Radar PGBR · 5 fontes": "Radar PGBR · 5 fontes",
+    "Sniper 1 · busca rápida": "Sniper 1 · busca rápida",
+    "Sniper 2 · busca avançada": "Sniper 2 · busca avançada",
+    "Importar dados locais": "Importar dados locais",
+    "Dados importados (local)": "Dados importados (local)",
+    "Nenhuma fonte com dados disponível": "Nenhuma fonte com dados disponível",
+    "Localização não liberada": "Localização não liberada",
+    "Copiar coords": "Copiar coords",
+    "Abrir no mapa": "Abrir no mapa",
+    "Salvar como preset": "Salvar como preset",
+    "Filtros": "Filtros",
+    "Aplicar filtros": "Aplicar filtros",
+    "Limpar filtros": "Limpar filtros",
+    "Próxima página": "Próxima página",
+    "Exportar GPX dos resultados válidos": "Exportar GPX dos resultados válidos",
+    "Busca de Pokémon e rastreadores": "Busca de Pokémon e rastreadores"
   }
 }

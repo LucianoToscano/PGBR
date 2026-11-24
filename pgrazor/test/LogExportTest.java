@@ -30,6 +30,20 @@ public final class LogExportTest {
             }
             if(zip.getNextEntry()!=null)throw new AssertionError("Unexpected entry");
         }
+        settings.setProperty("apiKey","secret-example");
+        settings.setProperty("trainerName","private-example");
+        settings.setProperty("smartAttack","true");
+        Properties safeSettings=LogExport.shareSettings(settings);
+        if(!"true".equals(safeSettings.getProperty("smartAttack"))||safeSettings.containsKey("apiKey")||safeSettings.containsKey("trainerName")||safeSettings.containsKey("escaped"))throw new AssertionError("Settings privacy");
+        String raw="2026-11-24T01:10:00.000-03:00 [transfer-kept] {\"reasonCode\":12,\"id\":\"private-example\",\"species\":25}\n"
+            +"2026-11-24T01:10:01.000-03:00 [battle-action] {\"smartAttackEnabled\":true,\"reason\":\"actor-unknown\",\"token\":\"secret-example\"}\n"
+            +"2026-11-24T01:10:02.000-03:00 [login] secret-example\n"
+            +"2026-11-24T01:10:03.000-03:00 [item-icon-missing] id=708\n"
+            +"2026-11-24T01:10:04.000-03:00 [item-icon-error] id=1401 asset=private-example cause=secret-example\n"
+            +"2026-11-24T01:10:05.000-03:00 [item-icon-error] id=999999999 private-example\n";
+        String safe=new String(LogExport.shareLog(new ByteArrayInputStream(raw.getBytes(StandardCharsets.UTF_8))),StandardCharsets.UTF_8);
+        if(safe.contains("secret-example")||safe.contains("private-example")||!safe.contains("\"reasonCode\":12")||!safe.contains("actor-unknown"))throw new AssertionError("Log privacy");
+        if(!safe.contains("\"itemId\":708")||!safe.contains("\"itemId\":1401")||safe.contains("999999999"))throw new AssertionError("Icon diagnostic privacy");
         System.out.println("PASS compact JSON escaping and ZIP log/settings byte-exact round trip");
     }
 }

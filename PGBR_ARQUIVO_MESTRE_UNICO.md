@@ -1562,3 +1562,200 @@ Foram executadas 18 fixtures C++ host, contratos de tempos/UI e verificação do
 - PR #157: união de #149, #155 e #156, base main `7c2d8199d698fb29d0f812e992d10ebe7db2b22e`; 131 blobs não conflitantes e histórico preservado. Os sete workflows especializados concluíram com sucesso (Snipers, radar, PGSharp, Hundo offline e governança); CI geral inicial falhou somente no stub TeleportDialog: faltava interface Remember do contrato LT044. Stub corrigido em `08e2da8e1e9a399f4d30452816282d427a2d4841`, sem remover teste ou alterar execução do diálogo. Nova validação necessária.
 - PR #158: layout VGP+ aprovado no CI geral e governança; integrado à candidata por três blobs independentes e adendo documental. Não implica port completo de regras de captura do Pokematrix.
 - Pendências Pokematrix: #134 MT requer vínculo da solicitação ao Pokémon/painel/geração, expiração e verificação de estoque antes da confirmação nativa (fork guarda só linha da UI). #133 VGP+ requer opt-in compatível com filtros antigos, cache por conta, trabalho limitado por tick e IV confirmado; fork exclui Nundo real ao exigir soma de IV > 0. Frutas manuais precisam validar encontro e estoque e preservar prioridades existentes. Não ativar sem implementação e testes; preservar Safari, premium/shiny, espécies e ciclo de vida. Auditoria não equivale à implementação. Sem teste físico Android, sem deploy do coletor, sem nova release publicada neste registro. Acompanhamento: issue #154.
+
+## 24/11/2026 — Especificacao unica de 5 fontes: camada canonica, Radar/Snipers e gateway proprio (candidata QA, PR #160)
+
+- **Base e branche:** `main` em `cbd4c69daad4e526bed7a1328925b3f82fdea56c` (LT044 QA); trabalho na branch unica da sessao `arena/20f54cfa-pgbr`, aberta na [PR #160](https://github.com/LucianoToscano/PGBR/pull/160) **sem merge para `main`** e sem auto-merge. A especificacao pede branch isolada por modulo; a sessao de trabalho aceita uma unica branch, por isso a separacao por modulo foi registrada em **commits isolados** dentro da mesma PR (links abaixo) e nao em PRs separadas.
+- **Fonte da verdade:** `docs/especificacao-unica-5-fontes-20261123/docs/integracoes/PGBR_ESPECIFICACAO_UNICA_5_FONTES_API_WEBHOOKS.md`, lida na integra. Exatamente **cinco integracoes** (PokeList, iFlowGo, PoGoCoordinates+PokeSearch como uma, PGSharp, iPogo); nenhuma sexta fonte, nenhum adaptador Pokemod/PGTools.
+- **Commits por modulo:** camada canonica [0cf2962](https://github.com/LucianoToscano/PGBR/commit/0cf2962f28260209f40f4add0937bc5dcdf62e6b) · adaptadores [9cce8fc](https://github.com/LucianoToscano/PGBR/commit/9cce8fcc076f251065e2c00fe46f13ed458c391e) · testes JVM + auditoria estatica [0f9d66c](https://github.com/LucianoToscano/PGBR/commit/0f9d66c102ae8f8e713b86995da1afb35a204349) · UI Radar/Snipers/Importacao [30ead40](https://github.com/LucianoToscano/PGBR/commit/30ead40be93cf856b5c3499ae3000550491f21f8) · gateway [c91221c](https://github.com/LucianoToscano/PGBR/commit/c91221c337f6bcd261845d710f174fee2e9b1abe).
+
+### Modelo canonico (Java 8, sem Android, apenas `org.json`)
+
+- **Ausencia e zero:** campo ausente = `null`; IV 0 continua sendo observacao real e nao "desconhecido". `(0,0)`, NaN e fora de faixa viram `CoordinatePrecision.UNAVAILABLE` e nunca viram coordenada de teleporte.
+- **Proveniencia:** `OriginKind {live_external, personal_import, static_catalog, demo_fixture}` por evento; `is_demo` nunca e acionavel. Sete `source_id` (`pokelist, iflowgo, pogocoordinates, pgsharp, ipogo, pgbr_hundo, livepokemap`); fonte remota comeca `UNVERIFIED`, recusa vira `BLOCKED` e **nada** assume `CONNECTED` sem resposta autorizada.
+- **Filtro:** `EventFilterEngine` separa `appliedLocally` de `unsupported` e falha fechado; `pvp` = rank GL **ou** UL nao nulo.
+- **Importacao local real:** `LocalEventImport`/`LocalEventStore` aceitam JSON (controles `events/items/spawns/pokemons/results/data` e `hundos`), CSV, GPX (SAX com doctype e entidade desligados) e coordenadas digitadas; teto de 2 MiB/5000 linhas, dedupe, rejeicao com motivo por linha e `toGpx` apenas de coordenadas validas.
+- **Presets e alertas:** `PresetCodec` formato `PGBR preset` v2 com migracao de v1 (`migrated_from="1"` + `raw_source`), dedupe e favoritos; `AlertEngine` nao dispara preset sem criterio e so considera shiny com `shinyObserved=true`; `PgSharpFilterMapping` converte configs proprias do PGSharp e informa campo nao suportado por `familia.chave`.
+- **Snipers:** `SniperSearch.sniper1` (TTL >= 60 s, sem expirado/demo, limite 25, distancia) e `sniper2` (limite 100, multiplos criterios). A acao de copiar/mapa/Teleporte e decidida **por linha** por `actionFor(event, agora, cooldown)`; Teleporte segue em `TeleportDialog.confirm`, nunca automatico.
+
+### Integracoes
+
+- **PokeList:** `PokeListFeedClient`/`PokeListFeedData` reescritos para consulta real por categoria (`pokemon|raid|quest|rocket|rocket_leader`) com contadores recebido/exibido, recusa de cursor/centro ausente e 401/403/429 tratados como `blocked` (nunca contornados).
+- **iFlowGo:** nearby por raio com o limite real da fonte e busca global paginada enquanto a resposta informa `total_pages`; 25 itens por pagina **nao** sao cobertura mundial.
+- **PoGoCoordinates + PokeSearch (uma integracao):** `reveal_code` nunca vira coordenada e nao existe revelacao automatica; `PogoFeedDialog` continua sendo a UX de referencia.
+- **PGSharp:** importacao/conversao de JSON/CSV/GPX e das proprias configs; Sniper local real **somente** sobre dados do usuario; dados de outra fonte nunca sao atribuidos ao PGSharp.
+- **iPogo:** radar, perfis, listas, filtros, busca, alertas e importacao pessoal; **sem** alegacao de API publica de coordenadas no APK/IPA (`ipogo_connector_unverified`).
+
+### UI (PT-BR) e gateway
+
+- `FeedChooser` passou de 6 para 10 entradas: Filtro Pokemon, Filtro Reides, LivePokeMap, PoGoCoordinates, Sniper 100% IV, PGSharp, **Radar PGBR 5 fontes** (7 abas: Pokemon, Reides, Pesquisas, Rocket, Power Spots, Ninhos e Rotas, com origem/TTL por linha e vazio honesto), **Sniper 1**, **Sniper 2** e **Importar dados locais** (colar, digitado, JSON/CSV/GPX, relatorio importado/rejeitado).
+- Glossario sincronizado: `pt-BR.json`, `PtBr.java` e `RootPtBr.java` com 1493 entradas cada (`test_ptbr_glossary` OK); "Teleporte", nunca "Teletransportar".
+- **Gateway proprio** em `gateway/pgbr_gateway.py` (stdlib, sem dependencia): `/v1/health`, `/v1/sources`, `/v1/capabilities`, `/v1/search`, `/v1/imports/{pgsharp,ipogo}`, `/v1/events`, `/v1/presets`, `/v1/webhooks/subscriptions` e OpenAPI 3.1 em `/openapi.json`. Token por perfil, limite de consulta com `Retry-After`, validacao que recusa faixa invalida em vez de ampliar a busca e proveniencia/TTL em cada item. Webhooks com HMAC-SHA256 (`X-Event-Id`, `X-Event-Timestamp`, `X-Event-Signature`), janela anti-replay, idempotencia, retry com backoff, DLQ e revogacao; destino obrigatoriamente HTTPS publico. **Coleta remota desligada por padrao** (nenhuma pagina/fonte com permissao explicita verificada) e `spawn/raid/quest/rocket` so saem de fato externo ao vivo — importacao pessoal e catalogo estatico nunca geram esses eventos.
+
+### Matriz de entrega
+
+| funcao | fonte | local/remoto | implementacao | testes | provider_connected | device_tested | PR | pendencia |
+|---|---|---|---|---|---|---|---|---|
+| Modelo canonico + filtros + presets + alertas | transversal | local | `SourceEvent/Query/Capabilities/Registry`, `EventFilterEngine`, `PresetCodec`, `AlertEngine`, `PgSharpFilterMapping` | `SourceModelTest`, `EventFilterEngineTest`, `PresetCodecTest`, `PgSharpFilterMappingTest` (JVM, no CI com SDK) | n/a | false | #160 | CI 12/12 |
+| Sniper 1 e Sniper 2 | todas | local | `SniperSearch`, `SniperDialog` | `SniperSearchTest` (TTL, cooldown, demo) | false | false | #160 | CI 12/12 |
+| Importacao pessoal JSON/CSV/GPX/digitado | pgsharp, ipogo, import | local | `LocalEventImport`, `LocalEventStore`, `LocalImportDialog`, `SourceDataStore` | `LocalEventImportTest` (limite, dedupe, rejeicao) | n/a | false | #160 | CI 12/12 |
+| PokeList (pokemon, raid, quest, rocket, lider) | pokelist | remoto | `PokeListFeedClient/Data`, `PokeListSourceAdapter` | `FeedSourceEventsTest`, `PokeListFeedDataTest` | **false** | false | #160 | resposta autorizada real |
+| iFlowGo (nearby + global paginado) | iflowgo | remoto | `IFlowGoFeedClient/Data`, `IFlowGoRequestPolicy`, `IFlowGoSourceAdapter` | `IFlowGoFeedDataTest`, `test_iflowgo_request_policy_java` | **false** | false | #160 | resposta autorizada real |
+| PoGoCoordinates + PokeSearch | pogocoordinates | remoto | `PogoFeedData`, `PoGoCoordinatesSourceAdapter` | `FeedSourceEventsTest` (reveal_code) | **false** | false | #160 | resposta autorizada real |
+| PGSharp (import/config/Sniper local) | pgsharp | local | `PgSharpDataImport` + `PgSharpFilterMapping` + adaptador local | `PgSharpFilterMappingTest` | n/a | false | #160 | CI 12/12 |
+| iPogo (radar/perfis/import) | ipogo | local | adaptador local + radar | `SourceAdaptersTest` | **false** (conector nao verificado) | false | #160 | sem API publica |
+| Radar 7 abas + exportar GPX | todas | local | `SourceRadarDialog` | sintaxe + auditoria de referencias + `test_source_ui_wiring.py` | false | false | #160 | CI 12/12 |
+| Gateway OpenAPI 3.1 | pgbr (proprio) | local | `gateway/pgbr_gateway.py` | **45 testes OK** | n/a | false | #160 | deploy/hospedagem |
+| Webhooks HMAC + DLQ | pgbr (proprio) | local | `WebhookDispatcher` | assinatura, replay, retry, DLQ, revogacao OK | n/a | false | #160 | destino real |
+
+### Verificacao executada (resultados reais)
+
+| Comando | Resultado |
+|---|---|
+| `python3 -B pgrazor/test/test_pgbr_gateway.py` | **45 testes, OK** |
+| `python3 gateway/pgbr_gateway.py --selftest` | **OK** |
+| `python3 -B pgrazor/test/test_ptbr_glossary.py` | **3 testes, OK** |
+| `python3 -B pgrazor/test/test_hundo_manual_ui_contract.py` | **5 testes, OK** (entradas anteriores do menu Feeds preservadas) |
+| `python3 -B pgrazor/test/test_pokelist_access_behavior.py` | **2 testes, OK** |
+| `python3 -B pgrazor/test/source_layer_reference_audit.py` | **27 arquivos, 1223 referencias verificadas, 0 nao resolvidas** |
+| `python3 -B -m unittest discover -s pgrazor/test -p 'test_*.py'` | 333 testes: 330 ok, 62 pulados, 3 falhas por `javac`/SDK ausente |
+| Parse sintatico (`javalang`) dos 36 arquivos Java novos | sintaxe OK (**nao** e compilacao) |
+| **CI do PR #160 em `aef08b2` (runner Windows + Android SDK 36)** | **12/12 checks verdes**: `Suite real check.py + compilacao Java + Root`, `apk-test`, website, NDK ARM64, governanca/inventario, C++ host, VNext, contract-policy-and-compile, native-pvp-fixture, offline-feed-and-contract, offline-slots-and-contract, translate |
+| `tools/check.py` no CI (runner Windows) | 414 testes, 0 falhas, 1 pulado; Java do aplicativo compilado; instalador Root validado |
+| Artefato QA gerado pelo CI | `PGBR-LT044-PGR040-Root-e-SemRoot-QA` (195 MB, nao expirado) em https://github.com/LucianoToscano/PGBR/actions/runs/45318237097 — **build QA de `aef08b2`, nao release** |
+
+### Atualizacao 24/11/2026 — CI fechado e motores ligados na interface (mesmo PR #160)
+
+A secao acima registrou que nada tinha sido compilado. Isso mudou: o PR #160 passou a ter **12/12 checks verdes**
+em `aef08b2`, incluindo a compilacao completa do Java do aplicativo com Android SDK 36, a validacao do instalador
+Root e o build QA de APK (Root e sem Root). As falhas reais que o CI encontrou, na ordem em que apareceram:
+
+| Falha no CI | Causa real | Correcao | Commit |
+|---|---|---|---|
+| `javac` nao encontrava simbolo em `PokeListFeedData` | parser de feed chamava `LocalEventImport.firstTime`, que esta fora do conjunto compilado dos feeds | `firstTime` local em `PokeListFeedData`; parser de feed autocontido | `2178572` |
+| `0,0 e descartada, nao armazenada` | o construtor de `SourceEvent` aceitava (0,0) | invariante movida para **dentro** do construtor: (0,0)/NaN/fora de faixa vira `UNAVAILABLE` com `lat/lon=null` | `2178572` |
+| `activeCriteria()` esperava 5, veio 6 | novo campo de consulta entrou no resumo | teste passa a afirmar os rotulos, nao a contagem | `6b323eb` |
+| `Um evento valido, foi 0` | fixture JSON do `LocalEventImportTest` fechava o array antes da 3a linha (invalido) | fixture corrigida | `72223ad` |
+| `Ordenado por distancia` | `sniper1/sniper2` so ordenavam quando a *query* tinha centro, ignorando a posicao do aparelho passada pelo chamador | a posicao do chamador vira o centro efetivo; ordenacao por distancia nos dois casos | `66c8625` |
+| `iv-100-rapido-` | slug de preset mantinha acento e traco final | NFD + remocao de marcas, ASCII apenas, sem traco final | `fa8825d` |
+| `Retry-After: '61' != '60'` (gateway) | relogio de parede pode voltar no Windows; `int(janela - negativo) + 1` passava da janela | tempo decorrido limitado em zero e teto igual a janela | `aef08b2` |
+| anotacao de falha vazia no job | o job roda em `windows-2022` com `pwsh`; bloco de diagnostico em `bash` quebrava em 1 s | passo explicitamente `shell: pwsh`, publica o fim do log como anotacao | `1bd092e` |
+
+**Motores que antes so existiam em teste passaram a ser chamados pela interface** (antes: codigo morto):
+
+- `AlertEngine` → `SourceRadarDialog`: a cada pagina recebida, os presets salvos sao avaliados sobre os registros
+  do aparelho **mais** os que acabaram de chegar; o painel mostra `Alertas locais (N)` com preset, registro e motivo,
+  ou `nenhum casa os criterios` / `nenhum preset salvo` quando nao ha match. Preset sem criterio nunca dispara.
+- `PgSharpFilterMapping` → `LocalImportDialog`: colar uma exportacao de filtros do PGSharp (`pokemonFilters`,
+  `questFilters`, `raidFilters`) converte em presets locais, guarda via `SourceDataStore.upsertPreset` e informa
+  `Nenhum teleporte foi feito.` Qualquer outro conteudo (linhas, coordenadas, GPX) continua no importador de eventos.
+- Contrato novo: `pgrazor/test/test_source_ui_wiring.py` (9 testes) garante que as duas ligacoes existem na fonte e
+  que os textos de ausencia/alerta sao os honestos. Auditoria de referencias: **27 arquivos, 1251 referencias, 0 nao resolvidas**.
+
+**CI apos a ligacao:** 12/12 checks verdes tambem em `bd8b1ea` (o commit que liga os dois motores), com o build QA
+`PGBR-LT044-PGR040-Root-e-SemRoot-QA` gerado de novo em https://github.com/LucianoToscano/PGBR/actions/runs/45320713787.
+
+**Verificacao desta atualizacao:** `test_pgbr_gateway.py` **46 testes OK** (1 novo de relogio voltando);
+`unittest discover` local **410 testes** (344 ok, 65 pulados, 1 erro conhecido por `javac` ausente nesta maquina);
+`test_source_ui_wiring.py` 9 OK; auditoria OK; `javalang` OK nos 36 arquivos; CI 12/12 em `aef08b2`.
+
+**Limites que continuam valendo:** `provider_connected=false` em todas as fontes (nenhuma resposta autorizada real);
+`device_tested=false`; o artefato do CI e **build QA**, nao release; `PokeListSourceAdapter`/`IFlowGoSourceAdapter`
+continuam fora do conjunto JVM por depender de `LiveFeedClient` (Android-bound), cobertos por sintaxe + auditoria.
+
+### Limites explicitos (nao alegar como entregue)
+
+- **Nenhum arquivo Java novo foi compilado**: `javac` e Android SDK nao existem neste ambiente (sem `apt`, JDK completo excede o snapshot, `jdk4py` e apenas JRE, assets de release do GitHub bloqueados). `tools/check.py` nao rodou; os 8 testes JVM novos auto-pulam sem SDK e **precisam do CI** para valer.
+- `provider_connected=false` em todas as fontes: nenhuma resposta autorizada real, nenhum log sanitizado de contrato valido.
+- `device_tested=false`; **APK nao gerado** (nenhum link de artefato), nenhum release, nenhuma tag.
+- `PokeListSourceAdapter`/`IFlowGoSourceAdapter` ficam fora do conjunto JVM porque dependem de `LiveFeedClient` (Android-bound): cobertos apenas por sintaxe e pela auditoria de referencias.
+- A auditoria de referencias e heuristica (sem sistema de tipos/escopo completos): 2026 receptores nao resolvidos, em maioria tipos do framework.
+- Nada foi alterado em GPS/joystick/Root/Zygisk/batalhas/ataques/escudo/VGP/inventario/traducoes existentes alem das entradas novas do menu Feeds e do glossario.
+- **Pendencias em chats paralelos preservadas:** #115/#118/#121 Snipers, #114/#108/#111 Radar, #135 Savant/Root seguem separadas; nada foi re-cherry-picked da #140.
+
+
+## 23/11/2026 — LT045: candidato de consolidação pós-LT044, sem sobrescrever versões
+- Fonte exata #157 `3eb36edc178d9b15202aa8493d3814130d4865bd`, base main `7c2d8199d698fb29d0f812e992d10ebe7db2b22e`; inclui #149/#155/#156/#158. CI geral #45296776414, governança #45296776312 e seis workflows especializados concluíram com sucesso. QA Android #45296776379 ainda em execução na conferência. `smart_attack_priority.h`, `rocket_combat.cpp`, `rocket_actions.cpp` e `AutoMaxBattle.java` idênticos por blob à main; backup preserva mapTapTeleportNoAsk e pgrazor-pgsharp-data-v1. PGRazor HEAD 084d700126 (ARM64 já presente), coletor 0bae6ebc6 incorporado; Pokematrix de777d2b9, Savant 4da955651 sem avanço posterior observado.
+- Preparado versionamento 0.00.45-LT e novos workflows de QA e publicação; LT044 fica manual para evitar reconstrução de tag antiga; contratos históricos permanecem e passam a aceitar LT045. Este registro não afirma merge, APK, release ou teste físico: exigir CI e verificação de assets reais. `device_tested=false`. PokeList Partner #118, VGP etiquetas/raros/frutas #133, MT #134 e sessão Max completa #137 permanecem pendentes; não confundir feeds simulados com reais.
+
+### Auditoria de continuidade histórica LT007–LT044 e correção de CI da LT045
+- Árvores completas de 36 tags de APK (LT007–LT023 disponíveis, LT033–LT044, QA LT041, PR136 e RocketQA1–QA6) comparadas à candidata `92bbf289`; nenhuma árvore truncada e nenhum caminho `pgrazor/` antigo ausente. Isso não é prova de equivalência semântica ou teste em Android. Template de PR antigo e workflows de auditoria/QA históricos ausentes na árvore atual continuam preservados nas tags; não reativar publicações antigas.
+- Recuperadas as seis notas `docs/releases/v0.00.43-RocketQA{1..6}-LT.md` da tag QA6, sem alterar texto original nem binários. CI #45297959489 falhou em `test_branding.test_main_readme` devido à ausência do nome do APK LT045 no README. Corrigida a documentação para indicar explicitamente `PGBR-v0.00.45-LT.apk` como ainda não publicado, sem relaxar o teste. Novo CI necessário.
+
+
+## 24/11/2026 — Consolidação LT045 com PR #160 e auditoria de continuidade
+- Base main b863af0b1b9a6c193ccbf608e120fb16b91adfc8 já contém #157/#158 (Snipers, Radar, Savant, coletor IV e VGP+ visual); fonte #159 c497773f407751061241211f172732160c4880cc e fonte #160 a39365eb866139a9d141313b39ace0da3b41e51b preservadas como pais. Único caminho sobreposto na comparação contra main: este Mestre; adendos históricos preservados integralmente. A antiga lista de limites #160 descreve o ambiente local anterior ao CI, não invalida os builds QA posteriores.
+- CI das duas fontes aprovado separadamente; exige novo CI integrado, build e recibo pós-publicação. LT044 permanece imutável; device_tested=false; provider_connected=false. Correção adicional em AlertEngine: deduplicar observações antes do filtro/limite e descartar expirados e demos antes de avaliar alertas; teste de regressão em PresetCodecTest. Não declarar teste executado antes do CI.
+- Upstream jpitty03/PGRazor HEAD 084d70012624ba32ba361bc31db6ac0eb17811b7: correção ART ARM64 já presente em CMakeLists e fixture no PGBR. Pokematrix de777d2b91a81b53d905e3733e15c66c88262dbf, Savant 4da955651ec24b1c3d2a97fce412cc57c78eb9c1 e belalsalah74 10c523009955317d456af55d00abb5b05022ed7e sem avanço sobre os snapshots do Mestre. A revisão de Aureal e PGRazorX foi preliminar. MT, etiquetas/raridades/frutas, sessão Max completa, contratos reais e teste físico continuam pendentes. PRs antigas não devem ser mescladas às cegas; #161 não avaliada. Não promover versão sem gates.
+
+- Complemento de revisão: mantém também a garantia original de um alerta por preset/observação mesmo que o mesmo preset seja repetido; teste correspondente acrescentado. Notas LT045 registram explicitamente a camada #160 e ausência de deploy/homologação.
+
+
+## 24/11/2026 — Pausa de APK e publicação por decisão do usuário
+- Base PR #162 4a8fe729fde0c2d0962d8b599171192447a5dfd3. Usuário solicitou concluir correções antes de gerar outro APK. Workflows LT045 QA e release passam a disparo exclusivamente manual; contrato exige ausência de push/pull_request automático. Não executar workflow_dispatch até nova autorização. CI de código permanece ativo. A execução QA 45326387106 já iniciada antes desta ordem pode terminar; não é uma nova publicação. LT044 preservada. Não mesclar/publicar automaticamente.
+
+### Revisão adicional da camada de fontes #160 — modelo canônico
+- Corrigida promoção indevida de precisão explicitamente indisponível, identificação demo entre gateway e Java e saturação de números inválidos em atributos. Fixtures de regressão em SourceModelTest; CI a confirmar; sem APK/release.
+
+- Importação e persistência: recuperação de linhas válidas após JSON inválido, identidade vazia/colisão de chaves, versão de armazenamento explícita, precisão preservada, recusa de demo e TTL Hundo sem conversão a int. Testes acrescentados em LocalEventImportTest; aguardam CI de código.
+
+- Gateway: preserva precisão explicitamente indisponível, recusa alias demo do Android, não transforma texto `false` em shiny/clima observado. Testes Python acrescentados. Sem deploy, APK ou release.
+
+## 24/11/2026 — VGP+ critérios de raridade configuráveis (implementação, sem build)
+- Base #162 221b060f49d8db3fa81e4c2d687c3efb745ec22a; referência conceitual Pokematrix de777d2b9. Implementação própria opt-in: Shiny, Hundo, Shundo, Nundo, IV mínimo, fruta de raridade. Reutiliza preferência premium existente, estoque e ordem Safari/espécies/shiny-only. Config v8 somente quando opt-in; v1–v7 preservadas. Usa resposta de encontro com status sucesso, classes verificadas e espécie/CP coerentes, em vez de considerar zero do mapa como IV conhecido. UI PT-BR, persistência por conta e whitelist de backup atualizadas. Fixtures Java e C++ adicionadas; CI pendente. Não declara homologação física nem APK. Etiquetas de armazenamento, famílias, raridade por categoria/costume/fundo, frutas manuais, atalhos MT e Max completo continuam não validados/implementados nesta alteração.
+
+### Atalhos MT — implementação candidata (sem APK)
+- Referência MIT Pokematrix de777d2b9: adaptado fluxo de abertura do diálogo de MT do jogo, não confirmação automática. Interface PT-BR com estoque, 3 linhas, sem sprites de terceiros. JNI somente snapshot e fila; execução no owner thread. Solicitação vinculada à geração do painel, Pokémon e movimento; validade 500 ms, estoque rechecado, recusa página ambígua e revoga com lease/sessão/ocultação. Teste puro de admissão e NDK syntax-only adicionados ao CI. Sem homologação em Android; não confirmar o funcionamento do diálogo real antes do teste físico. APK e release continuam manuais.
+
+### Batalha Max — sessão de combate com escopo nativo (implementação candidata)
+- Base #162 087e27e97bc4c03bb116d4e768a91ce2fa329879. Atende à fase de combate do plano #137 com canal JNI de consentimento independente (nenhuma mudança ABI/transport, `Control.battleOptions()` continua apenas persistente). Feature 19 já valida classes e serial do escopo Max; política nova vincula consentimento a um único serial, vence após 10 min armada/30 min ativa, revoga em perda de lease, modo não Max, falha, Rocket, Stop, troca de escopo/conta e background. Ataque ágil/carregado/Max e esquiva/orbes conforme opções; preserva cadência, Active status, picker e final gate. Java apresenta estado armado/ativo/encerrado e pausa VGP durante sessão. Testes puros, fixtures nativas do executor e JVM adicionados. Ainda sem CI no novo commit, sem teste físico, sem APK/release. Descoberta, gasto de partículas, equipe, entrada e captura permanecem manuais: não inventar adaptadores ausentes.
+
+### Etiquetas VGP+ e famílias — implementação candidata
+- Base #162 d505bbb0. Adiciona seleção de até 8 nomes exatos de etiquetas por lista, famílias para captura e para fruta, fruta específica e prioridade premium preservada. Config v9 compatível com v1–v8, nomes UTF-8 codificados em hex, persistência por conta e backup. Adaptador nativo somente leitura usa o caminho de TaggingRpcService/GameMaster já utilizado pela evolução em lote, identifica conta e geração, verifica presença/ambiguidade, resolve GetFamilyId em Pokémon etiquetados e no encontro confirmado. Leitura incremental (até quatro passos por tick e orçamento de 3 ms entre passos), cache 30 s, sem captura quando indisponível. Testes Java, parser e política C++, NDK syntax-only; CI e Android ainda não homologados. Nomes informados manualmente na UI; seleção automática a partir do catálogo e frutas manuais de encontro seguem a validar. APK/release suspensos.
+
+- CI do d505bbb0: seis workflows concluídos com sucesso. CI inicial de etiquetas 8d2659d2 encontrou dependência Java faltando na fixture isolada dos feeds e indentação C++ tratada como erro; corrigidas nesta revisão, sem enfraquecer verificações. APK permanece suspenso.
+
+### Raridades ampliadas e frutas no encontro manual — candidata
+- Base #162 84ab81ae. Máscara amplia a seleção para lendário/mítico/Ultra Beast, fantasia e fundo especial, usando campos/métodos da metadata de transferência já validados (sem tabela inventada). Sem metadata, não classifica a categoria como positiva. Config v10 opt-in para aplicar a prioridade de fruta ao lançamento manual, independente do VGP+, mas só com Auto Frutas previamente armado: identifica EncounterInteractionState vivo, MapPokemon da instância e resposta confirmada, confere geração e identidade após leitura. Prioridade especial precede a lista de estoque original; se não houver estoque mantém as alternativas. Usa executor original de frutas (CanUseBerry, foto, Master Ball, callback, lease e retomada do lançamento) sem auto-lançamento novo. Configuração, persistência, backup, parser e fixtures atualizados; CI e homologação em Android pendentes. Não há build APK/release.
+
+
+## 24/11/2026 — Auditoria local não destrutiva (branch independente)
+- Base #162 ae86a4035791b3fd2c109025611fc119c2e673ac; #160 ancestral. Branch audit/lt045-diagnostico-local-20261124. Mestre/especificação Drive e inventário geral consultados; ZIP e MP4 não encontrados. Reason 12 = evento; origem count>0 ou identificador limitado não vazio, fantasia/fundo separados. IV compara soma*100 >= limite*45. Não comprova falso positivo individual.
+- LocalAuditPolicy e GpxPreviewGeometry: modelos puros, 20 proteções tri-state, códigos PT-BR, dano estimado/energia e tipagem dupla/STAB, geometria GPX com distância e antimeridiano. Testes JVM sintéticos; sem transferência, ação no jogo, alteração nativa ou servidor. UI e CI a confirmar. Sem APK, merge, release.
+
+- Interface candidata: novo painel em Diagnósticos, dados manuais e nenhum comando de jogo; prévia esquemática GPX no menu existente; correção Seletor de Pokémon e texto da interrupção de rota sem alterar geração/controle. Android e CI ainda não verificados. Preserva todos os códigos de decisão e proteção existentes.
+
+- PR #163: https://github.com/LucianoToscano/PGBR/pull/163. ZIP de compartilhamento passa a aceitar exclusivamente campos técnicos permitidos e valores delimitados; exclui texto livre, IDs, tokens, rotas e preferências não autorizadas, mantendo TXT bruto local claramente identificado. Verificação SHA-256 de exportação preservada. Teste de redaction adicionado. Não afirma anonimização universal dos logs internos, recuperação de logs antigos ou TXT bruto. Changelog LT045 atualizado, sem nova numeração/release prematura. CI a confirmar.
+
+- Drive `LEIA_PRIMEIRO_PGBR.txt` confirma que o único Mestre é o Markdown canônico do GitHub, não uma cópia no Drive. O Mestre desta PR mantém o histórico, aguardando integração; sem alterar o atalho do Drive. PR #163 retarget main para CI completo, sem merge. Simulador permite explicitamente um único carregado, nunca infere a existência de apenas um de dados ausentes; apresenta versão e esquema. Teste de wiring read-only adicional. Sem alteração de executores existentes.
+
+- CI 45332217047: 429 testes, duas falhas e um skip; CI 45332216951 falhou na compilação Java. Corrigido escape de newline do LogExport; contrato técnico de interrupção de rota restaurado e tradução aplicada somente em PtBr e glossário. Sem alteração das ações do jogo. Reexecução necessária.
+
+- Complemento: sincronização da tradução de rota no instalador Root (mesmo glossário); versão do app no snapshot compartilhável; exibição de logs filtrada quando privacidade está ativa e bloqueio da exportação TXT bruto nas interfaces Root/sem Root enquanto ativo. Não altera identificação, autenticação ou telas externas. Sem APK.
+
+- Prévia GPX: distância acumulada por segmento, interpolação por distância e controle de progresso explicitamente ilustrativo; caminho base cacheado por tamanho de viewport, marcadores de início/fim e trecho selecionado, sem alterar posição do aparelho nem comandos de movimentação. Testes de antimeridiano, pontos repetidos e distância inválida. Sem APK.
+
+- CI 45332703952 revelou argumento Canvas em vez de Paint nos marcadores GPX. Corrigidos todos os drawCircle após a ampliação da prévia. CI anterior foi substituído pela revisão; resultado do HEAD a verificar.
+
+- Prévia de coleção em lote: importação por colagem de até 500 registros de origem fornecida pelo jogador, critérios tri-state, validação de linhas, contagem por decisão e detalhes limitados a 50 por tela. Rejeita registros contraditórios, sem inferir ausência de raridade; nenhum acesso à coleção ou transferência. Fixtures sintéticas acrescentadas. Sem APK.
+
+- Referência PvPPokeGo (EnergySequenceMath.kt e EnergyTracker.kt, consultados em main): planejamento manual de energia PvP no painel local. Preserva energia residual, distingue certeza de faixa estimada, calcula intervalo de ágeis restantes e sequência de quatro carregados somente com energia exata; valida custo/ganho e teto. Implementação matemática própria, sem copiar engine de execução nem leitura do jogo. Proteção adicional no ponto de exportação de TXT bruto, além da UI. Testes sintéticos acrescentados; sem APK.
+
+- Melhoria de interface inspirada no 7sarus (caa214ca): gesto de três dedos para ocultar controles visuais é opt-in, restaurar permanece sempre disponível; sem consumir toques, com debounce e bloqueio enquanto menus abertos. Aviso opcional e opção de restaurá-lo por conta. Teste JVM de limiares, distância e debounce. Sem novos mecanismos de movimentação, combate ou acesso ao jogo. Sem APK.
+
+- Revisão seguinte sobre 2af5efb5 (CI 6/6 e 5/5 jobs da verificação geral 45333293670 confirmados): prévia local esquema 2 registra contradições Hundo/Nundo, XXL/XXS e sombrio/purificado como incerteza mesmo quando a proteção opcional está desligada; proteções positivas permanecem. Simulador offline diferencia DPE, maior dano imediato, DPS do golpe PvE e finalização estimada sem escudo com PS fornecidos. Testes sintéticos adicionais. Não altera executor nativo, filtros automáticos, localização ou servidores. CI deste novo commit pendente; sem APK/release.
+
+- Prévia local de coleção: substituída limitação visual de 50 por paginação de 25, filtro por decisão e linha de origem, IV exato ou desconhecido, carimbo de avaliação/versão/esquema e invalidação imediata quando os dados ou critérios mudam. Até 500 registros, todos revisáveis; sem ler coleção do jogo ou transferir. Testes de paginação, filtro, IV e identidade da linha. Sem APK.
+
+- Revisão de fixtures: separador de linhas real no teste de 51 registros, seleção de categoria ainda não inicializada tratada como todos, validação de PC/IV manual alinhada à lista e teste individual de todos os 20 critérios. CI pendente, sem alterar proteções nativas.
+
+- Revisão visual sobre df88847: restauração confirmada de posição dos 12 elementos arrastáveis por conta, preservando tamanho, arte e demais configurações. Valores de posição inválidos/não finitos passam a usar origem segura; testes JVM. Relógio de recarga e contador respeitam ocultação de overlays e menus do PGBR. Não interfere na lógica de combate, localização ou funções do jogo. A validação visual em Android continua necessária. Sem APK.
+
+- Sprites de item: mantido identificador exato e fallback identificado (sem trocar imagens entre espécies/itens). Decodificação agora limitada a 256 px em ambos os eixos, mesmo em formatos extremos, com validação de dimensões e fixtures. Botões do painel local seguem fundo neutro/contraste do tema, mantendo ações. Não afirma que todos os arquivos de imagem da coleção estejam visualmente corretos; ainda exige confronto com ativos autorizados e evidência física. Sem APK.
+
+- Diagnósticos visuais: ZIP filtrado agora preserva exclusivamente o ID numérico de catálogo (1–999999) das ocorrências item-icon-missing/error, sem copiar caminhos ou mensagens de exceção. Teste de privacidade e ajuste de assert de viewport para rejeitar NaN. CI do df88847 confirmado 6/6. PR #118 consultada: dependência #115 e gates de autorização/staging e licença, sem integração real comprovada; #161 permanece aberta, alteração de menu/licença não integrada nesta revisão. Nenhum APK/release/merge.
+
+## Autorização de integração e entrega QA da LT045 — 24/11/2026
+- Proprietário encerrou suspensão de APK e autorizou merge, homologação, pré-release e atualização do Mestre. Base main b863af0b1b9a6c193ccbf608e120fb16b91adfc8; PR #163 contém #162 e suas correções. HEAD anterior f6a8d8d: cinco workflows aprovados, CI geral 45334984718 ainda em execução no momento da consulta. Não confundir com teste de dispositivo.
+- Acionamento de entrega único `.github/workflows/pgbr-lt045-delivery-163.yml`: só push main com o próprio arquivo alterado, confirma base, merge #163 com dois pais e seis checks verdes do HEAD exato, chama workflow de pré-release QA existente no SHA mesclado. Verificação de três variantes, assinatura, SHA256 e imutabilidade de LT044 mantidas. Sem execução em PR e sem publicação estável. Se falhar ou main divergir, revisão manual; não sobrescrever tags.
+- `device_tested=false` até execução comprovada em dispositivo; nenhum Android/ADB conectado nesta sessão. `provider_connected=false` até staging autorizado. Arquivo Mestre e notas atualizados; resultado de merge/build/release e hashes somente após confirmação efetiva.

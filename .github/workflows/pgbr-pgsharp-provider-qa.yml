@@ -43,4 +43,16 @@ jobs:
         run: |
           mkdir -p /tmp/pgsharp-java-classes /tmp/pgsharp-generated/dev/pgrazor
           echo 'package dev.pgrazor; final class BuildVersion { static final String NAME = "v0.00.33-LT"; }' > /tmp/pgsharp-generated/dev/pgrazor/BuildVersion.java
-          find pgrazor/src -name '*.java' -print0 | xargs -0 javac -encoding UTF-8 -source 8 -target 8 -classpath "$ANDROID_HOME/platforms/android-36/android.jar" -d /tmp/pgsharp-java-classes /tmp/pgsharp-generated/dev/pgrazor/BuildVersion.java
+          set -o pipefail
+          find pgrazor/src -name '*.java' -print0 | xargs -0 javac -encoding UTF-8 -source 8 -target 8 -classpath "$ANDROID_HOME/platforms/android-36/android.jar" -d /tmp/pgsharp-java-classes /tmp/pgsharp-generated/dev/pgrazor/BuildVersion.java > /tmp/javac.log 2>&1 || {
+            echo '```' >> "$GITHUB_STEP_SUMMARY"
+            head -60 /tmp/javac.log >> "$GITHUB_STEP_SUMMARY"
+            echo '```' >> "$GITHUB_STEP_SUMMARY"
+            grep -E '^.*\.java:[0-9]+: error:' /tmp/javac.log | head -20 | while read -r line; do
+              echo "::error title=javac::$(echo "$line" | cut -c1-400)"
+            done
+            echo '```'
+            head -40 /tmp/javac.log
+            echo '```'
+            exit 1
+          }

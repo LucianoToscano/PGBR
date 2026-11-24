@@ -63,6 +63,8 @@ jobs:
               grep -E "DIAG |Error|FAIL|Traceback|falhou|ERROR in|rc=" /tmp/feed-qa.log | head -80
               echo '```'
             } >> "$GITHUB_STEP_SUMMARY"
-            echo "::error title=Feed QA::$(grep -m1 -E 'DIAG .*ERROR in|AssertionError|FAIL' /tmp/feed-qa.log | cut -c1-900)"
+            grep -E 'error:|AssertionError|Exception|FAIL:' /tmp/feed-qa.log | head -25 | while read -r line; do
+              echo "::error title=Feed QA::$(echo "$line" | cut -c1-300)"
+            done
             exit 1
           }

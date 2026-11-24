@@ -13,6 +13,7 @@ public final class PtBr {
     static {
         Map<String, String> m = new HashMap<>();
         m.put("Map", "Mapa");
+        m.put("Stopped: movement was taken over.", "Rota interrompida: outro controle assumiu o movimento.");
         m.put("Walking speed", "Velocidade de caminhada");
         m.put("Autowalk", "Caminhada automática");
         m.put("In-game Routes", "Rotas do jogo");
@@ -1490,6 +1491,22 @@ public final class PtBr {
         m.put("unavailable", "indisponível");
         m.put(" (reversible)", " (reversível)");
         m.put("Not caught - broke free", "Não capturado — escapou da Pokébola");
+        m.put("Radar PGBR · 5 fontes", "Radar PGBR · 5 fontes");
+        m.put("Sniper 1 · busca rápida", "Sniper 1 · busca rápida");
+        m.put("Sniper 2 · busca avançada", "Sniper 2 · busca avançada");
+        m.put("Importar dados locais", "Importar dados locais");
+        m.put("Dados importados (local)", "Dados importados (local)");
+        m.put("Nenhuma fonte com dados disponível", "Nenhuma fonte com dados disponível");
+        m.put("Localização não liberada", "Localização não liberada");
+        m.put("Copiar coords", "Copiar coords");
+        m.put("Abrir no mapa", "Abrir no mapa");
+        m.put("Salvar como preset", "Salvar como preset");
+        m.put("Filtros", "Filtros");
+        m.put("Aplicar filtros", "Aplicar filtros");
+        m.put("Limpar filtros", "Limpar filtros");
+        m.put("Próxima página", "Próxima página");
+        m.put("Exportar GPX dos resultados válidos", "Exportar GPX dos resultados válidos");
+        m.put("Busca de Pokémon e rastreadores", "Busca de Pokémon e rastreadores");
         LABELS = Collections.unmodifiableMap(m);
     }
     private PtBr() {}

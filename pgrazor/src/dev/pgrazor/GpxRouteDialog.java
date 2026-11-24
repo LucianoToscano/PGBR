@@ -82,7 +82,7 @@ public final class GpxRouteDialog {
     /** The World-map GPX menu: Save route, Import GPX, Saved routes, Export route. */
     public static void menu(Activity activity, Source source, Selection selection) {
         if (!alive(activity)) return;
-        String[] items = {"Save route", "Import GPX", "Saved routes", "Export route"};
+        String[] items = {"Save route", "Import GPX", "Saved routes", "Export route", "Prévia visual do GPX"};
         AlertDialog dialog = ChoiceList.attach(new AlertDialog.Builder(MapTheme.wrap(activity)).setTitle(dev.pgrazor.PtBr.tr("GPX routes"))
             .setNegativeButton(dev.pgrazor.PtBr.tr("Close"), null).create(), items, which -> {
                 switch (which) {
@@ -90,6 +90,7 @@ public final class GpxRouteDialog {
                     case 1: importGpx(activity, "the route builder", selection); break;
                     case 2: chooseSaved(activity, selection); break;
                     case 3: exportRoute(activity, source); break;
+                    case 4: GpxRoute current=source==null?null:source.route();if(current==null)note(activity,"Selecione uma rota antes de visualizar.");else GpxPreviewView.show(activity,current);break;
                 }
             });
         present(activity, dialog);

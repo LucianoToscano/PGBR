@@ -30,6 +30,16 @@ public final class NativeCore {
     /** Diagnostic hook count, NOT proof that the map/profile names are protected. */
     public static native int trainerPrivacyStatus();
 
+    /** Fresh, generation-bound TM row snapshot; no managed calls from Java. */
+    public static native long[] tmState();
+    public static native boolean tmUse(int row,long token);
+    public static native void tmAllowed(boolean allowed);
+
+    /** Temporary Max consent: the native owner confirms scope before any action. */
+    public static native boolean maxSessionStart(int mask);
+    public static native void maxSessionStop();
+    public static native int maxSessionState();
+
     /** Atomic runtime counters only; safe off the Unity thread, never invokes game methods. */
     public static native long[] runtimeHealth();
 }

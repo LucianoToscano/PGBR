@@ -7,6 +7,12 @@ package dev.pgrazor;
 final class IFlowGoRequestPolicy {
     private IFlowGoRequestPolicy() {}
 
+    /**
+     * Highest page the app will request. It is a guard against a crafted cursor, not a claim about
+     * coverage: the response's own {@code total_pages} decides whether another page exists.
+     */
+    static final int MAX_GLOBAL_PAGES = 50;
+
     /** The nearby endpoint covers at most 25 km; +infinity is a UI sentinel, not global coverage. */
     static double nearbyRadiusKm(double requested) {
         if (Double.isNaN(requested) || requested <= 0.0 || requested == Double.NEGATIVE_INFINITY)

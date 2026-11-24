@@ -123,6 +123,22 @@ void pure_tests(){
  assert(s.speed==0&&pgr_smart_throw_base_ms(s.speed)==1200&&pgr_smart_rescan_ms(s.speed)==2500);
  s=parse("6;1;2;0;1;1500;30;3;1;0;75;25;415;2;1;2");assert(s.enabled&&s.mighty_safari&&s.speed==2&&s.catch_count==1);
  assert(pgr_smart_throw_base_ms(2)==500&&pgr_smart_throw_jitter_ms(2)==201&&pgr_smart_rescan_ms(2)==1000&&pgr_smart_throw_base_ms(1)==800&&pgr_smart_throw_base_ms(9)==1200);
+ // Version 8: opt-in rarity rules distinguish confirmed zero from unknown.
+ s=parse("8;1;2;0;1;0;0;3;1;0;75;;;0;0;0;0;8;90;708");
+ assert(s.enabled&&s.rare_custom&&s.rare_mask==8);
+ pgr_smart_decide(&s,false,0,false,100,10,25,&d);assert(d.ball==2&&d.berry==0);
+ pgr_smart_decide(&s,false,0,true,100,10,25,&d);assert(d.ball==3&&d.berry==708);
+ s.rare_mask=4;pgr_smart_decide(&s,false,45,true,100,10,25,&d);assert(d.ball==2);
+ pgr_smart_decide(&s,true,45,true,100,10,25,&d);assert(d.ball==3);
+ s.rare_mask=16;s.rare_iv_min=95;pgr_smart_decide(&s,false,42,true,100,10,25,&d);assert(d.ball==2);
+ pgr_smart_decide(&s,false,43,true,100,10,25,&d);assert(d.ball==3);
+ assert(!parse("8;1;2;0;1;0;0;3;1;0;75;;;0;0;0;0;256;90;708").enabled);
+ s=parse("9;1;2;0;1;0;0;3;1;0;75;;;0;0;0;0;8;90;708;0;646f636573;7261726f73;705");
+ assert(s.enabled&&!s.rare_custom&&std::string(s.catch_tags)=="646f636573"&&std::string(s.candy_tags)=="7261726f73"&&s.tag_berry==705);
+ assert(!parse("9;1;2;0;1;0;0;3;1;0;75;;;0;0;0;0;8;90;708;0;xyz;;705").enabled);
+ s=parse("10;0;2;0;1;0;0;3;1;0;75;;;0;0;0;0;224;90;708;1;;7261726f73;705;1");assert(!s.enabled&&s.manual_berry&&s.rare_custom&&s.rare_mask==224);
+ assert(!parse("10;1;2;0;1;0;0;3;1;0;75;;;0;0;0;0;224;90;708;1;;;705;2").enabled);
+ s=parse("6;1;2;0;1;1500;30;3;1;0;75;25;415;2;1;2");
  // Version 7: catch only shinies appended; version 6 means off.
  assert(!s.shiny_only);
  s=parse("7;1;2;0;1;1500;30;3;1;0;75;25;415;2;1;2;1");assert(s.enabled&&s.shiny_only&&s.speed==2&&s.mighty_safari&&s.catch_count==1);

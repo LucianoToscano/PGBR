@@ -25,6 +25,7 @@
 //                   (the resume's original-submit is never re-swallowed as a duplicate).
 
 #include "encounter_berries.h"
+extern int pgr_manual_encounter_berry(void*,uint64_t) __attribute__((weak));
 
 #include <atomic>
 #include <cstddef>
@@ -415,8 +416,19 @@ void preflight(Root &scope_r, bool *resume_now) {
   Root bag_r; bag_r.acquire(bag, &err);
   if (err) { note_error(0, PGR_BERRY_REASON_GCHANDLE); *resume_now = true; return; }
   int32_t selected = 0;
-  for (uint32_t i = 0; i < g_attempt.priority_count; ++i) {
-    int32_t id = g_attempt.priorities[i], count = 0;
+  int32_t priorities[kMaxPri+1]={};uint32_t n=0;int32_t special=0;
+  if(pgr_manual_encounter_berry){
+    special=pgr_manual_encounter_berry(scope_r.target(),current_tid());
+    if(!gen_ok())return;
+    if(!feed_authorized(policy_generation)){*resume_now=true;return;}
+    if(special==701||special==703||special==705||special==706||special==708)priorities[n++]=special;
+  }
+  for(uint32_t i=0;i<g_attempt.priority_count;i++){
+    bool duplicate=false;for(uint32_t j=0;j<n;j++)if(priorities[j]==g_attempt.priorities[i])duplicate=true;
+    if(!duplicate)priorities[n++]=g_attempt.priorities[i];
+  }
+  for (uint32_t i = 0; i < n; ++i) {
+    int32_t id = priorities[i], count = 0;
     void *qp[1] = {&id};
     invoke_int(g_cfg.m_quantity, bag_r.target(), qp, &count, &err);
     if (err) { note_error(0, PGR_BERRY_REASON_INVENTORY); *resume_now = true; return; }
@@ -450,6 +462,11 @@ void preflight(Root &scope_r, bool *resume_now) {
   if (!gen_ok()) return;
   if (!feed_authorized(policy_generation)) { *resume_now = true; return; }
 
+  if(selected==special&&special&&pgr_manual_encounter_berry){
+    int32_t current=pgr_manual_encounter_berry(scope_r.target(),current_tid());
+    if(!gen_ok())return;
+    if(current!=special||!feed_authorized(policy_generation)){*resume_now=true;return;}
+  }
   // Commit: transfer the callback root into the attempt and transition to FEEDING. result_begin
   // only mints a token once the attempt is FEEDING, so a result that fires synchronously inside
   // the feed request below matches this exact generation.

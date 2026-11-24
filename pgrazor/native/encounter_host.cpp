@@ -62,6 +62,13 @@
 #include "smart_battle.h"
 #include "ar_values.h"
 #include "catch_chance.h"
+#include "tm_shortcut.h"
+#include "tag_catch.h"
+extern void pgr_tag_catch_tick(uint64_t,const PgrSharedMetadataOutput*) __attribute__((weak));
+extern void pgr_tag_catch_stop(uint64_t) __attribute__((weak));
+// Host fixtures need not link the optional UI shortcut module.
+extern void pgr_tm_tick(uint64_t,const PgrSharedMetadataOutput*,bool) __attribute__((weak));
+extern void pgr_tm_stop(uint64_t) __attribute__((weak));
 #include "incense_guard.h"
 #include "vgp_incense.h"
 #include "pvp_keep.h"
@@ -2560,6 +2567,8 @@ static int api_tick(uint64_t proven_tid) {
   // 1. Berries tick, resume & event drain
   pump_berry_events_and_resume(os_tid, 0);
 
+  if(pgr_tag_catch_tick&&!raid_block&&!bird_block&&rem_lease>0)pgr_tag_catch_tick(os_tid,&g_md);
+  else if(pgr_tag_catch_stop)pgr_tag_catch_stop(os_tid);
   // 2. VGP controller tick & transfer handoff
   if(!map_block&&!pgr_map_auto_throw_active())tick_vgp_controller(os_tid, now, rem_lease);
 
@@ -2577,6 +2586,7 @@ static int api_tick(uint64_t proven_tid) {
   pgr_smart_battle_tick(os_tid, &g_md);
   pgr_ar_values_tick(os_tid, &g_md);
   pgr_catch_chance_tick(os_tid, &g_md);
+  if(pgr_tm_tick)pgr_tm_tick(os_tid,&g_md,!raid_block&&!bird_block&&rem_lease>0);
   pgr_auto_throw_tick(os_tid, &g_md, raid_block);
   if(!raid_block){
     pgr_remote_gym_tick(os_tid, &g_md);
@@ -2607,6 +2617,7 @@ static int api_stop(uint64_t proven_tid) {
   if (!tid || (proven_tid && proven_tid != tid)) return PGR_EH_RETRY;
   g_stopped = true;
   if (tid != 0) {
+    if(pgr_tm_stop)pgr_tm_stop(tid);
     pgr_auto_raid_stop(tid);
     pgr_map_auto_throw_stop();
     if (g_berries && (g_active_caps & PGR_EH_CAP_BERRIES)) {
@@ -2627,6 +2638,7 @@ static int api_stop(uint64_t proven_tid) {
       pgr_incense_guard_stop(tid);
       pgr_gym_stop(tid);
       pgr_evolution_stop(tid);
+      if(pgr_tag_catch_stop)pgr_tag_catch_stop(tid);
       pgr_evolve_transfer_stop(tid);
       pgr_heal_stop(tid);
       pgr_shundo_stop(tid);

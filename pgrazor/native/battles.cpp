@@ -17,6 +17,7 @@
 //     nothing. owned_roots (durable handles + active frames) stays nonzero while any frame runs.
 
 #include "battles.h"
+#include "max_session_policy.h"
 
 #include <atomic>
 #include <cstddef>
@@ -74,6 +75,9 @@ std::mutex g_policy_mutex;
 std::atomic<uint64_t> g_policy_generation{1};
 uint64_t g_tick_policy = 0;
 uint32_t g_tick_mask = 0;
+PgrMaxSessionPolicy g_max_session;
+uint64_t g_tick_max_generation=0;
+bool g_tick_max_active=false;
 std::atomic<uint32_t> g_mask{0};            // battleMask (exact source bits)
 std::atomic<uint64_t> g_lease_until_ms{0};  // absolute CLOCK_BOOTTIME lease deadline
 std::atomic<uint32_t> g_rocket_active{0};   // Rocket mutual-exclusion gate
@@ -301,6 +305,7 @@ void drop_gesture() {
 // battleClear: drop gesture + swap + scope + both lists, reset timers/latch, bump the epoch so any
 // in-flight action re-check (and any outstanding gym token) is invalidated.
 void battle_clear() {
+  {std::lock_guard<std::mutex> lock(g_policy_mutex);if(g_max_session.serial)g_max_session.stop();}
   // Detach the complete old state before the first callback-capable free.
   void *old[3 + 2 * kMaxList] = {g_gesture_handle, g_swap_handle, g_scope_handle};
   uint32_t n = 3;
@@ -326,7 +331,8 @@ void drain_stop() {
 // dodge-next cooldown and no pending dodge. Reads the policy gate live (CLOCK_BOOTTIME).
 void dodge_cue(int32_t mode) {
   const uint64_t now = boottime_ms();
-  const uint32_t mask = g_mask.load(std::memory_order_acquire);
+  uint32_t mask;
+  {std::lock_guard<std::mutex> lock(g_policy_mutex);mask=g_max_session.effective(g_mask.load(),g_scope_handle!=nullptr,g_mode,g_scope_serial.load());}
   const uint64_t lease = g_lease_until_ms.load(std::memory_order_acquire);
   if (mode < 0 || mode > 2 || g_stop_requested.load() || g_actions_locked.load() ||
       g_rocket_active.load() || !g_scope_handle || g_mode != mode || g_failed) return;
@@ -392,6 +398,7 @@ int api_update(uint32_t mask, uint64_t residual_lease_ms, uint32_t rocket_active
   const uint64_t owner = g_unity_tid.load(std::memory_order_acquire);
   const bool wrong_thread = owner != 0 && proven_tid != 0 && proven_tid != owner;
   if (wrong_thread || proven_tid == 0) {
+    g_max_session.stop();
     ++g_policy_generation;
     g_mask.store(0, std::memory_order_release);
     g_lease_until_ms.store(0, std::memory_order_release);
@@ -400,6 +407,7 @@ int api_update(uint32_t mask, uint64_t residual_lease_ms, uint32_t rocket_active
   }
   const uint64_t clamped = residual_lease_ms > kMaxLeaseMs ? kMaxLeaseMs : residual_lease_ms;
   const uint64_t now = boottime_ms();
+  if(!clamped||!now||now>=g_lease_until_ms.load()||rocket_active)g_max_session.stop();
   if (mask != g_mask.load() || !!rocket_active != !!g_rocket_active.load() ||
       !clamped || now >= g_lease_until_ms.load()) ++g_policy_generation;
   g_mask.store(mask, std::memory_order_release);
@@ -559,7 +567,8 @@ inline bool stale(uint64_t local_epoch) {
 bool final_ok(uint64_t, uint64_t local_epoch) {
   const uint64_t now = boottime_ms();
   std::lock_guard<std::mutex> lock(g_policy_mutex);
-  if (g_tick_policy != g_policy_generation.load() || g_tick_mask != g_mask.load()) return false;
+  if (g_tick_policy != g_policy_generation.load() || g_tick_mask != g_mask.load()||g_tick_max_generation!=g_max_session.generation) return false;
+  if(g_tick_max_active&&(!g_max_session.bound(g_scope_handle!=nullptr,g_mode,g_scope_serial.load())||now>=g_max_session.expires))return false;
   if (stale(local_epoch)) return false;
   if (!g_scope_handle || g_failed) return false;
   if (g_actions_locked.load(std::memory_order_acquire)) return false;
@@ -599,7 +608,12 @@ void run_tick_body(uint64_t now) {
   uint32_t mask_policy;
   { std::lock_guard<std::mutex> lock(g_policy_mutex);
     g_tick_policy = g_policy_generation.load();
-    mask_policy = g_tick_mask = g_mask.load(); }
+    g_tick_mask=g_mask.load();
+    const uint64_t deadline=g_lease_until_ms.load();
+    g_max_session.sync(now,deadline&&now<deadline,g_scope_handle!=nullptr,g_mode,g_scope_serial.load(),g_failed||g_actions_locked.load(),g_rocket_active.load()!=0);
+    g_tick_max_generation=g_max_session.generation;
+    g_tick_max_active=g_max_session.bound(g_scope_handle!=nullptr,g_mode,g_scope_serial.load());
+    mask_policy=g_max_session.effective(g_tick_mask,g_scope_handle!=nullptr,g_mode,g_scope_serial.load()); }
   const uint64_t lease = g_lease_until_ms.load(std::memory_order_acquire);
   const bool lease_ok = lease != 0 && now != 0 && now < lease;
   const bool rocket = g_rocket_active.load(std::memory_order_acquire) != 0;
@@ -682,7 +696,7 @@ void run_tick_body(uint64_t now) {
   // Max orbs run independently of the attack/dodge switches, within the same
   // active-scope/lease/manual-menu gates. The probe only reads current state;
   // this controller owns the final mutation and re-checks after all callbacks.
-  if(g_mode==PGR_BATTLE_MODE_MAX && g_cfg.max_orb_direction && state_r.target() &&
+  if(g_mode==PGR_BATTLE_MODE_MAX && (!g_tick_max_active||(mask_policy&(1u<<9))) && g_cfg.max_orb_direction && state_r.target() &&
      now>=g_next_ms && now>=g_dodge_next_ms && g_gesture_handle){
     int32_t direction=g_cfg.max_orb_direction(state_r.target(),g_cfg.m_dodge);
     if(stale(local_epoch))return;
@@ -838,6 +852,7 @@ int api_tick(uint64_t proven_tid, int stopping) {
   // Record a stop + disarm IMMEDIATELY (even nested) so no action can start between now and the
   // outermost drain. A nested tick returns here; the outer frame already running drains the stop.
   if (stopping) {
+    {std::lock_guard<std::mutex> lock(g_policy_mutex);g_max_session.stop();}
     g_stop_requested.store(true, std::memory_order_release);
     ++g_policy_generation;
     g_mask.store(0, std::memory_order_release);
@@ -903,4 +918,19 @@ const pgr_battle_api_v1 g_api = {
 const void *pgrazor_battles_api(uint32_t version) {
   if (version != PGR_BATTLE_API_VERSION) return nullptr;
   return &g_api;
+}
+
+// Independent JNI consent channel: no persisted mask, no managed calls, no ABI changes.
+bool pgr_max_session_start(uint32_t mask){
+  std::lock_guard<std::mutex> lock(g_policy_mutex);
+  const uint64_t now=boottime_ms(),deadline=g_lease_until_ms.load();
+  if(!g_installed.load()||g_stop_requested.load()||g_failed_pub.load()||g_rocket_active.load()||g_actions_locked.load())return false;
+  if(g_scope_active.load()&&g_mode_pub.load()!=PGR_BATTLE_MODE_MAX)return false;
+  return g_max_session.arm(mask,now,deadline&&now<deadline);
+}
+void pgr_max_session_stop(){std::lock_guard<std::mutex> lock(g_policy_mutex);g_max_session.stop();}
+int pgr_max_session_state(){
+  std::lock_guard<std::mutex> lock(g_policy_mutex);const uint64_t now=boottime_ms(),deadline=g_lease_until_ms.load();
+  if(!now||!deadline||now>=deadline||now>=g_max_session.expires||g_stop_requested.load()||g_failed_pub.load()||g_rocket_active.load()||g_actions_locked.load())g_max_session.stop();
+  return g_max_session.state();
 }

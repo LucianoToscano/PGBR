@@ -561,6 +561,32 @@ int scenario(int which) {
     g_api->tick(tid,0);if(g_orb_calls||g_act_method!=&m_raid_fast)return 1;
     g_api->tick(tid,1);return g_live_roots?2:0;
   }
+#ifdef PGR_BATTLE_DIRECT_TEST
+  case 42: case 43: case 44: {
+    Obj scope{&c_scope2},g{&c_max_gesture},tap{};
+    wire_active(&g,&director,&state);g.vnext_tap=&tap;scope.max_gesture=&g;
+    arm(1,tid); // saved Raid quick only, no saved Max bits
+    if(!pgr_max_session_start(1u<<4)||pgr_max_session_state()!=1)return 1;
+    g_api->observe(PGR_BATTLE_OBS_SCOPE_ENTER,&scope,2,tid);
+    if(which==43)pgr_max_session_stop();
+    if(which==44)g_api->update(1,0,0,tid);
+    g_api->tick(tid,0);
+    if(which==42){if(g_act_method!=&m_max_fast||pgr_max_session_state()!=2)return 2;}
+    else if(g_act_method||pgr_max_session_state())return 3;
+    g_api->observe(PGR_BATTLE_OBS_SCOPE_EXIT,&scope,2,tid);
+    if(pgr_max_session_state())return 4;
+    return g_live_roots?5:0;
+  }
+  case 45: {
+    Obj scope{&c_scope0},g{&c_raid_gesture},tap{};
+    wire_active(&g,&director,&state);g.vnext_tap=&tap;
+    arm(0,tid);if(!pgr_max_session_start(1u<<4))return 1;
+    g_api->observe(PGR_BATTLE_OBS_SCOPE_ENTER,&scope,0,tid);
+    g_api->observe(PGR_BATTLE_OBS_GESTURE,&g,0,tid);
+    g_api->tick(tid,0);if(g_act_method||pgr_max_session_state())return 2;
+    g_api->tick(tid,1);return g_live_roots?3:0;
+  }
+#endif
   default: return 0;
   }
 }
@@ -593,7 +619,11 @@ int main(int argc,char **argv) {
   bad = c; bad.reserved0 = 1;
   if (g_api->install(&bad) != PGR_BATTLE_ERR_BAD_CONFIG) { std::puts("FAIL reserved"); return 3; }
 
+#ifdef PGR_BATTLE_DIRECT_TEST
+  const int cases = 46;
+#else
   const int cases = 42;
+#endif
   for (int i = 0; i < cases; ++i) {
     pid_t pid = fork();
     if (pid == 0) {const int result=scenario(i);_exit(result?result:(g_unrooted_sender?79:0));}

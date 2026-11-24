@@ -26,7 +26,14 @@ jobs:
         with:
           python-version: '3.12'
       - name: Testes C++ independentes de Android
-        run: python -B tools/native_host_tests.py
+        run: |
+          python -B tools/native_host_tests.py
+          g++ -std=c++17 -Wall -Wextra -Werror -I pgrazor/native pgrazor/native/tm_request_policy_test.cpp -o /tmp/tm_request_policy_test
+          /tmp/tm_request_policy_test
+          g++ -std=c++17 -Wall -Wextra -Werror -I pgrazor/native pgrazor/native/max_session_policy_test.cpp -o /tmp/max_session_policy_test
+          /tmp/max_session_policy_test
+          g++ -std=c++17 -Wall -Wextra -Werror -I pgrazor/native pgrazor/native/tag_catch_policy_test.cpp -o /tmp/tag_catch_policy_test
+          /tmp/tag_catch_policy_test
 
   ndk-abi:
     name: Compilar politicas selecionadas via NDK ARM64
@@ -85,6 +92,8 @@ jobs:
           test -f "$DOBBY/include/dobby.h"
           "$CXX" -std=c++17 -fsyntax-only -I pgrazor/native -I "$DOBBY/include" \
             pgrazor/native/combat_host.cpp pgrazor/native/rocket_combat.cpp
+          "$CXX" -std=c++17 -fexceptions -fsyntax-only -I pgrazor/native -I "$DOBBY/include" \
+            pgrazor/native/tm_shortcut.cpp pgrazor/native/smart_catch_binding.cpp pgrazor/native/smart_catch.cpp pgrazor/native/jni_core.cpp pgrazor/native/battles.cpp pgrazor/native/tag_catch.cpp pgrazor/native/catch_chance.cpp pgrazor/native/encounter_berries.cpp
 
   website-build:
     name: Build do website com lockfile
@@ -137,7 +146,25 @@ jobs:
       - name: Preparar DEX fixado antes do gate
         run: python -c "import sys; sys.path.insert(0, 'pgrazor'); import dex_bridges; dex_bridges.dependencies(download=True)"
       - name: Testar Java Python Node geradores e vendor
-        run: python -B tools/check.py
+        shell: pwsh
+        run: |
+          $log = Join-Path $env:RUNNER_TEMP 'pgbr-check.log'
+          python -B tools/check.py *> $log
+          $code = $LASTEXITCODE
+          if ($code -ne 0) {
+            $tail = (Get-Content $log -Tail 40) -join '|'
+            Write-Output "::error title=check.py (fim do log)::$($tail.Substring(0, [Math]::Min(2000, $tail.Length)))"
+            Select-String -Path $log -Pattern 'error:|AssertionError|FAIL:|ERROR:|Exception' | Select-Object -First 25 | ForEach-Object {
+              $line = $_.Line
+              Write-Output "::error title=check.py::$($line.Substring(0, [Math]::Min(300, $line.Length)))"
+            }
+            Add-Content $env:GITHUB_STEP_SUMMARY '```'
+            Add-Content $env:GITHUB_STEP_SUMMARY ((Get-Content $log -Tail 120) -join "`n")
+            Add-Content $env:GITHUB_STEP_SUMMARY '```'
+            Write-Output '--- fim do log do check.py ---'
+            Get-Content $log -Tail 80
+            exit $code
+          }
       - name: Compilar Java do aplicativo sem entradas de jogo
         run: python -B pgrazor/build.py
       - name: Validar compilacao do instalador Root
