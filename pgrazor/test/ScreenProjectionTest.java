@@ -22,7 +22,20 @@ public class ScreenProjectionTest {
     near(q[0],W/2.0+scale*(Math.cos(a)*dx-Math.sin(a)*dy),2);
     near(q[1],H/2.0+scale*(Math.sin(a)*dx+Math.cos(a)*dy),2);
   }
+  static double[] perspectiveRef(double x,double y){double w=1+.2*x+.3*y;return new double[]{y*.001,x*.001,400*(.2+.5*x+.1*y)/w,800*(.3-.1*x+.4*y)/w};}
+  static void perspectiveProgress(){
+    RouteGroundProjection p=new RouteGroundProjection(new double[][]{perspectiveRef(0,0),perspectiveRef(1,0),perspectiveRef(0,1),perspectiveRef(1,1),perspectiveRef(.3,.4),perspectiveRef(.8,.6)},400,800);
+    double[][] route={{.0005,0},{.0005,.001}};
+    RouteTraceFrame base=RouteScreenFrameBuilder.build(p,route,false,0,1,0,400,800,1,1);
+    check(base!=null,"perspective base");
+    RouteTraceFrame middle=RouteScreenFrameBuilder.build(p,route,false,base.geometry.totalMeters()/2,1,0,400,800,1,1);
+    check(middle!=null&&middle.geometry.size()==3,"perspective split point");
+    double[] expected=p.project(.0005,.0005);int[] done={0};
+    middle.geometry.drawSegments(middle.completedMeters,(x1,y1,x2,y2,completed)->{if(completed){near(x2,expected[0],1e-5);near(y2,expected[1],1e-5);done[0]++;}});
+    check(done[0]==1,"one completed segment");
+  }
   public static void main(String[] args){
+    perspectiveProgress();
     double[][] refs={ref(0,0),ref(1,0),ref(0,1),ref(1,1),ref(.3,.4),ref(.8,.6)};
     int[] a=image();RouteScreenTracker tracker=new RouteScreenTracker(a,W,H,refs);
     RouteGroundProjection p=tracker.update(shift(a,5,7));check(p!=null,"translation");
@@ -38,6 +51,6 @@ public class ScreenProjectionTest {
     RouteTraceFrame longFrame=RouteScreenFrameBuilder.build(p,longRoute,true,0,1,1000,W,H,1,1);check(longFrame!=null&&longFrame.geometry.size()==10000,"5000 point loop");
     transformed(a,refs,8,1);transformed(a,refs,0,1.1);
     check(tracker.update(new int[W*H])==null,"blank screen rejected");check(tracker.update(a)==null,"loss latched");
-    System.out.println("PASS: translation, rotation, zoom, clipping, disconnected segments, progress, 5000-point loop, lost landmarks");
+    System.out.println("PASS: translation, rotation, zoom, perspective progress, clipping, disconnected segments, progress, 5000-point loop, lost landmarks");
   }
 }
