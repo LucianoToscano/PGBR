@@ -66,6 +66,7 @@ public final class MotionEngine {
     private int visitedStops;
     /** When set, the chosen route repeats from its first stop after the last; cleared by any cancellation. */
     private boolean looping;
+    private boolean visualReturning; // presentation only: last-to-first leg of a loop
     private boolean plannedRoute;
     private long routeGeneration;
     /** Nonzero only for an active planned route, including a one-stop GPX/Autowalk. */
@@ -93,6 +94,54 @@ public final class MotionEngine {
             +angle(unit(latitude,longitude),unit(route[visitedStops][0],route[visitedStops][1]))*EARTH_RADIUS_METERS;
         return new RouteProgress(route.length,visitedStops,walking,remaining);
     }
+    /** Read-only snapshot for the PGBR's own map. Geometry is copied only when the route changes. */
+    public static final class RouteVisualSnapshot {
+        public final long token;
+        public final double[][] newPoints;
+        public final int visited, total;
+        public final double legFraction, remainingMeters, routeMeters, completedMeters;
+        public final boolean looping, paused, returning;
+        private RouteVisualSnapshot(long token,double[][] points,int visited,int total,
+                double fraction,double remaining,double routeMeters,double completedMeters,boolean looping,boolean paused,boolean returning) {
+            this.token=token; this.newPoints=points; this.visited=visited; this.total=total;
+            this.legFraction=fraction; this.remainingMeters=remaining;
+            this.routeMeters=routeMeters; this.completedMeters=completedMeters;
+            this.looping=looping; this.paused=paused; this.returning=returning;
+        }
+    }
+    public synchronized RouteVisualSnapshot routeVisualSnapshot(long knownToken) {
+        long token=activeRouteToken();
+        if(token==0) return null;
+        double[][] copy=null;
+        if(knownToken!=token) {
+            copy=new double[route.length][];
+            for(int i=0;i<route.length;i++) copy[i]=route[i].clone();
+        }
+        double fraction=0;
+        RouteProgress progress=routeProgress();
+        if(visitedStops>0 && visitedStops<route.length) {
+            double length=remainingLegMeters[visitedStops-1]-remainingLegMeters[visitedStops];
+            double left=progress.remainingMeters-remainingLegMeters[visitedStops];
+            if(length>0) fraction=Math.max(0,Math.min(1,1-left/length));
+        }
+        double open=remainingLegMeters[0], closing=0;
+        if(looping&&route.length>1) {
+            double[] first=route[0],last=route[route.length-1];
+            closing=angle(unit(first[0],first[1]),unit(last[0],last[1]))*EARTH_RADIUS_METERS;
+        }
+        double total=open+closing;
+        double remaining=progress.remainingMeters+closing;
+        double completed=visitedStops==0?0:Math.max(0,Math.min(open,open-progress.remainingMeters));
+        boolean returning=looping&&visualReturning&&visitedStops==0;
+        if(returning) {
+            remaining=Math.max(0,progress.remainingMeters-open);
+            fraction=closing>0?Math.max(0,Math.min(1,1-remaining/closing)):1;
+            completed=Math.max(0,Math.min(total,total-remaining));
+        }
+        return new RouteVisualSnapshot(token,copy,returning?route.length:visitedStops,route.length,fraction,
+                remaining,total,completed,looping,!enabled||speedKmh==0,returning);
+    }
+
     private static void validatePosition(double lat, double lon) {
         if (!Double.isFinite(lat) || !Double.isFinite(lon) || Math.abs(lat) > 90 || Math.abs(lon) > 180)
             throw new IllegalArgumentException("Latitude must be -90 to 90; longitude -180 to 180.");
@@ -128,7 +177,7 @@ public final class MotionEngine {
         double[] legs=new double[copy.length];
         for(int i=copy.length-2;i>=0;i--)legs[i]=legs[i+1]
             +angle(unit(copy[i][0],copy[i][1]),unit(copy[i+1][0],copy[i+1][1]))*EARTH_RADIUS_METERS;
-        resetIdle();route=copy; remainingLegMeters=legs; visitedStops=0; looping=loop;plannedRoute=true;routeGeneration++;
+        resetIdle();route=copy; remainingLegMeters=legs; visitedStops=0; visualReturning=false; looping=loop;plannedRoute=true;routeGeneration++;
         targetLatitude=route[0][0]; targetLongitude=route[0][1];
         east = north = 0;
         enabled = true;
@@ -149,7 +198,7 @@ public final class MotionEngine {
         if (Math.hypot(east, north) > 0.05)
             bearing = (Math.toDegrees(Math.atan2(east, north)) + 360) % 360;
     }
-    private void clearRoute() { plannedRoute=false;routeGeneration++;walking=false; route=new double[0][]; remainingLegMeters=new double[0]; visitedStops=0; looping=false; }
+    private void clearRoute() { plannedRoute=false;routeGeneration++;walking=false; route=new double[0][]; remainingLegMeters=new double[0]; visitedStops=0; visualReturning=false; looping=false; }
     public synchronized void stop() { resetIdle();clearRoute(); east = north = 0; }
     /** Camera invalidation stops manual velocity without cancelling a walk or its arrival ownership. */
     public synchronized void stopManualMotion() { east = north = 0; }
@@ -192,8 +241,12 @@ public final class MotionEngine {
 
     private void arrive() {
         latitude = targetLatitude; longitude = targetLongitude;
+        if(visitedStops==0) visualReturning=false;
         visitedStops++;
-        if (visitedStops>=route.length) visitedStops = looping ? 0 : route.length;
+        if (visitedStops>=route.length) {
+            visualReturning=looping&&route.length>1;
+            visitedStops = looping ? 0 : route.length;
+        }
         walking = looping ? route.length>0 : visitedStops<route.length;
         if (walking) { targetLatitude=route[visitedStops][0]; targetLongitude=route[visitedStops][1]; }
         east = north = 0;

@@ -33,10 +33,11 @@ final class GpxPreviewView extends View {
  private void setDistance(double meters){if(distance==meters)return;distance=meters;progressDirty=true;postInvalidateOnAnimation();}
  @Override protected void onDraw(Canvas c){
   super.onDraw(c);if(progressDirty)rebuildCompleted();p.setStyle(Paint.Style.STROKE);p.setStrokeJoin(Paint.Join.ROUND);p.setStrokeCap(Paint.Cap.ROUND);p.setStrokeWidth(MapTheme.dp(getContext(),4));
-  p.setColor(0xff7c8991);c.drawPath(path,p);p.setColor(0xff1879ba);c.drawPath(complete,p);
+  p.setStrokeWidth(MapTheme.dp(getContext(),6));p.setColor(0xff394653);c.drawPath(path,p);
+  p.setStrokeWidth(MapTheme.dp(getContext(),4));p.setColor(0xffeeeeee);c.drawPath(path,p);p.setColor(0xff168fea);c.drawPath(complete,p);
   p.setStyle(Paint.Style.FILL);float r=MapTheme.dp(getContext(),7);int last=geo.x.length-1;
-  p.setColor(0xff167749);c.drawCircle(x(geo.x[0]),y(geo.y[0]),r,p);
-  p.setColor(0xffb14826);c.drawCircle(x(geo.x[last]),y(geo.y[last]),r/2,p);
+  p.setColor(0xff168fea);c.drawCircle(x(geo.x[0]),y(geo.y[0]),r,p);
+  p.setColor(0xffe2574f);c.drawCircle(x(geo.x[last]),y(geo.y[last]),r/2,p);
   if(distance>0&&distance<geo.meters){p.setColor(0xff1879ba);c.drawCircle(cursorX,cursorY,r,p);}
  }
  static void show(Activity a,GpxRoute route){
@@ -59,7 +60,7 @@ final class GpxPreviewView extends View {
    if(!displayedDistance[0].contentEquals(km.getText()))km.setText(displayedDistance[0]);
    km.setError(null);
    String progress=v.geo.meters==0?"Sem extensão mensurável":String.format(Locale.forLanguageTag("pt-BR"),"%.2f%%",100*(distance/v.geo.meters));
-   summary.setText(String.format(Locale.forLanguageTag("pt-BR"),"%d pontos • %.3f km\nPrévia: %s • %.3f km • restam %.3f km\nVerde: início • Laranja: fim • Azul: trecho percorrido\nProgresso ilustrativo, sem movimentação.",route.size(),v.geo.meters/1000,progress,distance/1000,(v.geo.meters-distance)/1000));
+   summary.setText(String.format(Locale.forLanguageTag("pt-BR"),"%d pontos • %.3f km\nPrévia: %s • %.3f km • restam %.3f km\nMarcadores: início azul, fim vermelho • Branco: restante • Azul: trecho percorrido\nProgresso ilustrativo, sem movimentação.",route.size(),v.geo.meters/1000,progress,distance/1000,(v.geo.meters-distance)/1000));
   };
   seek.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){public void onProgressChanged(SeekBar s,int p,boolean user){if(user&&!syncing[0])update.accept(v.geo.distanceForPercent(p));}public void onStartTrackingTouch(SeekBar s){}public void onStopTrackingTouch(SeekBar s){}});
   apply.setOnClickListener(x->{try{String entered=km.getText().toString().trim();update.accept(entered.equals(displayedDistance[0])?v.distance:v.geo.distanceFromKm(Double.parseDouble(entered.replace(',','.'))));}catch(IllegalArgumentException invalid){km.setError("Informe uma distância válida dentro da rota.");}});
