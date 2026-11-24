@@ -38,6 +38,21 @@ public final class LocalAuditTest {
  check(LocalAuditPolicy.preview(-1,14,15,101,EnumSet.noneOf(LocalAuditPolicy.Flag.class),contradictory).reasons.contains("Marcação IV 100% contradiz o IV parcial informado"));
  contradictory.clear();contradictory.put(LocalAuditPolicy.Flag.NUNDO,true);
  check(LocalAuditPolicy.preview(1,-1,0,101,EnumSet.noneOf(LocalAuditPolicy.Flag.class),contradictory).reasons.contains("Marcação IV 0% contradiz o IV parcial informado"));
+ // Positive extreme-IV flags remain protective in the local preview, while
+ // contradictory observations are still explained and absent data stays unknown.
+ for(LocalAuditPolicy.Flag extreme:EnumSet.of(LocalAuditPolicy.Flag.HUNDO,LocalAuditPolicy.Flag.NUNDO)){
+  int extremeIv=extreme==LocalAuditPolicy.Flag.HUNDO?15:0;
+  int conflictingIv=extreme==LocalAuditPolicy.Flag.HUNDO?14:1;
+  var extremeFacts=new EnumMap<LocalAuditPolicy.Flag,Boolean>(LocalAuditPolicy.Flag.class);
+  extremeFacts.put(extreme,true);
+  var partialPositive=LocalAuditPolicy.preview(-1,extremeIv,extremeIv,101,EnumSet.of(extreme),extremeFacts);
+  check(partialPositive.status==LocalAuditPolicy.Status.PROTECTED&&partialPositive.reasons.contains("IV não confirmado")&&partialPositive.reasons.contains(extreme.label));
+  var inconsistent=LocalAuditPolicy.preview(conflictingIv,extremeIv,extremeIv,101,EnumSet.of(extreme),extremeFacts);
+  check(inconsistent.status==LocalAuditPolicy.Status.PROTECTED&&inconsistent.reasons.stream().anyMatch(reason->reason.contains("contradiz")));
+  extremeFacts.put(extreme,false);
+  check(LocalAuditPolicy.preview(-1,extremeIv,extremeIv,101,EnumSet.of(extreme),extremeFacts).status==LocalAuditPolicy.Status.UNCERTAIN);
+  check(LocalAuditPolicy.preview(extremeIv,extremeIv,extremeIv,101,EnumSet.of(extreme),extremeFacts).status==LocalAuditPolicy.Status.PROTECTED);
+ }
  contradictory.clear();contradictory.put(LocalAuditPolicy.Flag.XXL,true);contradictory.put(LocalAuditPolicy.Flag.XXS,true);
  check(LocalAuditPolicy.preview(4,4,5,99,EnumSet.noneOf(LocalAuditPolicy.Flag.class),contradictory).status==LocalAuditPolicy.Status.UNCERTAIN);
  check(LocalAuditPolicy.preview(15,15,15,99,EnumSet.noneOf(LocalAuditPolicy.Flag.class),contradictory).status==LocalAuditPolicy.Status.PROTECTED);
