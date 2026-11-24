@@ -6,6 +6,8 @@
 - Cache de sprites limitado, validação estrutural dos PNGs, controles acessíveis, teclado adequado ao campo, diálogos roláveis e data PT-BR com fuso.
 - Auditoria dos 37 ícones: 30 idênticos aos arquivos do Drive e 7 visualmente equivalentes, incluindo Ovo da Sorte. Correções de fallback e galeria; nenhum PNG substituído.
 - Cofre Gemini/Groq restrito à prévia independente: AndroidKeyStore, criptografia e remoção local; sem conexão aos provedores. Resumo de diagnóstico em worker cancelável, sem bloquear a thread de interface durante análise.
+- Integrações #166–#172 (exceto #165, laboratório separado): diagnósticos com BOM e cancelamento; progresso GPX exato e nomes multissegmento; cofre com leitura limitada, autenticação e limpeza de buffers; prévia de coleção incremental e assíncrona; validação de novos arquivos de migração; nomes XML e limite de exportação GPX. CI dos HEADs de cada PR aprovado antes do respectivo merge. #171: 45372949115/45372949324/45372949127; #172: 45373080938/45373081108. Código consolidado em ed3684a7d24f98d3154b8cd001ea7f78cf0ed730.
+- Revisão de interface do cofre independente: bloqueio de edição e operações concorrentes, confirmação privada, resultado ignorado após encerramento da Activity e limpeza do campo no fechamento. CI da nova revisão pendente.
 - CI do commit c2f389e aprovado 3/3; revisões posteriores dependem de CI do HEAD exato. [Matriz de homologação](docs/validation/LT046_HOMOLOGACAO.md). Não há APK LT046 nem homologação física confirmada. O arquivo VERSION permanece LT045 até a preparação de entrega.
 
 ## PGBR LT045 (v0.00.45-LT) — pré-release QA publicada (24/11/2026)
