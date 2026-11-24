@@ -1693,3 +1693,6 @@ continuam fora do conjunto JVM por depender de `LiveFeedClient` (Android-bound),
 
 ## 24/11/2026 — Pausa de APK e publicação por decisão do usuário
 - Base PR #162 4a8fe729fde0c2d0962d8b599171192447a5dfd3. Usuário solicitou concluir correções antes de gerar outro APK. Workflows LT045 QA e release passam a disparo exclusivamente manual; contrato exige ausência de push/pull_request automático. Não executar workflow_dispatch até nova autorização. CI de código permanece ativo. A execução QA 45326387106 já iniciada antes desta ordem pode terminar; não é uma nova publicação. LT044 preservada. Não mesclar/publicar automaticamente.
+
+### Revisão adicional da camada de fontes #160 — modelo canônico
+- Corrigida promoção indevida de precisão explicitamente indisponível, identificação demo entre gateway e Java e saturação de números inválidos em atributos. Fixtures de regressão em SourceModelTest; CI a confirmar; sem APK/release.

@@ -26,6 +26,7 @@ public enum OriginKind {
     /** Wire value, or {@code null} for anything unrecognised (never silently coerced). */
     public static OriginKind fromWire(String value) {
         if (value == null) return null;
+        if ("demo_fixture".equals(value)) return SIMULATED_FIXTURE;
         for (OriginKind kind : values()) if (kind.wire.equals(value)) return kind;
         return null;
     }

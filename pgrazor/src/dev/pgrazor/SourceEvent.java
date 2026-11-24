@@ -114,7 +114,7 @@ public final class SourceEvent {
         observedAt = Math.max(0L, b.observedAt);
         retrievedAt = Math.max(0L, b.retrievedAt);
         expiresAt = Math.max(0L, b.expiresAt);
-        isDemo = b.isDemo;
+        isDemo = b.isDemo || originKind == OriginKind.SIMULATED_FIXTURE;
         dataQuality = b.dataQuality == null ? QUALITY_UNKNOWN : b.dataQuality;
         coverage = b.coverage;
         sourceUrl = b.sourceUrl;
@@ -206,7 +206,11 @@ public final class SourceEvent {
     public static Integer integer(Object raw) {
         if (raw == null) return null;
         try {
-            if (raw instanceof Number) return (int) Math.rint(((Number) raw).doubleValue());
+            if (raw instanceof Number) {
+                double n = ((Number) raw).doubleValue();
+                if (!Double.isFinite(n) || n < Integer.MIN_VALUE || n > Integer.MAX_VALUE) return null;
+                return (int) Math.rint(n);
+            }
             return Integer.parseInt(String.valueOf(raw).trim());
         } catch (RuntimeException invalid) {
             return null;
@@ -316,7 +320,7 @@ public final class SourceEvent {
             b.lat = lat;
             b.lon = lon;
             b.precision = CoordinatePrecision.fromWire(o.optString("coordinate_precision", "exact"));
-            if (b.precision == CoordinatePrecision.UNAVAILABLE) b.precision = CoordinatePrecision.EXACT;
+            // Explicit unavailable or unknown precision must never be upgraded to exact.
         } else {
             b.lat = null;
             b.lon = null;

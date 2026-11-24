@@ -77,6 +77,15 @@ public final class SourceModelTest {
                 .expiresAt(now + 60_000).build();
         check(!approx.isActionable(now), "Coordenada aproximada não vira destino");
 
+        SourceEvent unavailable = SourceEvent.fromJson(original.toJson().put("coordinate_precision", "unavailable"));
+        check(!unavailable.isActionable(now), "Precisão indisponível permanece indisponível");
+        check(!SourceEvent.fromJson(original.toJson().put("coordinate_precision", "invalid")).isActionable(now),
+                "Precisão desconhecida não vira exata");
+        check(SourceEvent.fromJson(original.toJson().put("origin_kind", "demo_fixture").put("is_demo", false)).isDemo,
+                "Origem demonstrativa do gateway permanece demo");
+        check(SourceEvent.integer(Double.NaN) == null && SourceEvent.integer(1e20) == null,
+                "Número inválido não vira IV zero nem inteiro saturado");
+
         // --- distance --------------------------------------------------------------------
         SourceEvent near = SourceEvent.builder("import", "near", SourceEvent.Kind.POKEMON)
                 .coordinates(-23.55, -46.63).build();
