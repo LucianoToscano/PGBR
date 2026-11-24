@@ -8,7 +8,7 @@ final class LocalAuditDialog {
  private LocalAuditDialog(){}
  static void show(Activity a){
   AlertDialog d=new AlertDialog.Builder(MapTheme.wrap(a)).setTitle("Análise local • sem ações no jogo")
-   .setItems(new String[]{"Prévia de proteção da coleção","Simular ataques carregados","Interpretar código de diagnóstico","Avaliar lista de Pokémon","Planejar energia PvP","Interpretar diagnóstico PvP","Planejar alternativas de frutas","Preparar equipe Max (manual)","Resumir diagnóstico filtrado"},(x,i)->{if(i==0)collection(a);else if(i==1)combat(a);else if(i==2)reason(a);else if(i==3)batch(a);else if(i==4)energyPlan(a);else if(i==5)battleDiagnostic(a);else if(i==6)berryPlan(a);else if(i==7)maxPlan(a);else summarize(a);})
+   .setItems(new String[]{"Prévia de proteção da coleção","Simular ataques carregados","Interpretar código de diagnóstico","Avaliar lista de Pokémon","Planejar energia PvP","Interpretar diagnóstico PvP","Planejar alternativas de frutas","Preparar equipe Max (manual)","Resumir diagnóstico filtrado","Conferir etiquetas (manual)"},(x,i)->{if(i==0)collection(a);else if(i==1)combat(a);else if(i==2)reason(a);else if(i==3)batch(a);else if(i==4)energyPlan(a);else if(i==5)battleDiagnostic(a);else if(i==6)berryPlan(a);else if(i==7)maxPlan(a);else if(i==8)summarize(a);else tagReview(a);})
    .setNegativeButton("Fechar",null).create();present(a,d);
  }
  static void present(Activity a,AlertDialog d){DialogLifecycle.bind(a,d,null);d.setOnShowListener(x->MapTheme.styleButtons(d));d.show();}
@@ -120,6 +120,45 @@ final class LocalAuditDialog {
   present(a,new AlertDialog.Builder(MapTheme.wrap(a)).setTitle("Prévia de coleção em lote").setView(scroll(a,b)).setPositiveButton("Fechar",null).create());
  }
  static void reason(Activity a){LinearLayout b=body(a);EditText code=input(a,b,"reasonCode","12");TextView r=text(a,b,"");action(a,b,"Interpretar",()->{try{r.setText(LocalAuditPolicy.reason(integer(code)));}catch(RuntimeException e){r.setText("Código inválido.");}});present(a,new AlertDialog.Builder(MapTheme.wrap(a)).setTitle("Motivos de proteção").setView(b).setPositiveButton("Fechar",null).create());}
+ static void tagReview(Activity a){
+  LinearLayout b=body(a);text(a,b,"Informe os nomes das etiquetas, um por linha. Selecione as protegidas e as observadas no Pokémon. Não lê etiquetas do jogo, não altera a coleção e não executa ações.");
+  EditText source=new EditText(MapTheme.wrap(a));source.setMinLines(3);source.setMaxLines(6);source.setHint("Uma etiqueta por linha");b.addView(source);
+  LinearLayout choices=body(a);b.addView(choices);
+  CheckBox complete=new CheckBox(MapTheme.wrap(a));complete.setText("Confirmei todas as etiquetas deste Pokémon");b.addView(complete);
+  TextView result=text(a,b,"");List<String> catalog=new ArrayList<>();List<CheckBox> selected=new ArrayList<>(),observed=new ArrayList<>();
+  Runnable invalidate=()->result.setText("Dados alterados. Confira novamente.");
+  source.addTextChangedListener(new android.text.TextWatcher(){
+   public void beforeTextChanged(CharSequence s,int start,int count,int after){}
+   public void onTextChanged(CharSequence s,int start,int before,int count){catalog.clear();selected.clear();observed.clear();choices.removeAllViews();complete.setChecked(false);result.setText("Catálogo alterado. Carregue novamente.");}
+   public void afterTextChanged(android.text.Editable e){}
+  });
+  complete.setOnCheckedChangeListener((v,on)->invalidate.run());
+  action(a,b,"Carregar seleção visual",()->{
+   catalog.clear();selected.clear();observed.clear();choices.removeAllViews();complete.setChecked(false);
+   try{
+    catalog.addAll(LocalAuditPolicy.tagCatalog(source.getText().toString()));
+    if(catalog.isEmpty())throw new IllegalArgumentException();
+    for(String tag:catalog){
+     text(a,choices,tag);
+     CheckBox protect=new CheckBox(MapTheme.wrap(a)),seen=new CheckBox(MapTheme.wrap(a));
+     protect.setText("Proteger esta etiqueta");seen.setText("Observada neste Pokémon");
+     protect.setContentDescription("Proteger etiqueta "+tag);seen.setContentDescription("Etiqueta observada "+tag);
+     choices.addView(protect);choices.addView(seen);selected.add(protect);observed.add(seen);
+     protect.setOnCheckedChangeListener((v,on)->invalidate.run());seen.setOnCheckedChangeListener((v,on)->invalidate.run());
+    }
+    result.setText("Selecione as etiquetas e confira os dados.");
+   }catch(IllegalArgumentException invalid){result.setText("Catálogo vazio ou inválido; informe até 200 nomes.");}
+  });
+  action(a,b,"Conferir etiquetas",()->{
+   if(catalog.isEmpty()){result.setText("Catálogo não confirmado. Carregue os nomes primeiro.");return;}
+   Set<String> protectedTags=new LinkedHashSet<>(),seenTags=new LinkedHashSet<>();
+   for(int i=0;i<catalog.size();i++){if(selected.get(i).isChecked())protectedTags.add(catalog.get(i));if(observed.get(i).isChecked())seenTags.add(catalog.get(i));}
+   LocalAuditPolicy.TagObservation state=LocalAuditPolicy.reviewTags(protectedTags,seenTags,complete.isChecked());
+   result.setText(state==LocalAuditPolicy.TagObservation.MATCH?"TAG=1 — etiqueta protegida confirmada.":state==LocalAuditPolicy.TagObservation.NO_MATCH?"TAG=0 — nenhuma etiqueta protegida na lista que você confirmou completa.":"TAG=? — dados insuficientes ou nenhuma etiqueta de proteção selecionada.");
+  });
+  text(a,b,"Use o resultado TAG na prévia local da coleção, se corresponder aos dados que você verificou. Nenhum filtro do jogo foi modificado.");
+  present(a,new AlertDialog.Builder(MapTheme.wrap(a)).setTitle("Seleção visual de etiquetas").setView(scroll(a,b)).setPositiveButton("Fechar",null).create());
+ }
  static void summarize(Activity a){
   LinearLayout b=body(a);text(a,b,"Abra o ZIP filtrado, extraia diagnostico.txt e cole seu conteúdo completo. Não cole o TXT bruto. A análise é local e não envia nem executa nada.");
   EditText source=new EditText(MapTheme.wrap(a));source.setMinLines(4);source.setMaxLines(8);

@@ -65,6 +65,29 @@ public final class LocalAuditPolicy {
   }
   return Collections.unmodifiableSet(result);
  }
+ /** Manual tag catalogue. Each line represents one exact name; no inference from missing data. */
+ public static List<String> tagCatalog(String raw){
+  if(raw==null||raw.length()>20000)throw new IllegalArgumentException("Catálogo de etiquetas inválido");
+  LinkedHashMap<String,String> unique=new LinkedHashMap<>();int count=0;
+  for(String line:raw.split("\\r\\n|\\n|\\r",-1)){
+   String name=line.trim();if(name.isEmpty())continue;
+   if(++count>200)throw new IllegalArgumentException("Máximo de 200 etiquetas");
+   String key=speciesKey(name);if(!unique.containsKey(key))unique.put(key,name);
+  }
+  return Collections.unmodifiableList(new ArrayList<>(unique.values()));
+ }
+ public enum TagObservation { MATCH, NO_MATCH, UNKNOWN }
+ public static TagObservation reviewTags(Set<String> protectedTags,Set<String> observedTags,boolean complete){
+  Objects.requireNonNull(protectedTags);Objects.requireNonNull(observedTags);
+  if(protectedTags.size()>200||observedTags.size()>200)throw new IllegalArgumentException("Limite de etiquetas");
+  Set<String> selected=new HashSet<>();
+  for(String tag:protectedTags)selected.add(speciesKey(tag));
+  Set<String> observed=new HashSet<>();
+  for(String tag:observedTags)observed.add(speciesKey(tag));
+  if(selected.isEmpty())return TagObservation.UNKNOWN;
+  for(String key:observed)if(selected.contains(key))return TagObservation.MATCH;
+  return complete?TagObservation.NO_MATCH:TagObservation.UNKNOWN;
+ }
  /** Manual stock review only: first confirmed available item in the supplied order.
   * -1 is unknown stock, 0 is unavailable, and a positive value is available.
   * An unknown earlier choice is explicitly reported; no action or inventory read. */

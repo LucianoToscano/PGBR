@@ -94,6 +94,13 @@ public final class LocalAuditTest {
  check(custom.protectedCount==2&&custom.matchCount==1&&custom.rows.get(2).decision.reasons.contains("IV não confirmado"));
  check(LocalAuditPolicy.preview(15,15,15,101,EnumSet.of(LocalAuditPolicy.Flag.HUNDO),Collections.emptyMap()).status==LocalAuditPolicy.Status.PROTECTED);
  check(LocalAuditPolicy.preview(15,15,15,101,EnumSet.noneOf(LocalAuditPolicy.Flag.class),Collections.emptyMap()).status==LocalAuditPolicy.Status.MATCH);
+ check(LocalAuditPolicy.tagCatalog("PvP\r\nRaro\npvp\nA, B").equals(Arrays.asList("PvP","Raro","A, B")));
+ check(LocalAuditPolicy.reviewTags(Collections.singleton("PvP"),Collections.singleton("pvp"),false)==LocalAuditPolicy.TagObservation.MATCH);
+ check(LocalAuditPolicy.reviewTags(Collections.singleton("PvP"),Collections.emptySet(),false)==LocalAuditPolicy.TagObservation.UNKNOWN);
+ check(LocalAuditPolicy.reviewTags(Collections.singleton("PvP"),Collections.emptySet(),true)==LocalAuditPolicy.TagObservation.NO_MATCH);
+ check(LocalAuditPolicy.reviewTags(Collections.emptySet(),Collections.emptySet(),true)==LocalAuditPolicy.TagObservation.UNKNOWN);
+ check(LocalAuditPolicy.reviewTags(Collections.singleton("A, B"),Collections.singleton("A"),true)==LocalAuditPolicy.TagObservation.NO_MATCH);
+ try{LocalAuditPolicy.tagCatalog(String.join("\n",Collections.nCopies(201,"X")));throw new AssertionError();}catch(IllegalArgumentException expected){}
  check(LocalAuditPolicy.reviewStock(new int[]{0,2,3}).index==1);
  check(LocalAuditPolicy.reviewStock(new int[]{-1,2}).earlierUnknown);
  check(LocalAuditPolicy.reviewStock(new int[]{0,-1}).index==-1&&LocalAuditPolicy.reviewStock(new int[]{0,-1}).earlierUnknown);

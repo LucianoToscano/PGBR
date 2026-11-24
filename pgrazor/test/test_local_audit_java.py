@@ -28,6 +28,15 @@ class LocalAuditTests(unittest.TestCase):
         self.assertIn('invalidateOnEdit(result,name,cp,atk,def,sta,limit,names)',individual)
         self.assertIn('LocalAuditPolicy.protectedNames(protectedNames.getText().toString())',batch)
 
+    def test_manual_tag_selector(self):
+        source=(ROOT/'src/dev/pgrazor/LocalAuditDialog.java').read_text(encoding='utf-8')
+        panel=source.split(' static void tagReview(Activity a){',1)[1].split(' static void summarize(Activity a){',1)[0]
+        self.assertIn('LocalAuditPolicy.tagCatalog(',panel)
+        self.assertIn('LocalAuditPolicy.reviewTags(',panel)
+        self.assertIn('complete.setChecked(false)',panel)
+        self.assertIn('TAG=?',panel)
+        self.assertNotIn('Control.',panel)
+
     def test_new_ui_is_read_only_and_wired(self):
         for name in ['LocalAuditPolicy.java','LocalCollectionPreview.java','LocalAuditDialog.java','LocalDiagnosticSummary.java','GpxPreviewView.java','GpxPreviewGeometry.java']:
             source=(ROOT/'src/dev/pgrazor'/name).read_text(encoding='utf-8')
