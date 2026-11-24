@@ -93,6 +93,39 @@ public final class MotionEngine {
             +angle(unit(latitude,longitude),unit(route[visitedStops][0],route[visitedStops][1]))*EARTH_RADIUS_METERS;
         return new RouteProgress(route.length,visitedStops,walking,remaining);
     }
+    /** Read-only snapshot for the PGBR's own map. Geometry is copied only when the route changes. */
+    public static final class RouteVisualSnapshot {
+        public final long token;
+        public final double[][] newPoints;
+        public final int visited, total;
+        public final double legFraction, remainingMeters;
+        public final boolean looping, paused;
+        private RouteVisualSnapshot(long token,double[][] points,int visited,int total,
+                double fraction,double remaining,boolean looping,boolean paused) {
+            this.token=token; this.newPoints=points; this.visited=visited; this.total=total;
+            this.legFraction=fraction; this.remainingMeters=remaining;
+            this.looping=looping; this.paused=paused;
+        }
+    }
+    public synchronized RouteVisualSnapshot routeVisualSnapshot(long knownToken) {
+        long token=activeRouteToken();
+        if(token==0) return null;
+        double[][] copy=null;
+        if(knownToken!=token) {
+            copy=new double[route.length][];
+            for(int i=0;i<route.length;i++) copy[i]=route[i].clone();
+        }
+        double fraction=0;
+        RouteProgress progress=routeProgress();
+        if(visitedStops>0 && visitedStops<route.length) {
+            double length=remainingLegMeters[visitedStops-1]-remainingLegMeters[visitedStops];
+            double left=progress.remainingMeters-remainingLegMeters[visitedStops];
+            if(length>0) fraction=Math.max(0,Math.min(1,1-left/length));
+        }
+        return new RouteVisualSnapshot(token,copy,visitedStops,route.length,fraction,
+                progress.remainingMeters,looping,!enabled||speedKmh==0);
+    }
+
     private static void validatePosition(double lat, double lon) {
         if (!Double.isFinite(lat) || !Double.isFinite(lon) || Math.abs(lat) > 90 || Math.abs(lon) > 180)
             throw new IllegalArgumentException("Latitude must be -90 to 90; longitude -180 to 180.");
