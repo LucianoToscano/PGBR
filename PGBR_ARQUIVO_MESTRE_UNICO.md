@@ -1698,3 +1698,5 @@ continuam fora do conjunto JVM por depender de `LiveFeedClient` (Android-bound),
 - Corrigida promoção indevida de precisão explicitamente indisponível, identificação demo entre gateway e Java e saturação de números inválidos em atributos. Fixtures de regressão em SourceModelTest; CI a confirmar; sem APK/release.
 
 - Importação e persistência: recuperação de linhas válidas após JSON inválido, identidade vazia/colisão de chaves, versão de armazenamento explícita, precisão preservada, recusa de demo e TTL Hundo sem conversão a int. Testes acrescentados em LocalEventImportTest; aguardam CI de código.
+
+- Gateway: preserva precisão explicitamente indisponível, recusa alias demo do Android, não transforma texto `false` em shiny/clima observado. Testes Python acrescentados. Sem deploy, APK ou release.

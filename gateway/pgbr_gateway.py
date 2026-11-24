@@ -286,6 +286,8 @@ def normalise(row: dict, source_id: str | None = None, origin_kind: str | None =
              "xxs": "XXS", "xs": "XS", "s": "S", "m": "M", "xl": "XL", "xxl": "XXL"}
     size = sizes.get(str(size_raw).strip().lower()) if size_raw is not None else None
     origin = origin_kind or row.get("origin_kind") or "personal_import"
+    if origin == "simulated_fixture":
+        origin = "demo_fixture"
     event = {
         "source_id": source,
         "event_id": str(event_id),
@@ -297,9 +299,9 @@ def normalise(row: dict, source_id: str | None = None, origin_kind: str | None =
         "latitude": lat if coordinates_valid else None,
         "longitude": lon if coordinates_valid else None,
         "coordinate_precision": ("unavailable" if not coordinates_valid
-                                 else row.get("coordinate_precision")
-                                 if row.get("coordinate_precision") in ("exact", "approximate")
-                                 else "exact"),
+                                 else row.get("coordinate_precision", "exact")
+                                 if row.get("coordinate_precision", "exact") in ("exact", "approximate", "unavailable")
+                                 else "unavailable"),
         "iv_percent": iv,
         "iv_atk": atk,
         "iv_def": dfn,
@@ -308,12 +310,10 @@ def normalise(row: dict, source_id: str | None = None, origin_kind: str | None =
         "level": level,
         "gender": gender,
         "size": size,
-        "weather_boost": (None if row.get("weather_boost") is None
-                          else bool(row.get("weather_boost"))),
+        "weather_boost": (row.get("weather_boost") if isinstance(row.get("weather_boost"), bool) else None),
         "pvp_great_rank": _integer(row.get("pvp_great_rank")),
         "pvp_ultra_rank": _integer(row.get("pvp_ultra_rank")),
-        "shiny_observed": (None if row.get("shiny_observed") is None
-                           else bool(row.get("shiny_observed"))),
+        "shiny_observed": (row.get("shiny_observed") if isinstance(row.get("shiny_observed"), bool) else None),
         "observed_at": _iso_ms(row.get("observed_at", row.get("startTime"))) or int(time.time() * 1000),
         "retrieved_at": retrieved_at or int(time.time() * 1000),
         "expires_at": _iso_ms(row.get("expires_at", row.get("endTime", row.get("end_time")))),
@@ -1010,7 +1010,7 @@ class Gateway:
         now = int(time.time() * 1000)
         events, rejected = [], []
         for index, row in enumerate(body["events"]):
-            if isinstance(row, dict) and (row.get("origin_kind") == "demo_fixture"
+            if isinstance(row, dict) and (row.get("origin_kind") in ("demo_fixture", "simulated_fixture")
                                           or row.get("is_demo") is True):
                 rejected.append({"row": index + 1,
                                  "reason": "fixture sintética só é aceita em testes automatizados"})

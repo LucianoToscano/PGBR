@@ -171,6 +171,22 @@ class GatewayImportTests(unittest.TestCase):
         self.assertEqual(report["imported"], 0)
         self.assertIn("testes automatizados", report["rejected"][0]["reason"])
 
+    def test_import_rejects_android_demo_alias(self):
+        status, report, _ = self.gateway.handle("POST", "/v1/imports/pgsharp", {},
+            {"events": [row("demo", origin_kind="simulated_fixture")]}, self.headers)
+        self.assertEqual(status, 422)
+        self.assertEqual(report["imported"], 0)
+
+    def test_normalisation_preserves_precision_and_boolean_evidence(self):
+        for precision in ("unavailable", "unknown"):
+            result = gw.normalise(row("unavailable", coordinate_precision=precision,
+                                      shiny_observed="false", weather_boost="false"))
+            self.assertEqual(result["coordinate_precision"], "unavailable")
+            self.assertIsNone(result["shiny_observed"])
+            self.assertIsNone(result["weather_boost"])
+        self.assertTrue(gw.normalise(row("demo", origin_kind="simulated_fixture"))["is_demo"])
+        self.assertIs(gw.normalise(row("verified", shiny_observed=False))["shiny_observed"], False)
+
     def test_import_rejects_oversized_payload_and_bad_shape(self):
         status, body, _ = self.gateway.handle("POST", "/v1/imports/pgsharp", {}, {"events": {}},
                                               self.headers)
