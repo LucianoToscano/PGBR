@@ -127,6 +127,10 @@ public final class PresetCodecTest {
         check(limitedAlerts.size() == 1 && "valid".equals(limitedAlerts.get(0).event.eventId),
                 "Observação expirada mais recente não ressuscita a antiga nem consome o limite");
 
+        limited.add(limited.get(0));
+        check(AlertEngine.evaluate(limited, repeated, NOW).size() == 1,
+                "Preset repetido não duplica alerta");
+
         // --- shiny is only reported when observed -------------------------------------------
         SourceEvent shinyObserved = SourceEvent.builder("import", "shiny", SourceEvent.Kind.POKEMON)
                 .coordinates(-23.55, -46.63).pokemonId(25).name("Pikachu")

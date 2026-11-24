@@ -2,9 +2,11 @@ package dev.pgrazor;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
-import java.util.Map;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Local alerts: a preset fires when a row that was actually imported or received matches its
@@ -49,11 +51,13 @@ public final class AlertEngine {
         List<SourceEvent> eligible = new ArrayList<>();
         for (Map<String, SourceEvent> byId : bySource.values())
             for (SourceEvent event : byId.values()) if (!event.expired(now)) eligible.add(event);
+        Map<String, Set<SourceEvent>> emitted = new LinkedHashMap<>();
         for (PresetCodec.Preset preset : presets) {
             if (preset == null || !preset.query.isActive()) continue; // no criteria => no alert
             EventFilterEngine.Outcome outcome = EventFilterEngine.apply(preset.query, eligible, now);
             for (SourceEvent event : outcome.kept) {
                 if (event == null || event.expired(now) || event.isDemo) continue;
+                if (!emitted.computeIfAbsent(preset.id, k -> new HashSet<>()).add(event)) continue;
                 alerts.add(new Alert(preset.id, preset.name, event, reasonFor(preset.query, event)));
             }
         }
