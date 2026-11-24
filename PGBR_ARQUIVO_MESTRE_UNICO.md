@@ -1847,3 +1847,6 @@ Base main 205ac2105a45dac4821c26b9ff73e66c4097e76a, comparação GitHub antes de
 
 
 - 24/11/2026 — PR #169 integrado em d16c0a9375442f89766ef181db030f58df9d4a14; HEAD 93996065873da9ce5e72a2ff45b1e4293cdc6014, workflows 45370546529 e 45370546494 ambos success; 5/5 jobs do CI geral. Prévia local de coleção validada em CI, não no Android físico nem na coleção real. Sem novo APK, alteração de versão ou release; device_tested=false, provider_connected=false.
+
+
+- LT046 — prévia em lote com análise fora da thread de interface, branch fix/lt046-previa-lote-worker-20261124, base 3f7d26365dd317ec073dd640ec9c35f28ddd91af. Snapshot de entradas e critérios, worker único por diálogo, controles desabilitados durante processamento, geração de dados para invalidar resultados antigos, descarte de callback após fechamento e cancelamento cooperativo no parser. Fixture JVM de interrupção e teste estático de ligação UI. Não altera filtros ativos, não lê coleção real e não transfere Pokémon; medição física de desempenho e CI novo pendentes. Sem APK/release.
