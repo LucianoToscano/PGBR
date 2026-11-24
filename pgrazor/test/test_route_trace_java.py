@@ -115,6 +115,15 @@ class RouteTraceTest(unittest.TestCase):
                             str(ROOT / "test/ProjectionTest.java")], check=True, timeout=30)
             subprocess.run([str(runtime), "-cp", tmp, "ProjectionTest"], check=True, timeout=30)
 
+    def test_screen_projection(self):
+        compiler, runtime = java_tools()
+        with tempfile.TemporaryDirectory() as tmp:
+            files=["RouteGroundProjection.java","RouteScreenTracker.java","RouteScreenFrameBuilder.java","RouteTraceGeometry.java","RouteTraceFrame.java"]
+            subprocess.run([str(compiler), "-encoding", "UTF-8", "-d", tmp,
+                            *[str(ROOT / "src/dev/pgrazor" / name) for name in files],
+                            str(ROOT / "test/ScreenProjectionTest.java")], check=True, timeout=30)
+            subprocess.run([str(runtime), "-cp", tmp, "ScreenProjectionTest"], check=True, timeout=30)
+
     def test_overlay_boundaries(self):
         overlay=(ROOT / "src/dev/pgrazor/RouteTraceOverlay.java").read_text(encoding="utf-8")
         view=(ROOT / "src/dev/pgrazor/RouteTraceView.java").read_text(encoding="utf-8")
@@ -124,7 +133,18 @@ class RouteTraceTest(unittest.TestCase):
         pad=(ROOT / "src/dev/pgrazor/Pad.java").read_text(encoding="utf-8")
         for token in ["void attachVisualRouteSource(", "if(source!=null) visualRouteOverlay=", "if(visualRouteOverlay==null)return", "!Control.catchScreenVisible()&&!blackShown", "visualRouteOverlay.close()"]:
             self.assertIn(token, pad)
-        self.assertEqual(pad.count("attachVisualRouteSource("),1)
+        self.assertEqual(pad.count("attachVisualRouteSource("),2)
+        self.assertIn("source.calibrate(()->", pad)
+        self.assertIn("Control::vgpMapVisible", pad)
+        self.assertIn("screenRouteSource.close()", pad)
+        screen=(ROOT / "src/dev/pgrazor/RouteScreenProjectionSource.java").read_text(encoding="utf-8")
+        for token in ["PixelCopy.request(surface", "matches.size()!=1", "mapVisible.getAsBoolean()", "if(n[0]!=6)", "RouteScreenTracker", "RouteScreenFrameBuilder.build", "bitmap.recycle()", "worker.shutdown()", "routeVisualSnapshot(knownToken)", "trackingLost", "ready=false"]:
+            self.assertIn(token, screen)
+        for forbidden in ["NativeCore", "Runtime.getRuntime", "java.net.", "FileOutputStream", ".walkRoute(", ".teleport(", ".input("]:
+            self.assertNotIn(forbidden, screen)
+        settings=(ROOT / "src/dev/pgrazor/SettingsPanel.java").read_text(encoding="utf-8")
+        self.assertIn("host::calibrateVisualRoute", settings)
+        self.assertIn("host::disableVisualRoute", settings)
 
         for forbidden in ["Control.", "MotionEngine", "NativeCore", "System.load", "inject"]:
             self.assertNotIn(forbidden, overlay)
