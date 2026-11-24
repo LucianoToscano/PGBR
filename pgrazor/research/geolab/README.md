@@ -6,3 +6,6 @@ Na pasta deste projeto: bash tests/run-host.sh (Linux, JDK 17, g++). A partir da
 Gradle 8.11.1, AGP 8.10.0, SDK 36, NDK 27.3.13750724, CMake 3.22.1. Execute gradle --no-daemon :app:assembleDebug nesta pasta. APK separado dev.pgbr.geolab; não substitui o PGBR oficial. CI próprio verifica assinatura debug e SHA-256. Não há publicação automática.
 ## Evidência
 O pacote local anterior v0.1.1 passou em 24/11/2026: geração+filtro 629307/s (20000), JNI+JSON+filtro 98424/s (10000, 788891 bytes). São medições host, não Android. O código importado deve passar CI do próprio HEAD antes de qualquer aprovação. Drive real e dispositivo não homologados.
+
+## Correção de CI — 24/11/2026
+O run 45339773695 falhou com código 127 (`sdkmanager: command not found`) antes da compilação Android. O workflow passa a preparar o SDK com a mesma ação fixada por SHA da main, instalar e verificar os componentes antes de `assembleDebug`. Não altera fonte do laboratório ou APK oficial. Novo CI a confirmar; homologação física continua pendente.
