@@ -72,6 +72,25 @@ class ItemIconAssetsTest(unittest.TestCase):
         self.assertTrue(all(not by_id[i]['drive_named_reference']['same_size'] for i in (101,102,103,104,201,202)))
         expansion=json.loads((ROOT.parent/"docs/validation/LT046_ITEM_ICON_EXPANSION.json").read_text(encoding="utf-8"))
         expanded={row["id"]:row for row in expansion["items"]}
+        # Reject ambiguous receipts before mapping IDs or checking hashes.
+        self.assertEqual(len(by_id),len(data["items"]))
+        self.assertEqual(len(expanded),len(expansion["items"]))
+        for row in data["items"]:
+            self.assertIs(type(row["id"]),int)
+            self.assertGreater(row["id"],0)
+            self.assertEqual(row["filename"],f'item-{row["id"]}.png')
+        for row in expansion["items"]:
+            self.assertIs(type(row["id"]),int)
+            self.assertGreater(row["id"],0)
+            self.assertEqual(row["path"],f'pgrazor/assets/item-icons/item-{row["id"]}.png')
+        receipts=expansion["items"]+expansion["named"]
+        self.assertEqual(len({row["path"] for row in receipts}),len(receipts))
+        for row in expansion["named"]:
+            self.assertIsNotNone(re.fullmatch(r"pgrazor/assets/map-icons/[a-z0-9-]+\.png",row["path"]))
+        for row in data["items"]+receipts:
+            self.assertIs(type(row["bytes"]),int)
+            self.assertGreater(row["bytes"],100)
+            self.assertIsNotNone(re.fullmatch(r"[0-9a-f]{40}",row["git_blob_sha1"]))
         for row in data["items"]:
             expected=expanded.get(row["id"],row)
             payload=(ROOT/"assets/item-icons"/row["filename"]).read_bytes()
