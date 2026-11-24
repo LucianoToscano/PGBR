@@ -61,6 +61,19 @@ public class SavedPlacesRaceHarness {
    if(!x.get(10,TimeUnit.SECONDS)||!y.get(10,TimeUnit.SECONDS)||a.read().entries.size()!=98)
     throw new AssertionError("lost concurrent removal");
   } finally {pool.shutdownNow();}
+  android.content.SharedPreferences prefs=AccountProfiles.preferences(ctx,"pgrazor-saved-places-v1");
+  String oversized="x".repeat(65537);
+  prefs.edit().putString("places",oversized).commit();
+  if(!a.read().damaged)throw new AssertionError("Oversized source accepted");
+  try {a.add(new SavedPlaces.Entry("New",0,0));throw new AssertionError("Overwrote unbackable source");}
+  catch(java.io.IOException expected){}
+  if(!oversized.equals(prefs.getString("places",""))||!prefs.getString("recovered-from","").isEmpty())
+    throw new AssertionError("Original was not preserved");
+  String damaged="not JSON";
+  prefs.edit().putString("places",damaged).commit();
+  a.add(new SavedPlaces.Entry("Recovered",0,0));
+  if(!damaged.equals(prefs.getString("recovered-from",""))||a.read().damaged||a.read().entries.size()!=1)
+    throw new AssertionError("Bounded recovery lost its backup");
  }
 }"""
 }
