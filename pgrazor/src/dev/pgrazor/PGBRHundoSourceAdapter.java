@@ -102,7 +102,7 @@ final class PGBRHundoSourceAdapter implements SourceAdapter {
             connection.setInstanceFollowRedirects(false);
             connection.setRequestMethod("GET");
             connection.setRequestProperty("Accept", "application/json");
-            connection.setRequestProperty("User-Agent", "PGBR/0.00.45 (+https://github.com/LucianoToscano/PGBR)");
+            connection.setRequestProperty("User-Agent", "PGBR/0.00.46 (+https://github.com/LucianoToscano/PGBR)");
             int status = connection.getResponseCode();
             if (status == 401 || status == 403 || status == 429)
                 throw new SourceUnavailableException(

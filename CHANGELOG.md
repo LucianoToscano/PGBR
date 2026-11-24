@@ -1,4 +1,7 @@
-## PGBR LT046 — candidata em desenvolvimento (não publicada)
+## PGBR LT046 (0.00.46-LT) — candidata em verificação de build (não publicada)
+
+- **Preparação de entrega QA (24/11/2026):** VERSION elevado para `0.00.46-LT`; novo workflow `pgbr-lt046-qa.yml` (somente `workflow_dispatch`, sem publicação) e contrato `test_lt046_release_contract.py` fail-closed; notas em `docs/releases/v0.00.46-LT.md`. Build e verificação dos artefatos pendentes de execução do workflow; nenhuma tag/APK/release LT046 existe.
+- **Integrações desta rodada:** PR #173 (cofre — ciclo de vida e consolidação QA) mesclado em 5f05c96566e0ea0cfac3080a407d296c0dcc93ba; PR #174 (galeria por ID exato, resumo de contexto, preparação Max com componentes independentes) e PR #165 (GeoLab, laboratório isolado) reconciliados com a main com conflito documental restrito ao Arquivo Mestre, preservando os dois registros; código dos PRs preservado por completo. GeoLab fora do APK de produção.
 
 - PR #164, base LT045 publicada: proteção local individual/em lote, etiquetas e espécies informadas manualmente, motivos de rejeição por linha, invalidação de resultados e planejamento local de frutas, energia, eficácia e preparação Max.
 - Prévia GPX por distância e percentual; limites agregados de pontos em GPX e novas importações JSON; compatibilidade com arquivos históricos.
@@ -8,7 +11,7 @@
 - Cofre Gemini/Groq restrito à prévia independente: AndroidKeyStore, criptografia e remoção local; sem conexão aos provedores. Resumo de diagnóstico em worker cancelável, sem bloquear a thread de interface durante análise.
 - Integrações #166–#172 (exceto #165, laboratório separado): diagnósticos com BOM e cancelamento; progresso GPX exato e nomes multissegmento; cofre com leitura limitada, autenticação e limpeza de buffers; prévia de coleção incremental e assíncrona; validação de novos arquivos de migração; nomes XML e limite de exportação GPX. CI dos HEADs de cada PR aprovado antes do respectivo merge. #171: 45372949115/45372949324/45372949127; #172: 45373080938/45373081108. Código consolidado em ed3684a7d24f98d3154b8cd001ea7f78cf0ed730.
 - Revisão de interface do cofre independente: bloqueio de edição e operações concorrentes, confirmação privada, resultado ignorado após encerramento da Activity e limpeza do campo no fechamento. CI da nova revisão pendente.
-- CI do commit c2f389e aprovado 3/3; revisões posteriores dependem de CI do HEAD exato. [Matriz de homologação](docs/validation/LT046_HOMOLOGACAO.md). Não há APK LT046 nem homologação física confirmada. O arquivo VERSION permanece LT045 até a preparação de entrega.
+- CI do commit c2f389e aprovado 3/3; revisões posteriores dependem de CI do HEAD exato. [Matriz de homologação](docs/validation/LT046_HOMOLOGACAO.md). Não há APK LT046 nem homologação física confirmada. VERSION elevado para 0.00.46-LT na preparação de entrega; publicação não autorizada nesta etapa.
 
 ## PGBR LT045 (v0.00.45-LT) — pré-release QA publicada (24/11/2026)
 - **Publicação QA confirmada:** 2026-11-24T06:03:08Z (UTC); merge #163, 205ac2105a45dac4821c26b9ff73e66c4097e76a. [Release](https://github.com/LucianoToscano/PGBR/releases/tag/v0.00.45-LT). Assets e digests conferidos na API:
