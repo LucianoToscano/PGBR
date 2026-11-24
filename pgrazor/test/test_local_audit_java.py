@@ -93,6 +93,8 @@ class LocalAuditTests(unittest.TestCase):
         self.assertIn('if(progressDirty)rebuildCompleted()',source)
         self.assertEqual(source.count('geo.positionAt(distance)'),1)
         self.assertIn('LocalAuditDialog.privateInput(km)',source)
+        self.assertIn('entered.equals(displayedDistance[0])?v.distance:',source)
+        self.assertIn('if(!displayedDistance[0].contentEquals(km.getText()))',source)
 
     def test_new_ui_is_read_only_and_wired(self):
         for name in ['LocalAuditPolicy.java','LocalCollectionPreview.java','LocalAuditDialog.java','LocalDiagnosticSummary.java','GpxPreviewView.java','GpxPreviewGeometry.java']:
