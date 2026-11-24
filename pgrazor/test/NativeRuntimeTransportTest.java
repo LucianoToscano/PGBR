@@ -11,7 +11,7 @@ import java.nio.charset.StandardCharsets;
  */
 public final class NativeRuntimeTransportTest {
     // Wire constants mirror runtime_transport.h / NativeRuntimeTransport.
-    private static final int MAGIC_SNAPSHOT = 0x53524750, MAGIC_EVENTS = 0x45524750, VERSION = 22;
+    private static final int MAGIC_SNAPSHOT = 0x53524750, MAGIC_EVENTS = 0x45524750, VERSION = 23;
     private static final int OFF_BOOLS = 32, OFF_INTS = 80, OFF_DOUBLES = 120, OFF_PULSES = 136, OFF_STRINGS = 160;
     private static final int EVENT_HEADER = 32;
 
@@ -98,8 +98,9 @@ public final class NativeRuntimeTransportTest {
         ByteBuffer snap = ByteBuffer.wrap(fake.lastSnapshot).order(ByteOrder.LITTLE_ENDIAN);
         require(snap.getInt(0) == MAGIC_SNAPSHOT && snap.getInt(4) == VERSION && snap.getInt(8) == fake.lastSnapshot.length);
         require(snap.get(OFF_BOOLS + 3) == 0);         // active default false
-        require(snap.get(OFF_BOOLS + 40) == 0);        // gymRepeatEnabled slot 40 (frame v20, 41 bools)
-        for (int i = OFF_BOOLS + 41; i < OFF_INTS; i++) require(snap.get(i) == 0);  // 7 zero padding bytes after 41 bools
+        require(snap.get(OFF_BOOLS + 40) == 0);        // gymRepeatEnabled slot 40 (frame v20)
+        require(snap.get(OFF_BOOLS + 41) == 0);        // routeAnchorsAllowed slot 41 (frame v23, 42 bools)
+        for (int i = OFF_BOOLS + 42; i < OFF_INTS; i++) require(snap.get(i) == 0);  // 6 zero padding bytes after 42 bools
         require(snap.getInt(OFF_INTS) == 0);           // battleOptions default 0
         require(Double.isNaN(snap.getDouble(OFF_DOUBLES)));         // latitude NaN -> null coord
         require(Double.isNaN(snap.getDouble(OFF_DOUBLES + 8)));     // longitude NaN
