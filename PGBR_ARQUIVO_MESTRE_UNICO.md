@@ -1844,3 +1844,6 @@ Base main 205ac2105a45dac4821c26b9ff73e66c4097e76a, comparação GitHub antes de
 
 
 - LT046 — revisão da prévia local de coleção, branch fix/lt046-previa-colecao-robustez-20261124, base c3bfa73f3409d2128ad9e16abfd5f35065cdb101. Varredura de linhas incremental sem alocar array de todas as quebras; limites de split dos campos e critérios; preserva numeração física CR/LF/CRLF e rejeição de campos extras. Identifica contradições HUNDO/NUNDO mesmo com IV parcial e normaliza nomes NFC após conversão de caixa, rejeitando controles/formatação Unicode suplementar e surrogate isolado. Fixtures de 30.000 linhas vazias, teto de colagem, Unicode e estados verdadeiro/falso/desconhecido de todos os critérios opcionais não derivados de IV. Sem leitura da coleção do jogo, transferências ou alterações de filtros ativos. CI e homologação física pendentes; sem APK/release.
+
+
+- 24/11/2026 — PR #169 integrado em d16c0a9375442f89766ef181db030f58df9d4a14; HEAD 93996065873da9ce5e72a2ff45b1e4293cdc6014, workflows 45370546529 e 45370546494 ambos success; 5/5 jobs do CI geral. Prévia local de coleção validada em CI, não no Android físico nem na coleção real. Sem novo APK, alteração de versão ou release; device_tested=false, provider_connected=false.
