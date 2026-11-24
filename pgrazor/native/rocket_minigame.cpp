@@ -149,7 +149,12 @@ void do_collect(void *challenge) {
     // running: read like present(challenge, running_field, 1) -> non-zero byte.
     uint8_t running = 0;
     g_cfg.field_get_value(challenge, g_cfg.running_field, &running);
-    if (running == 0) return;
+    if (running == 0) {
+        // Update can end the challenge before a lifecycle callback is delivered.
+        // Do not leave an enlarged visual object alive until the policy lease expires.
+        if (g_have_mini && g_cfg.target(g_mini.challenge) == challenge) do_restore();
+        return;
+    }
 
     // A different challenge means the previous one is stale: restore it first.
     if (g_have_mini && g_cfg.target(g_mini.challenge) != challenge) do_restore();
@@ -219,8 +224,18 @@ void do_collect(void *challenge) {
 }
 
 void maybe_restore_on_thread() {
-    if (g_have_mini && (g_restore_pending.load() || !native_allowed() ||
-        !obj_alive(g_cfg.target(g_mini.challenge)))) do_restore();
+    if (!g_have_mini) return;
+    if (g_restore_pending.load() || !native_allowed()) { do_restore(); return; }
+    void *challenge = g_cfg.target(g_mini.challenge);
+    if (!exact(challenge, g_cfg.mini_class) || !obj_alive(challenge)) {
+        do_restore();
+        return;
+    }
+    // The verified running field is also a lifecycle boundary when Exit/Hide
+    // arrives late or not at all. Restore on the proven Unity thread.
+    uint8_t running = 0;
+    g_cfg.field_get_value(challenge, g_cfg.running_field, &running);
+    if (running == 0) do_restore();
 }
 
 // --- original publication ---------------------------------------------------------
