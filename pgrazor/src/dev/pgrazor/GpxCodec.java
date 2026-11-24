@@ -104,10 +104,16 @@ public final class GpxCodec {
         xml.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
         xml.append("<gpx version=\"1.1\" creator=\"PGBR\" xmlns=\"http://www.topografix.com/GPX/1/1\">\n");
         xml.append("<rte><name>").append(escape(route.name)).append("</name>\n");
-        for (double[] point : route.points())
+        for (int i = 0; i < route.size(); i++) {
+            double[] point = route.point(i);
             xml.append("<rtept lat=\"").append(coord(point[0])).append("\" lon=\"").append(coord(point[1])).append("\"></rtept>\n");
+            if (xml.length() > MAX_BYTES) throw new IOException("GPX export exceeds 2 MB; split the route into smaller files.");
+        }
         xml.append("</rte>\n</gpx>\n");
-        out.write(xml.toString().getBytes(StandardCharsets.UTF_8));
+        byte[] encoded = xml.toString().getBytes(StandardCharsets.UTF_8);
+        // Reject before touching the destination; never write a file that our reader cannot reopen.
+        if (encoded.length > MAX_BYTES) throw new IOException("GPX export exceeds 2 MB; split the route into smaller files.");
+        out.write(encoded);
         out.flush();
     }
 
@@ -318,9 +324,10 @@ public final class GpxCodec {
 
         private static String sanitize(String text) {
             StringBuilder out = new StringBuilder(text.length());
-            for (int i = 0; i < text.length(); i++) {
-                char c = text.charAt(i);
-                out.append(Character.isISOControl(c) ? ' ' : c);
+            for (int i = 0; i < text.length();) {
+                int cp = text.codePointAt(i);
+                out.appendCodePoint(GpxRoute.validNameCodePoint(cp) ? cp : ' ');
+                i += Character.charCount(cp);
             }
             return out.toString().trim();
         }

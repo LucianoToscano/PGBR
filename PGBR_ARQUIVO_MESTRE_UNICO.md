@@ -53,6 +53,10 @@ O release `v0.00.33-LT` é uma **nova identificação de build**, não uma mudan
 - README e ROOTED sincronizados com o recibo LT045 já verificado (commits 3c0da69c011697f3fa769b6c649821211a272c25 e b0412c4d787b1223d8426084085be0c7a6513abf), histórico de versões preservado. Matriz `docs/validation/LT046_HOMOLOGACAO.md` ampliada para a futura sessão única de homologação do proprietário, incluindo etiquetas, filtros, evento, proteção, lifecycle, diagnóstico, Max/MT/frutas, IV/nível e GPX/ícones (f35ec46cf2ce21dd41bb79ede44acf7f24375f61). Nenhum teste físico marcado como aprovado.
 - Sem alterações em execução de jogo, GPS, PokeSearch, credenciais ou provedores, sem novo APK ou publicação. `device_tested=false`; `provider_connected=false`. Aguardar CI exato e revisão de integração sem sobrescrever trabalho paralelo.
 
+### Checkpoint LT046 — integridade de exportação GPX (24/11/2026)
+
+- Branch fix/lt046-gpx-export-validacao-20261124; base 0d29f3c1e0db08945b3299a3f0413a973004ee65 (merge #170). Validação de nomes compatíveis com XML 1.0, preservando pares Unicode válidos e saneando nomes de fallback inválidos. Exportação GPX verifica limite de 2 MB antes da escrita, inclusive para coordenadas decimais extremas, sem reduzir precisão nem copiar a matriz inteira de pontos. Fixtures de Unicode, round-trip e preservação do destino em exportação excessiva. CI e homologação física pendentes. Sem alteração de localização, jogo, automação, APK ou release.
+
 ### 24/11/2026 — GeoLab v0.1.1 (pesquisa isolada)
 - Branch `research/geolab-isolated-20261124`; base `205ac2105a45dac4821c26b9ff73e66c4097e76a`; commit de implementação `25f68f50c2dd20e51cefb213a48e70bb00959f78`.
 - Novo subprojeto `pgrazor/research/geolab/`: socketpair privado C++/JNI, parser JSON limitado, malha sintética, predicados concorrentes, callback, simulador HTTP loopback e leitura explícita de regras Drive OAuth. APK de laboratório separado; nenhuma mudança no runtime de produção, Zygisk, GPS, RPC ou PokeSearch.
@@ -1862,3 +1866,12 @@ Base main 205ac2105a45dac4821c26b9ff73e66c4097e76a, comparação GitHub antes de
 
 
 - LT046 — prévia em lote com análise fora da thread de interface, branch fix/lt046-previa-lote-worker-20261124, base 3f7d26365dd317ec073dd640ec9c35f28ddd91af. Snapshot de entradas e critérios, worker único por diálogo, controles desabilitados durante processamento, geração de dados para invalidar resultados antigos, descarte de callback após fechamento e cancelamento cooperativo no parser. Fixture JVM de interrupção e teste estático de ligação UI. Não altera filtros ativos, não lê coleção real e não transfere Pokémon; medição física de desempenho e CI novo pendentes. Sem APK/release.
+
+
+- LT046 — validação de novos arquivos locais de migração PGSharp, branch fix/lt046-validacao-migracao-local-20261124, base 3f7d26365dd317ec073dd640ec9c35f28ddd91af. Versão precisa ser número 1 sem coerção; nomes de favoritos/rotas precisam ser texto, limites respectivos e Unicode válido; notas sentinela (0,0) preservadas como texto original, nomes de filtros arquivados precisam ser texto. Validação anterior de arquivos já arquivados mantida para compatibilidade. Fixtures de tipos incorretos, limites e notas; nenhuma alteração de armazenamento efetivo, automação, localização, provedores ou APK. CI pendente. Revisão paralela confirmou que o código de importação #129 e a atualização da ordem do canvas do IV #132 já estão presentes na main; não mesclar PRs antigas indiscriminadamente.
+
+
+- 24/11/2026 — PR #170 integrado em 0d29f3c1e0db08945b3299a3f0413a973004ee65; HEAD e948047eb16820c673e7d193082435c5d0ef09af, workflows 45371840759 e 45371840647 success, 5/5 jobs gerais. PR #171 reconciliado com main preservando ambos os registros e os commits originais; nova execução de CI necessária. Sem APK/release; device_tested=false, provider_connected=false.
+
+
+- 24/11/2026 — PR #171 integrado em 15d5e270e4c6a8e297b22b54aac296a7a0fd1851; HEAD 02ea34acd97d05972a119bf9ce39fe6a282fd78b; CI 45372949115, 45372949324, 45372949127 success. PR #172 integrado em ed3684a7d24f98d3154b8cd001ea7f78cf0ed730; HEAD e113addf35b8927941a0a726e126d38429bc27fd; CI 45373080938, 45373081108 success. Ambos CI geral 5/5. GeoLab HEAD d5c77fc2142efb71e438ca72a9b4b3b9af195345 aprovado 3/3 (45373418055, 45373418042, 45373417875); conflito documental reconciliado sobre os merges mais recentes. Novo CI necessário para HEAD reconciliado. Sem APK de produção LT046, device_tested=false, provider_connected=false.
