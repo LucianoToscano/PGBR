@@ -29,6 +29,12 @@ class AiKeyTests(unittest.TestCase):
         self.assertIn('if(rejected[0])',ui)
         self.assertIn('if(ds==0&&de==dst.length())',ui)
         self.assertLess(ui.index('if(rejected[0])'),ui.index('value.getChars('))
+        self.assertIn('field.setEnabled(on)',ui)
+        self.assertIn('if(busy[0])return',ui)
+        self.assertIn('busy[0]=false',ui)
+        self.assertIn('!a.isFinishing()&&b.isAttachedToWindow()',ui)
+        self.assertIn('LocalAuditDialog.presentPrivate(a,confirm)',ui)
+        self.assertIn('onViewDetachedFromWindow(android.view.View view){field.getText().clear();}',ui)
         self.assertNotIn('LocalAiKeyDialog.show',(src/'SettingsPanel.java').read_text(encoding='utf-8'))
         for source in [vault,ui]:
             for forbidden in ['HttpURLConnection','openConnection(','Control.','SharedPreferences','Log.']:
