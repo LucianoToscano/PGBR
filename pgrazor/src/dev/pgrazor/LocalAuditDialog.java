@@ -66,7 +66,7 @@ final class LocalAuditDialog {
   TextView result=text(a,b,"");
   LocalCollectionPreview.Report[] report={null};int[] page={0};String[] evaluatedAt={""};final boolean[] oversized={false};
   records.setFilters(new android.text.InputFilter[]{(incoming,start,end,dest,ds,de)->{
-   if((long)dest.length()-(de-ds)+(end-start)>LocalCollectionPreview.MAX_CHARS){oversized[0]=true;report[0]=null;page[0]=0;records.setError("Lista grande demais. Use lotes menores.");return dest.subSequence(ds,de);}
+   if((long)dest.length()-(de-ds)+(end-start)>LocalCollectionPreview.MAX_CHARS){oversized[0]=true;report[0]=null;page[0]=0;result.setText("Colagem rejeitada; nenhuma avaliação atual disponível.");records.setError("Lista grande demais. Use lotes menores.");return dest.subSequence(ds,de);}
    if(ds==0&&de==dest.length()){oversized[0]=false;records.setError(null);}return null;
   }});
   java.util.function.Supplier<LocalAuditPolicy.Status> status=()->filter.getSelectedItemPosition()<=0?null:LocalAuditPolicy.Status.values()[filter.getSelectedItemPosition()-1];
@@ -122,17 +122,18 @@ final class LocalAuditDialog {
   LinearLayout b=body(a);text(a,b,"Abra o ZIP filtrado, extraia diagnostico.txt e cole seu conteúdo completo. Não cole o TXT bruto. A análise é local e não envia nem executa nada.");
   EditText source=new EditText(MapTheme.wrap(a));source.setMinLines(4);source.setMaxLines(8);
   source.setHint("Conteúdo de diagnostico.txt");
+  b.addView(source);TextView result=text(a,b,"");
   // Reject an oversized replacement completely, instead of silently truncating it.
   final boolean[] rejected={false};
   source.setFilters(new android.text.InputFilter[]{(incoming,start,end,dest,ds,de)->{
    if((long)dest.length()-(de-ds)+(end-start)>LocalDiagnosticSummary.MAX_CHARS){
-    rejected[0]=true;source.setError("Diagnóstico grande demais; use uma exportação menor.");return dest.subSequence(ds,de);
+    rejected[0]=true;result.setText("Colagem rejeitada; nenhum resumo atual disponível.");source.setError("Diagnóstico grande demais; use uma exportação menor.");return dest.subSequence(ds,de);
    }
    // Require a complete replacement/clear after a rejected paste, not an edit of stale contents.
    if(ds==0&&de==dest.length()){rejected[0]=false;source.setError(null);}
    return null;
   }});
-  b.addView(source);TextView result=text(a,b,"");invalidateOnEdit(result,source);
+  invalidateOnEdit(result,source);
   action(a,b,"Resumir registros",()->{try{
     if(rejected[0])throw new IllegalArgumentException("Substitua todo o conteúdo após a colagem rejeitada.");
     result.setText(LocalDiagnosticSummary.parse(source.getText().toString()).describe());

@@ -53,6 +53,11 @@ public final class LogExportTest {
           +"2026-11-24T01:10:00.000-03:00 [battle-action] {\"reason\":\"secret-example\"}\nRegistros omitidos: 0\n";
         LocalDiagnosticSummary.Summary bad=LocalDiagnosticSummary.parse(invalid);
         if(bad.unclassified!=2||!bad.transfers.isEmpty()||!bad.battle.isEmpty()||bad.describe().contains("secret-example"))throw new AssertionError("Untrusted values");
+        StringBuilder many=new StringBuilder(LocalDiagnosticSummary.HEADER).append('\n');
+        for(int i=1;i<=201;i++)many.append("2026-11-24T01:10:00.000-03:00 [item-icon-error] {\"itemId\":").append(i).append("}\n");
+        many.append("Registros omitidos: 0\n");
+        LocalDiagnosticSummary.Summary limited=LocalDiagnosticSummary.parse(many.toString());
+        if(limited.icons.size()!=201||!limited.describe().contains("Mais 1 IDs distintos não exibidos"))throw new AssertionError("Summary display limit");
         java.nio.file.Path dir=java.nio.file.Files.createTempDirectory("pgbr-export-test");
         File tmp=dir.resolve("current.tmp").toFile(),old=dir.resolve("old.zip").toFile(),dest=dir.resolve("current.zip").toFile();
         try{

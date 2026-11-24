@@ -8,7 +8,7 @@ import org.json.JSONException;
 /** Summarizes player-supplied, filtered diagnostics. No game or account access. */
 final class LocalDiagnosticSummary {
     private LocalDiagnosticSummary(){}
-    static final int MAX_CHARS=2100000,MAX_LINES=30000;
+    static final int MAX_CHARS=2100000,MAX_LINES=30000,MAX_DISPLAY_ICONS=200;
     static final String HEADER="PGBR — diagnóstico filtrado; mensagens livres e identificadores omitidos.";
     private static final Pattern LINE=Pattern.compile("^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}(?:Z|[+-]\\d{2}:\\d{2}) \\[([a-z-]{1,40})\\] (\\{.*\\})$");
     private static final Pattern FOOTER=Pattern.compile("^Registros omitidos: ([0-9]{1,8})$");
@@ -34,7 +34,10 @@ final class LocalDiagnosticSummary {
             for(Map.Entry<String,Integer> e:battle.entrySet())out.append(e.getKey()).append(": ").append(e.getValue()).append(" — ").append(LocalAuditPolicy.battleReason(e.getKey())).append('\n');
             out.append("\nÍcones ausentes ou com erro (ID de catálogo):\n");
             if(icons.isEmpty())out.append("Nenhum ID confirmado.\n");
-            for(Map.Entry<Integer,Integer> e:icons.entrySet())out.append(e.getKey()).append(": ").append(e.getValue()).append('\n');
+            List<Map.Entry<Integer,Integer>> ranked=new ArrayList<>(icons.entrySet());
+            ranked.sort((a,b)->{int n=Integer.compare(b.getValue(),a.getValue());return n!=0?n:Integer.compare(a.getKey(),b.getKey());});
+            for(int i=0;i<Math.min(ranked.size(),MAX_DISPLAY_ICONS);i++){Map.Entry<Integer,Integer> e=ranked.get(i);out.append(e.getKey()).append(": ").append(e.getValue()).append('\n');}
+            if(ranked.size()>MAX_DISPLAY_ICONS)out.append("Mais ").append(ranked.size()-MAX_DISPLAY_ICONS).append(" IDs distintos não exibidos. Total de IDs: ").append(ranked.size()).append('\n');
             return out.append("\nContagens não confirmam ação executada, causa individual, ausência de falhas ou funcionamento no aparelho. A exportação pode omitir campos e conter contexto repetido.").toString();
         }
     }
