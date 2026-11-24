@@ -15,8 +15,9 @@ final class LocalAuditDialog {
  static LinearLayout body(Activity a){LinearLayout b=new LinearLayout(MapTheme.wrap(a));b.setOrientation(LinearLayout.VERTICAL);int p=MapTheme.dp(a,16);b.setPadding(p,p,p,p);return b;}
  static ScrollView scroll(Activity a,LinearLayout b){ScrollView s=new ScrollView(a);s.addView(b);return s;}
  static TextView text(Activity a,LinearLayout b,String s){TextView t=new TextView(MapTheme.wrap(a));t.setText(s);b.addView(t);return t;}
- static EditText input(Activity a,LinearLayout b,String title,String initial){text(a,b,title);EditText e=new EditText(MapTheme.wrap(a));e.setSingleLine(true);e.setText(initial);b.addView(e);return e;}
- static Spinner select(Activity a,LinearLayout b,String title,String[] values){text(a,b,title);Spinner s=new Spinner(MapTheme.wrap(a));ArrayAdapter<String> ad=new ArrayAdapter<>(a,android.R.layout.simple_spinner_item,values);ad.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);s.setAdapter(ad);b.addView(s);return s;}
+ static EditText input(Activity a,LinearLayout b,String title,String initial){TextView label=text(a,b,title);EditText e=new EditText(MapTheme.wrap(a));e.setId(android.view.View.generateViewId());label.setLabelFor(e.getId());e.setSingleLine(true);e.setText(initial);b.addView(e);return e;}
+ static EditText numeric(Activity a,LinearLayout b,String title,String initial,boolean decimal,boolean signed){EditText e=input(a,b,title,initial);e.setInputType(android.text.InputType.TYPE_CLASS_NUMBER|(decimal?android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL:0)|(signed?android.text.InputType.TYPE_NUMBER_FLAG_SIGNED:0));e.setSingleLine(true);return e;}
+ static Spinner select(Activity a,LinearLayout b,String title,String[] values){TextView label=text(a,b,title);Spinner s=new Spinner(MapTheme.wrap(a));s.setId(android.view.View.generateViewId());label.setLabelFor(s.getId());ArrayAdapter<String> ad=new ArrayAdapter<>(MapTheme.wrap(a),android.R.layout.simple_spinner_item,values);ad.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);s.setAdapter(ad);b.addView(s);return s;}
  static void action(Activity a,LinearLayout b,String title,Runnable f){Button v=new Button(MapTheme.wrap(a));v.setText(title);v.setTextColor(MapTheme.ink());MapTheme.setButtonBackground(v);v.setAllCaps(false);v.setOnClickListener(x->f.run());b.addView(v);}
  static void invalidateOnEdit(TextView result,EditText... fields){
   android.text.TextWatcher w=new android.text.TextWatcher(){
@@ -36,7 +37,7 @@ final class LocalAuditDialog {
  static double decimal(EditText e){return Double.parseDouble(e.getText().toString().trim().replace(',','.'));}
  static void collection(Activity a){
   LinearLayout b=body(a);text(a,b,"Informe dados verificados. Desconhecido protege por precaução. Nenhuma transferência será executada.");
-  EditText name=input(a,b,"Espécie",""),cp=input(a,b,"PC",""),atk=input(a,b,"IV ataque (0–15 ou -1 desconhecido)","-1"),def=input(a,b,"IV defesa","-1"),sta=input(a,b,"IV PS","-1"),limit=input(a,b,"IV mínimo para preservar (0–100; 101 desativa só o limite de IV)","99");
+  EditText name=input(a,b,"Espécie",""),cp=numeric(a,b,"PC","",false,false),atk=numeric(a,b,"IV ataque (0–15 ou -1 desconhecido)","-1",false,true),def=numeric(a,b,"IV defesa","-1",false,true),sta=numeric(a,b,"IV PS","-1",false,true),limit=numeric(a,b,"IV mínimo para preservar (0–100; 101 desativa só o limite de IV)","99",false,false);
   EditText names=input(a,b,"Espécies adicionais protegidas (nomes exatos separados por vírgulas)","");
   text(a,b,"Lista adicional, com os mesmos critérios da prévia em lote. Formas diferentes precisam de nomes próprios.");
   LocalAuditPolicy.Flag[] flags=LocalAuditPolicy.Flag.values();Spinner[] observed=new Spinner[flags.length];CheckBox[] active=new CheckBox[flags.length];
@@ -58,7 +59,7 @@ final class LocalAuditDialog {
  static void batch(Activity a){
   LinearLayout b=body(a);
   text(a,b,"Cole até 500 registros de uma fonte autorizada, um por linha. Formato: espécie;PC;IV ataque;IV defesa;IV PS;critérios. Use ? para desconhecido; critérios no formato EVENT=1,SHINY=0. Ausência de informação não significa falso. Não lê a coleção nem transfere Pokémon.");
-  EditText limit=input(a,b,"IV mínimo para preservar (0–100; 101 desativa só o limite de IV)","99");
+  EditText limit=numeric(a,b,"IV mínimo para preservar (0–100; 101 desativa só o limite de IV)","99",false,false);
   EditText protectedNames=input(a,b,"Espécies adicionais protegidas (nomes exatos separados por vírgulas)","");
   text(a,b,"A lista é adicional aos 20 critérios; formas diferentes precisam de nomes próprios. Não usa dados do jogo.");
   EditText records=new EditText(MapTheme.wrap(a));records.setMinLines(4);records.setMaxLines(8);records.setHint("Rattata;478;4;4;5;EVENT=1,SHINY=0");b.addView(records);
@@ -104,7 +105,7 @@ final class LocalAuditDialog {
    if(oversized[0]||records.length()>LocalCollectionPreview.MAX_CHARS){result.setText("Colagem rejeitada por tamanho. Substitua todo o conteúdo por um lote completo menor; nenhum registro foi avaliado.");return;}
    try{
     EnumSet<LocalAuditPolicy.Flag> selected=EnumSet.noneOf(LocalAuditPolicy.Flag.class);for(int i=0;i<flags.length;i++)if(active[i].isChecked())selected.add(flags[i]);
-    report[0]=LocalCollectionPreview.parse(records.getText().toString(),integer(limit),selected,LocalAuditPolicy.protectedNames(protectedNames.getText().toString()));evaluatedAt[0]=new java.util.Date().toString();render.run();
+    report[0]=LocalCollectionPreview.parse(records.getText().toString(),integer(limit),selected,LocalAuditPolicy.protectedNames(protectedNames.getText().toString()));evaluatedAt[0]=new java.text.SimpleDateFormat("dd/MM/yyyy HH:mm:ss Z",Locale.forLanguageTag("pt-BR")).format(new java.util.Date());render.run();
    }catch(IllegalArgumentException invalid){result.setText("Confira os limites e o formato da lista.");}
   });
   action(a,b,"Consultar motivos das linhas inválidas",()->{
@@ -119,7 +120,7 @@ final class LocalAuditDialog {
   action(a,b,"Próxima página",()->{if(report[0]!=null&&page[0]+1<LocalCollectionPreview.pageCount(report[0],status.get())){page[0]++;render.run();}});
   present(a,new AlertDialog.Builder(MapTheme.wrap(a)).setTitle("Prévia de coleção em lote").setView(scroll(a,b)).setPositiveButton("Fechar",null).create());
  }
- static void reason(Activity a){LinearLayout b=body(a);EditText code=input(a,b,"reasonCode","12");TextView r=text(a,b,"");action(a,b,"Interpretar",()->{try{r.setText(LocalAuditPolicy.reason(integer(code)));}catch(RuntimeException e){r.setText("Código inválido.");}});present(a,new AlertDialog.Builder(MapTheme.wrap(a)).setTitle("Motivos de proteção").setView(b).setPositiveButton("Fechar",null).create());}
+ static void reason(Activity a){LinearLayout b=body(a);EditText code=numeric(a,b,"Código do diagnóstico (reasonCode)","12",false,false);TextView r=text(a,b,"");invalidateOnEdit(r,code);action(a,b,"Interpretar",()->{try{r.setText(LocalAuditPolicy.reason(integer(code)));}catch(RuntimeException e){r.setText("Código inválido.");}});present(a,new AlertDialog.Builder(MapTheme.wrap(a)).setTitle("Motivos de proteção").setView(scroll(a,b)).setPositiveButton("Fechar",null).create());}
  static void tagReview(Activity a){
   LinearLayout b=body(a);text(a,b,"Informe os nomes das etiquetas, um por linha. Selecione as protegidas e as observadas no Pokémon. Não lê etiquetas do jogo, não altera a coleção e não executa ações.");
   EditText source=new EditText(MapTheme.wrap(a));source.setMinLines(3);source.setMaxLines(6);source.setHint("Uma etiqueta por linha");b.addView(source);
@@ -144,7 +145,7 @@ final class LocalAuditDialog {
      protect.setText("Proteger esta etiqueta");seen.setText("Observada neste Pokémon");
      protect.setContentDescription("Proteger etiqueta "+tag);seen.setContentDescription("Etiqueta observada "+tag);
      choices.addView(protect);choices.addView(seen);selected.add(protect);observed.add(seen);
-     protect.setOnCheckedChangeListener((v,on)->invalidate.run());seen.setOnCheckedChangeListener((v,on)->invalidate.run());
+     protect.setOnCheckedChangeListener((v,on)->invalidate.run());seen.setOnCheckedChangeListener((v,on)->{complete.setChecked(false);invalidate.run();});
     }
     result.setText("Selecione as etiquetas e confira os dados.");
    }catch(IllegalArgumentException invalid){result.setText("Catálogo vazio ou inválido; informe até 200 nomes.");}
@@ -184,7 +185,7 @@ final class LocalAuditDialog {
  static void maxPlan(Activity a){
   LinearLayout b=body(a);text(a,b,"Preparação manual. Informe os tipos da forma correta, o tipo do golpe Max e um tipo de ataque do chefe que você confirmou. Isto compara apenas multiplicadores de tipo: não calcula dano, nível, habilidades Max, efeitos de equipe ou resultado da batalha.");
   Spinner f1=select(a,b,"Tipo 1 do chefe",LocalAuditPolicy.TYPES),f2=select(a,b,"Tipo 2 do chefe",LocalAuditPolicy.TYPES),fm=select(a,b,"Tipo do ataque do chefe",LocalAuditPolicy.TYPES);
-  EditText stock=input(a,b,"Partículas disponíveis (-1 desconhecido)","-1"),cost=input(a,b,"Custo informado pelo jogo (-1 desconhecido)","-1");
+  EditText stock=numeric(a,b,"Partículas disponíveis (-1 desconhecido)","-1",false,true),cost=numeric(a,b,"Custo informado pelo jogo (-1 desconhecido)","-1",false,true);
   EditText[] names=new EditText[3];Spinner[] own1=new Spinner[3],own2=new Spinner[3],moves=new Spinner[3],eligible=new Spinner[3];
   for(int i=0;i<3;i++){
    text(a,b,"Candidato "+(i+1));
@@ -218,7 +219,7 @@ final class LocalAuditDialog {
   LinearLayout b=body(a);text(a,b,"Escolha até três frutas em ordem de preferência e informe o estoque que você verificou: -1 desconhecido, 0 indisponível. O painel não lê inventário nem usa frutas.");
   String[] names={"Nenhuma","Fruta Frambo","Fruta Anaba","Fruta Caxi","Fruta Frambo Dourada","Fruta Caxi Prateada"};
   Spinner[] order=new Spinner[3];EditText[] count=new EditText[3];
-  for(int i=0;i<3;i++){order[i]=select(a,b,"Preferência "+(i+1),names);count[i]=input(a,b,"Estoque "+(i+1),"-1");}
+  for(int i=0;i<3;i++){order[i]=select(a,b,"Preferência "+(i+1),names);count[i]=numeric(a,b,"Estoque "+(i+1),"-1",false,true);}
   TextView result=text(a,b,"");invalidateOnEdit(result,count);invalidateOnSelection(result,order);
   action(a,b,"Consultar alternativas",()->{try{
    ArrayList<Integer> selected=new ArrayList<>();ArrayList<Integer> stock=new ArrayList<>();
@@ -242,11 +243,11 @@ final class LocalAuditDialog {
   String[] codes={"actor-unknown","actor-refresh","stale-effect","unknown-effect","unverified-slots","unavailable-pair","only-one-ready","effectiveness","known-super","off"};
   Spinner reason=select(a,b,"Motivo técnico",codes);TextView result=text(a,b,"");invalidateOnSelection(result,reason);
   action(a,b,"Interpretar",()->{int i=reason.getSelectedItemPosition();result.setText(i<0||i>=codes.length?"Selecione um motivo.":LocalAuditPolicy.battleReason(codes[i]));});
-  present(a,new AlertDialog.Builder(MapTheme.wrap(a)).setTitle("Diagnóstico PvP — interpretação local").setView(b).setPositiveButton("Fechar",null).create());
+  present(a,new AlertDialog.Builder(MapTheme.wrap(a)).setTitle("Diagnóstico PvP — interpretação local").setView(scroll(a,b)).setPositiveButton("Fechar",null).create());
  }
  static void energyPlan(Activity a){
   LinearLayout b=body(a);text(a,b,"Planejamento manual, sem executar ataques. Informe o ganho do ágil e o custo do carregado de acordo com os dados PvP da forma correta. Energia residual é preservada.");
-  EditText min=input(a,b,"Energia mínima estimada (0–100)","0"),max=input(a,b,"Energia máxima estimada (0–100)","0"),gain=input(a,b,"Energia por ataque ágil",""),cost=input(a,b,"Custo do carregado","");
+  EditText min=numeric(a,b,"Energia mínima estimada (0–100)","0",false,false),max=numeric(a,b,"Energia máxima estimada (0–100)","0",false,false),gain=numeric(a,b,"Energia por ataque ágil","",false,false),cost=numeric(a,b,"Custo do carregado","",false,false);
   TextView result=text(a,b,"");invalidateOnEdit(result,min,max,gain,cost);action(a,b,"Calcular",()->{try{
    LocalAuditPolicy.EnergyPlan p=LocalAuditPolicy.planEnergy(integer(min),integer(max),integer(gain),integer(cost),4);
    String ready=p.latest==0?"Pronto com certeza":p.earliest==0?"Pode estar pronto; energia incerta":"Ainda não pronto";
@@ -258,13 +259,13 @@ final class LocalAuditDialog {
   LinearLayout b=body(a);text(a,b,"Simulação: use potência e custo da modalidade e forma corretas. Não considera escudos, bônus de estado, clima ou prioridade CMP. Nenhum ataque será executado.");
   Spinner mode=select(a,b,"Modalidade",new String[]{"PvP","PvE"});
   Spinner objective=select(a,b,"Objetivo da comparação",new String[]{"Eficiência (dano por energia)","Maior dano imediato","Dano por segundo (PvE)","Finalizar alvo sem escudo"});
-  EditText targetHp=input(a,b,"PS restantes do alvo (somente finalizar)","");
+  EditText targetHp=numeric(a,b,"PS restantes do alvo (somente finalizar)","",true,false);
   text(a,b,"O cálculo de finalização só vale sem escudo, com PS e atributos informados corretamente. A duração PvE é a do golpe, sem incluir o ciclo de geração de energia.");
   Spinner u1=select(a,b,"Seu tipo 1",LocalAuditPolicy.TYPES),u2=select(a,b,"Seu tipo 2",LocalAuditPolicy.TYPES),f1=select(a,b,"Tipo adversário 1",LocalAuditPolicy.TYPES),f2=select(a,b,"Tipo adversário 2",LocalAuditPolicy.TYPES);
-  EditText atk=input(a,b,"Ataque efetivo",""),def=input(a,b,"Defesa efetiva adversária",""),energy=input(a,b,"Energia disponível (0–100)","");
+  EditText atk=numeric(a,b,"Ataque efetivo","",true,false),def=numeric(a,b,"Defesa efetiva adversária","",true,false),energy=numeric(a,b,"Energia disponível (0–100)","",true,false);
   CheckBox single=new CheckBox(MapTheme.wrap(a));single.setText("Confirmo que existe somente um carregado");b.addView(single);
   Spinner[] type=new Spinner[2];EditText[] power=new EditText[2],cost=new EditText[2],duration=new EditText[2];
-  for(int i=0;i<2;i++){type[i]=select(a,b,"Tipo carregado "+(i+1),LocalAuditPolicy.TYPES);power[i]=input(a,b,"Potência "+(i+1),"");cost[i]=input(a,b,"Energia exigida "+(i+1),"");duration[i]=input(a,b,"Duração do golpe em segundos (PvE) "+(i+1),"");}
+  for(int i=0;i<2;i++){type[i]=select(a,b,"Tipo carregado "+(i+1),LocalAuditPolicy.TYPES);power[i]=numeric(a,b,"Potência "+(i+1),"",true,false);cost[i]=numeric(a,b,"Energia exigida "+(i+1),"",true,false);duration[i]=numeric(a,b,"Duração do golpe em segundos (PvE) "+(i+1),"",true,false);}
   TextView result=text(a,b,"");invalidateOnEdit(result,atk,def,energy,targetHp);invalidateOnEdit(result,power);invalidateOnEdit(result,cost);invalidateOnEdit(result,duration);
   invalidateOnSelection(result,mode,objective,u1,u2,f1,f2);invalidateOnSelection(result,type);single.setOnCheckedChangeListener((v,on)->result.setText("Dados alterados. Compare novamente."));
   action(a,b,"Comparar",()->{try{

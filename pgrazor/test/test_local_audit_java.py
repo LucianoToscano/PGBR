@@ -37,6 +37,19 @@ class LocalAuditTests(unittest.TestCase):
         self.assertIn('TAG=?',panel)
         self.assertNotIn('Control.',panel)
 
+    def test_local_panel_accessibility_and_revalidation(self):
+        source=(ROOT/'src/dev/pgrazor/LocalAuditDialog.java').read_text(encoding='utf-8')
+        self.assertGreaterEqual(source.count('label.setLabelFor('),2)
+        self.assertIn('TYPE_NUMBER_FLAG_SIGNED',source)
+        self.assertIn('TYPE_NUMBER_FLAG_DECIMAL',source)
+        self.assertIn('invalidateOnEdit(r,code)',source)
+        self.assertIn('seen.setOnCheckedChangeListener((v,on)->{complete.setChecked(false)',source)
+        self.assertNotIn('.setView(b).setPositiveButton("Fechar",null)',source)
+        self.assertIn('dd/MM/yyyy HH:mm:ss Z',source)
+        gpx=(ROOT/'src/dev/pgrazor/GpxPreviewView.java').read_text(encoding='utf-8')
+        self.assertIn('hint.setLabelFor(km.getId())',gpx)
+        self.assertIn('Azul: trecho percorrido',gpx)
+
     def test_new_ui_is_read_only_and_wired(self):
         for name in ['LocalAuditPolicy.java','LocalCollectionPreview.java','LocalAuditDialog.java','LocalDiagnosticSummary.java','GpxPreviewView.java','GpxPreviewGeometry.java']:
             source=(ROOT/'src/dev/pgrazor'/name).read_text(encoding='utf-8')
