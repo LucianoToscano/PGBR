@@ -10,6 +10,7 @@ HARNESS = r"""
 import dev.pgrazor.RouteTraceGeometry;
 import dev.pgrazor.MotionEngine;
 import dev.pgrazor.RouteTraceStyle;
+import dev.pgrazor.RouteTraceFrame;
 import java.util.ArrayList;
 public class RouteTraceHarness {
   static void check(boolean ok) { if (!ok) throw new AssertionError(); }
@@ -51,6 +52,18 @@ public class RouteTraceHarness {
   }
   public static void main(String[] args) {
     testSnapshot();
+    RouteTraceGeometry projected=new RouteTraceGeometry(new double[]{20,30},new double[]{40,50},new double[]{0,10});
+    RouteTraceFrame frame=new RouteTraceFrame(42,1000,360,800,true,projected,5);
+    check(frame.usable(1250,42,360,800,true));
+    check(!frame.usable(1251,42,360,800,true));
+    check(!frame.usable(999,42,360,800,true));
+    check(!frame.usable(1000,43,360,800,true));
+    check(!frame.usable(1000,42,800,360,true));
+    check(!frame.usable(1000,42,360,800,false));
+    check(!new RouteTraceFrame(42,1000,360,800,false,projected,5).usable(1000,42,360,800,true));
+    reject(()->new RouteTraceFrame(42,1000,360,800,true,projected,11));
+    reject(()->new RouteTraceFrame(42,1000,360,800,true,new RouteTraceGeometry(new double[]{0,2000},new double[]{0,5},new double[]{0,10}),0));
+
     RouteTraceStyle style=RouteTraceStyle.defaults();
     check(style.width==5 && style.opacity==100 && style.color(style.remaining)==0xffeeeeee);
     style=new RouteTraceStyle(-1,10,0,0x123456,false,false,false,false);
@@ -90,8 +103,18 @@ class RouteTraceTest(unittest.TestCase):
                             str(ROOT / "src/dev/pgrazor/RouteTraceGeometry.java"),
                             str(ROOT / "src/dev/pgrazor/MotionEngine.java"),
                             str(ROOT / "src/dev/pgrazor/RouteTraceStyle.java"),
+                            str(ROOT / "src/dev/pgrazor/RouteTraceFrame.java"),
                             str(harness)], check=True, timeout=30)
             subprocess.run([str(runtime), "-cp", tmp, "RouteTraceHarness"], check=True, timeout=30)
+
+    def test_overlay_boundaries(self):
+        overlay=(ROOT / "src/dev/pgrazor/RouteTraceOverlay.java").read_text(encoding="utf-8")
+        view=(ROOT / "src/dev/pgrazor/RouteTraceView.java").read_text(encoding="utf-8")
+        for token in ["source==null", "parent.hasWindowFocus()", "frame.usable(", "view.postDelayed(expire", "view.clearTrace()", "parent.removeView(view)"]:
+            self.assertIn(token, overlay)
+        self.assertIn("onTouchEvent(android.view.MotionEvent event){return false;}", view)
+        for forbidden in ["Control.", "MotionEngine", "NativeCore", "System.load", "inject"]:
+            self.assertNotIn(forbidden, overlay)
 
     def test_map_integration(self):
         source = (ROOT / "src/dev/pgrazor/WorldMapDialog.java").read_text(encoding="utf-8")
