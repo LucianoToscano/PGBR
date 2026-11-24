@@ -5,7 +5,7 @@ public final class LocalAuditPolicy {
  private LocalAuditPolicy(){}
  public static final int SCHEMA=3;
  public enum Flag {
- SHINY("shiny"),HUNDO("IV 100%"),NUNDO("IV 0%"),LEGENDARY("lendário"),MYTHICAL("mítico"),ULTRA("Ultra Criatura"),
+ SHINY("brilhante (shiny)"),HUNDO("IV 100%"),NUNDO("IV 0%"),LEGENDARY("lendário"),MYTHICAL("mítico"),ULTRA("Ultra Criatura"),
  LUCKY("sortudo"),FAVORITE("favorito"),SHADOW("sombrio"),PURIFIED("purificado"),COSTUME("fantasia"),EVENT("evento"),BACKGROUND("fundo especial"),
  XXL("XXL"),XXS("XXS"),LEGACY("ataque exclusivo ou legado"),PVP("relevante para PvP"),TAG("etiqueta protegida"),RESEARCH("pesquisa especial"),SPECIES("espécie protegida");
  public final String label;Flag(String label){this.label=label;}

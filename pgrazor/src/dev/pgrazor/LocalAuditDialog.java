@@ -31,7 +31,7 @@ final class LocalAuditDialog {
  static EditText input(Activity a,LinearLayout b,String title,String initial){TextView label=text(a,b,title);EditText e=new EditText(MapTheme.wrap(a));e.setId(android.view.View.generateViewId());label.setLabelFor(e.getId());e.setSingleLine(true);e.setText(initial);privateInput(e);b.addView(e);return e;}
  static EditText numeric(Activity a,LinearLayout b,String title,String initial,boolean decimal,boolean signed){EditText e=input(a,b,title,initial);e.setInputType(android.text.InputType.TYPE_CLASS_NUMBER|(decimal?android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL:0)|(signed?android.text.InputType.TYPE_NUMBER_FLAG_SIGNED:0));e.setSingleLine(true);privateInput(e);return e;}
  static Spinner select(Activity a,LinearLayout b,String title,String[] values){TextView label=text(a,b,title);Spinner s=new Spinner(MapTheme.wrap(a));s.setId(android.view.View.generateViewId());label.setLabelFor(s.getId());ArrayAdapter<String> ad=new ArrayAdapter<>(MapTheme.wrap(a),android.R.layout.simple_spinner_item,values);ad.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);s.setAdapter(ad);b.addView(s);return s;}
- static void action(Activity a,LinearLayout b,String title,Runnable f){Button v=new Button(MapTheme.wrap(a));v.setText(title);v.setTextColor(MapTheme.ink());MapTheme.setButtonBackground(v);v.setAllCaps(false);v.setOnClickListener(x->f.run());b.addView(v);}
+ static Button action(Activity a,LinearLayout b,String title,Runnable f){Button v=new Button(MapTheme.wrap(a));v.setText(title);MapTheme.setButtonBackground(v);v.setAllCaps(false);v.setOnClickListener(x->f.run());b.addView(v);return v;}
  static void invalidateOnEdit(TextView result,EditText... fields){
   android.text.TextWatcher w=new android.text.TextWatcher(){
    public void beforeTextChanged(CharSequence s,int start,int count,int after){}
@@ -135,24 +135,34 @@ final class LocalAuditDialog {
  }
  static void reason(Activity a){LinearLayout b=body(a);EditText code=numeric(a,b,"Código do diagnóstico (reasonCode)","12",false,false);TextView r=text(a,b,"");invalidateOnEdit(r,code);action(a,b,"Interpretar",()->{try{r.setText(LocalAuditPolicy.reason(integer(code)));}catch(RuntimeException e){r.setText("Código inválido.");}});present(a,new AlertDialog.Builder(MapTheme.wrap(a)).setTitle("Motivos de proteção").setView(scroll(a,b)).setPositiveButton("Fechar",null).create());}
  static final int[] GALLERY_IDS={1,2,3,101,102,103,104,201,202,301,401,701,702,703,704,705,706,707,1201,1202,1203,1204,1301,1350,1351,1401,1402,1403,1404,1406,1408,1600,1601,1602,1606,1607,1609};
+ static String galleryLabel(int id){
+  switch(id){
+   case 1:return "Poké Bola";case 2:return "Grande Bola";case 3:return "Ultra Bola";
+   case 101:return "Poção";case 102:return "Superpoção";case 103:return "Hiperpoção";case 104:return "Poção Máxima";
+   case 201:return "Reviver";case 202:return "Reviver Máximo";case 301:return "Ovo da Sorte";
+   default:return "Item";
+  }
+ }
  static void itemGallery(Activity a){
   LinearLayout b=body(a);text(a,b,"Conferência visual dos ícones já empacotados. Compare pelo ID com o catálogo autorizado. Imagem decodificada não comprova identidade visual. Nenhum inventário é lido.");
   LinearLayout gallery=body(a);b.addView(gallery);
   TextView pageLabel=text(a,b,"");int[] page={0};int pageSize=9;
+  Button[] navigation=new Button[2];
   Runnable render=()->{
    gallery.removeAllViews();
    int pages=(GALLERY_IDS.length+pageSize-1)/pageSize;
    pageLabel.setText("Página "+(page[0]+1)+"/"+pages+" • "+GALLERY_IDS.length+" IDs");
+   navigation[0].setEnabled(page[0]>0);navigation[1].setEnabled(page[0]+1<pages);
    for(int i=page[0]*pageSize;i<Math.min(GALLERY_IDS.length,(page[0]+1)*pageSize);i++){
     int id=GALLERY_IDS[i];LinearLayout row=new LinearLayout(MapTheme.wrap(a));row.setGravity(android.view.Gravity.CENTER_VERTICAL);
     ItemBadge badge=new ItemBadge(MapTheme.wrap(a),id);
     row.addView(badge,new LinearLayout.LayoutParams(MapTheme.dp(a,48),MapTheme.dp(a,48)));
-    TextView label=new TextView(MapTheme.wrap(a));label.setText("ID "+id+" • "+(badge.hasDecodedSprite()?"Imagem decodificada":"Arte alternativa / ausente"));
+    TextView label=new TextView(MapTheme.wrap(a));label.setText(galleryLabel(id)+" • ID "+id+"\n"+(badge.hasDecodedSprite()?"Imagem decodificada":"Arte alternativa / ausente"));
     row.addView(label,new LinearLayout.LayoutParams(0,-2,1));gallery.addView(row);
    }
   };
-  action(a,b,"Página anterior",()->{if(page[0]>0){page[0]--;render.run();}});
-  action(a,b,"Próxima página",()->{if((page[0]+1)*pageSize<GALLERY_IDS.length){page[0]++;render.run();}});
+  navigation[0]=action(a,b,"Página anterior",()->{if(page[0]>0){page[0]--;render.run();}});
+  navigation[1]=action(a,b,"Próxima página",()->{if((page[0]+1)*pageSize<GALLERY_IDS.length){page[0]++;render.run();}});
   render.run();
   present(a,new AlertDialog.Builder(MapTheme.wrap(a)).setTitle("Conferência visual de itens").setView(scroll(a,b)).setPositiveButton("Fechar",null).create());
  }

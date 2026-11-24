@@ -55,10 +55,13 @@ final class MapTheme {
         return new RippleDrawable(ColorStateList.valueOf(dark()?0x33ffffff:0x22000000), new android.graphics.drawable.InsetDrawable(fill, inset), null);
     }
 
+    static ColorStateList actionTextColors(){return new ColorStateList(new int[][]{new int[]{-android.R.attr.state_enabled},new int[]{}},new int[]{muted(),ink()});}
+
     /** Applies {@link #buttonBackground}; an inset background would otherwise replace the label's padding. */
     static void setButtonBackground(View view) {
         int l = view.getPaddingLeft(), t = view.getPaddingTop(), r = view.getPaddingRight(), b = view.getPaddingBottom();
         view.setBackground(buttonBackground(view.getContext()));
+        if(view instanceof Button && !(view instanceof CompoundButton))((Button)view).setTextColor(actionTextColors());
         view.setPadding(l, t, r, b);
     }
 
@@ -89,7 +92,7 @@ final class MapTheme {
     static void styleButtons(AlertDialog dialog) {
         for (int which : new int[]{AlertDialog.BUTTON_POSITIVE, AlertDialog.BUTTON_NEGATIVE, AlertDialog.BUTTON_NEUTRAL}) {
             Button b = dialog.getButton(which);
-            if (b != null) { b.setTextColor(new ColorStateList(new int[][]{new int[]{-android.R.attr.state_enabled},new int[]{}},new int[]{muted(),ink()})); b.setAllCaps(false); }
+            if (b != null) { b.setTextColor(actionTextColors()); b.setAllCaps(false); }
         }
     }
 

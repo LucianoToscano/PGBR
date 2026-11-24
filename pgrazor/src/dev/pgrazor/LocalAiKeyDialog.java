@@ -26,7 +26,7 @@ final class LocalAiKeyDialog {
             LocalAuditDialog.privateInput(field);
             TextView status=LocalAuditDialog.text(a,b,"Verificando armazenamento local…");
             Button save=new Button(MapTheme.wrap(a)),remove=new Button(MapTheme.wrap(a));
-            save.setText("Salvar chave localmente");remove.setText("Remover chave");
+            save.setText("Salvar chave localmente");remove.setText("Remover chave");save.setAllCaps(false);remove.setAllCaps(false);
             MapTheme.setButtonBackground(save);MapTheme.setButtonBackground(remove);
             b.addView(save);b.addView(remove);save.setEnabled(false);remove.setEnabled(false);
             android.content.Context app=a.getApplicationContext();

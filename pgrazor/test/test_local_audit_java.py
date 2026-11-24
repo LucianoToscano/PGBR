@@ -71,6 +71,19 @@ class LocalAuditTests(unittest.TestCase):
         self.assertIn('new Thread(',panel)
         self.assertIn('a.runOnUiThread(',panel)
 
+    def test_gallery_navigation_and_neutral_button_state(self):
+        source=(ROOT/'src/dev/pgrazor/LocalAuditDialog.java').read_text(encoding='utf-8')
+        panel=source.split(' static String galleryLabel(int id){',1)[1].split(' static void tagReview(Activity a){',1)[0]
+        self.assertIn('case 301:return "Ovo da Sorte"',panel)
+        self.assertIn('default:return "Item"',panel)
+        self.assertIn('navigation[0].setEnabled(page[0]>0)',panel)
+        self.assertIn('navigation[1].setEnabled(page[0]+1<pages)',panel)
+        theme=(ROOT/'src/dev/pgrazor/MapTheme.java').read_text(encoding='utf-8')
+        self.assertIn('new int[]{-android.R.attr.state_enabled}',theme)
+        self.assertIn('((Button)view).setTextColor(actionTextColors())',theme)
+        policy=(ROOT/'src/dev/pgrazor/LocalAuditPolicy.java').read_text(encoding='utf-8')
+        self.assertIn('SHINY("brilhante (shiny)")',policy)
+
     def test_new_ui_is_read_only_and_wired(self):
         for name in ['LocalAuditPolicy.java','LocalCollectionPreview.java','LocalAuditDialog.java','LocalDiagnosticSummary.java','GpxPreviewView.java','GpxPreviewGeometry.java']:
             source=(ROOT/'src/dev/pgrazor'/name).read_text(encoding='utf-8')
