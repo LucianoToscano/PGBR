@@ -187,7 +187,7 @@ public final class GpxRouteDialog {
         present(activity, ChoiceList.attach(builder.create(), rows, which -> showEntry(activity, entries.get(which), selection)));
     }
 
-    private static void showEntry(Activity activity, GpxStore.Entry entry, Selection selection) {
+    static void showEntry(Activity activity, GpxStore.Entry entry, Selection selection) {
         AlertDialog dialog = new AlertDialog.Builder(MapTheme.wrap(activity)).setTitle(dev.pgrazor.PtBr.tr(entry.name))
             .setMessage(dev.pgrazor.PtBr.tr(String.format(Locale.forLanguageTag("pt-BR"), "%d paradas.\n\nUsar esta rota carrega o trajeto como rascunho. Depois, toque em Iniciar para começar.", entry.count)))
             .setNegativeButton(dev.pgrazor.PtBr.tr("Cancel"), null)
