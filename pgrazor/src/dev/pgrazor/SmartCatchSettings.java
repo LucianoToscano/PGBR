@@ -37,7 +37,7 @@ public final class SmartCatchSettings {
     public static Runnable populate(Activity activity,LinearLayout body){
         Context ui=body.getContext();
         CheckBox mode=new CheckBox(ui);mode.setText(dev.pgrazor.PtBr.tr("VGP+"));mode.setChecked(preferences.enabled());body.addView(mode);
-        LinearLayout options=new LinearLayout(ui);options.setOrientation(LinearLayout.VERTICAL);body.addView(options);
+        LinearLayout options=new SettingsUi.OptionList(ui);body.addView(options);
         TextView description=new TextView(ui);description.setText(dev.pgrazor.PtBr.tr("Use the VGP overlay to start or stop. VGP+ adds ball, berry and throw choices. High CP/level targets use Ultra Balls; set a threshold to 0 to disable it."));options.addView(description);
         TextView standard=row(activity,options,"Standard ball",new String[]{"Poké Ball","Great Ball","Ultra Ball"},preferences.ball()-1,index->{set("Ball",index+1);});
         CheckBox auto=new CheckBox(ui);auto.setText(dev.pgrazor.PtBr.tr("VGP+ auto ball"));auto.setChecked(preferences.autoBall());options.addView(auto);

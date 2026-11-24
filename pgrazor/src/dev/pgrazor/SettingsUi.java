@@ -38,6 +38,45 @@ final class SettingsUi {
         Button v = new Button(context); v.setText(dev.pgrazor.PtBr.tr(label)); v.setAllCaps(false); v.setTextSize(13); return v;
     }
 
+    // Pokematrix-inspired grouping: an explanatory note belongs to the control
+    // before it. Do not alter text, enabled state, listeners or the theme palette.
+    static final class OptionList extends LinearLayout {
+        private final android.graphics.Paint divider = new android.graphics.Paint();
+        OptionList(Context context){super(context);setOrientation(VERTICAL);}
+        private static boolean note(View v){
+            return v instanceof TextView && !(v instanceof Button)
+                && !(v instanceof EditText) && !v.isClickable();
+        }
+        @Override public void addView(View child,int index,ViewGroup.LayoutParams params){
+            LayoutParams lp=params instanceof LayoutParams
+                ? (LayoutParams)params : new LayoutParams(params);
+            final int gap=dp(getContext(),note(child)?3:8);
+            lp.topMargin=Math.max(lp.topMargin,gap);
+            super.addView(child,index,lp);
+        }
+        @Override protected void dispatchDraw(android.graphics.Canvas canvas){
+            super.dispatchDraw(canvas);
+            divider.setColor(Control.darkTheme()?0x446f8295:0x44778899);
+            final int inset=dp(getContext(),6);
+            final int h=Math.max(1,dp(getContext(),1));
+            if(getWidth()-getPaddingLeft()-getPaddingRight()<=2*inset)return;
+            View previous=null;
+            for(int i=0;i<getChildCount();i++){
+                View child=getChildAt(i);
+                if(child.getVisibility()!=View.VISIBLE)continue;
+                if(previous!=null&&!note(child)){
+                    int gap=child.getTop()-previous.getBottom();
+                    if(gap>=h){
+                        int y=previous.getBottom()+(gap-h)/2;
+                        canvas.drawRect(getPaddingLeft()+inset,y,
+                            getWidth()-getPaddingRight()-inset,y+h,divider);
+                    }
+                }
+                previous=child;
+            }
+        }
+    }
+
     static void styleTree(Context context,View view){
         if(view instanceof TextView){TextView t=(TextView)view;
             t.setTextColor(new android.content.res.ColorStateList(new int[][]{new int[]{-android.R.attr.state_enabled},new int[]{}},new int[]{muted(),ink()}));
