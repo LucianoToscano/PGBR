@@ -1515,3 +1515,71 @@ Foram executadas 18 fixtures C++ host, contratos de tempos/UI e verificação do
 - A branch de versão LT044 foi reconstruída a partir da `main` pós-merge da [PR #150](https://github.com/LucianoToscano/PGBR/pull/150) (`94d7e28e95c771574d0041260c99820e778c9181`), não substituindo o Mestre dessa revisão. Os 21 arquivos do contrato/versionamento da PR #148 foram reconciliados por conteúdo, enquanto este único Mestre recebeu **apenas o adendo histórico** de #148, preservando também o registro da auditoria e a correção da priorização de carregados já integrados.
 - A nova pré-release LT044, se for validada e publicada, deve conter PT-BR/GPS, Rocket QA6, mapa/HUD/IV, PGSharp local e prioridade imediata confirmada por CI da PR #150; continua `device_tested=false`. Não afirmar integração dos Snipers #115/#118/#121, Radar #114, Savant #135 ou VGP/MT de forks.
 - **Status inicial desta reconciliação:** merge/release e hashes ainda não concluídos neste registro; conferir GitHub Actions, source SHA e assets reais depois da publicação.
+
+## 24/11/2026 — Especificacao unica de 5 fontes: camada canonica, Radar/Snipers e gateway proprio (candidata QA, PR #160)
+
+- **Base e branche:** `main` em `cbd4c69daad4e526bed7a1328925b3f82fdea56c` (LT044 QA); trabalho na branch unica da sessao `arena/20f54cfa-pgbr`, aberta na [PR #160](https://github.com/LucianoToscano/PGBR/pull/160) **sem merge para `main`** e sem auto-merge. A especificacao pede branch isolada por modulo; a sessao de trabalho aceita uma unica branch, por isso a separacao por modulo foi registrada em **commits isolados** dentro da mesma PR (links abaixo) e nao em PRs separadas.
+- **Fonte da verdade:** `docs/especificacao-unica-5-fontes-20261123/docs/integracoes/PGBR_ESPECIFICACAO_UNICA_5_FONTES_API_WEBHOOKS.md`, lida na integra. Exatamente **cinco integracoes** (PokeList, iFlowGo, PoGoCoordinates+PokeSearch como uma, PGSharp, iPogo); nenhuma sexta fonte, nenhum adaptador Pokemod/PGTools.
+- **Commits por modulo:** camada canonica [0cf2962](https://github.com/LucianoToscano/PGBR/commit/0cf2962f28260209f40f4add0937bc5dcdf62e6b) · adaptadores [9cce8fc](https://github.com/LucianoToscano/PGBR/commit/9cce8fcc076f251065e2c00fe46f13ed458c391e) · testes JVM + auditoria estatica [0f9d66c](https://github.com/LucianoToscano/PGBR/commit/0f9d66c102ae8f8e713b86995da1afb35a204349) · UI Radar/Snipers/Importacao [30ead40](https://github.com/LucianoToscano/PGBR/commit/30ead40be93cf856b5c3499ae3000550491f21f8) · gateway [c91221c](https://github.com/LucianoToscano/PGBR/commit/c91221c337f6bcd261845d710f174fee2e9b1abe).
+
+### Modelo canonico (Java 8, sem Android, apenas `org.json`)
+
+- **Ausencia e zero:** campo ausente = `null`; IV 0 continua sendo observacao real e nao "desconhecido". `(0,0)`, NaN e fora de faixa viram `CoordinatePrecision.UNAVAILABLE` e nunca viram coordenada de teleporte.
+- **Proveniencia:** `OriginKind {live_external, personal_import, static_catalog, demo_fixture}` por evento; `is_demo` nunca e acionavel. Sete `source_id` (`pokelist, iflowgo, pogocoordinates, pgsharp, ipogo, pgbr_hundo, livepokemap`); fonte remota comeca `UNVERIFIED`, recusa vira `BLOCKED` e **nada** assume `CONNECTED` sem resposta autorizada.
+- **Filtro:** `EventFilterEngine` separa `appliedLocally` de `unsupported` e falha fechado; `pvp` = rank GL **ou** UL nao nulo.
+- **Importacao local real:** `LocalEventImport`/`LocalEventStore` aceitam JSON (controles `events/items/spawns/pokemons/results/data` e `hundos`), CSV, GPX (SAX com doctype e entidade desligados) e coordenadas digitadas; teto de 2 MiB/5000 linhas, dedupe, rejeicao com motivo por linha e `toGpx` apenas de coordenadas validas.
+- **Presets e alertas:** `PresetCodec` formato `PGBR preset` v2 com migracao de v1 (`migrated_from="1"` + `raw_source`), dedupe e favoritos; `AlertEngine` nao dispara preset sem criterio e so considera shiny com `shinyObserved=true`; `PgSharpFilterMapping` converte configs proprias do PGSharp e informa campo nao suportado por `familia.chave`.
+- **Snipers:** `SniperSearch.sniper1` (TTL >= 60 s, sem expirado/demo, limite 25, distancia) e `sniper2` (limite 100, multiplos criterios). A acao de copiar/mapa/Teleporte e decidida **por linha** por `actionFor(event, agora, cooldown)`; Teleporte segue em `TeleportDialog.confirm`, nunca automatico.
+
+### Integracoes
+
+- **PokeList:** `PokeListFeedClient`/`PokeListFeedData` reescritos para consulta real por categoria (`pokemon|raid|quest|rocket|rocket_leader`) com contadores recebido/exibido, recusa de cursor/centro ausente e 401/403/429 tratados como `blocked` (nunca contornados).
+- **iFlowGo:** nearby por raio com o limite real da fonte e busca global paginada enquanto a resposta informa `total_pages`; 25 itens por pagina **nao** sao cobertura mundial.
+- **PoGoCoordinates + PokeSearch (uma integracao):** `reveal_code` nunca vira coordenada e nao existe revelacao automatica; `PogoFeedDialog` continua sendo a UX de referencia.
+- **PGSharp:** importacao/conversao de JSON/CSV/GPX e das proprias configs; Sniper local real **somente** sobre dados do usuario; dados de outra fonte nunca sao atribuidos ao PGSharp.
+- **iPogo:** radar, perfis, listas, filtros, busca, alertas e importacao pessoal; **sem** alegacao de API publica de coordenadas no APK/IPA (`ipogo_connector_unverified`).
+
+### UI (PT-BR) e gateway
+
+- `FeedChooser` passou de 6 para 10 entradas: Filtro Pokemon, Filtro Reides, LivePokeMap, PoGoCoordinates, Sniper 100% IV, PGSharp, **Radar PGBR 5 fontes** (7 abas: Pokemon, Reides, Pesquisas, Rocket, Power Spots, Ninhos e Rotas, com origem/TTL por linha e vazio honesto), **Sniper 1**, **Sniper 2** e **Importar dados locais** (colar, digitado, JSON/CSV/GPX, relatorio importado/rejeitado).
+- Glossario sincronizado: `pt-BR.json`, `PtBr.java` e `RootPtBr.java` com 1493 entradas cada (`test_ptbr_glossary` OK); "Teleporte", nunca "Teletransportar".
+- **Gateway proprio** em `gateway/pgbr_gateway.py` (stdlib, sem dependencia): `/v1/health`, `/v1/sources`, `/v1/capabilities`, `/v1/search`, `/v1/imports/{pgsharp,ipogo}`, `/v1/events`, `/v1/presets`, `/v1/webhooks/subscriptions` e OpenAPI 3.1 em `/openapi.json`. Token por perfil, limite de consulta com `Retry-After`, validacao que recusa faixa invalida em vez de ampliar a busca e proveniencia/TTL em cada item. Webhooks com HMAC-SHA256 (`X-Event-Id`, `X-Event-Timestamp`, `X-Event-Signature`), janela anti-replay, idempotencia, retry com backoff, DLQ e revogacao; destino obrigatoriamente HTTPS publico. **Coleta remota desligada por padrao** (nenhuma pagina/fonte com permissao explicita verificada) e `spawn/raid/quest/rocket` so saem de fato externo ao vivo — importacao pessoal e catalogo estatico nunca geram esses eventos.
+
+### Matriz de entrega
+
+| funcao | fonte | local/remoto | implementacao | testes | provider_connected | device_tested | PR | pendencia |
+|---|---|---|---|---|---|---|---|---|
+| Modelo canonico + filtros + presets + alertas | transversal | local | `SourceEvent/Query/Capabilities/Registry`, `EventFilterEngine`, `PresetCodec`, `AlertEngine`, `PgSharpFilterMapping` | `SourceModelTest`, `EventFilterEngineTest`, `PresetCodecTest`, `PgSharpFilterMappingTest` (JVM, auto-pula sem SDK) | n/a | false | #160 | compilar no CI |
+| Sniper 1 e Sniper 2 | todas | local | `SniperSearch`, `SniperDialog` | `SniperSearchTest` (TTL, cooldown, demo) | false | false | #160 | compilar no CI |
+| Importacao pessoal JSON/CSV/GPX/digitado | pgsharp, ipogo, import | local | `LocalEventImport`, `LocalEventStore`, `LocalImportDialog`, `SourceDataStore` | `LocalEventImportTest` (limite, dedupe, rejeicao) | n/a | false | #160 | compilar no CI |
+| PokeList (pokemon, raid, quest, rocket, lider) | pokelist | remoto | `PokeListFeedClient/Data`, `PokeListSourceAdapter` | `FeedSourceEventsTest`, `PokeListFeedDataTest` | **false** | false | #160 | resposta autorizada real |
+| iFlowGo (nearby + global paginado) | iflowgo | remoto | `IFlowGoFeedClient/Data`, `IFlowGoRequestPolicy`, `IFlowGoSourceAdapter` | `IFlowGoFeedDataTest`, `test_iflowgo_request_policy_java` | **false** | false | #160 | resposta autorizada real |
+| PoGoCoordinates + PokeSearch | pogocoordinates | remoto | `PogoFeedData`, `PoGoCoordinatesSourceAdapter` | `FeedSourceEventsTest` (reveal_code) | **false** | false | #160 | resposta autorizada real |
+| PGSharp (import/config/Sniper local) | pgsharp | local | `PgSharpDataImport` + `PgSharpFilterMapping` + adaptador local | `PgSharpFilterMappingTest` | n/a | false | #160 | compilar no CI |
+| iPogo (radar/perfis/import) | ipogo | local | adaptador local + radar | `SourceAdaptersTest` | **false** (conector nao verificado) | false | #160 | sem API publica |
+| Radar 7 abas + exportar GPX | todas | local | `SourceRadarDialog` | sintaxe + auditoria de referencias | false | false | #160 | compilar no CI |
+| Gateway OpenAPI 3.1 | pgbr (proprio) | local | `gateway/pgbr_gateway.py` | **45 testes OK** | n/a | false | #160 | deploy/hospedagem |
+| Webhooks HMAC + DLQ | pgbr (proprio) | local | `WebhookDispatcher` | assinatura, replay, retry, DLQ, revogacao OK | n/a | false | #160 | destino real |
+
+### Verificacao executada (resultados reais)
+
+| Comando | Resultado |
+|---|---|
+| `python3 -B pgrazor/test/test_pgbr_gateway.py` | **45 testes, OK** |
+| `python3 gateway/pgbr_gateway.py --selftest` | **OK** |
+| `python3 -B pgrazor/test/test_ptbr_glossary.py` | **3 testes, OK** |
+| `python3 -B pgrazor/test/test_hundo_manual_ui_contract.py` | **5 testes, OK** (entradas anteriores do menu Feeds preservadas) |
+| `python3 -B pgrazor/test/test_pokelist_access_behavior.py` | **2 testes, OK** |
+| `python3 -B pgrazor/test/source_layer_reference_audit.py` | **27 arquivos, 1223 referencias verificadas, 0 nao resolvidas** |
+| `python3 -B -m unittest discover -s pgrazor/test -p 'test_*.py'` | 333 testes: 330 ok, 62 pulados, 3 falhas por `javac`/SDK ausente |
+| Parse sintatico (`javalang`) dos 36 arquivos Java novos | sintaxe OK (**nao** e compilacao) |
+
+### Limites explicitos (nao alegar como entregue)
+
+- **Nenhum arquivo Java novo foi compilado**: `javac` e Android SDK nao existem neste ambiente (sem `apt`, JDK completo excede o snapshot, `jdk4py` e apenas JRE, assets de release do GitHub bloqueados). `tools/check.py` nao rodou; os 8 testes JVM novos auto-pulam sem SDK e **precisam do CI** para valer.
+- `provider_connected=false` em todas as fontes: nenhuma resposta autorizada real, nenhum log sanitizado de contrato valido.
+- `device_tested=false`; **APK nao gerado** (nenhum link de artefato), nenhum release, nenhuma tag.
+- `PokeListSourceAdapter`/`IFlowGoSourceAdapter` ficam fora do conjunto JVM porque dependem de `LiveFeedClient` (Android-bound): cobertos apenas por sintaxe e pela auditoria de referencias.
+- A auditoria de referencias e heuristica (sem sistema de tipos/escopo completos): 2026 receptores nao resolvidos, em maioria tipos do framework.
+- Nada foi alterado em GPS/joystick/Root/Zygisk/batalhas/ataques/escudo/VGP/inventario/traducoes existentes alem das entradas novas do menu Feeds e do glossario.
+- **Pendencias em chats paralelos preservadas:** #115/#118/#121 Snipers, #114/#108/#111 Radar, #135 Savant/Root seguem separadas; nada foi re-cherry-picked da #140.
