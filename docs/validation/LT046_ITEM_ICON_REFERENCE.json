@@ -17,21 +17,39 @@
       "filename": "item-1.png",
       "git_blob_sha1": "e8a639dd5f5f8b860e9b28319b97378bbf959765",
       "bytes": 26184,
-      "drive_numeric_candidates": []
+      "drive_numeric_candidates": [],
+      "drive_named_reference": {
+        "filename": "poke-ball.png",
+        "bytes": 26184,
+        "same_size": true,
+        "status": "metadata_only_not_byte_or_visual_verified"
+      }
     },
     {
       "id": 2,
       "filename": "item-2.png",
       "git_blob_sha1": "7119733fe98a3dfc8874bd43931661e3bd2b4b37",
       "bytes": 29945,
-      "drive_numeric_candidates": []
+      "drive_numeric_candidates": [],
+      "drive_named_reference": {
+        "filename": "great-ball.png",
+        "bytes": 29945,
+        "same_size": true,
+        "status": "metadata_only_not_byte_or_visual_verified"
+      }
     },
     {
       "id": 3,
       "filename": "item-3.png",
       "git_blob_sha1": "bd375c73b5fc582264dd7c624430e927d33cc1be",
       "bytes": 29367,
-      "drive_numeric_candidates": []
+      "drive_numeric_candidates": [],
+      "drive_named_reference": {
+        "filename": "ultra-ball.png",
+        "bytes": 29367,
+        "same_size": true,
+        "status": "metadata_only_not_byte_or_visual_verified"
+      }
     },
     {
       "id": 101,
@@ -44,7 +62,13 @@
           "size": 34828,
           "same_size": false
         }
-      ]
+      ],
+      "drive_named_reference": {
+        "filename": "potion.png",
+        "bytes": 39445,
+        "same_size": false,
+        "status": "metadata_only_not_byte_or_visual_verified"
+      }
     },
     {
       "id": 102,
@@ -57,7 +81,13 @@
           "size": 31378,
           "same_size": false
         }
-      ]
+      ],
+      "drive_named_reference": {
+        "filename": "super-potion.png",
+        "bytes": 36835,
+        "same_size": false,
+        "status": "metadata_only_not_byte_or_visual_verified"
+      }
     },
     {
       "id": 103,
@@ -70,7 +100,13 @@
           "size": 32203,
           "same_size": false
         }
-      ]
+      ],
+      "drive_named_reference": {
+        "filename": "hyper-potion.png",
+        "bytes": 37095,
+        "same_size": false,
+        "status": "metadata_only_not_byte_or_visual_verified"
+      }
     },
     {
       "id": 104,
@@ -83,7 +119,13 @@
           "size": 51778,
           "same_size": false
         }
-      ]
+      ],
+      "drive_named_reference": {
+        "filename": "max-potion.png",
+        "bytes": 55956,
+        "same_size": false,
+        "status": "metadata_only_not_byte_or_visual_verified"
+      }
     },
     {
       "id": 201,
@@ -96,7 +138,13 @@
           "size": 12173,
           "same_size": false
         }
-      ]
+      ],
+      "drive_named_reference": {
+        "filename": "revive.png",
+        "bytes": 15555,
+        "same_size": false,
+        "status": "metadata_only_not_byte_or_visual_verified"
+      }
     },
     {
       "id": 202,
@@ -109,14 +157,45 @@
           "size": 23136,
           "same_size": false
         }
-      ]
+      ],
+      "drive_named_reference": {
+        "filename": "max-revive.png",
+        "bytes": 27804,
+        "same_size": false,
+        "status": "metadata_only_not_byte_or_visual_verified"
+      }
     },
     {
       "id": 301,
       "filename": "item-301.png",
       "git_blob_sha1": "f6062da05f351c347658bc5cdf5de5807e9af739",
       "bytes": 67371,
-      "drive_numeric_candidates": []
+      "drive_numeric_candidates": [],
+      "drive_named_reference": {
+        "status": "ambiguous_generic_egg",
+        "candidates": [
+          {
+            "filename": "egg-7km.png",
+            "bytes": 5916
+          },
+          {
+            "filename": "egg-5km.png",
+            "bytes": 28769
+          },
+          {
+            "filename": "egg-2km.png",
+            "bytes": 27651
+          },
+          {
+            "filename": "egg-12km.png",
+            "bytes": 5886
+          },
+          {
+            "filename": "egg-10km.png",
+            "bytes": 29314
+          }
+        ]
+      }
     },
     {
       "id": 401,
@@ -526,5 +605,12 @@
       "bytes": 31086,
       "status": "reference_only_no_verified_id_or_rights"
     }
-  ]
+  ],
+  "follow_up": {
+    "named_balls_same_size": 3,
+    "potion_revive_named_different_size": 6,
+    "generic_egg_unresolved": 1,
+    "byte_comparison": "not performed; no byte-level Drive checksum or materializable image bytes exposed in current connector",
+    "action": "preserve current images; do not substitute from names or sizes"
+  }
 }

@@ -53,6 +53,13 @@ class ItemIconAssetsTest(unittest.TestCase):
         data=json.loads((ROOT.parent/'docs/validation/LT046_ITEM_ICON_REFERENCE.json').read_text(encoding='utf-8'))
         self.assertEqual({row['id'] for row in data['items']},EXPECTED)
         self.assertEqual(data['counts']['total'],len(EXPECTED))
+        self.assertEqual(data['follow_up']['named_balls_same_size'],3)
+        self.assertEqual(data['follow_up']['potion_revive_named_different_size'],6)
+        self.assertEqual(data['follow_up']['generic_egg_unresolved'],1)
+        by_id={row['id']:row for row in data['items']}
+        self.assertEqual(by_id[301]['drive_named_reference']['status'],'ambiguous_generic_egg')
+        self.assertTrue(all(by_id[i]['drive_named_reference']['same_size'] for i in (1,2,3)))
+        self.assertTrue(all(not by_id[i]['drive_named_reference']['same_size'] for i in (101,102,103,104,201,202)))
         for row in data['items']:
             payload=(ROOT/'assets/item-icons'/row['filename']).read_bytes()
             self.assertEqual(len(payload),row['bytes'])

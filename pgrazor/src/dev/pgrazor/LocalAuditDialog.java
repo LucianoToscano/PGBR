@@ -12,11 +12,24 @@ final class LocalAuditDialog {
    .setNegativeButton("Fechar",null).create();present(a,d);
  }
  static void present(Activity a,AlertDialog d){DialogLifecycle.bind(a,d,null);d.setOnShowListener(x->MapTheme.styleButtons(d));d.show();}
+ // Protect only the manual collection/diagnostic windows; the public icon gallery remains capturable.
+ static void presentPrivate(Activity a,AlertDialog d){
+  android.view.Window w=d.getWindow();if(w!=null)w.addFlags(android.view.WindowManager.LayoutParams.FLAG_SECURE);
+  present(a,d);
+ }
+ static void privateInput(EditText e){
+  e.setSaveEnabled(false);
+  if(android.os.Build.VERSION.SDK_INT>=26){
+   e.setImportantForAutofill(android.view.View.IMPORTANT_FOR_AUTOFILL_NO);
+   e.setImeOptions(e.getImeOptions()|android.view.inputmethod.EditorInfo.IME_FLAG_NO_PERSONALIZED_LEARNING);
+  }
+ }
+ static String evaluationTime(){return new java.text.SimpleDateFormat("dd/MM/yyyy HH:mm:ss Z",Locale.forLanguageTag("pt-BR")).format(new java.util.Date());}
  static LinearLayout body(Activity a){LinearLayout b=new LinearLayout(MapTheme.wrap(a));b.setOrientation(LinearLayout.VERTICAL);int p=MapTheme.dp(a,16);b.setPadding(p,p,p,p);return b;}
  static ScrollView scroll(Activity a,LinearLayout b){ScrollView s=new ScrollView(a);s.addView(b);return s;}
  static TextView text(Activity a,LinearLayout b,String s){TextView t=new TextView(MapTheme.wrap(a));t.setText(s);b.addView(t);return t;}
- static EditText input(Activity a,LinearLayout b,String title,String initial){TextView label=text(a,b,title);EditText e=new EditText(MapTheme.wrap(a));e.setId(android.view.View.generateViewId());label.setLabelFor(e.getId());e.setSingleLine(true);e.setText(initial);b.addView(e);return e;}
- static EditText numeric(Activity a,LinearLayout b,String title,String initial,boolean decimal,boolean signed){EditText e=input(a,b,title,initial);e.setInputType(android.text.InputType.TYPE_CLASS_NUMBER|(decimal?android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL:0)|(signed?android.text.InputType.TYPE_NUMBER_FLAG_SIGNED:0));e.setSingleLine(true);return e;}
+ static EditText input(Activity a,LinearLayout b,String title,String initial){TextView label=text(a,b,title);EditText e=new EditText(MapTheme.wrap(a));e.setId(android.view.View.generateViewId());label.setLabelFor(e.getId());e.setSingleLine(true);e.setText(initial);privateInput(e);b.addView(e);return e;}
+ static EditText numeric(Activity a,LinearLayout b,String title,String initial,boolean decimal,boolean signed){EditText e=input(a,b,title,initial);e.setInputType(android.text.InputType.TYPE_CLASS_NUMBER|(decimal?android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL:0)|(signed?android.text.InputType.TYPE_NUMBER_FLAG_SIGNED:0));e.setSingleLine(true);privateInput(e);return e;}
  static Spinner select(Activity a,LinearLayout b,String title,String[] values){TextView label=text(a,b,title);Spinner s=new Spinner(MapTheme.wrap(a));s.setId(android.view.View.generateViewId());label.setLabelFor(s.getId());ArrayAdapter<String> ad=new ArrayAdapter<>(MapTheme.wrap(a),android.R.layout.simple_spinner_item,values);ad.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);s.setAdapter(ad);b.addView(s);return s;}
  static void action(Activity a,LinearLayout b,String title,Runnable f){Button v=new Button(MapTheme.wrap(a));v.setText(title);v.setTextColor(MapTheme.ink());MapTheme.setButtonBackground(v);v.setAllCaps(false);v.setOnClickListener(x->f.run());b.addView(v);}
  static void invalidateOnEdit(TextView result,EditText... fields){
@@ -36,7 +49,7 @@ final class LocalAuditDialog {
  static int integer(EditText e){return Integer.parseInt(e.getText().toString().trim());}
  static double decimal(EditText e){return Double.parseDouble(e.getText().toString().trim().replace(',','.'));}
  static void collection(Activity a){
-  LinearLayout b=body(a);text(a,b,"Informe dados verificados. Desconhecido protege por precaução. Nenhuma transferência será executada.");
+  LinearLayout b=body(a);text(a,b,"Informe dados verificados. Desconhecido protege por precaução. Nenhuma transferência será executada. A captura desta janela é bloqueada pelo Android; não é proteção das telas do jogo.");
   EditText name=input(a,b,"Espécie",""),cp=numeric(a,b,"PC","",false,false),atk=numeric(a,b,"IV ataque (0–15 ou -1 desconhecido)","-1",false,true),def=numeric(a,b,"IV defesa","-1",false,true),sta=numeric(a,b,"IV PS","-1",false,true),limit=numeric(a,b,"IV mínimo para preservar (0–100; 101 desativa só o limite de IV)","99",false,false);
   EditText names=input(a,b,"Espécies adicionais protegidas (nomes exatos separados por vírgulas)","");
   text(a,b,"Lista adicional, com os mesmos critérios da prévia em lote. Formas diferentes precisam de nomes próprios.");
@@ -52,9 +65,9 @@ final class LocalAuditDialog {
    LocalAuditPolicy.Decision decision=LocalAuditPolicy.withSpeciesProtection(LocalAuditPolicy.preview(aa,dd,ss,integer(limit),selected,values),name.getText().toString().trim(),LocalAuditPolicy.protectedNames(names.getText().toString()));
    String state=decision.status==LocalAuditPolicy.Status.PROTECTED?"Protegido":decision.status==LocalAuditPolicy.Status.UNCERTAIN?"Protegido por incerteza":"Corresponde ao filtro";
    String iv=LocalAuditPolicy.validIv(aa)&&LocalAuditPolicy.validIv(dd)&&LocalAuditPolicy.validIv(ss)?String.format(Locale.forLanguageTag("pt-BR"),"%.2f%%",(aa+dd+ss)*100.0/45):"Desconhecido";
-   result.setText(name.getText()+" • PC "+pc+" • IV "+iv+"\n"+state+"\n"+String.join("\n",decision.reasons)+"\n"+new java.util.Date()+" • PGBR "+BuildVersion.NAME+" • esquema "+LocalAuditPolicy.SCHEMA);
+   result.setText(name.getText()+" • PC "+pc+" • IV "+iv+"\n"+state+"\n"+String.join("\n",decision.reasons)+"\n"+evaluationTime()+" • PGBR "+BuildVersion.NAME+" • esquema "+LocalAuditPolicy.SCHEMA);
   }catch(RuntimeException invalid){result.setText("Confira os campos e os limites.");}});
-  present(a,new AlertDialog.Builder(MapTheme.wrap(a)).setTitle("Prévia local de filtros").setView(scroll(a,b)).setPositiveButton("Fechar",null).create());
+  presentPrivate(a,new AlertDialog.Builder(MapTheme.wrap(a)).setTitle("Prévia local de filtros").setView(scroll(a,b)).setPositiveButton("Fechar",null).create());
  }
  static void batch(Activity a){
   LinearLayout b=body(a);
@@ -62,7 +75,7 @@ final class LocalAuditDialog {
   EditText limit=numeric(a,b,"IV mínimo para preservar (0–100; 101 desativa só o limite de IV)","99",false,false);
   EditText protectedNames=input(a,b,"Espécies adicionais protegidas (nomes exatos separados por vírgulas)","");
   text(a,b,"A lista é adicional aos 20 critérios; formas diferentes precisam de nomes próprios. Não usa dados do jogo.");
-  EditText records=new EditText(MapTheme.wrap(a));records.setMinLines(4);records.setMaxLines(8);records.setHint("Rattata;478;4;4;5;EVENT=1,SHINY=0");b.addView(records);
+  EditText records=new EditText(MapTheme.wrap(a));records.setMinLines(4);records.setMaxLines(8);records.setHint("Rattata;478;4;4;5;EVENT=1,SHINY=0");privateInput(records);b.addView(records);
   LocalAuditPolicy.Flag[] flags=LocalAuditPolicy.Flag.values();CheckBox[] active=new CheckBox[flags.length];
   for(int i=0;i<flags.length;i++){CheckBox c=new CheckBox(MapTheme.wrap(a));c.setText("Proteger "+flags[i].label+" ("+flags[i].name()+")");c.setChecked(true);b.addView(c);active[i]=c;}
   Spinner filter=select(a,b,"Mostrar resultados",new String[]{"Todos","Protegidos","Protegidos por incerteza","Correspondem ao filtro"});
@@ -105,7 +118,7 @@ final class LocalAuditDialog {
    if(oversized[0]||records.length()>LocalCollectionPreview.MAX_CHARS){result.setText("Colagem rejeitada por tamanho. Substitua todo o conteúdo por um lote completo menor; nenhum registro foi avaliado.");return;}
    try{
     EnumSet<LocalAuditPolicy.Flag> selected=EnumSet.noneOf(LocalAuditPolicy.Flag.class);for(int i=0;i<flags.length;i++)if(active[i].isChecked())selected.add(flags[i]);
-    report[0]=LocalCollectionPreview.parse(records.getText().toString(),integer(limit),selected,LocalAuditPolicy.protectedNames(protectedNames.getText().toString()));evaluatedAt[0]=new java.text.SimpleDateFormat("dd/MM/yyyy HH:mm:ss Z",Locale.forLanguageTag("pt-BR")).format(new java.util.Date());render.run();
+    report[0]=LocalCollectionPreview.parse(records.getText().toString(),integer(limit),selected,LocalAuditPolicy.protectedNames(protectedNames.getText().toString()));evaluatedAt[0]=evaluationTime();render.run();
    }catch(IllegalArgumentException invalid){result.setText("Confira os limites e o formato da lista.");}
   });
   action(a,b,"Consultar motivos das linhas inválidas",()->{
@@ -114,11 +127,11 @@ final class LocalAuditDialog {
    for(Map.Entry<Integer,String> entry:report[0].rejectedReasons.entrySet())errors.append("Linha ").append(entry.getKey()).append(": ").append(entry.getValue()).append('\n');
    if(errors.length()==0)errors.append("Nenhuma linha inválida.");
    LinearLayout detail=body(a);text(a,detail,errors.toString());
-   present(a,new AlertDialog.Builder(MapTheme.wrap(a)).setTitle("Diagnóstico da importação").setView(scroll(a,detail)).setPositiveButton("Fechar",null).create());
+   presentPrivate(a,new AlertDialog.Builder(MapTheme.wrap(a)).setTitle("Diagnóstico da importação").setView(scroll(a,detail)).setPositiveButton("Fechar",null).create());
   });
   action(a,b,"Página anterior",()->{if(report[0]!=null&&page[0]>0){page[0]--;render.run();}});
   action(a,b,"Próxima página",()->{if(report[0]!=null&&page[0]+1<LocalCollectionPreview.pageCount(report[0],status.get())){page[0]++;render.run();}});
-  present(a,new AlertDialog.Builder(MapTheme.wrap(a)).setTitle("Prévia de coleção em lote").setView(scroll(a,b)).setPositiveButton("Fechar",null).create());
+  presentPrivate(a,new AlertDialog.Builder(MapTheme.wrap(a)).setTitle("Prévia de coleção em lote").setView(scroll(a,b)).setPositiveButton("Fechar",null).create());
  }
  static void reason(Activity a){LinearLayout b=body(a);EditText code=numeric(a,b,"Código do diagnóstico (reasonCode)","12",false,false);TextView r=text(a,b,"");invalidateOnEdit(r,code);action(a,b,"Interpretar",()->{try{r.setText(LocalAuditPolicy.reason(integer(code)));}catch(RuntimeException e){r.setText("Código inválido.");}});present(a,new AlertDialog.Builder(MapTheme.wrap(a)).setTitle("Motivos de proteção").setView(scroll(a,b)).setPositiveButton("Fechar",null).create());}
  static final int[] GALLERY_IDS={1,2,3,101,102,103,104,201,202,301,401,701,702,703,704,705,706,707,1201,1202,1203,1204,1301,1350,1351,1401,1402,1403,1404,1406,1408,1600,1601,1602,1606,1607,1609};
@@ -145,7 +158,7 @@ final class LocalAuditDialog {
  }
  static void tagReview(Activity a){
   LinearLayout b=body(a);text(a,b,"Informe os nomes das etiquetas, um por linha. Selecione as protegidas e as observadas no Pokémon. Não lê etiquetas do jogo, não altera a coleção e não executa ações.");
-  EditText source=new EditText(MapTheme.wrap(a));source.setMinLines(3);source.setMaxLines(6);source.setHint("Uma etiqueta por linha");b.addView(source);
+  EditText source=new EditText(MapTheme.wrap(a));source.setMinLines(3);source.setMaxLines(6);source.setHint("Uma etiqueta por linha");privateInput(source);b.addView(source);
   LinearLayout choices=body(a);b.addView(choices);
   CheckBox complete=new CheckBox(MapTheme.wrap(a));complete.setText("Confirmei todas as etiquetas deste Pokémon");b.addView(complete);
   TextView result=text(a,b,"");List<String> catalog=new ArrayList<>();List<CheckBox> selected=new ArrayList<>(),observed=new ArrayList<>();
@@ -180,12 +193,12 @@ final class LocalAuditDialog {
    result.setText(state==LocalAuditPolicy.TagObservation.MATCH?"TAG=1 — etiqueta protegida confirmada.":state==LocalAuditPolicy.TagObservation.NO_MATCH?"TAG=0 — nenhuma etiqueta protegida na lista que você confirmou completa.":"TAG=? — dados insuficientes ou nenhuma etiqueta de proteção selecionada.");
   });
   text(a,b,"Use o resultado TAG na prévia local da coleção, se corresponder aos dados que você verificou. Nenhum filtro do jogo foi modificado.");
-  present(a,new AlertDialog.Builder(MapTheme.wrap(a)).setTitle("Seleção visual de etiquetas").setView(scroll(a,b)).setPositiveButton("Fechar",null).create());
+  presentPrivate(a,new AlertDialog.Builder(MapTheme.wrap(a)).setTitle("Seleção visual de etiquetas").setView(scroll(a,b)).setPositiveButton("Fechar",null).create());
  }
  static void summarize(Activity a){
-  LinearLayout b=body(a);text(a,b,"Abra o ZIP filtrado, extraia diagnostico.txt e cole seu conteúdo completo. Não cole o TXT bruto. A análise é local e não envia nem executa nada.");
+  LinearLayout b=body(a);text(a,b,"Abra o ZIP filtrado, extraia diagnostico.txt e cole seu conteúdo completo. Não cole o TXT bruto. A análise é local e não envia nem executa nada. A captura desta janela é bloqueada pelo Android; não é proteção das telas do jogo.");
   EditText source=new EditText(MapTheme.wrap(a));source.setMinLines(4);source.setMaxLines(8);
-  source.setHint("Conteúdo de diagnostico.txt");
+  source.setHint("Conteúdo de diagnostico.txt");privateInput(source);
   b.addView(source);TextView result=text(a,b,"");
   // Reject an oversized replacement completely, instead of silently truncating it.
   final boolean[] rejected={false};
@@ -202,7 +215,7 @@ final class LocalAuditDialog {
     if(rejected[0])throw new IllegalArgumentException("Substitua todo o conteúdo após a colagem rejeitada.");
     result.setText(LocalDiagnosticSummary.parse(source.getText().toString()).describe());
    }catch(IllegalArgumentException invalid){result.setText(invalid.getMessage());}});
-  present(a,new AlertDialog.Builder(MapTheme.wrap(a)).setTitle("Resumo local de diagnóstico").setView(scroll(a,b)).setPositiveButton("Fechar",null).create());
+  presentPrivate(a,new AlertDialog.Builder(MapTheme.wrap(a)).setTitle("Resumo local de diagnóstico").setView(scroll(a,b)).setPositiveButton("Fechar",null).create());
  }
  static void maxPlan(Activity a){
   LinearLayout b=body(a);text(a,b,"Preparação manual. Informe os tipos da forma correta, o tipo do golpe Max e um tipo de ataque do chefe que você confirmou. Isto compara apenas multiplicadores de tipo: não calcula dano, nível, habilidades Max, efeitos de equipe ou resultado da batalha.");
@@ -235,7 +248,7 @@ final class LocalAuditDialog {
    out.append("\n\nConfira regras e elegibilidade no jogo. Nenhuma equipe foi selecionada e nenhuma partícula foi gasta.");
    result.setText(out);
   }catch(IllegalArgumentException invalid){result.setText("Confira nomes, estoque e custo.");}});
-  present(a,new AlertDialog.Builder(MapTheme.wrap(a)).setTitle("Preparação manual Max").setView(scroll(a,b)).setPositiveButton("Fechar",null).create());
+  presentPrivate(a,new AlertDialog.Builder(MapTheme.wrap(a)).setTitle("Preparação manual Max").setView(scroll(a,b)).setPositiveButton("Fechar",null).create());
  }
  static void berryPlan(Activity a){
   LinearLayout b=body(a);text(a,b,"Escolha até três frutas em ordem de preferência e informe o estoque que você verificou: -1 desconhecido, 0 indisponível. O painel não lê inventário nem usa frutas.");

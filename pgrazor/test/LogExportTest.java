@@ -44,7 +44,10 @@ public final class LogExportTest {
         String safe=new String(LogExport.shareLog(new ByteArrayInputStream(raw.getBytes(StandardCharsets.UTF_8))),StandardCharsets.UTF_8);
         if(safe.contains("secret-example")||safe.contains("private-example")||!safe.contains("\"reasonCode\":12")||!safe.contains("actor-unknown"))throw new AssertionError("Log privacy");
         if(!safe.contains("\"itemId\":708")||!safe.contains("\"itemId\":1401")||safe.contains("999999999"))throw new AssertionError("Icon diagnostic privacy");
+        try{LocalDiagnosticSummary.parse("\n".repeat(LocalDiagnosticSummary.MAX_LINES));throw new AssertionError("Line preflight");}catch(IllegalArgumentException expected){if(!expected.getMessage().equals("Excesso de registros."))throw expected;}
         LocalDiagnosticSummary.Summary summary=LocalDiagnosticSummary.parse(safe);
+        LocalDiagnosticSummary.Summary crlf=LocalDiagnosticSummary.parse(safe.replace("\n","\r\n"));
+        if(crlf.records!=summary.records||crlf.omitted!=summary.omitted||!crlf.icons.equals(summary.icons))throw new AssertionError("CRLF summary");
         if(summary.records!=5||summary.omitted!=1||summary.unclassified!=1||summary.transfers.get(12)!=1||summary.battle.get("actor-unknown")!=1||summary.icons.get(708)!=1||summary.icons.get(1401)!=1)throw new AssertionError("Filtered diagnostic summary");
         if(summary.describe().contains("private-example")||summary.describe().contains("secret-example")||!summary.describe().contains("não Pokémon únicos"))throw new AssertionError("Summary privacy or caveat");
         try{LocalDiagnosticSummary.parse(safe.substring(0,safe.indexOf("Registros omitidos:")));throw new AssertionError("Truncated diagnostic");}catch(IllegalArgumentException expected){}

@@ -43,6 +43,16 @@ final class LocalDiagnosticSummary {
     }
     static Summary parse(String raw){
         if(raw==null||raw.length()>MAX_CHARS)throw new IllegalArgumentException("Diagnóstico acima do limite.");
+        // Preflight before split: an input consisting of line breaks must not allocate
+        // millions of array entries before the line limit is checked.
+        int lineCount=1;
+        for(int i=0;i<raw.length();i++){
+            char ch=raw.charAt(i);
+            if(ch=='\r'||ch=='\n'){
+                if(ch=='\r'&&i+1<raw.length()&&raw.charAt(i+1)=='\n')i++;
+                if(++lineCount>MAX_LINES)throw new IllegalArgumentException("Excesso de registros.");
+            }
+        }
         String[] lines=raw.split("\\r\\n|\\n|\\r",-1);
         if(lines.length>MAX_LINES)throw new IllegalArgumentException("Excesso de registros.");
         int end=lines.length-1;while(end>0&&lines[end].trim().isEmpty())end--;

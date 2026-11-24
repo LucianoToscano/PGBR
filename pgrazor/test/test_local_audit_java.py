@@ -50,6 +50,19 @@ class LocalAuditTests(unittest.TestCase):
         self.assertIn('hint.setLabelFor(km.getId())',gpx)
         self.assertIn('Azul: trecho percorrido',gpx)
 
+    def test_local_privacy_boundaries(self):
+        source=(ROOT/'src/dev/pgrazor/LocalAuditDialog.java').read_text(encoding='utf-8')
+        self.assertIn('FLAG_SECURE',source)
+        self.assertIn('setSaveEnabled(false)',source)
+        self.assertIn('IMPORTANT_FOR_AUTOFILL_NO',source)
+        self.assertIn('IME_FLAG_NO_PERSONALIZED_LEARNING',source)
+        self.assertIn('privateInput(records)',source)
+        self.assertIn('privateInput(source)',source)
+        for title in ['Prévia local de filtros','Prévia de coleção em lote','Resumo local de diagnóstico','Seleção visual de etiquetas']:
+            self.assertIn('presentPrivate(a,new AlertDialog.Builder(MapTheme.wrap(a)).setTitle("'+title+'")',source)
+        self.assertIn('present(a,new AlertDialog.Builder(MapTheme.wrap(a)).setTitle("Conferência visual de itens")',source)
+        self.assertIn('evaluatedAt[0]=evaluationTime()',source)
+
     def test_new_ui_is_read_only_and_wired(self):
         for name in ['LocalAuditPolicy.java','LocalCollectionPreview.java','LocalAuditDialog.java','LocalDiagnosticSummary.java','GpxPreviewView.java','GpxPreviewGeometry.java']:
             source=(ROOT/'src/dev/pgrazor'/name).read_text(encoding='utf-8')
