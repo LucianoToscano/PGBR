@@ -2296,3 +2296,14 @@ O proprietário solicitou explicitamente que todos os requisitos, decisões, pri
 ## 24/11/2026 — Reconciliação documental cumulativa #197/#198
 
 - Sobre o HEAD de #201, preservado o conteúdo integral, com anexação exata dos sufixos de #197 (base 51734858) e #198 (base 611e5855), ambos verificados por comparação de prefixo. Catálogo auxiliar preservado pelo blob original de #198. Nenhuma mudança de produto; CI obrigatório e revisão de estados históricos antes de concluir. Não publicar APK a partir desta PR documental.
+
+
+
+## 24/11/2026 — Identificação LT047
+
+- PR #201 integrada em 8c644bc33d06d8772b939a0f07b94d4de5f8a542 após CI 45479212037 (5/5 jobs) e 45479212042 aprovados. Nova candidata 0.00.47-LT separa a futura compilação dos QA LT046 anteriores. Contratos históricos preservados, admitindo especificamente a nova versão. Não há comprovação de APK LT047 publicado nem de teste físico; protótipo #199 não incluído.
+
+
+## 24/11/2026 — Compilação QA LT047 solicitada
+
+- Autorização explícita do proprietário para gerar APK. Reconciliação da branch #203 com main `2915b5b15374aff20a141009039d1362e6a106f6`: Mestre já continha o prefixo integral; catálogo recuperado pelo blob da main. Workflow QA dedicado à PR e branch exatas, sem publicação, sem alterar workflow manual histórico, verifica três variantes e hashes. Não declarar geração até artefato real confirmado. `device_tested=false`.
