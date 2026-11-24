@@ -63,10 +63,20 @@ final class LocalAiKeyVault {
     }
     static synchronized boolean configured(Context c,LocalAiKeyEnvelope.Provider p)throws Exception{
         File f=file(c,p);if(!f.exists())return false;
-        if(!f.isFile()||f.length()>LocalAiKeyEnvelope.MAX_KEY+64)throw new IOException("Cofre inválido.");
-        byte[] encrypted=Files.readAllBytes(f.toPath()),plain=null;
-        try{plain=LocalAiKeyEnvelope.open(p,key(p,false),encrypted);return true;}
-        finally{Arrays.fill(encrypted,(byte)0);if(plain!=null)Arrays.fill(plain,(byte)0);}
+        if(!f.isFile()||f.length()>LocalAiKeyEnvelope.MAX_ENVELOPE)throw new IOException("Cofre inválido.");
+        // Read at most one byte beyond the bound, even if the file changes after stat.
+        byte[] buffer=new byte[LocalAiKeyEnvelope.MAX_ENVELOPE+1];
+        byte[] encrypted=null,plain=null;
+        try(java.io.InputStream in=Files.newInputStream(f.toPath())){
+            int count=0,n;
+            while(count<buffer.length&&(n=in.read(buffer,count,buffer.length-count))!=-1){
+                if(n==0)throw new IOException("Leitura incompleta.");
+                count+=n;
+            }
+            if(count>LocalAiKeyEnvelope.MAX_ENVELOPE)throw new IOException("Cofre inválido.");
+            encrypted=Arrays.copyOf(buffer,count);
+            plain=LocalAiKeyEnvelope.open(p,key(p,false),encrypted);return true;
+        }finally{Arrays.fill(buffer,(byte)0);if(encrypted!=null)Arrays.fill(encrypted,(byte)0);if(plain!=null)Arrays.fill(plain,(byte)0);}
     }
     static synchronized void remove(Context c,LocalAiKeyEnvelope.Provider p)throws Exception{
         File f=file(c,p);Files.deleteIfExists(f.toPath());
