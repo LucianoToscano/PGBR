@@ -112,7 +112,7 @@ public class RouteTraceHarness {
 ANCHOR_HARNESS = r"""
 package dev.pgrazor;
 public class RouteAnchorHarness {
-  static void check(boolean ok) { if (!ok) throw new AssertionError(); }
+  static void check(boolean ok) { System.out.println("ANCHOR_CHECK " + ok); if (!ok) throw new AssertionError(); }
   static String json(double[][] refs, int declared) {
     StringBuilder b=new StringBuilder("{\"count\":"+declared+",\"points\":[");
     for(int i=0;i<refs.length;i++) {
