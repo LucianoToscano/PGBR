@@ -166,6 +166,10 @@ class RouteTraceTest(unittest.TestCase):
         screen=(ROOT / "src/dev/pgrazor/RouteScreenProjectionSource.java").read_text(encoding="utf-8")
         for token in ["PixelCopy.request(surface", "matches.size()!=1", "mapVisible.getAsBoolean()", "if(n[0]!=6)", "RouteScreenTracker", "RouteScreenFrameBuilder.build", "bitmap.recycle()", "worker.shutdown()", "routeVisualSnapshot(knownToken)", "trackingLost", "ready=false"]:
             self.assertIn(token, screen)
+        self.assertIn("if(trackingLost){latest=null;return;}", screen)
+        self.assertNotIn("Recalibre", screen)
+        tracker=(ROOT / "src/dev/pgrazor/RouteScreenTracker.java").read_text(encoding="utf-8")
+        self.assertNotIn("lost=true", tracker)
         for forbidden in ["NativeCore", "Runtime.getRuntime", "java.net.", "FileOutputStream", ".walkRoute(", ".teleport(", ".input("]:
             self.assertNotIn(forbidden, screen)
         settings=(ROOT / "src/dev/pgrazor/SettingsPanel.java").read_text(encoding="utf-8")

@@ -10,7 +10,6 @@ public final class RouteScreenTracker {
     private final int[][][] templates=new int[6][][];
     private final double[][] means=new double[6][],energies=new double[6][];
     private final int[] xs=new int[6],ys=new int[6];
-    private boolean lost;
 
     /** Grayscale image (0..255) from the same explicitly calibrated frame. */
     public RouteScreenTracker(int[] image,int width,int height,double[][] refs) {
@@ -70,9 +69,10 @@ public final class RouteScreenTracker {
         }
         return best;
     }
-    /** Bounded translation, rotation and scale search. All six references must remain consistent. */
+    /** Bounded translation, rotation and scale search. All six references must remain consistent.
+     * A failed frame leaves the last verified positions untouched, allowing a later frame to recover. */
     public RouteGroundProjection update(int[] image){
-        if(lost||image==null||image.length!=width*height)return null;
+        if(image==null||image.length!=width*height)return null;
         image=smooth(image,width,height);
         int[] nx=new int[6],ny=new int[6],patch=new int[COUNT];
         double[][] candidate=new double[6][];
@@ -89,13 +89,13 @@ public final class RouteScreenTracker {
                 if(Math.abs(x-bx)<=2&&Math.abs(y-by)<=2)continue;
                 second=Math.min(second,scores[(y-minY)*cols+x-minX]);
             }
-            if(best>.16||second-best<.10){lost=true;return null;}
+            if(best>.16||second-best<.10)return null;
             nx[i]=bx;ny[i]=by;candidate[i]=new double[]{refs[i][0],refs[i][1],bx,by};
         }
         try{
             RouteGroundProjection projection=new RouteGroundProjection(candidate,width,height);
             for(int i=0;i<6;i++){xs[i]=nx[i];ys[i]=ny[i];}
             return projection;
-        }catch(IllegalArgumentException invalid){lost=true;return null;}
+        }catch(IllegalArgumentException invalid){return null;}
     }
 }
