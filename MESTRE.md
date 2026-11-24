@@ -107,7 +107,9 @@ Main observada `56cff4b885b9e52aa914aab8152a67959516e852`. Fila numerada de trab
 
 ### Próxima ação executável
 
-SYS-07/QA-02: conferir CI dos HEADs #215 (LT048), #216 (diagnóstico) e #217 (Locais); integrar apenas mudanças aprovadas e não conflitantes. Confirmar proveniência e processo de compilação autorizado antes de nova entrega; não reutilizar como LT048 o artefato QA LT047 14961904891. Retomar fila aberta pela prioridade original e preservar histórico, incluindo aceite físico separado.
+SYS-07/QA-02: LT048 identificada na main, #215–#218 integradas após CI aprovado. Verificar documentação e integridade da revisão consolidada; não anunciar APK sem compilação autorizada e verificada. Retomar fila original de P0/P1 e separar evidência física. PGBR-PR-TRIAGE: confirmar CI da reconciliação documental #182 antes de considerar encerramento por substituição.
+
+Registro anterior (histórico): SYS-07/QA-02: conferir CI dos HEADs #215 (LT048), #216 (diagnóstico) e #217 (Locais); integrar apenas mudanças aprovadas e não conflitantes. Confirmar proveniência e processo de compilação autorizado antes de nova entrega; não reutilizar como LT048 o artefato QA LT047 14961904891. Retomar fila aberta pela prioridade original e preservar histórico, incluindo aceite físico separado.
 
 Registro anterior (histórico): PGBR-CI-205: confirmar CI do novo HEAD #205 e corrigir eventual falha. Em paralelo, QA LT047 real disponível em https://github.com/LucianoToscano/PGBR/actions/runs/45482026778/artifacts/14961904891 ; publicação ainda distinta. Testar layout em condições de tamanho reduzido e preservar o estado das tarefas anteriores. O executor agendado deve retomar desta fila e manter IDs, evidências e histórico de cada ciclo.
 
@@ -147,3 +149,14 @@ PGBR-CI-205 integrado após CI completo; PGBR-UI-SMALL candidata de correção e
 - MAP-02/SYS-03: #217 HEAD 6004cf1857c0a8fee8fa06c3eb1576ed4dabdf11. Trava compartilhada no mesmo processo para mutações de Locais; testes concorrentes, CI 45497948852/45497948863. Transações entre processos e importações multi-etapas fora do escopo.
 - PGBR-PR-TRIAGE: #184 comparada com main; VgpController.java, VgpControllerTest.java e test_vgp_appearance_two_choices.py têm blobs idênticos. Outros quatro arquivos diferem; não encerrar a PR sem reconciliar diferenças e Mestre histórico.
 - Os 76 IDs e seis itens marcados permanecem. Não confundir correção parcial com conclusão de todos os requisitos. device_tested=false.
+
+
+### Ciclo 24/11/2026 — LT048 e triagem histórica
+
+- #215 integrada em 42e2ce33ed3b57b5adc223a9463d976948eab449; CI 45497444474/45497444322 aprovados. VERSION 0.00.48-LT e matriz incremental; nenhum APK LT048 confirmado.
+- #216 integrada em 5be5a2cfc8d6ca9500321be7fe7a16a259a0a1d7; CI 45497730714/45497730735 aprovados. Exportação filtrada compatível com limites de resumo; não garante atomicidade do provedor externo.
+- #217 integrada em 7a5d557e5b926291f2460ef50d68b46a8bde8176; CI 45497948852/45497948863 aprovados. Serialização local de mutações de Locais, sem garantia entre processos ou transações multi-etapas.
+- #218 integrada em 94e4d6a033db0b919ca4e88281580e6273aeebb3; CI 45498140270/45498140526 aprovados.
+- #184 encerrada após verificar três blobs idênticos, Mestre preservado e nenhuma linha nova ausente nos quatro arquivos divergentes; comentário 7145898538. Oito PRs substituídas encerradas no total, sem apagar histórico.
+- #182: #183 integrada com a mesma finalidade de separação, API posterior explícita e testes de token/isolamento. Recuperado recibo histórico original (duas linhas não presentes na main); não reintroduzir código antigo. Manter #182 aberta até validação da recuperação documental e decisão registrada.
+- 76 IDs, seis encerrados. device_tested=false; provider_connected=false; nenhum APK novo confirmado.
