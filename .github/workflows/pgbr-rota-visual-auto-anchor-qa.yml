@@ -169,6 +169,13 @@ jobs:
         run: python -c "import sys; sys.path.insert(0, 'pgrazor'); import dex_bridges; dex_bridges.dependencies(download=True)"
       - name: Auditoria de integridade dos modulos preservados
         run: python -B pgrazor/test/test_lt032_consolidation.py
+      - name: Diagnostico final da suite Python
+        shell: bash
+        run: |
+          set +e
+          python -B -m unittest discover -s pgrazor/test -p 'test_*.py' -v > /tmp/diag-tests.log 2>&1
+          grep -E '^(FAIL|ERROR):' /tmp/diag-tests.log | sed 's/^/::error::/'
+          grep -A18 -E '^(FAIL|ERROR):' /tmp/diag-tests.log | sed 's/^/::error::/'
       - name: Testar codigo PGBR apos preparar ferramentas DEX
         run: python -B tools/check.py
       - name: Testar menu, busca iFlowGo segura e janelas de escolha manual
