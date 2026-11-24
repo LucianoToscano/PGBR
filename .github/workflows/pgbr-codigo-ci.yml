@@ -30,6 +30,8 @@ jobs:
           python -B tools/native_host_tests.py
           g++ -std=c++17 -Wall -Wextra -Werror -I pgrazor/native pgrazor/native/tm_request_policy_test.cpp -o /tmp/tm_request_policy_test
           /tmp/tm_request_policy_test
+          g++ -std=c++17 -Wall -Wextra -Werror -I pgrazor/native pgrazor/native/max_session_policy_test.cpp -o /tmp/max_session_policy_test
+          /tmp/max_session_policy_test
 
   ndk-abi:
     name: Compilar politicas selecionadas via NDK ARM64
@@ -89,7 +91,7 @@ jobs:
           "$CXX" -std=c++17 -fsyntax-only -I pgrazor/native -I "$DOBBY/include" \
             pgrazor/native/combat_host.cpp pgrazor/native/rocket_combat.cpp
           "$CXX" -std=c++17 -fexceptions -fsyntax-only -I pgrazor/native -I "$DOBBY/include" \
-            pgrazor/native/tm_shortcut.cpp pgrazor/native/smart_catch_binding.cpp pgrazor/native/smart_catch.cpp pgrazor/native/jni_core.cpp
+            pgrazor/native/tm_shortcut.cpp pgrazor/native/smart_catch_binding.cpp pgrazor/native/smart_catch.cpp pgrazor/native/jni_core.cpp pgrazor/native/battles.cpp
 
   website-build:
     name: Build do website com lockfile

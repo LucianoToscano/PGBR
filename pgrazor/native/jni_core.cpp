@@ -12,6 +12,7 @@
 #include "runtime_host.h"
 #include "trainer_privacy_ui.h"
 #include "tm_shortcut.h"
+#include "battles.h"
 
 namespace {
 
@@ -77,7 +78,13 @@ jboolean JNICALL jni_tm_use(JNIEnv *,jclass,jint row,jlong token){
     return token>0&&pgr_tm_request(row,static_cast<uint64_t>(token))?JNI_TRUE:JNI_FALSE;
 }
 void JNICALL jni_tm_allowed(JNIEnv *,jclass,jboolean allowed){pgr_tm_set_allowed(allowed==JNI_TRUE);}
+jboolean JNICALL jni_max_start(JNIEnv *,jclass,jint mask){return mask>0&&pgr_max_session_start(static_cast<uint32_t>(mask))?JNI_TRUE:JNI_FALSE;}
+void JNICALL jni_max_stop(JNIEnv *,jclass){pgr_max_session_stop();}
+jint JNICALL jni_max_state(JNIEnv *,jclass){return pgr_max_session_state();}
 const JNINativeMethod kMethods[] = {
+    {const_cast<char *>("maxSessionStart"),const_cast<char *>("(I)Z"),reinterpret_cast<void *>(&jni_max_start)},
+    {const_cast<char *>("maxSessionStop"),const_cast<char *>("()V"),reinterpret_cast<void *>(&jni_max_stop)},
+    {const_cast<char *>("maxSessionState"),const_cast<char *>("()I"),reinterpret_cast<void *>(&jni_max_state)},
     {const_cast<char *>("tmState"),const_cast<char *>("()[J"),reinterpret_cast<void *>(&jni_tm_state)},
     {const_cast<char *>("tmUse"),const_cast<char *>("(IJ)Z"),reinterpret_cast<void *>(&jni_tm_use)},
     {const_cast<char *>("tmAllowed"),const_cast<char *>("(Z)V"),reinterpret_cast<void *>(&jni_tm_allowed)},

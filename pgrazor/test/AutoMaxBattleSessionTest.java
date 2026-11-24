@@ -33,6 +33,8 @@ public final class AutoMaxBattleSessionTest {
         check(AutoMaxBattle.running()&&AutoMaxBattle.selectedMask()==session,"Sessao nao foi ativada");
         check(AutoMaxBattle.optionMask()==0&&AutoMaxBattle.actionsBlocked(),"Sem contexto Max confiável, ações devem permanecer bloqueadas");
         check(Control.battleOptions()==1,"Bits Max vazaram para opções globais sem contexto confiável");
+        check(NativeCore.maxSessionState()==1,"Consentimento nativo não foi enviado");
+        NativeCore.maxState=2;check(AutoMaxBattle.status().contains("confirmada"),"Estado nativo ativo não refletido");
         check(!Control.vgpAllowed(),"VGP nao pode executar em paralelo com a sessao Max");
         reject(AutoMaxBattle.QUICK,"Aceitou duas sessoes simultaneas");
         AutoMaxBattle.stop();
@@ -44,6 +46,8 @@ public final class AutoMaxBattleSessionTest {
         Control.setBattlesReady(true,"Pronto");
         check(!AutoMaxBattle.running(),"Sessao retornou sem consentimento");
 
+        AutoMaxBattle.start(AutoMaxBattle.MAX_ATTACK);
+        NativeCore.maxState=0;check(!AutoMaxBattle.running()&&AutoMaxBattle.selectedMask()==0,"Fim nativo não encerrou sessão Java");
         AutoMaxBattle.start(AutoMaxBattle.MAX_ATTACK);
         check(Control.battleOptions()==1,"Batalha desconhecida nao pode receber ataque Max");
         Control.suspendForBackground();

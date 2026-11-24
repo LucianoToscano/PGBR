@@ -304,4 +304,8 @@ const void *pgrazor_battles_api(uint32_t version);
 
 #ifdef __cplusplus
 } /* extern "C" */
+// Separate temporary Max session consent (not part of feature-19 ABI).
+bool pgr_max_session_start(uint32_t mask);
+void pgr_max_session_stop();
+int pgr_max_session_state();
 #endif

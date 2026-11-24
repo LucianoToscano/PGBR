@@ -149,6 +149,10 @@ public class AccountProfiles {
 public final class NativeCore {
  public static int trainerPrivacyConfigure(boolean enabled,String name){return 0;}
  public static int trainerPrivacyStatus(){return 0;}
+ static int maxState;
+ public static boolean maxSessionStart(int mask){if(maxState!=0)return false;maxState=1;return true;}
+ public static void maxSessionStop(){maxState=0;}
+ public static int maxSessionState(){return maxState;}
 }''',
     'dev/pgrazor/Pad.java': '''package dev.pgrazor;
 public class Pad {public final android.app.Activity activity; public Pad(android.app.Activity a){activity=a;} public void close(){} public void confirmStopRoute(){} public void confirmMapTeleport(double lat,double lon,int mode,int epoch){}}''',

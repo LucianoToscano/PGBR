@@ -17,19 +17,19 @@ public final class AutoMaxBattle {
     private static volatile int sessionOptions;
     private static volatile String message="Sessão Max desativada";
 
-    public static boolean running(){return sessionOptions!=0;}
-    /** Os controles permanentes de batalha nunca sao alterados por esta sessao. */
-    /**
-     * Fail closed: the current host exposes battle readiness but does not
-     * attest the active battle kind. Do not inject Max bits into the global
-     * battle options until a trustworthy, scene-scoped Max signal exists.
-     * The selected mask remains session-only for UI/diagnostics.
-     */
+    public static synchronized boolean running(){
+        if(sessionOptions==0)return false;
+        int state=0;try{state=NativeCore.maxSessionState();}catch(UnsatisfiedLinkError ignored){}
+        if(state==0){sessionOptions=0;message="Sessão Max encerrada pelo motor; preferências preservadas.";return false;}
+        message=state==2?"Batalha Max confirmada — sessão ativa.":"Sessão armada — entre manualmente em uma Batalha Max.";
+        return true;
+    }
+    /** Nunca injeta bits temporários nas preferências globais: a sessão é nativa e isolada. */
     public static int optionMask(){return 0;}
-    public static int selectedMask(){return sessionOptions;}
+    public static synchronized int selectedMask(){return running()?sessionOptions:0;}
     public static boolean actionsBlocked(){return running();}
 
-    public static String status(){return message;}
+    public static synchronized String status(){running();return message;}
 
     public static synchronized void start(int requestedOptions){
         int selected=requestedOptions&OPTION_MASK;
@@ -44,13 +44,16 @@ public final class AutoMaxBattle {
             throw new IllegalStateException("Encerre as outras automações antes da Batalha Max.");
         if(Control.engine.walking||Control.gameRoutesRunning()||Control.automationPlanning())
             throw new IllegalStateException("Pare a caminhada ou rota antes de iniciar a Batalha Max.");
+        boolean armed=false;try{armed=NativeCore.maxSessionStart(selected);}catch(UnsatisfiedLinkError ignored){}
+        if(!armed)throw new IllegalStateException("Motor Max indisponível ou outra batalha ativa. Nenhuma sessão foi iniciada.");
         sessionOptions=selected;
-        message="Sessão preparada, mas ataques automáticos Max bloqueados: contexto Max não verificado.";
+        message="Sessão armada — entre manualmente em uma Batalha Max.";
         Control.event("max-battle-session","Iniciada, entrada/captura manuais");
     }
 
     public static synchronized void stop(){
-        if(!running())return;
+        if(sessionOptions==0)return;
+        try{NativeCore.maxSessionStop();}catch(UnsatisfiedLinkError ignored){}
         sessionOptions=0;
         message="Sessão Max encerrada; escolhas salvas mantidas.";
         Control.event("max-battle-session","Encerrada, preferencias de batalha preservadas");
@@ -58,6 +61,7 @@ public final class AutoMaxBattle {
 
     /** Nunca retomar apos segundo plano, troca de conta, perda do motor ou reinicio. */
     public static synchronized void reset(){
+        try{NativeCore.maxSessionStop();}catch(UnsatisfiedLinkError ignored){}
         sessionOptions=0;
         message="Sessão Max desativada";
     }
