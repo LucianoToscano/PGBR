@@ -2,7 +2,64 @@ import dev.pgrazor.*;
 import java.util.*;
 public final class LocalAuditTest {
  static void check(boolean b){if(!b)throw new AssertionError();}
+ // Independent type-name fixture for the local, advisory-only calculator.
+ // Each row: attack type, weaknesses, resistances, immunities (GO double resistance).
+ // IDs are resolved by the public Portuguese names rather than copied matrix entries.
+ private static void typeChartRegression(){
+  String[][] cases={
+   {"Normal","","Pedra,Aço","Fantasma"},
+   {"Lutador","Normal,Pedra,Aço,Gelo,Sombrio","Voador,Venenoso,Inseto,Psíquico,Fada","Fantasma"},
+   {"Voador","Lutador,Inseto,Planta","Pedra,Aço,Elétrico",""},
+   {"Venenoso","Planta,Fada","Venenoso,Terrestre,Pedra,Fantasma","Aço"},
+   {"Terrestre","Venenoso,Pedra,Aço,Fogo,Elétrico","Inseto,Planta","Voador"},
+   {"Pedra","Voador,Inseto,Fogo,Gelo","Lutador,Terrestre,Aço",""},
+   {"Inseto","Planta,Psíquico,Sombrio","Lutador,Voador,Venenoso,Fantasma,Aço,Fogo,Fada",""},
+   {"Fantasma","Fantasma,Psíquico","Sombrio","Normal"},
+   {"Aço","Pedra,Gelo,Fada","Aço,Fogo,Água,Elétrico",""},
+   {"Fogo","Inseto,Aço,Planta,Gelo","Pedra,Fogo,Água,Dragão",""},
+   {"Água","Terrestre,Pedra,Fogo","Água,Planta,Dragão",""},
+   {"Planta","Terrestre,Pedra,Água","Voador,Venenoso,Inseto,Aço,Fogo,Planta,Dragão",""},
+   {"Elétrico","Voador,Água","Planta,Elétrico,Dragão","Terrestre"},
+   {"Psíquico","Lutador,Venenoso","Aço,Psíquico","Sombrio"},
+   {"Gelo","Voador,Terrestre,Planta,Dragão","Aço,Fogo,Água,Gelo",""},
+   {"Dragão","Dragão","Aço","Fada"},
+   {"Sombrio","Fantasma,Psíquico","Lutador,Sombrio,Fada",""},
+   {"Fada","Lutador,Dragão,Sombrio","Venenoso,Aço,Fogo",""}
+  };
+  String[] types=LocalAuditPolicy.TYPES;
+  check(types.length==19&&cases.length==18);
+  Set<String> attackers=new HashSet<>();
+  for(String[] row:cases){
+   int attack=Arrays.asList(types).indexOf(row[0]);
+   check(attack>0&&attackers.add(row[0]));
+   for(int a=1;a<types.length;a++){
+    double first=expectedType(row,types[a]);
+    assertType(first,LocalAuditPolicy.effectiveness(attack,a,0),row[0]+" / "+types[a]);
+    for(int b=a+1;b<types.length;b++){
+     double expected=first*expectedType(row,types[b]);
+     assertType(expected,LocalAuditPolicy.effectiveness(attack,a,b),row[0]+" / "+types[a]+"+"+types[b]);
+     assertType(expected,LocalAuditPolicy.effectiveness(attack,b,a),row[0]+" / "+types[b]+"+"+types[a]);
+    }
+    check(Double.isNaN(LocalAuditPolicy.effectiveness(attack,a,a)));
+   }
+   check(Double.isNaN(LocalAuditPolicy.effectiveness(attack,0,0)));
+  }
+  check(Double.isNaN(LocalAuditPolicy.effectiveness(0,1,0)));
+  check(Double.isNaN(LocalAuditPolicy.effectiveness(19,1,0)));
+  check(Double.isNaN(LocalAuditPolicy.effectiveness(1,1,19)));
+ }
+ private static double expectedType(String[] row,String defender){
+  if(Arrays.asList(row[1].split(",")).contains(defender))return 1.6;
+  if(Arrays.asList(row[2].split(",")).contains(defender))return 0.625;
+  if(Arrays.asList(row[3].split(",")).contains(defender))return 0.390625;
+  return 1.0;
+ }
+ private static void assertType(double expected,double actual,String label){
+  if(!Double.isFinite(actual)||Math.abs(expected-actual)>1e-9)
+   throw new AssertionError(label+" expected "+expected+", got "+actual);
+ }
  public static void main(String[] args){
+ typeChartRegression();
  var flags=EnumSet.of(LocalAuditPolicy.Flag.EVENT,LocalAuditPolicy.Flag.SHINY);
  var data=new EnumMap<LocalAuditPolicy.Flag,Boolean>(LocalAuditPolicy.Flag.class);
  data.put(LocalAuditPolicy.Flag.EVENT,true);data.put(LocalAuditPolicy.Flag.SHINY,false);
