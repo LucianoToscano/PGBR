@@ -43,11 +43,25 @@ final class GpxPreviewView extends View {
   GpxPreviewView v=new GpxPreviewView(a,route);box.addView(v,new LinearLayout.LayoutParams(-1,MapTheme.dp(a,250)));
   TextView summary=new TextView(MapTheme.wrap(a));box.addView(summary);
   SeekBar seek=new SeekBar(MapTheme.wrap(a));seek.setMax(100);seek.setEnabled(v.geo.meters>0);seek.setContentDescription("Simular progresso do percurso");box.addView(seek);
-  java.util.function.IntConsumer update=percent->{double d=v.geo.meters*percent/100.0;v.setDistance(d);
-   summary.setText(String.format(Locale.forLanguageTag("pt-BR"),"%d pontos • %.2f km\nPrévia: %d%% • %.2f km • restam %.2f km\nVerde: início • Laranja: fim\nProgresso ilustrativo, sem movimentação.",route.size(),v.geo.meters/1000,percent,d/1000,(v.geo.meters-d)/1000));};
-  seek.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){public void onProgressChanged(SeekBar s,int p,boolean user){update.accept(p);}public void onStartTrackingTouch(SeekBar s){}public void onStopTrackingTouch(SeekBar s){}});
+  TextView hint=new TextView(MapTheme.wrap(a));hint.setText("Distância percorrida informada manualmente (km)");box.addView(hint);
+  android.widget.EditText km=new android.widget.EditText(MapTheme.wrap(a));km.setSingleLine(true);km.setInputType(android.text.InputType.TYPE_CLASS_NUMBER|android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL);box.addView(km);
+  android.widget.Button apply=new android.widget.Button(MapTheme.wrap(a));apply.setText("Exibir distância");apply.setAllCaps(false);apply.setTextColor(MapTheme.ink());MapTheme.setButtonBackground(apply);box.addView(apply);
+  android.widget.Button finish=new android.widget.Button(MapTheme.wrap(a));finish.setText("Exibir percurso completo");finish.setAllCaps(false);finish.setTextColor(MapTheme.ink());MapTheme.setButtonBackground(finish);box.addView(finish);
+  final boolean[] syncing={false};
+  java.util.function.DoubleConsumer update=distance->{
+   v.setDistance(distance);syncing[0]=true;
+   try{seek.setProgress(v.geo.percentForDistance(distance));}finally{syncing[0]=false;}
+   km.setText(String.format(Locale.forLanguageTag("pt-BR"),"%.6f",distance/1000));
+   km.setError(null);
+   String progress=v.geo.meters==0?"Sem extensão mensurável":String.format(Locale.forLanguageTag("pt-BR"),"%.2f%%",100*(distance/v.geo.meters));
+   summary.setText(String.format(Locale.forLanguageTag("pt-BR"),"%d pontos • %.3f km\nPrévia: %s • %.3f km • restam %.3f km\nVerde: início • Laranja: fim\nProgresso ilustrativo, sem movimentação.",route.size(),v.geo.meters/1000,progress,distance/1000,(v.geo.meters-distance)/1000));
+  };
+  seek.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){public void onProgressChanged(SeekBar s,int p,boolean user){if(user&&!syncing[0])update.accept(v.geo.distanceForPercent(p));}public void onStartTrackingTouch(SeekBar s){}public void onStopTrackingTouch(SeekBar s){}});
+  apply.setOnClickListener(x->{try{update.accept(v.geo.distanceFromKm(Double.parseDouble(km.getText().toString().trim().replace(',','.'))));}catch(IllegalArgumentException invalid){km.setError("Informe uma distância válida dentro da rota.");}});
+  finish.setOnClickListener(x->update.accept(v.geo.meters));
   update.accept(0);
-  AlertDialog d=new AlertDialog.Builder(MapTheme.wrap(a)).setTitle("Prévia GPX — "+route.name).setView(box).setPositiveButton("Fechar",null).create();
+  android.widget.ScrollView scroll=new android.widget.ScrollView(MapTheme.wrap(a));scroll.addView(box);
+  AlertDialog d=new AlertDialog.Builder(MapTheme.wrap(a)).setTitle("Prévia GPX — "+route.name).setView(scroll).setPositiveButton("Fechar",null).create();
   DialogLifecycle.bind(a,d,null);d.setOnShowListener(x->MapTheme.styleButtons(d));d.show();
  }
 }

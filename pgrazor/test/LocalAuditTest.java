@@ -54,10 +54,16 @@ public final class LocalAuditTest {
  check(g.meters>22000&&g.meters<22500&&g.width<1);
  check(Math.abs(g.positionAt(g.meters/2)[0]-g.width/2)<1e-8);
  check(g.positionAt(0)[0]==g.x[0]&&g.positionAt(g.meters)[0]==g.x[1]);
+ check(g.distanceForPercent(100)==g.meters&&g.distanceForPercent(0)==0);
+ check(g.percentForDistance(g.meters)==100&&g.percentForDistance(g.meters*0.999)==99);
+ check(g.distanceFromKm(1.234)==1234.0);
+ try{g.distanceFromKm(Double.POSITIVE_INFINITY);throw new AssertionError();}catch(IllegalArgumentException expected){}
+ try{g.distanceFromKm(g.meters/1000+1);throw new AssertionError();}catch(IllegalArgumentException expected){}
+ try{g.distanceForPercent(101);throw new AssertionError();}catch(IllegalArgumentException expected){}
  var repeated=new GpxPreviewGeometry(new GpxRoute("repetido",new double[][]{{0,0},{0,0},{0,1},{0,1}}));
  check(Math.abs(repeated.positionAt(repeated.meters/2)[0]-0.5)<1e-8);
  try{g.positionAt(Double.NaN);throw new AssertionError();}catch(IllegalArgumentException expected){}
- var single=new GpxPreviewGeometry(new GpxRoute("um ponto",new double[][]{{0,0}}));check(single.meters==0&&single.x.length==1);
+ var single=new GpxPreviewGeometry(new GpxRoute("um ponto",new double[][]{{0,0}}));check(single.meters==0&&single.x.length==1&&single.percentForDistance(0)==0);
  var batch=LocalCollectionPreview.parse("Rattata;478;4;4;5;EVENT=1,SHINY=0\nRhyhorn;547;6;6;7;EVENT=0,SHINY=0\nMunna;14;?;6;7;EVENT=?,SHINY=0\ninvalid\nPikachu;606;15;10;10;EVENT=0,EVENT=1",99,flags);
  check(batch.protectedCount==1&&batch.uncertainCount==1&&batch.matchCount==1&&batch.rejectedLines.equals(Arrays.asList(4,5)));
  check(batch.rows.get(1).sourceLine==2&&Double.isNaN(batch.rows.get(2).ivPercent()));
