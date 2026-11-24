@@ -20,9 +20,15 @@ public class RouteAnchorHarness {
     double[][] refs={ref(0,0),ref(1,0),ref(0,1),ref(1,1),ref(.3,.4),ref(.8,.6)};
     double[][] normal=new double[6][4];
     for(int i=0;i<6;i++)normal[i]=new double[]{refs[i][0],refs[i][1],refs[i][2]/width,refs[i][3]/height};
+    double[][] pixels=new double[6][4];
+    for(int i=0;i<6;i++)pixels[i]=new double[]{refs[i][0],refs[i][1],refs[i][2],refs[i][3]};
+    try { RouteGroundProjection direct=new RouteGroundProjection(pixels,width,height); System.out.println("DIRECT_OK "+direct); }
+    catch(IllegalArgumentException e) { System.out.println("DIRECT_FAIL "+e.getMessage()); }
     RouteAnchorSnapshot a=RouteAnchorSnapshot.parse(json(normal,6));
     check(a!=null&&a.size()==6);
     RouteGroundProjection p=a.fit(width,height);
+    for(int i=0;i<6;i++)System.out.println("REF "+i+" "+normal[i][0]+" "+normal[i][1]+" "+normal[i][2]+" "+normal[i][3]);
+    System.out.println("FIT "+(p==null?"null":"ok"));
     check(p!=null);
     double[] q=ref(.6,.7),s=p.project(q[0],q[1]);
     check(Math.hypot(q[2]-s[0],q[3]-s[1])<2);
