@@ -38,8 +38,10 @@ def installer_version_code(version):
         raise ValueError('Invalid PGBR version ' + str(version))
     major, minor, patch = map(int, match.groups())
     code = major * 1000000 + minor * 1000 + patch
-    if str(version).endswith('-LT'):
-        code += 100_000_000  # PGBR LT remains upgradeable from earlier preview installers
+    # QA labels after -LT must retain Android's upgradable LT versionCode family.
+    # v0.00.40-LT -> 100000040 and v0.00.41-LT-QA -> 100000041.
+    if re.search(r'-LT(?:[.-][A-Za-z0-9]+)*$', str(version)):
+        code += 100_000_000  # Other non-LT previews keep their existing versionCode
     if minor >= 1000 or patch >= 1000 or not 0 < code <= 2100000000:
         raise ValueError('PGBR version is outside Android versionCode limits')
     return code

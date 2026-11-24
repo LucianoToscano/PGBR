@@ -12,6 +12,20 @@ int main(){
     assert(!s.allowlisted()); // typed PvP proof does not press attack
     assert(s.vnext(111)&&s.pvp()&&s.allowlisted()); // actual VNext is required
     s.reset();
+    assert(!s.verified_vs_seeker(150)); // state alone may not arm
+    assert(!s.vnext(151));
+    hub(s,1000);
+    assert(s.verified_vs_seeker(1001));
+    assert(!s.allowlisted());
+    assert(s.vnext(1002)&&s.pvp()); // VNext + Hub required
+    s.reset();
+    hub(s,2000);assert(s.verified_vs_seeker(2001));
+    assert(!s.vnext(17001)); // witness has 15-second lease
+    prep(s,18000);assert(s.vnext(18001)); // normal preparation remains valid
+    s.reset();
+    npc(s,4000);assert(!s.verified_vs_seeker(4001));
+    assert(!s.vnext(4002)); // never reclassify training
+    s.reset();
     s.verified_pvp_type(200);
     assert(!s.vnext(15200)); // stale typed proof is not actionable
     s.verified_pvp_type(40000);

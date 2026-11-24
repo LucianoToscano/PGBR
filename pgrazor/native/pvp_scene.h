@@ -45,6 +45,15 @@ struct PgrPvpScene {
         stage=VERIFIED_PVP_ENTRY;mode=PVP;
         expires_ms=until(now,VERIFIED_PVP_ENTRY_MS);
     }
+    // Optional exact VsSeekerCombatState.EnterState witness (Savant-derived).
+    // Never creates a PvP scene from IDLE or TRAINING: Hub + genuine VNext
+    // are still required, and original PvE exclusion remains authoritative.
+    // This only helps a Hub whose Preparation callback was not observed.
+    bool verified_vs_seeker(uint64_t now) {
+        if(!now||!live(now)||stage!=HUB||mode!=PVP)return false;
+        typed_expires_ms=until(now,VERIFIED_PVP_ENTRY_MS);
+        return true;
+    }
     bool allowlisted() const {
         const PgrAutoBattleTarget kind =
             mode==PVP?PgrAutoBattleTarget::PVP:
