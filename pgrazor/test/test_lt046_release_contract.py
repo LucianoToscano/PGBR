@@ -6,7 +6,7 @@ ROOT=Path(__file__).resolve().parents[2]
 
 class Lt046ReleaseContract(unittest.TestCase):
     def test_version_qa_workflow_and_notes(self):
-        self.assertIn((ROOT/'pgrazor/VERSION').read_text(encoding='utf-8').strip(),('0.00.46-LT','0.00.47-LT',))
+        self.assertIn((ROOT/'pgrazor/VERSION').read_text(encoding='utf-8').strip(),('0.00.46-LT','0.00.47-LT','0.00.48-LT',))
         qa=(ROOT/'.github/workflows/pgbr-lt046-qa.yml').read_text(encoding='utf-8')
         for term in ('PGRAZOR_VERSION: v0.00.46-LT', 'PGBR-v0.00.46-LT.apk',
                      'PGBR-v0.00.46-LT-Root.apk','PGBR-v0.00.46-LT-Root-module.zip',
