@@ -7,6 +7,21 @@ public class ScreenProjectionTest {
   static double[] ref(double x,double y){return new double[]{y*.001,x*.001,45+200*x,40+150*y};}
   static int[] image(){int[] p=new int[W*H];Random r=new Random(17);for(int i=0;i<p.length;i++)p[i]=r.nextInt(256);return p;}
   static int[] shift(int[] a,int dx,int dy){int[] b=new int[a.length];for(int y=0;y<H;y++)for(int x=0;x<W;x++){int xx=x-dx,yy=y-dy;if(xx>=0&&xx<W&&yy>=0&&yy<H)b[y*W+x]=a[yy*W+xx];}return b;}
+  static int[] warp(int[] a,double angle,double scale){
+    int[] b=new int[a.length];double rad=Math.toRadians(angle),c=Math.cos(rad)/scale,s=Math.sin(rad)/scale;
+    for(int y=0;y<H;y++)for(int x=0;x<W;x++){
+      double dx=x-W/2.0,dy=y-H/2.0,xx=W/2.0+c*dx+s*dy,yy=H/2.0-s*dx+c*dy;
+      int ix=(int)Math.floor(xx),iy=(int)Math.floor(yy);double fx=xx-ix,fy=yy-iy;
+      if(ix>=0&&iy>=0&&ix+1<W&&iy+1<H)b[y*W+x]=(int)Math.round((1-fy)*((1-fx)*a[iy*W+ix]+fx*a[iy*W+ix+1])+fy*((1-fx)*a[(iy+1)*W+ix]+fx*a[(iy+1)*W+ix+1]));
+    }return b;
+  }
+  static void transformed(int[] image,double[][] refs,double angle,double scale){
+    RouteGroundProjection p=new RouteScreenTracker(image,W,H,refs).update(warp(image,angle,scale));
+    check(p!=null,"rotation/scale "+angle+"/"+scale);
+    double[] q=p.project(.0005,.0005);double dx=145-W/2.0,dy=115-H/2.0,a=Math.toRadians(angle);
+    near(q[0],W/2.0+scale*(Math.cos(a)*dx-Math.sin(a)*dy),2);
+    near(q[1],H/2.0+scale*(Math.sin(a)*dx+Math.cos(a)*dy),2);
+  }
   public static void main(String[] args){
     double[][] refs={ref(0,0),ref(1,0),ref(0,1),ref(1,1),ref(.3,.4),ref(.8,.6)};
     int[] a=image();RouteScreenTracker tracker=new RouteScreenTracker(a,W,H,refs);
@@ -21,7 +36,8 @@ public class ScreenProjectionTest {
     check(pieces!=null,"disconnected pieces");int[] n={0};pieces.geometry.drawSegments(0,(x1,y1,x2,y2,done)->n[0]++);check(n[0]==4,"no bridge: "+n[0]);
     double[][] longRoute=new double[5000][2];for(int i=0;i<5000;i++){longRoute[i][0]=.0005;longRoute[i][1]=.0001+.0008*i/4999.0;}
     RouteTraceFrame longFrame=RouteScreenFrameBuilder.build(p,longRoute,true,0,1,1000,W,H,1,1);check(longFrame!=null&&longFrame.geometry.size()==10000,"5000 point loop");
+    transformed(a,refs,8,1);transformed(a,refs,0,1.1);
     check(tracker.update(new int[W*H])==null,"blank screen rejected");check(tracker.update(a)==null,"loss latched");
-    System.out.println("PASS: translation, clipping, disconnected segments, progress, 5000-point loop, lost landmarks");
+    System.out.println("PASS: translation, rotation, zoom, clipping, disconnected segments, progress, 5000-point loop, lost landmarks");
   }
 }
