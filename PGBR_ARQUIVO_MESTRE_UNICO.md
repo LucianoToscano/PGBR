@@ -1689,3 +1689,7 @@ continuam fora do conjunto JVM por depender de `LiveFeedClient` (Android-bound),
 - Upstream jpitty03/PGRazor HEAD 084d70012624ba32ba361bc31db6ac0eb17811b7: correção ART ARM64 já presente em CMakeLists e fixture no PGBR. Pokematrix de777d2b91a81b53d905e3733e15c66c88262dbf, Savant 4da955651ec24b1c3d2a97fce412cc57c78eb9c1 e belalsalah74 10c523009955317d456af55d00abb5b05022ed7e sem avanço sobre os snapshots do Mestre. A revisão de Aureal e PGRazorX foi preliminar. MT, etiquetas/raridades/frutas, sessão Max completa, contratos reais e teste físico continuam pendentes. PRs antigas não devem ser mescladas às cegas; #161 não avaliada. Não promover versão sem gates.
 
 - Complemento de revisão: mantém também a garantia original de um alerta por preset/observação mesmo que o mesmo preset seja repetido; teste correspondente acrescentado. Notas LT045 registram explicitamente a camada #160 e ausência de deploy/homologação.
+
+
+## 24/11/2026 — Pausa de APK e publicação por decisão do usuário
+- Base PR #162 4a8fe729fde0c2d0962d8b599171192447a5dfd3. Usuário solicitou concluir correções antes de gerar outro APK. Workflows LT045 QA e release passam a disparo exclusivamente manual; contrato exige ausência de push/pull_request automático. Não executar workflow_dispatch até nova autorização. CI de código permanece ativo. A execução QA 45326387106 já iniciada antes desta ordem pode terminar; não é uma nova publicação. LT044 preservada. Não mesclar/publicar automaticamente.

@@ -15,6 +15,12 @@ class Lt045ReleaseContract(unittest.TestCase):
                      'pgrazor/nonroot.py','pgrazor/rooted.py'):
             self.assertIn(term, workflow)
         self.assertNotIn('PGBR-v0.00.44-LT.apk',workflow)
+        # User hold: no automatic APK build or release during implementation.
+        for name in ('pgbr-lt045-qa.yml','pgbr-lt045-release.yml'):
+            held=(ROOT/'.github/workflows'/name).read_text(encoding='utf-8')
+            self.assertIn('workflow_dispatch:',held)
+            self.assertNotIn('  push:',held)
+            self.assertNotIn('  pull_request:',held)
         for frozen in ('pgbr-lt044-release.yml','pgbr-lt044-qa.yml'):
             previous=(ROOT/'.github/workflows'/frozen).read_text(encoding='utf-8')
             self.assertIn('workflow_dispatch:',previous)
