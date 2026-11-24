@@ -25,10 +25,19 @@ public final class LocalAuditTest {
   int v=f==LocalAuditPolicy.Flag.HUNDO?15:f==LocalAuditPolicy.Flag.NUNDO?0:4;
   check(LocalAuditPolicy.preview(v,v,v,99,EnumSet.of(f),facts).status==LocalAuditPolicy.Status.PROTECTED);
   check(LocalAuditPolicy.preview(-1,-1,-1,99,EnumSet.of(f),Collections.emptyMap()).status==LocalAuditPolicy.Status.UNCERTAIN);
+  if(f!=LocalAuditPolicy.Flag.HUNDO&&f!=LocalAuditPolicy.Flag.NUNDO){
+   facts.put(f,false);
+   check(LocalAuditPolicy.preview(4,4,4,101,EnumSet.of(f),facts).status==LocalAuditPolicy.Status.MATCH);
+   facts.put(f,null);
+   check(LocalAuditPolicy.preview(4,4,4,101,EnumSet.of(f),facts).status==LocalAuditPolicy.Status.UNCERTAIN);
+  }
  }
  var contradictory=new EnumMap<LocalAuditPolicy.Flag,Boolean>(LocalAuditPolicy.Flag.class);
  contradictory.put(LocalAuditPolicy.Flag.HUNDO,true);
  check(LocalAuditPolicy.preview(4,4,5,99,EnumSet.noneOf(LocalAuditPolicy.Flag.class),contradictory).status==LocalAuditPolicy.Status.UNCERTAIN);
+ check(LocalAuditPolicy.preview(-1,14,15,101,EnumSet.noneOf(LocalAuditPolicy.Flag.class),contradictory).reasons.contains("Marcação IV 100% contradiz o IV parcial informado"));
+ contradictory.clear();contradictory.put(LocalAuditPolicy.Flag.NUNDO,true);
+ check(LocalAuditPolicy.preview(1,-1,0,101,EnumSet.noneOf(LocalAuditPolicy.Flag.class),contradictory).reasons.contains("Marcação IV 0% contradiz o IV parcial informado"));
  contradictory.clear();contradictory.put(LocalAuditPolicy.Flag.XXL,true);contradictory.put(LocalAuditPolicy.Flag.XXS,true);
  check(LocalAuditPolicy.preview(4,4,5,99,EnumSet.noneOf(LocalAuditPolicy.Flag.class),contradictory).status==LocalAuditPolicy.Status.UNCERTAIN);
  check(LocalAuditPolicy.preview(15,15,15,99,EnumSet.noneOf(LocalAuditPolicy.Flag.class),contradictory).status==LocalAuditPolicy.Status.PROTECTED);
@@ -80,6 +89,11 @@ public final class LocalAuditTest {
  check(malformed.rejectedReasons.get(2).startsWith("PC inválido")&&malformed.rejectedReasons.get(3).startsWith("IV inválido")&&malformed.rejectedReasons.get(4).equals("Critério não reconhecido.")&&malformed.rejectedReasons.get(5).startsWith("Valor de critério inválido"));
  try{malformed.rejectedReasons.clear();throw new AssertionError();}catch(UnsupportedOperationException expected){}
  try{LocalCollectionPreview.parse(" ".repeat(LocalCollectionPreview.MAX_CHARS+1),99,flags);throw new AssertionError();}catch(IllegalArgumentException expected){}
+ var sparse=LocalCollectionPreview.parse("\r\n".repeat(30000)+"X;1;0;0;0;EVENT=0,SHINY=0\r\n\rY;1;0;0;0;EVENT=0,SHINY=0\n",99,flags);
+ check(sparse.matchCount==2&&sparse.rows.get(0).sourceLine==30001&&sparse.rows.get(1).sourceLine==30003);
+ check(LocalCollectionPreview.parse("\n".repeat(LocalCollectionPreview.MAX_CHARS),99,flags).rows.isEmpty());
+ check(LocalCollectionPreview.parse("X;1;0;0;0;EVENT=0,SHINY=0;extra",99,flags).rejectedLines.equals(Arrays.asList(1)));
+ check(LocalCollectionPreview.parse("X;1;0;0;0;EVENT=0=1",99,flags).rejectedLines.equals(Arrays.asList(1)));
  check(batch.rows.get(1).sourceLine==2&&Double.isNaN(batch.rows.get(2).ivPercent()));
  check(Math.abs(batch.rows.get(0).ivPercent()-13*100.0/45)<1e-9);
  check(LocalCollectionPreview.page(batch,LocalAuditPolicy.Status.MATCH,0).get(0).sourceLine==2);
@@ -90,6 +104,10 @@ public final class LocalAuditTest {
  check(LocalCollectionPreview.parse("X;1;0;0;0;EVENT=0",99,flags).uncertainCount==1);
  var protectedNames=LocalAuditPolicy.protectedNames("Mew; Pikachu, MEW");
  check(protectedNames.size()==2);
+ check(LocalAuditPolicy.protectedNames("Pok\u00E9mon,Poke\u0301mon").size()==1);
+ try{LocalAuditPolicy.protectedNames("Mew\uDB40\uDC01");throw new AssertionError();}catch(IllegalArgumentException expected){}
+ try{LocalAuditPolicy.tagCatalog("Mew\uD800");throw new AssertionError();}catch(IllegalArgumentException expected){}
+ check(LocalAuditPolicy.tagCatalog("Mew\uD83D\uDE00").size()==1);
  var custom=LocalCollectionPreview.parse("mew;1;0;0;0;SPECIES=0\nMewtwo;1;0;0;0;SPECIES=0\nPikachu;1;?;0;0;",101,EnumSet.noneOf(LocalAuditPolicy.Flag.class),protectedNames);
  check(custom.protectedCount==2&&custom.matchCount==1&&custom.rows.get(2).decision.reasons.contains("IV não confirmado"));
  check(LocalAuditPolicy.preview(15,15,15,101,EnumSet.of(LocalAuditPolicy.Flag.HUNDO),Collections.emptyMap()).status==LocalAuditPolicy.Status.PROTECTED);
