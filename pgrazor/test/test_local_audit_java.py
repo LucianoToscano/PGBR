@@ -84,6 +84,16 @@ class LocalAuditTests(unittest.TestCase):
         policy=(ROOT/'src/dev/pgrazor/LocalAuditPolicy.java').read_text(encoding='utf-8')
         self.assertIn('SHINY("brilhante (shiny)")',policy)
 
+    def test_gpx_preview_coalesces_redraws(self):
+        source=(ROOT/'src/dev/pgrazor/GpxPreviewView.java').read_text(encoding='utf-8')
+        setter=source.split('private void setDistance(double meters){',1)[1].split('protected void onDraw',1)[0]
+        self.assertIn('if(distance==meters)return',setter)
+        self.assertIn('postInvalidateOnAnimation()',setter)
+        self.assertNotIn('rebuildCompleted()',setter)
+        self.assertIn('if(progressDirty)rebuildCompleted()',source)
+        self.assertEqual(source.count('geo.positionAt(distance)'),1)
+        self.assertIn('LocalAuditDialog.privateInput(km)',source)
+
     def test_new_ui_is_read_only_and_wired(self):
         for name in ['LocalAuditPolicy.java','LocalCollectionPreview.java','LocalAuditDialog.java','LocalDiagnosticSummary.java','GpxPreviewView.java','GpxPreviewGeometry.java']:
             source=(ROOT/'src/dev/pgrazor'/name).read_text(encoding='utf-8')
