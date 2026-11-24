@@ -33,9 +33,9 @@ final class GpxPreviewView extends View {
   super.onDraw(c);p.setStyle(Paint.Style.STROKE);p.setStrokeJoin(Paint.Join.ROUND);p.setStrokeCap(Paint.Cap.ROUND);p.setStrokeWidth(MapTheme.dp(getContext(),4));
   p.setColor(0xff7c8991);c.drawPath(path,p);p.setColor(0xff1879ba);c.drawPath(complete,p);
   p.setStyle(Paint.Style.FILL);float r=MapTheme.dp(getContext(),7);int last=geo.x.length-1;
-  p.setColor(0xff167749);c.drawCircle(x(geo.x[0]),y(geo.y[0]),r,c);
-  p.setColor(0xffb14826);c.drawCircle(x(geo.x[last]),y(geo.y[last]),r/2,c);
-  if(distance>0&&distance<geo.meters){double[] point=geo.positionAt(distance);p.setColor(0xff1879ba);c.drawCircle(x(point[0]),y(point[1]),r,c);}
+  p.setColor(0xff167749);c.drawCircle(x(geo.x[0]),y(geo.y[0]),r,p);
+  p.setColor(0xffb14826);c.drawCircle(x(geo.x[last]),y(geo.y[last]),r/2,p);
+  if(distance>0&&distance<geo.meters){double[] point=geo.positionAt(distance);p.setColor(0xff1879ba);c.drawCircle(x(point[0]),y(point[1]),r,p);}
  }
  static void show(Activity a,GpxRoute route){
   if(a==null||a.isFinishing()||a.isDestroyed()||route==null)return;
