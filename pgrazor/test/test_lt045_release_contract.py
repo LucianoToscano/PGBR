@@ -21,6 +21,14 @@ class Lt045ReleaseContract(unittest.TestCase):
             self.assertIn('workflow_dispatch:',held)
             self.assertNotIn('  push:',held)
             self.assertNotIn('  pull_request:',held)
+        delivery=(ROOT/'.github/workflows/pgbr-lt045-delivery-163.yml').read_text(encoding='utf-8')
+        self.assertIn('workflow_call:',workflow)
+        for term in ('branches: [main]', 'pgbr-lt045-delivery-163.yml', 'pulls/163',
+                     'pr["merged"]', 'pr["merge_commit_sha"]==sha', 'parents==[base,head]',
+                     'set(latest)==required', 'r["conclusion"]=="success"',
+                     'needs: approved-merge', 'uses: ./.github/workflows/pgbr-lt045-release.yml'):
+            self.assertIn(term,delivery)
+        self.assertNotIn('  pull_request:',delivery)
         for frozen in ('pgbr-lt044-release.yml','pgbr-lt044-qa.yml'):
             previous=(ROOT/'.github/workflows'/frozen).read_text(encoding='utf-8')
             self.assertIn('workflow_dispatch:',previous)

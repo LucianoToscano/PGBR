@@ -1,0 +1,68 @@
+name: PGBR LT045 - entrega QA autorizada da PR 163
+# One-time release request. Never builds from PRs, never changes the LT044 tag.
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/pgbr-lt045-delivery-163.yml'
+permissions:
+  contents: read
+jobs:
+  approved-merge:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: read
+      actions: read
+    steps:
+      - name: Confirmar merge e CI da candidata exata
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EXPECTED_BASE: b863af0b1b9a6c193ccbf608e120fb16b91adfc8
+          EVENT_BEFORE: ${{ github.event.before }}
+        run: |
+          python - <<'PY'
+          import json, os, subprocess
+          repo=os.environ["GITHUB_REPOSITORY"]
+          sha=os.environ["GITHUB_SHA"]
+          base=os.environ["EXPECTED_BASE"]
+          def api(path, *args):
+              return json.loads(subprocess.check_output(["gh","api","--method","GET",path,*args],text=True))
+          def require(ok, message):
+              if not ok:
+                  raise SystemExit(message)
+          require(repo=="LucianoToscano/PGBR" and os.environ["GITHUB_REF"]=="refs/heads/main","Wrong repository/ref")
+          require(os.environ["EVENT_BEFORE"]==base,"Main changed since delivery authorization; use manual review")
+          pr=api(f"repos/{repo}/pulls/163")
+          require(pr["merged"] and pr["merge_commit_sha"]==sha and pr["base"]["ref"]=="main","Not the authorized PR merge")
+          commit=api(f"repos/{repo}/commits/{sha}")
+          parents=[p["sha"] for p in commit["parents"]]
+          head=pr["head"]["sha"]
+          require(parents==[base,head],"Expected merge commit preserving both histories")
+          result=api(f"repos/{repo}/actions/runs","-f",f"head_sha={head}","-f","event=pull_request","-F","per_page=100")
+          require(result["total_count"]<=100,"Workflow list requires review")
+          required={
+              "PGBR - QA PGSharp free and optional key",
+              "PGBR - QA Sniper 1 e 2 (filtros separados)",
+              "PGBR - QA Sniper 100% IV manual",
+              "PGBR - verificacao de codigo em PRs e main",
+              "PGBR - PT-BR capturas Drive (QA isolado)",
+              "PGBR - Arquivo Mestre e limpeza segura (read-only)",
+          }
+          latest={}
+          for run in result["workflow_runs"]:
+              if run["name"] in required and run["head_sha"]==head:
+                  prior=latest.get(run["name"])
+                  if prior is None or (run["created_at"],run["id"])>(prior["created_at"],prior["id"]):
+                      latest[run["name"]]=run
+          require(set(latest)==required,"Missing required checks")
+          require(all(r["status"]=="completed" and r["conclusion"]=="success" for r in latest.values()),"Required CI not green")
+          print("Authorized LT045 QA merge and all six checks confirmed:",sha)
+          PY
+  release-qa:
+    needs: approved-merge
+    permissions:
+      contents: write
+    uses: ./.github/workflows/pgbr-lt045-release.yml
+    secrets: inherit
