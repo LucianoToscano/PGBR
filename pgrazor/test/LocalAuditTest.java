@@ -50,6 +50,13 @@ public final class LocalAuditTest {
  var single=new GpxPreviewGeometry(new GpxRoute("um ponto",new double[][]{{0,0}}));check(single.meters==0&&single.x.length==1);
  var batch=LocalCollectionPreview.parse("Rattata;478;4;4;5;EVENT=1,SHINY=0\nRhyhorn;547;6;6;7;EVENT=0,SHINY=0\nMunna;14;?;6;7;EVENT=?,SHINY=0\ninvalid\nPikachu;606;15;10;10;EVENT=0,EVENT=1",99,flags);
  check(batch.protectedCount==1&&batch.uncertainCount==1&&batch.matchCount==1&&batch.rejectedLines.equals(Arrays.asList(4,5)));
+ check(batch.rows.get(1).sourceLine==2&&Double.isNaN(batch.rows.get(2).ivPercent()));
+ check(Math.abs(batch.rows.get(0).ivPercent()-13*100.0/45)<1e-9);
+ check(LocalCollectionPreview.page(batch,LocalAuditPolicy.Status.MATCH,0).get(0).sourceLine==2);
+ var many=LocalCollectionPreview.parse(String.join("\\n",Collections.nCopies(51,"X;1;0;0;0;EVENT=0,SHINY=0")),99,flags);
+ check(LocalCollectionPreview.pageCount(many,null)==3&&LocalCollectionPreview.page(many,null,2).size()==1&&LocalCollectionPreview.page(many,null,2).get(0).sourceLine==51);
+ check(LocalCollectionPreview.page(many,LocalAuditPolicy.Status.PROTECTED,0).isEmpty());
+ try{LocalCollectionPreview.page(many,null,3);throw new AssertionError();}catch(IllegalArgumentException expected){}
  check(LocalCollectionPreview.parse("X;1;0;0;0;EVENT=0",99,flags).uncertainCount==1);
  try{LocalCollectionPreview.parse(String.join("\n",Collections.nCopies(501,"X;1;0;0;0;")),99,flags);throw new AssertionError();}catch(IllegalArgumentException expected){}
  var plan=LocalAuditPolicy.planEnergy(24,24,8,40,4);check(Arrays.equals(plan.sequence,new int[]{2,5,5,5})&&plan.earliest==2&&plan.latest==2);

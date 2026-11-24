@@ -3,15 +3,28 @@ import java.util.*;
 /** Offline preview of data supplied by the player; no collection access or destructive action. */
 public final class LocalCollectionPreview {
  private LocalCollectionPreview(){}
- public static final int MAX_ROWS=500,MAX_CHARS=100000;
+ public static final int MAX_ROWS=500,MAX_CHARS=100000,PAGE_SIZE=25;
  public static final class Row {
-  public final String species;public final int cp,attack,defense,stamina;
+  public final String species;public final int sourceLine,cp,attack,defense,stamina;
   public final LocalAuditPolicy.Decision decision;
-  Row(String name,int cp,int a,int d,int s,LocalAuditPolicy.Decision decision){species=name;this.cp=cp;attack=a;defense=d;stamina=s;this.decision=decision;}
+  Row(int line,String name,int cp,int a,int d,int s,LocalAuditPolicy.Decision decision){sourceLine=line;species=name;this.cp=cp;attack=a;defense=d;stamina=s;this.decision=decision;}
+  public double ivPercent(){return LocalAuditPolicy.validIv(attack)&&LocalAuditPolicy.validIv(defense)&&LocalAuditPolicy.validIv(stamina)?(attack+defense+stamina)*100.0/45:Double.NaN;}
  }
  public static final class Report {
   public final List<Row> rows;public final List<Integer> rejectedLines;public final int protectedCount,uncertainCount,matchCount;
   Report(List<Row> rows,List<Integer> rejected){this.rows=Collections.unmodifiableList(new ArrayList<>(rows));rejectedLines=Collections.unmodifiableList(new ArrayList<>(rejected));int p=0,u=0,k=0;for(Row r:rows){switch(r.decision.status){case PROTECTED:p++;break;case UNCERTAIN:u++;break;case MATCH:k++;break;}}protectedCount=p;uncertainCount=u;matchCount=k;}
+ }
+ /** A null filter represents all statuses; order and source-line identity are preserved. */
+ public static List<Row> filtered(Report report,LocalAuditPolicy.Status filter){
+  Objects.requireNonNull(report);List<Row> result=new ArrayList<>();
+  for(Row row:report.rows)if(filter==null||filter==row.decision.status)result.add(row);
+  return Collections.unmodifiableList(result);
+ }
+ public static int pageCount(Report report,LocalAuditPolicy.Status filter){return Math.max(1,(filtered(report,filter).size()+PAGE_SIZE-1)/PAGE_SIZE);}
+ public static List<Row> page(Report report,LocalAuditPolicy.Status filter,int index){
+  List<Row> all=filtered(report,filter);int pages=Math.max(1,(all.size()+PAGE_SIZE-1)/PAGE_SIZE);
+  if(index<0||index>=pages)throw new IllegalArgumentException("Página inválida");
+  int start=index*PAGE_SIZE;return Collections.unmodifiableList(new ArrayList<>(all.subList(start,Math.min(all.size(),start+PAGE_SIZE))));
  }
  public static Report parse(String text,int min,Set<LocalAuditPolicy.Flag> enabled){
   if(text==null||text.length()>MAX_CHARS||min<0||min>100||enabled==null)throw new IllegalArgumentException("Dados acima do limite ou configuração inválida.");
@@ -31,7 +44,7 @@ public final class LocalCollectionPreview {
       String val=parts[1].trim();if(observed.containsKey(f)||(!val.equals("1")&&!val.equals("0")&&!val.equals("?")))throw new IllegalArgumentException();
       observed.put(f,val.equals("?")?null:val.equals("1"));
     }
-    rows.add(new Row(name,cp,a,d,s,LocalAuditPolicy.preview(a,d,s,min,enabled,observed)));
+    rows.add(new Row(i+1,name,cp,a,d,s,LocalAuditPolicy.preview(a,d,s,min,enabled,observed)));
    }catch(IllegalArgumentException invalid){bad.add(i+1);}
   }
   return new Report(rows,bad);

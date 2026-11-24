@@ -43,17 +43,45 @@ final class LocalAuditDialog {
   EditText records=new EditText(MapTheme.wrap(a));records.setMinLines(4);records.setMaxLines(8);records.setHint("Rattata;478;4;4;5;EVENT=1,SHINY=0");records.setFilters(new android.text.InputFilter[]{new android.text.InputFilter.LengthFilter(LocalCollectionPreview.MAX_CHARS)});b.addView(records);
   LocalAuditPolicy.Flag[] flags=LocalAuditPolicy.Flag.values();CheckBox[] active=new CheckBox[flags.length];
   for(int i=0;i<flags.length;i++){CheckBox c=new CheckBox(MapTheme.wrap(a));c.setText("Proteger "+flags[i].label+" ("+flags[i].name()+")");c.setChecked(true);b.addView(c);active[i]=c;}
-  TextView result=text(a,b,"");action(a,b,"Avaliar lista sem transferir",()->{try{
-   EnumSet<LocalAuditPolicy.Flag> selected=EnumSet.noneOf(LocalAuditPolicy.Flag.class);for(int i=0;i<flags.length;i++)if(active[i].isChecked())selected.add(flags[i]);
-   LocalCollectionPreview.Report report=LocalCollectionPreview.parse(records.getText().toString(),integer(limit),selected);
-   StringBuilder out=new StringBuilder("Protegidos: "+report.protectedCount+" | Incertos: "+report.uncertainCount+" | Correspondem: "+report.matchCount+" | Linhas inválidas: "+report.rejectedLines.size()+"\n");
-   if(!report.rejectedLines.isEmpty())out.append("Linhas ignoradas: ").append(report.rejectedLines).append('\n');
-   int shown=0;for(LocalCollectionPreview.Row row:report.rows){
-    if(shown++==50){out.append("Outros resultados contabilizados; visualização limitada a 50.\n");break;}
-    out.append(row.species).append(" • PC ").append(row.cp).append(" • ").append(row.decision.status==LocalAuditPolicy.Status.PROTECTED?"Protegido":row.decision.status==LocalAuditPolicy.Status.UNCERTAIN?"Incerto":"Corresponde ao filtro").append('\n').append(String.join(", ",row.decision.reasons)).append("\n\n");
+  Spinner filter=select(a,b,"Mostrar resultados",new String[]{"Todos","Protegidos","Protegidos por incerteza","Correspondem ao filtro"});
+  TextView result=text(a,b,"");
+  LocalCollectionPreview.Report[] report={null};int[] page={0};String[] evaluatedAt={""};
+  java.util.function.Supplier<LocalAuditPolicy.Status> status=()->filter.getSelectedItemPosition()==0?null:LocalAuditPolicy.Status.values()[filter.getSelectedItemPosition()-1];
+  Runnable render=()->{
+   if(report[0]==null){result.setText("Avalie a lista para obter os resultados.");return;}
+   LocalCollectionPreview.Report r=report[0];int pages=LocalCollectionPreview.pageCount(r,status.get());page[0]=Math.max(0,Math.min(page[0],pages-1));
+   StringBuilder out=new StringBuilder("Protegidos: "+r.protectedCount+" | Incertos: "+r.uncertainCount+" | Correspondem: "+r.matchCount+" | Linhas inválidas: "+r.rejectedLines.size()+"\n");
+   if(!r.rejectedLines.isEmpty())out.append("Linhas inválidas (não classificadas): ").append(r.rejectedLines).append('\n');
+   out.append("Página ").append(page[0]+1).append('/').append(pages).append(" • ").append(evaluatedAt[0]).append(" • PGBR ").append(BuildVersion.NAME).append(" • esquema ").append(LocalAuditPolicy.SCHEMA).append("\n\n");
+   List<LocalCollectionPreview.Row> rows=LocalCollectionPreview.page(r,status.get(),page[0]);
+   if(rows.isEmpty())out.append("Nenhum registro nesta categoria.");
+   for(LocalCollectionPreview.Row row:rows){
+    double iv=row.ivPercent();
+    out.append("Linha ").append(row.sourceLine).append(" • ").append(row.species).append(" • PC ").append(row.cp).append(" • IV ").append(Double.isFinite(iv)?String.format(Locale.forLanguageTag("pt-BR"),"%.2f%%",iv):"Desconhecido").append(" • ").append(row.decision.status==LocalAuditPolicy.Status.PROTECTED?"Protegido":row.decision.status==LocalAuditPolicy.Status.UNCERTAIN?"Protegido por incerteza":"Corresponde ao filtro").append('\n').append(String.join(", ",row.decision.reasons)).append("\n\n");
    }
    result.setText(out.toString());
-  }catch(IllegalArgumentException invalid){result.setText("Confira os limites e o formato da lista.");}});
+  };
+  Runnable invalidate=()->{report[0]=null;page[0]=0;result.setText("Dados ou filtros alterados. Avalie novamente.");};
+  android.text.TextWatcher watcher=new android.text.TextWatcher(){
+   public void beforeTextChanged(CharSequence s,int start,int count,int after){}
+   public void onTextChanged(CharSequence s,int start,int before,int count){invalidate.run();}
+   public void afterTextChanged(android.text.Editable e){}
+  };
+  records.addTextChangedListener(watcher);limit.addTextChangedListener(watcher);
+  for(CheckBox c:active)c.setOnCheckedChangeListener((v,on)->invalidate.run());
+  filter.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener(){
+   public void onItemSelected(AdapterView<?> parent,android.view.View v,int position,long id){page[0]=0;render.run();}
+   public void onNothingSelected(AdapterView<?> parent){}
+  });
+  action(a,b,"Avaliar lista sem transferir",()->{
+   report[0]=null;page[0]=0;
+   try{
+    EnumSet<LocalAuditPolicy.Flag> selected=EnumSet.noneOf(LocalAuditPolicy.Flag.class);for(int i=0;i<flags.length;i++)if(active[i].isChecked())selected.add(flags[i]);
+    report[0]=LocalCollectionPreview.parse(records.getText().toString(),integer(limit),selected);evaluatedAt[0]=new java.util.Date().toString();render.run();
+   }catch(IllegalArgumentException invalid){result.setText("Confira os limites e o formato da lista.");}
+  });
+  action(a,b,"Página anterior",()->{if(report[0]!=null&&page[0]>0){page[0]--;render.run();}});
+  action(a,b,"Próxima página",()->{if(report[0]!=null&&page[0]+1<LocalCollectionPreview.pageCount(report[0],status.get())){page[0]++;render.run();}});
   present(a,new AlertDialog.Builder(MapTheme.wrap(a)).setTitle("Prévia de coleção em lote").setView(scroll(a,b)).setPositiveButton("Fechar",null).create());
  }
  static void reason(Activity a){LinearLayout b=body(a);EditText code=input(a,b,"reasonCode","12");TextView r=text(a,b,"");action(a,b,"Interpretar",()->{try{r.setText(LocalAuditPolicy.reason(integer(code)));}catch(RuntimeException e){r.setText("Código inválido.");}});present(a,new AlertDialog.Builder(MapTheme.wrap(a)).setTitle("Motivos de proteção").setView(b).setPositiveButton("Fechar",null).create());}
