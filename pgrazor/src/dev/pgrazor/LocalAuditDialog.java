@@ -32,7 +32,7 @@ final class LocalAuditDialog {
    LocalAuditPolicy.Decision decision=LocalAuditPolicy.preview(aa,dd,ss,integer(limit),selected,values);
    String state=decision.status==LocalAuditPolicy.Status.PROTECTED?"Protegido":decision.status==LocalAuditPolicy.Status.UNCERTAIN?"Protegido por incerteza":"Corresponde ao filtro";
    String iv=LocalAuditPolicy.validIv(aa)&&LocalAuditPolicy.validIv(dd)&&LocalAuditPolicy.validIv(ss)?String.format(Locale.forLanguageTag("pt-BR"),"%.2f%%",(aa+dd+ss)*100.0/45):"Desconhecido";
-   result.setText(name.getText()+" • PC "+pc+" • IV "+iv+"\n"+state+"\n"+String.join("\n",decision.reasons)+"\n"+new java.util.Date()+" • esquema "+LocalAuditPolicy.SCHEMA);
+   result.setText(name.getText()+" • PC "+pc+" • IV "+iv+"\n"+state+"\n"+String.join("\n",decision.reasons)+"\n"+new java.util.Date()+" • PGBR "+BuildVersion.NAME+" • esquema "+LocalAuditPolicy.SCHEMA);
   }catch(RuntimeException invalid){result.setText("Confira os campos e os limites.");}});
   present(a,new AlertDialog.Builder(MapTheme.wrap(a)).setTitle("Prévia local de filtros").setView(scroll(a,b)).setPositiveButton("Fechar",null).create());
  }
@@ -42,12 +42,13 @@ final class LocalAuditDialog {
   Spinner mode=select(a,b,"Modalidade",new String[]{"PvP","PvE"});
   Spinner u1=select(a,b,"Seu tipo 1",LocalAuditPolicy.TYPES),u2=select(a,b,"Seu tipo 2",LocalAuditPolicy.TYPES),f1=select(a,b,"Tipo adversário 1",LocalAuditPolicy.TYPES),f2=select(a,b,"Tipo adversário 2",LocalAuditPolicy.TYPES);
   EditText atk=input(a,b,"Ataque efetivo",""),def=input(a,b,"Defesa efetiva adversária",""),energy=input(a,b,"Energia disponível (0–100)","");
+  CheckBox single=new CheckBox(MapTheme.wrap(a));single.setText("Confirmo que existe somente um carregado");b.addView(single);
   Spinner[] type=new Spinner[2];EditText[] power=new EditText[2],cost=new EditText[2];
   for(int i=0;i<2;i++){type[i]=select(a,b,"Tipo carregado "+(i+1),LocalAuditPolicy.TYPES);power[i]=input(a,b,"Potência "+(i+1),"");cost[i]=input(a,b,"Energia exigida "+(i+1),"");}
   TextView result=text(a,b,"");action(a,b,"Comparar",()->{try{
    LocalAuditPolicy.Estimate[] e=new LocalAuditPolicy.Estimate[2];StringBuilder out=new StringBuilder(mode.getSelectedItemPosition()==0?"PvP\n":"PvE\n");
-   for(int i=0;i<2;i++){e[i]=LocalAuditPolicy.estimate(type[i].getSelectedItemPosition(),decimal(power[i]),decimal(cost[i]),u1.getSelectedItemPosition(),u2.getSelectedItemPosition(),f1.getSelectedItemPosition(),f2.getSelectedItemPosition(),decimal(atk),decimal(def),decimal(energy));if(e[i]==null)throw new IllegalArgumentException();out.append(String.format(Locale.forLanguageTag("pt-BR"),"Carregado %d: ×%.3f • %s • dano estimado %.0f • DPE %.2f • %s%n",i+1,e[i].effectiveness,e[i].effectiveness>1.001?"Super eficaz":e[i].effectiveness<0.999?"Pouco eficaz":"Neutro",e[i].damage,e[i].perEnergy,e[i].ready?"Pronto":"Sem energia"));}
-   int best=LocalAuditPolicy.recommend(e[0],e[1]);out.append(best<0?"Nenhum carregado pronto.":"Melhor DPE entre os prontos: carregado "+(best+1));result.setText(out);
+   for(int i=0;i<(single.isChecked()?1:2);i++){e[i]=LocalAuditPolicy.estimate(type[i].getSelectedItemPosition(),decimal(power[i]),decimal(cost[i]),u1.getSelectedItemPosition(),u2.getSelectedItemPosition(),f1.getSelectedItemPosition(),f2.getSelectedItemPosition(),decimal(atk),decimal(def),decimal(energy));if(e[i]==null)throw new IllegalArgumentException();out.append(String.format(Locale.forLanguageTag("pt-BR"),"Carregado %d: ×%.3f • %s • dano estimado %.0f • DPE %.2f • %s%n",i+1,e[i].effectiveness,e[i].effectiveness>1.001?"Super eficaz":e[i].effectiveness<0.999?"Pouco eficaz":"Neutro",e[i].damage,e[i].perEnergy,e[i].ready?"Pronto":"Sem energia"));}
+   int best=single.isChecked()?LocalAuditPolicy.recommendSingle(e[0]):LocalAuditPolicy.recommend(e[0],e[1]);out.append(best<0?"Nenhum carregado pronto.":"Melhor DPE entre os prontos: carregado "+(best+1));result.setText(out);
   }catch(RuntimeException invalid){result.setText("Dados incompletos ou inválidos. Não há recomendação.");}});
   present(a,new AlertDialog.Builder(MapTheme.wrap(a)).setTitle("Simulador de eficácia").setView(scroll(a,b)).setPositiveButton("Fechar",null).create());
  }

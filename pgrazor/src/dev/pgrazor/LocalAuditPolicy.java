@@ -77,6 +77,8 @@ public final class LocalAuditPolicy {
  double d=Math.floor(0.5*power*attack/defense*(move==own1||move==own2?1.2:1)*e)+1;
  if(!Double.isFinite(d))return null;return new Estimate(e,d,d/cost,energy>=cost);
  }
+ /** Explicit one-move configuration, never inferred from missing data. */
+ public static int recommendSingle(Estimate a){return a!=null&&a.ready?0:-1;}
  public static int recommend(Estimate a,Estimate b){
  if(a==null||b==null)return -1;if(!a.ready&&!b.ready)return -1;if(!a.ready)return 1;if(!b.ready)return 0;
  return b.perEnergy>a.perEnergy?1:0;

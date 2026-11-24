@@ -15,3 +15,11 @@ class LocalAuditTests(unittest.TestCase):
             p=subprocess.run([str(runtime),'-cp',d,'LocalAuditTest'],capture_output=True,text=True,timeout=30)
             self.assertEqual(p.returncode,0,p.stdout+p.stderr)
             self.assertIn('PASS: local audit',p.stdout)
+
+    def test_new_ui_is_read_only_and_wired(self):
+        for name in ['LocalAuditPolicy.java','LocalAuditDialog.java','GpxPreviewView.java','GpxPreviewGeometry.java']:
+            source=(ROOT/'src/dev/pgrazor'/name).read_text(encoding='utf-8')
+            for forbidden in ['NativeCore.','Control.engine','HttpURLConnection','transferPokemon','Runtime.getRuntime']:
+                self.assertNotIn(forbidden,source)
+        self.assertIn('LocalAuditDialog.show(activity)',(ROOT/'src/dev/pgrazor/SettingsPanel.java').read_text(encoding='utf-8'))
+        self.assertIn('GpxPreviewView.show(activity,current)',(ROOT/'src/dev/pgrazor/GpxRouteDialog.java').read_text(encoding='utf-8'))
