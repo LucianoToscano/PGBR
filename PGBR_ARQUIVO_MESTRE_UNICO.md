@@ -1841,3 +1841,6 @@ Base main 205ac2105a45dac4821c26b9ff73e66c4097e76a, comparação GitHub antes de
 
 
 - 24/11/2026 — PR #168 integrado em 233577a1b49fc27c438b6db0eeb4aa5901bbf215; HEAD 6621079991b5f36fb52c090a183e6065be1c0ecc, workflows 45368218108 e 45368218049 ambos success; 5/5 jobs do CI geral. Correção do cofre local aprovada no CI, não no Android físico. Sem conexão externa ou alteração de versão/APK. device_tested=false, provider_connected=false.
+
+
+- LT046 — revisão da prévia local de coleção, branch fix/lt046-previa-colecao-robustez-20261124, base c3bfa73f3409d2128ad9e16abfd5f35065cdb101. Varredura de linhas incremental sem alocar array de todas as quebras; limites de split dos campos e critérios; preserva numeração física CR/LF/CRLF e rejeição de campos extras. Identifica contradições HUNDO/NUNDO mesmo com IV parcial e normaliza nomes NFC após conversão de caixa, rejeitando controles/formatação Unicode suplementar e surrogate isolado. Fixtures de 30.000 linhas vazias, teto de colagem, Unicode e estados verdadeiro/falso/desconhecido de todos os critérios opcionais não derivados de IV. Sem leitura da coleção do jogo, transferências ou alterações de filtros ativos. CI e homologação física pendentes; sem APK/release.

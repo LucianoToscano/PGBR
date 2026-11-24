@@ -25,6 +25,9 @@ public final class LocalAuditPolicy {
  if(iv){
   if(observed.get(Flag.HUNDO)!=null&&observed.get(Flag.HUNDO)!=(a+d+s==45))unknown.add("Marcação IV 100% contradiz o IV informado");
   if(observed.get(Flag.NUNDO)!=null&&observed.get(Flag.NUNDO)!=(a+d+s==0))unknown.add("Marcação IV 0% contradiz o IV informado");
+ }else{
+  if(Boolean.TRUE.equals(observed.get(Flag.HUNDO))&&((validIv(a)&&a!=15)||(validIv(d)&&d!=15)||(validIv(s)&&s!=15)))unknown.add("Marcação IV 100% contradiz o IV parcial informado");
+  if(Boolean.TRUE.equals(observed.get(Flag.NUNDO))&&((validIv(a)&&a!=0)||(validIv(d)&&d!=0)||(validIv(s)&&s!=0)))unknown.add("Marcação IV 0% contradiz o IV parcial informado");
  }
  if(Boolean.TRUE.equals(observed.get(Flag.HUNDO))&&Boolean.TRUE.equals(observed.get(Flag.NUNDO)))unknown.add("Marcações IV 100% e IV 0% incompatíveis");
  if(Boolean.TRUE.equals(observed.get(Flag.XXL))&&Boolean.TRUE.equals(observed.get(Flag.XXS)))unknown.add("Marcações XXL e XXS incompatíveis");
@@ -51,8 +54,13 @@ public final class LocalAuditPolicy {
  }
  static String speciesKey(String name){
   if(name==null||name.trim().isEmpty()||name.length()>80)throw new IllegalArgumentException("Nome de espécie inválido");
-  for(int i=0;i<name.length();i++)if(Character.isISOControl(name.charAt(i))||Character.getType(name.charAt(i))==Character.FORMAT)throw new IllegalArgumentException("Nome de espécie inválido");
-  return java.text.Normalizer.normalize(name.trim(),java.text.Normalizer.Form.NFC).toLowerCase(Locale.ROOT);
+  for(int i=0;i<name.length();){
+   int cp=name.codePointAt(i),type=Character.getType(cp);
+   if(Character.isISOControl(cp)||type==Character.FORMAT||type==Character.SURROGATE)throw new IllegalArgumentException("Nome de espécie inválido");
+   i+=Character.charCount(cp);
+  }
+  String normalized=java.text.Normalizer.normalize(name.trim(),java.text.Normalizer.Form.NFC).toLowerCase(Locale.ROOT);
+  return java.text.Normalizer.normalize(normalized,java.text.Normalizer.Form.NFC);
  }
  public static Set<String> protectedNames(String text){
   if(text==null||text.length()>20000)throw new IllegalArgumentException("Lista de espécies inválida");
