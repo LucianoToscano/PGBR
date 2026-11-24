@@ -15,8 +15,13 @@ final class LocalAiKeyDialog {
             LocalAuditDialog.text(a,b,provider==LocalAiKeyEnvelope.Provider.GEMINI?"Gemini":"Groq");
             EditText field=LocalAuditDialog.input(a,b,"Sua chave de API","");
             field.setInputType(android.text.InputType.TYPE_CLASS_TEXT|android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD);
+            final boolean[] rejected={false};
             field.setFilters(new android.text.InputFilter[]{(src,start,end,dst,ds,de)->{
-                if((long)dst.length()-(de-ds)+(end-start)>LocalAiKeyEnvelope.MAX_KEY){field.setError("Chave longa demais.");return dst.subSequence(ds,de);}return null;
+                if((long)dst.length()-(de-ds)+(end-start)>LocalAiKeyEnvelope.MAX_KEY){
+                    rejected[0]=true;field.setError("Chave longa demais. Substitua todo o conteúdo.");return dst.subSequence(ds,de);
+                }
+                if(ds==0&&de==dst.length()){rejected[0]=false;field.setError(null);}
+                return null;
             }});
             LocalAuditDialog.privateInput(field);
             TextView status=LocalAuditDialog.text(a,b,"Verificando armazenamento local…");
@@ -33,6 +38,7 @@ final class LocalAiKeyDialog {
                 a.runOnUiThread(()->{if(!a.isDestroyed()&&b.isAttachedToWindow()){status.setText(result);save.setEnabled(true);remove.setEnabled(true);}});
             };
             save.setOnClickListener(v->{
+                if(rejected[0]){field.setError("Colagem rejeitada. Substitua toda a chave antes de salvar.");return;}
                 android.text.Editable value=field.getText();char[] secret=new char[value.length()];value.getChars(0,value.length(),secret,0);value.clear();
                 save.setEnabled(false);remove.setEnabled(false);
                 new Thread(()->{

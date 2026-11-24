@@ -11,7 +11,7 @@ import javax.crypto.spec.GCMParameterSpec;
 final class LocalAiKeyEnvelope {
     enum Provider { GEMINI, GROQ }
     static final int MAX_KEY=512, IV=12, TAG=16;
-    private static byte[] aad(Provider p){return new byte[]{'P','A','I',1,(byte)(p==Provider.GEMINI?1:2)};}
+    private static byte[] aad(Provider p){java.util.Objects.requireNonNull(p,"Provider required");return new byte[]{'P','A','I',1,(byte)(p==Provider.GEMINI?1:2)};}
     static byte[] encode(char[] chars){
         if(chars==null||chars.length<8||chars.length>MAX_KEY)throw new IllegalArgumentException("Chave inválida.");
         byte[] result=new byte[chars.length];

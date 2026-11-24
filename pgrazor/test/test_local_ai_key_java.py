@@ -15,14 +15,17 @@ class AiKeyTests(unittest.TestCase):
             self.assertIn('PASS: local AI credential envelope',p.stdout)
     def test_boundaries(self):
         src=ROOT/'src/dev/pgrazor'
-        vault=(src/'LocalAiKeyVault.java').read_text()
-        ui=(src/'LocalAiKeyDialog.java').read_text()
+        vault=(src/'LocalAiKeyVault.java').read_text(encoding='utf-8')
+        ui=(src/'LocalAiKeyDialog.java').read_text(encoding='utf-8')
         for term in ['dev.pgrazor.preview','getNoBackupFilesDir()','AndroidKeyStore','ATOMIC_MOVE','Arrays.fill(plaintext']:
             self.assertIn(term,vault)
         self.assertIn('LocalAiKeyVault.allowed(a)',ui)
         self.assertIn('TYPE_TEXT_VARIATION_PASSWORD',ui)
         self.assertIn('presentPrivate',ui)
-        self.assertNotIn('LocalAiKeyDialog.show',(src/'SettingsPanel.java').read_text())
+        self.assertIn('if(rejected[0])',ui)
+        self.assertIn('if(ds==0&&de==dst.length())',ui)
+        self.assertLess(ui.index('if(rejected[0])'),ui.index('value.getChars('))
+        self.assertNotIn('LocalAiKeyDialog.show',(src/'SettingsPanel.java').read_text(encoding='utf-8'))
         for source in [vault,ui]:
             for forbidden in ['HttpURLConnection','openConnection(','Control.','SharedPreferences','Log.']:
                 self.assertNotIn(forbidden,source)
