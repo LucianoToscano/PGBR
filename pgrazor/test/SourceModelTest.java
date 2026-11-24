@@ -104,8 +104,11 @@ public final class SourceModelTest {
                 .center(-23.5, -46.6, 5.0).minTtlSeconds(60L).build().toJson());
         check(roundTrip.pokemonIds.size() == 2 && roundTrip.ivMin == 90.0,
                 "Query sobrevive ao round trip");
-        check(roundTrip.activeCriteria().size() == 5, "Critérios ativos contados corretamente: "
-                + roundTrip.activeCriteria());
+        java.util.List<String> criteria = roundTrip.activeCriteria();
+        check(criteria.size() == 6, "Critérios ativos contados corretamente: " + criteria);
+        for (String expected : new String[]{"espécies (2)", "IV mín 90%", "tamanho (1)",
+                "PvP GL até #10", "raio 5 km", "TTL mín 60s"})
+            check(criteria.contains(expected), "Critério ausente: " + expected + " em " + criteria);
         check(!SourceQuery.builder().build().isActive(), "Query padrão não tem critério ativo");
 
         // --- registry: exactly five integrations, none of them "connected" --------------
