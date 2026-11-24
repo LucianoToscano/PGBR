@@ -16,7 +16,8 @@ inline bool decode(const std::string &wire,std::set<std::string>& out){
    unsigned char ch=static_cast<unsigned char>(a*16+b);if(ch<32||ch==127)return false;name+=char(ch);
   }
   if(!out.insert(name).second)return false;
-  if(end==wire.size())return true;at=end+1;
+  if(end==wire.size())return true;
+  at=end+1;
  }
  return false;
 }
