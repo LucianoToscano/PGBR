@@ -158,7 +158,7 @@ jobs:
         run: |
           python -B -m unittest discover -s pgrazor/test -p 'test_*.py' -v > /tmp/diag-tests.log 2>&1 || true
           grep -E '^(FAIL|ERROR):' /tmp/diag-tests.log | sed 's/^/::error::/' || true
-          grep -A22 -E '^ERROR: test_auto_anchor_snapshot' /tmp/diag-tests.log | sed 's/^/::error::/' || true
+          grep -A45 -E '^ERROR: test_auto_anchor_snapshot' /tmp/diag-tests.log | sed 's/^/::error::/' || true
           tail -25 /tmp/diag-tests.log
       - name: Testar codigo PGBR apos preparar ferramentas DEX
         run: python -B tools/check.py
