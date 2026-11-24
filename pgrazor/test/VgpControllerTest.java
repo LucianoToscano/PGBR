@@ -121,8 +121,12 @@ public final class VgpControllerTest {
         Control.setVgpEnabled(true);
         check(!Control.vgpAllowed()&&Control.vgpEnabled()&&Control.vgpCooldownPaused(),"Red cooldown blocks new VGP actions");
         check(Control.vgpDiagnosticStatus().contains("cooldown estimado"),"Cooldown pause is visible");
+        SmartCatchSettings.read(spin);
+        check(!SmartCatchSettings.gymSpinActive(),"Red cooldown pauses VGP gym disc option");
         Cooldown.remaining=0;
         check(Control.vgpAllowed()&&Control.vgpEnabled(),"Green cooldown resumes armed VGP");
+        check(SmartCatchSettings.gymSpinActive(),"Green cooldown permits VGP gym disc option again");
+        SmartCatchSettings.read(new java.util.Properties());
         Cooldown.remaining=600000;
         check(!Control.vgpAllowed(),"New cooldown pauses again");
         Control.setVgpEnabled(false);Cooldown.remaining=0;
