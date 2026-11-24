@@ -52,7 +52,7 @@ public final class LogExport {
         // Read bounded bytes, then discard all non-allowlisted free text.
         ByteArrayOutputStream raw=new ByteArrayOutputStream();byte[] buffer=new byte[8192];int n;
         while((n=input.read(buffer))!=-1){if(raw.size()+n>2097152)throw new IOException("Log acima do limite de compartilhamento.");raw.write(buffer,0,n);}
-        StringBuilder out=new StringBuilder("PGBR — diagnóstico filtrado; mensagens livres e identificadores omitidos.\\n");
+        StringBuilder out=new StringBuilder("PGBR — diagnóstico filtrado; mensagens livres e identificadores omitidos.\n");
         int omitted=0;
         for(String line:new String(raw.toByteArray(),StandardCharsets.UTF_8).split("\\r?\\n")){
             java.util.regex.Matcher m=LOG_LINE.matcher(line);
@@ -66,9 +66,9 @@ public final class LogExport {
                     Object v=data.opt(key);if(v instanceof Number){double x=((Number)v).doubleValue();if(Double.isFinite(x)&&x==Math.rint(x)&&x>=0&&x<=100000)safe.put(key,(int)x);}
                 }
             }catch(JSONException ignored){}
-            out.append(m.group(1)).append(" [").append(m.group(2)).append("] ").append(safe.toString()).append('\\n');
+            out.append(m.group(1)).append(" [").append(m.group(2)).append("] ").append(safe.toString()).append('\n');
         }
-        out.append("Registros omitidos: ").append(omitted).append('\\n');
+        out.append("Registros omitidos: ").append(omitted).append('\n');
         return out.toString().getBytes(StandardCharsets.UTF_8);
     }
     private static JSONObject preferenceGroups(Context context)throws IOException {

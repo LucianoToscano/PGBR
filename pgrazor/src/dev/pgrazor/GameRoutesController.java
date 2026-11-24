@@ -234,7 +234,7 @@ final class GameRoutesController {
             if (!hostAllowed) { halt("Automation stopped: host or hooks unavailable."); return; }
             // A different planned route taking over MotionEngine means a manual/other-route takeover.
             if(!freshSnapshot()){halt("Stopped: Route state is stale.");return;}
-            if (phase != Phase.IDLE && ownedToken != 0 && engine.routeGeneration() != ownedToken) { halt("Rota interrompida: outro controle assumiu o movimento."); return; }
+            if (phase != Phase.IDLE && ownedToken != 0 && engine.routeGeneration() != ownedToken) { halt("Stopped: movement was taken over."); return; }
             switch (phase) {
                 case WALK_TO_START: pumpWalkToStart(); break;
                 case AWAIT_START: pumpAwaitStart(); break;

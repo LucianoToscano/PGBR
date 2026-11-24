@@ -5,6 +5,7 @@
   "notes": "Glossário inicial PT-BR para textos exibidos ao usuário. Preservar identificadores técnicos, nomes de serviços e strings de protocolo.",
   "translations": {
     "Previous": "Anterior",
+    "Stopped: movement was taken over.": "Rota interrompida: outro controle assumiu o movimento.",
     "Next": "Próxima",
     "Add action at current location": "Registrar ação neste local",
     "Record action here": "Registrar ação neste local",
