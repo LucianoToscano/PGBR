@@ -249,6 +249,24 @@
       "label": "Incubadora temporária"
     },
     {
+      "id": 1001,
+      "path": "pgrazor/assets/item-icons/item-1001.png",
+      "drive_id": "1-dqMJY7ee_b0d73OXkVHCojIO0OpYlP7",
+      "bytes": 61305,
+      "git_blob_sha1": "55d9d7cd1a6e553aad98797d1a563e3cbb134bb3",
+      "source": "pokemonstorageupgrade.1.png",
+      "label": "Expansão de armazenamento Pokémon"
+    },
+    {
+      "id": 1003,
+      "path": "pgrazor/assets/item-icons/item-1003.png",
+      "drive_id": "1Zi9Xj97D5uKKFccOKEZ4z2y9ySv1ec0z",
+      "bytes": 27162,
+      "git_blob_sha1": "0bc0e8740e249ac772c5d5744476e17d56fd4d18",
+      "source": "Item_postcardstorageupgrade.1.png",
+      "label": "Expansão de cartões postais"
+    },
+    {
       "id": 1101,
       "path": "pgrazor/assets/item-icons/item-1101.png",
       "drive_id": "1rXbTWXxF3SEE1gZB5l1OK4YG43Kd8JME",
@@ -312,6 +330,60 @@
       "label": "Pedra de Unova"
     },
     {
+      "id": 1150,
+      "path": "pgrazor/assets/item-icons/item-1150.png",
+      "drive_id": "1xOZZdbDTocsQNmvTYBcrjDzAgaxoLwN7",
+      "bytes": 50480,
+      "git_blob_sha1": "fd988da685a090c511056bd61a39cab25ab27e30",
+      "source": "meteorite.png",
+      "label": "Meteorito"
+    },
+    {
+      "id": 1151,
+      "path": "pgrazor/assets/item-icons/item-1151.png",
+      "drive_id": "1pMormah2k6SuLsIYuAqShNZ9UaKHnLT9",
+      "bytes": 47421,
+      "git_blob_sha1": "4ec8956b85206bfabacbd64ebdd8e54cb41522f9",
+      "source": "item_maple_a.png",
+      "label": "Maçã evolutiva A"
+    },
+    {
+      "id": 1152,
+      "path": "pgrazor/assets/item-icons/item-1152.png",
+      "drive_id": "1yvxvrydXgogdre5qLdIWODfTDgI9UG10",
+      "bytes": 44988,
+      "git_blob_sha1": "62c01d509261208b29ef89590edbaf3e0f8eb715",
+      "source": "item_maple_b.png",
+      "label": "Maçã evolutiva B"
+    },
+    {
+      "id": 1153,
+      "path": "pgrazor/assets/item-icons/item-1153.png",
+      "drive_id": "1n4bBojR3vzpBnMU0b2skfvkd659zwrCK",
+      "bytes": 52033,
+      "git_blob_sha1": "3442d7fe9a0ebe8aa80e69b6d16fcc564a58003d",
+      "source": "crowned-sword-energy.png",
+      "label": "Energia Espada Coroada"
+    },
+    {
+      "id": 1154,
+      "path": "pgrazor/assets/item-icons/item-1154.png",
+      "drive_id": "1NUk_3ok0aYxNll8cAMzzpQfqxPgAJSzy",
+      "bytes": 51961,
+      "git_blob_sha1": "1e0fcb64b74310cbf6dcff2d94df93413d4ac90c",
+      "source": "crowned-shield-energy.png",
+      "label": "Energia Escudo Coroado"
+    },
+    {
+      "id": 1155,
+      "path": "pgrazor/assets/item-icons/item-1155.png",
+      "drive_id": "1VdzigkEma53TL8IG4RESR0p4M79C8Fd1",
+      "bytes": 43905,
+      "git_blob_sha1": "09f15e43bbff4439a9b4c9da1bbf3355d14e5d4a",
+      "source": "item_maple_c.png",
+      "label": "Maçã evolutiva C"
+    },
+    {
       "id": 1302,
       "path": "pgrazor/assets/item-icons/item-1302.png",
       "drive_id": "1oDJhWbEVUiiZNXThJjkI5KE7jWuM1YeW",
@@ -319,6 +391,24 @@
       "git_blob_sha1": "16a420ddf3c5fa695d8d5d4c7e3fc0f8b5879741",
       "source": "rare-candy-xl.png",
       "label": "Doce Raro GG"
+    },
+    {
+      "id": 1352,
+      "path": "pgrazor/assets/item-icons/item-1352.png",
+      "drive_id": "16NCmG4OrFlY7zt4YhK6-uD5I8WfX33OH",
+      "bytes": 36528,
+      "git_blob_sha1": "b470f4ed331bac27e9cb2e6e229951fc7dcdd412",
+      "source": "volt-fusion-energy.png",
+      "label": "Energia de Fusão Volt"
+    },
+    {
+      "id": 1353,
+      "path": "pgrazor/assets/item-icons/item-1353.png",
+      "drive_id": "1X025ab3Qwuh-9UlA8H6KCuQ_S4Hg8btT",
+      "bytes": 37688,
+      "git_blob_sha1": "2c7753b8e16daa6f6f23aea2175b9a7c25519877",
+      "source": "blaze-fusion-energy.png",
+      "label": "Energia de Fusão Blaze"
     },
     {
       "id": 1405,

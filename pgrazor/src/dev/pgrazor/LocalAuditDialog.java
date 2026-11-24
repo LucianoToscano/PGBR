@@ -165,7 +165,7 @@ final class LocalAuditDialog {
   presentPrivate(a,new AlertDialog.Builder(MapTheme.wrap(a)).setTitle("Prévia de coleção em lote").setView(scroll(a,b)).setPositiveButton("Fechar",null).create());
  }
  static void reason(Activity a){LinearLayout b=body(a);EditText code=numeric(a,b,"Código do diagnóstico (reasonCode)","12",false,false);TextView r=text(a,b,"");invalidateOnEdit(r,code);action(a,b,"Interpretar",()->{try{r.setText(LocalAuditPolicy.reason(integer(code)));}catch(RuntimeException e){r.setText("Código inválido.");}});present(a,new AlertDialog.Builder(MapTheme.wrap(a)).setTitle("Motivos de proteção").setView(scroll(a,b)).setPositiveButton("Fechar",null).create());}
- static final int[] GALLERY_IDS={1,2,3,4,5,6,7,101,102,103,104,201,202,301,302,303,304,305,401,405,406,407,501,502,503,504,505,506,701,702,703,704,705,706,707,708,709,801,802,803,901,902,903,904,1101,1102,1103,1104,1105,1106,1107,1201,1202,1203,1204,1301,1302,1350,1351,1401,1402,1403,1404,1405,1406,1408,1410,1411,1501,1502,1503,1504,1505,1506,1507,1600,1601,1602,1606,1607,1609};
+ static final int[] GALLERY_IDS={1,2,3,4,5,6,7,101,102,103,104,201,202,301,302,303,304,305,401,405,406,407,501,502,503,504,505,506,701,702,703,704,705,706,707,708,709,801,802,803,901,902,903,904,1001,1003,1101,1102,1103,1104,1105,1106,1107,1150,1151,1152,1153,1154,1155,1201,1202,1203,1204,1301,1302,1350,1351,1352,1353,1401,1402,1403,1404,1405,1406,1408,1410,1411,1501,1502,1503,1504,1505,1506,1507,1600,1601,1602,1606,1607,1609};
  static String galleryLabel(int id){
   switch(id){
    case 1:return "Poké Bola";case 2:return "Grande Bola";case 3:return "Ultra Bola";
@@ -216,6 +216,16 @@ final class LocalAuditDialog {
    case 1505:return "Joia Purificada";
    case 1506:return "Partículas Max";
    case 1507:return "Pacote de Partículas Max";
+   case 1150:return "Meteorito";
+   case 1151:return "Maçã evolutiva A";
+   case 1152:return "Maçã evolutiva B";
+   case 1155:return "Maçã evolutiva C";
+   case 1153:return "Energia Espada Coroada";
+   case 1154:return "Energia Escudo Coroado";
+   case 1352:return "Energia de Fusão Volt";
+   case 1353:return "Energia de Fusão Blaze";
+   case 1001:return "Expansão de armazenamento Pokémon";
+   case 1003:return "Expansão de cartões postais";
    default:return "Item";
   }
  }
