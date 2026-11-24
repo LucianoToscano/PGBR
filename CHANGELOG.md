@@ -6,6 +6,9 @@
 
 ## PGBR LT046 (0.00.46-LT) — candidata em verificação de build (não publicada)
 
+- **Integração posterior ao build QA inicial:** #178 (botões neutros, contraste e status de ícones) e #179 (Rota Visual #176, mapa, progresso, calibração experimental opt-in) integrados em `e1f94193835dcc8f6f56050dece0efa8b22afdd9`; CI dos PRs aprovado. O build 45382217542 não inclui estas mudanças; novo build autorizado, sem disparo confirmado. Homologação física pendente. (Registro histórico da sessão #180.)
+
+
 - **Preparação e build QA (24/11/2026):** VERSION elevado para `0.00.46-LT`; novo workflow `pgbr-lt046-qa.yml` (somente `workflow_dispatch`, sem publicação) e contrato `test_lt046_release_contract.py` fail-closed; notas em `docs/releases/v0.00.46-LT.md`. PR #175 (`01b067e`) mesclada; build QA `45382217542` `completed/success`; artefato `PGBR-LT046-Root-e-SemRoot-QA` (id `14914618192`, digest do ZIP sha256:ca8775edc8015282351286c813b1c9dedf086852a4f771a8d82bb5368110260a). Hashes individuais dentro do artefato. Nenhuma tag/APK/release LT046 existe; publicação não autorizada nesta etapa.
 - **Integrações desta rodada:** PR #173 (cofre — ciclo de vida e consolidação QA) mesclado em 5f05c96566e0ea0cfac3080a407d296c0dcc93ba; PR #174 (galeria por ID exato, resumo de contexto, preparação Max com componentes independentes) e PR #165 (GeoLab, laboratório isolado) reconciliados com a main com conflito documental restrito ao Arquivo Mestre, preservando os dois registros; código dos PRs preservado por completo. GeoLab fora do APK de produção.
 
