@@ -91,7 +91,10 @@ public final class PresetCodec {
         root.put("format", FORMAT);
         root.put("version", VERSION);
         JSONArray array = new JSONArray();
-        if (presets != null) for (Preset preset : presets) if (preset != null) array.put(preset.toJson());
+        if (presets != null) for (Preset preset : presets) if (preset != null) {
+            if (array.length() >= MAX_PRESETS) throw new JSONException("Muitos presets em um arquivo (limite " + MAX_PRESETS + ").");
+            array.put(preset.toJson());
+        }
         root.put("presets", array);
         return root.toString();
     }
@@ -108,7 +111,7 @@ public final class PresetCodec {
             return importV1(root);
         if (!FORMAT.equals(root.optString("format")))
             throw new JSONException("Arquivo não é um preset do PGBR.");
-        if (version > VERSION)
+        if (version < 1 || version > VERSION)
             throw new JSONException("Versão de preset (" + version + ") não suportada por esta versão do PGBR.");
         JSONArray array = root.optJSONArray("presets");
         if (array == null) throw new JSONException("Arquivo de presets sem lista.");
@@ -126,8 +129,16 @@ public final class PresetCodec {
     public static Preset presetFromJson(JSONObject o) throws JSONException {
         if (o == null) return null;
         int version = o.optInt("version", 1);
+        if (version < 1 || version > VERSION)
+            throw new JSONException("Versão de preset (" + version + ") não suportada.");
         String raw = o.toString();
-        if (version <= 1) return migrateV1(o, raw);
+        if (version == 1) return migrateV1(o, raw);
+        // Keep the original provenance, not another escaped copy of every prior export.
+        if (o.has("raw_source") && !o.isNull("raw_source")) {
+            Object original = o.opt("raw_source");
+            if (!(original instanceof String)) throw new JSONException("Origem do preset inválida.");
+            raw = (String) original;
+        }
         JSONObject queryJson = o.optJSONObject("query");
         SourceQuery query = queryJson == null
                 ? SourceQuery.builder().build() : SourceQuery.fromJson(queryJson);
