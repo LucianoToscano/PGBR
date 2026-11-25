@@ -31,15 +31,18 @@ class WhiteScreenContractTests(unittest.TestCase):
         self.assertIn("pgr_rocket_shape::enlarge(", self.mini)
         self.assertIn("const pgr_rocket_shape::Result r = pgr_rocket_shape::enlarge(in);", self.mini)
 
-    def test_visual_transform_is_never_scaled(self):
-        # The 1000x visual fallback (and its restore) must never come back.
+    def test_visual_transform_requires_verified_local_render_suppression(self):
+        self.assertIn("if (!snap.render_count) return false;", self.mini)
+        self.assertIn("if(!write_force_off(g_cfg.target(snap.renders[i].root),1)) return false;", self.mini)
+        self.assertIn("return write_local_scale(snap,snap.visual_scale);", self.mini)
+        self.assertIn("if (snap.visual_scaled) write_local_scale(snap,snap.original_scale);", self.mini)
+        self.assertIn("owner==g_cfg.target(go_root)", self.mini)
         self.assertNotIn("set_scale", self.mini)
         self.assertNotIn("Transform.set_localScale", self.mini)
-        self.assertNotIn("setScale_method, transform", self.mini)
 
-    def test_unknown_geometry_performs_no_mutation(self):
+    def test_unknown_geometry_without_verified_local_renderer_performs_no_mutation(self):
         self.assertIn('if (!r.ok) { g_cfg.free_root(h); shape_diagnostic(4u, "shape-geometry-rejected"); return false; }', self.mini)
-        self.assertIn("if (!shape_ready || g_failed.load())", self.mini)
+        self.assertIn("if ((!shape_ready && !visual_ready) || g_failed.load())", self.mini)
         # No fallback branch may publish a snapshot after a failed geometry read.
         self.assertNotIn("if (current_collider) prepare_shape", self.mini)
 
@@ -58,6 +61,7 @@ class WhiteScreenContractTests(unittest.TestCase):
     def test_host_fixture_is_registered(self):
         runner = (ROOT / "tools" / "native_host_tests.py").read_text(encoding="utf-8")
         self.assertIn("rocket_minigame_shape_test.cpp", runner)
+        self.assertIn("rocket_minigame_visual_test.cpp", runner)
 
 
 class ExecutorLifecycleContractTests(unittest.TestCase):

@@ -81,6 +81,25 @@ struct PgrRocketMiniConfigV2 {
 };
 static_assert(sizeof(PgrRocketMiniConfigV2) == 248, "v2 config layout");
 
+// Optional V3: rendering-only suppression on the tap object's own Renderer components.
+// V1/V2 remain ABI-compatible and retain their existing shape-only behavior.
+struct PgrRocketMiniVisual {
+    void *renderer_class;
+    void *renderer_type;
+    void *get_components;
+    void *get_force_off;
+    void *set_force_off;
+    void *array_get;
+    void *(*type_object)(void *);
+    uintptr_t (*array_length)(void *);
+    bool (*assignable)(void *, void *);
+};
+struct PgrRocketMiniConfigV3 {
+    PgrRocketMiniConfigV2 v2;
+    PgrRocketMiniVisual visual;
+};
+static_assert(sizeof(PgrRocketMiniConfigV3) == 320, "v3 config layout");
+
 // Status codes (0 == success). Shared spirit with the other feature headers.
 enum {
     PGR_RMINI_OK = 0,
