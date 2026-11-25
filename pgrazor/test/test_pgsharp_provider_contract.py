@@ -56,6 +56,11 @@ class PgSharpProviderContractTests(unittest.TestCase):
         self.assertIn("keyInput.setText(\"\")", self.ui)
         self.assertIn("Arrays.fill(chars", self.ui)
 
+    def test_local_import_shortcut(self):
+        self.assertIn("Importar filtros e resultados", self.ui)
+        self.assertIn("LocalImportDialog.show(activity, null)", self.ui)
+        self.assertIn("São dados locais, não consultas ao serviço PGSharp.", self.ui)
+
     def test_does_not_enable_premium_from_stored_key(self):
         self.assertIn("STORED_UNVERIFIED", self.ui)
         self.assertNotIn("VERIFIED_BY_PROVIDER", self.ui)
