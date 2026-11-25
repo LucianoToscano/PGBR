@@ -1,4 +1,5 @@
 #include "rocket_minigame.h"
+#include "rocket_minigame_shape.h"
 #include "hook_engine.h"
 
 #include <atomic>
@@ -44,7 +45,6 @@ struct MiniState {
     void *challenge;   // gchandle
     void *transform;   // gchandle
     void *go;          // gchandle
-    float scale[3];
     int   active;
     void *collider; // optional shape-only path, separately rooted
     PgrRocketMiniShape shape;
@@ -110,10 +110,6 @@ int obj_active(void *go) {
     return -1;
 }
 
-void set_scale(void *transform, const float v[3]) {
-    void *params[1] = { (void *)v }; // Vector3 value-type (size 12) passed by pointer
-    inv(g_cfg.setScale_method, transform, params);
-}
 void set_active(void *go, int on) {
     uint8_t b = on ? 1 : 0;
     void *params[1] = { &b };
@@ -121,8 +117,10 @@ void set_active(void *go, int on) {
 }
 
 // Resolve exact collider geometry only; never change unrelated renderers or
-// global camera/shader state. Unsupported collider classes retain v1 behavior.
+// global camera/shader state. Unsupported, unbound or out-of-range geometry returns
+// false and the caller performs NO mutation at all (no scale, no SetActive).
 bool prepare_shape(void *collider, const float scale[3], MiniState &snap) {
+    if (!scale) return false;
     const bool sphere = g_sphere.klass && exact(collider, g_sphere.klass);
     const auto shape = sphere ? g_sphere : g_box;
     if (!shape.klass || !exact(collider, shape.klass)) return false;
@@ -132,34 +130,26 @@ bool prepare_shape(void *collider, const float scale[3], MiniState &snap) {
     void *boxed = inv(shape.get_size, g_cfg.target(h), nullptr);
     const float *v = exact(boxed, shape.value_class) ?
         static_cast<const float *>(g_cfg.object_unbox(boxed)) : nullptr;
-    bool ok = v != nullptr;
-    float dims[3]{}, enlarged[3]{};
-    const int n = sphere ? 1 : 3;
-    for (int i=0; i<n && ok; ++i) {
-        dims[i] = v[i];
-        if (!std::isfinite(dims[i]) || dims[i] <= 0.f) ok=false;
+    if (!v) { g_cfg.free_root(h); return false; }
+
+    pgr_rocket_shape::Input in{};
+    in.sphere = sphere;
+    in.axes = pgr_rocket_shape::kMaxAxes;
+    in.geometry_bound = true;
+    for (int i = 0; i < pgr_rocket_shape::kMaxAxes; ++i) {
+        in.scale[i] = scale[i];
+        in.dimensions[i] = v[i];
     }
-    // Match the prior expansion in local units while leaving the transform alone.
-    // A zero or extremely small scale cannot be compensated safely.
-    float factors[3]{};
-    for (int i=0; i<3 && ok; ++i) {
-        const float a=std::fabs(scale[i]);
-        if (a < 0.001f) { ok=false; break; }
-        factors[i]=1000.f*std::fmax(a,1.f)/a;
+    if (sphere) in.dimensions[1] = in.dimensions[2] = 0.f; // radius only; not used
+
+    const pgr_rocket_shape::Result r = pgr_rocket_shape::enlarge(in);
+    if (!r.ok) { g_cfg.free_root(h); return false; }
+    snap.collider = h;
+    snap.shape = shape;
+    for (int i = 0; i < pgr_rocket_shape::kMaxAxes; ++i) {
+        snap.dimensions[i] = in.dimensions[i];
+        snap.enlarged[i] = r.enlarged[i];
     }
-    if (ok && sphere) {
-        // SphereCollider uses the largest magnitude scale axis.
-        const float old_max=std::fmax(std::fabs(scale[0]),std::fmax(std::fabs(scale[1]),std::fabs(scale[2])));
-        factors[0]=1000.f*std::fmax(old_max,1.f)/old_max;
-    }
-    for (int i=0; i<n && ok; ++i) {
-        enlarged[i]=dims[i]*factors[i];
-        if (!std::isfinite(enlarged[i]) || enlarged[i] > 1000000.f) ok=false;
-    }
-    if (!ok) { g_cfg.free_root(h); return false; }
-    snap.collider=h; snap.shape=shape;
-    std::memcpy(snap.dimensions,dims,sizeof(dims));
-    std::memcpy(snap.enlarged,enlarged,sizeof(enlarged));
     return true;
 }
 void set_dimensions(const MiniState &snap, const float *v) {
@@ -182,10 +172,8 @@ void do_restore() {
     MiniState snap = g_mini;
     g_have_mini = false;              // detach first
     g_restore_pending.store(0);
-    void *transform = g_cfg.target(snap.transform);
     void *go = g_cfg.target(snap.go);
     if (snap.collider) set_dimensions(snap, snap.dimensions);
-    else if (transform && obj_alive(transform)) set_scale(transform, snap.scale);
     if (go && obj_alive(go)) set_active(go, snap.active);
     if (snap.collider) g_cfg.free_root(snap.collider);
     g_cfg.free_root(snap.challenge);
@@ -194,8 +182,8 @@ void do_restore() {
     g_busy.store(0);
 }
 
-// Snapshot original scale/active on first collect, then scale each component to
-// max(abs(original),1)*1000 and force-activate. Only runs when running + alive/exact and
+// Snapshot original dimensions/active on first collect; never enlarge the visual
+// transform. Only runs for a verified shape when running + alive/exact and
 // external collection is allowed. Every managed reference used across an invoke is rooted
 // first; the snapshot is fully validated before g_mini/g_have_mini are published, so a
 // failure never leaks a root and never introduces a false "successful" collection.
@@ -264,8 +252,11 @@ void do_collect(void *challenge) {
         // Re-read the rooted challenge's collider after the managed calls above.
         void *current_collider=nullptr;
         g_cfg.field_get_value(g_cfg.target(ch_h),g_cfg.collider_field,&current_collider);
-        if (current_collider) prepare_shape(current_collider,sc,g_mini);
-        if (g_failed.load()) {
+        const bool shape_ready = current_collider && prepare_shape(current_collider,sc,g_mini);
+        // Never fall back to a giant visual Transform when the collider is unknown,
+        // invalid or unbound. The original game update already ran; manual input
+        // remains available and no object is mutated by this path.
+        if (!shape_ready || g_failed.load()) {
             if (g_mini.collider) g_cfg.free_root(g_mini.collider);
             g_cfg.free_root(ch_h); g_cfg.free_root(tr_h); g_cfg.free_root(go_h);
             g_busy.store(0); return;
@@ -273,19 +264,11 @@ void do_collect(void *challenge) {
         g_mini.challenge = ch_h;
         g_mini.transform = tr_h;
         g_mini.go = go_h;
-        std::memcpy(g_mini.scale, sc, sizeof(sc));
         g_mini.active = act;
         g_have_mini = true;
     }
 
-    float scaled[3];
-    for (int i = 0; i < 3; i++) {
-        float a = std::fabs(g_mini.scale[i]);
-        if (a < 1.0f) a = 1.0f;
-        scaled[i] = a * 1000.0f;
-    }
-    if (g_mini.collider) set_dimensions(g_mini,g_mini.enlarged);
-    else set_scale(g_cfg.target(g_mini.transform), scaled);
+    set_dimensions(g_mini,g_mini.enlarged);
     set_active(g_cfg.target(g_mini.go), 1);
     g_busy.store(0);
 }

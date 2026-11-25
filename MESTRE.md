@@ -19,6 +19,18 @@ Ciclo: recuperar HEAD e checkpoint; inventariar; priorizar P0 (build/crash/perda
 6. [ ] PGBR-ROUTE-199 / P2 — PR #199 isolada, protótipo experimental sem homologação; não sobrescrever branch Arena, não atribuir funcionamento comprovado. Próximo: revisar evidências e escopo autorizado; preservar demais correções.
 7. [ ] PGBR-RELEASE-047 / P5 — entrega real com versão reservada, tag imutável, artefatos e hashes confirmados no commit aprovado. Não marcar concluída sem evidência.
 
+## Ciclo 25/11/2026 — LT048 lote P0 (tela branca, Auto ATK, Supereficaz) + PT-BR
+
+Branch `arena/5ed38273-pgbr`, base `24700b8cba7fb9a789052a0faa632c75b7fdf54d`. Detalhe completo no Mestre canônico.
+
+12. [x] PGBR-BAT-01 / P0 — tela branca no ataque carregado: código de #275 consolidado (fallback que ampliava `Transform.localScale` em 1000× removido) + política de geometria `rocket_minigame_shape.h` com limites, recusa de NaN/infinito/escala extrema e “tudo ou nada”; geometria desconhecida não muta escala nem ativação. Fixtures host `rocket_minigame_shape_test.cpp` e contrato estático. Correção de código concluída; **homologação física separada** (issue #192).
+13. [x] PGBR-BAT-03 / P0 — Auto ATK parava após a batalha até reiniciar: causa em `combat_host.cpp` (revogação da política em corrida de leitura do transporte; `pvp_leave` em qualquer leitura indisponível). Corrigido com `transport_option_policy.h` (tolerância de 1000 ms, falha fechada sem relógio) e `pvp_executor_policy.h` (KEEP/SUSPEND/LEAVE). Em suspensão o escopo permanece ancorado e **nenhuma** ação é invocada. Reprodução em aparelho pendente (issue #105).
+14. [x] PGBR-BAT-02 / P0 — Supereficaz: Fantasma → Aço estava neutro (0) nas duas cópias da tabela; corrigido para 0,625× em `battle_counter.h` e `PvpChargedPreference.java`, com teste independente da tabela 18×18 inteira. Batalha real permanece pendente (#90).
+15. [x] PGBR-I18N-01 / P1 — 17 rótulos ainda em inglês traduzidos no glossário e nas duas UIs (1547 entradas sincronizadas), com teste de varredura. VGP+ “Lenta (aprox. 3 s)” já existente e coberta.
+16. [ ] PGBR-QA-03 / P0 — CI desta HEAD (Windows/Java, NDK ARM64, host C++) e compilação do APK QA com SHA-256. Não declarar artefato antes de CI verde; #267 é anterior a este lote.
+
+Status dos testes locais: 461 testes Python (só falha a suíte que exige `javac` neste ambiente), 24 fixtures C++ host, 22 suítes Node, `-fsyntax-only` do host nativo. `device_tested=false`, `provider_connected=false`.
+
 ## Aceite em dispositivo (separado)
 
 device_tested=false; provider_connected=false até evidência correspondente. Tela branca Rocket, Supereficaz, interface e traçado visual não são homologados fisicamente pela aprovação de CI. Não alterar estados por conveniência.

@@ -2442,3 +2442,50 @@ Registro complementar, sem substituir histórico, requisitos nem decisões de ou
 - #261 merge eb2e298507324fc5971578a49c43a364c46321fd, CI 45522014118/45522014032 aprovado. #268 merge 71784d7b46597db5c953cf35e5ab5841eb7b8318, CI 45522136874/45522136866 aprovado. #270 merge 8273d3e43ccf6d09ba85870d138b259774719749, CI 45522305986/45522305839 aprovado. #271 merge 5f8ff57bc6e1e8229d8780fd1137b8686534a70c, CI 45522407632/45522407624 aprovado.
 - QA-01: #274 HEAD 5e990430c40dec484375663961ce35f74cddabaf, LocalDiagnosticSummary.java/LogExportTest.java, seis registros de datas e horários, CI 45522752880/45522752816. MAP-03/VIS-01: #276 HEAD 5c66299b11ca6a695b8d6dedcfd4d9e45808fa7f, branch fix/lt048-preview-km-exact-boundary, GpxPreviewGeometry.java/LocalAuditTest.java, 11 verificações de limite exato incluindo rota sem extensão; CI 45522935291/45522935110. Apenas prévia local. Aguardar checks.
 - #272 e #273 aguardam CI de código. Build 45521989887: teste nativo e suíte interna aprovados, etapa Compilar aplicativo PGBR completo em andamento, nenhum artefato retornado na consulta. Revisão congelada a127452a5cd3671ae29e56b29b47dbd208b16b47 não inclui merges posteriores. device_tested=false; provider_connected=false; não declarar regressões de batalha resolvidas.
+
+
+## 25/11/2026 — LT048: lote P0 (tela branca, Auto ATK, Supereficaz) + PT-BR, branch `arena/5ed38273-pgbr`
+
+Base `24700b8cba7fb9a789052a0faa632c75b7fdf54d` (main). Execução única de engenharia com testes host; **nenhum** item deste lote está homologado em aparelho (`device_tested=false`). A compilação QA #267 é anterior a este lote e **não** contém estas correções.
+
+### BAT-01 — tela branca no ataque carregado (P0, código corrigido; causa física pendente)
+
+- **Causa em código (confirmada por leitura + fixture):** além de #193/#275, o caminho de fallback ampliava `Transform.localScale` do GameObject que possui o colisor de toque em até 1000×. Como o mesmo objeto também renderiza a apresentação do minijogo, a escala do transform cobria a tela (clarão) quando a geometria do colisor não era reconhecida.
+- **#275 consolidada nesta branch:** a PR #275 ficou `CONFLICTING` contra a main por conflito documental no Mestre. O código dela (`pgrazor/native/rocket_minigame.cpp`, `rocket_minigame_test.cpp`) foi aplicado integralmente aqui, preservando autoria e histórico, em vez de descartar o trabalho. A PR #275 será fechada como substituída **somente após** o merge desta branch.
+- **Correção adicional (nova):** extração da geometria para `pgrazor/native/rocket_minigame_shape.h` — política pura, Android-free, que (a) só aceita geometria de classe exata (SphereCollider.radius / BoxCollider.size), (b) recusa NaN/infinito/escala < 0,001 ou ≥ 10 000, (c) limita cada eixo ampliado a `kMaxEnlarged = 100000` e (d) nunca encolhe a geometria; resultado é *tudo ou nada*. `rocket_minigame.cpp` não escreve mais nada quando a geometria é desconhecida: sem escala, sem `SetActive`, sem snapshot.
+- **Testes novos:** `pgrazor/native/rocket_minigame_shape_test.cpp` (host, sem Android) cobre geometria não vinculada, caixa, esfera, números inválidos, varredura de limites e atomicidade; registrado em `tools/native_host_tests.py`. `pgrazor/test/test_white_screen_and_lifecycle_wiring.py` bloqueia a volta de `set_scale`/`set_localScale` e do fallback.
+- **Não alterado:** cadência de ataques, seleção de golpes, câmera, shader, regras de combate. Nenhuma segunda camada visual foi criada para encobrir o defeito. A causa física do clarão só pode ser encerrada com captura em Android: continua **pendente** (issue #192).
+
+### BAT-03 — Auto ATK parava após a batalha até reiniciar (P0, código corrigido)
+
+- **Causa em código:** dois caminhos tratavam “não consigo verificar agora” como “acabou”:
+  1. `poll_transport_options` revogava toda a política (`api_revoke`, máscaras = 0) quando duas leituras do transporte não coincidiam (`snapshot_seq` mudou entre elas) ou quando o snapshot ficava `!fresh` por um quadro. Isso é corrida normal do adaptador durante transições de cena.
+  2. `api_tick` chamava `pvp_leave` sempre que a política, o lease ou o classificador PvE não respondiam naquele quadro, liberando o root da UI VNext; rearmar exigia nova sequência Hub→Preparação→VNext, que não existe para a batalha em curso.
+- **Correção:** `pgrazor/native/transport_option_policy.h` (janela de tolerância de 1000 ms, falha fechada sem relógio, revogação só em persistência) e `pgrazor/native/pvp_executor_policy.h` (`KEEP`/`SUSPEND`/`LEAVE`). Em `SUSPEND` o escopo verificado permanece ancorado, `rocket_mask` efetivo é forçado a 0 (nenhuma ação é invocada) e o mesmo combate retoma quando a leitura volta; `LEAVE` fica reservado a fim autoritativo (host terminal, cena expirada, raid/ginásio/Max). Evento sanitizado `pvpExecutorSuspended` (modo + motivo fixo) é emitido só na transição e `Control.java` mostra “em espera” sem derrubar `pvpBattleReady`.
+- **Testes novos:** `transport_option_policy_test.cpp`, `pvp_executor_policy_test.cpp` (host) e contratos estáticos no teste de fiação. **Não amplia automação:** nenhuma ação nova é executada; toda suspensão é estritamente “não fazer nada”.
+- **Pendente:** reprodução em aparelho da sequência real (batalha → menu → nova batalha) para encerrar a issue #105.
+
+### BAT-02 — Supereficaz / Ataque Inteligente (P0, dado corrigido)
+
+- **Causa:** erro de dado na tabela de tipos, presente nas duas cópias: Fantasma → Aço estava `0` (neutro) em vez de `-1` (0,625×). Um golpe carregado Fantasma contra defensor de Aço (ex.: Registeel, Melmetal) era classificado como neutro e podia ser preferido sobre um golpe realmente melhor.
+- **Correção:** `pgrazor/native/battle_counter.h` e `pgrazor/src/dev/pgrazor/PvpChargedPreference.java` corrigidos.
+- **Teste independente:** `pgrazor/test/test_type_chart_consistency.py` mantém a tabela canônica própria (18×18), exige igualdade nas duas camadas, prova equivalência entre o código somado (nativo) e `1.6^soma` (Java) para todos os pares mono/duplos, confere as oito imunidades e garante que dado ausente/ inválido nunca resulta em SUPER. Falha comprovada sem a correção (`native ghost -> steel`).
+- **Pendente:** validação em batalha real (issue #90) — a tabela correta não prova seleção aceita pelo jogo.
+
+### I18N-01 — revisão PT-BR (P1)
+
+- 17 entradas acrescentadas a `pgrazor/i18n/pt-BR.json`, `PtBr.java` e `RootPtBr.java` (contagens 1547/1547/1547): rótulos ainda em inglês alcançáveis por `PtBr.tr` (`Catch`, `Transfer`, `Xfer`, `Fallback`, `Feed berries`, `Catch berry: `, textos de EventPanel/ShundoOverlay/MapTileSource/LogActivity, “Applies while…”, “Open boxes…”, “Synthetic location consumer”). Nenhum identificador interno, chave de configuração ou backup foi alterado.
+- `pgrazor/test/test_ptbr_english_sweep.py` fixa a lista e a sincronia dicionário × duas UIs. A opção lenta do VGP+ (“Lenta (aprox. 3 s)”) já existia e continua coberta.
+- **Pendente:** varredura visual em aparelho das telas secundárias.
+
+### Verificação local executada (sem Android)
+
+- `python -B -m unittest discover -s pgrazor/test -p 'test_*.py'`: 461 testes; única falha é `test_iflowgo_request_policy_java` por ausência de `javac` neste ambiente (pré-existente, roda no CI Windows).
+- `python -B tools/native_host_tests.py`: 24 fixtures host aprovadas (antes 21), incluindo `rocket_combat_test` (70 casos) e `battles_test`.
+- `g++ -fsyntax-only` de `combat_host.cpp`, `rocket_minigame.cpp` e `rocket_combat.cpp` com cabeçalho Dobby stub: sem erros.
+- Node: 22 suítes `*-test.cjs` aprovadas.
+- **Não executado aqui:** NDK ARM64, `tools/check.py` completo (requer JDK/SDK) e APK. CI é a evidência pendente para este lote.
+
+### Estado honesto
+
+`device_tested=false`; `provider_connected=false`. Tela branca, Auto ATK, Supereficaz e PT-BR têm **correção de código + testes host**, não homologação física. Nenhum ID abrangente é encerrado por este registro; o APK QA só pode ser declarado após CI verde e compilação desta HEAD.

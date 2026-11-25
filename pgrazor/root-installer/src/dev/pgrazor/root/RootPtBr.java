@@ -1542,6 +1542,23 @@ public final class RootPtBr {
         m.put("Choose a buddy first", "Escolha um companheiro primeiro");
         m.put("Paused: buddy engine failure", "Pausado: falha no sistema do companheiro");
         m.put("Slow (about 3 s)", "Lenta (aprox. 3 s)");
+        m.put("Catch", "Capturar");
+        m.put("Transfer", "Transferir");
+        m.put("Xfer", "Transferir");
+        m.put("Fallback", "Alternativa");
+        m.put("Feed berries", "Alimentar com frutas");
+        m.put("Catch berry: ", "Fruta de captura: ");
+        m.put("Applies while Auto Ball is enabled.", "Aplica-se enquanto a Bola automática estiver ligada.");
+        m.put("Applies while VGP+ is running.", "Aplica-se enquanto o VGP+ estiver em execução.");
+        m.put("Black out the screen to save battery while the sniper runs. Tap the black screen to bring the game back.", "Escurece a tela para economizar bateria enquanto o Sniper roda. Toque na tela escura para voltar ao jogo.");
+        m.put("Couldn't save that change. Please try again.", "Não foi possível salvar essa alteração. Tente novamente.");
+        m.put("Map cache unavailable. Close map and retry.", "Cache do mapa indisponível. Feche o mapa e tente novamente.");
+        m.put("No log file is available. Android logcat may contain startup errors.", "Nenhum arquivo de registro disponível. O logcat do Android pode conter erros de inicialização.");
+        m.put("Open boxes and skip encounters", "Abrir caixas e pular encontros");
+        m.put("Opens every visible map box and skips the encounter screen for any Pokemon result.", "Abre todas as caixas visíveis no mapa e pula a tela de encontro para qualquer resultado de Pokémon.");
+        m.put("Prefer GO Safari Balls for Mighty Pokemon. If Safari Balls are unavailable", "Preferir Bolas Safari do GO para Pokémon Poderosos. Se as Bolas Safari não estiverem disponíveis");
+        m.put("Stop Shundo Sniper and hide this card", "Parar o Sniper de Shundo e ocultar este cartão");
+        m.put("Synthetic location consumer\n", "Consumidor de localização sintética\n");
         LABELS = Collections.unmodifiableMap(m);
     }
     private RootPtBr() {}

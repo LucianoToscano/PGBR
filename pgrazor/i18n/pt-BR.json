@@ -1533,6 +1533,23 @@
     "Waiting for account identity": "Aguardando identificação da conta",
     "Choose a buddy first": "Escolha um companheiro primeiro",
     "Paused: buddy engine failure": "Pausado: falha no sistema do companheiro",
-    "Slow (about 3 s)": "Lenta (aprox. 3 s)"
+    "Slow (about 3 s)": "Lenta (aprox. 3 s)",
+    "Catch": "Capturar",
+    "Transfer": "Transferir",
+    "Xfer": "Transferir",
+    "Fallback": "Alternativa",
+    "Feed berries": "Alimentar com frutas",
+    "Catch berry: ": "Fruta de captura: ",
+    "Applies while Auto Ball is enabled.": "Aplica-se enquanto a Bola automática estiver ligada.",
+    "Applies while VGP+ is running.": "Aplica-se enquanto o VGP+ estiver em execução.",
+    "Black out the screen to save battery while the sniper runs. Tap the black screen to bring the game back.": "Escurece a tela para economizar bateria enquanto o Sniper roda. Toque na tela escura para voltar ao jogo.",
+    "Couldn't save that change. Please try again.": "Não foi possível salvar essa alteração. Tente novamente.",
+    "Map cache unavailable. Close map and retry.": "Cache do mapa indisponível. Feche o mapa e tente novamente.",
+    "No log file is available. Android logcat may contain startup errors.": "Nenhum arquivo de registro disponível. O logcat do Android pode conter erros de inicialização.",
+    "Open boxes and skip encounters": "Abrir caixas e pular encontros",
+    "Opens every visible map box and skips the encounter screen for any Pokemon result.": "Abre todas as caixas visíveis no mapa e pula a tela de encontro para qualquer resultado de Pokémon.",
+    "Prefer GO Safari Balls for Mighty Pokemon. If Safari Balls are unavailable": "Preferir Bolas Safari do GO para Pokémon Poderosos. Se as Bolas Safari não estiverem disponíveis",
+    "Stop Shundo Sniper and hide this card": "Parar o Sniper de Shundo e ocultar este cartão",
+    "Synthetic location consumer\n": "Consumidor de localização sintética\n"
   }
 }
