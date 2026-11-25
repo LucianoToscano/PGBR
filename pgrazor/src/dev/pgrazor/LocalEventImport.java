@@ -484,7 +484,9 @@ public final class LocalEventImport {
         Set<String> seen = new HashSet<>();
         int duplicates = 0;
         try {
+            if (text.toLowerCase(Locale.ROOT).contains("<!doctype")) throw new SAXException("DOCTYPE não aceito.");
             SAXParserFactory factory = SAXParserFactory.newInstance();
+            factory.setNamespaceAware(true);
             try { factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true); }
             catch (Exception ignored) { }
             try { factory.setFeature("http://xml.org/sax/features/external-general-entities", false); }
@@ -494,15 +496,33 @@ public final class LocalEventImport {
             SAXParser parser = factory.newSAXParser();
             final List<double[]> points = new ArrayList<>();
             final List<String> names = new ArrayList<>();
+            final boolean[] truncated = {false};
             parser.parse(new ByteArrayInputStream(text.getBytes(StandardCharsets.UTF_8)), new DefaultHandler() {
                 private StringBuilder name = new StringBuilder();
                 private boolean inName;
                 private int depth, pointDepth = -1, nameDepth = -1;
+                private final java.util.ArrayDeque<String> stack = new java.util.ArrayDeque<>();
+                @Override public org.xml.sax.InputSource resolveEntity(String publicId, String systemId) throws SAXException {
+                    throw new SAXException("Entidade externa não aceita.");
+                }
 
-                @Override public void startElement(String uri, String localName, String qName, Attributes attributes) {
+                @Override public void startElement(String uri, String localName, String qName, Attributes attributes) throws SAXException {
                     depth++;
+                    if (depth > 128) throw new SAXException("Estrutura GPX com níveis demais.");
                     String element = localName == null || localName.isEmpty() ? qName : localName;
+                    String parent = stack.peek();
+                    boolean known = uri == null || uri.isEmpty() || uri.equals("http://www.topografix.com/GPX/1/1") || uri.equals("http://www.topografix.com/GPX/1/0");
+                    if (depth == 1 && (!known || !"gpx".equals(element))) throw new SAXException("Era esperado um documento GPX.");
+                    boolean allowed = known && (depth == 1 ||
+                            (("wpt".equals(element) || "trk".equals(element) || "rte".equals(element)) && "gpx".equals(parent)) ||
+                            ("trkseg".equals(element) && "trk".equals(parent)) ||
+                            ("trkpt".equals(element) && "trkseg".equals(parent)) ||
+                            ("rtept".equals(element) && "rte".equals(parent)) ||
+                            ("name".equals(element) && ("wpt".equals(parent) || "trkpt".equals(parent) || "rtept".equals(parent))));
+                    if (!allowed) element = "#ignored";
+                    stack.push(element);
                     if ("wpt".equals(element) || "trkpt".equals(element) || "rtept".equals(element)) {
+                        if (points.size() >= MAX_ROWS) { truncated[0] = true; return; }
                         Double lat = SourceEvent.coordinate(attributes.getValue("lat"));
                         Double lon = SourceEvent.coordinate(attributes.getValue("lon"));
                         points.add(new double[]{lat == null ? Double.NaN : lat,
@@ -521,7 +541,7 @@ public final class LocalEventImport {
                 }
 
                 @Override public void endElement(String uri, String localName, String qName) {
-                    String element = localName == null || localName.isEmpty() ? qName : localName;
+                    String element = stack.pop();
                     if ("name".equals(element) && inName && depth == nameDepth) {
                         inName = false;
                         nameDepth = -1;
@@ -552,7 +572,7 @@ public final class LocalEventImport {
                         .note("Ponto GPX importado; não é um spawn ativo.")
                         .build());
             }
-            if (points.size() > MAX_ROWS)
+            if (truncated[0])
                 return new Report(Format.GPX, out, duplicates, rejections,
                         "Apenas os primeiros " + MAX_ROWS + " pontos foram importados.");
             return new Report(Format.GPX, out, duplicates, rejections,
