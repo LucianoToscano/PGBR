@@ -90,6 +90,20 @@ public final class SessionStatsHistoryTest {
         restoredShort.load(shortWindow.save(), slotStart + 4 * MIN);
         near(100, restoredShort.change(MIN).get(SessionStatsHistory.XP), "short window after reload");
 
+        // Restoring a corrupt/out-of-order row must not erase earlier valid history.
+        SessionStatsHistory corrupt = new SessionStatsHistory();
+        corrupt.load(T0 + ":1000;1;2;3;4.5;6|" +
+                (T0 + 10 * MIN) + ":2000;2;3;3;4.6;6|" +
+                (T0 + MIN) + ":100;0;0;0;0;0|" +
+                (T0 + 20 * MIN) + ":3000;3;4;3;4.7;6", T0 + 20 * MIN);
+        near(2000, corrupt.change(SessionStatsHistory.HOUR_MS).get(SessionStatsHistory.XP), "out-of-order storage does not erase history");
+        check(corrupt.change(SessionStatsHistory.HOUR_MS).coveredMs == 20 * MIN, "valid coverage retained");
+        corrupt.load(T0 + ":1000;1;2;3;4.5;6;", T0);
+        check(corrupt.change(SessionStatsHistory.HOUR_MS) == null, "trailing empty field rejected");
+        // Equal timestamps are valid: save() may include the first sample and newest reading.
+        corrupt.load(T0 + ":1000;1;2;3;4.5;6|" + T0 + ":1100;1;2;3;4.5;6", T0);
+        check(corrupt.change(SessionStatsHistory.HOUR_MS).updatedAt == T0, "equal timestamp retained");
+
         // A day later the oldest samples are dropped and the day window is full.
         SessionStatsHistory d = new SessionStatsHistory();
         for (int m = 0; m <= 26 * 60; m += 5) d.record(T0 + m * MIN, v(1_000_000 + 10.0 * m, 0, 0, 0, 0, 0, 10.0 * m));

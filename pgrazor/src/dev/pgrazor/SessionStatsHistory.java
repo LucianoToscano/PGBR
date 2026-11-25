@@ -140,8 +140,10 @@ public final class SessionStatsHistory {
             if (colon <= 0) continue;
             try {
                 long at = Long.parseLong(part.substring(0, colon));
-                String[] fields = part.substring(colon + 1).split(";");
+                String[] fields = part.substring(colon + 1).split(";", -1);
                 if ((fields.length != COUNT && fields.length != GAME_COUNTERS) || at <= 0 || at > now) continue;
+                // Saved rows are chronological. A corrupted, older row must not reset valid history.
+                if (latest != null && at < latestAt) continue;
                 double[] v = new double[COUNT];
                 v[BALANCE] = -1;
                 for (int i = 0; i < fields.length; i++) v[i] = Double.parseDouble(fields[i]);
