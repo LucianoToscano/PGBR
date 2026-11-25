@@ -24,7 +24,7 @@ jobs:
           persist-credentials: false
       - name: Verificar identidade reservada do candidato
         run: |
-          test "$(tr -d '\\r\\n' < pgrazor/VERSION)" = "0.00.48-LT"
+          test "$(tr -d '\r\n' < pgrazor/VERSION)" = "0.00.48-LT"
           test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha }}"
       - name: Testar escopos PvP e treino sem falsos positivos
         run: |
