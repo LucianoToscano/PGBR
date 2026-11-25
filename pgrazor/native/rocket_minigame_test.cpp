@@ -166,7 +166,7 @@ int main(int argc, char **argv) {
 
     void *method = &transform_m; // any non-null MethodInfo* stand-in for the hook arg
     GameObject goA{VEC, 1, 0};  Transform trA{VEC, 1, {2.f, -3.f, 0.5f}};
-    Collider colA{VEC, 1, &trA, &goA};  Challenge chA{MINI, 1, 1, &colA};
+    Collider colA{&sphere_tag, 1, &trA, &goA,{2.f,0.f,0.f}};  Challenge chA{MINI, 1, 1, &colA};
 
     // 1) Original chaining + exact int64 arg, and NO collection before a proven tick:
     //    policy is live but the Unity tid is unlatched, so the rooted path never runs.
@@ -176,32 +176,32 @@ int main(int argc, char **argv) {
     if (g_update_orig != 1 || g_last_arg != 111) return 6;
     if (g_roots != 0 || trA.scale[0] != 2.f || goA.active != 0) return 7;
 
-    // Prove the Unity thread, then a first collect snapshots the original and scales it.
+    // Prove the Unity thread, then collect without changing the visual transform.
     api->tick(1);
     g_root_calls = 0;
     call_update(&chA, 222, method);
     if (g_last_arg != 222) return 8;
-    if (g_roots != 3) return 9; // challenge + transform + gameObject rooted
-    if (trA.scale[0] != 2000.f || trA.scale[1] != 3000.f || trA.scale[2] != 1000.f) return 10;
+    if (g_roots != 4) return 9; // challenge + transform + gameObject + collider rooted
+    if (trA.scale[0] != 2.f || trA.scale[1] != -3.f || trA.scale[2] != 0.5f || colA.dimensions[0] != 2000.f) return 10;
     if (goA.active != 1) return 11;
 
     // 2) Repeated collection of the SAME challenge never re-snapshots (no new roots).
     int roots_calls = g_root_calls;
     call_update(&chA, 333, method);
-    if (g_roots != 3 || g_root_calls != roots_calls) return 12;
-    if (trA.scale[0] != 2000.f) return 13; // reapplied from the preserved original
+    if (g_roots != 4 || g_root_calls != roots_calls) return 12;
+    if (trA.scale[0] != 2.f || colA.dimensions[0] != 2000.f) return 13; // reapplied from the preserved original
 
     // 3) Disable (policy off) then a proven tick restores the original and frees roots.
     api->update(0, 0);
     api->tick(1);
     if (g_roots != 0) return 14;
-    if (trA.scale[0] != 2.f || trA.scale[1] != -3.f || trA.scale[2] != 0.5f || goA.active != 0) return 15;
+    if (trA.scale[0] != 2.f || trA.scale[1] != -3.f || trA.scale[2] != 0.5f || colA.dimensions[0] != 2.f || goA.active != 0) return 15;
 
     // 4) Lease expiry restores: collect under a 1ms lease, let it lapse, tick restores.
     trA.scale[0] = 2.f; trA.scale[1] = -3.f; trA.scale[2] = 0.5f; goA.active = 0;
     api->update(1, 2500); api->tick(1);
     call_update(&chA, 1, method);
-    if (g_roots != 3) return 16;
+    if (g_roots != 4) return 16;
     api->update(1, 1);
     timespec pause{0, 10000000}; nanosleep(&pause, nullptr);
     api->tick(1);
@@ -210,21 +210,21 @@ int main(int argc, char **argv) {
     // 5) A different challenge restores the previous one before snapshotting the new one.
     trA.scale[0] = 2.f; trA.scale[1] = -3.f; trA.scale[2] = 0.5f; goA.active = 0;
     GameObject goB{VEC, 1, 0}; Transform trB{VEC, 1, {4.f, 5.f, 6.f}};
-    Collider colB{VEC, 1, &trB, &goB}; Challenge chB{MINI, 1, 1, &colB};
+    Collider colB{&sphere_tag, 1, &trB, &goB,{3.f,0.f,0.f}}; Challenge chB{MINI, 1, 1, &colB};
     api->update(1, 2500); api->tick(1);
     call_update(&chA, 1, method);
-    if (g_roots != 3 || trA.scale[0] != 2000.f) return 18;
+    if (g_roots != 4 || trA.scale[0] != 2.f || colA.dimensions[0] != 2000.f) return 18;
     call_update(&chB, 1, method);
     if (trA.scale[0] != 2.f || goA.active != 0) return 19;  // previous restored
-    if (g_roots != 3) return 20;                            // only the new one is owned
-    if (trB.scale[0] != 4000.f || trB.scale[1] != 5000.f || trB.scale[2] != 6000.f || goB.active != 1) return 21;
+    if (g_roots != 4) return 20;                            // only the new one is owned
+    if (trB.scale[0] != 4.f || trB.scale[1] != 5.f || trB.scale[2] != 6.f || colB.dimensions[0] != 3000.f || goB.active != 1) return 21;
 
     // 6) Lifecycle restore happens BEFORE the original: the OnExit original observes the
     //    transform already restored to its original scale.
     g_watch = &trB; g_exit_observed = -1.f;
     call_exit(&chB, method);
     if (g_exit_orig != 1 || g_exit_observed != 4.f) return 22;
-    if (g_roots != 0 || trB.scale[0] != 4.f || goB.active != 0) return 23;
+    if (g_roots != 0 || trB.scale[0] != 4.f || colB.dimensions[0] != 3.f || goB.active != 0) return 23;
     g_watch = nullptr;
 
     // 7) An invalid (out-of-range) scale aborts the snapshot and leaks no roots.
@@ -253,7 +253,7 @@ int main(int argc, char **argv) {
     trA.scale[0] = 2.f; trA.scale[1] = -3.f; trA.scale[2] = 0.5f; goA.active = 0;
     g_root_calls = 0; g_reenter = 1; g_reenter_challenge = &chA; g_reenter_method = method;
     call_update(&chA, 1, method);
-    if (g_roots != 3 || trA.scale[0] != 2000.f || goA.active != 1) return 28; // collected
+    if (g_roots != 4 || trA.scale[0] != 2.f || colA.dimensions[0] != 2000.f || goA.active != 1) return 28; // collected
     if (g_destroy_orig < 1) return 29;                                        // reentry ran
     api->tick(1);
     if (g_roots != 0 || trA.scale[0] != 2.f || goA.active != 0) return 30;    // deferred restore
@@ -262,7 +262,7 @@ int main(int argc, char **argv) {
     api->update(1, 2500); api->tick(1);
     chA.running = 1;
     call_update(&chA, 1, method);
-    if (g_roots != 3 || goA.active != 1) return 31;
+    if (g_roots != 4 || goA.active != 1) return 31;
     chA.running = 0;
     call_update(&chA, 1, method);
     if (g_roots != 0 || trA.scale[0] != 2.f || trA.scale[1] != -3.f ||
@@ -270,7 +270,7 @@ int main(int argc, char **argv) {
     // A new active challenge remains supported; a tick alone also restores on end.
     chA.running = 1;
     call_update(&chA, 1, method);
-    if (g_roots != 3 || goA.active != 1) return 33;
+    if (g_roots != 4 || goA.active != 1) return 33;
     chA.running = 0;
     api->tick(1);
     if (g_roots != 0 || trA.scale[0] != 2.f || goA.active != 0) return 34;
@@ -291,8 +291,23 @@ int main(int argc, char **argv) {
     if(g_roots!=0||colA.dimensions[0]!=2.f||colA.dimensions[1]!=3.f||
        colA.dimensions[2]!=4.f||goA.active!=0)return 38;
 
+    // 13) Unsupported or invalid geometry never changes visual transform or activation.
+    chA.running=1; colA.klass=VEC; colA.dimensions[0]=2.f;
+    api->update(1,2500); api->tick(1); int original_calls=g_update_orig;
+    call_update(&chA,1,method); call_update(&chA,2,method);
+    if(g_update_orig!=original_calls+2||g_roots!=0||trA.scale[0]!=2.f||trA.scale[1]!=-3.f||trA.scale[2]!=0.5f||goA.active!=0||colA.dimensions[0]!=2.f)return 39;
+    colA.klass=&sphere_tag; colA.dimensions[0]=0.f; goA.active=1;
+    call_update(&chA,3,method);
+    if(g_roots!=0||trA.scale[0]!=2.f||goA.active!=1||colA.dimensions[0]!=0.f)return 40;
+    // A subsequent valid challenge retains its existing supported shape behavior.
+    colA.dimensions[0]=2.f; goA.active=0;
+    call_update(&chA,4,method);
+    if(g_roots!=4||colA.dimensions[0]!=2000.f||trA.scale[0]!=2.f)return 41;
+    call_exit(&chA,method);
+    if(g_roots!=0||colA.dimensions[0]!=2.f||goA.active!=0)return 42;
+
     std::puts("PASS native rocket minigame: real hooks/ABI, proven-tick gating, snapshot "
-              "scale/active preserve+1000, no re-snapshot, disable/expiry/change restore, "
+              "visual scale preserved, shape/active restore, unsupported shape pass-through, no re-snapshot, disable/expiry/change restore, "
               "lifecycle-before-original, root/scale/bool failure containment, reentrant no-deadlock, running-end restore");
     return 0;
 }

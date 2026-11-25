@@ -10,6 +10,8 @@
 #include "pvp_scene.h"
 #include "shared_auto_battle_gate.h"
 #include "charge_effect_ui.h"
+#include "transport_option_policy.h"
+#include "pvp_executor_policy.h"
 #include "smart_battle.h"
 #include "rocket_minigame.h"
 #include "runtime_bootstrap.h"
@@ -144,6 +146,12 @@ const pgr_rocket_combat_api_v1 *g_rocket_combat  = nullptr;
 PgrPvpScene g_pvp_scene{};
 uintptr_t g_pvp_ui_root=0; // durable GC handle to VNext; never store a movable raw object
 bool g_pvp_was_ready=false;
+// An open, verified PvP/training scope whose actions are withheld because the
+// scope could not be re-verified (or the assistant is off). Never freed here:
+// see pvp_executor_policy.h.
+bool g_pvp_suspended=false;
+// Transport policy freshness; a steering race must not erase the user policy.
+pgr_transport_options::Freshness g_option_freshness{};
 bool g_pvp_training_scope=false; // typed mode retained through scope exit telemetry
 const char *g_pvp_last_rejection=nullptr; // owner-thread, log each rejection reason once
 const pgr_battle_api_v1        *g_battles        = nullptr;
@@ -707,6 +715,16 @@ bool pve_exclusion_clear(uint64_t *tid) {
   pgr_battle_sample_v1 pve{};
   return g_battles->sample(&pve)==PGR_BATTLE_OK && !pve.scope_active;
 }
+// Three-state PvE exclusion classifier. The boolean form stays fail-closed (anything
+// but a successful "clear" sample denies entry), while the running session needs to
+// distinguish "a PvE scope really started" from "the classifier could not be read".
+pgr_pvp_exec::Classifier pve_classifier_state(uint64_t *tid) {
+  if(!battle_gate(tid))return pgr_pvp_exec::Classifier::UNREADABLE;
+  pgr_battle_sample_v1 pve{};
+  if(g_battles->sample(&pve)!=PGR_BATTLE_OK)return pgr_pvp_exec::Classifier::UNREADABLE;
+  return pve.scope_active?pgr_pvp_exec::Classifier::PVE_ACTIVE
+                         :pgr_pvp_exec::Classifier::CLEAR;
+}
 void pvp_leave(uint64_t tid,const char *reason) {
   uintptr_t old=g_pvp_ui_root;
   g_pvp_ui_root=0; // disarm before managed callbacks
@@ -727,6 +745,20 @@ void pvp_leave(uint64_t tid,const char *reason) {
   drain_leaf_events(tid);
   g_pvp_training_scope=false;
   g_pvp_last_rejection=nullptr;
+  g_pvp_suspended=false;
+}
+
+// Withhold every shared-battle action without destroying the verified scope. Emitting an
+// event only on transition keeps the diagnostic stream quiet. `pvpExecutorReady` is left
+// alone: the typed scope is still anchored, so a reader must not treat this as an end.
+void pvp_set_suspended(bool suspended,const char *reason,uint64_t tid) {
+  if(g_pvp_suspended==suspended)return;
+  g_pvp_suspended=suspended;
+  if(!g_pvp_ui_root)return;
+  std::string json=std::string(R"({"pvpExecutorSuspended":)")+(suspended?"true":"false")+
+    R"(,"mode":")"+(g_pvp_training_scope?"training":"pvp")+
+    R"(","reason":")"+(reason?reason:"unverified")+R"("})";
+  queue_event(PGR_CBH_EV_BATTLE_ACTION,0,0,tid,json.c_str());
 }
 // Diagnostic-only, rate-limited by reason; never changes action eligibility.
 void pvp_candidate_rejected(uint64_t tid,const char *reason) {
@@ -1794,12 +1826,14 @@ void refresh_leaf_gates(){
   }else rocket_failed=true;
   // Only an engine-owned exact Rocket/PvP/Training scope receives the shared
   // 1/2/4 mask; this path reads no cross-thread PgrPvpScene or Unity handles.
+  // A suspended scope keeps its root but must never emit an action.
+  const uint32_t shared_mask=g_pvp_suspended?0u:g_opts.rocket_mask;
   const uint32_t effective=PgrSharedAutoBattleGate::effective(
-    g_opts.rocket_mask,active,rocket!=0,rocket_active,rocket_failed);
+    shared_mask,active,rocket!=0,rocket_active,rocket_failed);
   g_rocket_combat->update(effective,effective?rocket:0,owner);
  }
  if((caps&PGR_CBH_CAP_BATTLES)&&g_battles)g_battles->update(g_opts.battle_mask,battle,rocket_active?1:0,owner);
- if((caps&PGR_CBH_CAP_ROCKET_MINIGAME)&&g_rocket_mini){bool on=active&&rocket&&!rocket_failed&&rocket_active&&(g_opts.rocket_mask&2);g_rocket_mini->update(on?1:0,on?int64_t(rocket):0);g_mini_active.store(on?1:0);}
+ if((caps&PGR_CBH_CAP_ROCKET_MINIGAME)&&g_rocket_mini){bool on=active&&!g_pvp_suspended&&rocket&&!rocket_failed&&rocket_active&&(g_opts.rocket_mask&2);g_rocket_mini->update(on?1:0,on?int64_t(rocket):0);g_mini_active.store(on?1:0);}
 }
 int api_revoke();
 int api_update(const PgrCombatHostOptions *opts) {
@@ -1871,9 +1905,17 @@ void poll_transport_options() {
     const auto *tr = transport_api();
     if (!tr || !tr->sample || !tr->get_bool || !tr->get_int) return;
 
+    const uint64_t now = now_ms();
     PgrRuntimeTransportSample a{}, z{};
     if (tr->sample(&a) != 0 || !a.snapshot_fresh) {
-        api_revoke();
+        // A momentarily stale transport (battle-scene unload, pilot pause) must not erase
+        // the user's battle policy: the accepted options already carry a <=2500 ms lease,
+        // so a bounded grace cannot run anything on stale data. Persistent staleness
+        // still revokes, and a missing clock fails closed immediately.
+        if (g_option_freshness.observe(false, now)) {
+            transport_text_action(52, R"({"battlePolicyRevoked":"transport-stale"})");
+            api_revoke();
+        }
         return;
     }
     auto rd_bool = [&](uint32_t idx) {
@@ -1891,10 +1933,20 @@ void poll_transport_options() {
     const int32_t b_raw        = rd_int(0);
     const int32_t r_raw        = rd_int(6);
 
-    if (tr->sample(&z) != 0 || !z.snapshot_fresh || a.snapshot_seq != z.snapshot_seq) {
-        api_revoke();
+    const bool present = tr->sample(&z) == 0;
+    const bool agreed = pgr_transport_options::Freshness::stable(
+        present, z.snapshot_fresh, a.snapshot_seq == z.snapshot_seq);
+    if (!agreed) {
+        // The adapter published between the two reads. That is a steering race, not an
+        // error: keep the previously accepted policy and re-read on the next tick. Only
+        // staleness beyond the bounded grace revokes it.
+        if (g_option_freshness.observe(false, now)) {
+            transport_text_action(52, R"({"battlePolicyRevoked":"transport-race"})");
+            api_revoke();
+        }
         return;
     }
+    g_option_freshness.observe(true, now);
 
     const uint32_t b_mask = (b_raw >= 0 && b_raw <= PGR_CBH_BATTLE_MASK_ALL)
                                 ? static_cast<uint32_t>(b_raw)
@@ -1949,15 +2001,35 @@ int api_tick(uint64_t proven_tid) {
 
     const uint32_t caps=g_capabilities.load();
     auto terminal=[](){return g_stopping.load()||g_failed.load();};
-    bool pvp_disarm=terminal()||!g_pvp_scene.live(now_ms())||
-                     !pve_exclusion_clear(&proven_tid);
+    const uint64_t tick_now=now_ms();
+    // `live()` also expires the typed scene, so it must run every tick.
+    const bool scene_live=g_pvp_scene.live(tick_now);
+    const pgr_pvp_exec::Classifier classifier=
+        g_pvp_ui_root?pve_classifier_state(&proven_tid):pgr_pvp_exec::Classifier::CLEAR;
+    bool policy_live=false;
     {std::lock_guard<std::mutex> lock(g_options_mutex);
-     pvp_disarm=pvp_disarm||(g_opts.flags&PGR_CBH_OPT_ACTIVE)==0||
-                (g_opts.flags&PGR_CBH_OPT_ROCKET_ALLOWED)==0||
-                (g_opts.flags&PGR_CBH_OPT_STOPPING)!=0||
-                (g_opts.rocket_mask&7u)==0||
-                (now_ms()>=g_rocket_deadline_ms);}
-    if(pvp_disarm&&g_pvp_ui_root)pvp_leave(proven_tid,terminal()?"host-stopped":"scope-ended");
+     policy_live=(g_opts.flags&PGR_CBH_OPT_ACTIVE)!=0&&
+                 (g_opts.flags&PGR_CBH_OPT_ROCKET_ALLOWED)!=0&&
+                 (g_opts.flags&PGR_CBH_OPT_STOPPING)==0&&
+                 (g_opts.rocket_mask&7u)!=0&&tick_now!=0&&
+                 tick_now<g_rocket_deadline_ms;}
+    if(g_pvp_ui_root){
+      const auto verdict=pgr_pvp_exec::decide(
+          terminal(),scene_live,policy_live,classifier);
+      if(verdict==pgr_pvp_exec::Action::LEAVE){
+        pvp_set_suspended(false,nullptr,proven_tid);
+        pvp_leave(proven_tid,pgr_pvp_exec::leave_reason(
+            terminal(),scene_live,classifier));
+      }else{
+        // A suspension withholds actions and keeps the verified scope anchored, so the
+        // same battle resumes once the data is readable again (issue #105).
+        pvp_set_suspended(verdict==pgr_pvp_exec::Action::SUSPEND,
+            classifier==pgr_pvp_exec::Classifier::UNREADABLE
+              ?"classifier-unreadable":"assistant-off",proven_tid);
+      }
+    }else{
+      pvp_set_suspended(false,nullptr,proven_tid);
+    }
     // Re-read and serialize gate publication after each managed leaf pass. A revoke
     // during Rocket work cannot be overwritten by a stale pre-tick Battle snapshot.
     if((caps&PGR_CBH_CAP_ROCKET_COMBAT)&&g_rocket_combat){refresh_leaf_gates();g_rocket_combat->tick(proven_tid,terminal()?1:0);}
@@ -1973,6 +2045,7 @@ int api_tick(uint64_t proven_tid) {
 int api_stop(uint64_t proven_tid) {
     if (!g_configured.load(std::memory_order_acquire)) return PGR_CBH_ERR_NOT_CONFIGURED;
     g_stopping.store(true, std::memory_order_release);
+    g_option_freshness.reset();
     if(self_tid()==g_owner_tid.load()&&thread_attached())clear_gym_next();
     if(g_gym_repeat)g_gym_repeat->stop(proven_tid?proven_tid:g_owner_tid.load());
     api_revoke();

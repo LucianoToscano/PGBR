@@ -2056,6 +2056,15 @@ public final class Control {
                     pvpBattleStatus=pvpBattleReady
                         ?battleMode+" em teste: executor conectado, sem confirmação de ataque aceito."
                         :battleMode+" aguardando partida reconhecida: "+b.optString("reason","pronto para observar");
+                }else if(b.has("pvpExecutorSuspended")){
+                    // A suspended scope keeps the verified battle anchored: it is NOT an
+                    // end, so the readiness flag survives and the reason is shown.
+                    String battleMode="training".equals(b.optString("mode","pvp"))
+                        ?"Treinamento VNext":"PvP VNext";
+                    String reason=b.optString("reason","não verificado");
+                    pvpBattleStatus=b.optBoolean("pvpExecutorSuspended",false)
+                        ?battleMode+" em espera ("+reason+"): escopo preservado, sem ações até a leitura voltar."
+                        :battleMode+" retomado: executor conectado, sem confirmação de ataque aceito.";
                 }else if(b.has("pvpAction")){
                     String mode="training".equals(b.optString("mode","pvp"))?"Treinamento":"PvP";
                     pvpBattleStatus=mode+" VNext: comando "+b.optString("pvpAction")+" invocado (sem confirmação de acerto).";

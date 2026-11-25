@@ -19,7 +19,13 @@ class BattleAllowlistTest(unittest.TestCase):
         self.assertIn("IsPvPCombat",probe)
         self.assertIn("VERIFIED_PVP_ENTRY_MS=15000",scene)
         self.assertIn("TRAINING_ENTRY_MS=45000",scene)
-        self.assertIn("now_ms()>=g_rocket_deadline_ms",host)
+        # The lease is still the authority; the running session now distinguishes an
+        # authoritative end from a transient verification gap (issue #105).
+        self.assertIn("tick_now<g_rocket_deadline_ms",host)
+        self.assertIn("pgr_pvp_exec::decide(",host)
+        self.assertIn("pgr_pvp_exec::Action::SUSPEND",host)
+        self.assertIn("pgr_pvp_exec::Action::LEAVE",host)
+        self.assertIn("classifier-unreadable",host)
         self.assertIn("PgrSharedAutoBattleGate::effective(",host)
         self.assertIn("pvpCandidateDenied",host)
         self.assertIn("pvpTypeProbeReady",host)

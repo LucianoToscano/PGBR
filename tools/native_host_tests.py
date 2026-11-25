@@ -28,6 +28,9 @@ FIXTURES=(
     'pvp_scene_test.cpp',  # pure state machine; no Android or hook stubs
     'shared_auto_battle_gate_test.cpp',
     'max_session_gate_test.cpp',
+    'rocket_minigame_shape_test.cpp',  # white-screen guard: collider-only, bounded
+    'transport_option_policy_test.cpp',  # transient transport reads keep the policy
+    'pvp_executor_policy_test.cpp',  # suspend/resume instead of a dead executor
 )
 
 # Explicitly linked, host-only tests of the real gameplay controller. These are
