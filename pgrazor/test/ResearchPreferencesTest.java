@@ -92,6 +92,13 @@ public final class ResearchPreferencesTest {
         full.select("KEEP_ME", true);
         for (int i = 0; i < ResearchPreferences.MAX_TEMPLATES + 5; i++) full.observe("T_" + i, "Task " + i, "", "i");
         require(full.tasks("").size() == ResearchPreferences.MAX_TEMPLATES && full.tasks("keep").size() == 1, "bounded catalog keeps selected tasks");
+        ResearchPreferences localized = new ResearchPreferences();
+        localized.observe("PT_BR_QUEST", "Capture 5 Pokémon", "Poeira Estelar", "i");
+        require(localized.tasks("POKEMON").size() == 1, "accent insensitive catalog search");
+        require(localized.tasks("\\u00a0CAPTURE\\u202f5  pokemon\\u00a0").size() == 1, "Unicode spacing in search");
+        require(localized.tasks("poeira estelar").size() == 1 && localized.tasks("PT_BR_QUEST").size() == 1, "reward and key still searchable");
+        require(localized.tasks("pokemon lendario").isEmpty(), "no false match");
+        require(localized.tasks("").get(0)[1].equals("Capture 5 Pokémon"), "original label preserved");
         System.out.println("ResearchPreferencesTest passed");
     }
 }
