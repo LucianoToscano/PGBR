@@ -68,7 +68,8 @@ public final class GpxStore {
         File[] existing = files();
         if (existing.length >= MAX_FILES) throw new IOException("The route store is full (" + MAX_FILES + " routes). Delete one before saving another.");
         for (Entry entry : list())
-            if (entry.name.equalsIgnoreCase(route.name)) throw new IOException("A route named “" + route.name + "” already exists. Choose another name.");
+            if (java.text.Normalizer.normalize(entry.name, java.text.Normalizer.Form.NFC)
+                    .equalsIgnoreCase(java.text.Normalizer.normalize(route.name, java.text.Normalizer.Form.NFC))) throw new IOException("A route named “" + route.name + "” already exists. Choose another name.");
         String id;
         File target;
         do { id = UUID.randomUUID().toString(); target = new File(directory, id + ".gpx"); } while (target.exists());
@@ -108,9 +109,12 @@ public final class GpxStore {
         if (file.exists() && !file.delete()) throw new IOException("Could not delete the route.");
     } }
 
-    private File[] files() {
+    private File[] files() throws IOException {
+        if (!directory.exists()) return new File[0];
+        if (!directory.isDirectory()) throw new IOException("Armazenamento de rotas inválido.");
         File[] found = directory.listFiles((dir, name) -> name.endsWith(".gpx") && ID.matcher(name.substring(0, name.length() - 4)).matches());
-        return found == null ? new File[0] : found;
+        if (found == null) throw new IOException("Não foi possível ler o armazenamento de rotas.");
+        return found;
     }
 
     private static String idOf(File file) {
