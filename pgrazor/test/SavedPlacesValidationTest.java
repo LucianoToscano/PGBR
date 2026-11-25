@@ -13,6 +13,9 @@ public final class SavedPlacesValidationTest {
         new SavedPlaces.Entry("1234567890123456789012345678901234567890", 0, 0);
         new SavedPlaces.Entry("12345678901234567890123456789012345678901", 0, 0);
         invalid("X".repeat(101), 0, 0);
+        for(String blank:new String[]{" "," "," ","    "})invalid(blank,0,0);
+        if(!new SavedPlaces.Entry("Praça Central",1,2).name.equals("Praça Central"))
+            throw new AssertionError("Valid Unicode name changed");
         invalid(null, 0, 0); invalid("  ", 0, 0); invalid("Bad\nname", 0, 0);
         invalid("Bad\tname", 0, 0); invalid("Bad\u0000name", 0, 0);
         invalid("Invalid", Double.NaN, 0); invalid("Invalid", 0, Double.POSITIVE_INFINITY);
