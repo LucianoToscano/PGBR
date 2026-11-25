@@ -1,6 +1,11 @@
 #include "rocket_minigame.h"
 #include "rocket_minigame_shape.h"
+#ifdef PGR_MINI_DIRECT_TEST
+int pgrazor_hook(void *, void *, void **);
+int pgrazor_unhook(void *);
+#else
 #include "hook_engine.h"
+#endif
 
 #include <atomic>
 #include <mutex>
@@ -27,7 +32,8 @@ typedef void (*LifeFn)(void *, void *);
 
 std::mutex g_install_mutex;                    // serialises install() and publishes originals
 PgrRocketMiniConfig g_cfg{};
-PgrRocketMiniShape g_sphere{}, g_box{};                   // validated copy, published under the mutex
+PgrRocketMiniShape g_sphere{}, g_box{};
+PgrRocketMiniVisual g_visual{};                   // validated copy, published under the mutex
 bool g_install_failed = false;                 // sticky; guarded by g_install_mutex
 
 std::atomic<int>     g_active{0};          // fully installed and live
@@ -53,6 +59,11 @@ struct MiniState {
     PgrRocketMiniShape shape;
     float dimensions[3];
     float enlarged[3];
+    float original_scale[3];
+    float visual_scale[3];
+    bool visual_scaled;
+    unsigned render_count;
+    struct RenderSnapshot { void *root; uint8_t force_off; } renders[16];
 };
 MiniState g_mini{};
 bool g_have_mini = false;
@@ -179,6 +190,76 @@ void set_dimensions(const MiniState &snap, const float *v) {
     inv(snap.shape.set_size,obj,args);
 }
 
+// Snapshot the complete set of renderers on this exact tap object, never the scene,
+// camera, parent or another object. No writes occur during discovery.
+void free_visual(MiniState &snap) {
+    for (unsigned i=0; i<snap.render_count; ++i) g_cfg.free_root(snap.renders[i].root);
+    snap.render_count=0;
+}
+int read_force_off(void *renderer) {
+    void *boxed=inv(g_visual.get_force_off,renderer,nullptr);
+    if (!exact(boxed,g_cfg.bool_class)) return -1;
+    const auto *p=static_cast<const uint8_t *>(g_cfg.object_unbox(boxed));
+    return p && *p<=1 ? *p : -1;
+}
+bool write_force_off(void *renderer,uint8_t value) {
+    if (!renderer || !obj_alive(renderer)) return false;
+    void *args[]={&value};
+    void *exc=nullptr;
+    g_cfg.runtime_invoke(g_visual.set_force_off,renderer,args,&exc);
+    if (exc) { g_failed.store(1); return false; }
+    return read_force_off(renderer)==value;
+}
+bool prepare_visual(void *collider,void *go_root,const float sc[3],MiniState &snap) {
+    if (!g_visual.renderer_class || !collider) return false;
+    for (int i=0;i<3;++i) {
+        const float v=std::fmax(1.f,std::fabs(sc[i]))*1000.f;
+        if (!std::isfinite(v) || v>100000.f) return false;
+        snap.original_scale[i]=sc[i]; snap.visual_scale[i]=v;
+    }
+    void *type=g_visual.type_object(g_visual.renderer_type);
+    void *type_root=type?g_cfg.root(type,0):nullptr;
+    if (!type_root) return false;
+    void *args[]={g_cfg.target(type_root)};
+    void *array=inv(g_visual.get_components,collider,args);
+    void *array_root=array?g_cfg.root(array,0):nullptr;
+    g_cfg.free_root(type_root);
+    if (!array_root) return false;
+    const uintptr_t count=g_visual.array_length(g_cfg.target(array_root));
+    bool ok=count>0 && count<=16;
+    for (int i=0;ok && i<static_cast<int>(count);++i) {
+        void *index[]={&i};
+        void *renderer=inv(g_visual.array_get,g_cfg.target(array_root),index);
+        if (!renderer || !g_visual.assignable(g_visual.renderer_class,g_cfg.object_class(renderer))) {ok=false;break;}
+        void *root=g_cfg.root(renderer,0);
+        if (!root) {ok=false;break;}
+        void *owner=inv(g_cfg.gameObject_method,g_cfg.target(root),nullptr);
+        int off=owner==g_cfg.target(go_root)?read_force_off(g_cfg.target(root)):-1;
+        if (off<0 || g_failed.load()) {g_cfg.free_root(root);ok=false;break;}
+        snap.renders[snap.render_count++]={root,static_cast<uint8_t>(off)};
+    }
+    g_cfg.free_root(array_root);
+    if (!ok) free_visual(snap);
+    return ok && snap.render_count>0;
+}
+bool write_local_scale(const MiniState &snap,const float *scale) {
+    void *tr=g_cfg.target(snap.transform);
+    if (!tr || !obj_alive(tr)) return false;
+    void *args[]={const_cast<float *>(scale)};
+    void *exc=nullptr;
+    g_cfg.runtime_invoke(g_cfg.setScale_method,tr,args,&exc);
+    if(exc)g_failed.store(1);
+    return !exc;
+}
+bool apply_visual(MiniState &snap) {
+    if (!snap.render_count) return false;
+    // No transform write until EVERY local renderer has been suppressed and verified.
+    for(unsigned i=0;i<snap.render_count;++i)
+        if(!write_force_off(g_cfg.target(snap.renders[i].root),1)) return false;
+    snap.visual_scaled=true; // record before call in case it partially succeeds
+    return write_local_scale(snap,snap.visual_scale);
+}
+
 // Snapshot is detached before any restoring call so a SetActive-driven re-entry cannot
 // see a half-restored state (it sees g_have_mini == false, intentionally). Handles are
 // freed only after the restore calls complete. Restore runs regardless of the failed
@@ -194,6 +275,11 @@ void do_restore() {
     g_restore_pending.store(0);
     void *go = g_cfg.target(snap.go);
     if (snap.collider) set_dimensions(snap, snap.dimensions);
+    // Restore scale before making the renderer visible, including error/exit paths.
+    if (snap.visual_scaled) write_local_scale(snap,snap.original_scale);
+    for(unsigned i=0;i<snap.render_count;++i)
+        write_force_off(g_cfg.target(snap.renders[i].root),snap.renders[i].force_off);
+    free_visual(snap);
     if (go && obj_alive(go)) set_active(go, snap.active);
     if (snap.collider) g_cfg.free_root(snap.collider);
     g_cfg.free_root(snap.challenge);
@@ -272,11 +358,12 @@ void do_collect(void *challenge) {
         // Re-read the rooted challenge's collider after the managed calls above.
         void *current_collider=nullptr;
         g_cfg.field_get_value(g_cfg.target(ch_h),g_cfg.collider_field,&current_collider);
-        const bool shape_ready = current_collider && prepare_shape(current_collider,sc,g_mini);
-        // Never fall back to a giant visual Transform when the collider is unknown,
-        // invalid or unbound. The original game update already ran; manual input
-        // remains available and no object is mutated by this path.
-        if (!shape_ready || g_failed.load()) {
+        // Prefer the historical functional geometry only when the exact local
+        // renderer set is independently proven and can be made invisible.
+        const bool visual_ready=current_collider && prepare_visual(current_collider,go_h,sc,g_mini);
+        const bool shape_ready = !visual_ready && !g_failed.load() && current_collider && prepare_shape(current_collider,sc,g_mini);
+        if ((!shape_ready && !visual_ready) || g_failed.load()) {
+            free_visual(g_mini);
             if (g_mini.collider) g_cfg.free_root(g_mini.collider);
             g_cfg.free_root(ch_h); g_cfg.free_root(tr_h); g_cfg.free_root(go_h);
             g_busy.store(0); return;
@@ -288,7 +375,15 @@ void do_collect(void *challenge) {
         g_have_mini = true;
     }
 
-    set_dimensions(g_mini,g_mini.enlarged);
+    if(g_mini.render_count) {
+        if(!apply_visual(g_mini)) {
+            shape_diagnostic(32u,"local-visual-suppression-failed");
+            g_busy.store(0); do_restore(); return;
+        }
+        shape_diagnostic(64u,"local-visual-suppressed");
+    } else {
+        set_dimensions(g_mini,g_mini.enlarged);
+    }
     set_active(g_cfg.target(g_mini.go), 1);
     g_busy.store(0);
 }
@@ -391,9 +486,18 @@ int api_install(const PgrRocketMiniConfig *cfg) {
 
     const bool v1=cfg->version==1 && cfg->size==sizeof(PgrRocketMiniConfig);
     const bool v2=cfg->version==2 && cfg->size==sizeof(PgrRocketMiniConfigV2);
-    if ((!v1 && !v2) || !config_pointers_ok(cfg)) return PGR_RMINI_ERR_BAD_CONFIG;
+    const bool v3=cfg->version==3 && cfg->size==sizeof(PgrRocketMiniConfigV3);
+    if ((!v1 && !v2 && !v3) || !config_pointers_ok(cfg)) return PGR_RMINI_ERR_BAD_CONFIG;
     PgrRocketMiniShape sphere{},box{};
-    if(v2) {
+    PgrRocketMiniVisual visual{};
+    if(v3) {
+        visual=reinterpret_cast<const PgrRocketMiniConfigV3 *>(cfg)->visual;
+        if(!visual.renderer_class||!visual.renderer_type||!visual.get_components||
+           !visual.get_force_off||!visual.set_force_off||!visual.array_get||
+           !visual.type_object||!visual.array_length||!visual.assignable)
+            return PGR_RMINI_ERR_BAD_CONFIG;
+    }
+    if(v2 || v3) {
         const auto *ext=reinterpret_cast<const PgrRocketMiniConfigV2 *>(cfg);
         sphere=ext->sphere; box=ext->box;
         auto valid=[](const PgrRocketMiniShape &s) {
@@ -409,13 +513,14 @@ int api_install(const PgrRocketMiniConfig *cfg) {
         // different config is refused.
         return std::memcmp(&g_cfg, cfg, sizeof(g_cfg)) == 0 &&
                std::memcmp(&g_sphere,&sphere,sizeof(sphere))==0 &&
-               std::memcmp(&g_box,&box,sizeof(box))==0
+               std::memcmp(&g_box,&box,sizeof(box))==0 &&
+               std::memcmp(&g_visual,&visual,sizeof(visual))==0
                    ? PGR_RMINI_OK
                    : PGR_RMINI_ERR_ALREADY_BOUND;
     }
 
     g_cfg = *cfg; // publish before any callback can read it (still under the mutex)
-    g_sphere=sphere; g_box=box;
+    g_sphere=sphere; g_box=box; g_visual=visual;
     g_have_mini = false;
     g_failed.store(0);
     g_policy_on.store(0);
