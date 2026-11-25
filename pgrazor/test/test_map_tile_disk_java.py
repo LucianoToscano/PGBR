@@ -53,6 +53,43 @@ class MapTileDiskTests(unittest.TestCase):
                 str(ROOT/"src/dev/pgrazor/MapTileDiskStore.java"),str(source)],check=True,timeout=30)
             subprocess.run([str(runtime),"-cp",tmp,"dev.pgrazor.MapTileDiskStoreHarness",str(cache)],check=True,timeout=30)
 
+    def test_interrupted_reads_are_not_corruption(self):
+        cache=(ROOT/"src/dev/pgrazor/MapTileCache.java").read_text(encoding="utf-8")
+        # Execute the production bounded stream method on the host without Android.
+        start=cache.index("    static byte[] readBounded(")
+        end=cache.index("    static Bitmap decode(",start)
+        method=cache[start:end]
+        harness=r"""
+package dev.pgrazor;
+import java.io.*;
+import java.util.Arrays;
+public class MapCacheCancelHarness {
+    static final int TILE_BYTE_LIMIT=512*1024;
+    static void check(boolean b){if(!b)throw new AssertionError();}
+    static void canceled(InputStream in) throws Exception {
+        try { readBounded(in);throw new AssertionError("Cancellation ignored"); }
+        catch(InterruptedIOException expected){}
+        finally{Thread.interrupted();}
+    }
+    public static void main(String[] args) throws Exception {
+        check(Arrays.equals(new byte[]{1,2},readBounded(new ByteArrayInputStream(new byte[]{1,2}))));
+        Thread.currentThread().interrupt();
+        canceled(new InputStream(){public int read(){throw new AssertionError("Read after cancellation");}});
+        canceled(new InputStream(){public int read(){Thread.currentThread().interrupt();return -1;}});
+        canceled(new InputStream(){public int read(){return 1;}public int read(byte[] b,int o,int n){Thread.currentThread().interrupt();b[o]=1;return 1;}});
+        try{readBounded(new ByteArrayInputStream(new byte[TILE_BYTE_LIMIT+1]));throw new AssertionError("Oversized input");}
+        catch(IOException expected){check(!(expected instanceof InterruptedIOException));}
+    }
+""" + method + "}"
+        compiler,runtime=java_tools()
+        with tempfile.TemporaryDirectory() as tmp:
+            source=Path(tmp)/"MapCacheCancelHarness.java"
+            source.write_text(harness,encoding="utf-8")
+            subprocess.run([str(compiler),"-encoding","UTF-8","-d",tmp,str(source)],check=True,timeout=30)
+            subprocess.run([str(runtime),"-cp",tmp,"dev.pgrazor.MapCacheCancelHarness"],check=True,timeout=30)
+        self.assertLess(cache.index("catch (InterruptedIOException canceled)"),cache.index("catch (IOException e)"))
+        self.assertIn("if (Thread.currentThread().isInterrupted()) throw e;",cache)
+
     def test_cache_integration(self):
         cache=(ROOT/"src/dev/pgrazor/MapTileCache.java").read_text(encoding="utf-8")
         self.assertEqual(cache.count("synchronized (DISK_LOCK)"),3)
