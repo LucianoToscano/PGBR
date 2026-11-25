@@ -67,7 +67,10 @@ public final class SessionStatsHistory {
     }
     private void put(long now, double[] v) {
         long slot = now / SLOT_MS;
-        if (!samples.containsKey(slot)) {
+        double[] retained = samples.get(slot);
+        // A corrected reading at exactly the retained timestamp replaces it; otherwise
+        // the same instant can appear to contain gains with zero elapsed time.
+        if (retained == null || (long) retained[0] == now) {
             double[] s = new double[COUNT + 1];
             s[0] = now;
             System.arraycopy(v, 0, s, 1, COUNT);
