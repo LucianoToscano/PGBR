@@ -96,6 +96,12 @@ final class PgSharpFilterMapping {
             if (filter == null) continue;
             String name = filter.optString("name", "").trim();
             if (name.isEmpty()) name = "Filtro " + kind.name().toLowerCase(Locale.ROOT) + " " + (i + 1);
+            // Malformed explicit criteria must not become a less restrictive local preset.
+            String invalidField = malformedNumericField(filter);
+            if (invalidField != null) {
+                unsupported.add(kind.name().toLowerCase(Locale.ROOT) + "." + invalidField + " (valor inválido)");
+                continue;
+            }
             SourceQuery.Builder query = SourceQuery.builder().kind(kind);
             Double ivMin = firstDecimal(filter, "ivMin", "minIv", "iv");
             Double ivMax = firstDecimal(filter, "ivMax", "maxIv");
@@ -145,24 +151,54 @@ final class PgSharpFilterMapping {
         return preserved;
     }
 
+    private static final String[] SPECIES_KEYS = {"species", "pokemon", "pokemonIds", "mons"};
+
+    private static Integer exactInteger(Object raw) {
+        Double value = SourceEvent.decimal(raw);
+        if (value == null || value != Math.rint(value) || value < Integer.MIN_VALUE
+                || value > Integer.MAX_VALUE) return null;
+        return value.intValue();
+    }
+
+    private static String malformedNumericField(JSONObject filter) {
+        for (String key : new String[]{"ivMin","ivMax","iv","minIv","maxIv","lat","lon","radiusKm"}) {
+            if (!filter.isNull(key) && SourceEvent.decimal(filter.opt(key)) == null) return key;
+        }
+        for (String key : new String[]{"attackMin","attackMax","defenseMin","defenseMax","hpMin","hpMax",
+                "levelMin","levelMax","cpMin","cpMax","pvpRank","minTtlSeconds"}) {
+            if (!filter.isNull(key) && exactInteger(filter.opt(key)) == null) return key;
+        }
+        for (String key : SPECIES_KEYS) {
+            if (filter.isNull(key)) continue;
+            Object raw = filter.opt(key);
+            if (raw instanceof JSONArray) {
+                JSONArray ids = (JSONArray) raw;
+                for (int i = 0; i < ids.length(); i++) if (!validSpecies(ids.opt(i))) return key;
+            } else if (raw instanceof String) {
+                String value = ((String) raw).trim();
+                if (!value.isEmpty())
+                    for (String part : value.split(",", -1)) if (!validSpecies(part)) return key;
+            } else return key;
+        }
+        return null;
+    }
+
+    private static boolean validSpecies(Object raw) {
+        Integer id = exactInteger(raw);
+        return id != null && id >= 1 && id <= 1025;
+    }
+
     private static void addSpecies(SourceQuery.Builder query, JSONObject filter) {
-        JSONArray ids = filter.optJSONArray("species");
-        if (ids == null) ids = filter.optJSONArray("pokemon");
-        if (ids == null) ids = filter.optJSONArray("pokemonIds");
-        if (ids == null) ids = filter.optJSONArray("mons");
-        if (ids != null) {
-            for (int i = 0; i < ids.length(); i++) {
-                Integer id = SourceEvent.integer(ids.opt(i));
-                if (id != null) query.pokemon(id.intValue());
+        for (String key : SPECIES_KEYS) {
+            if (filter.isNull(key)) continue;
+            Object raw = filter.opt(key);
+            if (raw instanceof JSONArray) {
+                JSONArray ids = (JSONArray) raw;
+                for (int i = 0; i < ids.length(); i++) query.pokemon(exactInteger(ids.opt(i)));
+            } else if (raw instanceof String && !((String) raw).trim().isEmpty()) {
+                for (String part : ((String) raw).split(",", -1)) query.pokemon(exactInteger(part));
             }
             return;
-        }
-        String raw = filter.optString("species", null);
-        if (raw == null) raw = filter.optString("mons", null);
-        if (raw == null || raw.trim().isEmpty()) return;
-        for (String part : raw.split(",")) {
-            Integer id = SourceEvent.integer(part.trim());
-            if (id != null) query.pokemon(id.intValue());
         }
     }
 
@@ -186,7 +222,7 @@ final class PgSharpFilterMapping {
 
     private static Integer firstInteger(JSONObject o, String... keys) {
         for (String key : keys) {
-            Integer value = SourceEvent.integer(o.opt(key));
+            Integer value = exactInteger(o.opt(key));
             if (value != null) return value;
         }
         return null;
