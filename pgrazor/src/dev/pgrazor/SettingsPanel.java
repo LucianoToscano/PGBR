@@ -1817,13 +1817,17 @@ final class SettingsPanel {
             pvpBattleChoices[i].setChecked((Control.pvpBattleOptions()&(1<<i))!=0);
             pvpBattleChoices[i].setEnabled(true);
         }
-        if(Control.pvpBattleReady()){
-            pvpBattleStatus.setText(Control.pvpBattleStatus());
-        }else if((Control.pvpBattleOptions()&PvpBattleMode.ACTIONS)!=0){
-            pvpBattleStatus.setText("Opções Rocket/PvP sincronizadas: Ágil/carregado/escudo compartilhados no Rocket, PvP tipado (incluindo desafios privados) e treinamento/NPC reconhecido. Sem ataque em reide, ginásio, Max ou modo desconhecido; não homologado em aparelho.");
-        }else{
-            pvpBattleStatus.setText("Você pode configurar as opções, mas a automação PvP ainda não está disponível nesta versão.");
-        }
+        // A configured preference is not evidence of a working battle session.
+        String status=Control.pvpBattleStatus();
+        boolean configured=(Control.pvpBattleOptions()&PvpBattleMode.ACTIONS)!=0;
+        String preference=configured
+            ?"Opções Rocket/PvP sincronizadas e configuradas."
+            :"Opções de batalha desativadas.";
+        String readiness=Control.pvpBattleReady()
+            ?"Controlador informado como disponível."
+            :"Controlador indisponível ou aguardando reconhecimento da sessão.";
+        pvpBattleStatus.setText(preference+"\n"+readiness+"\n"+dev.pgrazor.PtBr.tr(status)
+            +"\nFuncionamento no aparelho não confirmado.");
         pvpBattleStatus.setVisibility(View.VISIBLE);
     }
 
