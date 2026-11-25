@@ -25,6 +25,15 @@ public final class GpxCodecTest {
     private static boolean near(double a, double b) { return Math.abs(a - b) < 1e-9; }
 
     public static void main(String[] args) throws Exception {
+        try { GpxCodec.read(null, "Teste"); throw new AssertionError("Entrada nula aceita"); }
+        catch (IOException expected) { check(expected.getMessage().equals("Nenhum arquivo GPX foi fornecido."), "Mensagem de importação PT-BR"); }
+        try { GpxCodec.encode(null); throw new AssertionError("Rota nula aceita"); }
+        catch (IOException expected) { check(expected.getMessage().equals("Nenhuma rota para salvar."), "Mensagem de exportação PT-BR"); }
+        try { new GpxRoute("", new double[][]{{1,2}}); throw new AssertionError("Nome vazio aceito"); }
+        catch (IllegalArgumentException expected) { check(expected.getMessage().equals("Informe um nome para a rota."), "Mensagem de nome PT-BR"); }
+        try { read("<html/>"); throw new AssertionError("Raiz inválida aceita"); }
+        catch (IOException expected) { check(expected.getMessage().contains("Arquivo GPX inválido"), "Mensagem de XML PT-BR"); }
+
         rejects("GPX root required","<html><wpt lat='1' lon='2'/></html>");
         String utf16="<?xml version='1.0' encoding='UTF-16'?><!DOCTYPE gpx [<!ENTITY x '1'>]><gpx><wpt lat='&x;' lon='2'/></gpx>";
         try { GpxCodec.read(new ByteArrayInputStream(utf16.getBytes(StandardCharsets.UTF_16)),"bad");throw new AssertionError("UTF16 DTD accepted"); }

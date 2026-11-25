@@ -19,25 +19,25 @@ public final class GpxRoute {
     private final double[][] points;
 
     public GpxRoute(String name, double[][] points) {
-        if (name == null) throw new IllegalArgumentException("A route needs a name.");
+        if (name == null) throw new IllegalArgumentException("A rota precisa de um nome.");
         name = name.trim();
-        if (name.isEmpty()) throw new IllegalArgumentException("Enter a name for this route.");
-        if (name.length() > NAME_LIMIT) throw new IllegalArgumentException("Route names can contain at most " + NAME_LIMIT + " characters.");
+        if (name.isEmpty()) throw new IllegalArgumentException("Informe um nome para a rota.");
+        if (name.length() > NAME_LIMIT) throw new IllegalArgumentException("O nome da rota pode conter no máximo " + NAME_LIMIT + " caracteres.");
         for (int i = 0; i < name.length();) {
             int cp = name.codePointAt(i);
-            if (!validNameCodePoint(cp)) throw new IllegalArgumentException("Use a name without control or invalid XML characters.");
+            if (!validNameCodePoint(cp)) throw new IllegalArgumentException("Use um nome sem caracteres de controle ou inválidos para XML.");
             i += Character.charCount(cp);
         }
-        if (points == null) throw new IllegalArgumentException("A route needs points.");
-        if (points.length == 0) throw new IllegalArgumentException("A route needs at least one point.");
-        if (points.length > GpxCodec.MAX_POINTS) throw new IllegalArgumentException("Routes can contain at most " + GpxCodec.MAX_POINTS + " points.");
+        if (points == null) throw new IllegalArgumentException("A rota precisa de pontos.");
+        if (points.length == 0) throw new IllegalArgumentException("A rota precisa de pelo menos um ponto.");
+        if (points.length > GpxCodec.MAX_POINTS) throw new IllegalArgumentException("Uma rota pode conter no máximo " + GpxCodec.MAX_POINTS + " pontos.");
         double[][] copy = new double[points.length][];
         for (int i = 0; i < points.length; i++) {
             double[] point = points[i];
-            if (point == null || point.length != 2) throw new IllegalArgumentException("Each point must be a [lat, lon] pair.");
+            if (point == null || point.length != 2) throw new IllegalArgumentException("Cada ponto deve conter um par [lat, lon].");
             double lat = point[0], lon = point[1];
             if (!Double.isFinite(lat) || !Double.isFinite(lon) || Math.abs(lat) > 90 || Math.abs(lon) > 180)
-                throw new IllegalArgumentException("Point " + (i + 1) + " is outside the valid coordinate range.");
+                throw new IllegalArgumentException("O ponto " + (i + 1) + " está fora do intervalo válido de coordenadas.");
             copy[i] = new double[]{lat, lon};
         }
         this.name = name;

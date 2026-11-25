@@ -59,11 +59,11 @@ public final class GpxCodec {
      *                     an invalid coordinate, or a route that exceeds {@link #MAX_POINTS} points.
      */
     public static List<GpxRoute> read(InputStream in, String fallbackName) throws IOException {
-        if (in == null) throw new IOException("No GPX input was provided.");
+        if (in == null) throw new IOException("Nenhum arquivo GPX foi fornecido.");
         byte[] data = readBounded(in);
         // Primary defence is the parser configuration below; this guaranteed net covers parsers
         // (notably some Android builds) that quietly ignore the disallow-doctype feature.
-        if (containsDoctype(data)) throw new IOException("GPX files with a DOCTYPE are not supported.");
+        if (containsDoctype(data)) throw new IOException("Arquivos GPX com DOCTYPE não são aceitos.");
         Handler handler = new Handler(fallbackName);
         try {
             SAXParserFactory factory = SAXParserFactory.newInstance();
@@ -79,16 +79,16 @@ public final class GpxCodec {
             reader.setContentHandler(handler);
             reader.setProperty("http://xml.org/sax/properties/lexical-handler", handler);
             // Any external resource an attacker names resolves to nothing.
-            reader.setEntityResolver((publicId, systemId) -> { throw new SAXException("External entities are not supported."); });
+            reader.setEntityResolver((publicId, systemId) -> { throw new SAXException("Entidades externas não são aceitas."); });
             reader.setErrorHandler(new DefaultHandler() {
                 @Override public void error(SAXParseException e) throws SAXException { throw e; }
                 @Override public void fatalError(SAXParseException e) throws SAXException { throw e; }
             });
             reader.parse(new InputSource(new ByteArrayInputStream(data)));
         } catch (ParserConfigurationException e) {
-            throw new IOException("No XML parser is available.", e);
+            throw new IOException("Nenhum leitor XML está disponível.", e);
         } catch (SAXException e) {
-            throw new IOException("This file is not valid GPX: " + message(e), e);
+            throw new IOException("Arquivo GPX inválido: " + message(e), e);
         }
         return handler.finish();
     }
@@ -98,14 +98,14 @@ public final class GpxCodec {
      * with an XML-escaped name. Coordinates are written with full round-trip precision.
      */
     public static void write(OutputStream out, GpxRoute route) throws IOException {
-        if (out == null) throw new IOException("No GPX destination was provided.");
+        if (out == null) throw new IOException("Nenhum destino GPX foi informado.");
         out.write(encode(route));
         out.flush();
     }
 
     /** Prepare and validate the entire bounded document before opening a truncating destination. */
     public static byte[] encode(GpxRoute route) throws IOException {
-        if (route == null) throw new IOException("No route to write.");
+        if (route == null) throw new IOException("Nenhuma rota para salvar.");
         StringBuilder xml = new StringBuilder();
         xml.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
         xml.append("<gpx version=\"1.1\" creator=\"PGBR\" xmlns=\"http://www.topografix.com/GPX/1/1\">\n");
@@ -113,12 +113,12 @@ public final class GpxCodec {
         for (int i = 0; i < route.size(); i++) {
             double[] point = route.point(i);
             xml.append("<rtept lat=\"").append(coord(point[0])).append("\" lon=\"").append(coord(point[1])).append("\"></rtept>\n");
-            if (xml.length() > MAX_BYTES) throw new IOException("GPX export exceeds 2 MB; split the route into smaller files.");
+            if (xml.length() > MAX_BYTES) throw new IOException("A exportação GPX excede 2 MB; divida a rota em arquivos menores.");
         }
         xml.append("</rte>\n</gpx>\n");
         byte[] encoded = xml.toString().getBytes(StandardCharsets.UTF_8);
         // Reject before touching the destination; never write a file that our reader cannot reopen.
-        if (encoded.length > MAX_BYTES) throw new IOException("GPX export exceeds 2 MB; split the route into smaller files.");
+        if (encoded.length > MAX_BYTES) throw new IOException("A exportação GPX excede 2 MB; divida a rota em arquivos menores.");
         return encoded;
     }
 
@@ -129,7 +129,7 @@ public final class GpxCodec {
         int n;
         while ((n = in.read(chunk)) != -1) {
             total += n;
-            if (total > MAX_BYTES) throw new IOException("GPX files larger than 2 MB are not supported.");
+            if (total > MAX_BYTES) throw new IOException("Arquivos GPX acima de 2 MB não são aceitos.");
             buffer.write(chunk, 0, n);
         }
         return buffer.toByteArray();
@@ -173,7 +173,7 @@ public final class GpxCodec {
     /** Collects routes from a SAX event stream, preserving document order and enforcing limits. */
     private static final class Handler extends DefaultHandler2 {
         @Override public void startDTD(String name,String publicId,String systemId) throws SAXException {
-            throw new SAXException("GPX files with a DOCTYPE are not supported.");
+            throw new SAXException("Arquivos GPX com DOCTYPE não são aceitos.");
         }
         private final String fallback;
         private final List<GpxRoute> routes = new ArrayList<>();
@@ -194,10 +194,10 @@ public final class GpxCodec {
         @Override public void startElement(String uri, String localName, String qName, Attributes attributes) throws SAXException {
             String element = local(localName, qName);
             String parent = stack.peek();
-            if(stack.isEmpty() && !"gpx".equals(element))throw new SAXException("Expected a GPX document.");
-            if(stack.size()>128)throw new SAXException("GPX nesting is too deep.");
+            if(stack.isEmpty() && !"gpx".equals(element))throw new SAXException("Era esperado um documento GPX.");
+            if(stack.size()>128)throw new SAXException("Estrutura GPX com níveis demais.");
             boolean knownNamespace=uri==null||uri.isEmpty()||uri.equals("http://www.topografix.com/GPX/1/1")||uri.equals("http://www.topografix.com/GPX/1/0");
-            if(stack.isEmpty()&&!knownNamespace)throw new SAXException("Unsupported GPX namespace.");
+            if(stack.isEmpty()&&!knownNamespace)throw new SAXException("Namespace GPX não suportado.");
             if(!knownNamespace || !(stack.isEmpty() ||
                 ((element.equals("trk")||element.equals("rte")||element.equals("wpt"))&&"gpx".equals(parent)) ||
                 (element.equals("trkseg")&&"trk".equals(parent)) ||
@@ -235,7 +235,7 @@ public final class GpxCodec {
             switch (element) {
                 case "trkseg":
                     if (segment != null && !segment.isEmpty()) {
-                        if(routes.size()+trackSegments.size()>=MAX_ROUTES)throw new SAXException("Too many GPX routes.");
+                        if(routes.size()+trackSegments.size()>=MAX_ROUTES)throw new SAXException("Excesso de rotas GPX.");
                         trackSegments.add(segment);
                     }
                     segment = null;
@@ -253,7 +253,7 @@ public final class GpxCodec {
                     break;
                 case "rte":
                     if (routePoints != null && !routePoints.isEmpty()) {
-                        if(routes.size()>=MAX_ROUTES)throw new SAXException("Too many GPX routes.");
+                        if(routes.size()>=MAX_ROUTES)throw new SAXException("Excesso de rotas GPX.");
                         routes.add(build(resolveName(routeName), routePoints));
                     }
                     routePoints = null;
@@ -272,7 +272,7 @@ public final class GpxCodec {
         /** After the document ends, fall back to top-level waypoints only when no route was found. */
         List<GpxRoute> finish() throws IOException {
             if (routes.isEmpty() && !waypoints.isEmpty()) {
-                if (waypoints.size() > MAX_POINTS) throw new IOException("This file has more than " + MAX_POINTS + " waypoints.");
+                if (waypoints.size() > MAX_POINTS) throw new IOException("O arquivo contém mais de " + MAX_POINTS + " pontos.");
                 List<double[]> points = new ArrayList<>(waypoints.size());
                 for (String[] raw : waypoints) points.add(coordinate(raw[0], raw[1]));
                 routes.add(buildIo(resolveName(null), points));
@@ -281,12 +281,12 @@ public final class GpxCodec {
         }
 
         private void countPoint() throws SAXException {
-            if(++totalPoints>MAX_TOTAL_POINTS)throw new SAXException("Too many GPX points in one file.");
+            if(++totalPoints>MAX_TOTAL_POINTS)throw new SAXException("Excesso de pontos GPX no arquivo.");
         }
         private void add(List<double[]> target, Attributes attributes) throws SAXException {
             countPoint();
             target.add(toSaxCoordinate(attributes));
-            if (target.size() > MAX_POINTS) throw new SAXException("A route may contain at most " + MAX_POINTS + " points.");
+            if (target.size() > MAX_POINTS) throw new SAXException("Uma rota pode conter no máximo " + MAX_POINTS + " pontos.");
         }
 
         private double[] toSaxCoordinate(Attributes attributes) throws SAXException {
@@ -310,7 +310,7 @@ public final class GpxCodec {
         }
 
         private GpxRoute buildIo(String name, List<double[]> points) throws IOException {
-            if (points.size() > MAX_POINTS) throw new IOException("A route may contain at most " + MAX_POINTS + " points.");
+            if (points.size() > MAX_POINTS) throw new IOException("Uma rota pode conter no máximo " + MAX_POINTS + " pontos.");
             try {
                 return new GpxRoute(name, points.toArray(new double[0][]));
             } catch (IllegalArgumentException e) {
@@ -363,16 +363,16 @@ public final class GpxCodec {
     }
 
     private static double[] coordinate(String latText, String lonText) throws IOException {
-        if (latText == null || lonText == null) throw new IOException("A point is missing its latitude or longitude.");
+        if (latText == null || lonText == null) throw new IOException("Um ponto está sem latitude ou longitude.");
         double lat, lon;
         try {
             lat = Double.parseDouble(latText.trim());
             lon = Double.parseDouble(lonText.trim());
         } catch (NumberFormatException e) {
-            throw new IOException("A point has a non-numeric coordinate.");
+            throw new IOException("Um ponto tem coordenada não numérica.");
         }
         if (!Double.isFinite(lat) || !Double.isFinite(lon) || Math.abs(lat) > 90 || Math.abs(lon) > 180)
-            throw new IOException("A point is outside the valid coordinate range.");
+            throw new IOException("Um ponto está fora do intervalo válido de coordenadas.");
         return new double[]{lat, lon};
     }
 }

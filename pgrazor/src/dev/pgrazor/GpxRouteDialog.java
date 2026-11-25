@@ -365,7 +365,7 @@ public final class GpxRouteDialog {
     }
 
     private static void note(Activity a, String m) {
-        if (alive(a) && m != null) Toast.makeText(a, m, Toast.LENGTH_LONG).show();
+        if (alive(a) && m != null) Toast.makeText(a, dev.pgrazor.PtBr.tr(m), Toast.LENGTH_LONG).show();
     }
 
     private static TextView label(Context c, String text, int size) {
