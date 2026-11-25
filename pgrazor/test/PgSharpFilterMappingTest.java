@@ -22,7 +22,7 @@ public final class PgSharpFilterMappingTest {
                                 .put("gender", "female")
                                 .put("pvpLeague", "GL").put("pvpRank", 5)
                                 // a field this version does not understand must be reported, not applied
-                                .put("unknownSetting", true))
+                                .put("unknownSetting", true).put("weather", true))
                         .put(new JSONObject().put("name", "Reide")
                                 .put("tiers", new JSONArray().put(1).put(3))))
                 .put("questFilters", new JSONArray()
@@ -38,6 +38,9 @@ public final class PgSharpFilterMappingTest {
         check(report.rawSource.contains("unknownSetting"), "Arquivo original preservado");
         check(report.unsupportedFields.contains("pokemon.unknownSetting"),
                 "Campo desconhecido reportado: " + report.unsupportedFields);
+        for (String unsupported : new String[]{"pokemon.weather", "quest.reward", "quest.rewardType", "raid.tiers"})
+            check(report.unsupportedFields.contains(unsupported), "Predicado não convertido precisa aparecer: " + unsupported);
+        check(report.summary().contains("Revise os critérios não convertidos"), "Aviso de revisão");
         check(report.summary().contains("Nenhum feed ou teleporte foi ativado"),
                 "Resumo não promete feed: " + report.summary());
 
