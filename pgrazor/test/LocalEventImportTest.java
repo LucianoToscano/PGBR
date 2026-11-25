@@ -29,6 +29,20 @@ public final class LocalEventImportTest {
                 "Importação pessoal não vira feed ao vivo");
         check(json.events.get(0).dataQuality == SourceEvent.QUALITY_IMPORTED, "Qualidade importada");
 
+        check(LocalEventImport.parse("\uFEFF" + canonical, NOW).imported == 1,
+                "BOM UTF-8 no início não impede importação");
+        check(LocalEventImport.parse(canonical.replace("\"version\":1", "\"version\":99"), NOW).imported == 0,
+                "Versão futura do formato canônico não é interpretada como v1");
+        String oversized = new String(new char[LocalEventImport.MAX_BYTES / 2]).replace('\0', '\u20AC');
+        check(LocalEventImport.parse(oversized, NOW).rejections.get(0).reason.contains("2 MB"),
+                "Limite de bytes considera caracteres UTF-8 multibyte");
+        String scopedNames = "<gpx><wpt lat='1' lon='2'><name>Meu ponto</name></wpt>"
+                + "<trk><name>Nome da trilha</name><trkseg><trkpt lat='3' lon='4'/></trkseg></trk></gpx>";
+        LocalEventImport.Report scoped = LocalEventImport.parse(scopedNames, NOW);
+        check(scoped.imported == 2 && "Meu ponto".equals(scoped.events.get(0).name),
+                "Nome da trilha não sobrescreve nome do waypoint anterior");
+        check("Ponto 2".equals(scoped.events.get(1).name), "Ponto sem nome mantém fallback");
+
         // --- PokeList-like JSON with aliases --------------------------------------------
         String pokeList = "{\"type\":\"pokemon\",\"pokemons\":[{\"id\":\"s1\",\"number\":25,\"name\":\"Pikachu\","
                 + "\"latitude\":-23.550520,\"longitude\":-46.633310,\"cp\":500,\"level\":25,\"iv\":100,"
