@@ -22,3 +22,10 @@ Nunca expor chaves de assinatura, tokens, APKM privado, dados pessoais nem crede
 
 ## REGRA PRIORITÁRIA — CLARÃO NO ATAQUE CARREGADO
 Para investigar a tela branca no instante do ataque carregado, iniciar pela Batalha Rocket e pelo fluxo visual compartilhado, antes de avaliar PvP/Treinamento. Consultar o registro prioritário no Mestre e https://github.com/LucianoToscano/PGBR/issues/192. Preservar funcionalidades e regras de combate; corrigir somente a apresentação local identificada, sem encobrir a tela. Não presumir causalidade nem marcar como homologado sem validação física. Preservar outros trabalhos paralelos.
+
+
+## REGRA PERMANENTE — ENRIQUECER, NUNCA EMPOBRECER (ANTI-REGRESSÃO)
+- Toda contribuição, inclusive de IA externa, deve partir da main atual em branch isolada e preservar funcionalidades, preferências, interfaces, assets, contratos e requisitos existentes. Não remover, simplificar, desabilitar ou mascarar funcionalidades para passar testes; correções justificadas de dados incorretos não são perda de funcionalidade.
+- Antes de integrar: revisar diff completo contra main, conferir fontes independentes para dados de domínio, preservar testes anteriores e acrescentar teste que falha com o defeito e passa com a correção. Concordância entre cópias da mesma tabela não comprova correção; fixtures não podem ser alterados apenas para concordar com o código. Registrar motivo, referência e casos de fronteira.
+- Não mesclar se houver regressão conhecida, perda de requisito, conflito não resolvido ou CI obrigatório não aprovado na HEAD exata. Não aprovar resultado por mera reprodução do defeito. Reverter ou corrigir somente a alteração defeituosa, preservando melhorias independentes; homologação física separada de CI.
+- Gemini e outras IAs consultivas não devem escrever na main. Arena permanece no escopo designado; integração pelo coordenador após revisão. Esta regra não substitui proteções efetivas de branch nem garante ausência de todo defeito.

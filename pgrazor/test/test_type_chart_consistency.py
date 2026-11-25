@@ -58,7 +58,7 @@ def _chart_from():
         "ground": "bug grass",
         "rock": "fighting ground steel",
         "bug": "fighting flying poison ghost steel fire fairy",
-        "ghost": "dark steel",
+        "ghost": "dark",
         "steel": "steel fire water electric",
         "fire": "rock fire water dragon",
         "water": "water grass dragon",
@@ -153,10 +153,17 @@ class TypeChartTests(unittest.TestCase):
     def test_both_layers_are_identical(self):
         self.assertEqual(self.native, self.java)
 
-    def test_ghost_into_steel_is_resisted(self):
-        """Regression: ghost -> steel must be 0.5x, never neutral."""
-        self.assertEqual(self.native[TYPES.index("ghost")][TYPES.index("steel")], NVE)
-        self.assertEqual(self.java[TYPES.index("ghost")][TYPES.index("steel")], NVE)
+    def test_ghost_into_steel_is_neutral(self):
+        """Gen VI+ / GO: Steel no longer resists Ghost (or Dark).
+        Independent reference: https://pokemondb.net/go/type
+        """
+        for chart in (self.native, self.java, self.canonical):
+            for attack in ("ghost", "dark"):
+                self.assertEqual(chart[TYPES.index(attack)][TYPES.index("steel")], 0)
+            ghost = chart[TYPES.index("ghost")]
+            self.assertAlmostEqual(1.6 ** (ghost[TYPES.index("steel")] + ghost[TYPES.index("psychic")]), 1.6)
+            self.assertAlmostEqual(1.6 ** (ghost[TYPES.index("steel")] + ghost[TYPES.index("dark")]), 0.625)
+            self.assertAlmostEqual(1.6 ** (ghost[TYPES.index("steel")] + ghost[TYPES.index("normal")]), 0.390625)
 
     def test_each_code_means_one_multiplier(self):
         steps = {0: 1.0, SE: 1.6, NVE: 0.625, DOUBLE_NVE: 0.390625}

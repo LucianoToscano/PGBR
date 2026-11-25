@@ -2489,3 +2489,10 @@ Base `24700b8cba7fb9a789052a0faa632c75b7fdf54d` (main). Execução única de eng
 ### Estado honesto
 
 `device_tested=false`; `provider_connected=false`. Tela branca, Auto ATK, Supereficaz e PT-BR têm **correção de código + testes host**, não homologação física. Nenhum ID abrangente é encerrado por este registro; o APK QA só pode ser declarado após CI verde e compilação desta HEAD.
+
+
+### 25/11/2026 UTC — BAT-02 / barreira anti-regressão de dados
+- Base auditada 4e74063c51f325498a0f8e2caf75794e1ec8de3a; branch fix/lt048-type-chart-neutrality-guard. Correção isolada: Fantasma → Aço é neutro (1×) em Pokémon GO, não 0,625×. Fonte independente: https://pokemondb.net/go/type e https://bulbapedia.bulbagarden.net/wiki/Type_chart. O registro anterior de LT048 neste histórico não é apagado, mas a alegação de resistência é superada por esta correção.
+- Ajustar exclusivamente a célula Ghost→Steel em battle_counter.h e PvpChargedPreference.java, a referência independente em test_type_chart_consistency.py e o teste específico (inclui Dark→Steel e combinações duplas); preservar as demais células e testes. Não alterar executor, comportamento de combate, funcionalidades, mapa ou outras branches.
+- Reforço de AGENTS.md por determinação do proprietário: **enriquecer, nunca empobrecer**, preservar requisitos e funcionalidades, revisão independente de domínio, testes de regressão e CI da HEAD antes de merge. Não considerar fixture concordante como prova suficiente. CI, merge e build ainda não comprovados neste registro; device_tested=false.
+- Gemini: recebidos os patches 0001-gemini-test-battle-regressions-and-type-audit.patch (9afa4cf), 0001-gemini-feat-pokemon-tools-data-engine.patch (5076401), e revisão complementar 0002-pgbr-review-data-hardening.patch. Arquivos não confirmados na main; revisão/integração independente continua pendente. Teste que reproduz defeito não é teste de correção. Não declarar execução física, CI ou integração dos patches.
