@@ -2534,3 +2534,14 @@ Base `24700b8cba7fb9a789052a0faa632c75b7fdf54d` (main). Execução única de eng
   - `B79272963BF85CC99924EF5A3C5CED34476645919770D03C3B1D922E493D6BB8  PGBR-v0.00.48-LT-Root-module.zip`
 - Conteúdo: tela branca no carregado (P0), Auto ATK sem reinício, Supereficaz Fantasma→Aço, 17 rótulos PT-BR, mais o host nativo da #275/#283. Nenhuma tag criada, nenhum asset publicado, nada sobrescrito. `device_tested=false`.
 - `docs/releases/v0.00.48-LT.md` recebeu a seção "Atualização 25/11/2026" (as frases antigas "não há artefato LT048 confirmado" ficaram preservadas como histórico até 24/11) e `test_lt048_release_contract.py` passou a exigir run, id do artefato, os três hashes e `device_tested=false` (6 testes).
+
+## Ciclo 25/11/2026 — P1 PT-BR lote 2: textos ainda em inglês na interface (código)
+
+Escopo pequeno e verificável, sem tocar em identificadores internos, chaves de configuração, backups ou no nome do treinador (`PlayerService.get_PlayerName`).
+
+- **Traduzidos na origem (eram inglês em tempo de execução):** `LogActivity` ("Save failed: "), `PreviewActivity` ("Export failed: "), `RootedLogDialog` ("Saved to "), `QuickLocationDialogs` ("Walking to ", "Saved X to Favorites"), `GymFeedOverlay` (descrição de acessibilidade "Gym Slotter and Berry Feeder … on/off; tap to …"), `ShundoSniper` (toast "Shundo Sniper is running: … taps are blocked"), `GameRoutesOverlay` (descrição "In-game Routes: … Tap for current path").
+- **Seletor de espécies/chefes (`PokemonSpeciesDialog`):** as mensagens de limite montavam a frase com o substantivo em inglês ("Choose at most 200 species.", "That would exceed … species; narrow the list first."). Agora passam por `nounPt(...)` (`species`→`espécies`, `bosses`→`chefes de Reide`, `formas`, `itens`; rótulo desconhecido é preservado), mantendo as assinaturas públicas intactas.
+- **Dicionário:** 1 entrada nova — `All species (no selection)` → `Todas as espécies (sem seleção)` em `pgrazor/i18n/pt-BR.json` + `PtBr.java` + `RootPtBr.java` (1548/1548/1548). É o rótulo de "nenhuma seleção" que ficava em inglês dentro do rodapé do seletor.
+- **Regressão coberta:** `pgrazor/test/test_ptbr_ui_strings.py` (5 testes) fixa que as frases inglesas não voltam, que as portuguesas existem (remoção não pode ser "conserto" por deleção), que o substantivo do limite é traduzido com *default* honesto, que a chave do dicionário está nas duas UIs e que chaves de configuração/backup e o nome do treinador não foram tocados.
+- **Verificação local:** 487 testes Python (só a suíte que exige `javac` falha neste ambiente), 24 fixtures C++ host.
+- **Não feito de propósito:** rodar `tools/ptbr_wire.py --apply` em massa. O teste mostrou que a varredura ampla reescreve literais que contratos estáticos verificam (`setPositiveButton("Aplicar", null)`, `keyInput.setText("")`, mensagens de privacidade) e derrubou 5 suítes; o caminho seguro é tradução cirúrgica + teste, como neste lote. `device_tested=false`.

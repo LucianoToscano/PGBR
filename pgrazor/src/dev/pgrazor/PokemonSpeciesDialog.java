@@ -65,6 +65,18 @@ final class PokemonSpeciesDialog {
             : "Choose a group, then select Pokemon individually or use Select shown. Groups can include unreleased forms.";
     }
 
+    /** Portuguese noun for the selection cap message; unknown labels are kept verbatim. */
+    static String nounPt(String noun) {
+        if (noun == null) return "itens";
+        switch (noun) {
+            case "species": return "espécies";
+            case "bosses": return "chefes de Reide";
+            case "forms": case "formas": return "formas";
+            case "items": return "itens";
+            default: return noun;
+        }
+    }
+
     private static final class Picker {
         private final Activity activity;
         private final Context ui;
@@ -142,7 +154,7 @@ final class PokemonSpeciesDialog {
             list.setOnItemClickListener((parent, view, position, rowId) -> {
                 int id = shown.get(position);
                 if (!selected.remove(id)) {
-                    if(selected.size()>=max){android.widget.Toast.makeText(activity,"Choose at most "+max+" "+noun+".",android.widget.Toast.LENGTH_SHORT).show();return;}
+                    if(selected.size()>=max){android.widget.Toast.makeText(activity,"Escolha no máximo "+max+" "+nounPt(noun)+".",android.widget.Toast.LENGTH_SHORT).show();return;}
                     selected.add(id);
                 }
                 onSelectionChanged();
@@ -208,8 +220,8 @@ final class PokemonSpeciesDialog {
         private void selectShown() {
             TreeSet<Integer> union = new TreeSet<>(selected); union.addAll(shown);
             if (union.size() > max) {
-                android.widget.Toast.makeText(activity, "That would exceed " + max + " " + noun
-                    + "; narrow the list first.", android.widget.Toast.LENGTH_SHORT).show();
+                android.widget.Toast.makeText(activity, "Isso ultrapassa " + max + " " + nounPt(noun)
+                    + "; reduza a lista antes.", android.widget.Toast.LENGTH_SHORT).show();
                 return;
             }
             selected.clear(); selected.addAll(union);

@@ -1559,6 +1559,7 @@ public final class RootPtBr {
         m.put("Prefer GO Safari Balls for Mighty Pokemon. If Safari Balls are unavailable", "Preferir Bolas Safari do GO para Pokémon Poderosos. Se as Bolas Safari não estiverem disponíveis");
         m.put("Stop Shundo Sniper and hide this card", "Parar o Sniper de Shundo e ocultar este cartão");
         m.put("Synthetic location consumer\n", "Consumidor de localização sintética\n");
+        m.put("All species (no selection)", "Todas as espécies (sem seleção)");
         LABELS = Collections.unmodifiableMap(m);
     }
     private RootPtBr() {}

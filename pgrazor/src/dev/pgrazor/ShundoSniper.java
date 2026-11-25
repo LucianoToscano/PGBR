@@ -282,7 +282,7 @@ public final class ShundoSniper {
         if (app == null || now - lastBlockedToast < 3000) return;
         lastBlockedToast = now;
         String thing = "pokestop".equals(what) ? "PokéStop" : "gym".equals(what) ? "Gym" : "Pokémon";
-        main.post(() -> Toast.makeText(app, "Shundo Sniper is running: " + thing + " taps are blocked. Stop it from its card to play.",
+        main.post(() -> Toast.makeText(app, "Shundo Sniper ativo: toques em " + thing + " estão bloqueados. Pare pelo card para jogar.",
             Toast.LENGTH_SHORT).show());
     }
     private static String ivs(JSONObject o) {
