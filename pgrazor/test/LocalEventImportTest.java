@@ -92,6 +92,15 @@ public final class LocalEventImportTest {
         check(gpxReport.events.get(0).kind == SourceEvent.Kind.ROUTE, "Ponto GPX não é spawn");
         check(gpxReport.events.get(0).name.equals("Pokestop A"), "Nome do waypoint preservado");
 
+        check("Trilha".equals(gpxReport.events.get(1).name), "Legacy flat track point name preserved");
+        LocalEventImport.Report standardTrack = LocalEventImport.parse(
+                "<gpx><trk><trkseg><trkpt lat='1' lon='2'><name>Trilha padrão</name></trkpt></trkseg></trk></gpx>", NOW);
+        check(standardTrack.imported == 1 && "Trilha padrão".equals(standardTrack.events.get(0).name),
+                "Standard GPX track hierarchy supported");
+        LocalEventImport.Report nestedTrack = LocalEventImport.parse(
+                "<gpx><extensions><trkpt lat='1' lon='2'/></extensions></gpx>", NOW);
+        check(nestedTrack.imported == 0, "Track point in extensions ignored");
+
         // GPX is a real document, not any XML carrying a wpt-like element.
         check(LocalEventImport.parse("<html><wpt lat='1' lon='2'/></html>", NOW).imported == 0,
                 "Non-GPX root rejected");
