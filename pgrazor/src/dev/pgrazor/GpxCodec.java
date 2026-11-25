@@ -325,9 +325,9 @@ public final class GpxCodec {
 
         private String resolveName(String candidate) {
             String name = candidate == null ? "" : candidate.trim();
-            if (name.isEmpty()) {
+            if (!GpxRoute.hasVisibleName(name)) {
                 name = fallback == null ? "" : fallback.trim();
-                if (name.isEmpty()) name = "Imported route";
+                if (!GpxRoute.hasVisibleName(name)) name = "Imported route";
             }
             return clip(sanitize(name));
         }
@@ -344,7 +344,7 @@ public final class GpxCodec {
 
         private static String clip(String text) {
             String trimmed = text.trim();
-            if (trimmed.isEmpty()) trimmed = "Imported route";
+            if (!GpxRoute.hasVisibleName(trimmed)) trimmed = "Imported route";
             if(trimmed.length()<=GpxRoute.NAME_LIMIT)return trimmed;
             int end=GpxRoute.NAME_LIMIT;
             if(Character.isHighSurrogate(trimmed.charAt(end-1)))end--;

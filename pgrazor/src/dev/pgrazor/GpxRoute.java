@@ -21,7 +21,7 @@ public final class GpxRoute {
     public GpxRoute(String name, double[][] points) {
         if (name == null) throw new IllegalArgumentException("A rota precisa de um nome.");
         name = name.trim();
-        if (name.isEmpty()) throw new IllegalArgumentException("Informe um nome para a rota.");
+        if (!hasVisibleName(name)) throw new IllegalArgumentException("Informe um nome para a rota.");
         if (name.length() > NAME_LIMIT) throw new IllegalArgumentException("O nome da rota pode conter no máximo " + NAME_LIMIT + " caracteres.");
         for (int i = 0; i < name.length();) {
             int cp = name.codePointAt(i);
@@ -42,6 +42,10 @@ public final class GpxRoute {
         }
         this.name = name;
         this.points = copy;
+    }
+
+    static boolean hasVisibleName(String name) {
+        return name != null && name.codePoints().anyMatch(cp -> !Character.isWhitespace(cp) && !Character.isSpaceChar(cp));
     }
 
     /** XML 1.0-safe route name characters, excluding all ISO controls. */

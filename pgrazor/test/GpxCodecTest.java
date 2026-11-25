@@ -57,6 +57,9 @@ public final class GpxCodecTest {
         double[][] p = wpt.get(0).points();
         check(p.length == 3 && near(p[0][0], 41.1) && near(p[2][1], 2.3), "Waypoint order is preserved");
 
+        check(read("<gpx><rte><name>\u00a0\u2003</name><rtept lat='1' lon='2'/></rte></gpx>").get(0).name.equals("Fallback"),"Invisible GPX name uses fallback");
+        check(GpxCodec.read(new ByteArrayInputStream("<gpx><wpt lat='1' lon='2'/></gpx>".getBytes(StandardCharsets.UTF_8)),"\u202f").get(0).name.equals("Imported route"),"Invisible fallback uses existing default");
+
         // --- Default-namespaced track with a name ---
         List<GpxRoute> trk = read("<gpx xmlns=\"http://www.topografix.com/GPX/1/1\" version=\"1.1\">"
             + "<trk><name>City loop</name><trkseg>"

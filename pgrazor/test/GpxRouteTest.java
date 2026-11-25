@@ -16,6 +16,9 @@ public final class GpxRouteTest {
 
         rejects("null name", () -> new GpxRoute(null, ok));
         rejects("blank name", () -> new GpxRoute("   ", ok));
+        for(String blank:new String[]{"\u00a0","\u2003","\u202f"," \u00a0\u2003 "})
+            rejects("invisible Unicode name", () -> new GpxRoute(blank, ok));
+        check(new GpxRoute("Trilha\u00a0Central",ok).name.equals("Trilha\u00a0Central"),"Visible Unicode name preserved");
         rejects("control character in name", () -> new GpxRoute("line\nbreak", ok));
         StringBuilder tooLong = new StringBuilder();
         for (int i = 0; i <= GpxRoute.NAME_LIMIT; i++) tooLong.append('x');
