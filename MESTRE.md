@@ -201,3 +201,14 @@ PGBR-CI-205 integrado após CI completo; PGBR-UI-SMALL candidata de correção e
 - BAT-02: #230 integrada em 6be33b63c5b86c61f1edab418755dc1a16674547, CI 45514546252/45514546359 aprovados. Testes da matriz local: 324 simples e 5508 duplas ordenadas; zero divergências na comparação independente. Subtarefa de teste de código concluída; execução no aparelho e demais critérios BAT-02/QA-01 continuam separados.
 - FEED-01: #229 aprovada em CI mas conflito documental com main; dois blobs de código/testes preservados integralmente nesta branch, sem sobrescrever histórico da main. Revalidar novo HEAD antes de integrar e só então encerrar PR substituída.
 - Lotes independentes de 10–15 subtarefas quando viável; não inflar contagens, preservar os 76 IDs, distinguir aceite de código e QA física. device_tested=false; provider_connected=false; APK LT048 não confirmado nesta rodada.
+
+### Ciclo 24/11/2026 — lote acelerado de integridade, filtros e GPX
+
+- FEED-01: #232 integrada em 467945105b5e6c17d19c7eb35065e8ed1a3c3376, CI 45515175889/45515175981 aprovados. #229 encerrada por equivalência comprovada (dois blobs idênticos na main, notas preservadas; comentário 7148200514).
+- EVT-04/SYS-03: #233 integrada em d942b13a3ef53728d7efc6c012d42540964508ef, CI 45515249997/45515249888 aprovados. Presets: origem estável, versões e limite simétrico de exportação.
+- SYS-02: #231 integrada em d876e22729045723a6bf46076aff40e9ab074309, CI 45514953258/45514953119 aprovados. Restauração cronológica e campos vazios, sem descartar histórico válido.
+- MAP-03/DATA-03: #234 integrada em f332644d47392b4055e7a9630b34487e769d17a9, CI 45515320279/45515320294 aprovados. UTF-8, BOM, versão do formato e associação de nomes GPX.
+- DATA-03/SYS-03: #235 HEAD c6574a2b0251792193c214a1deb1e96687556d47; validação de envelope, versão e lista antes de mutação, testes de preservação. CI 45515660354 aprovado, 45515660276 em execução na consulta.
+- MAP-03/VIS-01: #236 HEAD 70a2086cbe2fed9c08e004f6a777578bb4d30cc8; limiares de progresso GPX e testes de ida/volta 0–100% em três rotas. CI 45515717355 aprovado, 45515717296 em execução na consulta.
+- SYS-01/MAP-03: #237 HEAD 26a5f4b3301ac9070752daa5957b28b0aed52a93; tradução PT-BR das validações GPX e feedback de UI, quatro testes. CI 45515984710/45515984684 ainda em fila na consulta.
+- Encerradas as subtarefas de código integradas acima; IDs abrangentes preservados. Aceite físico independente; device_tested=false, provider_connected=false. Nenhum novo APK LT048 comprovado. Continuar verificando HEADs, integrar após CI e preservar escopo de branches paralelas.
