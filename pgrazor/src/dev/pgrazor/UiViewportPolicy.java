@@ -29,13 +29,18 @@ final class UiViewportPolicy {
         float rightShift=Math.max(0f,halfPadding-fromEnd);
         return hitExtent*.5f-leftShift+rightShift;
     }
+    // Corrupt or unavailable UI-scale values must not produce NaN geometry
+    // or collapse the menu to a single pixel. Keep the default at 100%.
+    private static float validScale(float scale){
+        return Float.isFinite(scale)&&scale>0f?scale:1f;
+    }
     static float fit(float requested,int width,int height,int availableWidth,int availableHeight){
-        float scale=requested;
+        float scale=validScale(requested);
         if(width>0)scale=Math.min(scale,(float)Math.max(1,availableWidth)/width);
         if(height>0)scale=Math.min(scale,(float)Math.max(1,availableHeight)/height);
         return Math.max(0.01f,scale);
     }
     static int menuExtent(int desired,int available,float scale){
-        return Math.max(1,Math.min(desired,(int)Math.floor(Math.max(1,available)/Math.max(.01f,scale))));
+        return Math.max(1,Math.min(desired,(int)Math.floor(Math.max(1,available)/Math.max(.01f,validScale(scale)))));
     }
 }
