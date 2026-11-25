@@ -151,6 +151,16 @@ public final class LocalAuditTest {
  check(g.positionAt(0)[0]==g.x[0]&&g.positionAt(g.meters)[0]==g.x[1]);
  check(g.distanceForPercent(100)==g.meters&&g.distanceForPercent(0)==0);
  check(g.percentForDistance(g.meters)==100&&g.percentForDistance(g.meters*0.999)==99);
+ // Every slider threshold must round-trip exactly, without rounding up a value just below it.
+ for(GpxPreviewGeometry geometry:Arrays.asList(g,new GpxPreviewGeometry(new GpxRoute("curto",new double[][]{{0,0},{0,0.000001}})),
+   new GpxPreviewGeometry(new GpxRoute("longo",new double[][]{{-80,0},{0,90},{80,180}})))){
+  for(int percent=0;percent<=100;percent++){
+   double threshold=geometry.distanceForPercent(percent);
+   check(geometry.percentForDistance(threshold)==percent);
+   if(percent>0)check(geometry.percentForDistance(Math.nextDown(threshold))==percent-1);
+  }
+ }
+
  check(g.distanceFromKm(1.234)==1234.0);
  try{g.distanceFromKm(Double.POSITIVE_INFINITY);throw new AssertionError();}catch(IllegalArgumentException expected){}
  try{g.distanceFromKm(g.meters/1000+1);throw new AssertionError();}catch(IllegalArgumentException expected){}
