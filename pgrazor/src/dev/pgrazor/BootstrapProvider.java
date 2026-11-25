@@ -22,7 +22,19 @@ public final class BootstrapProvider extends ContentProvider {
         Control.event("rooted-native-state", "stage=loading reason=unity-render-observed");
         new Thread(start, "pgrazor-loader").start();
     }
-    public boolean onCreate() { return start(getContext()); }
+    public boolean onCreate() {
+        android.util.Log.i("PGBR", "startup-stage=provider-enter");
+        try {
+            boolean started = start(getContext());
+            android.util.Log.i("PGBR", "startup-stage=provider-return result=" + started);
+            return started;
+        } catch (RuntimeException | LinkageError failure) {
+            // Preserve the original failure and account-recovery safety contract.
+            // Do not log exception messages that may contain private storage details.
+            android.util.Log.e("PGBR", "startup-stage=provider-failed type=" + failure.getClass().getSimpleName());
+            throw failure;
+        }
+    }
     /**
      * Shared startup for both builds: the patched APK calls it from this provider; PGBR Root
      * calls it from its Application.onCreate hook (RootedRuntime) at the same point in startup.
@@ -37,9 +49,13 @@ public final class BootstrapProvider extends ContentProvider {
         if(!Application.getProcessName().equals(context.getApplicationInfo().processName)) return true;
         // Finish an interrupted auth swap before Unity caches any credentials or preferences.
         boolean sessionRecovered;
+        android.util.Log.i("PGBR", "startup-stage=account-recovery-enter");
         try { sessionRecovered=AccountSessions.recover(context); }
         catch(IOException failure) { throw new IllegalStateException("Saved account session could not be restored; game startup stopped",failure); }
+        android.util.Log.i("PGBR", "startup-stage=account-recovery-return");
+        android.util.Log.i("PGBR", "startup-stage=control-begin-enter");
         Control.embedded("Embedded controls - starting"); Control.begin(app);
+        android.util.Log.i("PGBR", "startup-stage=control-begin-return");
         try {
             android.content.pm.PackageInfo game=context.getPackageManager().getPackageInfo(context.getPackageName(),0);
             Control.event("session-environment","diagnostics=2 module="+BuildVersion.NAME
@@ -72,7 +88,11 @@ public final class BootstrapProvider extends ContentProvider {
             Control.event("rooted-native-deferred", "Waiting for Unity render before loading gameplay libraries");
             Control.event("rooted-native-state", "stage=waiting reason=unity-render-not-observed");
         } else {
-            new Thread(() -> load(context),"pgrazor-loader").start();
+            new Thread(() -> {
+                android.util.Log.i("PGBR", "startup-stage=loader-enter");
+                load(context);
+                android.util.Log.i("PGBR", "startup-stage=loader-return");
+            },"pgrazor-loader").start();
         }
         return true;
     }

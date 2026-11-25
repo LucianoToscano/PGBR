@@ -17,6 +17,9 @@ public final class SettingsSearchTest {
 
     private static void normalization() {
         eq("pokemon go", SettingsSearch.normalize("  Pokémon GO  "));
+        eq("pokemon go", SettingsSearch.normalize("Pokémon\u0085\u000bGO"));
+        eq("pokemon go", SettingsSearch.normalize("Pokémon\u2028\u2029GO"));
+        eq("pokemon go", SettingsSearch.normalize("Pokémon\t\n\r\fGO"));
         eq("pokemon", SettingsSearch.normalize("POKÉMON"));
         eq("pokemon go", SettingsSearch.normalize("\u00a0Pokémon\u202fGO\u2003"));
         eq("", SettingsSearch.normalize("\u00a0\u0301\u2003"));
