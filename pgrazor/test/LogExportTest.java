@@ -69,6 +69,17 @@ public final class LogExportTest {
             +"2026-11-24T01:10:02.000-03:00 [heartbeat-expired] {}\nRegistros omitidos: 0\n";
         LocalDiagnosticSummary.Summary observed=LocalDiagnosticSummary.parse(context);
         if(observed.other!=3||observed.observedEvents.get("vgp")!=1||observed.observedEvents.get("panel-closed")!=1||observed.observedEvents.get("heartbeat-expired")!=1||observed.describe().contains("secret-example"))throw new AssertionError("Context event counts and privacy");
+        // Preserve lifecycle occurrence counts without exposing free text or account identifiers.
+        String lifecycle="2026-11-24T01:10:00.000Z [battle-scope] {\"mode\":\"rocket\",\"trainer\":\"private-example\"}\n"
+            +"2026-11-24T01:10:01.000Z [battle-ended] private-example\n"
+            +"2026-11-24T01:10:02.000Z [battle-scope] {\"mode\":\"training\",\"token\":\"secret-example\"}\n";
+        String lifecycleSafe=new String(LogExport.shareLog(new ByteArrayInputStream(lifecycle.getBytes(StandardCharsets.UTF_8))),StandardCharsets.UTF_8);
+        LocalDiagnosticSummary.Summary lifecycleSummary=LocalDiagnosticSummary.parse(lifecycleSafe);
+        if(lifecycleSafe.contains("private-example")||lifecycleSafe.contains("secret-example")
+            ||lifecycleSummary.records!=3||lifecycleSummary.omitted!=0||lifecycleSummary.other!=3
+            ||lifecycleSummary.observedEvents.get("battle-scope")!=2||lifecycleSummary.observedEvents.get("battle-ended")!=1
+            ||!lifecycleSummary.describe().contains("sem inferir causa, duração ou êxito"))
+            throw new AssertionError("Lifecycle context counts or privacy");
         // Dense valid input can exceed the summary's line limit even below the byte limit.
         String event="2026-11-24T01:10:00.000Z [vgp] {}\n";
         int eventCount=LocalDiagnosticSummary.MAX_LINES+10;
