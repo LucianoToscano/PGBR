@@ -33,6 +33,7 @@ std::mutex g_install_mutex;                    // serialises install() and publi
 PgrRocketMiniConfig g_cfg{};
 PgrRocketMiniShape g_sphere{}, g_box{};
 PgrRocketMiniVisual g_visual{};                   // validated copy, published under the mutex
+PgrRocketMiniCanvasAlpha g_canvas_alpha{};
 PgrRocketMiniVisualEx g_visual_ex{};              // optional renderer-only white-layer fix
 bool g_install_failed = false;                 // sticky; guarded by g_install_mutex
 
@@ -68,6 +69,10 @@ struct MiniState {
     int hidden_count;
     int hidden_index[PGR_MINI_MAX_HIDDEN];
     uint8_t hidden_was_enabled[PGR_MINI_MAX_HIDDEN];
+    void *canvas_hidden;
+    int canvas_count;
+    int canvas_index[PGR_MINI_MAX_HIDDEN];
+    float canvas_original_alpha[PGR_MINI_MAX_HIDDEN];
 };
 MiniState g_mini{};
 bool g_have_mini = false;
@@ -286,9 +291,11 @@ bool write_enabled(void *renderer, uint8_t on) {
     // A void setter returns null on success, so only the managed exception means failure;
     // the write is then confirmed by reading the property back.
     g_cfg.runtime_invoke(g_visual_ex.set_enabled, renderer, args, &exc);
-    if (exc) { shape_diagnostic(1u << 17, "white-layer-write-failed"); return false; }
+    if (exc) { shape_diagnostic(1u << 20, "white-layer-write-failed"); return false; }
     uint8_t after = 1;
-    return read_enabled(renderer, &after) && after == value; // never claim an unverified hide
+    const bool confirmed = read_enabled(renderer, &after) && after == value;
+    if (!confirmed) shape_diagnostic(1u << 20, "white-layer-write-failed");
+    return confirmed; // never claim an unverified hide
 }
 
 bool hide_white_layer(void *collider, MiniState &snap) {
@@ -313,6 +320,7 @@ bool hide_white_layer(void *collider, MiniState &snap) {
         return false;
     }
     int hidden = 0;
+    bool any_enabled = false, any_readable = false;
     for (uintptr_t i = 0; i < total; ++i) {
         int index = static_cast<int>(i);
         void *index_args[1] = {&index};
@@ -321,6 +329,8 @@ bool hide_white_layer(void *collider, MiniState &snap) {
         if (!g_visual.assignable(g_visual.renderer_class, g_cfg.object_class(renderer))) continue;
         uint8_t was = 0;
         if (!read_enabled(renderer, &was)) continue;
+        any_readable = true;
+        if (was) any_enabled = true;
         if (!was) continue;                        // already invisible: leave it alone
         if (!write_enabled(renderer, 0)) continue; // unverified write: do not record it
         snap.hidden_index[hidden] = index;
@@ -329,7 +339,9 @@ bool hide_white_layer(void *collider, MiniState &snap) {
     }
     if (hidden == 0) {
         g_cfg.free_root(array_root);
-        shape_diagnostic(1u << 18, "white-layer-renderers-absent");
+        if (!any_readable) shape_diagnostic(1u << 23, "white-layer-read-failed");
+        else if (!any_enabled) shape_diagnostic(1u << 24, "white-layer-already-disabled");
+        // Failed writes are reported by write_enabled, not misclassified as absence.
         return false;
     }
     snap.hidden = array_root;
@@ -353,6 +365,138 @@ void restore_white_layer(MiniState &snap) {
     g_cfg.free_root(snap.hidden);
     snap.hidden = nullptr;
     snap.hidden_count = 0;
+}
+
+// Read-only check after Unity activation; a script may have re-enabled a renderer.
+void verify_white_layer_after_activation(const MiniState &snap) {
+    if (!snap.hidden) return;
+    bool readable = true, enabled = false;
+    for (int i = 0; i < snap.hidden_count; ++i) {
+        int index = snap.hidden_index[i];
+        void *args[] = {&index};
+        void *renderer = visual_invoke(g_visual.array_get, g_cfg.target(snap.hidden), args);
+        uint8_t on = 0;
+        if (!renderer || !g_visual.assignable(g_visual.renderer_class, g_cfg.object_class(renderer)) ||
+            !read_enabled(renderer, &on)) { readable = false; continue; }
+        enabled = enabled || on;
+    }
+    if (enabled) shape_diagnostic(1u << 21, "white-layer-reenabled-after-activation");
+    if (!readable) shape_diagnostic(1u << 23, "white-layer-read-failed");
+    if (readable && !enabled) shape_diagnostic(1u << 22, "white-layer-still-hidden-after-activation");
+}
+
+// Local UI-only path: CanvasRenderer is not a UnityEngine.Renderer.
+bool read_canvas_alpha(void *cr, float *out) {
+    if (!g_canvas_alpha.get_alpha || !cr) return false;
+    void *boxed = visual_invoke(g_canvas_alpha.get_alpha, cr, nullptr);
+    if (!exact(boxed, g_canvas_alpha.float_class)) return false;
+    const float *v = static_cast<const float *>(g_cfg.object_unbox(boxed));
+    if (!v || !std::isfinite(*v)) return false;
+    *out = *v;
+    return true;
+}
+
+bool write_canvas_alpha(void *cr, float alpha) {
+    if (!g_canvas_alpha.set_alpha || !cr || !std::isfinite(alpha)) return false;
+    void *args[1] = {&alpha};
+    void *exc = nullptr;
+    g_cfg.runtime_invoke(g_canvas_alpha.set_alpha, cr, args, &exc);
+    if (exc) { shape_diagnostic(1u << 29, "white-canvas-write-failed"); return false; }
+    float after = 1.0f;
+    const bool ok = read_canvas_alpha(cr, &after) && std::fabs(after - alpha) <= 0.001f;
+    if (!ok) shape_diagnostic(1u << 29, "white-canvas-write-failed");
+    return ok;
+}
+
+bool hide_canvas_white_layer(void *collider, MiniState &snap) {
+    if (!g_canvas_alpha.canvas_renderer_class || !g_canvas_alpha.canvas_renderer_type ||
+        !g_canvas_alpha.get_alpha || !g_canvas_alpha.set_alpha || !g_canvas_alpha.float_class ||
+        !g_visual_ex.get_components_in_children) {
+        shape_diagnostic(1u << 26, "white-canvas-unbound");
+        return false;
+    }
+    if (!collider) return false;
+    void *type = g_visual.type_object(g_canvas_alpha.canvas_renderer_type);
+    void *type_root = type ? g_cfg.root(type, 0) : nullptr;
+    if (!type_root) return false;
+    void *args[1] = {g_cfg.target(type_root)};
+    void *array = visual_invoke(g_visual_ex.get_components_in_children, collider, args);
+    g_cfg.free_root(type_root);
+    void *array_root = array ? g_cfg.root(array, 0) : nullptr;
+    if (!array_root) { shape_diagnostic(1u << 27, "white-canvas-absent"); return false; }
+    const uintptr_t total = g_visual.array_length(g_cfg.target(array_root));
+    if (total == 0 || total > static_cast<uintptr_t>(PGR_MINI_MAX_HIDDEN)) {
+        g_cfg.free_root(array_root);
+        shape_diagnostic(1u << 27, "white-canvas-absent");
+        return false;
+    }
+    int count = 0;
+    for (uintptr_t i = 0; i < total; ++i) {
+        int index = static_cast<int>(i);
+        void *index_args[1] = {&index};
+        void *cr = visual_invoke(g_visual.array_get, g_cfg.target(array_root), index_args);
+        if (!cr || !g_visual.assignable(g_canvas_alpha.canvas_renderer_class, g_cfg.object_class(cr)))
+            continue;
+        float orig_alpha = 0.0f;
+        if (!read_canvas_alpha(cr, &orig_alpha)) continue;
+        if (orig_alpha <= 0.001f) continue;
+        if (!write_canvas_alpha(cr, 0.0f)) continue;
+        snap.canvas_index[count] = index;
+        snap.canvas_original_alpha[count] = orig_alpha;
+        ++count;
+    }
+    if (count == 0) {
+        g_cfg.free_root(array_root);
+        shape_diagnostic(1u << 27, "white-canvas-absent");
+        return false;
+    }
+    snap.canvas_hidden = array_root;
+    snap.canvas_count = count;
+    shape_diagnostic(1u << 28, "white-canvas-alpha-zero");
+    return true;
+}
+
+void restore_canvas_white_layer(MiniState &snap) {
+    if (!snap.canvas_hidden) return;
+    for (int i = 0; i < snap.canvas_count; ++i) {
+        int index = snap.canvas_index[i];
+        void *index_args[1] = {&index};
+        void *cr = visual_invoke(g_visual.array_get, g_cfg.target(snap.canvas_hidden), index_args);
+        if (!cr || !g_visual.assignable(g_canvas_alpha.canvas_renderer_class, g_cfg.object_class(cr)))
+            continue;
+        write_canvas_alpha(cr, snap.canvas_original_alpha[i]);
+    }
+    g_cfg.free_root(snap.canvas_hidden);
+    snap.canvas_hidden = nullptr;
+    snap.canvas_count = 0;
+}
+
+// Re-enforce only captured local renderers; retain the original values for restore.
+void enforce_white_layers(MiniState &snap) {
+    if (snap.hidden) {
+        for (int i = 0; i < snap.hidden_count; ++i) {
+            int index = snap.hidden_index[i];
+            void *index_args[1] = {&index};
+            void *r = visual_invoke(g_visual.array_get, g_cfg.target(snap.hidden), index_args);
+            uint8_t on = 0;
+            if (r && g_visual.assignable(g_visual.renderer_class, g_cfg.object_class(r)) &&
+                read_enabled(r, &on) && on != 0) {
+                if (write_enabled(r, 0)) shape_diagnostic(1u << 31, "white-layer-reenforced");
+            }
+        }
+    }
+    if (snap.canvas_hidden) {
+        for (int i = 0; i < snap.canvas_count; ++i) {
+            int index = snap.canvas_index[i];
+            void *index_args[1] = {&index};
+            void *cr = visual_invoke(g_visual.array_get, g_cfg.target(snap.canvas_hidden), index_args);
+            float a = 0.0f;
+            if (cr && g_visual.assignable(g_canvas_alpha.canvas_renderer_class, g_cfg.object_class(cr)) &&
+                read_canvas_alpha(cr, &a) && a > 0.001f) {
+                if (write_canvas_alpha(cr, 0.0f)) shape_diagnostic(1u << 30, "white-canvas-reenforced");
+            }
+        }
+    }
 }
 
 void restore_alpha(MiniState &snap) {
@@ -382,6 +526,7 @@ void do_restore() {
     if (transform && obj_alive(transform)) set_scale(transform, snap.scale);
     restore_alpha(snap);
     restore_white_layer(snap); // appearance first: the object must look like the game left it
+    restore_canvas_white_layer(snap);
     free_visual(snap);
     if (go && obj_alive(go)) set_active(go, snap.active);
     g_cfg.free_root(snap.challenge);
@@ -412,6 +557,7 @@ void do_collect(void *challenge) {
 
     if (g_busy.exchange(1)) return;
 
+    const bool first_collection = !g_have_mini;
     if (!g_have_mini) {
         // Root the challenge BEFORE any invoke, so the collider it owns stays reachable
         // across the transform/gameObject calls (no unrooted managed refs across invokes).
@@ -468,6 +614,7 @@ void do_collect(void *challenge) {
         // Appearance only, independent of the alpha candidate: no failure here may affect
         // the collector, the scale or the collider.
         if(current_collider)hide_white_layer(current_collider,g_mini);
+        if(current_collider && g_canvas_alpha.get_alpha)hide_canvas_white_layer(current_collider,g_mini);
         g_have_mini = true;
     }
 
@@ -483,6 +630,23 @@ void do_collect(void *challenge) {
     }
     set_scale(g_cfg.target(g_mini.transform), scaled);
     set_active(g_cfg.target(g_mini.go), 1);
+    if (first_collection) {
+        // Unity GetComponentsInChildren(Type) may omit inactive children before activation.
+        // Retry once, only within the same collider and only if no prior hide was recorded.
+        if (!g_mini.active && !g_mini.hidden && !g_failed.load()) {
+            void *current_collider = nullptr;
+            g_cfg.field_get_value(g_cfg.target(g_mini.challenge), g_cfg.collider_field, &current_collider);
+            if (current_collider && hide_white_layer(current_collider, g_mini))
+                shape_diagnostic(1u << 25, "white-layer-found-after-activation");
+        }
+        verify_white_layer_after_activation(g_mini);
+    }
+    if (g_canvas_alpha.get_alpha && !g_mini.canvas_hidden && !g_failed.load()) {
+        void *post_collider = nullptr;
+        g_cfg.field_get_value(g_cfg.target(g_mini.challenge), g_cfg.collider_field, &post_collider);
+        if (post_collider) hide_canvas_white_layer(post_collider, g_mini);
+    }
+    if (g_canvas_alpha.get_alpha) enforce_white_layers(g_mini);
     g_busy.store(0);
 }
 
@@ -591,16 +755,24 @@ int api_install(const PgrRocketMiniConfig *cfg) {
     const bool v2=cfg->version==2 && cfg->size==sizeof(PgrRocketMiniConfigV2);
     const bool v3=cfg->version==3 && cfg->size==sizeof(PgrRocketMiniConfigV3);
     const bool v4=cfg->version==4 && cfg->size==sizeof(PgrRocketMiniConfigV4);
-    if ((!v1 && !v2 && !v3 && !v4) || !config_pointers_ok(cfg)) return PGR_RMINI_ERR_BAD_CONFIG;
+    const bool v5=cfg->version==5 && cfg->size==sizeof(PgrRocketMiniConfigV5);
+    if (((!v1 && !v2 && !v3 && !v4) && !v5) || !config_pointers_ok(cfg)) return PGR_RMINI_ERR_BAD_CONFIG;
     PgrRocketMiniShape sphere{},box{};
     PgrRocketMiniVisual visual{};
     PgrRocketMiniVisualEx visual_ex{};
-    if(v4) {
+    PgrRocketMiniCanvasAlpha canvas_alpha{};
+    if(v5) {
+        canvas_alpha=reinterpret_cast<const PgrRocketMiniConfigV5 *>(cfg)->canvas_alpha;
+        if(!canvas_alpha.canvas_renderer_class||!canvas_alpha.canvas_renderer_type||
+           !canvas_alpha.get_alpha||!canvas_alpha.set_alpha||!canvas_alpha.float_class)
+            return PGR_RMINI_ERR_BAD_CONFIG;
+    }
+    if(v4 || v5) {
         visual_ex=reinterpret_cast<const PgrRocketMiniConfigV4 *>(cfg)->visual_ex;
         if(!visual_ex.get_enabled||!visual_ex.set_enabled||!visual_ex.get_components_in_children)
             return PGR_RMINI_ERR_BAD_CONFIG;
     }
-    if(v3 || v4) {
+    if(v3 || v4 || v5) {
         visual=reinterpret_cast<const PgrRocketMiniConfigV3 *>(cfg)->visual;
         if(!visual.renderer_class||!visual.renderer_type||!visual.get_components||
            !visual.get_shared_materials||!visual.get_material||!visual.material_class||
@@ -608,7 +780,7 @@ int api_install(const PgrRocketMiniConfig *cfg) {
            !visual.type_object||!visual.array_length||!visual.assignable)
             return PGR_RMINI_ERR_BAD_CONFIG;
     }
-    if(v2 || v3 || v4) {
+    if(v2 || v3 || v4 || v5) {
         const auto *ext=reinterpret_cast<const PgrRocketMiniConfigV2 *>(cfg);
         sphere=ext->sphere; box=ext->box;
         auto valid=[](const PgrRocketMiniShape &s) {
@@ -626,13 +798,14 @@ int api_install(const PgrRocketMiniConfig *cfg) {
                std::memcmp(&g_sphere,&sphere,sizeof(sphere))==0 &&
                std::memcmp(&g_box,&box,sizeof(box))==0 &&
                std::memcmp(&g_visual,&visual,sizeof(visual))==0 &&
-               std::memcmp(&g_visual_ex,&visual_ex,sizeof(visual_ex))==0
+               std::memcmp(&g_visual_ex,&visual_ex,sizeof(visual_ex))==0 &&
+               std::memcmp(&g_canvas_alpha,&canvas_alpha,sizeof(canvas_alpha))==0
                    ? PGR_RMINI_OK
                    : PGR_RMINI_ERR_ALREADY_BOUND;
     }
 
     g_cfg = *cfg; // publish before any callback can read it (still under the mutex)
-    g_sphere=sphere; g_box=box; g_visual=visual; g_visual_ex=visual_ex;
+    g_sphere=sphere; g_box=box; g_visual=visual; g_visual_ex=visual_ex; g_canvas_alpha=canvas_alpha;
     g_have_mini = false;
     g_failed.store(0);
     g_policy_on.store(0);

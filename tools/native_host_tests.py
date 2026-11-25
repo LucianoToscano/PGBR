@@ -55,6 +55,10 @@ LINKED_FIXTURES = {
         'source': ('rocket_minigame_white_layer_test.cpp',),
         'flags': ('-pthread',),
     },
+    'rocket_minigame_canvas_alpha_test': {
+        'source': ('rocket_minigame_canvas_alpha_test.cpp',),
+        'flags': ('-pthread',),
+    },
     'heal_runtime_test': {
         'source': ('heal_runtime_test.cpp',),
         'flags': ('-pthread',),
