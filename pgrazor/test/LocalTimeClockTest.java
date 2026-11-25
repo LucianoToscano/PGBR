@@ -55,6 +55,13 @@ public final class LocalTimeClockTest {
         starts("22:00 ", clock.label(-33.8688,151.2093,at("2026-07-01T12:00:00Z"),true,Locale.US));
         equal("--:--", clock.label(Double.NaN,0,now,true,Locale.US));
         starts("01:30 ", clock.label(35.6762,139.6503,now,true,Locale.US));
+        Locale originalLocale = Locale.getDefault();
+        try {
+            Locale.setDefault(Locale.US);
+            equal(clock.label(35.6762,139.6503,now,false,Locale.US),clock.label(35.6762,139.6503,now,false,null));
+            Locale.setDefault(Locale.FRANCE);
+            equal(clock.label(35.6762,139.6503,now,true,Locale.FRANCE),clock.label(35.6762,139.6503,now,true,null));
+        } finally { Locale.setDefault(originalLocale); }
         // Clock corrections backwards should also replace the cached minute.
         starts("01:29 ", clock.label(35.6762,139.6503,now-60000,true,Locale.US));
         if (args.length > 0) {
