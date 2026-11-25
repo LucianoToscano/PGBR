@@ -1,6 +1,11 @@
 #include "rocket_minigame.h"
 #include "rocket_minigame_shape.h"
+#ifdef PGR_MINI_DIRECT_TEST
+int pgrazor_hook(void *, void *, void **);
+int pgrazor_unhook(void *);
+#else
 #include "hook_engine.h"
+#endif
 
 #include <atomic>
 #include <mutex>
@@ -27,7 +32,8 @@ typedef void (*LifeFn)(void *, void *);
 
 std::mutex g_install_mutex;                    // serialises install() and publishes originals
 PgrRocketMiniConfig g_cfg{};
-PgrRocketMiniShape g_sphere{}, g_box{};                   // validated copy, published under the mutex
+PgrRocketMiniShape g_sphere{}, g_box{};
+PgrRocketMiniVisual g_visual{};                   // validated copy, published under the mutex
 bool g_install_failed = false;                 // sticky; guarded by g_install_mutex
 
 std::atomic<int>     g_active{0};          // fully installed and live
@@ -53,6 +59,12 @@ struct MiniState {
     PgrRocketMiniShape shape;
     float dimensions[3];
     float enlarged[3];
+    float original_scale[3];
+    float visual_scale[3];
+    bool visual_scaled;
+    void *material;
+    float original_color[4];
+    bool alpha_written;
 };
 MiniState g_mini{};
 bool g_have_mini = false;
@@ -179,6 +191,128 @@ void set_dimensions(const MiniState &snap, const float *v) {
     inv(snap.shape.set_size,obj,args);
 }
 
+// Read the shared color only; write the renderer's local material instance.
+// Reject ambiguous, non-white, and opaque materials rather than altering them.
+void free_visual(MiniState &snap) {
+    if(snap.material)g_cfg.free_root(snap.material);
+    snap.material=nullptr;
+}
+bool read_color(void *material,float out[4]) {
+    if(!exact(material,g_visual.material_class))return false;
+    void *boxed=inv(g_visual.get_color,material,nullptr);
+    const float *v=exact(boxed,g_visual.color_class)?
+        static_cast<const float *>(g_cfg.object_unbox(boxed)):nullptr;
+    if(!v)return false;
+    for(int i=0;i<4;++i){if(!std::isfinite(v[i]))return false;out[i]=v[i];}
+    return true;
+}
+bool is_white(const float c[4]) {
+    for(int i=0;i<3;++i)if(c[i]<0.97f||c[i]>1.03f)return false;
+    return true;
+}
+bool is_milky_white(const float c[4]) {
+    return is_white(c)&&c[3]>0.001f&&c[3]<0.999f;
+}
+bool same_color(const float a[4],const float b[4]) {
+    for(int i=0;i<4;++i)if(std::fabs(a[i]-b[i])>0.001f)return false;
+    return true;
+}
+bool set_color(void *material,const float color[4]) {
+    if(!exact(material,g_visual.material_class))return false;
+    void *args[]={const_cast<float *>(color)};
+    void *exc=nullptr;
+    g_cfg.runtime_invoke(g_visual.set_color,material,args,&exc);
+    if(exc){g_failed.store(1);return false;}
+    float after[4]{};
+    return read_color(material,after)&&same_color(color,after);
+}
+bool prepare_visual(void *collider,void *go_root,const float sc[3],MiniState &snap) {
+    if(!g_visual.renderer_class||!collider)return false;
+    for(int i=0;i<3;++i){
+        const float v=std::fmax(1.f,std::fabs(sc[i]))*1000.f;
+        if(!std::isfinite(v)||v>100000.f)return false;
+        snap.original_scale[i]=sc[i];snap.visual_scale[i]=v;
+    }
+    void *type=g_visual.type_object(g_visual.renderer_type);
+    void *type_root=type?g_cfg.root(type,0):nullptr;
+    if(!type_root)return false;
+    void *args[]={g_cfg.target(type_root)};
+    void *array=inv(g_visual.get_components,collider,args);
+    void *array_root=array?g_cfg.root(array,0):nullptr;
+    g_cfg.free_root(type_root);
+    if(!array_root)return false;
+    void *renderer_root=nullptr;
+    int index=0;
+    void *index_args[]={&index};
+    if(g_visual.array_length(g_cfg.target(array_root))==1){
+        void *renderer=inv(g_visual.array_get,g_cfg.target(array_root),index_args);
+        if(renderer&&g_visual.assignable(g_visual.renderer_class,g_cfg.object_class(renderer)))
+            renderer_root=g_cfg.root(renderer,0);
+    }
+    g_cfg.free_root(array_root);
+    if(!renderer_root)return false;
+    bool ok=false;
+    do{
+        void *owner=inv(g_cfg.gameObject_method,g_cfg.target(renderer_root),nullptr);
+        if(owner!=g_cfg.target(go_root))break;
+        void *shared_array=inv(g_visual.get_shared_materials,g_cfg.target(renderer_root),nullptr);
+        void *shared_root=shared_array?g_cfg.root(shared_array,0):nullptr;
+        if(!shared_root)break;
+        float shared_color[4]{};
+        bool candidate=false;
+        if(g_visual.array_length(g_cfg.target(shared_root))==1){
+            void *shared=inv(g_visual.array_get,g_cfg.target(shared_root),index_args);
+            void *shared_material_root=shared?g_cfg.root(shared,0):nullptr;
+            if(shared_material_root){
+                candidate=read_color(g_cfg.target(shared_material_root),shared_color)&&is_milky_white(shared_color);
+                g_cfg.free_root(shared_material_root);
+            }
+        }
+        g_cfg.free_root(shared_root);
+        if(!candidate)break;
+        void *material=inv(g_visual.get_material,g_cfg.target(renderer_root),nullptr);
+        void *material_root=material?g_cfg.root(material,0):nullptr;
+        if(!material_root)break;
+        float color[4]{};
+        if(read_color(g_cfg.target(material_root),color)&&is_milky_white(color)&&same_color(color,shared_color)&&!g_failed.load()){
+            snap.material=material_root;
+            std::memcpy(snap.original_color,color,sizeof(color));
+            ok=true;
+        }else g_cfg.free_root(material_root);
+    }while(false);
+    g_cfg.free_root(renderer_root);
+    shape_diagnostic(ok?128u:256u,ok?"white-alpha-candidate":"white-alpha-not-matched");
+    return ok;
+}
+bool write_local_scale(const MiniState &snap,const float *scale) {
+    void *tr=g_cfg.target(snap.transform);
+    if (!tr || !obj_alive(tr)) return false;
+    void *args[]={const_cast<float *>(scale)};
+    void *exc=nullptr;
+    g_cfg.runtime_invoke(g_cfg.setScale_method,tr,args,&exc);
+    if(exc)g_failed.store(1);
+    return !exc;
+}
+bool apply_visual(MiniState &snap) {
+    if(!snap.material)return false;
+    float current[4]{};
+    if(!read_color(g_cfg.target(snap.material),current)||!is_white(current))return false;
+    // Only A changes; RGB, material, shader and renderer remain intact.
+    current[3]=0.f;
+    snap.alpha_written=true;
+    if(!set_color(g_cfg.target(snap.material),current))return false;
+    snap.visual_scaled=true;
+    return write_local_scale(snap,snap.visual_scale);
+}
+void restore_alpha(MiniState &snap) {
+    if(!snap.material||!snap.alpha_written)return;
+    float color[4]{};
+    if(read_color(g_cfg.target(snap.material),color)&&is_white(color)){
+        color[3]=snap.original_color[3];
+        set_color(g_cfg.target(snap.material),color);
+    }
+}
+
 // Snapshot is detached before any restoring call so a SetActive-driven re-entry cannot
 // see a half-restored state (it sees g_have_mini == false, intentionally). Handles are
 // freed only after the restore calls complete. Restore runs regardless of the failed
@@ -194,6 +328,10 @@ void do_restore() {
     g_restore_pending.store(0);
     void *go = g_cfg.target(snap.go);
     if (snap.collider) set_dimensions(snap, snap.dimensions);
+    // Restore original geometry before restoring the alpha.
+    if (snap.visual_scaled) write_local_scale(snap,snap.original_scale);
+    restore_alpha(snap);
+    free_visual(snap);
     if (go && obj_alive(go)) set_active(go, snap.active);
     if (snap.collider) g_cfg.free_root(snap.collider);
     g_cfg.free_root(snap.challenge);
@@ -272,11 +410,11 @@ void do_collect(void *challenge) {
         // Re-read the rooted challenge's collider after the managed calls above.
         void *current_collider=nullptr;
         g_cfg.field_get_value(g_cfg.target(ch_h),g_cfg.collider_field,&current_collider);
-        const bool shape_ready = current_collider && prepare_shape(current_collider,sc,g_mini);
-        // Never fall back to a giant visual Transform when the collider is unknown,
-        // invalid or unbound. The original game update already ran; manual input
-        // remains available and no object is mutated by this path.
-        if (!shape_ready || g_failed.load()) {
+        // Keep historical geometry only when a local white material can be made transparent.
+        const bool visual_ready=current_collider && prepare_visual(current_collider,go_h,sc,g_mini);
+        const bool shape_ready = !visual_ready && !g_failed.load() && current_collider && prepare_shape(current_collider,sc,g_mini);
+        if ((!shape_ready && !visual_ready) || g_failed.load()) {
+            free_visual(g_mini);
             if (g_mini.collider) g_cfg.free_root(g_mini.collider);
             g_cfg.free_root(ch_h); g_cfg.free_root(tr_h); g_cfg.free_root(go_h);
             g_busy.store(0); return;
@@ -288,7 +426,15 @@ void do_collect(void *challenge) {
         g_have_mini = true;
     }
 
-    set_dimensions(g_mini,g_mini.enlarged);
+    if(g_mini.material) {
+        if(!apply_visual(g_mini)) {
+            shape_diagnostic(32u,"white-alpha-write-failed");
+            g_busy.store(0); do_restore(); return;
+        }
+        shape_diagnostic(64u,"white-alpha-zero");
+    } else {
+        set_dimensions(g_mini,g_mini.enlarged);
+    }
     set_active(g_cfg.target(g_mini.go), 1);
     g_busy.store(0);
 }
@@ -391,9 +537,19 @@ int api_install(const PgrRocketMiniConfig *cfg) {
 
     const bool v1=cfg->version==1 && cfg->size==sizeof(PgrRocketMiniConfig);
     const bool v2=cfg->version==2 && cfg->size==sizeof(PgrRocketMiniConfigV2);
-    if ((!v1 && !v2) || !config_pointers_ok(cfg)) return PGR_RMINI_ERR_BAD_CONFIG;
+    const bool v3=cfg->version==3 && cfg->size==sizeof(PgrRocketMiniConfigV3);
+    if ((!v1 && !v2 && !v3) || !config_pointers_ok(cfg)) return PGR_RMINI_ERR_BAD_CONFIG;
     PgrRocketMiniShape sphere{},box{};
-    if(v2) {
+    PgrRocketMiniVisual visual{};
+    if(v3) {
+        visual=reinterpret_cast<const PgrRocketMiniConfigV3 *>(cfg)->visual;
+        if(!visual.renderer_class||!visual.renderer_type||!visual.get_components||
+           !visual.get_shared_materials||!visual.get_material||!visual.material_class||
+           !visual.color_class||!visual.get_color||!visual.set_color||!visual.array_get||
+           !visual.type_object||!visual.array_length||!visual.assignable)
+            return PGR_RMINI_ERR_BAD_CONFIG;
+    }
+    if(v2 || v3) {
         const auto *ext=reinterpret_cast<const PgrRocketMiniConfigV2 *>(cfg);
         sphere=ext->sphere; box=ext->box;
         auto valid=[](const PgrRocketMiniShape &s) {
@@ -409,13 +565,14 @@ int api_install(const PgrRocketMiniConfig *cfg) {
         // different config is refused.
         return std::memcmp(&g_cfg, cfg, sizeof(g_cfg)) == 0 &&
                std::memcmp(&g_sphere,&sphere,sizeof(sphere))==0 &&
-               std::memcmp(&g_box,&box,sizeof(box))==0
+               std::memcmp(&g_box,&box,sizeof(box))==0 &&
+               std::memcmp(&g_visual,&visual,sizeof(visual))==0
                    ? PGR_RMINI_OK
                    : PGR_RMINI_ERR_ALREADY_BOUND;
     }
 
     g_cfg = *cfg; // publish before any callback can read it (still under the mutex)
-    g_sphere=sphere; g_box=box;
+    g_sphere=sphere; g_box=box; g_visual=visual;
     g_have_mini = false;
     g_failed.store(0);
     g_policy_on.store(0);

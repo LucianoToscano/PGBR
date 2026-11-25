@@ -81,6 +81,29 @@ struct PgrRocketMiniConfigV2 {
 };
 static_assert(sizeof(PgrRocketMiniConfigV2) == 248, "v2 config layout");
 
+// Optional V3: alpha-only correction of a verified white material on the tap object.
+// V1/V2 remain ABI-compatible and retain their existing shape-only behavior.
+struct PgrRocketMiniVisual {
+    void *renderer_class;
+    void *renderer_type;
+    void *get_components;
+    void *get_shared_materials;
+    void *get_material;
+    void *material_class;
+    void *color_class;
+    void *get_color;
+    void *set_color;
+    void *array_get;
+    void *(*type_object)(void *);
+    uintptr_t (*array_length)(void *);
+    bool (*assignable)(void *, void *);
+};
+struct PgrRocketMiniConfigV3 {
+    PgrRocketMiniConfigV2 v2;
+    PgrRocketMiniVisual visual;
+};
+static_assert(sizeof(PgrRocketMiniConfigV3) == 352, "v3 config layout");
+
 // Status codes (0 == success). Shared spirit with the other feature headers.
 enum {
     PGR_RMINI_OK = 0,

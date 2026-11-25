@@ -29,6 +29,7 @@
 #include <string>
 #include <time.h>
 #include <unistd.h>
+#include <dlfcn.h>
 
 namespace {
 
@@ -1151,6 +1152,62 @@ PgrRocketMiniShape resolve_mini_shape(const char *name,const char *property,cons
  return getter&&setter?PgrRocketMiniShape{owner,getter,setter,value}:PgrRocketMiniShape{};
 }
 
+// Resolve exact, non-generic instance overloads; GetComponents(Type) is local
+// to the collider's object. Never resolve a camera/global renderer control.
+PgrRocketMiniVisual resolve_mini_visual() {
+ const auto *api=api_table<PgrMetaApi>(pgrazor_runtime_metadata_api(1));
+ const auto *boot=api_table<PgrBootApi>(pgrazor_runtime_bootstrap_api(1));
+ PgrBootBinding b{};
+ if(!api||!api->resolve_class||!boot||!boot->snapshot||boot->snapshot(&b)!=PGR_BOOT_OK||!b.handle)return {};
+ auto find=[&](const char *ns,const char *name)->PgrMetaClassResult{
+  PgrMetaClassQuery q{};q.version=1;q.size=sizeof(q);q.name_space=ns;q.name=name;
+  PgrMetaClassResult out{};if(api->resolve_class(&q,&out)!=PGR_MD_OK)return {};return out;
+ };
+ const auto renderer=find("UnityEngine","Renderer"),component=find("UnityEngine","Component"),array=find("System","Array");
+ const auto material=find("UnityEngine","Material"),color=find("UnityEngine","Color");
+ if(!renderer.klass||!renderer.type||!component.klass||!array.klass||!material.klass||!color.klass||!b.meta.class_value_size)return {};
+ int color_align=0;
+ if(reinterpret_cast<int(*)(const void*,int*)>(b.meta.class_value_size)(color.klass,&color_align)!=16)return {};
+ auto methods=reinterpret_cast<void*(*)(const void*,void**)>(b.meta.class_get_methods);
+ auto name_of=reinterpret_cast<const char*(*)(void*)>(b.meta.method_get_name);
+ auto count=reinterpret_cast<uint32_t(*)(void*)>(b.meta.method_get_param_count);
+ auto param=reinterpret_cast<void*(*)(void*,uint32_t)>(b.meta.method_get_param);
+ auto ret=reinterpret_cast<void*(*)(void*)>(b.meta.method_get_return_type);
+ auto type_name=reinterpret_cast<char*(*)(void*)>(b.meta.type_get_name);
+ auto free_name=reinterpret_cast<void(*)(void*)>(b.meta.mem_free);
+ auto generic=reinterpret_cast<bool(*)(void*)>(b.meta.method_is_generic);
+ auto inflated=reinterpret_cast<bool(*)(void*)>(b.meta.method_is_inflated);
+ auto flags=reinterpret_cast<uint32_t(*)(void*,uint32_t*)>(b.meta.method_get_flags);
+ auto owner_of=reinterpret_cast<void*(*)(void*)>(b.meta.method_get_class);
+ if(!methods||!name_of||!count||!param||!ret||!type_name||!free_name||!generic||!inflated||!flags||!owner_of)return {};
+ auto type_is=[&](void *t,const char *expected){if(!t)return false;char *n=type_name(t);bool ok=n&&std::strcmp(n,expected)==0;if(n)free_name(n);return ok;};
+ auto method=[&](const void *owner,const char *name,const char *result,const char *arg)->void*{
+  void *iter=nullptr,*found=nullptr;
+  for(int n=0;n<512;++n){
+   void *m=methods(owner,&iter);if(!m)return found;
+   const char *mn=name_of(m);uint32_t iflags=0;
+   if(!mn||std::strcmp(mn,name)||owner_of(m)!=owner||generic(m)||inflated(m)||(flags(m,&iflags)&0x10u)||count(m)!=(arg?1u:0u))continue;
+   if(!type_is(ret(m),result)||(arg&&!type_is(param(m,0),arg)))continue;
+   if(found)return nullptr;
+   found=m;
+  }
+  return nullptr;
+ };
+ PgrRocketMiniVisual v{};
+ v.renderer_class=const_cast<void*>(renderer.klass);v.renderer_type=const_cast<void*>(renderer.type);
+ v.get_components=method(component.klass,"GetComponents","UnityEngine.Component[]","System.Type");
+ v.get_shared_materials=method(renderer.klass,"get_sharedMaterials","UnityEngine.Material[]",nullptr);
+ v.get_material=method(renderer.klass,"get_material","UnityEngine.Material",nullptr);
+ v.material_class=const_cast<void*>(material.klass);v.color_class=const_cast<void*>(color.klass);
+ v.get_color=method(material.klass,"get_color","UnityEngine.Color",nullptr);
+ v.set_color=method(material.klass,"set_color","System.Void","UnityEngine.Color");
+ v.array_get=method(array.klass,"GetValue","System.Object","System.Int32");
+ v.type_object=reinterpret_cast<void*(*)(void*)>(dlsym(b.handle,"il2cpp_type_get_object"));
+ v.array_length=reinterpret_cast<uintptr_t(*)(void*)>(dlsym(b.handle,"il2cpp_array_length"));
+ v.assignable=reinterpret_cast<bool(*)(void*,void*)>(b.meta.class_is_assignable_from);
+ return v.get_components&&v.get_shared_materials&&v.get_material&&v.get_color&&v.set_color&&v.array_get&&v.type_object&&v.array_length&&v.assignable?v:PgrRocketMiniVisual{};
+}
+
 bool install_gym_next(){
  if(g_gym_next_ready)return true;
  const auto *api=api_table<PgrMetaApi>(pgrazor_runtime_metadata_api(1));
@@ -1322,13 +1379,16 @@ bool configure_and_install_rocket(uint64_t tid) {
             }
         }
         if (!mini_collision) {
-            PgrRocketMiniConfigV2 extended{};
+            PgrRocketMiniConfigV3 full{};
+            auto &extended=full.v2;
             auto &mn_cfg=extended.base;
             extended.sphere=resolve_mini_shape("SphereCollider","radius","System","Single","System.Single");
             extended.box=resolve_mini_shape("BoxCollider","size","UnityEngine","Vector3","UnityEngine.Vector3");
+            full.visual=resolve_mini_visual();
             const bool shape_ready=extended.sphere.klass||extended.box.klass;
-            mn_cfg.version           = shape_ready?2:1;
-            mn_cfg.size              = shape_ready?sizeof(extended):sizeof(mn_cfg);
+            const bool visual_ready=full.visual.renderer_class!=nullptr;
+            mn_cfg.version           = visual_ready?3:shape_ready?2:1;
+            mn_cfg.size              = visual_ready?sizeof(full):shape_ready?sizeof(extended):sizeof(mn_cfg);
             mn_cfg.update_addr       = md_h(H_RK_MN_UPDATE_CODE);
             mn_cfg.exit_addr         = md_h(H_RK_MN_EXIT_CODE);
             mn_cfg.hide_addr         = md_h(H_RK_MN_HIDE_CODE);

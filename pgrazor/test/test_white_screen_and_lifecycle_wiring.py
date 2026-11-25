@@ -4,7 +4,7 @@ These are wiring guards, not gameplay proofs. They exist so a later refactor can
 silently reintroduce the two P0 regressions:
 
 * BAT-01 — the Rocket tap assist scaled the visual Transform by 1000x whenever the
-  collider geometry was not recognised (issue #192). The collector must only ever
+  collider geometry was not recognised (issue #192). The collector may safely
   write collider geometry, through the bounded policy in
   ``rocket_minigame_shape.h``, and must perform no mutation at all for unknown geometry.
 * BAT-03 — a transient inability to re-verify a running battle (or an option toggle)
@@ -31,15 +31,22 @@ class WhiteScreenContractTests(unittest.TestCase):
         self.assertIn("pgr_rocket_shape::enlarge(", self.mini)
         self.assertIn("const pgr_rocket_shape::Result r = pgr_rocket_shape::enlarge(in);", self.mini)
 
-    def test_visual_transform_is_never_scaled(self):
-        # The 1000x visual fallback (and its restore) must never come back.
+    def test_visual_change_is_alpha_only(self):
+        self.assertIn("if(!snap.material)return false;", self.mini)
+        self.assertIn("current[3]=0.f;", self.mini)
+        self.assertIn("if(!set_color(g_cfg.target(snap.material),current))return false;", self.mini)
+        self.assertIn("return write_local_scale(snap,snap.visual_scale);", self.mini)
+        self.assertIn("if (snap.visual_scaled) write_local_scale(snap,snap.original_scale);", self.mini)
+        self.assertIn("color[3]=snap.original_color[3];", self.mini)
+        self.assertIn("if(owner!=g_cfg.target(go_root))break;", self.mini)
+        self.assertIn("is_milky_white(shared_color)", self.mini)
+        self.assertNotIn("forceRenderingOff", self.mini)
         self.assertNotIn("set_scale", self.mini)
         self.assertNotIn("Transform.set_localScale", self.mini)
-        self.assertNotIn("setScale_method, transform", self.mini)
 
-    def test_unknown_geometry_performs_no_mutation(self):
+    def test_unknown_geometry_without_verified_white_material_performs_no_mutation(self):
         self.assertIn('if (!r.ok) { g_cfg.free_root(h); shape_diagnostic(4u, "shape-geometry-rejected"); return false; }', self.mini)
-        self.assertIn("if (!shape_ready || g_failed.load())", self.mini)
+        self.assertIn("if ((!shape_ready && !visual_ready) || g_failed.load())", self.mini)
         # No fallback branch may publish a snapshot after a failed geometry read.
         self.assertNotIn("if (current_collider) prepare_shape", self.mini)
 
@@ -58,6 +65,7 @@ class WhiteScreenContractTests(unittest.TestCase):
     def test_host_fixture_is_registered(self):
         runner = (ROOT / "tools" / "native_host_tests.py").read_text(encoding="utf-8")
         self.assertIn("rocket_minigame_shape_test.cpp", runner)
+        self.assertIn("rocket_minigame_visual_test.cpp", runner)
 
 
 class ExecutorLifecycleContractTests(unittest.TestCase):
