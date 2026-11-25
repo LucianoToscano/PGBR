@@ -38,7 +38,9 @@ final class SettingsSearch {
 
     private final List<Entry> entries = new ArrayList<>();
     private static final Pattern MARKS = Pattern.compile("\\p{M}+");
-    private static final Pattern SPACES = Pattern.compile("\\s+", Pattern.UNICODE_CHARACTER_CLASS);
+    // Explicit Unicode White_Space set: Android rejects the JVM-only regex flag.
+    // Keep identical whitespace behavior on Android ICU and the host JDK.
+    private static final Pattern SPACES = Pattern.compile("[\\p{Z}\\x{0009}-\\x{000D}\\x{0085}]+");
     private static final Pattern COUNT = Pattern.compile("\\s*\\(\\d+\\)$");
 
     int add(String name, String group, String category, int page) {
