@@ -92,6 +92,23 @@ public final class GpxStoreTest {
         try { store.load(alpha.id); throw new AssertionError("Loaded a deleted route"); }
         catch (FileNotFoundException expected) { }
 
+        // Canonically equivalent Unicode names collide, but the first spelling is preserved.
+        GpxStore.Entry accented = store.save(new GpxRoute("Café", new double[][]{{1,2}}));
+        try { store.save(new GpxRoute("CAFE\u0301", new double[][]{{2,3}})); throw new AssertionError("Canonical collision accepted"); }
+        catch (IOException expected) { }
+        check(store.load(accented.id).name.equals("Café"), "Original spelling preserved");
+        store.delete(accented.id);
+
+        // An invalid store path cannot be represented as an empty, healthy library.
+        File brokenRoot = new File(context.getFilesDir(), "broken-store-test");
+        check(brokenRoot.mkdirs(), "create isolated store root");
+        File brokenDirectory = new File(brokenRoot, "pgrazor-gpx-routes-v1");
+        Files.write(brokenDirectory.toPath(), new byte[]{7});
+        GpxStore broken = new GpxStore(new Context(brokenRoot));
+        try { broken.list(); throw new AssertionError("Invalid directory reported as empty"); }
+        catch (IOException expected) { }
+        check(Files.readAllBytes(brokenDirectory.toPath())[0] == 7, "Invalid store file preserved");
+
         // The store is bounded: once full, further saves are rejected (count, not silent drop).
         int toFill = GpxStore.MAX_FILES - store.list().size();
         for (int i = 0; i < toFill; i++) store.save(new GpxRoute("Fill " + i, new double[][]{{0, 0}, {1, 1}}));
