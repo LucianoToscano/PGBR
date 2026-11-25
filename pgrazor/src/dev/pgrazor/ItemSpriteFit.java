@@ -15,9 +15,12 @@ final class ItemSpriteFit {
     static float[] centeredRect(int width, int height, float available) {
         if (width <= 0 || height <= 0 || available <= 0 || !Float.isFinite(available))
             throw new IllegalArgumentException("Invalid item sprite dimensions");
-        float scale = Math.min(available / width, available / height);
-        float halfWidth = width * scale / 2f;
-        float halfHeight = height * scale / 2f;
+        // Calculate the half-frame before multiplying aspect ratios, avoiding
+        // overflow for a finite frame and underflow of the intermediate scale.
+        double half = (double) available / 2.0;
+        double longest = Math.max(width, height);
+        float halfWidth = (float) (half * (width / longest));
+        float halfHeight = (float) (half * (height / longest));
         return new float[]{-halfWidth, -halfHeight, halfWidth, halfHeight};
     }
 }
