@@ -10,6 +10,7 @@ public final class SettingsSearchTest {
         ranking();
         matching();
         synonyms();
+        portugueseUi();
         emptyQueries();
         System.out.println("SettingsSearch: normalization, cleaning, ranking, synonyms, multi-token, category and empty states pass");
     }
@@ -95,6 +96,19 @@ public final class SettingsSearchTest {
         eq("Location spoofing", single(search.find("fake gps")));
         eq("Location spoofing", single(search.find("mock location")));
         eq("Dark theme", single(search.find("light mode")));
+    }
+
+    private static void portugueseUi() {
+        SettingsSearch search = new SettingsSearch();
+        for(String name:new String[]{"World map","Dark theme","UI scale","Export / import settings","Run log / export","Low graphics quality"})
+            search.add(name,"Interface","Display",4);
+        eq("World map",single(search.find("mapa mundial")));
+        eq("Dark theme",single(search.find("tema escuro")));
+        eq("UI scale",single(search.find("escala interface")));
+        eq("Export / import settings",single(search.find("restaurar configurações")));
+        eq("Run log / export",single(search.find("registro execução")));
+        eq("Low graphics quality",single(search.find("qualidade gráfica")));
+        eq("Dark theme",single(search.find("light mode")));
     }
 
     private static void emptyQueries() {
