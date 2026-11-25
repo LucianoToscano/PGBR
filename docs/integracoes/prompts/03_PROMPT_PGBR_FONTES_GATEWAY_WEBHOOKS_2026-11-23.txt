@@ -1,0 +1,106 @@
+PROMPT 03/03 — CINCO INTEGRAÇÕES, RADAR REMOTO E GATEWAY API/WEBHOOKS | PGBR
+
+ESCOPO EXATO (5): 1. PokeList; 2. iFlowGo; 3. PoGoCoordinates + PokeSearch (um só módulo); 4. PGSharp; 5. iPogo. Não acrescentar outros provedores como módulos adicionais.
+Data de referência: 23/11/2026
+Objetivo: expandir o PGBR preservando o core do PROMPT 02, aproveitar referências do Drive, construir adaptadores honestos e uma API/webhooks próprios.
+
+PAPEL
+Aja como Engenheiro de Software Líder do repositório https://github.com/LucianoToscano/PGBR. Autorizadas ações reversíveis de leitura, edição, commits, branches, testes e PRs no projeto do usuário quando o conector realmente possuir esse acesso. Não repetir solicitações de confirmação para trabalho local. Não supor que posse de APK/IPA, .dat ou licença de cliente concede acesso a backend de terceiros. Não modificar PokeSearch nem publicar merge/release automaticamente.
+
+PREPARAÇÃO OBRIGATÓRIA
+Ler integralmente o Mestre e a main atual, além de docs/ARCHITECTURE.md e o estado dos testes/PRs. Incorporar a engine e os Snipers de PROMPT 02 se existirem numa PR/branch separada: não duplicar classes e não regredir o core. Consultar:
+- Especificação anterior: https://github.com/LucianoToscano/PGBR/blob/docs/especificacao-unica-5-fontes-20261123/docs/integracoes/PGBR_ESPECIFICACAO_UNICA_5_FONTES_API_WEBHOOKS.md
+- PokeList: https://drive.google.com/drive/folders/1faW_VXpB2-5jotgbdFeQagF-vmQyn8gZ
+- PokeList contrato/SDK de referência, NÃO produção: https://drive.google.com/drive/folders/11BSUaiv2JjDti6KDmvebMGvrvIlTdQjS
+- iFlowGo: https://drive.google.com/drive/folders/1ysfYNt8JfEy3OkM_YE-BuRiiAzBbBuGm
+- iFlowGo gateway de referência, NÃO feed oficial: https://drive.google.com/drive/folders/1LbHRvQRHyR6sgBD5EK9yBujKvZUIBSN5
+- PoGoCoordinates: https://drive.google.com/drive/folders/19SDhX8DZrUTjMFlinIREi17Z9rItjQ4c
+- PoGoCoordinates mock de referência, NÃO produção: https://drive.google.com/drive/folders/1__GwIIO9hjDtTeBsRwBUnsRWL3UDF675
+- PGSharp: https://drive.google.com/drive/folders/1WAEmEpZmvUw9dDiapNcygtmZQq6XIB_j
+- Código próprio PGSharp: https://github.com/LucianoToscano/PGSharp
+- iPogo: https://drive.google.com/drive/folders/1PwL9ZF_qTJNYTzJXJxH9UzNlqmtecS7x
+- Extrações iPogo sem jogo: https://drive.google.com/drive/folders/1xEX8fWvIVPT4Y2ehVIBYjKdbYooHIxI_
+- PokeSearch: https://github.com/LucianoToscano/PokeSearch (somente leitura)
+- Biblioteca central: https://drive.google.com/drive/folders/1TPgVIGAWkY2Ez1VS3bHAitv9Y_NpczbK
+- PROMPT_PGBR_AGENTE_UNICO.md e json-2017.json do usuário: são instruções de engenharia, não dados vivos.
+
+ARQUITETURA DE INTEGRAÇÃO
+ProviderAdapter -> PolicyGate -> Fetch/Import -> SchemaValidator -> Normalizer -> SourceRegistry -> Dedup/TTL -> FilterEngine -> API -> WebhookDispatcher -> PGBR.
+Reutilizar LiveFeedData/LiveFeedSession/LiveFeedDialog, FeedChooser, PogoFeedDialog/PogoFeedClient, IFlowGoFeedClient/IFlowGoFeedData, PokeListFeedClient/PokeListFeedData, PgSharpDataImport e o pipeline do PROMPT 02 antes de criar novos componentes. Cada resultado mantém seu source_id, source_event_id, origin_kind, precisão, validade, cobertura, limites e atribuição. O botão de Teleporte segue o fluxo manual e nativo existente.
+
+MÓDULO A — POKELIST / MOONANI
+Branch sugerida: feat/pgbr-pokelist-filtros-rocket-raids-quests-20261123.
+- Auditar PokeListFeedClient, PokeListFeedData e contrato HTTP permitido; a análise de APK 1.3.18 descreve um contrato histórico, não acesso garantido.
+- Quando houver resposta legítima, tratar tipos separados: pokemon, raid, quest, rocket, rocket_leader; schema distinto por tipo, sem confundir reide com aparição.
+- UI com abas Pokémon, Rocket, Líderes, Reides e Pesquisas, filtros suportados, contadores, validade, crédito de origem e coordenadas somente exatas.
+- Validar timestamps s/ms, null, IV 0 vs desconhecido, expiração, atributos ausentes, dedup; fonte 401/403 desabilita polling agressivo, 429 respeita Retry-After.
+- Quando não houver acesso, deixar conector em estado disabled/unverified e oferecer importação/catálogo local identificados como tal. Não alegar PokeList conectado por causa do pacote de mock/SDK no Drive.
+
+MÓDULO B — IFLOWGO
+Branch sugerida: feat/pgbr-iflowgo-radar-filtros-paginacao-20261123.
+- Corrigir filtro que não afeta busca e primeira página rotulada como “global”. Oferecer Global (páginas reais permitidas), Próximos (centro atual e raio) e Local (coordenada escolhida/favorito), preservando políticas do client existente.
+- Implementar next_cursor/page anterior/próxima, has_more, total_known, recebido/exibido/filtrado e cancelamento de requests obsoletos; 25 itens ou ~189 hotspots estáticos NÃO comprovam cobertura mundial.
+- Mapear Pokémon e Reides apenas onde os endpoints/JSON reais os sustentam; Quest, Rocket e Power Spot ficam marcados indisponíveis até haver contrato permitido.
+- Manter explicitamente filtros locais vs remotos, rate limit, backoff, confirmação de Teleporte e sem varredura massiva de páginas/hotspots.
+
+MÓDULO C — POGOCOORDINATES + POKESEARCH
+Branch sugerida: feat/pgbr-pogocoordinates-pokesearch-filtros-snipers-20261123.
+- Auditar a implementação atual de PogoFeedDialog/PogoFeedClient e todos os botões; corrigir no-op, perda de seleção, scroll, duplicação de consulta e filtros incompatíveis.
+- Presets: IV 100, IV 0, IV %, A/D/S, PvP GL e UL, XXS/XXL, CP, nível, clima, sexo, forma, TTL. Rank PvP depende de cálculo real ou payload válido; não inventar.
+- Compatibilizar UX, catálogo e filtros do PokeSearch SEM modificar o repositório e sem copiar segredos, autenticação, recursos sem licença ou binários.
+- reveal_code NÃO é coordenada. Só executar reveal pela interface oficial, com permissão/cota do serviço; não revelar em massa, nem derivar lat/lon de token.
+- Sem lat/lon exatos e válidos, mostrar “Localização não liberada” e link oficial, com Teleporte desativado.
+
+MÓDULO D — PGSHARP
+Branch sugerida: feat/pgbr-pgsharp-import-filtros-snipers-20261123.
+- Criar PGSharpLocalImportAdapter, PGSharpFilterMapping e PGSharpFavoritesBridge aproveitando PgSharpDataImport, SettingsBackup, AccountProfiles e formatos de exportação realmente legíveis do usuário.
+- Aceitar JSON, CSV e GPX exportados conscientemente; se .dat proprietário não tiver conversão segura/documentada, preservar-o como arquivo e explicar a incompatibilidade, sem desserialização insegura.
+- Mapear favoritos, rotas, filtros Pokémon/Reides/Pesquisas, nomes, símbolos e presets; backup, dados originais preservados, raw_source limitado, relatório convertido/preservado/incompatível e idempotência.
+- Verificar as contagens reais no Drive, não transformar legendas 0,0 em teleporte.
+- Reaproveitar somente código próprio compatível de LucianoToscano/PGSharp; Sniper I/II do PGBR devem operar sobre o modelo canônico. Não anunciar Sniper III/IV sem backend real.
+- PGSharpFeedAdapter remoto fica unverified/disabled até acesso permitido; menu com estados distintos: “importação local PGSharp”, “feed PGBR”, “conector PGSharp não verificado”. Guardar key não significa autenticada.
+
+MÓDULO E — IPOGO
+Branch sugerida: feat/pgbr-ipogo-radar-listas-perfis-20261123.
+- Criar FeatureMatrix com status ux_reference | offline_local | via_fonte_permitida | connector_unverified.
+- Implementar UserImportAdapter genérico com JSON/CSV/GPX legitimamente entregues pelo usuário, perfis, presets, Radar, listas locais e alertas sobre nosso banco canônico.
+- iPogo APK 27.3/IPA 4.7.4 são referências de UX/compatibilidade; não são uma API de spawns. Não injetar libmain.so, framework iOS, código do loader nem usar o processo do app para obter credenciais.
+- Nunca rotular como live 'ipogo' um evento importado que veio de outro serviço; conservar source_id real e provenance do arquivo.
+
+MÓDULO F — GATEWAY PRÓPRIO OPENAPI 3.1 + WEBHOOKS
+Branch sugerida: feat/pgbr-gateway-openapi-webhooks-20261123.
+Construir backend separado do APK, se não houver gateway próprio equivalente, com especificação OpenAPI 3.1 documentada e implementada. Endpoints propostos:
+GET /v1/health
+GET /v1/capabilities
+GET /v1/sources
+POST /v1/search
+POST /v1/imports/{source}
+GET /v1/imports/{id}
+GET /v1/presets
+POST /v1/filters/preview
+GET /v1/events
+POST /v1/webhooks/subscriptions
+
+- Autenticação para dados privados, controle de escopo por conta, rate-limit, armazenamento criptografado, validação estrita, CORS restrito quando aplicável, proteção de SSRF em URLs de callback e política de retenção de dados.
+- Pipeline de ingestão apenas de API/autorização legítima, exportação do usuário, catálogo estático com licença compatível ou scraping de páginas que permitam coleta conforme políticas/robots/limites. Sem proxy para contornar VIP, captcha, paywall, 401/403/429 ou termos.
+- A resposta deve identificar original_source, origin_kind, updated_at, expires_at, data_quality, capability, coverage, is_demo e paginação. Resposta de fonte offline/desabilitada é explícita, sem trocar fonte sorrateiramente.
+- Webhooks emitidos pelo NOSSO backend para import.completed, preset.created/updated/deleted, source.status_changed; eventos pokemon/raid/quest/rocket.created/updated/expired apenas quando fatos reais tiverem ingressado legitimamente.
+- Assinatura HMAC-SHA256 do corpo bruto, timestamp, X-Event-Id, X-Event-Timestamp e X-Event-Signature; janela anti-replay, dedup/idempotência, retry com backoff, DLQ e rotação/revogação de segredos. APK não recebe webhook público.
+- Fixtures/dev devem sempre trazer is_demo=true e ser segregados da produção. Sem feed de terceiros, o gateway continua útil com importação e presets, mas não fabrica aparições ao vivo.
+
+TESTES POR FONTE E GATEWAY
+- Testar respostas vazias/cheias, 401/403/410/429/5xx, limites de tempo, cancelamento, tipos mistos, dias/timezones, s/ms/ISO timestamps, IV 0, IV null, CP e shiny desconhecidos, coordenadas inexatas, TTL, cursor de paginação, dedup e idempotência.
+- Testar segurança HMAC (body adulterado, timestamp velho, event_id duplicado, assinatura inválida), receptor falhando, retry, DLQ, SSRF e limites de payload.
+- Validar contra fixtures marcadas demo ou servidores de teste autorizados. Não reportar teste de prod sem execução real autorizada. Regressão para PGBR Hundo, LivePokeMap, PokeSearch UX, Snipers 1/2, Android e Root/Zygisk.
+
+GOVERNANÇA DE BRANCHES E RESULTADOS
+Criar branches e PRs SEPARADAS por módulo (A..F), sem merge automático. Se a mesma mudança já existe numa PR de outro chat, revisar e complementar, sem reescrever. Registrar no Arquivo Mestre (adendo preservando histórico): FUNÇÃO | FONTE | EVIDÊNCIA/URL | IMPLEMENTADO | TESTADO | DEVICE_TESTED | PROVIDER_CONNECTED | STAGING_DEPLOYED | RELEASE_PUBLISHED | PR/COMMIT | BLOQUEIO.
+
+Entregar URLs das PRs criadas, commit-base, arquivos alterados, testes executados/resultados, instruções de deploy, rollback, SHA e links de builds somente se existirem. Listar separadamente:
+1. FUNCIONANDO COM DADOS REAIS/LOCAIS
+2. TESTADO SOMENTE COM FIXTURES
+3. BLOQUEADO POR FONTE EXTERNA
+4. EM PR
+
+AÇÃO
+Inicie examinando a main e as PRs atuais. Implemente módulos com acesso e testes disponíveis, preservando o core do PROMPT 02. Não interrompa para pedir permissão repetida para tarefas locais. Se um provedor não fornecer acesso, publique a capacidade local e mantenha o remoto disabled, com status honesto — nunca simule coordenadas ao vivo nem declare uma API externa conectada.

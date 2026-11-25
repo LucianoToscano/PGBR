@@ -1,0 +1,67 @@
+PROMPT 02/03 — IMPLEMENTAÇÃO REAL DA ENGINE CORE, SNIPER 1 E SNIPER 2 | PGBR
+Data de referência: 23/11/2026
+Objetivo: entregar código funcional de normalização, filtros, importação, Radar local e Snipers; compilar, testar e abrir PR.
+
+PAPEL E DIREITOS
+Você é o engenheiro responsável por desenvolver o código do projeto do usuário https://github.com/LucianoToscano/PGBR. O usuário autoriza alterações locais, testes, commits, branches e PRs em seu próprio repositório sem perguntas repetitivas. Use somente os acessos reais disponibilizados à sessão; não alegue operações que não ocorreram. Este prompt é executável de modo independente, mas priorize os achados do PROMPT 01 quando estiverem presentes.
+
+LEITURA INICIAL
+Ler o arquivo https://github.com/LucianoToscano/PGBR/blob/main/PGBR_ARQUIVO_MESTRE_UNICO.md, a arquitetura, o HEAD atual da main, PRs e branches paralelas. Ler a especificação unificada: https://github.com/LucianoToscano/PGBR/blob/docs/especificacao-unica-5-fontes-20261123/docs/integracoes/PGBR_ESPECIFICACAO_UNICA_5_FONTES_API_WEBHOOKS.md. Consultar PROMPT_PGBR_AGENTE_UNICO.md e json-2017.json como instruções (não como banco de spawns). Não modificar PokeSearch: https://github.com/LucianoToscano/PokeSearch. Inventariar a implementação existente e incorporar melhorias de PRs atuais em vez de substituir código recente.
+
+BRANCH / HISTÓRICO
+Preferir feat/pgbr-core-sniper-20261123; se existir ou colidir, usar nome único com sufixo, a partir do SHA-base revalidado. Se mudanças paralelas já contiverem algo equivalente, reconciliar sem perder código. Commits atômicos e uma PR própria para o core; NÃO realizar merge automático na main. Guardar backup reversível para migrações de dados. Registrar arquivos alterados e CI no PR.
+
+ESCOPO 1 — MODELO ÚNICO CANÔNICO
+Criar ou adaptar SourceAdapter / ProviderAdapter e um tipo interno de evento normalizado. Reutilizar LiveFeedData.Entry ou seus pontos de integração comprovados quando couber; não quebrar os consumidores atuais.
+Campos mínimos, com tipagem clara:
+- source_id, source_event_id, origin_kind: personal_import | third_party_live | static_catalog | simulated_fixture;
+- kind: pokemon | raid | quest | rocket | route | nest | power_spot | pokestop;
+- species_id, form_id, lat, lon, coordinate_precision: exact | approximate | unavailable;
+- iv_percent, iv_atk, iv_def, iv_sta, cp, level, gender, size, weather_boost;
+- pvp_rank_gl, pvp_rank_ul, observed_at, retrieved_at, expires_at, ttl;
+- source_url, data_quality, coverage, is_demo, has_more, next_cursor, total_known;
+- server_filters_applied, local_filters_applied, raw_source preservado e limitado.
+Todos os valores desconhecidos são null/unknown, NUNCA zero. Timestamp UTC em segundos/milissegundos/ISO-8601 deve ser normalizado, validade verificada e origem identificada. Shiny elegível não é shiny confirmado. Calculadora PvP real e Game Master atualizado são pré-requisitos para afirmar um rank.
+
+Contrato do adaptador: capabilities(), search(query,cursor), cancel(), sourceStatus(), attribution(). Implementar validação de schema, normalização, deduplicação por origem/ID/tempo, TTL, cancelamento de requisição anterior, isolamento entre fontes e perfis, limite de registros, estado de erro e persistência versionada. Não atribuir registros de um provedor a outro.
+
+ESCOPO 2 — IMPORTAÇÃO LOCAL QUE REALMENTE FUNCIONA
+- Ler coordenadas digitadas, clipboard, JSON, CSV e GPX fornecidos/selecionados pelo usuário (não importar automaticamente dados particulares de outros apps).
+- Validar latitude [-90,90], longitude [-180,180], números finitos, tamanho máximo, encoding, timestamps e extensão real, com parsers seguros; GPX usa parser XML sem entidades externas (XXE desabilitado).
+- Um campo desconhecido não impede importação dos campos válidos; produzir relatório importados/rejeitados/preservados/não suportados e reason codes.
+- Para legendas/placeholder 0,0, não oferecer Teleporte. Não tratar número isolado ou data vencida como spawn.
+- Persistir o lote com backup/migração idempotente; manter entradas pessoais separadas de registros vivos, incluindo origem e horário. Importação repetida não duplica.
+- Exportar dados pessoais e presets em JSON; exportar GPX apenas dos waypoints válidos explicitamente selecionados.
+
+ESCOPO 3 — SNIPER 1 (BUSCA RÁPIDA)
+- Reutilizar FeedChooser, LiveFeedDialog, LiveFeedData, LiveFeedFilters, PokemonSelectorDialog e, quando disponível, HundoFeedDialog/ShundoSniper e o fluxo nativo de ações.
+- Busca manual com espécie/#Dex, IV 100 e/ou faixa de IV, CP, raio, validade TTL, ordenação e fonte explícita. Em modo sem feed remoto, buscar apenas eventos importados ou fontes locais disponíveis e EXIBIR essa situação corretamente.
+- Lista com espécie, sprite correto, IV conhecido, horário, fonte e precisão de coordenada.
+- Ações: Copiar 'lat,lon', Salvar favorito, Mostrar no mapa e Teleporte via fluxo JÁ EXISTENTE. Teleporte somente se coordenada exata, válida, não vencida, origem permitida e após confirmação; cooldown/GPS existentes não devem ser desativados. Não implementar teleporte automático ou clandestino.
+- Se a espécie tiver IV desconhecido, NÃO classificá-la como 100% ou 0%.
+
+ESCOPO 4 — SNIPER 2 (AVANÇADO)
+- Interface de filtros persistente, com presets criar, renomear, duplicar, editar, excluir, importar/exportar JSON e restaurar versões anteriores.
+- Filtros AND/OR por espécie, forma, sexo, tamanho (XXS, XS, S, M, L, XL, XXL), clima, level, CP, IV percent, IV A/D/S 0–15, IV 100, IV 0, Liga Grande/Ultra com rank computado, raio, centro, TTL e origem.
+- Implementar estados claros: filtro suportado pela fonte, aplicado no servidor, aplicado localmente ou não suportado. Campo ausente não pode aprovar resultado como se tivesse sido filtrado; não inventar ranking PvP.
+- Perfis separados por conta quando o PGBR oferecer AccountProfiles; presets versionados e migrações seguras. Não mostrar Sniper 3/4 sem backend comprovado.
+- Compatibilizar filtros locais com formatos inspirados no PokeSearch e PGSharp, sem copiar binários/recursos proprietários.
+
+ESCOPO 5 — RADAR, LISTAS, ROTAS E ALERTAS LOCAIS
+- Abas: Pokémon, Reides, Pesquisas, Rocket, Rotas, Ninhos e Power Spot/Poképarada conforme o modelo suportar. Cada aba deve ter estados de carregamento, vazio real, catálogo local, dados importados, cobertura desconhecida e dado expirado. Sem feed ao vivo, NÃO desenhar spawns fictícios.
+- Mesma origem de dados para lista/mapa/filtros. Mostrar contagem recebido/exibido/filtrado, fonte e hora local.
+- Editor/importador de rotas GPX e locais favoritos sem regressão em SavedPlaces nem em funcionalidades de caminhada existentes.
+- Notificações Android só para novos registros reais (ou importados legitimamente) que coincidirem com um preset, com anti-duplicação, privacidade e consentimento de notificações conforme versão Android.
+- Componentes UI PT-BR, incluindo a palavra Teleporte. Não bloquear a main thread, não destruir layout atual.
+
+RESTRIÇÕES EXPLÍCITAS
+Nenhuma parte local depende de token externo, VIP ou API de fabricante. Não criar falso servidor de aparições, contornar HTTP 401/403/429 ou misturar fixtures com dados reais. Preservar Ataque Inteligente, Rocket, PvP, ginásios, raids, batalha Max, VGP+, Root, sem Root, Zygisk, joystick e controles de GPS. Não reconstruir o projeto sem necessidade.
+
+TESTES E CI
+Escrever testes reais para: parsing JSON/CSV/GPX/clipboard, coordenadas inválidas/0,0/NaN, expiry/TTL, IV 0 vs desconhecido, tipos, idempotência, dedup, filtros AND/OR, cancelamento, migração de presets, isolamento por conta, Teleporte indisponível em destino sem precisão, estados vazios. Rodar tools/check.py quando presente, testes JVM/Android relevantes e build pelo CI apropriado. Se faltar dispositivo, registrar device_tested=false; não anunciar testado no jogo.
+
+REGISTRO E ENTREGA
+Atualizar PGBR_ARQUIVO_MESTRE_UNICO.md APENAS com adendo histórico/matriz na branch, nunca reescrever ou reduzir o Mestre. Criar PR de implementação com SHA-base, arquivos, resumo, testes, riscos, rollback e resultados concretos. Fornecer link da PR, commits, CI, lista do que funciona e do que depende de integração posterior. APK somente se build real gerou e disponibilizou artefato; enviar link DIRETO do APK e checksum, não apenas workflow. Não dizer que tem release se não publicou.
+
+COMECE AGORA
+Inspecione o repositório atualizado, edite os arquivos reais, execute os testes e abra a PR sem pedir confirmação repetitiva. Se ferramentas de escrita não existirem, forneça patch ou arquivos completos, com limitações verificáveis, em vez de fingir commits.
