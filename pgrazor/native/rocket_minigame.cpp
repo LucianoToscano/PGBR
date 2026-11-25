@@ -33,6 +33,7 @@ std::mutex g_install_mutex;                    // serialises install() and publi
 PgrRocketMiniConfig g_cfg{};
 PgrRocketMiniShape g_sphere{}, g_box{};
 PgrRocketMiniVisual g_visual{};                   // validated copy, published under the mutex
+PgrRocketMiniVisualEx g_visual_ex{};              // optional renderer-only white-layer fix
 bool g_install_failed = false;                 // sticky; guarded by g_install_mutex
 
 std::atomic<int>     g_active{0};          // fully installed and live
@@ -48,6 +49,10 @@ std::atomic<LifeFn>   g_orig_exit{nullptr};
 std::atomic<LifeFn>   g_orig_hide{nullptr};
 std::atomic<LifeFn>   g_orig_destroy{nullptr};
 
+// Bounded so a corrupted component array can never walk the scene; a valid tap object
+// has a handful of renderers at most.
+static constexpr int PGR_MINI_MAX_HIDDEN = 24;
+
 // Rooted snapshot, written and read only on the Unity thread under the busy guard.
 struct MiniState {
     void *challenge;   // gchandle
@@ -58,6 +63,11 @@ struct MiniState {
     void *material;
     float original_color[4];
     bool alpha_written;
+    // V4 visual-only fix: rooted Component[] of the tap subtree and the exact flags it had.
+    void *hidden;
+    int hidden_count;
+    int hidden_index[PGR_MINI_MAX_HIDDEN];
+    uint8_t hidden_was_enabled[PGR_MINI_MAX_HIDDEN];
 };
 MiniState g_mini{};
 bool g_have_mini = false;
@@ -249,6 +259,102 @@ bool apply_visual(MiniState &snap) {
     snap.alpha_written=true;
     return set_color(g_cfg.target(snap.material),current);
 }
+// ---- V4: hide the milky-white layer (appearance only) ------------------------------
+// The historical collector scales the tap object by 1000x so the game registers the charged
+// input. Any renderer in that subtree is therefore drawn 1000x bigger, which is the milky
+// white that covers the battle. The material alpha edit is not enough when the game keeps an
+// opaque white color and lets the shader blend, so the renderers themselves are hidden while
+// the collector holds the object. Only Renderer.enabled is written; colliders, transforms,
+// materials and the collector keep working exactly as before, and every original flag is
+// restored on release. Any binding or read failure leaves the historical behavior intact.
+
+bool read_enabled(void *renderer, uint8_t *out) {
+    if (!g_visual_ex.get_enabled || !renderer) return false;
+    void *boxed = visual_invoke(g_visual_ex.get_enabled, renderer, nullptr);
+    if (!exact(boxed, g_cfg.bool_class)) return false;
+    uint8_t *b = static_cast<uint8_t *>(g_cfg.object_unbox(boxed));
+    if (!b || (*b != 0 && *b != 1)) return false;
+    *out = *b;
+    return true;
+}
+
+bool write_enabled(void *renderer, uint8_t on) {
+    if (!g_visual_ex.set_enabled || !renderer) return false;
+    uint8_t value = on ? 1 : 0;
+    void *args[1] = {&value};
+    void *exc = nullptr;
+    // A void setter returns null on success, so only the managed exception means failure;
+    // the write is then confirmed by reading the property back.
+    g_cfg.runtime_invoke(g_visual_ex.set_enabled, renderer, args, &exc);
+    if (exc) { shape_diagnostic(1u << 17, "white-layer-write-failed"); return false; }
+    uint8_t after = 1;
+    return read_enabled(renderer, &after) && after == value; // never claim an unverified hide
+}
+
+bool hide_white_layer(void *collider, MiniState &snap) {
+    if (!g_visual_ex.get_enabled || !g_visual_ex.set_enabled ||
+        !g_visual_ex.get_components_in_children) {
+        shape_diagnostic(1u << 17, "white-layer-unbound");
+        return false;
+    }
+    if (!collider) return false;
+    void *type = g_visual.type_object(g_visual.renderer_type);
+    void *type_root = type ? g_cfg.root(type, 0) : nullptr;
+    if (!type_root) return false;
+    void *args[1] = {g_cfg.target(type_root)};
+    void *array = visual_invoke(g_visual_ex.get_components_in_children, collider, args);
+    g_cfg.free_root(type_root);
+    void *array_root = array ? g_cfg.root(array, 0) : nullptr;
+    if (!array_root) { shape_diagnostic(1u << 18, "white-layer-renderers-absent"); return false; }
+    const uintptr_t total = g_visual.array_length(g_cfg.target(array_root));
+    if (total == 0 || total > static_cast<uintptr_t>(PGR_MINI_MAX_HIDDEN)) {
+        g_cfg.free_root(array_root);
+        shape_diagnostic(1u << 18, "white-layer-renderers-absent");
+        return false;
+    }
+    int hidden = 0;
+    for (uintptr_t i = 0; i < total; ++i) {
+        int index = static_cast<int>(i);
+        void *index_args[1] = {&index};
+        void *renderer = visual_invoke(g_visual.array_get, g_cfg.target(array_root), index_args);
+        if (!renderer) continue;
+        if (!g_visual.assignable(g_visual.renderer_class, g_cfg.object_class(renderer))) continue;
+        uint8_t was = 0;
+        if (!read_enabled(renderer, &was)) continue;
+        if (!was) continue;                        // already invisible: leave it alone
+        if (!write_enabled(renderer, 0)) continue; // unverified write: do not record it
+        snap.hidden_index[hidden] = index;
+        snap.hidden_was_enabled[hidden] = was;
+        ++hidden;
+    }
+    if (hidden == 0) {
+        g_cfg.free_root(array_root);
+        shape_diagnostic(1u << 18, "white-layer-renderers-absent");
+        return false;
+    }
+    snap.hidden = array_root;
+    snap.hidden_count = hidden;
+    shape_diagnostic(1u << 19, "white-layer-hidden");
+    return true;
+}
+
+// Put back exactly the flags the game had. Runs even after a latched failure so an owned
+// object is never left hidden.
+void restore_white_layer(MiniState &snap) {
+    if (!snap.hidden) return;
+    for (int i = 0; i < snap.hidden_count; ++i) {
+        int index = snap.hidden_index[i];
+        void *index_args[1] = {&index};
+        void *renderer = visual_invoke(g_visual.array_get, g_cfg.target(snap.hidden), index_args);
+        if (!renderer) continue;
+        if (!g_visual.assignable(g_visual.renderer_class, g_cfg.object_class(renderer))) continue;
+        write_enabled(renderer, snap.hidden_was_enabled[i]);
+    }
+    g_cfg.free_root(snap.hidden);
+    snap.hidden = nullptr;
+    snap.hidden_count = 0;
+}
+
 void restore_alpha(MiniState &snap) {
     if(!snap.material||!snap.alpha_written)return;
     float color[4]{};
@@ -275,6 +381,7 @@ void do_restore() {
     void *transform=g_cfg.target(snap.transform);
     if (transform && obj_alive(transform)) set_scale(transform, snap.scale);
     restore_alpha(snap);
+    restore_white_layer(snap); // appearance first: the object must look like the game left it
     free_visual(snap);
     if (go && obj_alive(go)) set_active(go, snap.active);
     g_cfg.free_root(snap.challenge);
@@ -358,6 +465,9 @@ void do_collect(void *challenge) {
         void *current_collider=nullptr;
         g_cfg.field_get_value(g_cfg.target(ch_h),g_cfg.collider_field,&current_collider);
         if(current_collider)prepare_visual(current_collider,go_h,g_mini);
+        // Appearance only, independent of the alpha candidate: no failure here may affect
+        // the collector, the scale or the collider.
+        if(current_collider)hide_white_layer(current_collider,g_mini);
         g_have_mini = true;
     }
 
@@ -480,10 +590,17 @@ int api_install(const PgrRocketMiniConfig *cfg) {
     const bool v1=cfg->version==1 && cfg->size==sizeof(PgrRocketMiniConfig);
     const bool v2=cfg->version==2 && cfg->size==sizeof(PgrRocketMiniConfigV2);
     const bool v3=cfg->version==3 && cfg->size==sizeof(PgrRocketMiniConfigV3);
-    if ((!v1 && !v2 && !v3) || !config_pointers_ok(cfg)) return PGR_RMINI_ERR_BAD_CONFIG;
+    const bool v4=cfg->version==4 && cfg->size==sizeof(PgrRocketMiniConfigV4);
+    if ((!v1 && !v2 && !v3 && !v4) || !config_pointers_ok(cfg)) return PGR_RMINI_ERR_BAD_CONFIG;
     PgrRocketMiniShape sphere{},box{};
     PgrRocketMiniVisual visual{};
-    if(v3) {
+    PgrRocketMiniVisualEx visual_ex{};
+    if(v4) {
+        visual_ex=reinterpret_cast<const PgrRocketMiniConfigV4 *>(cfg)->visual_ex;
+        if(!visual_ex.get_enabled||!visual_ex.set_enabled||!visual_ex.get_components_in_children)
+            return PGR_RMINI_ERR_BAD_CONFIG;
+    }
+    if(v3 || v4) {
         visual=reinterpret_cast<const PgrRocketMiniConfigV3 *>(cfg)->visual;
         if(!visual.renderer_class||!visual.renderer_type||!visual.get_components||
            !visual.get_shared_materials||!visual.get_material||!visual.material_class||
@@ -491,7 +608,7 @@ int api_install(const PgrRocketMiniConfig *cfg) {
            !visual.type_object||!visual.array_length||!visual.assignable)
             return PGR_RMINI_ERR_BAD_CONFIG;
     }
-    if(v2 || v3) {
+    if(v2 || v3 || v4) {
         const auto *ext=reinterpret_cast<const PgrRocketMiniConfigV2 *>(cfg);
         sphere=ext->sphere; box=ext->box;
         auto valid=[](const PgrRocketMiniShape &s) {
@@ -508,13 +625,14 @@ int api_install(const PgrRocketMiniConfig *cfg) {
         return std::memcmp(&g_cfg, cfg, sizeof(g_cfg)) == 0 &&
                std::memcmp(&g_sphere,&sphere,sizeof(sphere))==0 &&
                std::memcmp(&g_box,&box,sizeof(box))==0 &&
-               std::memcmp(&g_visual,&visual,sizeof(visual))==0
+               std::memcmp(&g_visual,&visual,sizeof(visual))==0 &&
+               std::memcmp(&g_visual_ex,&visual_ex,sizeof(visual_ex))==0
                    ? PGR_RMINI_OK
                    : PGR_RMINI_ERR_ALREADY_BOUND;
     }
 
     g_cfg = *cfg; // publish before any callback can read it (still under the mutex)
-    g_sphere=sphere; g_box=box; g_visual=visual;
+    g_sphere=sphere; g_box=box; g_visual=visual; g_visual_ex=visual_ex;
     g_have_mini = false;
     g_failed.store(0);
     g_policy_on.store(0);

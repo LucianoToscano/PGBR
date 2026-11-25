@@ -104,6 +104,21 @@ struct PgrRocketMiniConfigV3 {
 };
 static_assert(sizeof(PgrRocketMiniConfigV3) == 352, "v3 config layout");
 
+// Optional V4: hide the milky-white layer that the historical 1000x visual scale magnifies.
+// Pure appearance: only Renderer.enabled is toggled inside the tap object's subtree. Colliders,
+// transforms, materials, shader properties and the collector itself are not touched, and every
+// original flag is written back on restore. A missing binding keeps the V3 behavior untouched.
+struct PgrRocketMiniVisualEx {
+    void *get_enabled;                // Renderer.get_enabled              -> System.Boolean
+    void *set_enabled;                // Renderer.set_enabled              <- System.Boolean
+    void *get_components_in_children; // Component.GetComponentsInChildren  <- System.Type -> Component[]
+};
+struct PgrRocketMiniConfigV4 {
+    PgrRocketMiniConfigV3 v3;
+    PgrRocketMiniVisualEx visual_ex;
+};
+static_assert(sizeof(PgrRocketMiniConfigV4) == 376, "v4 config layout");
+
 // Status codes (0 == success). Shared spirit with the other feature headers.
 enum {
     PGR_RMINI_OK = 0,

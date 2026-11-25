@@ -29,6 +29,21 @@ Roteiro no aparelho (Rocket primeiro; depois os modos derivados):
    faixa (Boa/Ótima/Excelente), o modo e se o ícone de estado do auxiliar está ligado.
    Isso indica um segundo caminho visual, que **não** é o fallback removido.
 
+## 1b. Camada branca no carregado (fix visual de 25/11/2026)
+
+O mecanismo do carregado continua o da PR #297 (`1b1286bc`). O que mudou é **apenas** a aparência: os renderers do objeto de toque são desligados (`Renderer.enabled=false`) enquanto o coletor o amplia 1000×, e cada flag original é reposta ao sair.
+
+Aceite no aparelho:
+
+1. Boa, Ótima e Excelente: a batalha permanece **visível**; nenhuma camada leitosa cobre a tela.
+2. O carregado continua **funcionando** (o mesmo número de toques/arrastos de antes).
+3. Ao sair do carregado, a cena volta ao normal (nada fica invisível depois).
+4. Se ainda houver branco, verificar no diagnóstico `miniWhiteHideBound` e o último `miniStage` com prefixo `white-layer-`:
+   - `white-layer-unbound` → o runtime não expôs `Renderer.set_enabled`/`GetComponentsInChildren`;
+   - `white-layer-renderers-absent` → nenhum renderer na subárvore do colisor (hipótese: segundo objeto branco);
+   - `white-layer-write-failed` → exceção gerenciada ao desligar (o objeto é restaurado e a coleta segue).
+5. Reportar aparelho/Android, versão do PGBR, SHA do APK e o `miniStage`, se houver falha.
+
 ## 2. Auto ATK para de funcionar após a batalha (issue #105)
 
 O que já está provado (sem Android):

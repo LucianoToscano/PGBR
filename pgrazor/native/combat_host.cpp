@@ -409,7 +409,7 @@ void drain_leaf_events(uint64_t tid) {
     const uint32_t caps = g_capabilities.load(std::memory_order_acquire);
     if(caps & PGR_CBH_CAP_ROCKET_MINIGAME){
         const uint32_t bits=pgrazor_rocket_minigame_take_diagnostics();
-        static constexpr const char *stages[]={"shape-unbound-or-unsupported","shape-value-unavailable","shape-geometry-rejected","shape-sphere-ready","shape-box-ready","white-alpha-write-failed","white-alpha-zero","white-alpha-candidate","white-alpha-not-matched","white-alpha-unbound","local-renderer-missing-or-ambiguous","local-renderer-owner-mismatch","local-white-material-unconfirmed","running-challenge-observed","update-observed","unity-thread-unconfirmed","policy-not-live"};
+        static constexpr const char *stages[]={"shape-unbound-or-unsupported","shape-value-unavailable","shape-geometry-rejected","shape-sphere-ready","shape-box-ready","white-alpha-write-failed","white-alpha-zero","white-alpha-candidate","white-alpha-not-matched","white-alpha-unbound","local-renderer-missing-or-ambiguous","local-renderer-owner-mismatch","local-white-material-unconfirmed","running-challenge-observed","update-observed","unity-thread-unconfirmed","policy-not-live","white-layer-unbound","white-layer-renderers-absent","white-layer-hidden","white-layer-write-failed"};
         for(unsigned i=0;i<sizeof(stages)/sizeof(stages[0]);++i){
             if(!(bits&(1u<<i)))continue;
             char json[128];
@@ -1164,7 +1164,8 @@ PgrRocketMiniShape resolve_mini_shape(const char *name,const char *property,cons
 
 // Resolve exact, non-generic instance overloads; GetComponents(Type) is local
 // to the collider's object. Never resolve a camera/global renderer control.
-PgrRocketMiniVisual resolve_mini_visual() {
+PgrRocketMiniVisual resolve_mini_visual(PgrRocketMiniVisualEx *ex = nullptr) {
+ if(ex)*ex=PgrRocketMiniVisualEx{};
  const auto *api=api_table<PgrMetaApi>(pgrazor_runtime_metadata_api(1));
  const auto *boot=api_table<PgrBootApi>(pgrazor_runtime_bootstrap_api(1));
  PgrBootBinding b{};
@@ -1215,7 +1216,18 @@ PgrRocketMiniVisual resolve_mini_visual() {
  v.type_object=reinterpret_cast<void*(*)(void*)>(dlsym(b.handle,"il2cpp_type_get_object"));
  v.array_length=reinterpret_cast<uintptr_t(*)(void*)>(dlsym(b.handle,"il2cpp_array_length"));
  v.assignable=reinterpret_cast<bool(*)(void*,void*)>(b.meta.class_is_assignable_from);
- return v.get_components&&v.get_shared_materials&&v.get_material&&v.get_color&&v.set_color&&v.array_get&&v.type_object&&v.array_length&&v.assignable?v:PgrRocketMiniVisual{};
+ if(!(v.get_components&&v.get_shared_materials&&v.get_material&&v.get_color&&v.set_color&&v.array_get&&v.type_object&&v.array_length&&v.assignable))
+  return PgrRocketMiniVisual{};
+ // Appearance-only white-layer fix: Renderer.enabled and GetComponentsInChildren(Type).
+ // The historical collector never depends on these bindings.
+ if(ex){
+  PgrRocketMiniVisualEx x{};
+  x.get_enabled=method(renderer.klass,"get_enabled","System.Boolean",nullptr);
+  x.set_enabled=method(renderer.klass,"set_enabled","System.Void","System.Boolean");
+  x.get_components_in_children=method(component.klass,"GetComponentsInChildren","UnityEngine.Component[]","System.Type");
+  if(x.get_enabled&&x.set_enabled&&x.get_components_in_children)*ex=x;
+ }
+ return v;
 }
 
 bool install_gym_next(){
@@ -1389,16 +1401,19 @@ bool configure_and_install_rocket(uint64_t tid) {
             }
         }
         if (!mini_collision) {
-            PgrRocketMiniConfigV3 full{};
-            auto &extended=full.v2;
+            PgrRocketMiniConfigV4 full{};
+            PgrRocketMiniVisualEx visual_ex{};
+            auto &extended=full.v3.v2;
             auto &mn_cfg=extended.base;
             extended.sphere=resolve_mini_shape("SphereCollider","radius","System","Single","System.Single");
             extended.box=resolve_mini_shape("BoxCollider","size","UnityEngine","Vector3","UnityEngine.Vector3");
-            full.visual=resolve_mini_visual();
+            full.v3.visual=resolve_mini_visual(&visual_ex);
+            full.visual_ex=visual_ex;
             const bool shape_ready=extended.sphere.klass||extended.box.klass;
-            const bool visual_ready=full.visual.renderer_class!=nullptr;
-            mn_cfg.version           = visual_ready?3:shape_ready?2:1;
-            mn_cfg.size              = visual_ready?sizeof(full):shape_ready?sizeof(extended):sizeof(mn_cfg);
+            const bool visual_ready=full.v3.visual.renderer_class!=nullptr;
+            const bool white_hide_ready=visual_ex.get_enabled!=nullptr;
+            mn_cfg.version           = white_hide_ready?4:visual_ready?3:shape_ready?2:1;
+            mn_cfg.size              = white_hide_ready?sizeof(full):visual_ready?sizeof(full.v3):shape_ready?sizeof(extended):sizeof(mn_cfg);
             mn_cfg.update_addr       = md_h(H_RK_MN_UPDATE_CODE);
             mn_cfg.exit_addr         = md_h(H_RK_MN_EXIT_CODE);
             mn_cfg.hide_addr         = md_h(H_RK_MN_HIDE_CODE);
@@ -1426,7 +1441,7 @@ bool configure_and_install_rocket(uint64_t tid) {
                 g_capabilities.fetch_or(PGR_CBH_CAP_ROCKET_MINIGAME, std::memory_order_release);
                 g_installed_hooks.fetch_add(4, std::memory_order_relaxed);
                 char binding[160];
-                std::snprintf(binding,sizeof(binding),"{\"available\":true,\"miniAlphaBound\":%s,\"miniSphereBound\":%s,\"miniBoxBound\":%s}",visual_ready?"true":"false",extended.sphere.klass?"true":"false",extended.box.klass?"true":"false");
+                std::snprintf(binding,sizeof(binding),"{\"available\":true,\"miniAlphaBound\":%s,\"miniWhiteHideBound\":%s,\"miniSphereBound\":%s,\"miniBoxBound\":%s}",visual_ready?"true":"false",white_hide_ready?"true":"false",extended.sphere.klass?"true":"false",extended.box.klass?"true":"false");
                 queue_event(PGR_CBH_EV_ROCKET_MINIGAME_READY, 1, 0, tid, binding);
             } else {
                 queue_event(PGR_CBH_EV_ROCKET_MINIGAME_READY, 0, 0, tid,

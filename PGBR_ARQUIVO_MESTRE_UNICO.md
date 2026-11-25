@@ -2575,3 +2575,33 @@ Escopo pequeno e verificável, sem tocar em identificadores internos, chaves de 
 
 ### P0 #192 — restauração explícita do coletor pré-correção visual
 - Ordem do proprietário: restaurar o mecanismo funcional anterior mesmo se o branco persistir; a alteração de alpha não pode impedir a assistência. Referência histórica 21badfd1: snapshot de scale/active, loop original de escala e SetActive recuperados; removida a seleção obrigatória por geometria/material. Alpha opcional somente no material local identificado, sem latch de erro do coletor por falha visual. Preservados gate original, restauração, diagnósticos, prioridade/controles #294 e demais alterações da base #296. Teste host do do_collect com material branco, material não correspondente, exceção do setter e binding ausente; não é teste no jogo. Pode voltar a aparecer branco se efeito real não for identificado ou shader ignorar alpha; não homologar até teste físico.
+
+## Ciclo 25/11/2026 — LT048 / #192: camada branca do carregado (correção EXCLUSIVAMENTE visual)
+
+Base funcional: PR #297 (`1b1286bc`), confirmada pelo proprietário — o mecanismo do ataque carregado voltou a funcionar. Nada do coletor foi alterado.
+
+### Origem identificada da camada branca
+
+O coletor histórico funciona ampliando o objeto de toque em 1000× (`scaled[i] = a * 1000.0f`) e reativando-o (`SetActive(1)`). A camada leitosa que cobre a batalha é o **renderer desse mesmo objeto** desenhado 1000× maior — não é câmera, iluminação, canvas externo nem efeito global. A tentativa anterior (`471dd39`, alpha do material) só funcionava quando o material era branco **semitransparente** (`alpha` entre 0,001 e 0,999) na mesma GameObject do colisor; um material branco **opaco** (alpha = 1) era rejeitado de propósito, o que explica a camada continuar visível.
+
+### Correção aplicada (só aparência)
+
+- `PgrRocketMiniVisualEx` + `PgrRocketMiniConfigV4` (`rocket_minigame.h`): `Renderer.get_enabled`, `Renderer.set_enabled`, `Component.GetComponentsInChildren(Type)`. `sizeof(PgrRocketMiniConfigV4) == 376`; V1/V2/V3 continuam válidos.
+- `rocket_minigame.cpp`:
+  - `hide_white_layer()` localiza os renderers **na própria subárvore** do objeto de toque (`GetComponentsInChildren`), lê `enabled`, desliga com `set_enabled(false)` e **confirma por leitura**; renderer que já estava desligado é deixado em paz, e escrita não confirmada não é registrada.
+  - `restore_white_layer()` repõe exatamente cada flag original (índice + valor gravados por renderer) e libera o handle; roda dentro de `do_restore()`, ao lado do alpha, antes de restaurar escala/ativo.
+  - Limite de 24 renderers: array maior é recusado (nunca percorre a cena).
+  - Nenhum `setScale`, `SetActive`, colisor, material, shader ou tempo foi tocado. Falha em qualquer ponto **não** liga `g_failed` e **não** impede a coleta.
+  - Lição de ABI: `set_enabled` é `void`, logo retorno nulo é sucesso; só exceção gerenciada conta como falha (o teste fixa isso).
+- `combat_host.cpp`: resolve os três métodos exatos, publica V4 quando o binding existe (`miniWhiteHideBound` no diagnóstico) e cai para V3/V2/V1 quando não existe. Novos nomes de estágio: `white-layer-unbound`, `white-layer-renderers-absent`, `white-layer-hidden`, `white-layer-write-failed`.
+- Diagnóstico preservado: `PGR_MINI_MAX_HIDDEN`, bits 17–20 no `take_diagnostics()`.
+
+### Testes
+
+- Novo `pgrazor/native/rocket_minigame_white_layer_test.cpp` (host, registrado em `tools/native_host_tests.py` → 26 fixtures), 7 cenários: material branco opaco (alpha recusado, renderers escondidos), restauração exata, escrita rejeitada não registrada, todas as escritas rejeitadas, sem binding V4, array absurdo recusado, `running=0` restaurando na hora. Prova em todos: escala 1000×, `SetActive`, colisor e `running` intactos; `roots == 0` ao final.
+- Novo `pgrazor/test/test_white_layer_visual_only.py` (9 testes): trava a linha funcional de referência de #297, proíbe escrever escala/colisor/`SetActive`/material no caminho visual, proíbe tratar `void` como falha, exige restaurar todo renderer escondido, exige fallback de versão no host e exige que todo bit emitido tenha nome na tabela de estágios.
+- Suíte local: **500 testes Python** (única falha é `test_iflowgo_request_policy_java`, que exige `javac`), **26 fixtures C++ host**.
+
+### Limites declarados
+
+`device_tested=false`. A camada branca só se confirma ausente no aparelho, com a batalha visível durante Boa/Ótima/Excelente. Se o aparelho ainda mostrar branco com `miniWhiteHideBound=true`, o log dirá qual estágio falhou (`white-layer-unbound` = binding ausente, `white-layer-renderers-absent` = nenhum renderer na subárvore, `white-layer-write-failed` = exceção ao escrever) — nesse caso a próxima hipótese é um segundo objeto branco fora da subárvore do colisor, e o caminho é diagnosticar antes de mudar qualquer outra coisa.

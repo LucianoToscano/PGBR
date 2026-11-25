@@ -48,7 +48,11 @@ device_tested=false; provider_connected=false até evidência correspondente. Te
 Verificar PR #203 e run 45482026778, registrar logs/resultado real, preservar o SHA do build em andamento e avançar as tarefas independentes. Antes de declarar STATUS: CONCLUIDO, revisar todos os registros canônicos e obter evidência de entrega real; a mera ausência de checkboxes não basta. A ID de auditoria de um eventual supervisor CLI só pode ser registrada pelo executor real desse supervisor.
 
 
-## Ciclo 24/11/2026 — versão atual 0.00.47-LT
+### Ciclo 25/11/2026 — LT048 #192: camada branca do carregado (visual puro)
+
+22. [x] PGBR-BAT-04 / P0 — camada branca do ataque carregado. Base funcional: PR #297 (`1b1286bc`), mecanismo intacto. Origem: o renderer do objeto de toque, ampliado 1000× pelo coletor histórico; o material branco **opaco** escapava da correção de alpha anterior. Correção exclusivamente visual: `Renderer.enabled=false` nos renderers da subárvore do colisor, com leitura de confirmação, restauração exata por renderer e limite de 24; nada de escala, colisor, material, shader, `SetActive` ou tempo. Config V4 (`376` bytes) com fallback V3/V2/V1 e `miniWhiteHideBound` no diagnóstico. Testes: `rocket_minigame_white_layer_test.cpp` (7 cenários) + `test_white_layer_visual_only.py` (9 testes) → 26 fixtures host, 500 testes Python. **Homologação física pendente** (#192).
+
+# Ciclo 24/11/2026 — versão atual 0.00.47-LT
 
 Main observada `56cff4b885b9e52aa914aab8152a67959516e852`. Fila numerada de trabalho: os itens de catálogo incluem verificação de recursos existentes, propostas e melhorias; aberto não significa bug comprovado nem autorização para executar ações em serviço terceiro. Dependências e critérios completos permanecem no catálogo; decisões posteriores do Mestre prevalecem (BYOK retirado, não reativar automaticamente). Os itens já integrados podem exigir aceite em dispositivo separado. Não marcar conclusão sem evidência.
 
