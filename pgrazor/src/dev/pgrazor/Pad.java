@@ -27,6 +27,8 @@ public final class Pad {
     // The full-screen settings body (switches, captions, sections) owns its own construction/refresh.
     private final SettingsPanel settings;
     private View launcher;
+    private LinearLayout battleShortcuts;
+    private final Button[] battleShortcutButtons=new Button[3];
     private VgpToggle vgpToggle;
     private AlertDialog vgpStartDialog;
     private int appliedUiScale;
@@ -316,6 +318,7 @@ public final class Pad {
             public void onHideOverlays(){confirmHideOverlays();}
         });
         launcher.setOnClickListener(v->{if(quickMenu!=null)quickMenu.toggle();});draggable(launcher,launcher,true);
+        initBattleShortcuts();
 
         settings.hide();joystickOverlay.setVisibility(Control.joystickVisible()?View.VISIBLE:View.GONE);applyTheme();
         unhideWatcher=new ThreeFingerWatcher(host);parent.addView(unhideWatcher,new FrameLayout.LayoutParams(-1,-1));
@@ -700,8 +703,48 @@ public final class Pad {
             !Control.catchScreenVisible()&&!blackShown;
         visualRouteOverlay.refresh(allowed&&!Control.gameRoutesRunning(),Control.engine.activeVisualRouteToken(),RouteTraceSettings.read(prefs));
     }
+    // The three buttons edit existing preferences; they never invoke a combat action.
+    private void initBattleShortcuts(){
+        battleShortcuts=new LinearLayout(activity);
+        battleShortcuts.setOrientation(LinearLayout.HORIZONTAL);
+        battleShortcuts.setVisibility(View.GONE);
+        for(int i=0;i<3;i++){
+            final int bit=1<<i;
+            Button b=button("");
+            b.setTextSize(11);b.setMinWidth(0);b.setMinimumWidth(0);
+            b.setMinHeight(dp(36));b.setMinimumHeight(dp(36));
+            b.setPadding(dp(6),0,dp(6),0);
+            b.setAllCaps(false);
+            b.setOnClickListener(v->{
+                if(!Control.battleShortcutsVisible()||overlaysHidden||settings.isVisible())return;
+                Control.setRocketOptions(Control.rocketOptions()^bit);
+                refreshBattleShortcuts();
+            });
+            battleShortcutButtons[i]=b;
+            battleShortcuts.addView(b,new LinearLayout.LayoutParams(-2,dp(40)));
+        }
+        FrameLayout.LayoutParams lp=new FrameLayout.LayoutParams(-2,-2,Gravity.TOP|Gravity.CENTER_HORIZONTAL);
+        lp.topMargin=dp(110);
+        overlays.addView(battleShortcuts,lp);
+    }
+    private void refreshBattleShortcuts(){
+        if(battleShortcuts==null)return;
+        boolean visible=Control.battleShortcutsVisible()&&!overlaysHidden&&!settings.isVisible()
+            &&!(quickMenu!=null&&quickMenu.isShowing())&&!blackShown;
+        battleShortcuts.setVisibility(visible?View.VISIBLE:View.GONE);
+        if(!visible)return;
+        String[] labels={"Ágil","Carregado","Escudo"};
+        int mask=Control.rocketOptions();
+        for(int i=0;i<3;i++){
+            boolean on=(mask&(1<<i))!=0;
+            Button b=battleShortcutButtons[i];
+            setTextIfChanged(b,labels[i]+(on?" ON":" OFF"));
+            b.setAlpha(on?1f:0.7f);
+        }
+    }
     private void refresh() {
         applyMapScale();
+        refreshBattleShortcuts();
         if(gymFeedOverlay!=null)gymFeedOverlay.refresh(!settings.isVisible()&&!(quickMenu!=null&&quickMenu.isShowing()));
         boolean black=ShundoSniper.dark()&&!settings.isVisible();
         if(blackScreen!=null&&black!=blackShown){

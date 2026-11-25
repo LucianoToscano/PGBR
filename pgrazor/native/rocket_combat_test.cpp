@@ -1152,6 +1152,24 @@ int scenario(int n) {
       if(sc.vcharge.tapped||sc.vc2.tapped!=1)return 135;
       break;
     }
+    case 70: { // 25 Nov physical regression: resisted Charge ready, neutral Charge2 charging.
+      arm(&sc.scope,3,tid);api->observe(PGR_RC_OBS_VNEXT_UPDATE,&sc.vui,0,tid);
+      sc.vc2.button=&sc.vbutton;sc.vc2.vcharged=0;
+      using namespace pgr_charge_effect_ui;
+      pgrazor_rc_direct_smart_attack(1);
+      api->observe(PGR_RC_OBS_ACTOR_PROBE,nullptr,1,tid);
+      api->observe(PGR_RC_OBS_ACTOR_PAIR,nullptr,8181,tid);
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vcharge,pack({Slot::FIRST,Tier::RESISTED,51}),tid);
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vc2,pack({Slot::SECOND,Tier::NEUTRAL,51}),tid);
+      api->tick(tid,0);
+      if(sc.vcharge.tapped||sc.vc2.tapped||sc.vgest.tapped!=1)return 136;
+      sc.vc2.vcharged=1;usleep(650000);
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vcharge,pack({Slot::FIRST,Tier::RESISTED,51}),tid);
+      api->observe(PGR_RC_OBS_CHARGE,&sc.vc2,pack({Slot::SECOND,Tier::NEUTRAL,51}),tid);
+      api->tick(tid,0);
+      if(sc.vcharge.tapped||sc.vc2.tapped!=1)return 137;
+      break;
+    }
 #endif
   }
   g_cb=nullptr;api->tick(tid,1);
@@ -1160,7 +1178,7 @@ int scenario(int n) {
 }
 
 #if defined(PGR_RC_DIRECT_TEST)
-constexpr int kScenarios = 70;
+constexpr int kScenarios = 71;
 #else
 constexpr int kScenarios = 33;
 #endif

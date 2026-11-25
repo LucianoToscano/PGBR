@@ -59,8 +59,8 @@ inline Result choose(bool enabled, uint64_t session, uint64_t opponent,
 // Optional VNext display-only selector. Each candidate refers to a rooted
 // ChargeAttackDisplayVNext already observed AFTER its original state update.
 // A batch token is only an update-coherence hint, not an opponent ID.
-// Compare effectiveness only among charged buttons that are actually ready:
-// a verified but unready SUPER attack does not postpone a ready NEUTRAL attack.
+// inspect_display compares ready buttons; admit_display ranks both slots before
+// authorizing a charged action and reserves energy for a verified better tier.
 // Require a fresh typed pair before action; never infer a target from capture order.
 struct DisplayCandidate {
   pgr_charge_effect_ui::Sample sample{};
@@ -164,12 +164,13 @@ inline DisplayAdmission admit_display(bool enabled,uint64_t now,
   if(ranking.index<0)return {-1,true,ranking.reason};
   const int best=ranking.index,other=1-best;
   if(items[best].ready)return {best,false,ranking.reason};
-  // Smart ON: reserve energy for a confirmed SUPER move rather than
-  // repeatedly spending it on a weaker charge. Equal tiers and comparisons
-  // without a SUPER move retain the immediate-ready policy. No fixed delay;
-  // the best slot may fire as soon as it becomes ready.
-  if(items[best].sample.tier==pgr_charge_effect_ui::Tier::SUPER &&
-     items[other].sample.tier!=pgr_charge_effect_ui::Tier::SUPER)
+  // Smart ON: reserve energy for ANY confirmed strictly better tier.
+  // In particular, a resisted ready move must not consume energy needed by
+  // a neutral move still charging. No KO exception is inferred: this provider
+  // has no verified minimum damage, defender HP and shield state together.
+  // Equal tiers retain the immediate-ready policy. No fixed delay.
+  if(static_cast<int>(items[best].sample.tier)>
+     static_cast<int>(items[other].sample.tier))
     return {-1,true,DisplayReason::ONLY_ONE_READY};
   // An UNKNOWN/hidden classification does not become NEUTRAL by fallback.
   if(items[other].ready &&
