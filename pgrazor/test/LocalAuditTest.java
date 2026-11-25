@@ -183,6 +183,12 @@ public final class LocalAuditTest {
  check(Math.abs(repeated.positionAt(repeated.meters/2)[0]-0.5)<1e-8);
  try{g.positionAt(Double.NaN);throw new AssertionError();}catch(IllegalArgumentException expected){}
  var single=new GpxPreviewGeometry(new GpxRoute("um ponto",new double[][]{{0,0}}));check(single.meters==0&&single.x.length==1&&single.percentForDistance(0)==0);
+ // Invisible whitespace must never become a classified species or tag.
+ for(String blank:new String[]{"\u00a0","\u2003","\u202f"," \u00a0\u2003 "}) {
+  try{LocalAuditPolicy.tagCatalog(blank);throw new AssertionError("Blank Unicode species");}
+  catch(IllegalArgumentException expected){}
+  check(LocalCollectionPreview.parse(blank+";1;0;0;0;",99,flags).rejectedLines.equals(Arrays.asList(1)));
+ }
  var batch=LocalCollectionPreview.parse("Rattata;478;4;4;5;EVENT=1,SHINY=0\nRhyhorn;547;6;6;7;EVENT=0,SHINY=0\nMunna;14;?;6;7;EVENT=?,SHINY=0\ninvalid\nPikachu;606;15;10;10;EVENT=0,EVENT=1",99,flags);
  check(batch.protectedCount==1&&batch.uncertainCount==1&&batch.matchCount==1&&batch.rejectedLines.equals(Arrays.asList(4,5)));
  check(batch.rejectedReasons.get(4).contains("seis campos")&&batch.rejectedReasons.get(5).equals("Critério repetido."));

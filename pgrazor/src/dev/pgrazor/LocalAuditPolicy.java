@@ -61,7 +61,9 @@ public final class LocalAuditPolicy {
   return new Decision(Status.PROTECTED,reasons);
  }
  static String speciesKey(String name){
-  if(name==null||name.trim().isEmpty()||name.length()>80)throw new IllegalArgumentException("Nome de espécie inválido");
+  if(name==null||name.trim().isEmpty()||name.length()>80
+      ||name.codePoints().allMatch(cp->Character.isWhitespace(cp)||Character.isSpaceChar(cp)))
+   throw new IllegalArgumentException("Nome de espécie inválido");
   for(int i=0;i<name.length();){
    int cp=name.codePointAt(i),type=Character.getType(cp);
    if(Character.isISOControl(cp)||type==Character.FORMAT||type==Character.SURROGATE)throw new IllegalArgumentException("Nome de espécie inválido");
