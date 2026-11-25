@@ -49,6 +49,8 @@ public final class SessionStatsHistory {
                 double d = balance - before[BALANCE];
                 if (d > 0) v[DUST] += d; else v[DUST_SPENT] -= d;
             }
+            // Reject an unrepresentable cumulative value before mutating the retained history.
+            if (!finite(v[DUST]) || !finite(v[DUST_SPENT])) return false;
             if (balance < 0) balance = before[BALANCE];
         }
         v[BALANCE] = balance;
