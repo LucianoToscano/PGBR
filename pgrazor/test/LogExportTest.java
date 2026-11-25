@@ -69,6 +69,12 @@ public final class LogExportTest {
             +"2026-11-24T01:10:02.000-03:00 [heartbeat-expired] {}\nRegistros omitidos: 0\n";
         LocalDiagnosticSummary.Summary observed=LocalDiagnosticSummary.parse(context);
         if(observed.other!=3||observed.observedEvents.get("vgp")!=1||observed.observedEvents.get("panel-closed")!=1||observed.observedEvents.get("heartbeat-expired")!=1||observed.describe().contains("secret-example"))throw new AssertionError("Context event counts and privacy");
+        StringBuilder dates = new StringBuilder(LocalDiagnosticSummary.HEADER).append('\n');
+        for(String stamp:new String[]{"2026-02-29T12:00:00.000Z","2026-13-01T12:00:00.000Z","2026-11-24T25:00:00.000Z","2026-11-24T12:00:00.000+19:00","2024-02-29T12:00:00.000Z","2026-11-24T12:00:00.000-03:00"})
+            dates.append(stamp).append(" [panel-closed] {}\n");
+        LocalDiagnosticSummary.Summary dateSummary=LocalDiagnosticSummary.parse(dates.append("Registros omitidos: 0\n").toString());
+        if(dateSummary.records!=6||dateSummary.unclassified!=4||dateSummary.other!=2||dateSummary.observedEvents.get("panel-closed")!=2)
+            throw new AssertionError("Invalid calendar timestamps classified as real events");
         // Preserve lifecycle occurrence counts without exposing free text or account identifiers.
         String lifecycle="2026-11-24T01:10:00.000Z [battle-scope] {\"mode\":\"rocket\",\"trainer\":\"private-example\"}\n"
             +"2026-11-24T01:10:01.000Z [battle-ended] private-example\n"
