@@ -38,7 +38,7 @@ class WhiteScreenContractTests(unittest.TestCase):
         self.assertIn("return write_local_scale(snap,snap.visual_scale);", self.mini)
         self.assertIn("if (snap.visual_scaled) write_local_scale(snap,snap.original_scale);", self.mini)
         self.assertIn("color[3]=snap.original_color[3];", self.mini)
-        self.assertIn("if(owner!=g_cfg.target(go_root))break;", self.mini)
+        self.assertIn('if(owner!=g_cfg.target(go_root)){shape_diagnostic(2048u,"local-renderer-owner-mismatch");break;}', self.mini)
         self.assertIn("is_milky_white(shared_color)", self.mini)
         self.assertNotIn("forceRenderingOff", self.mini)
         self.assertNotIn("set_scale", self.mini)
