@@ -1,6 +1,5 @@
 package dev.pgrazor;
 
-import java.util.Locale;
 import java.util.TreeMap;
 
 /**
@@ -130,7 +129,10 @@ public final class SessionStatsHistory {
         for (int i = 0; i < COUNT; i++) {
             if (i > 0) out.append(';');
             double x = v[from + i];
-            out.append(x == Math.rint(x) ? Long.toString((long) x) : String.format(Locale.US, "%.3f", x));
+            // Keep integral counters compact, without saturating at Long.MAX_VALUE.
+            // Preserve full precision of fractional counters across a save/load cycle.
+            out.append(x == Math.rint(x) && x >= -0x1p63 && x < 0x1p63
+                    ? Long.toString((long) x) : Double.toString(x));
         }
     }
     /** Replaces the history with a stored value; anything malformed is skipped. Entries saved before
