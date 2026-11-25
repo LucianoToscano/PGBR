@@ -409,7 +409,7 @@ void drain_leaf_events(uint64_t tid) {
     const uint32_t caps = g_capabilities.load(std::memory_order_acquire);
     if(caps & PGR_CBH_CAP_ROCKET_MINIGAME){
         const uint32_t bits=pgrazor_rocket_minigame_take_diagnostics();
-        static constexpr const char *stages[]={"shape-unbound-or-unsupported","shape-value-unavailable","shape-geometry-rejected","shape-sphere-ready","shape-box-ready","white-alpha-write-failed","white-alpha-zero","white-alpha-candidate","white-alpha-not-matched","white-alpha-unbound","local-renderer-missing-or-ambiguous","local-renderer-owner-mismatch","local-white-material-unconfirmed","running-challenge-observed","update-observed","unity-thread-unconfirmed","policy-not-live","white-layer-unbound","white-layer-renderers-absent","white-layer-hidden","white-layer-write-failed","white-layer-reenabled-after-activation","white-layer-still-hidden-after-activation","white-layer-read-failed","white-layer-already-disabled","white-layer-found-after-activation"};
+        static constexpr const char *stages[]={"shape-unbound-or-unsupported","shape-value-unavailable","shape-geometry-rejected","shape-sphere-ready","shape-box-ready","white-alpha-write-failed","white-alpha-zero","white-alpha-candidate","white-alpha-not-matched","white-alpha-unbound","local-renderer-missing-or-ambiguous","local-renderer-owner-mismatch","local-white-material-unconfirmed","running-challenge-observed","update-observed","unity-thread-unconfirmed","policy-not-live","white-layer-unbound","white-layer-renderers-absent","white-layer-hidden","white-layer-write-failed","white-layer-reenabled-after-activation","white-layer-still-hidden-after-activation","white-layer-read-failed","white-layer-already-disabled","white-layer-found-after-activation","white-canvas-unbound","white-canvas-absent","white-canvas-alpha-zero","white-canvas-write-failed","white-canvas-reenforced","white-layer-reenforced"};
         for(unsigned i=0;i<sizeof(stages)/sizeof(stages[0]);++i){
             if(!(bits&(1u<<i)))continue;
             char json[128];
@@ -1164,8 +1164,9 @@ PgrRocketMiniShape resolve_mini_shape(const char *name,const char *property,cons
 
 // Resolve exact, non-generic instance overloads; GetComponents(Type) is local
 // to the collider's object. Never resolve a camera/global renderer control.
-PgrRocketMiniVisual resolve_mini_visual(PgrRocketMiniVisualEx *ex = nullptr) {
+PgrRocketMiniVisual resolve_mini_visual(PgrRocketMiniVisualEx *ex = nullptr, PgrRocketMiniCanvasAlpha *ca = nullptr) {
  if(ex)*ex=PgrRocketMiniVisualEx{};
+ if(ca)*ca=PgrRocketMiniCanvasAlpha{};
  const auto *api=api_table<PgrMetaApi>(pgrazor_runtime_metadata_api(1));
  const auto *boot=api_table<PgrBootApi>(pgrazor_runtime_bootstrap_api(1));
  PgrBootBinding b{};
@@ -1226,6 +1227,18 @@ PgrRocketMiniVisual resolve_mini_visual(PgrRocketMiniVisualEx *ex = nullptr) {
   x.set_enabled=method(renderer.klass,"set_enabled","System.Void","System.Boolean");
   x.get_components_in_children=method(component.klass,"GetComponentsInChildren","UnityEngine.Component[]","System.Type");
   if(x.get_enabled&&x.set_enabled&&x.get_components_in_children)*ex=x;
+ }
+ if(ca){
+  const auto cr=find("UnityEngine","CanvasRenderer"),fl=find("System","Single");
+  if(cr.klass&&cr.type&&fl.klass){
+   PgrRocketMiniCanvasAlpha c{};
+   c.canvas_renderer_class=const_cast<void*>(cr.klass);
+   c.canvas_renderer_type=const_cast<void*>(cr.type);
+   c.get_alpha=method(cr.klass,"GetAlpha","System.Single",nullptr);
+   c.set_alpha=method(cr.klass,"SetAlpha","System.Void","System.Single");
+   c.float_class=const_cast<void*>(fl.klass);
+   if(c.get_alpha&&c.set_alpha)*ca=c;
+  }
  }
  return v;
 }
@@ -1401,19 +1414,23 @@ bool configure_and_install_rocket(uint64_t tid) {
             }
         }
         if (!mini_collision) {
-            PgrRocketMiniConfigV4 full{};
+            PgrRocketMiniConfigV5 full5{};
+            auto &full=full5.v4;
             PgrRocketMiniVisualEx visual_ex{};
+            PgrRocketMiniCanvasAlpha canvas_alpha{};
             auto &extended=full.v3.v2;
             auto &mn_cfg=extended.base;
             extended.sphere=resolve_mini_shape("SphereCollider","radius","System","Single","System.Single");
             extended.box=resolve_mini_shape("BoxCollider","size","UnityEngine","Vector3","UnityEngine.Vector3");
-            full.v3.visual=resolve_mini_visual(&visual_ex);
+            full.v3.visual=resolve_mini_visual(&visual_ex,&canvas_alpha);
             full.visual_ex=visual_ex;
+            full5.canvas_alpha=canvas_alpha;
             const bool shape_ready=extended.sphere.klass||extended.box.klass;
             const bool visual_ready=full.v3.visual.renderer_class!=nullptr;
             const bool white_hide_ready=visual_ex.get_enabled!=nullptr;
-            mn_cfg.version           = white_hide_ready?4:visual_ready?3:shape_ready?2:1;
-            mn_cfg.size              = white_hide_ready?sizeof(full):visual_ready?sizeof(full.v3):shape_ready?sizeof(extended):sizeof(mn_cfg);
+            const bool canvas_alpha_ready=white_hide_ready&&canvas_alpha.get_alpha!=nullptr;
+            mn_cfg.version           = canvas_alpha_ready?5:(white_hide_ready?4:visual_ready?3:shape_ready?2:1);
+            mn_cfg.size              = canvas_alpha_ready?sizeof(full5):white_hide_ready?sizeof(full):visual_ready?sizeof(full.v3):shape_ready?sizeof(extended):sizeof(mn_cfg);
             mn_cfg.update_addr       = md_h(H_RK_MN_UPDATE_CODE);
             mn_cfg.exit_addr         = md_h(H_RK_MN_EXIT_CODE);
             mn_cfg.hide_addr         = md_h(H_RK_MN_HIDE_CODE);
@@ -1440,8 +1457,8 @@ bool configure_and_install_rocket(uint64_t tid) {
             if (g_rocket_mini->install(&mn_cfg) == PGR_RMINI_OK) {
                 g_capabilities.fetch_or(PGR_CBH_CAP_ROCKET_MINIGAME, std::memory_order_release);
                 g_installed_hooks.fetch_add(4, std::memory_order_relaxed);
-                char binding[160];
-                std::snprintf(binding,sizeof(binding),"{\"available\":true,\"miniAlphaBound\":%s,\"miniWhiteHideBound\":%s,\"miniSphereBound\":%s,\"miniBoxBound\":%s}",visual_ready?"true":"false",white_hide_ready?"true":"false",extended.sphere.klass?"true":"false",extended.box.klass?"true":"false");
+                char binding[192];
+                std::snprintf(binding,sizeof(binding),"{\"available\":true,\"miniAlphaBound\":%s,\"miniWhiteHideBound\":%s,\"miniCanvasAlphaBound\":%s,\"miniSphereBound\":%s,\"miniBoxBound\":%s}",visual_ready?"true":"false",white_hide_ready?"true":"false",canvas_alpha_ready?"true":"false",extended.sphere.klass?"true":"false",extended.box.klass?"true":"false");
                 queue_event(PGR_CBH_EV_ROCKET_MINIGAME_READY, 1, 0, tid, binding);
             } else {
                 queue_event(PGR_CBH_EV_ROCKET_MINIGAME_READY, 0, 0, tid,
