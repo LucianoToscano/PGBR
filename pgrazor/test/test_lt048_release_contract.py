@@ -30,4 +30,12 @@ class Lt048ReleaseContract(unittest.TestCase):
         self.assertIn('device_tested=false',roteiro)
         for term in ('#192','#105','#90','Boa','Ótima','Excelente'):
             self.assertIn(term,roteiro)
+    def test_qa_artifact_recorded_with_real_hashes(self):
+        notes=(ROOT/'docs/releases/v0.00.48-LT.md').read_text(encoding='utf-8')
+        for term in ('45528225920','14984545589',
+                     '46CDD67527FAADD6FFA4D05FFDDB5D311D8DDD85DE7C8BF7EF945078E3C6B7C3',
+                     'EF07C25DC09BF35623086259D73FBB766EA3D01C733C57DEA20AB8285174081E',
+                     'B79272963BF85CC99924EF5A3C5CED34476645919770D03C3B1D922E493D6BB8',
+                     'Nenhuma tag foi criada','device_tested=false'):
+            self.assertIn(term,notes)
 if __name__=='__main__': unittest.main()

@@ -2523,3 +2523,14 @@ Base `24700b8cba7fb9a789052a0faa632c75b7fdf54d` (main). Execução única de eng
 ### Estado honesto deste ciclo
 
 `device_tested=false`; `provider_connected=false`. Implementação de código e integração na main: **feitas**. CI: **verde**. APK QA: **compilado e assinado, hashes reais** (rótulo `v0.00.47-LT` do workflow); APK rotulado `v0.00.48-LT` depende apenas de dispatch do novo workflow após o merge deste registro. Homologação física: **pendente**.
+
+### APK QA `v0.00.48-LT` compilado na main (run 45528225920)
+
+- Workflow `.github/workflows/pgbr-lt048-qa.yml` (criado nesta rodada, mesclado em `4ceed40e`), `workflow_dispatch` na `main`, run `45528225920`, jobs `native-pvp-fixture` e `apk-test` aprovados. No mesmo run rodaram `tools/check.py`, os testes Java (`PvpBattleMode`/`SharedBattleOptions`), `test_iflowgo_request_policy_java`, `test_lt048_release_contract` e `tools/verify_release.py --tag v0.00.48-LT` (aprovado).
+- Artefato `PGBR-LT048-Root-e-SemRoot-QA` (id `14984545589`, 195 MB, 6 arquivos, retenção 30 dias). Download: `https://github.com/LucianoToscano/PGBR/actions/runs/45528225920` (exige sessão autenticada).
+- SHA-256 reais (log do job e `SHA256SUMS.txt`):
+  - `46CDD67527FAADD6FFA4D05FFDDB5D311D8DDD85DE7C8BF7EF945078E3C6B7C3  PGBR-v0.00.48-LT.apk`
+  - `EF07C25DC09BF35623086259D73FBB766EA3D01C733C57DEA20AB8285174081E  PGBR-v0.00.48-LT-Root.apk`
+  - `B79272963BF85CC99924EF5A3C5CED34476645919770D03C3B1D922E493D6BB8  PGBR-v0.00.48-LT-Root-module.zip`
+- Conteúdo: tela branca no carregado (P0), Auto ATK sem reinício, Supereficaz Fantasma→Aço, 17 rótulos PT-BR, mais o host nativo da #275/#283. Nenhuma tag criada, nenhum asset publicado, nada sobrescrito. `device_tested=false`.
+- `docs/releases/v0.00.48-LT.md` recebeu a seção "Atualização 25/11/2026" (as frases antigas "não há artefato LT048 confirmado" ficaram preservadas como histórico até 24/11) e `test_lt048_release_contract.py` passou a exigir run, id do artefato, os três hashes e `device_tested=false` (6 testes).
