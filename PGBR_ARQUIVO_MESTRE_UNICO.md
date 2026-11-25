@@ -2605,3 +2605,15 @@ O coletor histórico funciona ampliando o objeto de toque em 1000× (`scaled[i] 
 ### Limites declarados
 
 `device_tested=false`. A camada branca só se confirma ausente no aparelho, com a batalha visível durante Boa/Ótima/Excelente. Se o aparelho ainda mostrar branco com `miniWhiteHideBound=true`, o log dirá qual estágio falhou (`white-layer-unbound` = binding ausente, `white-layer-renderers-absent` = nenhum renderer na subárvore, `white-layer-write-failed` = exceção ao escrever) — nesse caso a próxima hipótese é um segundo objeto branco fora da subárvore do colisor, e o caminho é diagnosticar antes de mudar qualquer outra coisa.
+
+### Builds QA desta correção (não publicados)
+
+Disparo manual do workflow `pgbr-lt048-qa.yml` em `main` (`e28ca3f`, merge do PR #298) — run **45558935471**, conclusão `success`, artifact **14996574948** (`PGBR-LT048-Root-e-SemRoot-QA`, 205.061.737 bytes, zip SHA-256 `a064ee7e2186c390b6c6cf35ae68d9017262601650cfcc79ea779ac6564ac9ae`).
+
+| Arquivo | SHA-256 |
+|---|---|
+| `PGBR-v0.00.48-LT.apk` (Sem Root) | `646AE87C39A6A790758B9385642DA8F4B713FE9FFBABB3D328504FDF798E1181` |
+| `PGBR-v0.00.48-LT-Root.apk` | `DB1BAF46E84F41E30948B0AE16A7C7ABC31FE4EB59473184B7D8C4E1276F19B6` |
+| `PGBR-v0.00.48-LT-Root-module.zip` | `C559269B752D1C061DEBB200E0DF9800EC801DF1E5DD834A29B53F5E67F4C1BC` |
+
+`device_tested=false`, `provider_connected=false`: artefatos são QA. Nada foi publicado (sem release, sem tag, sem alteração de asset existente).
