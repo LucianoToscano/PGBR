@@ -127,7 +127,11 @@ public final class GpxCodec {
         byte[] chunk = new byte[8192];
         long total = 0;
         int n;
-        while ((n = in.read(chunk)) != -1) {
+        while (true) {
+            if (Thread.currentThread().isInterrupted()) throw new java.io.InterruptedIOException("Importação GPX cancelada.");
+            n = in.read(chunk);
+            if (Thread.currentThread().isInterrupted()) throw new java.io.InterruptedIOException("Importação GPX cancelada.");
+            if (n == -1) break;
             total += n;
             if (total > MAX_BYTES) throw new IOException("Arquivos GPX acima de 2 MB não são aceitos.");
             buffer.write(chunk, 0, n);
@@ -192,6 +196,7 @@ public final class GpxCodec {
         Handler(String fallback) { this.fallback = fallback; }
 
         @Override public void startElement(String uri, String localName, String qName, Attributes attributes) throws SAXException {
+            if (Thread.currentThread().isInterrupted()) throw new SAXException("Importação GPX cancelada.");
             String element = local(localName, qName);
             String parent = stack.peek();
             if(stack.isEmpty() && !"gpx".equals(element))throw new SAXException("Era esperado um documento GPX.");
