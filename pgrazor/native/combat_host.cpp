@@ -409,7 +409,7 @@ void drain_leaf_events(uint64_t tid) {
     const uint32_t caps = g_capabilities.load(std::memory_order_acquire);
     if(caps & PGR_CBH_CAP_ROCKET_MINIGAME){
         const uint32_t bits=pgrazor_rocket_minigame_take_diagnostics();
-        static constexpr const char *stages[]={"shape-unbound-or-unsupported","shape-value-unavailable","shape-geometry-rejected","shape-sphere-ready","shape-box-ready","white-alpha-write-failed","white-alpha-zero","white-alpha-candidate","white-alpha-not-matched","white-alpha-unbound","local-renderer-missing-or-ambiguous","local-renderer-owner-mismatch","local-white-material-unconfirmed","running-challenge-observed","update-observed","unity-thread-unconfirmed","policy-not-live","white-layer-unbound","white-layer-renderers-absent","white-layer-hidden","white-layer-write-failed"};
+        static constexpr const char *stages[]={"shape-unbound-or-unsupported","shape-value-unavailable","shape-geometry-rejected","shape-sphere-ready","shape-box-ready","white-alpha-write-failed","white-alpha-zero","white-alpha-candidate","white-alpha-not-matched","white-alpha-unbound","local-renderer-missing-or-ambiguous","local-renderer-owner-mismatch","local-white-material-unconfirmed","running-challenge-observed","update-observed","unity-thread-unconfirmed","policy-not-live","white-layer-unbound","white-layer-renderers-absent","white-layer-hidden","white-layer-write-failed","white-layer-reenabled-after-activation","white-layer-still-hidden-after-activation","white-layer-read-failed","white-layer-already-disabled","white-layer-found-after-activation"};
         for(unsigned i=0;i<sizeof(stages)/sizeof(stages[0]);++i){
             if(!(bits&(1u<<i)))continue;
             char json[128];
