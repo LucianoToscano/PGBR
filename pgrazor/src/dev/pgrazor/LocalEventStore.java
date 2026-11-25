@@ -100,12 +100,15 @@ public final class LocalEventStore {
         JSONObject root = new JSONObject(json);
         if (!STORE_FORMAT.equals(root.optString("format")))
             throw new JSONException("Formato de armazenamento desconhecido");
-        if (root.optInt("version", -1) != STORE_VERSION)
+        Object version = root.opt("version");
+        if (!(version instanceof Number) || ((Number) version).doubleValue() != STORE_VERSION)
             throw new JSONException("Versão de armazenamento desconhecida");
         JSONArray rows = root.optJSONArray("events");
-        if (rows == null) return 0;
+        if (rows == null) throw new JSONException("Lista de eventos ausente ou inválida");
+        if (rows.length() > MAX_EVENTS)
+            throw new JSONException("Lista de eventos excede o limite de " + MAX_EVENTS);
         int added = 0;
-        int limit = Math.min(rows.length(), MAX_EVENTS);
+        int limit = rows.length();
         for (int i = 0; i < limit; i++) {
             JSONObject row = rows.optJSONObject(i);
             if (row == null) continue;

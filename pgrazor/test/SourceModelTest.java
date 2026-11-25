@@ -159,6 +159,32 @@ public final class SourceModelTest {
         check(SourceAdapterSupport.categoryFor(SourceQuery.builder().build())
                 == PokeListFeedData.Category.POKEMON, "Categoria padrão é Pokémon");
 
+        // Store envelope validation must happen before the first mutation.
+        LocalEventStore storage = new LocalEventStore();
+        check(storage.add(near), "Existing local record");
+        String snapshot = storage.toJson();
+        org.json.JSONArray excessive = new org.json.JSONArray();
+        for (int i = 0; i <= LocalEventStore.MAX_EVENTS; i++)
+            excessive.put(SourceEvent.builder("import", "extra-" + i, SourceEvent.Kind.ROUTE).build().toJson());
+        for (JSONObject malformedStore : new JSONObject[]{
+                new JSONObject(snapshot).put("version", 1.5),
+                new JSONObject(snapshot).put("version", "1"),
+                new JSONObject(snapshot).put("events", new JSONObject()),
+                new JSONObject(snapshot).put("events", excessive)}) {
+            try {
+                storage.mergeJson(malformedStore.toString(), now);
+                throw new AssertionError("Invalid store envelope accepted");
+            } catch (org.json.JSONException expected) { /* ok */ }
+            check(snapshot.equals(storage.toJson()), "Invalid envelope must preserve previous records");
+        }
+        JSONObject missingEvents = new JSONObject(snapshot);
+        missingEvents.remove("events");
+        try {
+            storage.mergeJson(missingEvents.toString(), now);
+            throw new AssertionError("Missing event list accepted");
+        } catch (org.json.JSONException expected) { /* ok */ }
+        check(snapshot.equals(storage.toJson()), "Missing list cannot mutate the store");
+
         System.out.println("SourceModelTest: OK");
     }
 }
