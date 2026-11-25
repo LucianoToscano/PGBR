@@ -28,7 +28,14 @@ public final class GpxPreviewGeometry {
   if(!Double.isFinite(distance)||distance<0||distance>meters)throw new IllegalArgumentException("Distância inválida");
   if(meters==0)return 0;
   if(distance==meters)return 100;
-  return Math.min(99,(int)Math.floor(100*(distance/meters)));
+  // Compare against the same distance thresholds used by the slider. A division
+  // round-off at an exact threshold must not send the thumb one step backwards.
+  int lo=0,hi=100;
+  while(lo+1<hi){
+   int mid=(lo+hi)>>>1;
+   if(distanceForPercent(mid)<=distance)lo=mid;else hi=mid;
+  }
+  return lo;
  }
  public double distanceFromKm(double km){
   if(!Double.isFinite(km)||km<0)throw new IllegalArgumentException("Distância inválida");
