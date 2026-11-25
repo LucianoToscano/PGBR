@@ -104,6 +104,19 @@ public final class SessionStatsHistoryTest {
         corrupt.load(T0 + ":1000;1;2;3;4.5;6|" + T0 + ":1100;1;2;3;4.5;6", T0);
         check(corrupt.change(SessionStatsHistory.HOUR_MS).updatedAt == T0, "equal timestamp retained");
 
+        // Two readings at the exact same instant have no measurable elapsed interval.
+        SessionStatsHistory sameTime = new SessionStatsHistory();
+        check(sameTime.record(T0, v(1000, 1, 2, 3, 4, 5)), "first instant");
+        check(sameTime.record(T0, v(1100, 2, 3, 3, 4, 5)), "corrected instant");
+        near(0, sameTime.change(SessionStatsHistory.HOUR_MS).get(SessionStatsHistory.XP), "no fictitious gain at zero duration");
+        check(sameTime.change(SessionStatsHistory.HOUR_MS).coveredMs == 0, "zero duration");
+        SessionStatsHistory sameTimeRestored = new SessionStatsHistory();
+        sameTimeRestored.load(T0 + ":1000;1;2;3;4;5|" + T0 + ":1100;2;3;3;4;5", T0);
+        near(0, sameTimeRestored.change(SessionStatsHistory.HOUR_MS).get(SessionStatsHistory.XP), "legacy duplicate instant has no gain");
+        check(sameTimeRestored.record(T0 + MIN, v(1200, 3, 4, 3, 4, 5)), "later reading");
+        near(100, sameTimeRestored.change(SessionStatsHistory.HOUR_MS).get(SessionStatsHistory.XP), "later gain uses corrected baseline");
+        check(sameTimeRestored.change(SessionStatsHistory.HOUR_MS).coveredMs == MIN, "one minute covered");
+
         // A day later the oldest samples are dropped and the day window is full.
         SessionStatsHistory d = new SessionStatsHistory();
         for (int m = 0; m <= 26 * 60; m += 5) d.record(T0 + m * MIN, v(1_000_000 + 10.0 * m, 0, 0, 0, 0, 0, 10.0 * m));
