@@ -33,6 +33,16 @@ public final class LocalEventImportTest {
                 "BOM UTF-8 no início não impede importação");
         check(LocalEventImport.parse(canonical.replace("\"version\":1", "\"version\":99"), NOW).imported == 0,
                 "Versão futura do formato canônico não é interpretada como v1");
+        JSONObject envelope = new JSONObject(canonical);
+        for(Object invalid:new Object[]{1.5,0,2,true,JSONObject.NULL,"invalid","1.5",new JSONObject(),new JSONArray()}) {
+            envelope.put("version",invalid);
+            LocalEventImport.Report rejectedVersion=LocalEventImport.parse(envelope.toString(),NOW);
+            check(rejectedVersion.imported==0 && rejectedVersion.rejections.get(0).reason.contains("Versão"),"Explicit invalid version rejected: "+invalid);
+        }
+        envelope.put("version","1");
+        check(LocalEventImport.parse(envelope.toString(),NOW).imported==1,"Legacy string version preserved");
+        envelope.remove("version");
+        check(LocalEventImport.parse(envelope.toString(),NOW).imported==1,"Legacy missing version preserved");
         String oversized = new String(new char[LocalEventImport.MAX_BYTES / 2]).replace('\0', '\u20AC');
         check(LocalEventImport.parse(oversized, NOW).rejections.get(0).reason.contains("2 MB"),
                 "Limite de bytes considera caracteres UTF-8 multibyte");
