@@ -82,6 +82,16 @@ void sphere_uses_the_largest_scale_axis() {
     check(r.enlarged[1] == 0.f && r.enlarged[2] == 0.f, "sphere leaves other axes zero");
 }
 
+void sphere_uses_nonzero_largest_axis_only() {
+    const auto r = pgr_rocket_shape::enlarge(sphere(0.f, 2.f, 0.f, 0.25f));
+    check(r.ok && r.axes == 1 && std::fabs(r.enlarged[0] - 250.f) < 0.01f,
+          "flattened unused sphere axes accepted without scaling transform");
+    check(!pgr_rocket_shape::enlarge(sphere(0.f, 0.f, 0.f, 0.25f)).ok,
+          "fully collapsed sphere refused");
+    check(!pgr_rocket_shape::enlarge(sphere(0.f, 2.f, std::numeric_limits<float>::quiet_NaN(), 0.25f)).ok,
+          "nonfinite sphere axis refused");
+}
+
 void invalid_numbers_are_refused() {
     check(!pgr_rocket_shape::enlarge(box(1.f, 1.f, 1.f, 0.f, 1.f, 1.f)).ok,
           "zero dimension refused");
@@ -147,6 +157,7 @@ int main() {
     box_geometry_is_enlarged_not_scaled();
     unit_scale_is_the_historical_magnitude();
     sphere_uses_the_largest_scale_axis();
+    sphere_uses_nonzero_largest_axis_only();
     invalid_numbers_are_refused();
     enlargement_is_always_bounded_and_never_shrinks();
     result_is_all_or_nothing();

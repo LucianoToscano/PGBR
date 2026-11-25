@@ -13,6 +13,17 @@ class SettingsSearchTests(unittest.TestCase):
             self.assertIn(statement, section)
         self.assertIn("result.setContentDescription(", section)
 
+    def test_android_regex_compatibility(self):
+        source = (ROOT / "src/dev/pgrazor/SettingsSearch.java").read_text(encoding="utf-8")
+        declaration = next(line for line in source.splitlines() if "Pattern SPACES =" in line)
+        self.assertNotIn("UNICODE_CHARACTER_CLASS", declaration)
+        self.assertNotIn("CANON_EQ", declaration)
+        self.assertIn(r"\\p{Z}", declaration)
+        self.assertIn(r"\\x{0085}", declaration)
+        panel = (ROOT / "src/dev/pgrazor/SettingsPanel.java").read_text(encoding="utf-8")
+        self.assertIn('filterSettings("");', panel)
+        self.assertIn("SettingsSearch.normalize(raw)", panel)
+
     def test_search_catalogue(self):
         home = Path(os.environ.get('JAVA_HOME', '')) / 'bin'
         suffix = '.exe' if os.name == 'nt' else ''

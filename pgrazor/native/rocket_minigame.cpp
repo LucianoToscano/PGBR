@@ -10,6 +10,9 @@
 #include <cstdlib>
 #include <unistd.h>
 #include <sys/syscall.h>
+#ifdef __ANDROID__
+#include <android/log.h>
+#endif
 
 // Native state is Unity-thread-only. The only cross-thread entrypoints are the table
 // functions (update/tick/restore) driven from the JS pilot; those touch atomics and a
@@ -53,6 +56,17 @@ struct MiniState {
 };
 MiniState g_mini{};
 bool g_have_mini = false;
+
+// Emit each fixed diagnostic once per process, without player data or addresses.
+void shape_diagnostic(unsigned bit, const char *reason) {
+    static std::atomic<unsigned> reported{0};
+    if (reported.fetch_or(bit) & bit) return;
+#ifdef __ANDROID__
+    __android_log_print(ANDROID_LOG_INFO, "PGRazorMini", "%s", reason);
+#else
+    (void)reason;
+#endif
+}
 
 int64_t boottime_ms() {
     struct timespec ts;
@@ -123,14 +137,18 @@ bool prepare_shape(void *collider, const float scale[3], MiniState &snap) {
     if (!scale) return false;
     const bool sphere = g_sphere.klass && exact(collider, g_sphere.klass);
     const auto shape = sphere ? g_sphere : g_box;
-    if (!shape.klass || !exact(collider, shape.klass)) return false;
+    if (!shape.klass || !exact(collider, shape.klass)) {
+        shape_diagnostic(1u, (!g_sphere.klass && !g_box.klass) ?
+            "shape-unbound" : "shape-unsupported");
+        return false;
+    }
     // Keep a root across all subsequent invocations.
     void *h = g_cfg.root(collider, 0);
     if (!h) return false;
     void *boxed = inv(shape.get_size, g_cfg.target(h), nullptr);
     const float *v = exact(boxed, shape.value_class) ?
         static_cast<const float *>(g_cfg.object_unbox(boxed)) : nullptr;
-    if (!v) { g_cfg.free_root(h); return false; }
+    if (!v) { shape_diagnostic(2u, "shape-value-unavailable"); g_cfg.free_root(h); return false; }
 
     pgr_rocket_shape::Input in{};
     in.sphere = sphere;
@@ -138,12 +156,14 @@ bool prepare_shape(void *collider, const float scale[3], MiniState &snap) {
     in.geometry_bound = true;
     for (int i = 0; i < pgr_rocket_shape::kMaxAxes; ++i) {
         in.scale[i] = scale[i];
-        in.dimensions[i] = v[i];
+        // Single is one float; do not read past the unboxed radius.
+        in.dimensions[i] = (sphere && i != 0) ? 0.f : v[i];
     }
     if (sphere) in.dimensions[1] = in.dimensions[2] = 0.f; // radius only; not used
 
     const pgr_rocket_shape::Result r = pgr_rocket_shape::enlarge(in);
-    if (!r.ok) { g_cfg.free_root(h); return false; }
+    if (!r.ok) { g_cfg.free_root(h); shape_diagnostic(4u, "shape-geometry-rejected"); return false; }
+    shape_diagnostic(sphere ? 8u : 16u, sphere ? "shape-sphere-ready" : "shape-box-ready");
     snap.collider = h;
     snap.shape = shape;
     for (int i = 0; i < pgr_rocket_shape::kMaxAxes; ++i) {
