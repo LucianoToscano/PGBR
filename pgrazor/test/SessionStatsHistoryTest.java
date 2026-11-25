@@ -130,6 +130,19 @@ public final class SessionStatsHistoryTest {
                 "fractional distance survives save and load");
         check(precise.save().equals(preciseRestored.save()), "stable serialized precision");
 
+        // Even finite balances may overflow the accumulated earned or spent totals.
+        SessionStatsHistory overflow = new SessionStatsHistory();
+        check(overflow.record(T0, v(1000,0,0,0,0,0,0)), "initial zero balance");
+        check(overflow.record(T0+MIN, v(1100,0,0,0,0,0,Double.MAX_VALUE)), "first large balance");
+        check(overflow.record(T0+2*MIN, v(1200,0,0,0,0,0,0)), "first large expenditure");
+        String beforeOverflow = overflow.save();
+        check(!overflow.record(T0+3*MIN, v(1300,0,0,0,0,0,Double.MAX_VALUE)), "overflow rejected");
+        check(beforeOverflow.equals(overflow.save()), "overflow leaves history unchanged");
+        check(Double.isFinite(overflow.change(SessionStatsHistory.HOUR_MS).get(SessionStatsHistory.DUST)), "finite earnings retained");
+        SessionStatsHistory overflowRestored = new SessionStatsHistory();
+        overflowRestored.load(beforeOverflow,T0+3*MIN);
+        check(beforeOverflow.equals(overflowRestored.save()), "overflow-safe history reloads");
+
         // A day later the oldest samples are dropped and the day window is full.
         SessionStatsHistory d = new SessionStatsHistory();
         for (int m = 0; m <= 26 * 60; m += 5) d.record(T0 + m * MIN, v(1_000_000 + 10.0 * m, 0, 0, 0, 0, 0, 10.0 * m));
