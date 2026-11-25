@@ -95,7 +95,7 @@ public final class ResearchPreferencesTest {
         ResearchPreferences localized = new ResearchPreferences();
         localized.observe("PT_BR_QUEST", "Capture 5 Pokémon", "Poeira Estelar", "i");
         require(localized.tasks("POKEMON").size() == 1, "accent insensitive catalog search");
-        require(localized.tasks("\\u00a0CAPTURE\\u202f5  pokemon\\u00a0").size() == 1, "Unicode spacing in search");
+        require(localized.tasks("\u00a0CAPTURE\u202f5  pokemon\u00a0").size() == 1, "Unicode spacing in search");
         require(localized.tasks("poeira estelar").size() == 1 && localized.tasks("PT_BR_QUEST").size() == 1, "reward and key still searchable");
         require(localized.tasks("pokemon lendario").isEmpty(), "no false match");
         require(localized.tasks("").get(0)[1].equals("Capture 5 Pokémon"), "original label preserved");
