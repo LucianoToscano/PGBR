@@ -196,6 +196,12 @@ public final class LocalEventImportTest {
         check(!recovered.add(SourceEvent.builder("import", "", SourceEvent.Kind.ROUTE).build()), "Identidade vazia recusada");
         check(fails(() -> recovered.mergeJson(new JSONObject(saved).put("version", 99).toString(), NOW)),
                 "Versão futura não é interpretada como v1");
+        int oldSize = recovered.size();
+        for(String blank:new String[]{" "," "," ","   "}) {
+            check(!recovered.add(SourceEvent.builder("import",blank,SourceEvent.Kind.ROUTE).build()), "Invisible event identity rejected");
+            check(!recovered.add(SourceEvent.builder(blank,"id",SourceEvent.Kind.ROUTE).build()), "Invisible source identity rejected");
+        }
+        check(recovered.size()==oldSize,"Invalid identity preserves stored records");
         SourceEvent dying = SourceEvent.builder("import", "dying", SourceEvent.Kind.POKEMON)
                 .coordinates(-23.55, -46.63).expiresAt(NOW + 1000).build();
         store.add(dying);
