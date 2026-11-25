@@ -119,6 +119,20 @@ struct PgrRocketMiniConfigV4 {
 };
 static_assert(sizeof(PgrRocketMiniConfigV4) == 376, "v4 config layout");
 
+// Optional V5: local CanvasRenderer alpha control. CanvasRenderer is not a Renderer.
+struct PgrRocketMiniCanvasAlpha {
+    void *canvas_renderer_class;
+    void *canvas_renderer_type;
+    void *get_alpha;
+    void *set_alpha;
+    void *float_class;
+};
+struct PgrRocketMiniConfigV5 {
+    PgrRocketMiniConfigV4 v4;
+    PgrRocketMiniCanvasAlpha canvas_alpha;
+};
+static_assert(sizeof(PgrRocketMiniConfigV5) == 416, "v5 config layout");
+
 // Status codes (0 == success). Shared spirit with the other feature headers.
 enum {
     PGR_RMINI_OK = 0,
