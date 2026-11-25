@@ -2545,3 +2545,9 @@ Escopo pequeno e verificável, sem tocar em identificadores internos, chaves de 
 - **Regressão coberta:** `pgrazor/test/test_ptbr_ui_strings.py` (5 testes) fixa que as frases inglesas não voltam, que as portuguesas existem (remoção não pode ser "conserto" por deleção), que o substantivo do limite é traduzido com *default* honesto, que a chave do dicionário está nas duas UIs e que chaves de configuração/backup e o nome do treinador não foram tocados.
 - **Verificação local:** 487 testes Python (só a suíte que exige `javac` falha neste ambiente), 24 fixtures C++ host.
 - **Não feito de propósito:** rodar `tools/ptbr_wire.py --apply` em massa. O teste mostrou que a varredura ampla reescreve literais que contratos estáticos verificam (`setPositiveButton("Aplicar", null)`, `keyInput.setText("")`, mensagens de privacidade) e derrubou 5 suítes; o caminho seguro é tradução cirúrgica + teste, como neste lote. `device_tested=false`.
+
+
+### LT048 — consolidação P0 #285 / #287 (candidata)
+- Base main `91b3827efadfe7207a60688dac99dd98f9c8fa8d` (inclui #289 PT-BR). Preservados os arquivos de inicialização e testes do hotfix #285 (`e5c0777b`), cujo CI e QA 45526952847 passaram, artefato 14983826362. Causa do crash ainda necessita confirmação física (#284).
+- Fantasma → Aço é neutro (1×), conforme https://pokemondb.net/go/type ; a correção #287 tinha uma linha Java de 17 valores e CI 45528082540 reprovado. Corrigida a célula 9 sem deslocar Psíquico, Sombrio ou Fada; matriz Java verificada estruturalmente 18×18; preservada referência independente e casos duplos de #287. Nenhum executor alterado.
+- Branch isolada de consolidação, workflow QA sem publicação. CI e APK desta HEAD ainda não confirmados. Não encerrar #285/#287 nem issues físicas antes de equivalência e validação. Preservar registros anteriores e demais requisitos; `device_tested=false`.
