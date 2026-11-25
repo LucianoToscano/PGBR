@@ -212,3 +212,12 @@ PGBR-CI-205 integrado após CI completo; PGBR-UI-SMALL candidata de correção e
 - MAP-03/VIS-01: #236 HEAD 70a2086cbe2fed9c08e004f6a777578bb4d30cc8; limiares de progresso GPX e testes de ida/volta 0–100% em três rotas. CI 45515717355 aprovado, 45515717296 em execução na consulta.
 - SYS-01/MAP-03: #237 HEAD 26a5f4b3301ac9070752daa5957b28b0aed52a93; tradução PT-BR das validações GPX e feedback de UI, quatro testes. CI 45515984710/45515984684 ainda em fila na consulta.
 - Encerradas as subtarefas de código integradas acima; IDs abrangentes preservados. Aceite físico independente; device_tested=false, provider_connected=false. Nenhum novo APK LT048 comprovado. Continuar verificando HEADs, integrar após CI e preservar escopo de branches paralelas.
+
+
+### Recibo de integração — lote #235–#238
+
+- #235 integrada em `128c30b94c3024b34147cb5b7b0c01c8fcaa0fb6`, CI da PR 45515660354/45515660276 aprovado; validação de envelope local concluída em código.
+- #236 integrada em `05b69e86fd6475b78d669473488d95ca12aa4392`, CI da PR 45515717355/45515717296 aprovado; limiares da prévia GPX corrigidos em código.
+- #237 integrada em `11737b318ec26da76f31c0e1aa43bc3bd87bbb89`, CI da PR 45515984710/45515984684 aprovado; mensagens GPX traduzidas, QA física separada.
+- #238 integrada em `622f49bb26eee08e7bef33dffc252ff054fd43a2`, CI da PR 45516042862/45516042856 aprovado. Na consulta subsequente, CI da main 45517452346/45517452317 ainda não concluído; verificar antes de build. Sem sobreposição de arquivos detectada na comparação antes de cada merge.
+- Preservados os IDs e critérios abrangentes; nenhum APK LT048 comprovado, device_tested=false, provider_connected=false. Próximo: validar a revisão consolidada, avançar código independente e acionar build oficial por executor autorizado.
