@@ -107,7 +107,7 @@ Main observada `56cff4b885b9e52aa914aab8152a67959516e852`. Fila numerada de trab
 
 ### Próxima ação executável
 
-SYS-07/QA-02: conferir CI de #222–#224, integrar somente HEADs aprovadas, manter matriz LT048 e recibos de cada revisão. #182 já encerrada por substituição com preservação de registros. Continuar requisitos P0 abertos; não confundir LT048 identificada com APK entregue.
+SYS-07/QA-02: #222–#227 integradas; conferir CI da main consolidada e manter recibos LT048. Retomar requisitos P0 de integridade e regressão, triagem histórica por equivalência comprovada e matriz de homologação física separada. Não confundir LT048 identificada com APK entregue.
 
 Registro anterior (histórico): SYS-07/QA-02: LT048 identificada na main, #215–#218 integradas após CI aprovado. Verificar documentação e integridade da revisão consolidada; não anunciar APK sem compilação autorizada e verificada. Retomar fila original de P0/P1 e separar evidência física. PGBR-PR-TRIAGE: confirmar CI da reconciliação documental #182 antes de considerar encerramento por substituição.
 
@@ -174,3 +174,15 @@ PGBR-CI-205 integrado após CI completo; PGBR-UI-SMALL candidata de correção e
 - SYS-01: #224 HEAD 1d3f0d7c1442f9255dce6f0a94dc1d6dca1636cb; busca Unicode e resultados adaptáveis. CI 45501436357/45501436477; aceite físico separado.
 - BAT-01: #193 confirmada merged; tela branca Rocket e supereficácia ainda exigem teste autorizado, sem atribuição de causa física.
 - Mantidos 76 IDs e seis concluídos. device_tested=false; provider_connected=false; nenhum APK LT048 confirmado.
+
+
+### Ciclo 24/11/2026 — recibos LT048 e proteção de dados
+
+- #222 integrada em c806ee8bac690df1811afd3532f290d30b336227; CI do HEAD da PR 45501103417 / 45501102327 aprovado. INV-01/DATA-02: unicidade e correspondência de IDs de ícones.
+- #223 integrada em 8e0d2427376a6f732443cbf88d481fd125627350; CI do HEAD da PR 45501246674 / 45501246673 aprovado. COL-02: proteção IV extremo na prévia local.
+- #224 integrada em f6aab3f5ab20513af574018aae752c19dba7a3f7; CI do HEAD da PR 45501436357 / 45501436477 aprovado. SYS-01: busca Unicode e acessibilidade.
+- #225 integrada em 963650627aa9281bc3ef8b0684a6b70972c52b05; CI do HEAD da PR 45501588304 / 45501588364 aprovado. SYS-07/SYS-08: recibos e homologação.
+- #226 integrada em 132479131c51193d4eef5491044cf64bfcde6dbf; CI do HEAD da PR 45501792994 / 45501793000 aprovado. SYS-03/MAP-02: validação de tipos e nomes antes da restauração.
+- #227 integrada em 3eaae4a0adf2813713d54ded93923d6dfef7d667; CI do HEAD da PR 45502406072 / 45502406273 aprovado. MAP-03/SYS-03: codificação GPX antes de abertura truncante.
+- #226 rejeita tipos incorretos e nomes inválidos antes da restauração. #227 preserva o destino quando a codificação falha, sem garantia de atomicidade após abertura em provedor externo.
+- Main observada 3eaae4a0adf2813713d54ded93923d6dfef7d667. CI da revisão consolidada deve ser conferido separadamente. Mantidos os 76 IDs e seis concluídos; requisitos abrangentes permanecem abertos. device_tested=false; provider_connected=false; sem APK LT048 confirmado.
