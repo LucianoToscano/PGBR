@@ -39,7 +39,7 @@ public final class SavedPlaces {
         private Entry(String id,String name,double latitude,double longitude,
                       String category,long createdAtMs){
             if(id==null||id.isEmpty()||id.length()>64)throw new IllegalArgumentException("ID inválido");
-            if(name==null||name.trim().isEmpty())throw new IllegalArgumentException("Informe o nome do local");
+            if(name==null||name.trim().isEmpty()||name.codePoints().allMatch(cp->Character.isWhitespace(cp)||Character.isSpaceChar(cp)))throw new IllegalArgumentException("Informe o nome do local");
             name=name.trim();
             if(name.length()>NAME_LIMIT)throw new IllegalArgumentException("Nome com até 100 caracteres");
             for(int i=0;i<name.length();i++)if(Character.isISOControl(name.charAt(i)))
