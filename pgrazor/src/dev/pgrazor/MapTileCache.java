@@ -63,9 +63,15 @@ final class MapTileCache {
             try {
                 MapTileDiskStore.replace(file, bytes);
                 // Bound disk use even if the viewport changes before a batch finishes.
-                if (writes.incrementAndGet() % 32 == 0) trim();
+                // Also trim on the first successful write of each picker. Repeated
+                // short-lived pickers must not postpone eviction indefinitely.
+                if (shouldTrimAfterWrite(writes.incrementAndGet())) trim();
             } catch (IOException ignored) { /* Preserve the previous tile; the decoded bitmap remains usable. */ }
         }
+    }
+
+    static boolean shouldTrimAfterWrite(int count) {
+        return count == 1 || count % 32 == 0;
     }
 
     /** Evict the oldest files until within the byte and count ceilings. */

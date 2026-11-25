@@ -90,6 +90,30 @@ public class MapCacheCancelHarness {
         self.assertLess(cache.index("catch (InterruptedIOException canceled)"),cache.index("catch (IOException e)"))
         self.assertIn("if (Thread.currentThread().isInterrupted()) throw e;",cache)
 
+    def test_trim_after_reopening_and_periodic_writes(self):
+        cache=(ROOT/"src/dev/pgrazor/MapTileCache.java").read_text(encoding="utf-8")
+        start=cache.index("    static boolean shouldTrimAfterWrite(")
+        end=cache.index("    /** Evict",start)
+        method=cache[start:end]
+        harness=r"""
+package dev.pgrazor;
+public class MapCacheTrimHarness {
+    static void check(boolean b){if(!b)throw new AssertionError();}
+    public static void main(String[] args){
+        for(int reopening=0;reopening<100;reopening++)check(shouldTrimAfterWrite(1));
+        for(int i=2;i<=128;i++)check(shouldTrimAfterWrite(i)==(i%32==0));
+    }
+}
+""" 
+        harness=harness[:harness.rfind("}")]+method+"}"
+        compiler,runtime=java_tools()
+        with tempfile.TemporaryDirectory() as tmp:
+            source=Path(tmp)/"MapCacheTrimHarness.java"
+            source.write_text(harness,encoding="utf-8")
+            subprocess.run([str(compiler),"-encoding","UTF-8","-d",tmp,str(source)],check=True,timeout=30)
+            subprocess.run([str(runtime),"-cp",tmp,"dev.pgrazor.MapCacheTrimHarness"],check=True,timeout=30)
+        self.assertIn("shouldTrimAfterWrite(writes.incrementAndGet())",cache)
+
     def test_cache_integration(self):
         cache=(ROOT/"src/dev/pgrazor/MapTileCache.java").read_text(encoding="utf-8")
         self.assertEqual(cache.count("synchronized (DISK_LOCK)"),3)
