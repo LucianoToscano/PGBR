@@ -23,3 +23,10 @@ Base: PR #72, commit c3430532a363ca0704e713c6a4a2c7e492c301d6. Branch: feat/pgsh
 5. Homologar no Android físico, sem apagar versões existentes e com confirmação explícita de teleporte.
 
 **Status factual:** UI, política e cofre de key em código; consultas externas e login PGSharp não implementados. O Sniper 100% IV anterior do PGBR mantém sua fonte FaustusFoundry. Nenhum APK instalável novo foi publicado.
+
+## 25/11/2026 — Requisito de provedor opcional com licença pessoal
+
+- O proprietário declara possuir autorização para a integração e uma licença própria para teste; cada usuário deve adquirir e cadastrar a sua credencial no aparelho. O PGBR não comercializa, compartilha ou incorpora chaves. Não considerar essa declaração documentação de um contrato técnico do provedor.
+- Escopo: somente filtros e resultados de pesquisa PGSharp, com interoperabilidade de Sniper 1/2 e Radar; preservar demais módulos. Preferir SDK/interface autorizada independente. Não embutir APK completo, não presumir que partes DEX/.so constituam módulo isolável, não inventar requisições, não transmitir credenciais a terceiros.
+- PR #302 integrada em fe142f7d0bc5f4acf11357f9c2b2edc64c8bd11d, CI 45571206249/45571206201/45571206130 aprovado: atalho de importação local e indicação dos critérios não convertidos. #303 acrescenta validação dos campos numéricos e aliases CSV; CI a confirmar no HEAD final.
+- A documentação pública https://www.pgsharp.com/features/ e https://www.pgsharp.com/ confirma o recurso comercial, não especifica API externa, autenticação ou schema. Permanecem necessários contrato autorizado, proveniência dos componentes e testes do serviço. Credencial pessoal fica no cofre local já existente; nenhuma consulta ao serviço nem APK novo comprovados.
