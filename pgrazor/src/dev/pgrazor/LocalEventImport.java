@@ -122,6 +122,13 @@ public final class LocalEventImport {
 
     // --- JSON ------------------------------------------------------------------------------------
 
+    private static boolean supportedEventVersion(JSONObject root) {
+        if (!root.has("version")) return true; // compatibility with unversioned local exports
+        Object version = root.opt("version");
+        return version instanceof Number && ((Number) version).doubleValue() == EVENT_VERSION
+                || Integer.toString(EVENT_VERSION).equals(version);
+    }
+
     private static Report parseJson(String text, long now, String sourceId) throws JSONException {
         List<Rejection> rejections = new ArrayList<>();
         List<SourceEvent> out = new ArrayList<>();
@@ -136,7 +143,7 @@ public final class LocalEventImport {
             rows = new JSONArray(trimmed);
         } else {
             root = new JSONObject(trimmed);
-            if (EVENT_FORMAT.equals(root.optString("format")) && root.optInt("version", EVENT_VERSION) != EVENT_VERSION) {
+            if (EVENT_FORMAT.equals(root.optString("format")) && !supportedEventVersion(root)) {
                 rejections.add(new Rejection(1, "Versão do arquivo de eventos não suportada.", ""));
                 return new Report(Format.JSON, out, duplicates, rejections, note);
             }
