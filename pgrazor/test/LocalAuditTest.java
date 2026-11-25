@@ -185,7 +185,7 @@ public final class LocalAuditTest {
  var single=new GpxPreviewGeometry(new GpxRoute("um ponto",new double[][]{{0,0}}));check(single.meters==0&&single.x.length==1&&single.percentForDistance(0)==0);
  // Invisible whitespace must never become a classified species or tag.
  for(String blank:new String[]{"\u00a0","\u2003","\u202f"," \u00a0\u2003 "}) {
-  try{LocalAuditPolicy.speciesKey(blank);throw new AssertionError("Blank Unicode species");}
+  try{LocalAuditPolicy.tagCatalog(blank);throw new AssertionError("Blank Unicode species");}
   catch(IllegalArgumentException expected){}
   check(LocalCollectionPreview.parse(blank+";1;0;0;0;",99,flags).rejectedLines.equals(Arrays.asList(1)));
  }
