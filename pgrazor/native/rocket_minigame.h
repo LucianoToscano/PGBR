@@ -82,7 +82,7 @@ struct PgrRocketMiniConfigV2 {
 static_assert(sizeof(PgrRocketMiniConfigV2) == 248, "v2 config layout");
 
 // Optional V3: alpha-only correction of a verified white material on the tap object.
-// V1/V2 remain ABI-compatible and retain their existing shape-only behavior.
+// V1/V2 remain ABI-compatible; the historical collector works without the optional visual binding.
 struct PgrRocketMiniVisual {
     void *renderer_class;
     void *renderer_type;
