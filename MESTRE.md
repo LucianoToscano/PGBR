@@ -186,3 +186,18 @@ PGBR-CI-205 integrado após CI completo; PGBR-UI-SMALL candidata de correção e
 - #227 integrada em 3eaae4a0adf2813713d54ded93923d6dfef7d667; CI do HEAD da PR 45502406072 / 45502406273 aprovado. MAP-03/SYS-03: codificação GPX antes de abertura truncante.
 - #226 rejeita tipos incorretos e nomes inválidos antes da restauração. #227 preserva o destino quando a codificação falha, sem garantia de atomicidade após abertura em provedor externo.
 - Main observada 3eaae4a0adf2813713d54ded93923d6dfef7d667. CI da revisão consolidada deve ser conferido separadamente. Mantidos os 76 IDs e seis concluídos; requisitos abrangentes permanecem abertos. device_tested=false; provider_connected=false; sem APK LT048 confirmado.
+
+### 2026-11-24 — Consolidação das investigações PGSharp/Lua e diagnóstico local FEED-01
+
+- PR #229: corrigidos diagnóstico de campos em registros elegíveis (nulos, demo e expirados), disponibilidade de rank na liga solicitada e consulta OU vazia, com cenários sintéticos em EventFilterEngineTest. CI da #229 aprovado (45514194051/45514194103); correção transposta para base consolidada, aguardar CI do novo HEAD; manter FEED-01 aberto e não afirmar fonte conectada.
+- Arquitetura: preservar SpawnContract, SourceAdapter, SpawnFilters, EventFilterEngine, PresetCodec e SharedBattleOptions; configuração declarativa JSON versionada e validada, sem introduzir VM Lua ou duplicar modelos. Auditar capacidade por fonte, atributos ausentes, proveniência e validade; somente fontes autorizadas. Não inferir gênero a partir de forma, nem preencher IV/nível ausentes.
+- BAT-01/QA-01: Rocket primeiro; comparar gravações e diagnóstico sanitizado da UI própria, identificar fase e camada do clarão, não presumir causa Unity/GPU. #193 permanece candidata, sem teste físico.
+- BAT-02: manter comparação independente e testes locais de tipos, imunidades, dupla tipagem e valores desconhecidos. BAT-03: separar preferências persistentes de contexto efêmero por sessão/conta; estados desconhecidos não equivalem a zero; validar interface própria em cenários sintéticos e no ensaio autorizado. Não ampliar executor de ações do jogo.
+- Referência histórica PGSharp 1.33.0: https://github.com/romainthomas/pgsharp e https://romainthomas.fr/post/21-11-pgsharp-analysis/ ; Lua no PGSharp 1.278.0 segue não comprovada. Arquivo de correlação no Drive: https://drive.google.com/file/d/13gF5iC0aZgEabsnco3o72uIG-CYg4kmU/view . Não importar bytecode proprietário. PvPoke e GoBattleSim como referências de simulação local, licenças a conferir antes de reutilizar código.
+- Nenhum ID encerrado nesta rodada. device_tested=false; provider_connected=false; nenhum APK novo confirmado.
+
+### Ciclo 25/11/2026 — código local e homologação separada
+
+- BAT-02: #230 integrada em 6be33b63c5b86c61f1edab418755dc1a16674547, CI 45514546252/45514546359 aprovados. Testes da matriz local: 324 simples e 5508 duplas ordenadas; zero divergências na comparação independente. Subtarefa de teste de código concluída; execução no aparelho e demais critérios BAT-02/QA-01 continuam separados.
+- FEED-01: #229 aprovada em CI mas conflito documental com main; dois blobs de código/testes preservados integralmente nesta branch, sem sobrescrever histórico da main. Revalidar novo HEAD antes de integrar e só então encerrar PR substituída.
+- Lotes independentes de 10–15 subtarefas quando viável; não inflar contagens, preservar os 76 IDs, distinguir aceite de código e QA física. device_tested=false; provider_connected=false; APK LT048 não confirmado nesta rodada.

@@ -75,7 +75,8 @@ public final class EventFilterEngine {
         // Which active filters does the payload actually carry a field for?
         Set<String> present = new LinkedHashSet<>();
         for (SourceEvent event : safe) {
-            for (String key : activeKeys) if (fieldPresent(event, key)) present.add(key);
+            if (event == null || (event.isDemo && !q.includeDemo) || (!q.includeExpired && event.expired(now))) continue;
+            for (String key : activeKeys) if (fieldPresent(q, event, key)) present.add(key);
         }
         List<String> unsupported = new ArrayList<>();
         List<String> appliedLocally = new ArrayList<>();
@@ -108,6 +109,7 @@ public final class EventFilterEngine {
     // --- matching --------------------------------------------------------------------------------
 
     private static boolean matches(SourceQuery q, SourceEvent e, long now, List<String> keys) {
+        if (keys.isEmpty()) return true;
         int matched = 0;
         for (String key : keys) {
             if (criterionMatches(q, e, now, key)) matched++;
@@ -191,7 +193,7 @@ public final class EventFilterEngine {
         return keys;
     }
 
-    private static boolean fieldPresent(SourceEvent e, String key) {
+    private static boolean fieldPresent(SourceQuery q, SourceEvent e, String key) {
         switch (key) {
             case "kind": return true;
             case "origin": return true;
@@ -206,7 +208,8 @@ public final class EventFilterEngine {
             case "gender": return e.gender != null;
             case "size": return e.size != null;
             case "weather": return e.weatherBoost != null;
-            case "pvp": return e.pvpGreatRank != null || e.pvpUltraRank != null;
+            case "pvp": return SourceQuery.LEAGUE_ULTRA.equals(q.pvpLeague)
+                    ? e.pvpUltraRank != null : e.pvpGreatRank != null;
             case "radius": return e.hasCoordinates();
             case "ttl": return e.expiresAt > 0;
             case "expires_within": return e.expiresAt > 0;
