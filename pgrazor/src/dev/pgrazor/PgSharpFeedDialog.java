@@ -82,6 +82,18 @@ public final class PgSharpFeedDialog {
             });
             root.addView(fallback, new LinearLayout.LayoutParams(-1, MapTheme.dp(ui, 48)));
 
+            root.addView(text("Filtros e resultados importados", 17));
+            root.addView(text("Importe configurações ou resultados que você exportou. "
+                    + "São dados locais, não consultas ao serviço PGSharp.", 13));
+            Button importData = new Button(ui);
+            importData.setText("Importar filtros e resultados");
+            importData.setOnClickListener(v -> {
+                if (closed) return;
+                dialog.dismiss();
+                LocalImportDialog.show(activity, null);
+            });
+            root.addView(importData, new LinearLayout.LayoutParams(-1, MapTheme.dp(ui, 48)));
+
             root.addView(text("Filtros avançados · PGSharp Standard", 17));
             root.addView(text("Quando houver conector verificado, os filtros adicionais "
                     + "dependerão das permissões da licença. A key cadastrada não "
