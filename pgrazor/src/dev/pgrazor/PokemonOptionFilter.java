@@ -19,6 +19,11 @@ import java.util.Locale;
  */
 final class PokemonOptionFilter {
     private PokemonOptionFilter() {}
+    private static String normalize(String value) {
+        if(value==null)return "";
+        return java.text.Normalizer.normalize(value.toLowerCase(Locale.ROOT),java.text.Normalizer.Form.NFD)
+                .replaceAll("\\p{M}+","").replaceAll("[\\p{Z}\\s]+"," ").trim();
+    }
 
     /** Catalog rows may supply an explicit Dex separately from their opaque selection key. */
     static int dexOf(String[] option) {
@@ -59,14 +64,14 @@ final class PokemonOptionFilter {
      * Only the extracted Dex id is compared, so a form or variant id in a composite key never matches.
      */
     static boolean matchesSearch(String query, String label, String key) {
-        String q = query == null ? "" : query.trim().toLowerCase(Locale.US);
+        String q = normalize(query);
         boolean dexOnly = q.startsWith("#");
         if (dexOnly) q = q.substring(1).trim();
         if (q.isEmpty()) return true;
         int dex = dexOf(key);
         boolean dexHit = dex > 0 && String.valueOf(dex).contains(q);
         if (dexOnly) return dexHit;
-        boolean nameHit = label != null && label.toLowerCase(Locale.US).contains(q);
+        boolean nameHit = label != null && normalize(label).contains(q);
         return nameHit || dexHit;
     }
 
