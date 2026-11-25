@@ -74,6 +74,14 @@ public class SavedPlacesRaceHarness {
   a.add(new SavedPlaces.Entry("Recovered",0,0));
   if(!damaged.equals(prefs.getString("recovered-from",""))||a.read().damaged||a.read().entries.size()!=1)
     throw new AssertionError("Bounded recovery lost its backup");
+  a.add(new SavedPlaces.Entry("Café",1,2));
+  try {b.add(new SavedPlaces.Entry("CAFE\\u0301",3,4));throw new AssertionError("Equivalent name accepted");}
+  catch(IllegalArgumentException expected){}
+  if(b.merge(java.util.Arrays.asList(new SavedPlaces.Entry("cafe\\u0301",4,5),new SavedPlaces.Entry("Outro",1,2)))!=1)
+    throw new AssertionError("Merge accepted duplicate name or dropped distinct place");
+  SavedPlaces.Snapshot normalized=a.read();
+  if(normalized.damaged||normalized.entries.size()!=3||!normalized.entries.get(1).name.equals("Café"))
+    throw new AssertionError("Original spelling or entries lost");
  }
 }"""
 }
