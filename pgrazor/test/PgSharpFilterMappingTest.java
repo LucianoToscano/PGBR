@@ -76,6 +76,23 @@ public final class PgSharpFilterMappingTest {
                 "Arquivo sem filtros não gera preset");
         check(PgSharpFilterMapping.map(null).presets.isEmpty(), "Arquivo nulo não gera preset");
 
+        // A malformed explicit constraint must not silently become an unrestricted preset.
+        JSONObject malformed = new JSONObject().put("pokemonFilters", new JSONArray()
+                .put(new JSONObject().put("name", "IV inválido").put("ivMin", "unknown"))
+                .put(new JSONObject().put("name", "Ataque fracionário").put("attackMin", 14.5))
+                .put(new JSONObject().put("name", "Espécie inválida").put("species", new JSONArray().put(25).put(99999)))
+                .put(new JSONObject().put("name", "Espécie textual inválida").put("mons", "25,not-a-number"))
+                .put(new JSONObject().put("name", "Alias textual").put("pokemonIds", "25,149")));
+        PgSharpFilterMapping.MappingReport strict = PgSharpFilterMapping.map(malformed);
+        check(strict.converted == 1, "Critérios inválidos não podem ser descartados silenciosamente");
+        check(strict.unsupportedFields.contains("pokemon.ivMin (valor inválido)"), "IV inválido reportado");
+        check(strict.unsupportedFields.contains("pokemon.attackMin (valor inválido)"), "IV fracionário reportado");
+        check(strict.unsupportedFields.contains("pokemon.species (valor inválido)"), "Espécie fora de faixa reportada");
+        check(strict.unsupportedFields.contains("pokemon.mons (valor inválido)"), "Alias inválido reportado");
+        check(strict.presets.get(0).query.pokemonIds.contains(25)
+                && strict.presets.get(0).query.pokemonIds.contains(149), "Alias CSV preservado");
+        check(strict.rawSource.contains("not-a-number"), "Original inválido preservado no relatório");
+
         System.out.println("PgSharpFilterMappingTest: OK");
     }
 }
