@@ -21,4 +21,11 @@ assert 'rocketOptions=SharedBattleOptions.actionMask(options);' in control or 'i
 assert 'pvpBattleReady=false;' in control
 assert 'PvpBattleMode.allowed(pvpBattleOptions,pvpBattleReady,quickSummaryReady(),hostLive())' in control
 assert 'return (sanitize(options)&ACTIONS)!=0&&runtimeReady&&summaryReady&&hostLive;' in mode
+# Configuration, readiness and observed status must be presented separately.
+refresh = ui[ui.index('private void refreshPvpBattles()'):ui.index('private void refreshItems()')]
+assert 'String status=Control.pvpBattleStatus();' in refresh
+assert 'Controlador indisponível ou aguardando reconhecimento da sessão.' in refresh
+assert 'dev.pgrazor.PtBr.tr(status)' in refresh
+assert 'Funcionamento no aparelho não confirmado.' in refresh
+assert 'treinamento/NPC reconhecido' not in refresh
 print('LT030 battle settings sync and PvP fail-closed policy passed')
