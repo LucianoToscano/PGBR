@@ -110,6 +110,27 @@ public final class PresetCodecTest {
         check(PresetCodec.importPresets(PresetCodec.export(java.util.Collections.nCopies(
                 PresetCodec.MAX_PRESETS, hundred))).size() == 1, "Limite inclusivo e deduplicação");
 
+        // Explicit fractional, boolean, null and malformed string versions cannot migrate silently.
+        for (Object invalid : new Object[]{1.5, 2.5, true, JSONObject.NULL, "2.5", "x"}) {
+            try {
+                PresetCodec.presetFromJson(new JSONObject().put("version", invalid));
+                throw new AssertionError("Invalid explicit row version accepted: " + invalid);
+            } catch (org.json.JSONException expected) { /* ok */ }
+            try {
+                PresetCodec.importPresets(new JSONObject().put("format", PresetCodec.FORMAT)
+                        .put("version", invalid).put("presets", new org.json.JSONArray()).toString());
+                throw new AssertionError("Invalid explicit envelope version accepted: " + invalid);
+            } catch (org.json.JSONException expected) { /* ok */ }
+        }
+        check(PresetCodec.presetFromJson(new JSONObject().put("version", "2")
+                .put("query", hundred.query.toJson())).version == 2, "Exact legacy version string remains valid");
+        for (Object invalid : new Object[]{JSONObject.NULL, "bad", 42, new org.json.JSONArray()}) {
+            try {
+                PresetCodec.presetFromJson(new JSONObject().put("version", 2).put("query", invalid));
+                throw new AssertionError("Malformed explicit query silently became empty");
+            } catch (org.json.JSONException expected) { /* ok */ }
+        }
+
         // --- dedupe by id -------------------------------------------------------------------
         List<PresetCodec.Preset> duplicated = new ArrayList<>();
         duplicated.add(hundred);
