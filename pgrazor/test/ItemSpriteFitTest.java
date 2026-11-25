@@ -24,6 +24,15 @@ final class ItemSpriteFitTest {
         try {ItemSpriteFit.sampleSize(8193,1);throw new AssertionError("Oversized icon");}catch(IllegalArgumentException expected){}
         try {ItemSpriteFit.centeredRect(0,100,30);throw new AssertionError("zero width");}
         catch(IllegalArgumentException expected){}
+        for(float available:new float[]{1e-30f,30f,Float.MAX_VALUE}) {
+            for(int[] size:new int[][]{{8192,1},{1,8192},{8192,8192},{203,79}}){
+                float[] rect=ItemSpriteFit.centeredRect(size[0],size[1],available);
+                for(float edge:rect)if(!Float.isFinite(edge)||Math.abs(edge)>available/2)
+                    throw new AssertionError("Non-finite or overflowing sprite edge");
+                if(rect[2]<=0||rect[3]<=0||rect[0]!=-rect[2]||rect[1]!=-rect[3])
+                    throw new AssertionError("Degenerate or uncentered sprite");
+            }
+        }
         System.out.println("PASS: ItemSpriteFit");
     }
 }
