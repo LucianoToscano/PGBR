@@ -72,6 +72,7 @@ final class MapPoiLayer {
     private TextView poiStatus;
     private JSONArray pois = new JSONArray();
     private String lastPois = "";
+    private boolean snapshotInvalid;
     private boolean closed;
     private WorldMapDialog.DestinationListener walk, teleport;
 
@@ -96,10 +97,25 @@ final class MapPoiLayer {
     void refresh() {
         if (closed) return; snapshots.setOpen(layers != 0);
         String snapshot = snapshots.read();
-        if (!snapshot.equals(lastPois)) { lastPois = snapshot; try { pois = new JSONObject(snapshot).optJSONArray("points"); } catch (Exception e) { pois = null; } if (pois == null) pois = new JSONArray(); invalidate.run(); }
-        if (poiStatus != null) { String message = layers == 0 ? "Nearby layers off" : "Nearby locations loaded by the game (" + pois.length() + ")";
-            if (layers != 0 && snapshot.isEmpty()) message = "Waiting for nearby game locations";
-            else if (layers != 0) try { if (new JSONObject(snapshot).has("error")) message = "Nearby layers unavailable"; } catch (Exception ignored) {}
+        if (snapshot == null) snapshot = "";
+        if (!snapshot.equals(lastPois)) {
+            lastPois = snapshot;
+            pois = new JSONArray();
+            snapshotInvalid = false;
+            if (!snapshot.trim().isEmpty()) {
+                try {
+                    JSONObject decoded = new JSONObject(snapshot);
+                    JSONArray points = decoded.optJSONArray("points");
+                    if (decoded.has("error") || points == null) snapshotInvalid = true;
+                    else pois = points;
+                } catch (org.json.JSONException e) { snapshotInvalid = true; }
+            }
+            invalidate.run();
+        }
+        if (poiStatus != null) {
+            String message = layers == 0 ? "Nearby layers off" : snapshotInvalid
+                    ? "Nearby layers unavailable" : snapshot.trim().isEmpty()
+                    ? "Waiting for nearby game locations" : "Nearby locations loaded by the game (" + pois.length() + ")";
             poiStatus.setText(dev.pgrazor.PtBr.tr(message));
         }
         invalidate.run(); main.removeCallbacks(poiRefresh); main.postDelayed(poiRefresh, 1000);
