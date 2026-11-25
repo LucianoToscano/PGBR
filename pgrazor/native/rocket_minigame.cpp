@@ -286,9 +286,11 @@ bool write_enabled(void *renderer, uint8_t on) {
     // A void setter returns null on success, so only the managed exception means failure;
     // the write is then confirmed by reading the property back.
     g_cfg.runtime_invoke(g_visual_ex.set_enabled, renderer, args, &exc);
-    if (exc) { shape_diagnostic(1u << 17, "white-layer-write-failed"); return false; }
+    if (exc) { shape_diagnostic(1u << 20, "white-layer-write-failed"); return false; }
     uint8_t after = 1;
-    return read_enabled(renderer, &after) && after == value; // never claim an unverified hide
+    const bool confirmed = read_enabled(renderer, &after) && after == value;
+    if (!confirmed) shape_diagnostic(1u << 20, "white-layer-write-failed");
+    return confirmed; // never claim an unverified hide
 }
 
 bool hide_white_layer(void *collider, MiniState &snap) {
@@ -313,6 +315,7 @@ bool hide_white_layer(void *collider, MiniState &snap) {
         return false;
     }
     int hidden = 0;
+    bool any_enabled = false, any_readable = false;
     for (uintptr_t i = 0; i < total; ++i) {
         int index = static_cast<int>(i);
         void *index_args[1] = {&index};
@@ -321,6 +324,8 @@ bool hide_white_layer(void *collider, MiniState &snap) {
         if (!g_visual.assignable(g_visual.renderer_class, g_cfg.object_class(renderer))) continue;
         uint8_t was = 0;
         if (!read_enabled(renderer, &was)) continue;
+        any_readable = true;
+        if (was) any_enabled = true;
         if (!was) continue;                        // already invisible: leave it alone
         if (!write_enabled(renderer, 0)) continue; // unverified write: do not record it
         snap.hidden_index[hidden] = index;
@@ -329,7 +334,9 @@ bool hide_white_layer(void *collider, MiniState &snap) {
     }
     if (hidden == 0) {
         g_cfg.free_root(array_root);
-        shape_diagnostic(1u << 18, "white-layer-renderers-absent");
+        if (!any_readable) shape_diagnostic(1u << 23, "white-layer-read-failed");
+        else if (!any_enabled) shape_diagnostic(1u << 24, "white-layer-already-disabled");
+        // Failed writes are reported by write_enabled, not misclassified as absence.
         return false;
     }
     snap.hidden = array_root;
@@ -353,6 +360,24 @@ void restore_white_layer(MiniState &snap) {
     g_cfg.free_root(snap.hidden);
     snap.hidden = nullptr;
     snap.hidden_count = 0;
+}
+
+// Read-only check after Unity activation; a script may have re-enabled a renderer.
+void verify_white_layer_after_activation(const MiniState &snap) {
+    if (!snap.hidden) return;
+    bool readable = true, enabled = false;
+    for (int i = 0; i < snap.hidden_count; ++i) {
+        int index = snap.hidden_index[i];
+        void *args[] = {&index};
+        void *renderer = visual_invoke(g_visual.array_get, g_cfg.target(snap.hidden), args);
+        uint8_t on = 0;
+        if (!renderer || !g_visual.assignable(g_visual.renderer_class, g_cfg.object_class(renderer)) ||
+            !read_enabled(renderer, &on)) { readable = false; continue; }
+        enabled = enabled || on;
+    }
+    if (enabled) shape_diagnostic(1u << 21, "white-layer-reenabled-after-activation");
+    if (!readable) shape_diagnostic(1u << 23, "white-layer-read-failed");
+    if (readable && !enabled) shape_diagnostic(1u << 22, "white-layer-still-hidden-after-activation");
 }
 
 void restore_alpha(MiniState &snap) {
@@ -412,6 +437,7 @@ void do_collect(void *challenge) {
 
     if (g_busy.exchange(1)) return;
 
+    const bool first_collection = !g_have_mini;
     if (!g_have_mini) {
         // Root the challenge BEFORE any invoke, so the collider it owns stays reachable
         // across the transform/gameObject calls (no unrooted managed refs across invokes).
@@ -483,6 +509,17 @@ void do_collect(void *challenge) {
     }
     set_scale(g_cfg.target(g_mini.transform), scaled);
     set_active(g_cfg.target(g_mini.go), 1);
+    if (first_collection) {
+        // Unity GetComponentsInChildren(Type) may omit inactive children before activation.
+        // Retry once, only within the same collider and only if no prior hide was recorded.
+        if (!g_mini.active && !g_mini.hidden && !g_failed.load()) {
+            void *current_collider = nullptr;
+            g_cfg.field_get_value(g_cfg.target(g_mini.challenge), g_cfg.collider_field, &current_collider);
+            if (current_collider && hide_white_layer(current_collider, g_mini))
+                shape_diagnostic(1u << 25, "white-layer-found-after-activation");
+        }
+        verify_white_layer_after_activation(g_mini);
+    }
     g_busy.store(0);
 }
 
