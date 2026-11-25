@@ -33,6 +33,19 @@ public class PlaceSearchClientTest {
         many.append("]}");check(PlaceSearchClient.parse(many.toString()).size()==20,"Results capped");
         check(PlaceSearchClient.readBounded(new ByteArrayInputStream(new byte[16])).length==16,"Bounded body read");
         rejects(()->PlaceSearchClient.readBounded(new ByteArrayInputStream(new byte[PlaceSearchClient.MAX_BYTES+1])));
+        Thread.currentThread().interrupt();
+        try {
+            PlaceSearchClient.readBounded(new java.io.InputStream(){
+                public int read(){throw new AssertionError("Read attempted after cancellation");}
+            });
+            throw new AssertionError("Pre-cancelled stream accepted");
+        } catch(java.io.InterruptedIOException expected){} finally {Thread.interrupted();}
+        try {
+            PlaceSearchClient.readBounded(new java.io.InputStream(){
+                public int read(){Thread.currentThread().interrupt();return -1;}
+            });
+            throw new AssertionError("Cancellation at EOF accepted");
+        } catch(java.io.InterruptedIOException expected){} finally {Thread.interrupted();}
         PlaceSearchClient closed=new PlaceSearchClient();closed.close();rejects(()->closed.search("park",0,0));
         System.out.println("PASS: place search validation, URL encoding, coordinate order, malformed results, dedupe, limits and cancellation");
     }
