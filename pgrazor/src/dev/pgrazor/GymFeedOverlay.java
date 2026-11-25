@@ -38,8 +38,8 @@ public final class GymFeedOverlay extends View {
     public void refresh(boolean visible){
         boolean on=GymAutomationSettings.running();
         setVisibility(visible&&GymAutomationSettings.overlayEnabled()?VISIBLE:GONE);
-        setContentDescription("Gym Slotter and Berry Feeder "+(on?"on; tap to stop":"off; tap to start")
-            +". Drag to reposition. "+GymAutomationSettings.status());
+        setContentDescription("Ginásio e alimentador de frutas "+(on?"ligado; toque para parar":"desligado; toque para iniciar")
+            +". Arraste para reposicionar. "+GymAutomationSettings.status());
         if(artworkVersion!=OverlayArtwork.version()){
             artworkVersion=OverlayArtwork.version();
             personalizedGym=OverlayArtwork.load(getContext(),"gym");

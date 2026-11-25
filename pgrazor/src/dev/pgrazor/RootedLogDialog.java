@@ -92,7 +92,7 @@ final class RootedLogDialog {
                     File saved = LogExport.copyToExternal(app, file,includeSettings);
                     handler.post(() -> {
                         if (dialog.isShowing()) {save.setEnabled(true);bundle.setEnabled(true);}
-                        Toast.makeText(app, "Saved to " + saved.getAbsolutePath(), Toast.LENGTH_LONG).show();
+                        Toast.makeText(app, "Salvo em " + saved.getAbsolutePath(), Toast.LENGTH_LONG).show();
                     });
                 } catch (IOException error) {
                     handler.post(() -> {

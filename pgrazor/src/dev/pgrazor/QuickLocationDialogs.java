@@ -74,7 +74,7 @@ public final class QuickLocationDialogs {
                 catch (IllegalArgumentException e) { coordinates.setError(e.getMessage()); return; }
                 if(walk.teleport(point[0],point[1])){
                     dialog.dismiss();
-                    Toast.makeText(activity,"Walking to "+CoordinateClipboard.text(point[0],point[1]),Toast.LENGTH_SHORT).show();
+                    Toast.makeText(activity,"Caminhando até "+CoordinateClipboard.text(point[0],point[1]),Toast.LENGTH_SHORT).show();
                 }
             });
         });
@@ -211,7 +211,7 @@ public final class QuickLocationDialogs {
                     if (!dialog.isShowing()) return;
                     if (failed != null) { dialog.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(true); name.setError(failed); return; }
                     dialog.dismiss();
-                    Toast.makeText(activity, "Saved " + entry.name + " to Favorites", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(activity, "Salvo em Favoritos: " + entry.name, Toast.LENGTH_SHORT).show();
                 });
             }, "pgrazor-favorites-save").start();
         }));

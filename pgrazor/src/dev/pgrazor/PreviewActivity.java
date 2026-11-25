@@ -48,6 +48,6 @@ public final class PreviewActivity extends Activity {
         try {
             LogExport.save(this,data.getData(),Control.currentLog());
             Toast.makeText(this,dev.pgrazor.PtBr.tr("Log exported"),Toast.LENGTH_SHORT).show();
-        } catch(IOException error) { Toast.makeText(this,"Export failed: "+error.getMessage(),Toast.LENGTH_LONG).show(); }
+        } catch(IOException error) { Toast.makeText(this,"Falha ao exportar: "+error.getMessage(),Toast.LENGTH_LONG).show(); }
     }
 }

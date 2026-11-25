@@ -34,6 +34,11 @@ Branch `arena/5ed38273-pgbr`, base `24700b8cba7fb9a789052a0faa632c75b7fdf54d`. D
 
 Status dos testes locais: 465 testes Python (só falha a suíte que exige `javac` neste ambiente), 24 fixtures C++ host, 22 suítes Node, `-fsyntax-only` do host nativo. `device_tested=false`, `provider_connected=false`.
 
+## Ciclo 25/11/2026 — P1 PT-BR lote 2 (textos ainda em inglês)
+
+20. [x] PGBR-I18N-02 / P1 — 7 telas/overlays com texto inglês visível traduzidos na origem (`LogActivity`, `PreviewActivity`, `RootedLogDialog`, `QuickLocationDialogs`, `GymFeedOverlay`, `ShundoSniper`, `GameRoutesOverlay`); mensagens de limite do seletor de espécies/chefes passaram a usar substantivo traduzido (`nounPt`), sem mudar assinaturas; 1 entrada nova no dicionário (`All species (no selection)`, 1548/1548/1548). Regressão coberta por `pgrazor/test/test_ptbr_ui_strings.py` (5 testes). Homologação visual pendente (`device_tested=false`).
+21. [x] PGBR-I18N-03 / P1 — decidido e registrado **não** rodar `tools/ptbr_wire.py --apply` em massa nesta branch: a varredura reescreve literais que contratos estáticos exigem (botão "Aplicar", limpeza de campo de key, mensagens de privacidade) e derrubou 5 suítes; tradução passa a ser cirúrgica, com teste por lote.
+
 ## Aceite em dispositivo (separado)
 
 device_tested=false; provider_connected=false até evidência correspondente. Tela branca Rocket, Supereficaz, interface e traçado visual não são homologados fisicamente pela aprovação de CI. Não alterar estados por conveniência.

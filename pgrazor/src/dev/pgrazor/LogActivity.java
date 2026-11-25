@@ -67,6 +67,6 @@ public final class LogActivity extends Activity {
             if(request==40&&Control.trainerPrivacyMode()!=0){Toast.makeText(this,"TXT bruto bloqueado no modo de privacidade.",Toast.LENGTH_LONG).show();return;}
             LogExport.save(this,data.getData(),Control.currentLog(),request==41);
             Toast.makeText(this,request==41?"Log and settings saved":"Log saved",Toast.LENGTH_SHORT).show();
-        } catch(IOException error) { Toast.makeText(this,"Save failed: "+error.getMessage(),Toast.LENGTH_LONG).show(); }
+        } catch(IOException error) { Toast.makeText(this,"Falha ao salvar: "+error.getMessage(),Toast.LENGTH_LONG).show(); }
     }
 }
