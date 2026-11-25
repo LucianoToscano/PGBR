@@ -92,9 +92,13 @@ public final class PlaceSearchClient {
     static byte[] readBounded(InputStream input) throws IOException {
         ByteArrayOutputStream out=new ByteArrayOutputStream(); byte[] buffer=new byte[4096]; int count;
         long started=System.nanoTime();
-        while((count=input.read(buffer))!=-1) {
-            if(Thread.currentThread().isInterrupted()) throw new IOException("Search cancelled.");
+        while(true) {
+            if(Thread.currentThread().isInterrupted()) throw new java.io.InterruptedIOException("Search cancelled.");
             if(System.nanoTime()-started>20_000_000_000L) throw new IOException("Search timed out.");
+            count=input.read(buffer);
+            if(Thread.currentThread().isInterrupted()) throw new java.io.InterruptedIOException("Search cancelled.");
+            if(System.nanoTime()-started>20_000_000_000L) throw new IOException("Search timed out.");
+            if(count==-1)break;
             if(out.size()+count>MAX_BYTES) throw new IOException("Search response is too large.");
             out.write(buffer,0,count);
         }
