@@ -2605,3 +2605,12 @@ O coletor histórico funciona ampliando o objeto de toque em 1000× (`scaled[i] 
 ### Limites declarados
 
 `device_tested=false`. A camada branca só se confirma ausente no aparelho, com a batalha visível durante Boa/Ótima/Excelente. Se o aparelho ainda mostrar branco com `miniWhiteHideBound=true`, o log dirá qual estágio falhou (`white-layer-unbound` = binding ausente, `white-layer-renderers-absent` = nenhum renderer na subárvore, `white-layer-write-failed` = exceção ao escrever) — nesse caso a próxima hipótese é um segundo objeto branco fora da subárvore do colisor, e o caminho é diagnosticar antes de mudar qualquer outra coisa.
+
+
+## 25/11/2026 — BAT-01 V5 CanvasRenderer (PR #300)
+
+- Relato físico: o branco persistiu na QA da PR #298; não homologada. A origem UI é hipótese ainda não confirmada no dispositivo.
+- Entrega Gemini `55df3948d09789488db100bf6087b3ba65635fa8`, patch `0003-gemini-fix-charged-white-layer-canvas-alpha.patch`, portada via API sobre a PR #299 (`aa2ba5f0ebb1039e1c6fc34063b5998851c2e9fe`, base `e28ca3f`). PR #300 contém #299; não duplicar integração.
+- V5 opcional: `CanvasRenderer.GetAlpha/SetAlpha(0)` localizado na subárvore do colisor, captura/restauração do alpha, busca pós-ativação e reforço por frame de renderizadores capturados. Mantidos V1–V4, escala funcional 1000×, SetActive, colisor, running e lógica de batalha. Reforço condicionado a V5; diagnósticos 21–25 da #299 preservados, 26–31 para V5.
+- Fixture host Gemini adaptada e registrada em `tools/native_host_tests.py`. Gemini reportou 5 cenários aprovados; CI desta integração ainda não confirmado. Verificar `miniCanvasAlphaBound` e `white-canvas-alpha-zero`/`white-canvas-reenforced`; se persistir, não ampliar ocultação sem identificar o componente exato.
+- Estado: PR aberta, sem merge ou APK confirmado; `device_tested=false`. Não declarar resolvido até homologação física. Issue #192 permanece aberta.
