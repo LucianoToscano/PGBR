@@ -8,6 +8,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InterruptedIOException;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -44,7 +45,11 @@ final class MapTileCache {
             File file = new File(directory, key + ".png");
             if (file.isFile() && System.currentTimeMillis() - file.lastModified() < CACHE_TTL) {
                 try (InputStream stream = new FileInputStream(file)) { return decode(readBounded(stream)); }
-                catch (IOException e) { file.delete(); }
+                catch (InterruptedIOException canceled) { throw canceled; }
+                catch (IOException e) {
+                    if (Thread.currentThread().isInterrupted()) throw e;
+                    file.delete();
+                }
             }
             return null;
         }
@@ -83,8 +88,11 @@ final class MapTileCache {
     static byte[] readBounded(InputStream stream) throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         byte[] buffer = new byte[8192]; int count;
-        while ((count = stream.read(buffer)) != -1) {
-            if (Thread.currentThread().isInterrupted()) throw new IOException("Map closed");
+        while (true) {
+            if (Thread.currentThread().isInterrupted()) throw new InterruptedIOException("Mapa fechado");
+            count = stream.read(buffer);
+            if (Thread.currentThread().isInterrupted()) throw new InterruptedIOException("Mapa fechado");
+            if (count == -1) break;
             if (out.size() + count > TILE_BYTE_LIMIT) throw new IOException("Oversize map tile");
             out.write(buffer, 0, count);
         }
