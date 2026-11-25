@@ -168,6 +168,10 @@ public final class LocalAuditTest {
  // Every slider threshold must round-trip exactly, without rounding up a value just below it.
  for(GpxPreviewGeometry geometry:Arrays.asList(g,new GpxPreviewGeometry(new GpxRoute("curto",new double[][]{{0,0},{0,0.000001}})),
    new GpxPreviewGeometry(new GpxRoute("longo",new double[][]{{-80,0},{0,90},{80,180}})))){
+  double limit=geometry.meters/1000.0;
+  check(geometry.distanceFromKm(limit)==geometry.meters);
+  check(geometry.distanceFromKm(Math.nextDown(limit))<=geometry.meters);
+  try{geometry.distanceFromKm(Math.nextUp(limit));throw new AssertionError("Distance beyond exact route endpoint accepted");}catch(IllegalArgumentException expected){}
   for(int percent=0;percent<=100;percent++){
    double threshold=geometry.distanceForPercent(percent);
    check(geometry.percentForDistance(threshold)==percent);
@@ -183,6 +187,8 @@ public final class LocalAuditTest {
  check(Math.abs(repeated.positionAt(repeated.meters/2)[0]-0.5)<1e-8);
  try{g.positionAt(Double.NaN);throw new AssertionError();}catch(IllegalArgumentException expected){}
  var single=new GpxPreviewGeometry(new GpxRoute("um ponto",new double[][]{{0,0}}));check(single.meters==0&&single.x.length==1&&single.percentForDistance(0)==0);
+ check(single.distanceFromKm(0)==0);
+ try{single.distanceFromKm(Math.nextUp(0.0));throw new AssertionError("Positive distance on zero-length route accepted");}catch(IllegalArgumentException expected){}
  // Invisible whitespace must never become a classified species or tag.
  for(String blank:new String[]{"\u00a0","\u2003","\u202f"," \u00a0\u2003 "}) {
   try{LocalAuditPolicy.tagCatalog(blank);throw new AssertionError("Blank Unicode species");}
