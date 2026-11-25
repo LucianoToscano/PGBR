@@ -46,6 +46,9 @@ uint8_t running = 1;
 int roots = 0, scale_writes = 0, color_writes = 0;
 bool reject_hide_for_glow = false;   // set_enabled throws for one renderer
 bool refuse_hide_completely = false; // every write throws
+bool children_require_active = false;
+bool reenable_on_activation = false;
+Obj empty_subtree{&array_tag};
 
 Obj *subtree_items[3] = {&tap_renderer, &glow_renderer, &off_renderer};
 uintptr_t subtree_count = 3;
@@ -60,7 +63,7 @@ void *unbox(void *p) {
                                  : static_cast<void *>(o->value);
 }
 void *type_object(void *) { return &type; }
-uintptr_t array_length(void *p) { return p == &subtree ? subtree_count : 1; }
+uintptr_t array_length(void *p) { return p == &empty_subtree ? 0 : p == &subtree ? subtree_count : 1; }
 bool assignable(void *a, void *b) { return a == b; }
 
 void field(void *, void *f, void *out) {
@@ -71,7 +74,7 @@ void field(void *, void *f, void *out) {
 void *invoke(void *m, void *obj, void **args, void **exc) {
     *exc = nullptr;
     auto *o = static_cast<Obj *>(obj);
-    if (m == &get_in_children_m) return &subtree;
+    if (m == &get_in_children_m) return children_require_active && !go.flag ? &empty_subtree : &subtree;
     if (m == &get_components_m) return &subtree;
     if (m == &array_get_m) {
         if (obj == &subtree) {
@@ -109,7 +112,11 @@ void *invoke(void *m, void *obj, void **args, void **exc) {
         ++scale_writes;
         return nullptr;
     }
-    if (m == &active_set_m) { go.flag = *static_cast<uint8_t *>(args[0]); return nullptr; }
+    if (m == &active_set_m) {
+        go.flag = *static_cast<uint8_t *>(args[0]);
+        if (go.flag && reenable_on_activation) tap_renderer.flag = 1;
+        return nullptr;
+    }
     if (m == &alive_m) { boxed.flag = static_cast<Obj *>(args[0])->alive; return &boxed; }
     return nullptr;
 }
@@ -160,6 +167,8 @@ void reset_scene() {
     subtree_count = 3;
     reject_hide_for_glow = false;
     refuse_hide_completely = false;
+    children_require_active = false;
+    reenable_on_activation = false;
 }
 } // namespace
 
@@ -240,7 +249,27 @@ int main() {
     assert(!g_have_mini && tap_renderer.flag == 1 && tr.value[0] == 1.f && roots == 0);
     running = 1;
 
+    // 8. Inactive children omitted until SetActive: retry same subtree once.
+    reset_scene();
+    children_require_active = true;
+    do_collect(&challenge);
+    assert(go.flag == 1 && tr.value[0] == 1000.f && tap_renderer.flag == 0 && glow_renderer.flag == 0);
+    do_restore();
+    assert(go.flag == 0 && tap_renderer.flag == 1 && glow_renderer.flag == 1 && roots == 0);
+
+    // 9. Activation may re-enable a renderer: observe it without changing the collector.
+    reset_scene();
+    reenable_on_activation = true;
+    do_collect(&challenge);
+    assert(tap_renderer.flag == 1 && glow_renderer.flag == 0 && tr.value[0] == 1000.f);
+    do_restore();
+    assert(roots == 0);
+
     const uint32_t diag = pgrazor_rocket_minigame_take_diagnostics();
+    assert(diag & (1u << 25)); // discovered after activation
+    assert(diag & (1u << 21)); // re-enabled by activation
+    assert(diag & (1u << 20)); // write failure is not binding failure
+    assert(diag & (1u << 17)); // missing binding is separate
     assert(diag & (1u << 19));                  // white-layer-hidden observed at least once
     std::puts("rocket_minigame_white_layer_test: OK");
     return 0;
