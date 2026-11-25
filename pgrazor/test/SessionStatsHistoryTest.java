@@ -104,6 +104,19 @@ public final class SessionStatsHistoryTest {
         corrupt.load(T0 + ":1000;1;2;3;4.5;6|" + T0 + ":1100;1;2;3;4.5;6", T0);
         check(corrupt.change(SessionStatsHistory.HOUR_MS).updatedAt == T0, "equal timestamp retained");
 
+        // Persist exact fractional counters and avoid long saturation on large finite input.
+        SessionStatsHistory precise = new SessionStatsHistory();
+        double baseXp = 0x1p63, nextXp = Math.nextUp(baseXp);
+        check(precise.record(T0, v(baseXp, 0, 0, 0, 1.0001234, 0)), "large finite sample");
+        check(precise.record(T0 + 10 * MIN, v(nextXp, 0, 0, 0, 1.0005678, 0)), "large finite next sample");
+        SessionStatsHistory preciseRestored = new SessionStatsHistory();
+        preciseRestored.load(precise.save(), T0 + 10 * MIN);
+        near(nextXp - baseXp, preciseRestored.change(SessionStatsHistory.HOUR_MS).get(SessionStatsHistory.XP),
+                "large integral counters survive save and load");
+        near(1.0005678 - 1.0001234, preciseRestored.change(SessionStatsHistory.HOUR_MS).get(SessionStatsHistory.KM),
+                "fractional distance survives save and load");
+        check(precise.save().equals(preciseRestored.save()), "stable serialized precision");
+
         // A day later the oldest samples are dropped and the day window is full.
         SessionStatsHistory d = new SessionStatsHistory();
         for (int m = 0; m <= 26 * 60; m += 5) d.record(T0 + m * MIN, v(1_000_000 + 10.0 * m, 0, 0, 0, 0, 0, 10.0 * m));
