@@ -68,11 +68,13 @@ struct MiniState {
 };
 MiniState g_mini{};
 bool g_have_mini = false;
+std::atomic<unsigned> g_diag_pending{0};
 
 // Emit each fixed diagnostic once per process, without player data or addresses.
 void shape_diagnostic(unsigned bit, const char *reason) {
     static std::atomic<unsigned> reported{0};
     if (reported.fetch_or(bit) & bit) return;
+    g_diag_pending.fetch_or(bit);
 #ifdef __ANDROID__
     __android_log_print(ANDROID_LOG_INFO, "PGRazorMini", "%s", reason);
 #else
@@ -227,7 +229,7 @@ bool set_color(void *material,const float color[4]) {
     return read_color(material,after)&&same_color(color,after);
 }
 bool prepare_visual(void *collider,void *go_root,const float sc[3],MiniState &snap) {
-    if(!g_visual.renderer_class||!collider)return false;
+    if(!g_visual.renderer_class||!collider){shape_diagnostic(512u,"white-alpha-unbound");return false;}
     for(int i=0;i<3;++i){
         const float v=std::fmax(1.f,std::fabs(sc[i]))*1000.f;
         if(!std::isfinite(v)||v>100000.f)return false;
@@ -250,11 +252,11 @@ bool prepare_visual(void *collider,void *go_root,const float sc[3],MiniState &sn
             renderer_root=g_cfg.root(renderer,0);
     }
     g_cfg.free_root(array_root);
-    if(!renderer_root)return false;
+    if(!renderer_root){shape_diagnostic(1024u,"local-renderer-missing-or-ambiguous");return false;}
     bool ok=false;
     do{
         void *owner=inv(g_cfg.gameObject_method,g_cfg.target(renderer_root),nullptr);
-        if(owner!=g_cfg.target(go_root))break;
+        if(owner!=g_cfg.target(go_root)){shape_diagnostic(2048u,"local-renderer-owner-mismatch");break;}
         void *shared_array=inv(g_visual.get_shared_materials,g_cfg.target(renderer_root),nullptr);
         void *shared_root=shared_array?g_cfg.root(shared_array,0):nullptr;
         if(!shared_root)break;
@@ -269,7 +271,7 @@ bool prepare_visual(void *collider,void *go_root,const float sc[3],MiniState &sn
             }
         }
         g_cfg.free_root(shared_root);
-        if(!candidate)break;
+        if(!candidate){shape_diagnostic(4096u,"local-white-material-unconfirmed");break;}
         void *material=inv(g_visual.get_material,g_cfg.target(renderer_root),nullptr);
         void *material_root=material?g_cfg.root(material,0):nullptr;
         if(!material_root)break;
@@ -358,6 +360,7 @@ void do_collect(void *challenge) {
         return;
     }
 
+    shape_diagnostic(8192u,"running-challenge-observed");
     // A different challenge means the previous one is stale: restore it first.
     if (g_have_mini && g_cfg.target(g_mini.challenge) != challenge) do_restore();
 
@@ -481,7 +484,12 @@ void repl_update(void *self, int64_t a1, void *method) {
     }
     // Chain the original THEN collect (original published before the hook went live).
     original_for(g_orig_update)(self, a1, method);
-    if (g_active.load() && on_unity_thread() && native_allowed()) do_collect(self);
+    if(g_active.load()){
+        shape_diagnostic(16384u,"update-observed");
+        if(!on_unity_thread())shape_diagnostic(32768u,"unity-thread-unconfirmed");
+        else if(!native_allowed())shape_diagnostic(65536u,"policy-not-live");
+        else do_collect(self);
+    }
 }
 
 void restore_if_owned(void *self) {
@@ -642,6 +650,8 @@ int api_restore() {
 }
 
 } // namespace
+
+extern "C" uint32_t pgrazor_rocket_minigame_take_diagnostics() { return g_diag_pending.exchange(0); }
 
 extern "C" const void *pgrazor_rocket_minigame_api(uint32_t version) {
     static const PgrRocketMiniApi api = {

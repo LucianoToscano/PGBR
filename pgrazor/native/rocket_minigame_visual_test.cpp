@@ -64,5 +64,8 @@ int main(){
  s={};assert(prepare_visual(&collider,&go,scale,s));own(s);fail_alpha=true;
  assert(!apply_visual(g_mini)&&scale_writes==2);fail_alpha=false;
  do_restore();assert(roots==0&&material.value[3]==0.5f&&tr.value[0]==1.f&&scale_writes==2);
+ const uint32_t diag=pgrazor_rocket_minigame_take_diagnostics();
+ assert((diag&128u)&&(diag&4096u)&&(diag&2048u));
+ assert(pgrazor_rocket_minigame_take_diagnostics()==0);
  return 0;
 }

@@ -86,6 +86,12 @@ public final class LogExportTest {
             ||lifecycleSummary.observedEvents.get("battle-scope")!=2||lifecycleSummary.observedEvents.get("battle-ended")!=1
             ||!lifecycleSummary.describe().contains("sem inferir causa, duração ou êxito"))
             throw new AssertionError("Lifecycle context counts or privacy");
+        String mini="2026-11-25T05:10:00.000Z [rocket-minigame-native] {\"miniStage\":\"white-alpha-unbound\",\"miniAlphaBound\":false,\"trainer\":\"private-example\"}\n";
+        String miniSafe=new String(LogExport.shareLog(new ByteArrayInputStream(mini.getBytes(StandardCharsets.UTF_8))),StandardCharsets.UTF_8);
+        if(!miniSafe.contains("white-alpha-unbound")||!miniSafe.contains("miniAlphaBound")||miniSafe.contains("private-example"))
+            throw new AssertionError("Minigame diagnostics lost or private data exposed");
+        if(LocalDiagnosticSummary.parse(miniSafe).observedEvents.get("rocket-minigame-native")!=1)
+            throw new AssertionError("Minigame diagnostic event unclassified");
         // Dense valid input can exceed the summary's line limit even below the byte limit.
         String event="2026-11-24T01:10:00.000Z [vgp] {}\n";
         int eventCount=LocalDiagnosticSummary.MAX_LINES+10;

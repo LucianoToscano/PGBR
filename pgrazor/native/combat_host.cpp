@@ -407,6 +407,16 @@ const char *smart_charge_reason(int32_t aux) {
 
 void drain_leaf_events(uint64_t tid) {
     const uint32_t caps = g_capabilities.load(std::memory_order_acquire);
+    if(caps & PGR_CBH_CAP_ROCKET_MINIGAME){
+        const uint32_t bits=pgrazor_rocket_minigame_take_diagnostics();
+        static constexpr const char *stages[]={"shape-unbound-or-unsupported","shape-value-unavailable","shape-geometry-rejected","shape-sphere-ready","shape-box-ready","white-alpha-write-failed","white-alpha-zero","white-alpha-candidate","white-alpha-not-matched","white-alpha-unbound","local-renderer-missing-or-ambiguous","local-renderer-owner-mismatch","local-white-material-unconfirmed","running-challenge-observed","update-observed","unity-thread-unconfirmed","policy-not-live"};
+        for(unsigned i=0;i<sizeof(stages)/sizeof(stages[0]);++i){
+            if(!(bits&(1u<<i)))continue;
+            char json[128];
+            std::snprintf(json,sizeof(json),"{\"miniStage\":\"%s\"}",stages[i]);
+            queue_event(PGR_CBH_EV_ROCKET_MINIGAME_READY,0,0,tid,json);
+        }
+    }
 
     if ((caps & PGR_CBH_CAP_ROCKET_COMBAT) && g_rocket_combat) {
         pgr_rocket_combat_event_v1 rev{};
@@ -1415,7 +1425,9 @@ bool configure_and_install_rocket(uint64_t tid) {
             if (g_rocket_mini->install(&mn_cfg) == PGR_RMINI_OK) {
                 g_capabilities.fetch_or(PGR_CBH_CAP_ROCKET_MINIGAME, std::memory_order_release);
                 g_installed_hooks.fetch_add(4, std::memory_order_relaxed);
-                queue_event(PGR_CBH_EV_ROCKET_MINIGAME_READY, 1, 0, tid, "{\"available\":true}");
+                char binding[160];
+                std::snprintf(binding,sizeof(binding),"{\"available\":true,\"miniAlphaBound\":%s,\"miniSphereBound\":%s,\"miniBoxBound\":%s}",visual_ready?"true":"false",extended.sphere.klass?"true":"false",extended.box.klass?"true":"false");
+                queue_event(PGR_CBH_EV_ROCKET_MINIGAME_READY, 1, 0, tid, binding);
             } else {
                 queue_event(PGR_CBH_EV_ROCKET_MINIGAME_READY, 0, 0, tid,
                             "{\"available\":false,\"reason\":\"install-failed\"}");

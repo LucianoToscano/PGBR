@@ -145,6 +145,8 @@ extern "C" {
 // the core getter registry. Returns the process-lifetime table on an exact version
 // match, else nullptr.
 const void *pgrazor_rocket_minigame_api(uint32_t version);
+// Private diagnostic drain; no ABI change, identifiers, pointers or managed reads.
+uint32_t pgrazor_rocket_minigame_take_diagnostics();
 #ifdef __cplusplus
 }
 #endif
