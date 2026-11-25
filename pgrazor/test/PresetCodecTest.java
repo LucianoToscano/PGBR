@@ -80,6 +80,36 @@ public final class PresetCodecTest {
             throw new AssertionError("Arquivo vazio deve ser rejeitado");
         } catch (org.json.JSONException expected) { /* ok */ }
 
+        // Preserve original provenance without recursively nesting prior exports.
+        List<PresetCodec.Preset> legacyRoundTrip = java.util.Collections.singletonList(migratedUnknown);
+        String stable = PresetCodec.export(legacyRoundTrip);
+        for (int cycle = 0; cycle < 20; cycle++) {
+            legacyRoundTrip = PresetCodec.importPresets(stable);
+            check(migratedUnknown.rawSource.equals(legacyRoundTrip.get(0).rawSource),
+                    "Proveniência original deve permanecer estável");
+            check(stable.equals(PresetCodec.export(legacyRoundTrip)), "Exportação não deve crescer a cada leitura");
+        }
+        String v2Stable = PresetCodec.export(imported);
+        check(v2Stable.equals(PresetCodec.export(PresetCodec.importPresets(v2Stable))),
+                "Preset v2 estabiliza após a primeira importação");
+        for (int invalidVersion : new int[]{0, -1, 99}) {
+            try {
+                PresetCodec.presetFromJson(new JSONObject().put("version", invalidVersion));
+                throw new AssertionError("Versão individual inválida aceita: " + invalidVersion);
+            } catch (org.json.JSONException expected) { /* ok */ }
+            try {
+                PresetCodec.importPresets(new JSONObject().put("format", PresetCodec.FORMAT)
+                        .put("version", invalidVersion).put("presets", new org.json.JSONArray()).toString());
+                throw new AssertionError("Versão do arquivo inválida aceita: " + invalidVersion);
+            } catch (org.json.JSONException expected) { /* ok */ }
+        }
+        try {
+            PresetCodec.export(java.util.Collections.nCopies(PresetCodec.MAX_PRESETS + 1, hundred));
+            throw new AssertionError("Exportação acima do limite aceita");
+        } catch (org.json.JSONException expected) { /* ok */ }
+        check(PresetCodec.importPresets(PresetCodec.export(java.util.Collections.nCopies(
+                PresetCodec.MAX_PRESETS, hundred))).size() == 1, "Limite inclusivo e deduplicação");
+
         // --- dedupe by id -------------------------------------------------------------------
         List<PresetCodec.Preset> duplicated = new ArrayList<>();
         duplicated.add(hundred);
