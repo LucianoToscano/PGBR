@@ -307,3 +307,12 @@ PGBR-CI-205 integrado após CI completo; PGBR-UI-SMALL candidata de correção e
 
 ### P0 #192 — restauração explícita do coletor pré-correção visual
 - Ordem do proprietário: restaurar o mecanismo funcional anterior mesmo se o branco persistir; a alteração de alpha não pode impedir a assistência. Referência histórica 21badfd1: snapshot de scale/active, loop original de escala e SetActive recuperados; removida a seleção obrigatória por geometria/material. Alpha opcional somente no material local identificado, sem latch de erro do coletor por falha visual. Preservados gate original, restauração, diagnósticos, prioridade/controles #294 e demais alterações da base #296. Teste host do do_collect com material branco, material não correspondente, exceção do setter e binding ausente; não é teste no jogo. Pode voltar a aparecer branco se efeito real não for identificado ou shader ignorar alpha; não homologar até teste físico.
+
+
+## 25/11/2026 — BAT-01 V5 CanvasRenderer (PR #300)
+
+- Relato físico: o branco persistiu na QA da PR #298; não homologada. A origem UI é hipótese ainda não confirmada no dispositivo.
+- Entrega Gemini `55df3948d09789488db100bf6087b3ba65635fa8`, patch `0003-gemini-fix-charged-white-layer-canvas-alpha.patch`, portada via API sobre a PR #299 (`aa2ba5f0ebb1039e1c6fc34063b5998851c2e9fe`, base `e28ca3f`). PR #300 contém #299; não duplicar integração.
+- V5 opcional: `CanvasRenderer.GetAlpha/SetAlpha(0)` localizado na subárvore do colisor, captura/restauração do alpha, busca pós-ativação e reforço por frame de renderizadores capturados. Mantidos V1–V4, escala funcional 1000×, SetActive, colisor, running e lógica de batalha. Reforço condicionado a V5; diagnósticos 21–25 da #299 preservados, 26–31 para V5.
+- Fixture host Gemini adaptada e registrada em `tools/native_host_tests.py`. Gemini reportou 5 cenários aprovados; CI desta integração ainda não confirmado. Verificar `miniCanvasAlphaBound` e `white-canvas-alpha-zero`/`white-canvas-reenforced`; se persistir, não ampliar ocultação sem identificar o componente exato.
+- Estado: PR aberta, sem merge ou APK confirmado; `device_tested=false`. Não declarar resolvido até homologação física. Issue #192 permanece aberta.
