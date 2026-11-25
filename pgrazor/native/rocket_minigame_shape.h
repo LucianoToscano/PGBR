@@ -63,11 +63,14 @@ inline Result enlarge(const Input &in) {
   for (int i = 0; i < kMaxAxes; ++i) {
     // Reject NaN/infinite scales outright; std::fabs(NaN) is NaN and fails the range.
     const float mag = std::fabs(in.scale[i]);
-    if (!(mag >= kMinAxisScale) || !(mag < kMaxAxisScale)) return out;
+    // A sphere uses its largest axis; a flattened unused axis does not invalidate it.
+    // Box geometry still requires every axis to be independently usable.
+    if (!(mag < kMaxAxisScale) || (!in.sphere && !(mag >= kMinAxisScale))) return out;
     magnitude[i] = mag;
   }
   for (int i = 0; i < axes; ++i) {
     if (!usable(in.dimensions[i], kMaxDimension)) return out;
+    if (in.sphere) continue; // computed from the largest axis below, never axis 0 alone
     const float base = magnitude[i] > 1.0f ? magnitude[i] : 1.0f;
     factor[i] = kEnlargeTimes * base / magnitude[i];
     if (!std::isfinite(factor[i]) || factor[i] < 1.0f) return out;

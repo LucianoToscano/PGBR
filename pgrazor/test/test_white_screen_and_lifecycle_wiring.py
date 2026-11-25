@@ -38,10 +38,16 @@ class WhiteScreenContractTests(unittest.TestCase):
         self.assertNotIn("setScale_method, transform", self.mini)
 
     def test_unknown_geometry_performs_no_mutation(self):
-        self.assertIn("if (!r.ok) { g_cfg.free_root(h); return false; }", self.mini)
+        self.assertIn('if (!r.ok) { g_cfg.free_root(h); shape_diagnostic(4u, "shape-geometry-rejected"); return false; }', self.mini)
         self.assertIn("if (!shape_ready || g_failed.load())", self.mini)
         # No fallback branch may publish a snapshot after a failed geometry read.
         self.assertNotIn("if (current_collider) prepare_shape", self.mini)
+
+    def test_sphere_reads_only_one_float_and_reports_rejections(self):
+        self.assertIn('in.dimensions[i] = (sphere && i != 0) ? 0.f : v[i];', self.mini)
+        for reason in ('shape-unbound', 'shape-unsupported', 'shape-value-unavailable', 'shape-geometry-rejected'):
+            self.assertIn(reason, self.mini)
+        self.assertIn('if (in.sphere) continue;', self.shape)
 
     def test_policy_bounds_are_declared_and_enforced(self):
         for token in ("kEnlargeTimes", "kMaxEnlarged", "kMinAxisScale", "kMaxAxisScale"):
