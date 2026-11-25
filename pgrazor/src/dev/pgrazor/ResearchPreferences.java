@@ -132,13 +132,19 @@ public final class ResearchPreferences {
         catalog.put(template, entry);
         return true;
     }
+    private static String searchKey(String value) {
+        if (value == null) return "";
+        String folded = java.text.Normalizer.normalize(value.toLowerCase(Locale.ROOT), java.text.Normalizer.Form.NFD);
+        return folded.replaceAll("\\p{M}+", "").replaceAll("[\\p{Z}\\s]+", " ").trim();
+    }
+
     /** Catalog rows {template, task, reward, category} matching the query, sorted by task text. */
     public synchronized List<String[]> tasks(String query) {
-        String q = query == null ? "" : query.trim().toLowerCase(Locale.US);
+        String q = searchKey(query);
         List<String[]> out = new ArrayList<>();
         for (Map.Entry<String, String[]> e : catalog.entrySet()) {
             String[] v = e.getValue();
-            String haystack = (v[0] + " " + v[1] + " " + e.getKey()).toLowerCase(Locale.US);
+            String haystack = searchKey(v[0] + " " + v[1] + " " + e.getKey());
             if (q.isEmpty() || haystack.contains(q)) out.add(new String[]{e.getKey(), v[0], v[1], v[2]});
         }
         out.sort((a, b) -> a[1].compareToIgnoreCase(b[1]) != 0 ? a[1].compareToIgnoreCase(b[1]) : a[0].compareTo(b[0]));
