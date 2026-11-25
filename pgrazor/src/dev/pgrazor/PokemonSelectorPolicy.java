@@ -10,11 +10,11 @@ final class PokemonSelectorPolicy {
     static String normalize(String query) {
         if (query == null) return "";
         return Normalizer.normalize(query.trim().toLowerCase(Locale.ROOT), Normalizer.Form.NFD)
-                .replaceAll("\\p{M}+", "").replaceAll("\\s+", " ");
+                .replaceAll("\\p{M}+", "").replaceAll("[\\p{Z}\\s]+", " ").trim();
     }
 
     static boolean matchesSpecies(int dex, String name, String query) {
-        String q = normalize(query).replace("#", "");
+        String q = normalize(query).replace("#", "").trim();
         return q.isEmpty() || normalize(name).contains(q) || Integer.toString(dex).startsWith(q);
     }
 

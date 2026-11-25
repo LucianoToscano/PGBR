@@ -12,6 +12,10 @@ public final class PokemonSelectorPolicyTest {
         ok(PokemonSelectorPolicy.matchesSpecies(25,"Pikachu","PIKA"),"case insensitive");
         ok(PokemonSelectorPolicy.matchesSpecies(1,"Nidorán","nidoran"),"accent fold");
         ok(!PokemonSelectorPolicy.matchesSpecies(25,"Pikachu","eevee"),"different species");
+        ok(PokemonSelectorPolicy.matchesSpecies(115,"Kangaskhan"," # 115 "),"Unicode spacing around dex");
+        ok(PokemonSelectorPolicy.matchesSpecies(29,"Nidorán F"," NIDORAN F "),"Unicode spacing in species name");
+        ok(PokemonSelectorPolicy.matchesSpecies(29,"Nidorán F"," "),"blank query");
+        ok(!PokemonSelectorPolicy.matchesSpecies(29,"Nidorán F","Nidoran M"),"distinct name preserved");
         LiveFeedData.Entry alive=new LiveFeedData.Entry("real",LiveFeedData.Kind.POKEMON,
                 "Mankey","PC 100",35.6,139.6,56,100,10,89,now+100000L,true);
         LiveFeedData.Entry expired=new LiveFeedData.Entry("old",LiveFeedData.Kind.POKEMON,
