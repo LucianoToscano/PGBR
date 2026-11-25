@@ -69,7 +69,7 @@ public final class SavedPlaces {
             String raw = preferences.getString("places", "[]");
             if (raw == null || raw.length() > JSON_LIMIT) return new Snapshot(entries, true);
             JSONArray array = new JSONArray(raw);
-            Set<String> names = new HashSet<>(), ids = new HashSet<>();
+            Set<String> names = new java.util.TreeSet<>(String.CASE_INSENSITIVE_ORDER), ids = new HashSet<>();
             if (array.length() > LIMIT) damaged = true;
             // Inspect at most LIMIT records even when a corrupt document advertises a larger collection.
             for (int i = 0; i < Math.min(array.length(), LIMIT); i++) {
@@ -77,7 +77,7 @@ public final class SavedPlaces {
                     JSONObject object = array.getJSONObject(i);
                     Entry entry = new Entry(object.getString("id"), object.getString("name"), object.getDouble("latitude"), object.getDouble("longitude"),
                         object.optString("category","Geral"),object.optLong("createdAtMs",0));
-                    String normalized = entry.name.toLowerCase(Locale.ROOT);
+                    String normalized = nameKey(entry.name);
                     if (ids.contains(entry.id) || names.contains(normalized)) { damaged = true; continue; }
                     ids.add(entry.id); names.add(normalized); entries.add(entry);
                 } catch (JSONException | IllegalArgumentException e) { damaged = true; }
@@ -89,7 +89,7 @@ public final class SavedPlaces {
     public void add(Entry entry) throws IOException { synchronized (LOCK) {
         List<Entry> entries = new ArrayList<>(read().entries);
         if (entries.size() >= LIMIT) throw new IllegalArgumentException("Você atingiu o limite de 200 favoritos. Exclua um antes de adicionar outro.");
-        for (Entry existing : entries) if (existing.name.equalsIgnoreCase(entry.name)) throw new IllegalArgumentException("A place with this name already exists. Choose another name.");
+        for (Entry existing : entries) if (nameKey(existing.name).equalsIgnoreCase(nameKey(entry.name))) throw new IllegalArgumentException("A place with this name already exists. Choose another name.");
         entries.add(entry);
         write(entries);
     } }
@@ -99,12 +99,12 @@ public final class SavedPlaces {
         Snapshot snapshot=read();
         if(snapshot.damaged)throw new IOException("Existing favorites are damaged.");
         List<Entry> merged=new ArrayList<>(snapshot.entries);
-        Set<String> names=new HashSet<>();
-        for(Entry e:merged)names.add(e.name.toLowerCase(Locale.ROOT));
+        Set<String> names=new java.util.TreeSet<>(String.CASE_INSENSITIVE_ORDER);
+        for(Entry e:merged)names.add(nameKey(e.name));
         int added=0;
         for(Entry e:additions) {
             if(e==null)throw new IOException("Invalid imported favorite");
-            String n=e.name.toLowerCase(Locale.ROOT);
+            String n=nameKey(e.name);
             if(names.contains(n))continue;
             merged.add(e);names.add(n);added++;
         }
@@ -126,6 +126,10 @@ public final class SavedPlaces {
         if (removed) write(entries);
         return removed;
     } }
+
+    private static String nameKey(String name) {
+        return java.text.Normalizer.normalize(name, java.text.Normalizer.Form.NFC).toLowerCase(Locale.ROOT);
+    }
 
     private void write(List<Entry> entries) throws IOException {
         JSONArray array = new JSONArray();
