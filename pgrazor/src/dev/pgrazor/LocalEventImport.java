@@ -93,10 +93,12 @@ public final class LocalEventImport {
 
     public static Report parse(String text, long now, String sourceId) {
         String raw = text == null ? "" : text;
+        if (raw.length() > MAX_BYTES || raw.getBytes(StandardCharsets.UTF_8).length > MAX_BYTES)
+            return new Report(Format.UNKNOWN, Collections.<SourceEvent>emptyList(),
+                    0, Collections.singletonList(new Rejection(1, "Arquivo maior que 2 MB.", "")), "");
+        if (raw.startsWith("\uFEFF")) raw = raw.substring(1);
         if (raw.trim().isEmpty()) return new Report(Format.UNKNOWN, Collections.<SourceEvent>emptyList(),
                 0, Collections.singletonList(new Rejection(1, "Nenhum dado para importar.", "")), "");
-        if (raw.length() > MAX_BYTES) return new Report(Format.UNKNOWN, Collections.<SourceEvent>emptyList(),
-                0, Collections.singletonList(new Rejection(1, "Arquivo maior que 2 MB.", "")), "");
         String trimmed = raw.trim();
         try {
             if (trimmed.startsWith("{") || trimmed.startsWith("[")) return parseJson(trimmed, now, sourceId);
@@ -134,6 +136,10 @@ public final class LocalEventImport {
             rows = new JSONArray(trimmed);
         } else {
             root = new JSONObject(trimmed);
+            if (EVENT_FORMAT.equals(root.optString("format")) && root.optInt("version", EVENT_VERSION) != EVENT_VERSION) {
+                rejections.add(new Rejection(1, "Versão do arquivo de eventos não suportada.", ""));
+                return new Report(Format.JSON, out, duplicates, rejections, note);
+            }
             String[] containers = {"events", "items", "spawns", "pokemons", "results", "data"};
             for (String container : containers) {
                 Object value = root.opt(container);
@@ -491,8 +497,10 @@ public final class LocalEventImport {
             parser.parse(new ByteArrayInputStream(text.getBytes(StandardCharsets.UTF_8)), new DefaultHandler() {
                 private StringBuilder name = new StringBuilder();
                 private boolean inName;
+                private int depth, pointDepth = -1, nameDepth = -1;
 
                 @Override public void startElement(String uri, String localName, String qName, Attributes attributes) {
+                    depth++;
                     String element = localName == null || localName.isEmpty() ? qName : localName;
                     if ("wpt".equals(element) || "trkpt".equals(element) || "rtept".equals(element)) {
                         Double lat = SourceEvent.coordinate(attributes.getValue("lat"));
@@ -500,8 +508,10 @@ public final class LocalEventImport {
                         points.add(new double[]{lat == null ? Double.NaN : lat,
                                 lon == null ? Double.NaN : lon});
                         names.add("");
-                    } else if ("name".equals(element)) {
+                        pointDepth = depth;
+                    } else if ("name".equals(element) && pointDepth >= 0 && depth == pointDepth + 1) {
                         inName = true;
+                        nameDepth = depth;
                         name.setLength(0);
                     }
                 }
@@ -512,10 +522,13 @@ public final class LocalEventImport {
 
                 @Override public void endElement(String uri, String localName, String qName) {
                     String element = localName == null || localName.isEmpty() ? qName : localName;
-                    if ("name".equals(element) && inName) {
+                    if ("name".equals(element) && inName && depth == nameDepth) {
                         inName = false;
+                        nameDepth = -1;
                         if (!names.isEmpty()) names.set(names.size() - 1, name.toString().trim());
                     }
+                    if (depth == pointDepth) pointDepth = -1;
+                    depth--;
                 }
             });
             int limit = Math.min(points.size(), MAX_ROWS);
