@@ -2489,3 +2489,37 @@ Base `24700b8cba7fb9a789052a0faa632c75b7fdf54d` (main). Execução única de eng
 ### Estado honesto
 
 `device_tested=false`; `provider_connected=false`. Tela branca, Auto ATK, Supereficaz e PT-BR têm **correção de código + testes host**, não homologação física. Nenhum ID abrangente é encerrado por este registro; o APK QA só pode ser declarado após CI verde e compilação desta HEAD.
+
+## Ciclo 25/11/2026 — integração na main e build QA real do lote P0 (LT048)
+
+### Integração
+
+- PR #283 (`arena/5ed38273-pgbr` → `main`) **aprovada e mesclada**: merge commit `4e74063c51f325498a0f8e2caf75794e1ec8de3a`, sobre `8ea28784` (que já continha a reconciliação com `origin/main` `942500bc`). Nada foi sobrescrito: o registro da main (#276–#279) e o registro do lote P0 LT048 convivem no arquivo canônico.
+- CI da PR #283 — **7/7 aprovados**: `Suite real check.py + compilacao Java + Root`, `Compilar politicas selecionadas via NDK ARM64`, `Politicas C++ host (sem Android)`, `Validar sintaxe do executor e host VNext ARM64`, `Conferir governança e inventário (sem exclusões)`, `Build do website com lockfile`, `translate`. Isso resolve o item 16 na parte de CI: o `tools/check.py` completo e a compilação Java (incluindo `Control.java` com `pvpExecutorSuspended`) rodaram em runner Windows com JDK/SDK.
+- PR #275 **fechada como substituída**: o histórico de código dela (`8459c37`) foi reaplicado integralmente na #283 e citado no registro do lote P0. Fechamento não descartou trabalho; a discussão permanece legível na PR.
+
+### Build QA executado (run 45526055689)
+
+- Workflow `PGBR LT047 pós-LT045 - compilar APKs QA sem publicar` (`workflow_dispatch`, `main`, HEAD `4e74063c`), 2 jobs aprovados: `native-pvp-fixture` e `apk-test` (windows-2025, 01:29:26Z → 01:37:47Z). Nenhuma publicação de release: apenas artefato com retenção de 30 dias.
+- Artefato `PGBR-LT047-Root-e-SemRoot-QA` (id `14982987001`, zip de 195,5 MB, 6 arquivos). O workflow executa `tools/verify_release.py dist/pgbr-lt047 --tag v0.00.47-LT`, que **passou**: os recibos (`build-info.json`, `root-build-info.json`) batem com os downloads e o módulo embutido no instalador é idêntico ao ZIP publicado no artefato.
+- SHA-256 reais impressos no log do job e em `SHA256SUMS.txt` dentro do artefato:
+  - `9EBA808C54EDF53D2CF7351A72FE1EB647B3020B3C8792C842E753F794C34B51  PGBR-v0.00.47-LT.apk`
+  - `811BF2D2F163F9AD42E3790136DE458204D5541D00457D176545AA96B0869E95  PGBR-v0.00.47-LT-Root.apk`
+  - `08748CAEEA670E5402A1577F5F4FD007E5014F21A4A217ECCB3843514DC126C6  PGBR-v0.00.47-LT-Root-module.zip`
+- **Rótulo honesto:** o artefato carrega o nome `v0.00.47-LT` porque é o `PGRAZOR_VERSION` fixado no workflow QA (contrato `test_lt047_release_contract.py`), embora `pgrazor/VERSION` já seja `0.00.48-LT`. O **conteúdo** é o HEAD `4e74063c` da main, que inclui tela branca, Auto ATK, Supereficaz e PT-BR deste lote. Este APK não substitui a release `v0.00.47-LT` existente (nenhum asset/tag foi tocado) e não é release.
+- Download: `https://github.com/LucianoToscano/PGBR/actions/runs/45526055689` (artefato; exige sessão autenticada). O redirect de upload/download usa `productionresultssa*.blob.core.windows.net`, host **bloqueado** no ambiente deste executor; por isso os hashes acima vieram do log assinado do job, não de recálculo local do binário.
+
+### Novo caminho para o APK rotulado v0.00.48-LT
+
+- `.github/workflows/pgbr-lt048-qa.yml`: mesmo endurecimento do QA LT047 (somente `workflow_dispatch`, ações fixadas por SHA, guarda de repositório, `verify_release.py`, três variantes, sem `gh release create/upload`), porém com `PGRAZOR_VERSION: v0.00.48-LT`, `dist/pgbr-lt048` e artefato `PGBR-LT048-Root-e-SemRoot-QA`.
+- `pgrazor/test/test_lt048_release_contract.py` **estendido, não substituído** (3 testes novos, 5 no total; o contrato de identidade LT048 e a matriz `QA48-01..10` continuam intactos) fixa: `pgrazor/VERSION == 0.00.48-LT`, os três nomes de download LT048 no workflow, ausência de gatilhos `push`/`pull_request` e de publicação, e retenção do contrato histórico LT047.
+- Motivo: a versão do workflow `pgbr-lt048-build-request.yml` criado na branch `release/lt048-qa-build-20261124` está presa a `github.head_ref == 'release/lt048-qa-build-20261124'`, o que impede executá-lo a partir da main por dispatch. O novo arquivo não altera aquele workflow nem a branch de release; ele existe para a main poder gerar APK com o rótulo correto.
+
+### Homologação física (separada, aberta)
+
+- `docs/validation/LT048_P0_TESTE_FISICO_20261125.md`: roteiro por item (tela branca nas três faixas e nos modos derivados; Auto ATK após batalha/menu/nova batalha; Supereficaz com defensor de Aço; telas PT-BR) com o que **só o aparelho** pode provar e os campos de evidência exigidos (aparelho, versão, SHA do APK, cenário, log sanitizado).
+- Issues abertas que dependem disso: #192 (tela branca), #105 (Auto ATK), #90 (Supereficaz). Nenhuma será fechada por CI.
+
+### Estado honesto deste ciclo
+
+`device_tested=false`; `provider_connected=false`. Implementação de código e integração na main: **feitas**. CI: **verde**. APK QA: **compilado e assinado, hashes reais** (rótulo `v0.00.47-LT` do workflow); APK rotulado `v0.00.48-LT` depende apenas de dispatch do novo workflow após o merge deste registro. Homologação física: **pendente**.
