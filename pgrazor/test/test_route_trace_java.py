@@ -192,6 +192,17 @@ class RouteTraceTest(unittest.TestCase):
         controller=(ROOT/"src/dev/pgrazor/GameRoutesController.java").read_text(encoding="utf-8")
         self.assertIn("ready&&freshSnapshot()?rawSnapshot",controller)
 
+    def test_poi_presentation_distinguishes_unavailable_from_empty(self):
+        poi=(ROOT/"src/dev/pgrazor/MapPoiLayer.java").read_text(encoding="utf-8")
+        refresh=poi[poi.index("    void refresh()"):poi.index("    void draw(Canvas")]
+        self.assertIn('if (snapshot == null) snapshot = "";',refresh)
+        self.assertIn('pois = new JSONArray();',refresh)
+        self.assertIn('snapshotInvalid = false;',refresh)
+        self.assertIn('decoded.has("error") || points == null',refresh)
+        self.assertIn('catch (org.json.JSONException e) { snapshotInvalid = true; }',refresh)
+        self.assertLess(refresh.index('Nearby layers unavailable'),refresh.index('Nearby locations loaded by the game ('))
+        self.assertIn('Waiting for nearby game locations',refresh)
+
     def test_map_library_and_coordinates_layout(self):
         source=(ROOT/"src/dev/pgrazor/WorldMapDialog.java").read_text(encoding="utf-8")
         self.assertEqual(source.count("layout.addView(selectionRow)"),1)
