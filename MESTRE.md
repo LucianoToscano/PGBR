@@ -228,3 +228,12 @@ PGBR-CI-205 integrado após CI completo; PGBR-UI-SMALL candidata de correção e
 - SYS-02: #245, HEAD 609e2886fbf2487ea36be19f0c634e03e7683dde, corrige ganhos fictícios em timestamps simultâneos, mantendo a primeira amostra de slots com horários distintos; inclui teste de restauração e ganho posterior. CI a verificar.
 - MAP-01/SYS-05: branch `fix/lt048-cache-trim-reopen`, base `a605ceea945f7df63ce710b2b53a575fbddc9a77`: MapTileCache passa a executar trim também na primeira gravação bem-sucedida de cada instância, mantendo intervalo de 32 gravações. Evita que reaberturas curtas adiem indefinidamente a limpeza. Teste Java host extraído do método real, 100 reaberturas simuladas e periodicidade. CI a verificar. Sem alterar rede, movimento ou jogo.
 - #243/#244: checks documentais aprovados, suíte de código ainda em andamento na última consulta. Sem APK novo ou homologação física confirmados; requisitos abrangentes preservados.
+
+
+### LT048 — integração e novo lote de código
+
+- #245 merge 0b78ab729cd51b5a437d00f9a463b13f96789297, CI 45518975698/45518976132 aprovado. #247 merge 83c7f2aca8559bfc7711ccee525af5bbf1d75942, CI 45519061722/45519061926 aprovado. #248 merge b5861f1a4d6aec6f0aded2f8463b4be07cdbf2b9, CI 45519113153/45519113237 aprovado. #249 merge 9ef3dabacf227af43183628df5f4d09a5fa6dfb0, CI 45519293193/45519294836 aprovado.
+- SYS-02: #250 HEAD b3a164b19072c7f59d07bee993876217e40a3c87 combina #245 integrada com #246 aprovada (45519061890/45519062287), preservando todos os testes. Novo CI 45520347773/45520347718; encerrar #246 apenas após integração e comparação.
+- COL-02: #251 HEAD c8ef16bde66e80fa0b91665aa33cad14086323da, seletor exclusivo XXL/XXS em busca manual copiável, API antiga preservada, 240 combinações de teste; CI 45520427236/45520427290. Sem ação na coleção.
+- MAP-03/SYS-03: #252 HEAD 0a4768f251d5ee4aa28a99d0d88f5fb0046e5a1f, nomes Unicode canonicamente equivalentes não sobrescrevem entradas, falha de leitura não representa biblioteca vazia; CI 45520467043/45520466964. Testes de preservação.
+- CI main 1b1c84388bdbe4d4949ca14195329f471708fe37 aprovado (45519197070/45519196972); CI da nova main 9ef3dabacf227af43183628df5f4d09a5fa6dfb0 45520301024 ainda em execução na consulta, auditoria 45520300957 aprovada. Nenhum APK LT048 comprovado; workflows de build identificados ainda referem LT047. Não relabelar artefato antigo. device_tested=false; provider_connected=false; preservar IDs abrangentes.
