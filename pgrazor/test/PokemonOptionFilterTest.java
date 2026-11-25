@@ -32,6 +32,12 @@ public final class PokemonOptionFilterTest {
         expect(PokemonOptionFilter.visible(ALL, "#0", "Charizard", "60|0|normal", false), "#0 does match the real Dex #60");
         expect(PokemonOptionFilter.visible(ALL, "char", "Charizard", "6|0|mega", false), "Name search still matches the label");
 
+        expect(PokemonOptionFilter.matchesSearch("nidoran f","Nidorán F","29"),"Accent insensitive");
+        expect(PokemonOptionFilter.matchesSearch(" NIDORAN F ","Nidorán F","29"),"Unicode whitespace");
+        expect(PokemonOptionFilter.matchesSearch(" # 29 ","Nidorán F","29"),"Pasted Dex number");
+        expect(!PokemonOptionFilter.matchesSearch("#nidoran","Nidorán F","29"),"Dex only remains numeric");
+        expect(!PokemonOptionFilter.matchesSearch("nidoran m","Nidorán F","29"),"Distinct species");
+        expect(!PokemonOptionFilter.matchesSearch("#3","Nidorán F","29|3|normal"),"Form remains excluded");
         // Category and search intersect: a Legendary name search keeps Mewtwo but drops a Mythical.
         expect(PokemonOptionFilter.visible(LEGENDARY, "mew", "Mewtwo", "150", false), "Legendary + name keeps Mewtwo");
         expect(!PokemonOptionFilter.visible(MYTHICAL, "mew", "Mewtwo", "150", false), "Mewtwo is not Mythical");
