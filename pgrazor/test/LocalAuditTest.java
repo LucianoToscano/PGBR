@@ -76,6 +76,20 @@ public final class LocalAuditTest {
  check(LocalAuditPolicy.preview(15,15,14,99,EnumSet.noneOf(LocalAuditPolicy.Flag.class),data).status==LocalAuditPolicy.Status.MATCH);
  check(LocalAuditPolicy.preview(-1,15,15,99,flags,data).status==LocalAuditPolicy.Status.UNCERTAIN);
  check(LocalAuditPolicy.preview(0,0,0,99,EnumSet.of(LocalAuditPolicy.Flag.NUNDO),data).status==LocalAuditPolicy.Status.PROTECTED);
+ // With partial data, the lower bound alone can prove a protection threshold.
+ var none=EnumSet.noneOf(LocalAuditPolicy.Flag.class);
+ for(int known=0;known<=15;known++)for(int other=0;other<=15;other++){
+  for(int min=0;min<=101;min++){
+   var expected=(known+other)*100>=min*45&&min<=100?LocalAuditPolicy.Status.PROTECTED:LocalAuditPolicy.Status.UNCERTAIN;
+   for(int[] partialIv:new int[][]{{-1,known,other},{known,-1,other},{known,other,-1}}){
+    var decision=LocalAuditPolicy.preview(partialIv[0],partialIv[1],partialIv[2],min,none,Collections.emptyMap());
+    check(decision.status==expected&&decision.reasons.contains("IV não confirmado"));
+   }
+  }
+ }
+ check(LocalAuditPolicy.preview(15,-1,-1,33,none,Collections.emptyMap()).status==LocalAuditPolicy.Status.PROTECTED);
+ check(LocalAuditPolicy.preview(15,-1,-1,34,none,Collections.emptyMap()).status==LocalAuditPolicy.Status.UNCERTAIN);
+ check(LocalAuditPolicy.preview(-1,-1,-1,101,none,Collections.emptyMap()).status==LocalAuditPolicy.Status.UNCERTAIN);
  // Every optional protection must preserve a positive observation, and absent facts remain uncertain.
  for(LocalAuditPolicy.Flag f:LocalAuditPolicy.Flag.values()){
   var facts=new EnumMap<LocalAuditPolicy.Flag,Boolean>(LocalAuditPolicy.Flag.class);facts.put(f,true);

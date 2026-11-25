@@ -20,7 +20,12 @@ public final class LocalAuditPolicy {
  if(min<0||min>101||enabled==null||observed==null)throw new IllegalArgumentException("Configuração inválida");
  List<String> reasons=new ArrayList<>(),unknown=new ArrayList<>();
  boolean iv=validIv(a)&&validIv(d)&&validIv(s);
- if(!iv)unknown.add("IV não confirmado");else if(min<=100&&(a+d+s)*100>=min*45)reasons.add("IV acima ou igual ao limite");
+ if(!iv){
+  unknown.add("IV não confirmado");
+  // Known components establish a lower bound, not an estimate of the missing IV.
+  int lower=(validIv(a)?a:0)+(validIv(d)?d:0)+(validIv(s)?s:0);
+  if(min<=100&&lower*100>=min*45)reasons.add("IV mínimo confirmado acima ou igual ao limite");
+ }else if(min<=100&&(a+d+s)*100>=min*45)reasons.add("IV acima ou igual ao limite");
  // Contradictions are uncertainty even if the optional protection is disabled.
  if(iv){
   if(observed.get(Flag.HUNDO)!=null&&observed.get(Flag.HUNDO)!=(a+d+s==45))unknown.add("Marcação IV 100% contradiz o IV informado");
