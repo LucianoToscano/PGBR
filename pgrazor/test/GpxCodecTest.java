@@ -39,6 +39,16 @@ public final class GpxCodecTest {
         try { GpxCodec.read(new ByteArrayInputStream(utf16.getBytes(StandardCharsets.UTF_16)),"bad");throw new AssertionError("UTF16 DTD accepted"); }
         catch(IOException expected) {}
 
+        Thread.currentThread().interrupt();
+        try {
+            GpxCodec.read(new InputStream(){public int read(){throw new AssertionError("Read after cancel");}}, "Cancel");
+            throw new AssertionError("Canceled import accepted");
+        } catch (java.io.InterruptedIOException expected) {} finally {Thread.interrupted();}
+        try {
+            GpxCodec.read(new InputStream(){public int read(){Thread.currentThread().interrupt();return -1;}}, "Cancel");
+            throw new AssertionError("Cancellation at end of input ignored");
+        } catch (java.io.InterruptedIOException expected) {} finally {Thread.interrupted();}
+
         // --- Waypoint fallback, non-namespaced, order preserved (shape of the user sample) ---
         List<GpxRoute> wpt = read("<gpx version=\"1.1\"><wpt lat=\"41.1\" lon=\"2.1\"/>"
             + "<wpt lat=\"41.2\" lon=\"2.2\"/><wpt lat=\"41.3\" lon=\"2.3\"/></gpx>");
