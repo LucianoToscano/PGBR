@@ -92,6 +92,27 @@ public final class LocalEventImportTest {
         check(gpxReport.events.get(0).kind == SourceEvent.Kind.ROUTE, "Ponto GPX não é spawn");
         check(gpxReport.events.get(0).name.equals("Pokestop A"), "Nome do waypoint preservado");
 
+        // GPX is a real document, not any XML carrying a wpt-like element.
+        check(LocalEventImport.parse("<html><wpt lat='1' lon='2'/></html>", NOW).imported == 0,
+                "Non-GPX root rejected");
+        check(LocalEventImport.parse("<gpx xmlns='urn:other'><wpt lat='1' lon='2'/></gpx>", NOW).imported == 0,
+                "Unknown GPX namespace rejected");
+        LocalEventImport.Report prefixed = LocalEventImport.parse(
+                "<g:gpx xmlns:g='http://www.topografix.com/GPX/1/1'><g:wpt lat='1' lon='2'><g:name>Nome</g:name></g:wpt></g:gpx>", NOW);
+        check(prefixed.imported == 1 && "Nome".equals(prefixed.events.get(0).name), "Prefixed GPX supported");
+        LocalEventImport.Report extensions = LocalEventImport.parse(
+                "<gpx><extensions><wpt lat='1' lon='2'/></extensions><wpt lat='3' lon='4'/></gpx>", NOW);
+        check(extensions.imported == 1 && extensions.events.get(0).lat == 3.0, "Nested extension is not a GPX point");
+        check(LocalEventImport.parse("<!DOCTYPE gpx><gpx><wpt lat='1' lon='2'/></gpx>", NOW).imported == 0,
+                "DTD rejected");
+        StringBuilder crowded = new StringBuilder("<gpx>");
+        for (int i = 0; i <= LocalEventImport.MAX_ROWS; i++) crowded.append("<wpt lat='1' lon='2'/>");
+        LocalEventImport.Report capped = LocalEventImport.parse(crowded.append("</gpx>").toString(), NOW);
+        check(capped.imported == LocalEventImport.MAX_ROWS && capped.note.contains("primeiros"),
+                "Point cap is reported rather than hidden");
+        String deep = "<gpx>" + "<x>".repeat(130) + "</x>".repeat(130) + "</gpx>";
+        check(!LocalEventImport.parse(deep, NOW).rejections.isEmpty(), "Deep structure rejected");
+
         // --- typed / clipboard coordinates -----------------------------------------------
         LocalEventImport.Report coords = LocalEventImport.parse(
                 "-23.550520, -46.633310\n-23.560000,-46.640000\n0,0\nabc,def\n-23.550520, -46.633310\n", NOW);
