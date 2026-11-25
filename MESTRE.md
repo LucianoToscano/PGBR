@@ -48,7 +48,11 @@ device_tested=false; provider_connected=false até evidência correspondente. Te
 Verificar PR #203 e run 45482026778, registrar logs/resultado real, preservar o SHA do build em andamento e avançar as tarefas independentes. Antes de declarar STATUS: CONCLUIDO, revisar todos os registros canônicos e obter evidência de entrega real; a mera ausência de checkboxes não basta. A ID de auditoria de um eventual supervisor CLI só pode ser registrada pelo executor real desse supervisor.
 
 
-## Ciclo 24/11/2026 — versão atual 0.00.47-LT
+### Ciclo 25/11/2026 — LT048 #192: camada branca do carregado (visual puro)
+
+22. [x] PGBR-BAT-04 / P0 — camada branca do ataque carregado. Base funcional: PR #297 (`1b1286bc`), mecanismo intacto. Origem: o renderer do objeto de toque, ampliado 1000× pelo coletor histórico; o material branco **opaco** escapava da correção de alpha anterior. Correção exclusivamente visual: `Renderer.enabled=false` nos renderers da subárvore do colisor, com leitura de confirmação, restauração exata por renderer e limite de 24; nada de escala, colisor, material, shader, `SetActive` ou tempo. Config V4 (`376` bytes) com fallback V3/V2/V1 e `miniWhiteHideBound` no diagnóstico. Testes: `rocket_minigame_white_layer_test.cpp` (7 cenários) + `test_white_layer_visual_only.py` (9 testes) → 26 fixtures host, 500 testes Python. **Homologação física pendente** (#192).
+
+# Ciclo 24/11/2026 — versão atual 0.00.47-LT
 
 Main observada `56cff4b885b9e52aa914aab8152a67959516e852`. Fila numerada de trabalho: os itens de catálogo incluem verificação de recursos existentes, propostas e melhorias; aberto não significa bug comprovado nem autorização para executar ações em serviço terceiro. Dependências e critérios completos permanecem no catálogo; decisões posteriores do Mestre prevalecem (BYOK retirado, não reativar automaticamente). Os itens já integrados podem exigir aceite em dispositivo separado. Não marcar conclusão sem evidência.
 
@@ -284,3 +288,22 @@ PGBR-CI-205 integrado após CI completo; PGBR-UI-SMALL candidata de correção e
 ### P0 #192 — retorno físico: branco ausente, assistência do minigame não funciona
 - Proprietário relata que o clarão sumiu mas agora precisa acertar os círculos manualmente. Não marcar BAT-01 homologado. A revisão anterior abandona geometria não reconhecida e não há camada branca independente identificada no código. Não restaurar escala visual de 1000× nem presumir alpha de material.
 - Candidata isolada sobre #290 (3546da64): corrigida leitura além do `System.Single` do raio e rejeição indevida de eixos não dominantes do colisor esférico; mantidas guardas de limites, BoxCollider, restauração e ausência de escrita visual. Logs PGRazorMini com motivos fixos, uma vez por processo, sem dados do treinador. Teste de esfera achatada e contrato de leitura adicionados. Se persistir, identificar motivo e classe real por diagnóstico em ambiente autorizado; não afirmar restauração da função sem teste de dispositivo. CI/QA desta revisão ainda não confirmados. Nenhum outro sistema alterado neste lote.
+
+
+### P0 25/11 — nova evidência de treinamento e controles em combate
+- Log enviado pelo proprietário: 01:40:39 e 01:40:54 selecionou Charge RESISTED quando Charge2 NEUTRAL ainda não estava pronta (`only-one-ready`); vídeo mostra Mergulho contra Sealeo, não muito eficaz. 109 observações stale-effect; não confundir com 109 ataques. Nenhuma prova de HP/dano mínimo/escudo para exceção de nocaute. Política VNext agora bloqueia a inferior quando a superior conhecida ainda carrega, inclusive normal vs resistido; empate continua imediato, seleção manual e preferências OFF preservadas. Teste de política e fixture do executor real com objetos sintéticos.
+- Atalhos Ágil/Carregado/Escudo no overlay durante escopos Rocket/PvP/Treino reconhecidos, vinculados aos bits existentes, sem criar executor. Outros modos não abrangidos neste lote. Validação de layout em aparelho necessária.
+- #192 continua aberto: proprietário pede SOMENTE alpha=0 no efeito branco específico, sem alterar funcionamento anterior nem ocultar renderers indiscriminadamente. PR #293 é candidata distinta com QA, NÃO aplicar merge automaticamente porque usa supressão de renderer e não ajuste comprovado de cor. Identidade de material/cor e blend ainda não comprovadas. Sem regressão visual declarada concluída. #293 preservada para revisão, não sobreposta.
+
+
+### P0 #192 — candidata de cor exclusivamente (alpha=0), consolidada sobre #294
+- Não usa forceRenderingOff, não muda shader, não desliga componente, não esconde câmera, não altera RGB nem escreve material compartilhado. Procura um único Renderer no objeto exato do tapCollider, um único material, e confirma branco semitransparente por leitura de Color (ABI 16 bytes); altera apenas A=0 do material de instância, confirma leitura, mantém geometria histórica quando confirmado e restaura alpha/escala na saída. Se não houver identificação inequívoca, mantém caminho de geometria limitada existente. Fixture testa cor/RGB/alpha, rejeição de cor diferente, múltiplos materiais, proprietário incorreto, restauração e falha do setter. A identidade do efeito branco real e o suporte ao alpha pelo shader ainda exigem teste no aparelho; não confundir leitura da propriedade com resultado visual. #293 preservada sem merge; #294 incluída nesta candidata. Sem exceção de nocaute sem dados válidos; sem liberar homologação automática.
+
+
+### P0 #192 — reprovação física reportada após oferta de Alpha Zero
+- Usuário relata novamente que não corrigiu; SHA efetivamente instalado não fornecido. #295 não integrada, código/QA verdes não comprovam funcionamento. Não liberar como corrigido. A recuperação da geometria antiga depende de um material branco local único; se não for localizado, a candidata volta ao caminho limitado que já falhou fisicamente.
+- Candidata de diagnóstico: exporta vínculo alfa/forma, callback observado, thread/política e estágios de seleção/resultado da cor, com enums fixos e sem dados de conta. Não muda ação, geometria ou gates. Testes de transporte filtrado e coleta de bits. Objetivo: diagnóstico pelo próprio ZIP, sem ADB, para evitar outro ajuste por tentativa. Não é correção funcional nem homologação.
+
+
+### P0 #192 — restauração explícita do coletor pré-correção visual
+- Ordem do proprietário: restaurar o mecanismo funcional anterior mesmo se o branco persistir; a alteração de alpha não pode impedir a assistência. Referência histórica 21badfd1: snapshot de scale/active, loop original de escala e SetActive recuperados; removida a seleção obrigatória por geometria/material. Alpha opcional somente no material local identificado, sem latch de erro do coletor por falha visual. Preservados gate original, restauração, diagnósticos, prioridade/controles #294 e demais alterações da base #296. Teste host do do_collect com material branco, material não correspondente, exceção do setter e binding ausente; não é teste no jogo. Pode voltar a aparecer branco se efeito real não for identificado ou shader ignorar alpha; não homologar até teste físico.

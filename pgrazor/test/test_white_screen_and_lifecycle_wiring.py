@@ -3,10 +3,9 @@
 These are wiring guards, not gameplay proofs. They exist so a later refactor cannot
 silently reintroduce the two P0 regressions:
 
-* BAT-01 — the Rocket tap assist scaled the visual Transform by 1000x whenever the
-  collider geometry was not recognised (issue #192). The collector must only ever
-  write collider geometry, through the bounded policy in
-  ``rocket_minigame_shape.h``, and must perform no mutation at all for unknown geometry.
+* BAT-01 — restore the pre-fix collector after repeated physical regressions;
+  the optional alpha edit must never block the historical functional path.
+  The white effect may persist if its material cannot be identified.
 * BAT-03 — a transient inability to re-verify a running battle (or an option toggle)
   used to tear the verified executor down, so Auto ATK stopped after a battle until the
   app was restarted (issue #105). The host must distinguish an authoritative end from a
@@ -26,28 +25,24 @@ class WhiteScreenContractTests(unittest.TestCase):
         self.mini = (NATIVE / "rocket_minigame.cpp").read_text(encoding="utf-8")
         self.shape = (NATIVE / "rocket_minigame_shape.h").read_text(encoding="utf-8")
 
-    def test_collector_uses_the_bounded_shape_policy(self):
-        self.assertIn('#include "rocket_minigame_shape.h"', self.mini)
-        self.assertIn("pgr_rocket_shape::enlarge(", self.mini)
-        self.assertIn("const pgr_rocket_shape::Result r = pgr_rocket_shape::enlarge(in);", self.mini)
+    def test_original_collector_is_not_gated_by_visual_binding(self):
+        collect=self.mini.split("void do_collect(void *challenge) {",1)[1].split("void maybe_restore_on_thread()",1)[0]
+        self.assertIn("scaled[i] = a * 1000.0f;", collect)
+        self.assertIn("set_scale(g_cfg.target(g_mini.transform), scaled);", collect)
+        self.assertIn("set_active(g_cfg.target(g_mini.go), 1);", collect)
+        self.assertIn("if(current_collider)prepare_visual(current_collider,go_h,g_mini);", collect)
+        self.assertNotIn("shape_ready", collect)
+        self.assertNotIn("visual_ready", collect)
+        self.assertNotIn("do_restore(); return;", collect)
 
-    def test_visual_transform_is_never_scaled(self):
-        # The 1000x visual fallback (and its restore) must never come back.
-        self.assertNotIn("set_scale", self.mini)
-        self.assertNotIn("Transform.set_localScale", self.mini)
-        self.assertNotIn("setScale_method, transform", self.mini)
-
-    def test_unknown_geometry_performs_no_mutation(self):
-        self.assertIn('if (!r.ok) { g_cfg.free_root(h); shape_diagnostic(4u, "shape-geometry-rejected"); return false; }', self.mini)
-        self.assertIn("if (!shape_ready || g_failed.load())", self.mini)
-        # No fallback branch may publish a snapshot after a failed geometry read.
-        self.assertNotIn("if (current_collider) prepare_shape", self.mini)
-
-    def test_sphere_reads_only_one_float_and_reports_rejections(self):
-        self.assertIn('in.dimensions[i] = (sphere && i != 0) ? 0.f : v[i];', self.mini)
-        for reason in ('shape-unbound', 'shape-unsupported', 'shape-value-unavailable', 'shape-geometry-rejected'):
-            self.assertIn(reason, self.mini)
-        self.assertIn('if (in.sphere) continue;', self.shape)
+    def test_visual_change_is_alpha_only(self):
+        self.assertIn("current[3]=0.f;", self.mini)
+        self.assertIn("return set_color(g_cfg.target(snap.material),current);", self.mini)
+        self.assertIn("color[3]=snap.original_color[3];", self.mini)
+        self.assertIn("is_milky_white(shared_color)", self.mini)
+        self.assertNotIn("forceRenderingOff", self.mini)
+        visual=self.mini.split("void *visual_invoke(",1)[1].split("// Snapshot is detached",1)[0]
+        self.assertNotIn("g_failed.store(1)",visual)
 
     def test_policy_bounds_are_declared_and_enforced(self):
         for token in ("kEnlargeTimes", "kMaxEnlarged", "kMinAxisScale", "kMaxAxisScale"):
@@ -58,6 +53,7 @@ class WhiteScreenContractTests(unittest.TestCase):
     def test_host_fixture_is_registered(self):
         runner = (ROOT / "tools" / "native_host_tests.py").read_text(encoding="utf-8")
         self.assertIn("rocket_minigame_shape_test.cpp", runner)
+        self.assertIn("rocket_minigame_visual_test.cpp", runner)
 
 
 class ExecutorLifecycleContractTests(unittest.TestCase):

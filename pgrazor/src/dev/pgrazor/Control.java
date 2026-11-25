@@ -514,7 +514,9 @@ public final class Control {
         event("rocket-options",String.valueOf(value));
         event("pvp-battle-options",String.valueOf(pvpBattleOptions));
     }
-    public static void setRocketReady(boolean ready,String status){rocketReady=ready;rocketStatus=status;}
+    private static volatile boolean rocketScopeActive;
+    public static void setRocketReady(boolean ready,String status){rocketReady=ready;rocketStatus=status;if(!ready)rocketScopeActive=false;}
+    public static boolean battleShortcutsVisible(){return hostLive()&&(rocketScopeActive||pvpBattleReady);}
     public static void setRocketStatus(String status){rocketStatus=status;}
     public static boolean rocketAllowed(){return rocketReady&&quickSummaryReady()&&hostLive();}
     // Shared action preferences; PvP-only super-effective preference stays independent.
@@ -1346,6 +1348,7 @@ public final class Control {
         saveState();return next;
     }
     public static void suspendForBackground() {
+        rocketScopeActive=false;
         EternatusRouteRunner.stop("O aplicativo deixou o primeiro plano.");
         gameRoutes.stop("App left foreground; check the active in-game Route before restarting");
         gameRoutesPlanning=false;mapRoutesOpen=false;gameRoutes.setPlanning(false);
@@ -2022,6 +2025,10 @@ public final class Control {
     private static final MapCatchStatus mapCatchStatus = new MapCatchStatus();
     public static String mapCatchLabel(){return autoThrow && autoThrowOnMap && hostLive() ? mapCatchStatus.label(android.os.SystemClock.elapsedRealtime()) : "";}
     public static void event(String kind, String detail) {
+        if("rocket-scope".equals(kind)){
+            try{rocketScopeActive=new org.json.JSONObject(detail).optBoolean("active",false);}
+            catch(org.json.JSONException ignored){rocketScopeActive=false;}
+        }
         if("battle-action".equals(kind)&&detail.startsWith("{")){
             try{
                 org.json.JSONObject b=new org.json.JSONObject(detail);

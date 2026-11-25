@@ -13,7 +13,7 @@ final class LocalDiagnosticSummary {
     private static final Pattern LINE=Pattern.compile("^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}(?:Z|[+-]\\d{2}:\\d{2}) \\[([a-z-]{1,40})\\] (\\{.*\\})$");
     private static final Pattern FOOTER=Pattern.compile("^Registros omitidos: ([0-9]{1,8})$");
     private static final Set<String> BATTLE_REASONS=Collections.unmodifiableSet(new HashSet<>(Arrays.asList("actor-unknown","actor-refresh","stale-effect","unknown-effect","unverified-slots","unavailable-pair","only-one-ready","effectiveness","known-super","off")));
-    private static final Set<String> OTHER=Collections.unmodifiableSet(new HashSet<>(Arrays.asList("runtime-gates","state-activation","battle-scope","battle-ended","panel-closed","disconnected","heartbeat-expired","route","game-routes","vgp","smart-battle","auto-raid","export-start","export-complete","export-error","log-recovery")));
+    private static final Set<String> OTHER=Collections.unmodifiableSet(new HashSet<>(Arrays.asList("runtime-gates","rocket-minigame-native","state-activation","battle-scope","battle-ended","panel-closed","disconnected","heartbeat-expired","route","game-routes","vgp","smart-battle","auto-raid","export-start","export-complete","export-error","log-recovery")));
     static final class Summary {
         final Map<Integer,Integer> transfers,icons,missingIcons,errorIcons;
         final Map<String,Integer> battle,observedEvents;

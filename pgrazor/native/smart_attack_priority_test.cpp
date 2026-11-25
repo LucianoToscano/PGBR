@@ -220,14 +220,20 @@ int main() {
   guarded[0].ready=false;
   allowed=admit_display(true,5320,guarded,2);
   assert(!allowed.hold&&allowed.index==1); // equal tier: use ready one
-  // READY policy: reserve for confirmed SUPER, preserve immediate fallback
-  // when neither move is SUPER and classifications are known.
+  // READY policy: reserve for every verified superior tier, not only SUPER.
   guarded[0].ready=true;
   guarded[0].sample.tier=Tier::RESISTED;
   guarded[1].sample.tier=Tier::NEUTRAL;
   guarded[1].ready=false;
   allowed=admit_display(true,5320,guarded,2);
-  assert(!allowed.hold&&allowed.index==0); // resisted ready, neutral charging
+  assert(allowed.hold&&allowed.index==-1); // physical report: resisted ready, neutral charging
+  guarded[0].ready=false;guarded[1].ready=true;
+  allowed=admit_display(true,5320,guarded,2);
+  assert(!allowed.hold&&allowed.index==1); // neutral ready
+  guarded[0].sample.tier=Tier::NEUTRAL;guarded[1].sample.tier=Tier::RESISTED;
+  allowed=admit_display(true,5320,guarded,2);
+  assert(allowed.hold&&allowed.index==-1); // opposite slot order
+  guarded[0].ready=true;guarded[1].ready=false;
   guarded[0].sample.tier=Tier::NEUTRAL;
   guarded[1].sample.tier=Tier::SUPER;
   allowed=admit_display(true,5320,guarded,2);

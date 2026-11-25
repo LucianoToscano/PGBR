@@ -46,6 +46,15 @@ LINKED_FIXTURES = {
         'flags': ('-DPGR_BATTLE_DIRECT_TEST', '-pthread'),
     },
     # Includes the runtime itself and replaces its clock/managed boundary with fixtures.
+    'rocket_minigame_visual_test': {
+        'source': ('rocket_minigame_visual_test.cpp',),
+        'flags': ('-pthread',),
+    },
+    # V4 appearance-only fix: hides renderers of the tap subtree, restores exact flags.
+    'rocket_minigame_white_layer_test': {
+        'source': ('rocket_minigame_white_layer_test.cpp',),
+        'flags': ('-pthread',),
+    },
     'heal_runtime_test': {
         'source': ('heal_runtime_test.cpp',),
         'flags': ('-pthread',),

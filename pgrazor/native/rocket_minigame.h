@@ -81,6 +81,44 @@ struct PgrRocketMiniConfigV2 {
 };
 static_assert(sizeof(PgrRocketMiniConfigV2) == 248, "v2 config layout");
 
+// Optional V3: alpha-only correction of a verified white material on the tap object.
+// V1/V2 remain ABI-compatible; the historical collector works without the optional visual binding.
+struct PgrRocketMiniVisual {
+    void *renderer_class;
+    void *renderer_type;
+    void *get_components;
+    void *get_shared_materials;
+    void *get_material;
+    void *material_class;
+    void *color_class;
+    void *get_color;
+    void *set_color;
+    void *array_get;
+    void *(*type_object)(void *);
+    uintptr_t (*array_length)(void *);
+    bool (*assignable)(void *, void *);
+};
+struct PgrRocketMiniConfigV3 {
+    PgrRocketMiniConfigV2 v2;
+    PgrRocketMiniVisual visual;
+};
+static_assert(sizeof(PgrRocketMiniConfigV3) == 352, "v3 config layout");
+
+// Optional V4: hide the milky-white layer that the historical 1000x visual scale magnifies.
+// Pure appearance: only Renderer.enabled is toggled inside the tap object's subtree. Colliders,
+// transforms, materials, shader properties and the collector itself are not touched, and every
+// original flag is written back on restore. A missing binding keeps the V3 behavior untouched.
+struct PgrRocketMiniVisualEx {
+    void *get_enabled;                // Renderer.get_enabled              -> System.Boolean
+    void *set_enabled;                // Renderer.set_enabled              <- System.Boolean
+    void *get_components_in_children; // Component.GetComponentsInChildren  <- System.Type -> Component[]
+};
+struct PgrRocketMiniConfigV4 {
+    PgrRocketMiniConfigV3 v3;
+    PgrRocketMiniVisualEx visual_ex;
+};
+static_assert(sizeof(PgrRocketMiniConfigV4) == 376, "v4 config layout");
+
 // Status codes (0 == success). Shared spirit with the other feature headers.
 enum {
     PGR_RMINI_OK = 0,
@@ -122,6 +160,8 @@ extern "C" {
 // the core getter registry. Returns the process-lifetime table on an exact version
 // match, else nullptr.
 const void *pgrazor_rocket_minigame_api(uint32_t version);
+// Private diagnostic drain; no ABI change, identifiers, pointers or managed reads.
+uint32_t pgrazor_rocket_minigame_take_diagnostics();
 #ifdef __cplusplus
 }
 #endif
