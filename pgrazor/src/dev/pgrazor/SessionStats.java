@@ -18,7 +18,7 @@ public final class SessionStats {
     private static SharedPreferences store;
     private static String account = "";
     private static long savedAt;
-    private static boolean dirty;
+    private static boolean dirty, writableHistory;
 
     private static String key() {
         String id = AccountProfiles.currentId();
@@ -38,9 +38,18 @@ public final class SessionStats {
     private static void follow(long now) {
         String current = key();
         if (current.equals(account)) return;
-        if (store != null && !account.isEmpty() && dirty) store.edit().putString(account, history.save()).apply();
+        if (store != null && writableHistory && !account.isEmpty() && dirty) store.edit().putString(account, history.save()).apply();
         account = current;
-        history.load(store == null ? "" : store.getString(current, ""), now);
+        String stored = "";
+        writableHistory = store != null;
+        if (store != null) {
+            try { stored = store.getString(current, ""); }
+            catch (ClassCastException incompatible) {
+                // Preserve an incompatible stored value; use an in-memory history this session.
+                writableHistory = false;
+            }
+        }
+        history.load(stored, now);
         dirty = false; savedAt = now;
     }
     /** A native "session-stats" event: the counters read just now. */
@@ -62,7 +71,7 @@ public final class SessionStats {
             follow(now);
             if (!history.record(now, values)) return;
             dirty = true;
-            if (store != null && now - savedAt >= SAVE_MS) { store.edit().putString(account, history.save()).apply(); savedAt = now; dirty = false; }
+            if (store != null && writableHistory && now - savedAt >= SAVE_MS) { store.edit().putString(account, history.save()).apply(); savedAt = now; dirty = false; }
         }
     }
     /** The change over the last {@code windowMs} for the signed-in account, or null before the first reading. */
@@ -70,6 +79,6 @@ public final class SessionStats {
         synchronized (LOCK) { follow(System.currentTimeMillis()); return history.change(windowMs); }
     }
     static void flush() {
-        synchronized (LOCK) { if (store != null && dirty && !account.isEmpty()) { store.edit().putString(account, history.save()).apply(); savedAt = System.currentTimeMillis(); dirty = false; } }
+        synchronized (LOCK) { if (store != null && writableHistory && dirty && !account.isEmpty()) { store.edit().putString(account, history.save()).apply(); savedAt = System.currentTimeMillis(); dirty = false; } }
     }
 }
