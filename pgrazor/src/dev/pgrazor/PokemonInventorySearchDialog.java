@@ -49,7 +49,13 @@ final class PokemonInventorySearchDialog {
 
         CheckBox shiny = check(activity, body, "Shiny");
         CheckBox shadow = check(activity, body, "Sombrio");
-        CheckBox xxl = check(activity, body, "XXL");
+        body.addView(text(activity, "Tamanho", 15));
+        Spinner size = new Spinner(activity);
+        ArrayAdapter<String> sizes = new ArrayAdapter<>(activity,
+                android.R.layout.simple_spinner_item, PokemonInventorySearchBuilder.SIZE_LABELS);
+        sizes.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        size.setAdapter(sizes);
+        body.addView(size);
         CheckBox background = check(activity, body, "Fundo especial");
         CheckBox legacy = check(activity, body, "Ataque especial (@special)");
 
@@ -66,14 +72,14 @@ final class PokemonInventorySearchDialog {
         result.setPadding(0, pad, 0, pad);
         result.setGravity(Gravity.START);
         body.addView(result);
-        body.addView(text(activity, "Os termos em inglês (shiny, shadow, xxl, background e @special) "
+        body.addView(text(activity, "Os termos em inglês (shiny, shadow, xxl, xxs, background e @special) "
                 + "podem precisar de tradução conforme o idioma definido no Pokémon GO. "
                 + "0/15/15 não garante Rank 1 PvP; depende da espécie e da liga.", 12));
 
         Runnable refresh = () -> {
             try {
                 String generated = PokemonInventorySearchBuilder.build(base.getSelectedItemPosition(),
-                        shiny.isChecked(), shadow.isChecked(), xxl.isChecked(),
+                        shiny.isChecked(), shadow.isChecked(), size.getSelectedItemPosition(),
                         background.isChecked(), legacy.isChecked(), dex.getText().toString());
                 result.setText(generated.isEmpty()
                         ? "Selecione pelo menos um filtro para gerar a busca." : generated);
@@ -82,9 +88,13 @@ final class PokemonInventorySearchDialog {
             }
         };
 
-        for (CheckBox cb : new CheckBox[]{shiny, shadow, xxl, background, legacy})
+        for (CheckBox cb : new CheckBox[]{shiny, shadow, background, legacy})
             cb.setOnCheckedChangeListener((button, checked) -> refresh.run());
         base.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            public void onItemSelected(AdapterView<?> parent, View view, int pos, long id) { refresh.run(); }
+            public void onNothingSelected(AdapterView<?> parent) { refresh.run(); }
+        });
+        size.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             public void onItemSelected(AdapterView<?> parent, View view, int pos, long id) { refresh.run(); }
             public void onNothingSelected(AdapterView<?> parent) { refresh.run(); }
         });
@@ -106,7 +116,7 @@ final class PokemonInventorySearchDialog {
                     String query;
                     try {
                         query = PokemonInventorySearchBuilder.build(base.getSelectedItemPosition(),
-                                shiny.isChecked(), shadow.isChecked(), xxl.isChecked(),
+                                shiny.isChecked(), shadow.isChecked(), size.getSelectedItemPosition(),
                                 background.isChecked(), legacy.isChecked(), dex.getText().toString());
                     } catch (IllegalArgumentException invalid) {
                         Toast.makeText(activity, invalid.getMessage(), Toast.LENGTH_SHORT).show();

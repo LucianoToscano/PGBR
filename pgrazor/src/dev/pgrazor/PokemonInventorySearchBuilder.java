@@ -33,13 +33,25 @@ public final class PokemonInventorySearchBuilder {
     public static String build(int ivPreset, boolean shiny, boolean shadow,
                                boolean xxl, boolean background, boolean specialMove,
                                String dexText) {
+        return build(ivPreset, shiny, shadow, xxl ? SIZE_XXL : SIZE_ANY, background, specialMove, dexText);
+    }
+
+    public static final int SIZE_ANY = 0, SIZE_XXL = 1, SIZE_XXS = 2;
+    public static final String[] SIZE_LABELS = {"Qualquer tamanho", "XXL", "XXS"};
+
+    /** One size at a time avoids generating impossible XXL AND XXS searches. */
+    public static String build(int ivPreset, boolean shiny, boolean shadow,
+                               int size, boolean background, boolean specialMove, String dexText) {
+        if (size < SIZE_ANY || size > SIZE_XXS)
+            throw new IllegalArgumentException("Tamanho inválido");
         if (ivPreset < 0 || ivPreset >= BASE_TERMS.length)
-            throw new IllegalArgumentException("Unknown IV preset");
+            throw new IllegalArgumentException("Avaliação de IV inválida");
         List<String> terms = new ArrayList<>();
         if (!BASE_TERMS[ivPreset].isEmpty()) terms.add(BASE_TERMS[ivPreset]);
         if (shiny) terms.add("shiny");
         if (shadow) terms.add("shadow");
-        if (xxl) terms.add("xxl");
+        if (size == SIZE_XXL) terms.add("xxl");
+        if (size == SIZE_XXS) terms.add("xxs");
         if (background) terms.add("background");
         if (specialMove) terms.add("@special");
 
