@@ -7,6 +7,13 @@ public final class UiViewportPolicyTest {
         near(UiViewportPolicy.clamp(Float.NaN,20,300,40),20);
         near(UiViewportPolicy.clamp(Float.POSITIVE_INFINITY,20,300,40),20);
         near(UiViewportPolicy.resizePosition(Float.NaN,20,300,40,30,400,60),30);
+        for(float invalid:new float[]{Float.NaN,Float.NEGATIVE_INFINITY,Float.POSITIVE_INFINITY,0f,-1f}){
+            near(UiViewportPolicy.fit(invalid,100,100,200,200),1f);
+            near(UiViewportPolicy.fit(invalid,200,100,100,100),.5f);
+            if(UiViewportPolicy.menuExtent(100,200,invalid)!=100||
+                UiViewportPolicy.menuExtent(200,100,invalid)!=100)
+                throw new AssertionError("invalid scale must retain default usable extent");
+        }
         int cases=0;
         for(int widthDp:new int[]{240,280,320,360,412,600,840})
         for(int heightDp:new int[]{240,320,480,640,960})
