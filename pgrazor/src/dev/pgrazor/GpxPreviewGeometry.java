@@ -39,9 +39,11 @@ public final class GpxPreviewGeometry {
  }
  public double distanceFromKm(double km){
   if(!Double.isFinite(km)||km<0)throw new IllegalArgumentException("Distância inválida");
-  double d=km*1000;
-  if(!Double.isFinite(d)||d>meters+1e-6)throw new IllegalArgumentException("Distância além do percurso");
-  return Math.min(meters,d);
+  double limit=meters/1000.0;
+  if(km>limit)throw new IllegalArgumentException("Distância além do percurso");
+  // The exact endpoint in km must round-trip to the route's exact length.
+  if(km==limit)return meters;
+  return Math.min(meters,km*1000.0);
  }
  public double[] positionAt(double distance){
   if(!Double.isFinite(distance)||distance<0||distance>meters)throw new IllegalArgumentException("Distância inválida");
