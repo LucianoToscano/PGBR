@@ -2489,3 +2489,9 @@ Base `24700b8cba7fb9a789052a0faa632c75b7fdf54d` (main). Execução única de eng
 ### Estado honesto
 
 `device_tested=false`; `provider_connected=false`. Tela branca, Auto ATK, Supereficaz e PT-BR têm **correção de código + testes host**, não homologação física. Nenhum ID abrangente é encerrado por este registro; o APK QA só pode ser declarado após CI verde e compilação desta HEAD.
+
+
+## 24/11/2026 — P0 LT048: encerramento ao abrir (#284)
+- Evidência do proprietário: APK PGBR-v0.00.48-LT.apk (192 MB exibidos), pasta a127452a5cd3671ae29e56b29b47dbd208b16b47, build 45521989887. Vídeo mostra splash e retorno à Home. Causa, stack e hash do arquivo instalado não confirmados. Prioridade bloqueante; não apagar dados nem considerar homologado.
+- Comparação com QA LT047 4092c29b7d4759bce8864224527e2a0bad72b1f5: 152 commits à frente; alterações em arquivos Java de dados/UI, testes e workflows, sem diferença de fonte nativa nessa comparação. LT047 aprovada em CI, não prova abertura física. BootstrapProvider pode lançar IllegalStateException por recuperação de sessão; nenhuma evidência de que ocorreu nesse aparelho. Preservar guardas, não forçar abertura após recuperação insegura.
+- Branch fix/lt048-startup-diagnostics-284; código bf225720f99e00552e673adc97d5fd94db4b0091 acrescenta marcadores Logcat provider-enter/return/failed, account-recovery-enter/return, control-begin-enter/return, loader-enter/return para o APK sem Root, sem engolir falhas nem registrar mensagens privadas. Teste estático eed78b5dcae994574d68550208ff405ed470871c. CI não observado; sem novo APK ou correção causal. Capturar logcat -b crash -d e logcat do tag PGBR; então reparar causa e validar instalação/atualização e estabilidade. Issue https://github.com/LucianoToscano/PGBR/issues/284. device_tested=false para homologação; falha física observada. Não interferir em Arena nem outras branches.
