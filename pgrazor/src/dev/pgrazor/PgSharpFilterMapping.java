@@ -31,10 +31,12 @@ final class PgSharpFilterMapping {
         Collections.addAll(KNOWN_POKEMON, "name", "ivMin", "ivMax", "iv", "minIv", "maxIv",
                 "attackMin", "attackMax", "defenseMin", "defenseMax", "hpMin", "hpMax",
                 "levelMin", "levelMax", "cpMin", "cpMax", "species", "pokemon", "pokemonIds", "mons",
-                "gender", "sizes", "size", "weather", "pvpLeague", "pvpRank", "radiusKm", "lat", "lon",
+                "gender", "sizes", "size", "pvpLeague", "pvpRank", "radiusKm", "lat", "lon",
                 "minTtlSeconds", "enabled", "id");
-        Collections.addAll(KNOWN_QUEST, "name", "reward", "rewardType", "questTitles", "enabled", "id");
-        Collections.addAll(KNOWN_RAID, "name", "tiers", "bosses", "exclusiveMode", "enabled", "id");
+        // Reward/quest-specific predicates are archived but not implemented in SourceQuery.
+        Collections.addAll(KNOWN_QUEST, "name", "enabled", "id");
+        // Raid-specific predicates are archived but not implemented in SourceQuery.
+        Collections.addAll(KNOWN_RAID, "name", "enabled", "id");
     }
 
     static final class MappingReport {
@@ -58,7 +60,7 @@ final class PgSharpFilterMapping {
                     + preserved + " campo(s) preservado(s) em raw_source, "
                     + unsupported + " campo(s) não suportado(s)"
                     + (unsupportedFields.isEmpty() ? "." : " (" + join(unsupportedFields) + ").")
-                    + " Nenhum feed ou teleporte foi ativado.";
+                    + " Revise os critérios não convertidos antes de usar o preset. Nenhum feed ou teleporte foi ativado.";
         }
     }
 
