@@ -250,7 +250,7 @@ final class SettingsSearch {
 
         put(SYNONYMS, "Location spoofing", "fake gps mock location teleport");
         put(SYNONYMS, "Coordinates & speed", "lat lon latitude longitude kmh walking speed");
-        put(SYNONYMS, "World map", "map place search pin route");
+        put(SYNONYMS, "World map", "map place search pin route mapa mundial locais pontos");
         put(SYNONYMS, "Auto ball", "ball pokeball great ultra catch rate");
         put(SYNONYMS, "Auto throw", "throw catch automatic");
         put(SYNONYMS, "Transfer new catches", "transfer iv appraise candy auto");
@@ -266,13 +266,13 @@ final class SettingsSearch {
         put(SYNONYMS, "Quick spin", "pokestop spin stop");
         put(SYNONYMS, "Smart healing", "heal potion revive");
         put(SYNONYMS, "Auto incubate", "egg incubator hatch");
-        put(SYNONYMS, "Dark theme", "light mode appearance");
-        put(SYNONYMS, "UI scale", "size resize scale overlays");
+        put(SYNONYMS, "Dark theme", "light mode appearance tema escuro claro aparencia");
+        put(SYNONYMS, "UI scale", "size resize scale overlays escala tamanho interface");
         put(SYNONYMS, "Limit to 20 FPS", "fps frames battery performance");
         put(SYNONYMS, "Lower resolution", "resolution battery performance graphics");
-        put(SYNONYMS, "Low graphics quality", "graphics quality battery performance shadows");
-        put(SYNONYMS, "Export / import settings", "backup restore settings");
-        put(SYNONYMS, "Run log / export", "log txt diagnostics export");
+        put(SYNONYMS, "Low graphics quality", "graphics quality battery performance shadows qualidade grafica bateria desempenho sombras");
+        put(SYNONYMS, "Export / import settings", "backup restore settings exportar importar configuracoes restaurar");
+        put(SYNONYMS, "Run log / export", "log txt diagnostics export registro execucao exportar");
         put(SYNONYMS, "Shiny Scanner (Experimental)", "shiny scan scanner notification");
         put(SYNONYMS, "Shundo Sniper (Experimental)", "shundo sniper teleport shiny");
     }
