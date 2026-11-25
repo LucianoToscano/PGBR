@@ -516,7 +516,8 @@ public final class LocalEventImport {
                     boolean allowed = known && (depth == 1 ||
                             (("wpt".equals(element) || "trk".equals(element) || "rte".equals(element)) && "gpx".equals(parent)) ||
                             ("trkseg".equals(element) && "trk".equals(parent)) ||
-                            ("trkpt".equals(element) && "trkseg".equals(parent)) ||
+                            // Preserve historical flat GPX exports; extension points remain excluded.
+                            ("trkpt".equals(element) && ("trkseg".equals(parent) || "gpx".equals(parent))) ||
                             ("rtept".equals(element) && "rte".equals(parent)) ||
                             ("name".equals(element) && ("wpt".equals(parent) || "trkpt".equals(parent) || "rtept".equals(parent))));
                     if (!allowed) element = "#ignored";
