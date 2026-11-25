@@ -106,7 +106,7 @@ public final class PresetCodec {
     public static List<Preset> importPresets(String json) throws JSONException {
         if (json == null || json.trim().isEmpty()) throw new JSONException("Arquivo de presets vazio.");
         JSONObject root = new JSONObject(json);
-        int version = root.optInt("version", 1);
+        int version = readVersion(root);
         if (!FORMAT.equals(root.optString("format")) && !root.has("presets") && version == 1)
             return importV1(root);
         if (!FORMAT.equals(root.optString("format")))
@@ -128,7 +128,7 @@ public final class PresetCodec {
     /** Reads a single preset object (v1 or v2). */
     public static Preset presetFromJson(JSONObject o) throws JSONException {
         if (o == null) return null;
-        int version = o.optInt("version", 1);
+        int version = readVersion(o);
         if (version < 1 || version > VERSION)
             throw new JSONException("Versão de preset (" + version + ") não suportada.");
         String raw = o.toString();
@@ -140,12 +140,28 @@ public final class PresetCodec {
             raw = (String) original;
         }
         JSONObject queryJson = o.optJSONObject("query");
+        // Missing query retains historical behavior, but a malformed explicit query
+        // must not silently become an unfiltered preset.
+        if (o.has("query") && queryJson == null) throw new JSONException("Critérios do preset inválidos.");
         SourceQuery query = queryJson == null
                 ? SourceQuery.builder().build() : SourceQuery.fromJson(queryJson);
         long now = System.currentTimeMillis();
         return new Preset(o.optString("id", ""), o.optString("name", ""), query, version,
                 o.optLong("created_at", now), o.optLong("updated_at", now),
                 o.optBoolean("favorite", false), o.optString("migrated_from", ""), raw);
+    }
+
+    /** Preserve unversioned v1 and exact legacy string versions, never truncate fractions. */
+    private static int readVersion(JSONObject o) throws JSONException {
+        if (!o.has("version")) return 1;
+        Object value = o.opt("version");
+        if (value instanceof Number) {
+            double n = ((Number) value).doubleValue();
+            if (n >= 1 && n <= VERSION && n == Math.rint(n)) return (int) n;
+        } else if (value instanceof String) {
+            for (int n = 1; n <= VERSION; n++) if (Integer.toString(n).equals(value)) return n;
+        }
+        throw new JSONException("Versão de preset inválida ou não suportada.");
     }
 
     // --- migration -------------------------------------------------------------------------------
