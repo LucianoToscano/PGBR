@@ -76,7 +76,7 @@ final class LocalDiagnosticSummary {
             checkCanceled();records++;
             if(lines[i].length()>4200){unknown++;continue;}
             Matcher row=LINE.matcher(lines[i]);
-            if(!row.matches()||row.group(2).length()>4096){unknown++;continue;}
+            if(!row.matches()||row.group(2).length()>4096||!validTimestamp(lines[i])){unknown++;continue;}
             try{
                 JSONObject data=new JSONObject(row.group(2));String kind=row.group(1);
                 if("transfer-kept".equals(kind)){
@@ -92,6 +92,12 @@ final class LocalDiagnosticSummary {
             }catch(JSONException e){unknown++;}
         }
         return new Summary(transfers,icons,missingIcons,errorIcons,battle,observedEvents,omitted,records,unknown,other);
+    }
+    private static boolean validTimestamp(String line){
+        try {
+            java.time.OffsetDateTime.parse(line.substring(0,line.indexOf(' ')));
+            return true;
+        } catch(java.time.DateTimeException invalid){return false;}
     }
     private static Integer number(Object v,int min,int max){
         if(!(v instanceof Number))return null;
