@@ -55,6 +55,7 @@ final class LocalTimeClock {
         catch (IllegalArgumentException invalid) { return "--:--"; }
         // TimeZone silently returns GMT for unknown IDs. Never show a convincing wrong clock.
         if (!AVAILABLE.contains(zone)) return "--:--";
+        if (language == null) language = Locale.getDefault();
         if (!zone.equals(zoneId) || !language.equals(locale) || use24 != twentyFourHour) {
             zoneId = zone; locale = language; use24 = twentyFourHour;
             formatter = new SimpleDateFormat(use24 ? "HH:mm z" : "h:mm a z", locale);
