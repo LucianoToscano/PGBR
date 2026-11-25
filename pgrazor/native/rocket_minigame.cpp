@@ -646,7 +646,7 @@ void do_collect(void *challenge) {
         g_cfg.field_get_value(g_cfg.target(g_mini.challenge), g_cfg.collider_field, &post_collider);
         if (post_collider) hide_canvas_white_layer(post_collider, g_mini);
     }
-    enforce_white_layers(g_mini);
+    if (g_canvas_alpha.get_alpha) enforce_white_layers(g_mini);
     g_busy.store(0);
 }
 
