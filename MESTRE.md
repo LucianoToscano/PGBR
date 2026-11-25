@@ -221,3 +221,10 @@ PGBR-CI-205 integrado após CI completo; PGBR-UI-SMALL candidata de correção e
 - #237 integrada em `11737b318ec26da76f31c0e1aa43bc3bd87bbb89`, CI da PR 45515984710/45515984684 aprovado; mensagens GPX traduzidas, QA física separada.
 - #238 integrada em `622f49bb26eee08e7bef33dffc252ff054fd43a2`, CI da PR 45516042862/45516042856 aprovado. Na consulta subsequente, CI da main 45517452346/45517452317 ainda não concluído; verificar antes de build. Sem sobreposição de arquivos detectada na comparação antes de cada merge.
 - Preservados os IDs e critérios abrangentes; nenhum APK LT048 comprovado, device_tested=false, provider_connected=false. Próximo: validar a revisão consolidada, avançar código independente e acionar build oficial por executor autorizado.
+
+
+### Lote LT048 — regressões de estatísticas e cache
+
+- SYS-02: #245, HEAD 609e2886fbf2487ea36be19f0c634e03e7683dde, corrige ganhos fictícios em timestamps simultâneos, mantendo a primeira amostra de slots com horários distintos; inclui teste de restauração e ganho posterior. CI a verificar.
+- MAP-01/SYS-05: branch `fix/lt048-cache-trim-reopen`, base `a605ceea945f7df63ce710b2b53a575fbddc9a77`: MapTileCache passa a executar trim também na primeira gravação bem-sucedida de cada instância, mantendo intervalo de 32 gravações. Evita que reaberturas curtas adiem indefinidamente a limpeza. Teste Java host extraído do método real, 100 reaberturas simuladas e periodicidade. CI a verificar. Sem alterar rede, movimento ou jogo.
+- #243/#244: checks documentais aprovados, suíte de código ainda em andamento na última consulta. Sem APK novo ou homologação física confirmados; requisitos abrangentes preservados.
