@@ -44,6 +44,13 @@ struct Input {
   bool geometry_bound = true;      // the host resolved this collider class exactly
 };
 
+// Read the exact payload width of the validated managed value.
+inline void copy_dimensions(bool sphere, const float *value, float (&out)[kMaxAxes]) {
+  out[0] = value[0];
+  out[1] = sphere ? 0.f : value[1];
+  out[2] = sphere ? 0.f : value[2];
+}
+
 struct Result {
   bool ok = false;                 // true only for a bounded, finite enlargement
   int axes = 0;

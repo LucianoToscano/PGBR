@@ -82,6 +82,18 @@ void sphere_uses_the_largest_scale_axis() {
     check(r.enlarged[1] == 0.f && r.enlarged[2] == 0.f, "sphere leaves other axes zero");
 }
 
+void payload_width_is_respected() {
+    const float radius[1] = {0.25f};
+    float out[3] = {9.f, 9.f, 9.f};
+    pgr_rocket_shape::copy_dimensions(true, radius, out);
+    check(out[0] == 0.25f && out[1] == 0.f && out[2] == 0.f,
+          "scalar payload copies one float and clears unused axes");
+    const float box_size[3] = {1.f, 2.f, 3.f};
+    pgr_rocket_shape::copy_dimensions(false, box_size, out);
+    check(out[0] == 1.f && out[1] == 2.f && out[2] == 3.f,
+          "vector payload copies all three floats");
+}
+
 void invalid_numbers_are_refused() {
     check(!pgr_rocket_shape::enlarge(box(1.f, 1.f, 1.f, 0.f, 1.f, 1.f)).ok,
           "zero dimension refused");
@@ -147,6 +159,7 @@ int main() {
     box_geometry_is_enlarged_not_scaled();
     unit_scale_is_the_historical_magnitude();
     sphere_uses_the_largest_scale_axis();
+    payload_width_is_respected();
     invalid_numbers_are_refused();
     enlargement_is_always_bounded_and_never_shrinks();
     result_is_all_or_nothing();

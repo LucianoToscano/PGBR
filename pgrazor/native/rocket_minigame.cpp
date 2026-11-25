@@ -136,11 +136,9 @@ bool prepare_shape(void *collider, const float scale[3], MiniState &snap) {
     in.sphere = sphere;
     in.axes = pgr_rocket_shape::kMaxAxes;
     in.geometry_bound = true;
-    for (int i = 0; i < pgr_rocket_shape::kMaxAxes; ++i) {
-        in.scale[i] = scale[i];
-        in.dimensions[i] = v[i];
-    }
-    if (sphere) in.dimensions[1] = in.dimensions[2] = 0.f; // radius only; not used
+    for (int i = 0; i < pgr_rocket_shape::kMaxAxes; ++i) in.scale[i] = scale[i];
+    // A boxed Single contains one float, not a Vector3. Read only its actual size.
+    pgr_rocket_shape::copy_dimensions(sphere, v, in.dimensions);
 
     const pgr_rocket_shape::Result r = pgr_rocket_shape::enlarge(in);
     if (!r.ok) { g_cfg.free_root(h); return false; }

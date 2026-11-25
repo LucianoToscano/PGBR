@@ -2545,3 +2545,9 @@ Escopo pequeno e verificável, sem tocar em identificadores internos, chaves de 
 - **Regressão coberta:** `pgrazor/test/test_ptbr_ui_strings.py` (5 testes) fixa que as frases inglesas não voltam, que as portuguesas existem (remoção não pode ser "conserto" por deleção), que o substantivo do limite é traduzido com *default* honesto, que a chave do dicionário está nas duas UIs e que chaves de configuração/backup e o nome do treinador não foram tocados.
 - **Verificação local:** 487 testes Python (só a suíte que exige `javac` falha neste ambiente), 24 fixtures C++ host.
 - **Não feito de propósito:** rodar `tools/ptbr_wire.py --apply` em massa. O teste mostrou que a varredura ampla reescreve literais que contratos estáticos verificam (`setPositiveButton("Aplicar", null)`, `keyInput.setText("")`, mensagens de privacidade) e derrubou 5 suítes; o caminho seguro é tradução cirúrgica + teste, como neste lote. `device_tested=false`.
+
+
+### P0 BAT-01 — reprovação funcional pós-correção visual (#192)
+- Proprietário relata que o branco sumiu, mas a assistência do minigame carregado deixou de funcionar, exigindo interação manual. APK/SHA não informado. Não considerar BAT-01 encerrado nem inferir causa no aparelho. Evidência: https://github.com/LucianoToscano/PGBR/issues/192#issuecomment-7152000038.
+- Defeito independente confirmado em fonte: prepare_shape lia três floats de um boxed Single (SphereCollider.radius) antes de zerar eixos extras. Candidata corrige largura de leitura e inclui fixture escalar/vetor; sem mudar a escala visual, regras ou executor. Não afirmar recuperação funcional por esta correção de segurança. CI e teste físico separados.
+- Investigar disponibilidade/diagnóstico de geometria em ambiente autorizado, sem desativar funcionalidades para mascarar problemas; preservar código concorrente #290 e históricos. Critérios visual e funcional separados; não reintroduzir fallback de Transform 1000×.
