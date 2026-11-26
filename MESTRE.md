@@ -499,3 +499,17 @@ Evidências recentes: #327 runs 45751930949/45751930997/45751931018/45751930966 
 ## LT049 — migração candidata 0.439.0 (26/11/2026)
 
 Origem upstream: `jpitty03/PGRazor@39b52749eed81ed344140000a9a3ee200d41fbe0`. O commit explica que o jogo removeu CombatUI, CombatDirectorV2 e CombatChargeAttackDisplay; as 25 entradas ausentes pertencem à interface Legacy removida, não são endereços a inventar. Perfil anterior PGBR idêntico byte a byte ao upstream anterior (`c6efee8fa88a2eed1a074e180df9bb8a7fadd5ae`), assim como os seis arquivos gerados anteriores. Importação por hunks exatos, sem substituir arquivos com alterações PGBR; perfil 0.439.0 e seis saídas geradas correspondem ao upstream revisado. Perfil 0.437.0 preservado para rollback. Original passou assinaturas e identidade no run 45758860479. #348 integrada, prepara build QA automaticamente após seleção de perfil na main. A migração ainda depende de CI e avaliação das regressões próprias PGBR, sem APK ou homologação física confirmados. device_tested=false; provider_connected=false. Não publicar antes dos testes e hashes reais.
+
+
+## 26/11/2026 — LT049 QA entregue e início LT050
+
+Checkpoint imutável do APK QA: `403150f8a402e7101840fafcf7772bf946290c77`. #349 integrou o perfil 0.439.0 (CI 2/2), #350 corrigiu a validação de manifesto Windows via verificação assinada em Linux e igualdade SHA-256 (CI 2/2). Run [45762103569](https://github.com/LucianoToscano/PGBR/actions/runs/45762103569) concluído com sucesso, 4/4 jobs; job 139714467533 verificou os três arquivos via tools/verify_release.py. Artefato [15091455644](https://github.com/LucianoToscano/PGBR/actions/runs/45762103569/artifacts/15091455644), 204653488 bytes, expira em 26/12/2026. Hashes lidos dos logs reais:
+
+| Arquivo | SHA-256 |
+|---|---|
+| PGBR-v0.00.49-LT.apk | 5c3ac782e9b458451599aad9410a27ce65461fafcdd37323da3513ecae0daf9b |
+| PGBR-v0.00.49-LT-Root.apk | c8401c01b7348a74a5fc7e72049e934187207a651e3625630688b34364f8ccfc |
+| PGBR-v0.00.49-LT-Root-module.zip | 220074b3ca2c1a2fd9e1ad5537629cd299df41e60a5d230f78122dc54b83b6fd |
+| ZIP do artefato | c0dc67e5070fb3a8faf6461af43dbe0dd89519aea6a39ac42cbab8a7fb5d1451 |
+
+QA concluída, não release publicada; device_tested=false; provider_connected=false. Os registros anteriores de bloqueio são históricos, não estado atual. Próximo ciclo LT050: despacho das três IAs na issue #320 comentário 7183816749. #351 recupera 17 arquivos offline da #328 sem sobrescrever código compartilhado, CI e auditoria pendentes; #328 preservada. Reservas Gemini G-050-01, Arena A-050-01, GPT C-050-01, sem duplicar G-049-10/A-049-02. Não modificar o artefato LT049 nem afirmar teste físico. Entregas externas dependem de recibos reais.
