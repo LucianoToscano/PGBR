@@ -17,6 +17,12 @@ class Lt049QaContract(unittest.TestCase):
         for term in ("  pull_request:", "  pull_request_target:", "gh release create", "gh release upload"):
             self.assertNotIn(term, workflow)
 
+    def test_r2_artifact_does_not_replace_original_qa(self):
+        workflow = (ROOT / ".github/workflows/pgbr-lt049-qa.yml").read_text(encoding="utf-8")
+        self.assertIn("name: PGBR-LT049-R2-Root-e-SemRoot-QA", workflow)
+        self.assertIn("PGRAZOR_VERSION: v0.00.49-LT", workflow)
+        self.assertNotIn("gh release upload", workflow)
+
     def test_historical_recipe_preserved(self):
         old = (ROOT / ".github/workflows/pgbr-lt048-qa.yml").read_text(encoding="utf-8")
         self.assertIn("PGRAZOR_VERSION: v0.00.48-LT", old)

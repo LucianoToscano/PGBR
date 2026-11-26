@@ -79,6 +79,7 @@ final class SettingsPanel {
     private Button vgpIconStyleButton, vgpStartStopButton, joystickStyleButton, eternatusIntensityButton, eternatusSpeedButton;
     private BerryPriorityPicker berryPicker;
     private Switch catchPreviewSwitch;
+    private Button availableReleaseRow;
     private TextView quickSummaryLabel, vgpStatus, cutsceneStatus, healStatus, smartBattleStatus,
         smartAttackNativeStatus;
     private Switch healSwitch, healReviveSwitch, smartBattleSwitch, smartAttackSwitch, gymRepeatSwitch;
@@ -358,6 +359,11 @@ final class SettingsPanel {
         Button releaseCheck=button("Verificar atualização do PGBR");
         releaseCheck.setAllCaps(false);
         releaseCheck.setOnClickListener(v->ReleaseCheck.check(activity, releaseCheck));
+        availableReleaseRow=button("Atualização disponível");
+        availableReleaseRow.setAllCaps(false);
+        availableReleaseRow.setVisibility(View.GONE);
+        availableReleaseRow.setOnClickListener(v->UpdateChecker.check(activity));
+        home.addView(availableReleaseRow,new LinearLayout.LayoutParams(-1,-2));
         home.addView(releaseCheck,new LinearLayout.LayoutParams(-1,-2));
         // Session stats from read-only lifetime counters; accounts are kept in separate local histories.
         LinearLayout sessionCard=new LinearLayout(activity);sessionCard.setOrientation(LinearLayout.VERTICAL);
@@ -1648,6 +1654,11 @@ final class SettingsPanel {
 
     void refresh() {
         refreshHome();
+        if(availableReleaseRow!=null){
+            String available=UpdateChecker.availableVersion();
+            availableReleaseRow.setVisibility(available.isEmpty()?View.GONE:View.VISIBLE);
+            if(!available.isEmpty())availableReleaseRow.setText("Atualização disponível: "+available);
+        }
         if(joystickStyleButton!=null){
             String desired="Estilo do joystick: "+joystickStyleName(Control.joystickStyle());
             if(!desired.contentEquals(joystickStyleButton.getText()))

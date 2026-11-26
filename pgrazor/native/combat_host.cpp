@@ -1766,16 +1766,19 @@ int finish_setup_locked(uint64_t tid) {
 
     g_owner_tid.store(owner, std::memory_order_release);
 
-    // Optional metadata for the simple charged-button selector (0.437.0).
+    // Optional metadata for the simple charged-button selector across game profiles.
     // The runtime bootstrap exposes field/type queries and literal values.
-    // Resolve by exact names/types; if any member or enum is unexpected,
+    // Resolve by exact names/types or unique enum signatures; if ambiguous,
     // leave the feature disabled without affecting the original battle gates.
     g_charge_ui={};
     const auto *boot_ui=api_table<PgrBootApi>(pgrazor_runtime_bootstrap_api(1));
     if(boot_ui&&boot_ui->version==1&&boot_ui->size>=sizeof(PgrBootApi)&&boot_ui->snapshot) {
         PgrBootBinding binding{};
-        if(boot_ui->snapshot(&binding)==PGR_BOOT_OK)
-            pgr_charge_effect_ui::resolve(binding,md_k(OC_RVCHARGE),g_charge_ui);
+        if(boot_ui->snapshot(&binding)==PGR_BOOT_OK) {
+            auto enumerate=binding.handle?reinterpret_cast<pgr_charge_effect_ui::FieldIterator>(
+                dlsym(binding.handle,"il2cpp_class_get_fields")):nullptr;
+            pgr_charge_effect_ui::resolve(binding,md_k(OC_RVCHARGE),g_charge_ui,enumerate);
+        }
     }
 
     // 4. Configure & install Rocket (Features 6, 20, 21 + 11 hooks) and Battles (Feature 19 + 31 hooks).

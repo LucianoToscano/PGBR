@@ -29,7 +29,16 @@ final class UpdateChecker {
     private static final long PROMPT_INTERVAL=24L*60*60*1000;
     private static final Handler MAIN=new Handler(Looper.getMainLooper());
     private static final AtomicBoolean RUNNING=new AtomicBoolean();
+    private static volatile String availableVersion="";
+    private static volatile long availableCheckedAt;
     private UpdateChecker(){}
+
+    // Presentation only: advertise a verified newer stable package, never an input or QA artifact.
+    static String availableVersion(){
+        long age=android.os.SystemClock.elapsedRealtime()-availableCheckedAt;
+        String version=availableVersion;
+        return age>=0&&age<CHECK_INTERVAL&&ReleaseCheckRules.newer(version,BuildVersion.NAME)?version:"";
+    }
 
     private static SharedPreferences prefs(Context c){
         return c.getApplicationContext().getSharedPreferences(PREFS,Context.MODE_PRIVATE);
@@ -72,6 +81,8 @@ final class UpdateChecker {
             RUNNING.set(false);
             MAIN.post(()->{
                 if(!visible(activity)||(automatic&&!automaticEnabled(activity)))return;
+                availableVersion=error==null&&found!=null&&found.url!=null&&ReleaseCheckRules.newer(found.version,BuildVersion.NAME)?found.version:"";
+                availableCheckedAt=android.os.SystemClock.elapsedRealtime();
                 if(error!=null){if(!automatic)message(activity,error);return;}
                 if(!ReleaseCheckRules.newer(found.version,BuildVersion.NAME)){
                     if(!automatic)message(activity,"Você já está na versão mais recente publicada.\n\nInstalada: "+BuildVersion.NAME);
