@@ -1215,7 +1215,26 @@ int main(int argc, char **argv) {
       v.f_first = v.f_second = v.f_charged = v.f_input = nullptr;
       v.class_rui = v.class_rdir = v.class_rcharge = nullptr;
       reset_runtime();
-      _exit(api->install(&v) == PGR_RC_OK ? 0 : 1);
+      if (api->install(&v) != PGR_RC_OK) _exit(1);
+      // Exercise the existing synthetic regressions under the actual 0.439.0
+      // VNext-only contract, not just installation with the legacy group absent.
+#ifdef PGR_RC_DIRECT_TEST
+      const int vnext_cases[] = {3,4,33,34,35,38,66,68,69,70};
+#else
+      const int vnext_cases[] = {3,4};
+#endif
+      for (int n : vnext_cases) {
+        const pid_t child = fork();
+        if (child == 0) _exit(scenario(n));
+        int result = 0;
+        if (child < 0 || waitpid(child, &result, 0) != child ||
+            !WIFEXITED(result) || WEXITSTATUS(result)) {
+          std::printf("FAIL VNext-only scenario %d\n", n);
+          std::fflush(stdout);
+          _exit(2);
+        }
+      }
+      _exit(0);
     }
     int status = 0; waitpid(pid, &status, 0);
     if (!WIFEXITED(status) || WEXITSTATUS(status)) { std::puts("FAIL vnext-only install"); return 7; }
