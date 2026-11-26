@@ -28,3 +28,12 @@ class ReleaseCheckTest(unittest.TestCase):
         for token in ('ReleaseCheckRules.asset(version,PgAssets.rooted())','ReleaseCheckRules.trustedAsset(version,name,candidate)','packages==1&&checksums==1','ReleaseCheckRules.releasePage(version)','setInstanceFollowRedirects(false)','automatic&&!automaticEnabled(activity)'):
             self.assertIn(token,source)
         self.assertNotIn('PackageInstaller',source)
+
+    def test_home_advertises_only_recent_verified_release(self):
+        source=(ROOT / "src/dev/pgrazor/UpdateChecker.java").read_text(encoding="utf-8")
+        panel=(ROOT / "src/dev/pgrazor/SettingsPanel.java").read_text(encoding="utf-8")
+        self.assertIn("found.url!=null&&ReleaseCheckRules.newer",source)
+        self.assertIn("age>=0&&age<CHECK_INTERVAL",source)
+        self.assertIn("availableReleaseRow.setOnClickListener(v->UpdateChecker.check(activity))",panel)
+        self.assertIn("available.isEmpty()?View.GONE:View.VISIBLE",panel)
+        self.assertLess(panel.index("home.addView(availableReleaseRow"),panel.index("home.addView(releaseCheck"))
