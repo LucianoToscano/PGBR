@@ -133,7 +133,7 @@ jobs:
 
   auto-dev-proposals:
     needs: audit
-    if: github.repository == 'LucianoToscano/PGBR' && github.ref == 'refs/heads/main' && github.event_name != 'pull_request' && vars.PGBR_AUTO_DEV_ENABLED == 'true'
+    if: github.repository == 'LucianoToscano/PGBR' && github.ref == 'refs/heads/main' && github.event_name != 'pull_request' && vars.PGBR_AUTO_DEV_ENABLED == 'true' && vars.PGBR_AUTO_DEV_MODE == 'free' && vars.PGBR_FREE_BILLING_CONFIRMED == 'true' && vars.PGBR_GITHUB_FREE_BUDGET_CONFIRMED == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 8
     permissions:
@@ -148,12 +148,11 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           PGBR_AUTO_DEV_ENABLED: ${{ vars.PGBR_AUTO_DEV_ENABLED }}
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          ARENA_API_KEY: ${{ secrets.ARENA_API_KEY }}
-          PGBR_OPENAI_MODEL: ${{ vars.PGBR_OPENAI_MODEL }}
-          PGBR_GEMINI_MODEL: ${{ vars.PGBR_GEMINI_MODEL }}
-          PGBR_ARENA_MODEL: ${{ vars.PGBR_ARENA_MODEL }}
+          PGBR_AUTO_DEV_MODE: ${{ vars.PGBR_AUTO_DEV_MODE }}
+          PGBR_FREE_BILLING_CONFIRMED: ${{ vars.PGBR_FREE_BILLING_CONFIRMED }}
+          PGBR_GITHUB_FREE_BUDGET_CONFIRMED: ${{ vars.PGBR_GITHUB_FREE_BUDGET_CONFIRMED }}
+          PGBR_GEMINI_FREE_KEY: ${{ secrets.PGBR_GEMINI_FREE_KEY }}
+          PGBR_GEMINI_FREE_MODEL: ${{ vars.PGBR_GEMINI_FREE_MODEL }}
         run: python3 -B tools/auto_dev_orchestrator.py --queue tools/auto_dev_queue.json --output "$RUNNER_TEMP/pgbr-auto-dev" --live
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: always()
@@ -161,4 +160,4 @@ jobs:
           name: pgbr-auto-dev-proposals-${{ github.run_id }}-${{ github.run_attempt }}
           path: ${{ runner.temp }}/pgbr-auto-dev/*.json
           if-no-files-found: ignore
-          retention-days: 7
+          retention-days: 1
