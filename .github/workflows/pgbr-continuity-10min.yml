@@ -4,6 +4,12 @@ on:
   schedule:
     - cron: '*/10 * * * *'
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'tools/auto_dev_queue.json'
+      - 'tools/auto_dev_orchestrator.py'
+      - '.github/workflows/pgbr-continuity-10min.yml'
   pull_request:
     branches: [main]
     paths:
