@@ -33,6 +33,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}
+          QUEUE_TEST_REF: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || '' }}
         shell: bash
         run: |
           set -euo pipefail
@@ -44,7 +45,9 @@ jobs:
           prs=$(gh api --paginate "repos/$REPO/pulls?state=open&per_page=100" | jq -s '[.[][]] | length')
           queue=$(mktemp)
           trap 'rm -f "$queue"' EXIT
-          gh api "repos/$REPO/contents/MESTRE.md?ref=$sha" --jq '.content' | base64 --decode > "$queue"
+          queue_ref="${QUEUE_TEST_REF:-$sha}"
+          [[ "$queue_ref" =~ ^[0-9a-f]{40}$ ]]
+          gh api "repos/$REPO/contents/MESTRE.md?ref=$queue_ref" --jq '.content' | base64 --decode > "$queue"
           # Validate stable numbered IDs; only IDs and counts enter the report.
           queue_report=$(python3 - "$queue" <<'PY'
           import pathlib, re, sys
@@ -82,7 +85,7 @@ jobs:
             printf -- '- [Arquivo Mestre nesta HEAD](https://github.com/%s/blob/%s/PGBR_ARQUIVO_MESTRE_UNICO.md), blob `%s`\n' "$REPO" "$sha" "$master"
             printf -- '- [Issues abertas](https://github.com/%s/issues): %s\n' "$REPO" "$issues"
             printf -- '- [PRs abertas](https://github.com/%s/pulls): %s\n' "$REPO" "$prs"
-            printf '\n## Fila numerada do MESTRE.md na mesma HEAD\n\n%s\n' "$queue_report"
+            printf '\n## Fila numerada do MESTRE.md na revisão %s\n\n%s\n' "$queue_ref" "$queue_report"
             printf '\n## CI da HEAD (não equivale a teste físico)\n\n'
             for workflow in pgbr-codigo-ci.yml pgbr-auditoria-mestre.yml; do
               runs=$(gh api "repos/$REPO/actions/workflows/$workflow/runs?branch=main&head_sha=$sha&per_page=100")
