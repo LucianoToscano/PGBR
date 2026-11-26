@@ -799,9 +799,9 @@ def _try_load_events_planner_checklist() -> Tuple[Optional[Any], Optional[Any]]:
 class ResearchManualChecklist:
     """User-confirmed manual research checklist without account or game access.
 
-    Automatically delegates to tools.pgbr_data_tools.events_planner.ManualChecklist
-    (from batch 0006) when installed, or uses an identical local fallback when 0006
-    is not present on the current branch.
+    Reuses the events planner when installed. The research-facing four-state
+    checklist is authoritative locally because the planner exposes only three
+    states; delegation preserves the planner contract without losing distinctions.
     """
 
     def __init__(self, catalog: ResearchCatalog) -> None:
@@ -834,19 +834,18 @@ class ResearchManualChecklist:
                 "campo": "field",
                 "temporaria": "timed",
                 "especial": "special",
-                "colecao": "collection",
+                "colecao": "collection_challenge",
             }
             item = self._delegated_item_cls(
                 item_id=entry.research_id,
-                title_ptbr=entry.title_ptbr,
+                title_pt=entry.title_ptbr,
                 kind=kind_map[entry.category],
-                state="pendente",
+                state="pending",
                 priority=priority,
                 window_key=window_key.strip(),
             )
             self._delegated.upsert(item)
-        else:
-            self._local_states[entry.research_id] = ("pendente", window_key.strip())
+        self._local_states[entry.research_id] = ("pendente", window_key.strip())
 
     def confirm_state(self, research_id: str, new_state: str) -> None:
         canonical = validate_research_id(research_id)
@@ -854,17 +853,18 @@ class ResearchManualChecklist:
             raise KeyError(f"research_id desconhecido no catálogo: {canonical}")
         if new_state not in CHECKLIST_STATES:
             raise ValueError(f"Estado inválido: {new_state!r}. Permitidos: {CHECKLIST_STATES}")
+        if canonical not in self._local_states:
+            raise KeyError(f"Pesquisa não adicionada ao checklist: {canonical}")
         if self._delegated is not None:
-            self._delegated.confirm_state(canonical, new_state)
-        else:
-            if canonical not in self._local_states:
-                raise KeyError(f"Pesquisa não adicionada ao checklist: {canonical}")
-            _, wk = self._local_states[canonical]
-            self._local_states[canonical] = (new_state, wk)
+            planner_states = {"pendente": "pending", "em_progresso": "pending",
+                              "concluido": "done", "ignorado": "unknown"}
+            self._delegated.confirm_state(canonical, planner_states[new_state])
+        _, wk = self._local_states[canonical]
+        self._local_states[canonical] = (new_state, wk)
 
     def reset_window(self, window_key: str) -> int:
         if self._delegated is not None:
-            return int(self._delegated.reset_window(window_key))
+            self._delegated.reset_window(window_key)
         count = 0
         for rid, (st, wk) in list(self._local_states.items()):
             if wk == window_key and st != "pendente":
@@ -873,8 +873,6 @@ class ResearchManualChecklist:
         return count
 
     def summary(self) -> Dict[str, int]:
-        if self._delegated is not None:
-            return dict(self._delegated.summary())
         counts = {s: 0 for s in CHECKLIST_STATES}
         for st, _ in self._local_states.values():
             counts[st] += 1
