@@ -39,8 +39,13 @@ class Lt049QaContract(unittest.TestCase):
 
     def test_signed_manifest_gate_before_build(self):
         workflow = (ROOT / '.github/workflows/pgbr-lt049-qa.yml').read_text(encoding='utf-8')
-        gate = 'tools/verify_candidate_input.py pgrazor/input/game.apkm --require-signatures --require-manifest-identity --apksigner $signer --apkanalyzer $analyzer'
+        gate = 'tools/verify_candidate_input.py "$PGBR_ORIGINAL_TEMP/original.apkm" --require-signatures --require-manifest-identity --apksigner "$signer" --apkanalyzer "$analyzer"'
         self.assertIn(gate, workflow)
-        self.assertIn("'cmdline-tools/latest/bin/apkanalyzer.bat'", workflow)
+        self.assertIn("needs: [native-pvp-fixture, validate-original]", workflow)
+        self.assertIn("needs.validate-original.outputs.sha256", workflow)
+        self.assertIn("Get-FileHash -LiteralPath 'pgrazor/input/game.apkm' -Algorithm SHA256", workflow)
+        self.assertIn("$actual -cne $env:VERIFIED_INPUT_SHA256", workflow)
+        self.assertIn('report.get("signed_manifest_identity_verified") is not True', workflow)
+        self.assertLess(workflow.index("Get-FileHash -LiteralPath 'pgrazor/input/game.apkm'"), workflow.index("run: python -B pgrazor/nonroot.py"))
         self.assertLess(workflow.index(gate), workflow.index('run: python -B pgrazor/nonroot.py'))
         self.assertLess(workflow.index(gate), workflow.index('run: python -B tools/check.py'))
