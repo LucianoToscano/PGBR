@@ -2942,3 +2942,21 @@ R2 compilada no commit e1c19a420a14d83fafe23085f93179ce187b2022 (#355, CI 2/2). 
 | ZIP do artefato | 44b8b0aca2305499624874aa0b9b93dd4d9d56b64e1fcb223c1cc05f93bad357 |
 
 QA privada; preserva artefato anterior. device_tested=false; provider_connected=false; recuperação dos carregados não confirmada no aparelho. #356 Auto Rocket ainda rascunho e não integra R2. Imagens de itens não substituídas. #351 integrada com CI 2/2 em 4ea5bbf6f91d10bd8f33b1e2b5dead37c1c44ae0; 17 arquivos offline e ajuste CI. Patches Gemini 0015, 0016, 0017 com SHA256 conferido e blobs verificados, PRs #357, #359, #358 respectivamente, ainda sujeitos ao CI e revisão. Despacho G-050-03 na issue #320 comentário 7185126944. Nenhuma afirmação de UI Android integrada nem nova build LT050.
+
+
+## 26/11/2026 — LT050: reconciliação C-050-02
+
+Base observada no início: 4ea5bbf6f91d10bd8f33b1e2b5dead37c1c44ae0. Merges confirmados pelo GitHub, sem excluir branches:
+
+| PR | Evidência CI no HEAD | Merge |
+|---|---|---|
+| #360 | 45773460036 / 45773460076, 2/2 | f39ca38d8f7669cc681481253d224d8802d058f3 |
+| #358 (Gemini 0017) | 45773288981 / 45773288960, 2/2 | f0ab075bdc5b879f99dc709a475891f2e0e26540 |
+| #359 (Gemini 0016) | 45773407078 / 45773407056, 2/2 | b16800d0433ba93f2f951a7c843082f39c261f3d |
+| #361 | 45775883159 / 45775883170, 2/2 | be10eac1a016e322b7ccb48a19de0e01ba79d7ca |
+
+#357 (Gemini 0015) não integrada: run 45773249983, job 139750675828, 651 testes com um erro e um skip: ChecklistItem não aceita title_ptbr. Na própria branch de revisão, commits 96211d992d04ad4ccc121598d83ab36c732fadc2 e 1063408f0aab0ff3fab1949752731c8080bdead4 adaptam title_pt, collection_challenge e os estados do planner, preservam os quatro estados locais e adicionam teste de reset idempotente. CI novo 45900826748 (governança verde) e 45900826714 (código em execução no momento deste registro). Não desabilitar testes nem integrar antes de resultado verde no HEAD exato.
+
+#358 é auditoria offline, não substituição de PNGs; #359 são 12 pontos de robustez offline, não telas Android novas; #361 apenas distingue none-ready de only-one-ready e mantém a decisão existente. Não comprova execução de carregados ou quantidade real de botões. V5, APKs anteriores e branches preservados. device_tested=false; provider_connected=false. Nenhum APK LT050 gerado neste ciclo.
+
+0018: recibo e despacho G-050-04 já registrados na issue #320 comentário 7204018755; não repetir. Busca no Drive não localizou 0019 nem recibos A-049-02/A-050-01; conector de listagem da pasta pai retornou 404, logo ausência não está provada. Solicitar somente publicação do trabalho existente, sem duplicação. Não importar alterações upstream ou variantes sem auditoria individual. Próximos gates: CI #357, readback de 0019 e Arena, validação consolidada e preparação de QA LT050. Nenhuma contratação de APIs pagas.
