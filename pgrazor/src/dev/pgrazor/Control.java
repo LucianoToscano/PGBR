@@ -1880,6 +1880,33 @@ public final class Control {
             }
         }
     }
+    /** Apply only explicit, validated appearance keys. Never reload gameplay or account state. */
+    static int copyAccountAppearance(Properties source) {
+        Properties p=AccountAppearancePolicy.select(source);
+        if(p.isEmpty())return 0;
+        synchronized(stateLock) {
+            if(settingsFile==null)throw new IllegalStateException("Configurações indisponíveis");
+            if(p.containsKey("darkTheme"))darkTheme=Boolean.parseBoolean(p.getProperty("darkTheme"));
+            if(p.containsKey("uiScalePercent"))uiScalePercent=Integer.parseInt(p.getProperty("uiScalePercent"));
+            if(p.containsKey("joystickSizeDp"))joystickSizeDp=Integer.parseInt(p.getProperty("joystickSizeDp"));
+            if(p.containsKey("joystickOpacity"))joystickOpacity=Integer.parseInt(p.getProperty("joystickOpacity"));
+            if(p.containsKey("joystickEternatusEffects"))joystickEternatusEffects=Boolean.parseBoolean(p.getProperty("joystickEternatusEffects"));
+            if(p.containsKey("eternatusFxIntensity"))eternatusFxIntensity=Integer.parseInt(p.getProperty("eternatusFxIntensity"));
+            if(p.containsKey("eternatusFxSpeed"))eternatusFxSpeed=Integer.parseInt(p.getProperty("eternatusFxSpeed"));
+            if(p.containsKey("menuIconSizeDp"))menuIconSizeDp=Integer.parseInt(p.getProperty("menuIconSizeDp"));
+            if(p.containsKey("gymIconSizeDp"))gymIconSizeDp=Integer.parseInt(p.getProperty("gymIconSizeDp"));
+            if(p.containsKey("gymIconOpacity"))gymIconOpacity=Integer.parseInt(p.getProperty("gymIconOpacity"));
+            if(p.containsKey("overlayBackgroundOpacity"))overlayBackgroundOpacity=Integer.parseInt(p.getProperty("overlayBackgroundOpacity"));
+            if(p.containsKey("menuLauncherSizeDp"))menuLauncherSizeDp=Integer.parseInt(p.getProperty("menuLauncherSizeDp"));
+            if(p.containsKey("menuLauncherOpacity"))menuLauncherOpacity=Integer.parseInt(p.getProperty("menuLauncherOpacity"));
+            if(p.containsKey("menuLauncherBgOpacity"))menuLauncherBgOpacity=Integer.parseInt(p.getProperty("menuLauncherBgOpacity"));
+            if(p.containsKey("gymBackgroundOpacity"))gymBackgroundOpacity=Integer.parseInt(p.getProperty("gymBackgroundOpacity"));
+            if(p.containsKey("vgpIconOpacity"))vgpIconOpacity=Integer.parseInt(p.getProperty("vgpIconOpacity"));
+            if(p.containsKey("vgpBackgroundOpacity"))vgpBackgroundOpacity=Integer.parseInt(p.getProperty("vgpBackgroundOpacity"));
+            saveSettings();
+        }
+        return p.size();
+    }
     // Capture current preferences under stateLock; serialization and AtomicFile IO run off the main thread.
     static void saveSettings() {
         synchronized(stateLock) {
