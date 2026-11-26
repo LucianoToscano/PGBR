@@ -103,6 +103,7 @@ public final class PtBrDynamicTest {
         eq("A route named “%s” already exists. Choose another name.","Já existe uma rota chamada “%s”. Escolha outro nome.");
         eq("Map unavailable in some areas. Check internet, then Retry.","Mapa indisponível em algumas áreas. Verifique a internet e tente novamente.");
         eq("Choose a walking speed greater than zero to continue.","Escolha uma velocidade de caminhada maior que zero para continuar.");
+        eq("Nearby game data expired; waiting for refresh","Os dados de locais do jogo expiraram; aguardando atualização");
         eq("No live results in range.","Nenhum resultado disponível no alcance selecionado.");
         eq("Encounter limit: 25","Limite de encontros: 25");
         eq("UI scale: 100%","Escala da interface: 100%");

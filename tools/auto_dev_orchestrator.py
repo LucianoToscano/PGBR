@@ -139,6 +139,22 @@ def call(row, model, key):
     return {"proposal": response_text(row["agent"], data), "usage": data.get("usage", data.get("usageMetadata", {}))}
 
 
+def safe_failure_reason(error):
+    """Only fixed diagnostic categories/status codes, never provider text or URLs."""
+    if isinstance(error, urllib.error.HTTPError):
+        code = error.code
+        return "http-" + str(code) if type(code) is int and 100 <= code <= 599 else "http-error"
+    if isinstance(error, TimeoutError):
+        return "timeout"
+    if isinstance(error, urllib.error.URLError):
+        return "transport-error"
+    if isinstance(error, (ValueError, KeyError, IndexError, TypeError)):
+        return "invalid-or-incomplete-response"
+    if isinstance(error, OSError):
+        return "local-io-error"
+    return "unexpected-error"
+
+
 def gh(*args):
     # The GitHub subprocess receives only the GitHub credential, not API keys.
     env = {k: os.environ[k] for k in ("PATH", "HOME", "GH_TOKEN") if k in os.environ}
@@ -185,6 +201,7 @@ def main():
         note("<!-- pgbr-auto-dev:v1:" + row["id"] + ":reserved -->\n"
              "Lote reservado para Gemini free; proposta, não execução de código.")
         state = "failed"
+        reason = "none"
         try:
             report = call(row, *configured[row["agent"]])
             payload = json.dumps(report, ensure_ascii=False, indent=2).encode("utf-8")
@@ -194,16 +211,20 @@ def main():
         except urllib.error.HTTPError as error:
             state = "quota-or-access-blocked" if error.code in (401, 403, 429) else "failed"
             digest = "none"
+            reason = safe_failure_reason(error)
             if state == "quota-or-access-blocked":
                 note("<!-- pgbr-auto-dev:v1:" + row["id"] + ":paused -->\n"
                      "Gemini pausado: verificar cota, acesso e faturamento antes de retomar.")
-        except Exception:
+        except Exception as error:
             digest = "none"
+            reason = safe_failure_reason(error)
         run = os.environ.get("GITHUB_RUN_ID", "")
         attempt = os.environ.get("GITHUB_RUN_ATTEMPT", "")
-        note("AUTO DEV " + row["id"] + ": " + state + "; SHA256 " + digest +
+        note("AUTO DEV " + row["id"] + ": " + state + "; SHA256 " + digest + "; reason " + reason +
              "; run " + run + " attempt " + attempt +
              ". Proposta não aplicada. Sem retry automático ou fallback pago.")
+        if state != "proposal":
+            raise SystemExit(f"Gemini dispatch {row['id']}: {state}")
     print("Dispatched:", len(selected))
 
 

@@ -18,6 +18,7 @@ final class AccountSessions {
             if(new File(context.getNoBackupFilesDir(),"pgrazor-account-sessions-v1/switch-journal.bin").exists())throw new IOException("Finish switching before deleting an account");
             new AccountSessionVault(context).delete(id);
             AccountProfileData.delete(profiles,context.getFilesDir(),new File(context.getApplicationInfo().dataDir,"shared_prefs"),id);
+            SessionStats.deleteInactiveProfile(context,id);
             profiles.remove(id);
         }
     }
