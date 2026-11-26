@@ -129,3 +129,36 @@ jobs:
               printf 'Solicitado CI ausente: %s\n' "$workflow" >> "$GITHUB_STEP_SUMMARY"
             fi
           done
+
+
+  auto-dev-proposals:
+    needs: audit
+    if: github.repository == 'LucianoToscano/PGBR' && github.ref == 'refs/heads/main' && github.event_name != 'pull_request' && vars.PGBR_AUTO_DEV_ENABLED == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ needs.audit.outputs.head }}
+          persist-credentials: false
+      - name: Dispatch reviewed batches (proposals only)
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PGBR_AUTO_DEV_ENABLED: ${{ vars.PGBR_AUTO_DEV_ENABLED }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          ARENA_API_KEY: ${{ secrets.ARENA_API_KEY }}
+          PGBR_OPENAI_MODEL: ${{ vars.PGBR_OPENAI_MODEL }}
+          PGBR_GEMINI_MODEL: ${{ vars.PGBR_GEMINI_MODEL }}
+          PGBR_ARENA_MODEL: ${{ vars.PGBR_ARENA_MODEL }}
+        run: python3 -B tools/auto_dev_orchestrator.py --queue tools/auto_dev_queue.json --output "$RUNNER_TEMP/pgbr-auto-dev" --live
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: always()
+        with:
+          name: pgbr-auto-dev-proposals-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/pgbr-auto-dev/*.json
+          if-no-files-found: ignore
+          retention-days: 7
