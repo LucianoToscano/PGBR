@@ -302,7 +302,7 @@ jobs:
           }
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: PGBR-LT049-Root-e-SemRoot-QA
+          name: PGBR-LT049-R2-Root-e-SemRoot-QA
           path: |
             dist/pgbr-lt049/PGBR-v0.00.49-LT.apk
             dist/pgbr-lt049/PGBR-v0.00.49-LT-Root.apk
