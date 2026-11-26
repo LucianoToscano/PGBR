@@ -144,6 +144,21 @@ class ResearchCatalogAdversarialTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             checklist.confirm_state("SYNTH_FIELD_001", "auto_completado_pelo_jogo")
 
+    def test_checklist_delegation_preserves_four_states_and_window_reset(self) -> None:
+        cat = build_synthetic_example_catalog()
+        checklist = ResearchManualChecklist(cat)
+        for rid in ("SYNTH_FIELD_001", "SYNTH_TIMED_001", "SYNTH_COLLECTION_001"):
+            checklist.track(rid, window_key="w1")
+        checklist.confirm_state("SYNTH_FIELD_001", "em_progresso")
+        checklist.confirm_state("SYNTH_TIMED_001", "ignorado")
+        checklist.confirm_state("SYNTH_COLLECTION_001", "concluido")
+        self.assertEqual(checklist.summary(), {
+            "pendente": 0, "em_progresso": 1, "concluido": 1, "ignorado": 1,
+        })
+        self.assertEqual(checklist.reset_window("w1"), 3)
+        self.assertEqual(checklist.reset_window("w1"), 0)
+        self.assertEqual(checklist.summary()["pendente"], 3)
+
     def test_sanitization_bounded_import_export_and_symlink_rejection(self) -> None:
         dirty = {
             "trainer_name": "AshReal",
