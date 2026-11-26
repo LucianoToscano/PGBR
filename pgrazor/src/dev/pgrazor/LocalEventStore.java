@@ -26,7 +26,7 @@ public final class LocalEventStore {
 
     /** Adds one event; returns {@code false} when the same identity is already stored. */
     public synchronized boolean add(SourceEvent event) {
-        if (event == null || event.sourceId.trim().isEmpty() || event.eventId.trim().isEmpty()) return false;
+        if (event == null || blankIdentity(event.sourceId) || blankIdentity(event.eventId)) return false;
         String key = key(event);
         if (events.containsKey(key)) return false;
         if (events.size() >= MAX_EVENTS) {
@@ -76,6 +76,10 @@ public final class LocalEventStore {
         List<SourceEvent> out = new ArrayList<>();
         for (SourceEvent event : events.values()) if (event.sourceId.equals(sourceId)) out.add(event);
         return Collections.unmodifiableList(out);
+    }
+
+    private static boolean blankIdentity(String value) {
+        return value == null || value.codePoints().allMatch(cp -> Character.isWhitespace(cp) || Character.isSpaceChar(cp));
     }
 
     private static String key(SourceEvent event) {
