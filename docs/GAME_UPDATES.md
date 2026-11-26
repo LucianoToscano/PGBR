@@ -1,7 +1,7 @@
 # Updating the supported game version
 
 The version-specific native binding values live in
-`pgrazor/native/schema/game/0.437.0.json`; `current.json` selects the profile.
+`pgrazor/native/schema/game/0.439.0.json`; `current.json` selects the profile.
 Update that profile, then regenerate. Do not hand-edit generated headers or the
 derived `routes.json` and `gifts.json` files.
 
@@ -104,7 +104,7 @@ inspection, extraction and targeted fixture selection together.
 
 ## Candidate package preflight (0.439.0, read only)
 
-The candidate APKM is private and the active profile stays 0.437.0. The verifier checks the exact archive, metadata and split hashes. It can also reconstruct the two known parts into a temporary directory. Use the trusted SDK apksigner executable to verify both signatures and require the previous approved signer fingerprint; a changed signer is rejected pending review, never silently accepted.
+The candidate APKM is private. The prior 0.437.0 profile is retained as rollback data; the 0.439.0 candidate selects the reviewed upstream profile. The verifier checks the exact archive, metadata and split hashes. It can also reconstruct the two known parts into a temporary directory. Use the trusted SDK apksigner executable to verify both signatures and require the previous approved signer fingerprint; a changed signer is rejected pending review, never silently accepted.
 
 ```powershell
 python -B tools/verify_candidate_input.py path/to/candidate.apkm --require-signatures --apksigner "$env:ANDROID_HOME/build-tools/36.0.0/apksigner.bat"
@@ -112,3 +112,8 @@ python -B tools/verify_candidate_input.py --parts path/to/part1 path/to/part2 --
 ```
 
 For acceptance use `--require-signatures`: omission of `--apksigner` fails before any success report. Without the strict flag, hash-only inspection remains available and explicitly sets `apk_signatures_verified=false`. `signed_manifest_identity_verified=false` remains explicit unless the trusted SDK `apkanalyzer` is also supplied. For signed identity acceptance, add `--apkanalyzer` pointing to the Android SDK Command-Line Tools executable. Both APK manifests are checked after verifying the signature of the same extracted bytes. The base must match package, version name and version code; the split must match package, version code and split ID (and version name if present). The checks do not certify runtime compatibility. See https://developer.android.com/tools/apkanalyzer for the official `manifest print` command. Even a successful signature check is not runtime compatibility, and no command changes current.json or uploads the original package.
+
+
+## LT049 — migração candidata 0.439.0 (26/11/2026)
+
+Origem upstream: `jpitty03/PGRazor@39b52749eed81ed344140000a9a3ee200d41fbe0`. O commit explica que o jogo removeu CombatUI, CombatDirectorV2 e CombatChargeAttackDisplay; as 25 entradas ausentes pertencem à interface Legacy removida, não são endereços a inventar. Perfil anterior PGBR idêntico byte a byte ao upstream anterior (`c6efee8fa88a2eed1a074e180df9bb8a7fadd5ae`), assim como os seis arquivos gerados anteriores. Importação por hunks exatos, sem substituir arquivos com alterações PGBR; perfil 0.439.0 e seis saídas geradas correspondem ao upstream revisado. Perfil 0.437.0 preservado para rollback. Original passou assinaturas e identidade no run 45758860479. #348 integrada, prepara build QA automaticamente após seleção de perfil na main. A migração ainda depende de CI e avaliação das regressões próprias PGBR, sem APK ou homologação física confirmados. device_tested=false; provider_connected=false. Não publicar antes dos testes e hashes reais.

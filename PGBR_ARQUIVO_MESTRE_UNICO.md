@@ -2909,3 +2909,8 @@ Evidências recentes: #327 runs 45751930949/45751930997/45751931018/45751930966 
 - Conservar todos os itens abertos do índice com seus critérios de aceite. Não confundir fechamento do lote de código com conclusão total ou publicação. Módulos e patches offline não equivalem a uma função integrada na interface Android.
 - Ordem do proprietário: finalizar a LT049, gerar APK verificável e depois prosseguir em LT050. Cada novo comando de avanço deve recuperar o estado atual, incorporar entregas pendentes e distribuir o próximo lote sem duplicação.
 
+
+
+## LT049 — migração candidata 0.439.0 (26/11/2026)
+
+Origem upstream: `jpitty03/PGRazor@39b52749eed81ed344140000a9a3ee200d41fbe0`. O commit explica que o jogo removeu CombatUI, CombatDirectorV2 e CombatChargeAttackDisplay; as 25 entradas ausentes pertencem à interface Legacy removida, não são endereços a inventar. Perfil anterior PGBR idêntico byte a byte ao upstream anterior (`c6efee8fa88a2eed1a074e180df9bb8a7fadd5ae`), assim como os seis arquivos gerados anteriores. Importação por hunks exatos, sem substituir arquivos com alterações PGBR; perfil 0.439.0 e seis saídas geradas correspondem ao upstream revisado. Perfil 0.437.0 preservado para rollback. Original passou assinaturas e identidade no run 45758860479. #348 integrada, prepara build QA automaticamente após seleção de perfil na main. A migração ainda depende de CI e avaliação das regressões próprias PGBR, sem APK ou homologação física confirmados. device_tested=false; provider_connected=false. Não publicar antes dos testes e hashes reais.
