@@ -55,5 +55,49 @@ class FeedSpriteIntegrityTests(unittest.TestCase):
                 build.feed_icon_assets(root)
 
 
+    def test_invalid_manifest_schema(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            folder = root / 'assets/feed-icons'
+            (folder / 'pokemon').mkdir(parents=True)
+            path = folder / 'provenance.json'
+            entry = {'dex': 25, 'bytes': 7, 'sha256': 'a'*64}
+            valid = {'commit': 'a'*40, 'repository': 'https://example.invalid', 'sprites': [entry]}
+            cases = [
+                ([], 'manifest object'),
+                (dict(valid, commit=None), 'revision missing'),
+                (dict(valid, repository=[]), 'revision missing'),
+                (dict(valid, repository='  '), 'revision missing'),
+                (dict(valid, sprites={}), 'manifest list'),
+                (dict(valid, sprites=[None]), 'manifest entry'),
+                (dict(valid, sprites=[{}]), 'Invalid feed sprite ID'),
+                (dict(valid, sprites=[dict(entry, bytes=True)]), 'Invalid feed sprite provenance'),
+                (dict(valid, sprites=[dict(entry, sha256=123)]), 'Invalid feed sprite provenance'),
+                (dict(valid, sprites=[{'dex': 25}]), 'Invalid feed sprite provenance'),
+            ]
+            for payload, message in cases:
+                with self.subTest(payload=payload):
+                    path.write_text(json.dumps(payload), encoding='utf-8')
+                    with self.assertRaisesRegex(ValueError, message):
+                        build.feed_icon_assets(root)
+            path.write_text('{"sprites":[],"sprites":[]}', encoding='utf-8')
+            with self.assertRaisesRegex(ValueError, 'Duplicate feed manifest key'):
+                build.feed_icon_assets(root)
+
+    def test_manifest_symlink_is_rejected(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            folder = root / 'assets/feed-icons'
+            (folder / 'pokemon').mkdir(parents=True)
+            target = root / 'external.json'
+            target.write_text('{}', encoding='utf-8')
+            try:
+                (folder / 'provenance.json').symlink_to(target)
+            except (OSError, NotImplementedError):
+                self.skipTest('Symlink creation unavailable on this host')
+            with self.assertRaisesRegex(ValueError, 'path is a symlink'):
+                build.feed_icon_assets(root)
+
+
 if __name__ == '__main__':
     unittest.main()
