@@ -41,7 +41,7 @@ Status dos testes locais: 465 testes Python (só falha a suíte que exige `javac
 
 ## Aceite em dispositivo (separado)
 
-device_tested=false; provider_connected=false até evidência correspondente. Tela branca Rocket, Supereficaz, interface e traçado visual não são homologados fisicamente pela aprovação de CI. Não alterar estados por conveniência.
+device_tested=false; provider_connected=false até evidência correspondente. Tela branca Rocket: aprovação funcional do proprietário registrada na #301 para V5, sem SHA instalado informado. Supereficaz, Auto ATK, interface e traçado visual não são homologados fisicamente pela aprovação de CI. Não alterar estados por conveniência.
 
 ## Próximo ciclo (checkpoint original preservado)
 
@@ -80,7 +80,7 @@ Main observada `56cff4b885b9e52aa914aab8152a67959516e852`. Fila numerada de trab
 26. [ ] CAP-01 — Captura, Quick Catch, Hunt/Farm/Transfer. F/P: Control, CatchOutcomeController, VgpController, release/mestre. Critério: Preservar interface e preferências; revisar feedback, Lenta 3s, estados e proteção; testar em fixtures sem ampliar automação do jogo. Prioridade original: P0.
 27. [ ] VGP-01 — VGP+. I/P: LT045, VgpController; etiquetas/raridade #133 pendentes. Critério: Classificação e etiquetas locais; status correto, não confundir dado desconhecido com ausência; preservar proteção e compatibilidade. Prioridade original: P0.
 28. [ ] FEED-01 — Sniper 1/2, Radar, Savant, coletor IV100. I/P: LT045 QA; SourceQuery, LiveFeedClient/Data/Filters/Dialog. Critério: Identificação e filtros de catálogo; rótulo de fonte/idade/ausência; nenhum feed privado ou coordenadas ao vivo presumidas. Provedor autorizado obrigatório. Prioridade original: P1/B.
-29. [ ] BAT-01 — Rocket: tela branca carregado. P: #193 HEAD 955eb76aaf9c48e1a25d0f51f741608fe8fa002f, integrada na main; correção candidata sem homologação física. Critério: Prioridade Rocket por ser fluxo compartilhado; documentar fase, comparar registros e visibilidade em ensaio autorizado; investigar material/overlay próprio e regressão sem remover função; efeito discreto somente em UI própria; nenhuma causa comprovada. Prioridade original: P0.
+29. [x] BAT-01 — Rocket: tela branca carregado. V5 #300 e aprovação do proprietário #301 prevalecem sobre o registro histórico a seguir; reabrir apenas com evidência de regressão. P: #193 HEAD 955eb76aaf9c48e1a25d0f51f741608fe8fa002f, integrada na main; correção candidata sem homologação física. Critério: Prioridade Rocket por ser fluxo compartilhado; documentar fase, comparar registros e visibilidade em ensaio autorizado; investigar material/overlay próprio e regressão sem remover função; efeito discreto somente em UI própria; nenhuma causa comprovada. Prioridade original: P0.
 30. [ ] BAT-02 — Supereficaz e Ataque Inteligente. P: #193 candidata, política local e matriz. Critério: Validar types/moves como referência independente; simulações de tipo simples/duplo, resistências, metadados desconhecidos, dois carregados; separar recomendação local da execução real. Prioridade original: P0.
 31. [ ] BAT-03 — PvP e treinamento. P: política local, testes, #90/#105. Critério: Simulador, recomendação de equipes, diagnóstico de lifecycle/rearme; não declarar executor homologado. Prioridade original: P0.
 32. [ ] BAT-04 — Reides e ginásios. F/P: arquitetura, runtime e histórico LT; API RaidBoss/Pokebattler. Critério: Central de chefes, counters, tipos, clima, custos, equipe manual; avisos de agenda e disponibilidade. Prioridade original: P2.
@@ -324,3 +324,14 @@ PGBR-CI-205 integrado após CI completo; PGBR-UI-SMALL candidata de correção e
 - **Referência funcional a preservar:** PR #300 (inclui #299), main `ec3bfc5fbab6e62546e99460bdf9d987d233685e`, com V5 CanvasRenderer alpha 0, reforço por frame, restauração visual e fallback V1–V4. Não alterar escala 1000×, SetActive, colisor, running, coletor funcional da #297 ou lógica de combate ao trabalhar em apresentação visual. Preservar testes de regressão.
 - CI da PR: 6/6 aprovado (run 45564763588 e 45564763611). Build QA concluído com sucesso: run 45566111133, artifact 15001260160, `PGBR-LT048-Root-e-SemRoot-QA`, commit `ec3bfc5fbab6e62546e99460bdf9d987d233685e`. SHA-256 do APK Sem Root produzido: `080e4e1e241ce71da38d06ffbc2f89c85cb059ebbb14ab79846665df8cdfa0de`. Não foi informado o SHA efetivamente instalado, modo específico ou log físico; a confirmação funcional é o relato direto acima.
 - **BAT-01 / issue #192: aprovado pelo proprietário, não repetir correção sem evidência de regressão.** As issues #90 (Supereficaz) e #105 (Auto ATK) não recebem homologação por este relato. A solução anterior #298 permanece registrada historicamente como tentativa visual insuficiente. Não atribuir causalidade exclusiva ao CanvasRenderer sem diagnóstico do dispositivo.
+
+
+## Lote upstream v0.3.7 — 25/11/2026
+- #304 integrada: consulta de versões estáveis, instalação manual.
+- #306/#307 integradas: Locais e critérios locais Dynamax/Gigantamax.
+- #308 integrada: visibilidade temporária do joystick, merge f199496edb21db9cf5253563f2020b19e8423194.
+- #309/#310/#311 integradas no merge 53f2029d76715506da7c4aa4825c13516bcc8aca; CI conjunto 45731449524/45731449535 aprovado; sem teste físico.
+- Nova candidata: validar variante e manifesto na consulta automática de atualizações; planejamento manual de bônus com estoque desconhecido explícito. Não são novas automações de jogo.
+- P0 restante: versão 0.439.0 não validada; QA física das regressões #90/#105; release LT049 não gerada.
+
+- Entrada 0.439.0: hashes de arquivo/splits e CRC verificados localmente; certificados e compatibilidade ainda não verificados. Ver tools/game_input_0439_manifest.json.

@@ -14,7 +14,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.util.Locale;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -24,7 +23,7 @@ import org.json.JSONObject;
  * or exposes the private upstream input APK.
  */
 final class UpdateChecker {
-    private static final String API="https://api.github.com/repos/LucianoToscano/PGBR/releases/latest";
+    private static final String API=ReleaseCheckRules.API;
     private static final String PREFS="pgbr-update-notifications";
     private static final long CHECK_INTERVAL=6L*60*60*1000;
     private static final long PROMPT_INTERVAL=24L*60*60*1000;
@@ -74,12 +73,12 @@ final class UpdateChecker {
             MAIN.post(()->{
                 if(!visible(activity))return;
                 if(error!=null){if(!automatic)message(activity,error);return;}
-                if(!UpdateVersion.isNewer(found.version,BuildVersion.NAME)){
+                if(!ReleaseCheckRules.newer(found.version,BuildVersion.NAME)){
                     if(!automatic)message(activity,"Você já está na versão mais recente publicada.\n\nInstalada: "+BuildVersion.NAME);
                     return;
                 }
                 if(found.url==null){
-                    if(!automatic)message(activity,"Existe uma versão nova, mas o APK sem Root ainda não foi publicado.");
+                    if(!automatic)message(activity,"Existe uma versão nova, mas o pacote da sua variante e o manifesto SHA-256 não estão disponíveis de forma verificável.");
                     return;
                 }
                 SharedPreferences p=prefs(activity);
@@ -92,7 +91,7 @@ final class UpdateChecker {
         },"pgbr-updates").start();
     }
     private static void showWhenReady(Activity activity,Release release,boolean automatic,int retry){
-        if(!visible(activity))return;
+        if(!visible(activity)||(automatic&&!automaticEnabled(activity)))return;
         // Avoid covering other modals during startup. Try again briefly.
         if(automatic&&!activity.hasWindowFocus()){
             if(retry<10)MAIN.postDelayed(()->showWhenReady(activity,release,true,retry+1),1500);
@@ -103,12 +102,12 @@ final class UpdateChecker {
         String notes=release.notes.length()>1400?release.notes.substring(0,1400)+"…":release.notes;
         String text="Instalada: "+BuildVersion.NAME+"\nNova versão: "+release.version+
             "\n\n"+(notes.isEmpty()?"Confira as novidades.":notes)+
-            "\n\nO Android solicitará sua confirmação para instalar a atualização.";
+            "\n\nConfira o SHA-256 e a assinatura antes da instalação manual.";
         new AlertDialog.Builder(MapTheme.wrap(activity))
             .setTitle(dev.pgrazor.PtBr.tr("Nova atualização do PGBR"))
             .setMessage(dev.pgrazor.PtBr.tr(text))
             .setNegativeButton(dev.pgrazor.PtBr.tr("Depois"),null)
-            .setPositiveButton(dev.pgrazor.PtBr.tr("Baixar atualização"),(dialog,which)->{
+            .setPositiveButton(dev.pgrazor.PtBr.tr("Ver versão oficial"),(dialog,which)->{
                 try{activity.startActivity(new Intent(Intent.ACTION_VIEW,Uri.parse(release.url)));}
                 catch(Exception problem){Toast.makeText(activity,"Não foi possível abrir o download.",Toast.LENGTH_LONG).show();}
             }).show();
@@ -121,7 +120,7 @@ final class UpdateChecker {
         HttpURLConnection c=null;
         try{
             c=(HttpURLConnection)new URL(API).openConnection();
-            c.setConnectTimeout(8000);c.setReadTimeout(8000);
+            c.setConnectTimeout(8000);c.setReadTimeout(8000);c.setInstanceFollowRedirects(false);
             c.setRequestProperty("Accept","application/vnd.github+json");
             c.setRequestProperty("User-Agent","PGBR-Android-UpdateChecker");
             int status=c.getResponseCode();
@@ -136,22 +135,22 @@ final class UpdateChecker {
                 }
             }
             JSONObject root=new JSONObject(out.toString("UTF-8"));
-            if(root.optBoolean("draft")||root.optBoolean("prerelease"))
+            if(root.optBoolean("draft",true)||root.optBoolean("prerelease",true))
                 throw new IOException("Nenhuma atualização estável publicada.");
             String version=root.optString("tag_name","");
-            if(!UpdateVersion.valid(version))throw new IOException("Versão pública inválida.");
+            if(ReleaseCheckRules.version(version)<0||!version.startsWith("v"))throw new IOException("Versão pública inválida.");
             String notes=root.optString("body","");
             JSONArray assets=root.optJSONArray("assets");
-            String url=null;
+            String wanted=ReleaseCheckRules.asset(version,PgAssets.rooted());
+            int packages=0,checksums=0;
             if(assets!=null)for(int i=0;i<assets.length();i++){
                 JSONObject asset=assets.optJSONObject(i);if(asset==null)continue;
                 String name=asset.optString("name",""),candidate=asset.optString("browser_download_url","");
-                if(name.startsWith("PGBR-")&&name.endsWith(".apk")
-                    &&!name.toLowerCase(Locale.ROOT).contains("root")
-                    &&candidate.startsWith("https://github.com/LucianoToscano/PGBR/releases/download/")){
-                    url=candidate;break;
-                }
+                if(asset.optLong("size",0)<=0||!ReleaseCheckRules.trustedAsset(version,name,candidate))continue;
+                if(name.equals(wanted))packages++;
+                if(name.equals("SHA256SUMS.txt"))checksums++;
             }
+            String url=packages==1&&checksums==1?ReleaseCheckRules.releasePage(version):null;
             return new Release(version,notes,url);
         }finally{if(c!=null)c.disconnect();}
     }

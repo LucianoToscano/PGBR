@@ -22,3 +22,9 @@ class ReleaseCheckTest(unittest.TestCase):
         self.assertIn("apk == 1 && checksums == 1", source)
         self.assertNotIn("PackageInstaller", source)
         self.assertNotIn("REQUEST_INSTALL_PACKAGES", source)
+
+    def test_automatic_checker_uses_same_release_rules(self):
+        source=(ROOT / 'src/dev/pgrazor/UpdateChecker.java').read_text(encoding='utf-8')
+        for token in ('ReleaseCheckRules.asset(version,PgAssets.rooted())','ReleaseCheckRules.trustedAsset(version,name,candidate)','packages==1&&checksums==1','ReleaseCheckRules.releasePage(version)','setInstanceFollowRedirects(false)','automatic&&!automaticEnabled(activity)'):
+            self.assertIn(token,source)
+        self.assertNotIn('PackageInstaller',source)
