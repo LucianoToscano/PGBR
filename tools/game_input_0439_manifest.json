@@ -16,5 +16,17 @@
       "sha256": "d34256b45a235869f4459a8f2a468025ea22b071ee4ae976aad2dbb695f0b833"
     }
   },
-  "source": "Owner-provided APKM; archive SHA-256 matches upstream commit 39b52749eed81ed344140000a9a3ee200d41fbe0; not a runtime profile."
+  "source": "Owner-provided APKM; archive SHA-256 matches upstream commit 39b52749eed81ed344140000a9a3ee200d41fbe0; not a runtime profile.",
+  "expected_signer_sha256": "944bda466eaf64be1c93896d5c8e9a454a07c8d8fcbc4adeeefb3545b335e979",
+  "expected_signer_source": "Approved 0.437.0 profile; require exact single signer match; no claim that 0.439.0 has passed signature verification.",
+  "parts": [
+    {
+      "bytes": 85000000,
+      "sha256": "0961e5a74b531f8c40c838f5d5cd610b2ce175cdcf884516d5c3b9ec004d425a"
+    },
+    {
+      "bytes": 84083658,
+      "sha256": "68de9eec6d40ad5e88cdaaaf1e75152496d66ecff486f0eb741f1d0e8b9d001d"
+    }
+  ]
 }

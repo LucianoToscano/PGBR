@@ -335,3 +335,8 @@ PGBR-CI-205 integrado após CI completo; PGBR-UI-SMALL candidata de correção e
 - P0 restante: versão 0.439.0 não validada; QA física das regressões #90/#105; release LT049 não gerada.
 
 - Entrada 0.439.0: hashes de arquivo/splits e CRC verificados localmente; certificados e compatibilidade ainda não verificados. Ver tools/game_input_0439_manifest.json.
+
+
+## 26/11/2026 UTC — recibo #312 e validação de entrada
+- #312 integrada: merge daeda9cfdae5f96bbf4f74933a60b88878fdfe08, HEAD 260d94178299dea72f5fcab17d32f8d06f827de9, workflows 45732025138/45732024960 concluídos com sucesso.
+- Verificadas localmente as duas partes do APKM, 85000000 e 84083658 bytes; concatenação SHA-256 c6d3c04c38ca2f2446957633b4fee8c93dcc9cebdbbaddc9cb9651722ef8f54f. Nova candidata adiciona reconstrução temporária com hashes fixados e verificação opcional por apksigner oficial, com assinatura esperada do perfil aprovado anterior; teste de assinatura real ainda não executado. Perfil 0.437.0 mantido.
