@@ -950,7 +950,7 @@ public final class WorldMapDialog {
                     double dx=detector.getFocusX()-getWidth()/2.0,dy=detector.getFocusY()-getHeight()/2.0;
                     double anchorX=MapProjection.offsetX(centerX,dx,old),anchorY=MapProjection.offsetY(centerY,dy,old);
                     zoom=MapOptics.levelFor(next,tileSize,minimum);
-                    zoomScale=MapOptics.scaleFor(next,tileSize,zoom,minimum);
+                    zoomScale=MapOptics.scaleFor(next,tileSize,minimum,zoom);
                     centerX=MapProjection.offsetX(anchorX,-dx,next);centerY=MapProjection.offsetY(anchorY,-dy,next);
                     viewportChanged();return true;
                 }
