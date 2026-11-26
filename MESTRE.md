@@ -392,3 +392,9 @@ No HEAD `364d567`, o job GitHub `Suite real check.py + compilacao Java + Root` f
 ## 26/11/2026 — main após #318 (integridade de sprites)
 
 `origin/main` avançou para `18a5cbeb665acba00a0211c64f07e3a8cc0d89ee` ao mesclar #318 após seis checks verdes (run 45742981881, suite Java/Root 3m03; governance 45742981824). Patch de `pgrazor/build.py` e fixture #318 foi recebido via merge não-ff e preservado em `67642193`; conflito exclusivamente documental resolvido conservando ambos os registros. Fixture #318 passou localmente (2/2). CI da revisão `67642193` passou: PR code run `45743740630` (6/6 incluindo Java/Root), governance `45743740395` (também manual `45743744722`) e PT-BR translate `45743740326`. PR #319 continua aberta; não remover trabalho de terceiros.
+
+## 26/11/2026 — main após #322 e CI MAP-01 reconciliado
+
+`origin/main` atual `2f559ef912213fd82ffe785409fa09b0b863fbad` inclui #317, #318 e #322 (hardening do manifesto de sprites). Main foi mesclada na branch ativa em `ce312b3743c70953e7d4cb06d65405735df5fb33`; conflito somente documental, preservando ambos os históricos e sem cherry-pick repetido. A fixture atualizada de sprites passou localmente 4/4.
+
+PR #319 HEAD code `ce312b37` permanece aberta. CI do PR `45744289804` passou 6/6, incluindo `check.py`, compilação do app Java e Root (4m19s); governança `45744289838` e PT-BR `45744289872` também passaram. Falha histórica no head `364d567` foi corrigida ao incluir `MapPoiFreshness.java` no harness. Commit subsequente `b2f6b3c8` é documentação/merge only; não confundir CI verde anterior com validação física. `device_tested=false`.
