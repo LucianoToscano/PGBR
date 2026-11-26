@@ -5,6 +5,8 @@ import json
 from pathlib import Path
 import tempfile
 import unittest
+from unittest.mock import patch
+import subprocess
 import zipfile
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -52,3 +54,41 @@ class CandidateInputTests(unittest.TestCase):
             path,expected=self.fixture(folder,wrong_metadata=True)
             with self.assertRaisesRegex(ValueError,"metadata"):
                 module.validate(path,expected)
+
+    def test_parts_and_signature_gate(self):
+        with tempfile.TemporaryDirectory() as folder:
+            path,expected=self.fixture(folder)
+            data=path.read_bytes()
+            pieces=[data[:len(data)//2],data[len(data)//2:]]
+            parts=[]
+            expected["parts"]=[]
+            for i,piece in enumerate(pieces):
+                part=Path(folder)/f"part{i}"
+                part.write_bytes(piece)
+                parts.append(part)
+                expected["parts"].append({"bytes":len(piece),"sha256":hashlib.sha256(piece).hexdigest()})
+            joined=Path(folder)/"joined.apkm"
+            module.assemble_parts(parts,expected,joined)
+            self.assertEqual(joined.read_bytes(),data)
+            self.assertTrue(module.validate(joined,expected)["archive_identity_verified"])
+            corrupt=bytearray(pieces[0]);corrupt[0]^=1
+            parts[0].write_bytes(corrupt)
+            with self.assertRaisesRegex(ValueError,"Part hash"):
+                module.assemble_parts(parts,expected,Path(folder)/"bad.apkm")
+            expected["expected_signer_sha256"]="a"*64
+            sdk=Path(folder)/"apksigner"
+            sdk.touch()
+            success=subprocess.CompletedProcess([],0,"Signer #1 certificate SHA-256 digest: "+"a"*64+"\n","")
+            with patch.object(module.subprocess,"run",return_value=success) as verify:
+                report=module.validate(path,expected,sdk)
+                self.assertTrue(report["apk_signatures_verified"])
+                self.assertFalse(report["runtime_compatibility_verified"])
+                self.assertEqual(verify.call_count,2)
+            for failed in [
+                subprocess.CompletedProcess([],1,"","bad signature"),
+                subprocess.CompletedProcess([],0,"Signer #1 certificate SHA-256 digest: "+"b"*64+"\n",""),
+                subprocess.CompletedProcess([],0,success.stdout+"Signer #2 certificate SHA-256 digest: "+"a"*64+"\n",""),
+                subprocess.CompletedProcess([],0,"","")]:
+                with patch.object(module.subprocess,"run",return_value=failed):
+                    with self.assertRaises(ValueError):
+                        module.validate(path,expected,sdk)
