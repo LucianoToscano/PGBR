@@ -231,3 +231,11 @@ Este registro consolida toda a discussão de cinco pastas, reutilização, catá
 
 ### 9.3. Regras de continuidade
 Toda nova entrega deve consultar Mestre canônico e este catálogo, verificar código e status atuais, referenciar IDs, preservar funções aprovadas, evitar PRs duplicadas e registrar resultado real. Ações reais em serviços externos exigem interfaces autorizadas e respeito às regras; o pedido de bug de reides fica como investigação/correção, não exploração automatizada. Nenhuma proposta, fixture, build ou PR comprova funcionamento em Android. `device_tested=false`, `provider_connected=false` até evidência contrária. Nenhum código, APK, versão, credencial ou configuração de automação foi alterado nesta consolidação.
+
+## 10. Atualização 26/11/2026 UTC — LT049 / A-049-01 (LMArena)
+
+- **MAP-02 (Locais e Favoritos):** política de filtro e ordenação unificada em `SavedPlaceOrder` e usada pelas duas superfícies (biblioteca "Locais" do Mapa Mundial e lista rápida "Favoritos"). Antes cada tela tinha seu próprio comparador, mostrando a mesma coleção em ordens diferentes. Cobertura: busca com dobra de acentos, união de categorias, 8 ordenações, valores não medidos por último, ordem total com desempate por nome e id.
+- **MAP-03 (GPX):** exclusão de rota disponível na aba "Rotas" da biblioteca, com confirmação, execução fora da UI thread e erro traduzido; nenhuma ação de movimento associada.
+- **SYS-01/DATA-04 (PT-BR):** 52 chaves novas/ajustadas sincronizadas nas duas UIs (1600 entradas cada); frases montadas em inglês das telas de Locais/GPX substituídas por chave única com `%d`.
+- **Acessibilidade:** alvos de toque dos ícones da biblioteca em 48dp.
+- Sem alteração de privacidade, V5, runtime ou contratos nativos. `device_tested=false`; `provider_connected=false`.

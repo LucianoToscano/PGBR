@@ -82,7 +82,7 @@ public final class GpxRouteDialog {
     /** The World-map GPX menu: Save route, Import GPX, Saved routes, Export route. */
     public static void menu(Activity activity, Source source, Selection selection) {
         if (!alive(activity)) return;
-        String[] items = {"Save route", "Import GPX", "Saved routes", "Export route", "Prévia visual do GPX"};
+        String[] items = {dev.pgrazor.PtBr.tr("Save route"), dev.pgrazor.PtBr.tr("Import GPX"), dev.pgrazor.PtBr.tr("Saved routes"), dev.pgrazor.PtBr.tr("Export route"), dev.pgrazor.PtBr.tr("GPX visual preview")};
         AlertDialog dialog = ChoiceList.attach(new AlertDialog.Builder(MapTheme.wrap(activity)).setTitle(dev.pgrazor.PtBr.tr("GPX routes"))
             .setNegativeButton(dev.pgrazor.PtBr.tr("Close"), null).create(), items, which -> {
                 switch (which) {
@@ -136,8 +136,9 @@ public final class GpxRouteDialog {
     private static void deliverImported(Activity activity, GpxRoute route, String where, Selection selection) {
         int count = route.points().length;
         selection.onRoute(route); // never auto-starts; only hands the route to the caller
-        note(activity, String.format(Locale.US, "Imported “%s” (%d %s). Ready in %s.",
-            route.name, count, count == 1 ? "stop" : "stops", where));
+        // The whole sentence is translated once, so a Portuguese UI never prints "1 stop" or "stops".
+        note(activity, String.format(Locale.forLanguageTag("pt-BR"), dev.pgrazor.PtBr.tr("Imported “%s” (%d %s). Ready in the route builder."),
+            route.name, count, count == 1 ? dev.pgrazor.PtBr.tr("stop") : dev.pgrazor.PtBr.tr("stops")));
     }
 
     // ---- export --------------------------------------------------------------------------
@@ -179,7 +180,7 @@ public final class GpxRouteDialog {
 
     private static void showList(Activity activity, List<GpxStore.Entry> entries, Selection selection) {
         AlertDialog.Builder builder = new AlertDialog.Builder(MapTheme.wrap(activity))
-            .setTitle(dev.pgrazor.PtBr.tr("Saved routes (" + entries.size() + ")")).setNegativeButton(dev.pgrazor.PtBr.tr("Close"), null);
+            .setTitle(String.format(Locale.forLanguageTag("pt-BR"), dev.pgrazor.PtBr.tr("Saved routes (%d)"), entries.size())).setNegativeButton(dev.pgrazor.PtBr.tr("Close"), null);
         if (entries.isEmpty()) { builder.setMessage(dev.pgrazor.PtBr.tr("No saved routes yet. Import a GPX file, or save a route you build on the map.")); present(activity, builder.create()); return; }
         String[] rows = new String[entries.size()];
         for (int i = 0; i < rows.length; i++) {
@@ -262,7 +263,7 @@ public final class GpxRouteDialog {
         int pad = MapTheme.dp(ui, 20);
         form.setPadding(pad, 0, pad, 0);
         int count = current.points().length;
-        form.addView(label(ui, count + (count == 1 ? " stop" : " stops") + " will be saved.", 14));
+        form.addView(label(ui, String.format(Locale.forLanguageTag("pt-BR"), dev.pgrazor.PtBr.tr("%d stops will be saved."), count), 14));
         EditText name = new EditText(ui);
         name.setHint(dev.pgrazor.PtBr.tr("Route name"));
         name.setSingleLine(true);

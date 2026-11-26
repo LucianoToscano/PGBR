@@ -81,6 +81,28 @@ public final class PtBrDynamicTest {
         eq("Stop route","Interromper rota");
         eq("Nearby here","Próximos daqui");
         eq("Nearby layers unavailable","Camadas de locais próximos indisponíveis");
+        // Locais/GPX surfaces: these sentences reach the screen through PtBr.tr, so the dictionary
+        // is the whole fix; each pair is asserted against both the app and the Root UI.
+        eq("Nearby resources (%d/%d)","Recursos próximos (%d/%d)");
+        eq("No resource available in the selected layers.","Nenhum recurso disponível nas camadas selecionadas.");
+        eq("PokéStop loaded nearby by the game.","PokéParada carregada pelo jogo nas proximidades.");
+        eq("Defenders: %d/6 (%d slots open)","Defensores: %d/6 (%d vagas livres)");
+        eq("Defenders: unavailable","Defensores: indisponível");
+        eq("Last known data - no fresh nearby snapshot.","Últimos dados conhecidos: sem nova leitura de locais próximos.");
+        eq("Saved routes (%d)","Rotas salvas (%d)");
+        eq("%d stops will be saved.","%d paradas serão salvas.");
+        eq("%d GPX points","%d pontos GPX");
+        eq("No routes were found in that GPX file.","Nenhuma rota foi encontrada nesse arquivo GPX.");
+        eq("No saved places in this filter. Use + to save one.","Nenhum local salvo neste filtro. Use + para salvar.");
+        eq("No saved routes yet. Use + to build a route or import a GPX.","Nenhuma rota salva. Use + para criar uma rota ou importar um GPX.");
+        eq("Delete route ","Excluir rota ");
+        eq("GPX visual preview","Prévia visual do GPX");
+        eq("All categories","Todas as categorias");
+        eq("Categories and place ordering","Categorias e ordem de locais");
+        eq("The route store is full (%d routes). Delete one before saving another.","O armazenamento de rotas está cheio (%d rotas). Exclua uma antes de salvar outra.");
+        eq("A route named “%s” already exists. Choose another name.","Já existe uma rota chamada “%s”. Escolha outro nome.");
+        eq("Map unavailable in some areas. Check internet, then Retry.","Mapa indisponível em algumas áreas. Verifique a internet e tente novamente.");
+        eq("Choose a walking speed greater than zero to continue.","Escolha uma velocidade de caminhada maior que zero para continuar.");
         eq("No live results in range.","Nenhum resultado disponível no alcance selecionado.");
         eq("Encounter limit: 25","Limite de encontros: 25");
         eq("UI scale: 100%","Escala da interface: 100%");

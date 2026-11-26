@@ -32,12 +32,12 @@ public final class QuickLocationDialogs {
         final double hereLat = Control.engine.latitude, hereLon = Control.engine.longitude;
         LinearLayout here = new LinearLayout(ctx); here.setGravity(android.view.Gravity.CENTER_VERTICAL);
         android.widget.TextView hereText = new android.widget.TextView(ctx);
-        hereText.setText(dev.pgrazor.PtBr.tr("You are at\n" + CoordinateClipboard.text(hereLat, hereLon))); hereText.setTextSize(14);
+        hereText.setText(String.format(java.util.Locale.ROOT,dev.pgrazor.PtBr.tr("You are at\n%s"),CoordinateClipboard.text(hereLat, hereLon))); hereText.setTextSize(14);
         here.addView(hereText, new LinearLayout.LayoutParams(0, -2, 1));
         android.widget.Button copy = new android.widget.Button(ctx); copy.setText(dev.pgrazor.PtBr.tr("Copy")); copy.setAllCaps(false); copy.setTextSize(13);
         copy.setContentDescription(dev.pgrazor.PtBr.tr("Copy your current coordinates"));
         MapTheme.setButtonBackground(copy);
-        copy.setOnClickListener(v -> CoordinateClipboard.copy(activity, hereLat, hereLon, "Your location copied"));
+        copy.setOnClickListener(v -> CoordinateClipboard.copy(activity, hereLat, hereLon, dev.pgrazor.PtBr.tr("Your location copied")));
         here.addView(copy, new LinearLayout.LayoutParams(dp(ctx, 76), dp(ctx, 48)));
         android.widget.Button favorite = new android.widget.Button(ctx); favorite.setText(dev.pgrazor.PtBr.tr("Favorite")); favorite.setAllCaps(false); favorite.setTextSize(13);
         favorite.setContentDescription(dev.pgrazor.PtBr.tr("Save your current location to Favorites"));
@@ -82,9 +82,16 @@ public final class QuickLocationDialogs {
     }
 
     private static volatile int favoritesCategoryFilter=0, favoritesSort=0;
+    // Menu order is the contract: a stored index must keep meaning the same ordering.
+    private static final SavedPlaceOrder.Sort[] SORTS={
+        SavedPlaceOrder.Sort.NAME_ASC,SavedPlaceOrder.Sort.NAME_DESC,
+        SavedPlaceOrder.Sort.LOCAL_TIME_EARLY,SavedPlaceOrder.Sort.LOCAL_TIME_LATE,
+        SavedPlaceOrder.Sort.NEWEST,SavedPlaceOrder.Sort.OLDEST,
+        SavedPlaceOrder.Sort.DISTANCE,SavedPlaceOrder.Sort.COOLDOWN};
     private static final String[] SORT_NAMES={"Nome: A–Z","Nome: Z–A",
         "Horário local: mais cedo primeiro","Horário local: mais tarde primeiro",
-        "Adicionados recentemente","Adicionados há mais tempo"};
+        "Adicionados recentemente","Adicionados há mais tempo",
+        "Distância: mais perto primeiro","Cooldown: menor primeiro"};
 
     /** Saved places, with a separate category filter and stable sort modes. */
     public static void showFavorites(Activity activity,TeleportTarget target) {
@@ -98,7 +105,7 @@ public final class QuickLocationDialogs {
                 if(activity.isFinishing()||activity.isDestroyed())return;
                 if(snap==null){
                     show(activity,new AlertDialog.Builder(themed(activity))
-                        .setTitle("Locais favoritos").setMessage("Não foi possível ler os locais.")
+                        .setTitle(dev.pgrazor.PtBr.tr("Locais favoritos")).setMessage("Não foi possível ler os locais.")
                         .setPositiveButton("Fechar",null).create());
                     return;
                 }
@@ -110,43 +117,40 @@ public final class QuickLocationDialogs {
         },"pgrazor-favorites-read").start();
     }
 
-    private static int localUtcOffset(SavedPlaces.Entry place,long now){
+    private static Integer localUtcOffset(double latitude,double longitude,long now){
         try {
-            String zone=TimeZoneLookup.zoneId(place.latitude,place.longitude);
+            String zone=TimeZoneLookup.zoneId(latitude,longitude);
             return java.util.TimeZone.getTimeZone(zone).getOffset(now);
-        }catch(RuntimeException invalid){return 0;}
+        }catch(RuntimeException invalid){return null;}
     }
     private static void showFavoriteList(Activity activity,TeleportTarget target,SavedPlaces.Snapshot snap){
-        java.util.ArrayList<SavedPlaces.Entry> sorted=new java.util.ArrayList<>();
-        for(SavedPlaces.Entry place:snap.entries)
-            if(favoritesCategoryFilter==0||
-                place.category.equals(SavedPlaces.CATEGORIES[favoritesCategoryFilter-1]))sorted.add(place);
         final long now=System.currentTimeMillis();
-        java.util.Comparator<SavedPlaces.Entry> byName=(a,b)->a.name.compareToIgnoreCase(b.name);
-        switch(favoritesSort){
-            case 1:sorted.sort(byName.reversed());break;
-            case 2:sorted.sort(java.util.Comparator.comparingInt((SavedPlaces.Entry e)->localUtcOffset(e,now)).thenComparing(byName));break;
-            case 3:sorted.sort(java.util.Comparator.comparingInt((SavedPlaces.Entry e)->localUtcOffset(e,now)).reversed().thenComparing(byName));break;
-            case 4:sorted.sort(java.util.Comparator.comparingLong((SavedPlaces.Entry e)->e.createdAtMs).reversed().thenComparing(byName));break;
-            case 5:sorted.sort(java.util.Comparator.comparingLong((SavedPlaces.Entry e)->e.createdAtMs).thenComparing(byName));break;
-            default:sorted.sort(byName);
-        }
-        String selected=favoritesCategoryFilter==0?"Todas":SavedPlaces.CATEGORIES[favoritesCategoryFilter-1];
+        // One shared policy with the World Map Locais library: same filter, same order, same ties.
+        java.util.List<SavedPlaces.Entry> sorted=SavedPlaceOrder.select(snap.entries,
+            new SavedPlaceOrder.Query("",favoritesCategoryFilter==0?null:
+                java.util.Collections.singletonList(SavedPlaces.CATEGORIES[favoritesCategoryFilter-1]),
+                SORTS[Math.max(0,Math.min(SORTS.length-1,favoritesSort))]),
+            (lat,lon)->localUtcOffset(lat,lon,now),
+            (lat,lon)->Control.locationKnown()?
+                WorldMapDialog.distanceMeters(Control.currentLatitude(),Control.currentLongitude(),lat,lon):Double.NaN,
+            (lat,lon)->Cooldown.hasHistory()?Cooldown.remainingAt(lat,lon):-1);
+        sorted=new java.util.ArrayList<>(sorted);
+        String selected=favoritesCategoryFilter==0?dev.pgrazor.PtBr.tr("Todas"):dev.pgrazor.PtBr.tr(SavedPlaces.CATEGORIES[favoritesCategoryFilter-1]);
         AlertDialog.Builder builder=new AlertDialog.Builder(themed(activity))
-            .setTitle("Locais • "+selected)
+            .setTitle(dev.pgrazor.PtBr.tr("Locais")+" • "+dev.pgrazor.PtBr.tr(selected))
             .setNegativeButton("Fechar",null)
             .setNeutralButton("Filtrar / ordenar",(d,w)->showFavoriteOptions(activity,target,snap));
         if(sorted.isEmpty()){
-            builder.setMessage("Nenhum local nesta categoria. Mude o filtro ou salve um favorito.");
+            builder.setMessage(dev.pgrazor.PtBr.tr("No saved places in this category. Change the filter or save a favorite."));
             show(activity,builder.create());
             return;
         }
         String[] names=new String[sorted.size()];
         for(int i=0;i<sorted.size();i++){
             SavedPlaces.Entry place=sorted.get(i);
-            int offset=localUtcOffset(place,now)/60000;
-            String zone=String.format(Locale.US,"UTC%s%02d:%02d",
-                offset>=0?"+":"-",Math.abs(offset)/60,Math.abs(offset)%60);
+            Integer utc=localUtcOffset(place.latitude,place.longitude,now);
+            String zone=utc==null?dev.pgrazor.PtBr.tr("fuso indisponível"):String.format(Locale.US,"UTC%s%02d:%02d",
+                utc>=0?"+":"-",Math.abs(utc/60000)/60,Math.abs(utc/60000)%60);
             names[i]=String.format(Locale.US,"%s  •  %s\n%s  |  %.5f, %.5f",
                 place.name,place.category,zone,place.latitude,place.longitude);
         }
@@ -181,12 +185,12 @@ public final class QuickLocationDialogs {
             new Thread(()->{
                 String error=null;
                 try{
-                    if(!new SavedPlaces(activity).rename(place.id,requested))error="Local não encontrado.";
-                }catch(java.io.IOException|RuntimeException e){error=e.getMessage()==null?"Não foi possível renomear.":e.getMessage();}
+                    if(!new SavedPlaces(activity).rename(place.id,requested))error=dev.pgrazor.PtBr.tr("Local não encontrado.");
+                }catch(java.io.IOException|RuntimeException e){error=e.getMessage()==null?dev.pgrazor.PtBr.tr("Não foi possível renomear."):e.getMessage();}
                 final String failed=error;
                 activity.runOnUiThread(()->{
                     if(activity.isFinishing()||activity.isDestroyed()||!dialog.isShowing())return;
-                    if(failed!=null){name.setError(failed);dialog.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(true);return;}
+                    if(failed!=null){name.setError(dev.pgrazor.PtBr.tr(failed));dialog.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(true);return;}
                     dialog.dismiss();showFavorites(activity,target);
                 });
             },"pgbr-place-rename").start();
@@ -202,8 +206,8 @@ public final class QuickLocationDialogs {
             new Thread(()->{
                 String error=null;
                 try{
-                    if(!new SavedPlaces(activity).remove(place.id))error="Local não encontrado.";
-                }catch(java.io.IOException|RuntimeException e){error="Não foi possível excluir o local.";}
+                    if(!new SavedPlaces(activity).remove(place.id))error=dev.pgrazor.PtBr.tr("Local não encontrado.");
+                }catch(java.io.IOException|RuntimeException e){error=dev.pgrazor.PtBr.tr("Não foi possível excluir o local.");}
                 final String failed=error;
                 activity.runOnUiThread(()->{
                     if(activity.isFinishing()||activity.isDestroyed()||!dialog.isShowing())return;
@@ -217,13 +221,13 @@ public final class QuickLocationDialogs {
 
     private static void showFavoriteOptions(Activity activity,TeleportTarget target,SavedPlaces.Snapshot snap){
         String[] choices=new String[SavedPlaces.CATEGORIES.length+1+SORT_NAMES.length];
-        choices[0]=(favoritesCategoryFilter==0?"✓  ":"")+"Todas as categorias";
+        choices[0]=(favoritesCategoryFilter==0?"✓  ":"")+dev.pgrazor.PtBr.tr("All categories");
         for(int i=0;i<SavedPlaces.CATEGORIES.length;i++)
             choices[i+1]=(favoritesCategoryFilter==i+1?"✓  ":"")+SavedPlaces.CATEGORIES[i];
         for(int i=0;i<SORT_NAMES.length;i++)
-            choices[SavedPlaces.CATEGORIES.length+1+i]=(favoritesSort==i?"✓  ":"")+SORT_NAMES[i];
+            choices[SavedPlaces.CATEGORIES.length+1+i]=(favoritesSort==i?"✓  ":"")+dev.pgrazor.PtBr.tr(SORT_NAMES[i]);
         show(activity,new AlertDialog.Builder(themed(activity))
-            .setTitle("Categorias e ordem de locais")
+            .setTitle(dev.pgrazor.PtBr.tr("Categories and place ordering"))
             .setItems(choices,(dialog,choice)->{
                 if(choice<=SavedPlaces.CATEGORIES.length)favoritesCategoryFilter=choice;
                 else favoritesSort=choice-SavedPlaces.CATEGORIES.length-1;
@@ -244,12 +248,12 @@ public final class QuickLocationDialogs {
         int p = dp(ctx, 22); form.setPadding(p, dp(ctx, 8), p, dp(ctx, 8));
         android.widget.TextView where = new android.widget.TextView(ctx); where.setText(dev.pgrazor.PtBr.tr(CoordinateClipboard.text(latitude, longitude))); where.setTextSize(14);
         form.addView(where);
-        EditText name = input(ctx, "Place name (up to " + SavedPlaces.NAME_LIMIT + " characters)");
+        EditText name = input(ctx, String.format(java.util.Locale.ROOT, dev.pgrazor.PtBr.tr("Place name (up to %d characters)"), SavedPlaces.NAME_LIMIT));
         name.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_CAP_SENTENCES);
         name.setFilters(new android.text.InputFilter[]{new android.text.InputFilter.LengthFilter(SavedPlaces.NAME_LIMIT)});
         form.addView(name);
         android.widget.TextView categoryLabel=new android.widget.TextView(ctx);
-        categoryLabel.setText("Categoria");categoryLabel.setTextSize(14);form.addView(categoryLabel);
+        categoryLabel.setText(dev.pgrazor.PtBr.tr("Categoria"));categoryLabel.setTextSize(14);form.addView(categoryLabel);
         android.widget.Spinner category=new android.widget.Spinner(ctx);
         android.widget.ArrayAdapter<String> categoryAdapter=new android.widget.ArrayAdapter<>(
             ctx,android.R.layout.simple_spinner_dropdown_item,SavedPlaces.CATEGORIES);
@@ -260,16 +264,16 @@ public final class QuickLocationDialogs {
             final SavedPlaces.Entry entry;
             try { entry = new SavedPlaces.Entry(name.getText().toString(), latitude, longitude,
                 SavedPlaces.CATEGORIES[category.getSelectedItemPosition()]); }
-            catch (IllegalArgumentException e) { name.setError(e.getMessage()); return; }
+            catch (IllegalArgumentException e) { name.setError(dev.pgrazor.PtBr.tr(e.getMessage())); return; }
             dialog.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(false);
             new Thread(() -> {
                 String error = null;
                 try { new SavedPlaces(activity).add(entry); }
-                catch (java.io.IOException | RuntimeException e) { error = e.getMessage() == null ? "Could not save this place." : e.getMessage(); }
+                catch (java.io.IOException | RuntimeException e) { error = e.getMessage() == null ? dev.pgrazor.PtBr.tr("Could not save this place.") : e.getMessage(); }
                 final String failed = error;
                 activity.runOnUiThread(() -> {
                     if (!dialog.isShowing()) return;
-                    if (failed != null) { dialog.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(true); name.setError(failed); return; }
+                    if (failed != null) { dialog.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(true); name.setError(dev.pgrazor.PtBr.tr(failed)); return; }
                     dialog.dismiss();
                     Toast.makeText(activity, "Salvo em Favoritos: " + entry.name, Toast.LENGTH_SHORT).show();
                 });

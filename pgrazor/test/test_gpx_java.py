@@ -67,8 +67,11 @@ final class AccountProfiles {
             data = work / 'data'
             data.mkdir()
             classes = work / 'classes'
-            sources = [stub, profiles, ROOT / 'src/dev/pgrazor/GpxRoute.java', ROOT / 'src/dev/pgrazor/GpxCodec.java',
-                       ROOT / 'src/dev/pgrazor/GpxStore.java', ROOT / 'test/GpxStoreTest.java']
+            # The real PtBr is compiled with the store: the store's user-facing errors are translated
+            # through the same dictionary the rest of the UI uses, so the harness must not stub it.
+            sources = [stub, profiles, ROOT / 'src/dev/pgrazor/PtBr.java', ROOT / 'src/dev/pgrazor/GpxRoute.java',
+                       ROOT / 'src/dev/pgrazor/GpxCodec.java', ROOT / 'src/dev/pgrazor/GpxStore.java',
+                       ROOT / 'test/GpxStoreTest.java']
             compiled = subprocess.run([str(compiler), '-encoding', 'UTF-8', '-d', str(classes), *map(str, sources)],
                                       capture_output=True, text=True, timeout=30)
             self.assertEqual(compiled.returncode, 0, compiled.stdout + compiled.stderr)

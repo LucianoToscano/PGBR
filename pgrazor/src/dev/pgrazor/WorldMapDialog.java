@@ -508,6 +508,14 @@ public final class WorldMapDialog {
         RouteUi routeUi;
         private int activeTab=1;
         private final int[] orders=new int[4];
+        /**
+         * Locais ordering menu. The index is the stored preference, so appending an entry is safe and
+         * reordering would silently change the meaning of an existing choice.
+         */
+        private static final SavedPlaceOrder.Sort[] savedOrders={
+            SavedPlaceOrder.Sort.NAME_ASC,SavedPlaceOrder.Sort.NAME_DESC,SavedPlaceOrder.Sort.NEWEST,
+            SavedPlaceOrder.Sort.DISTANCE,SavedPlaceOrder.Sort.COOLDOWN,SavedPlaceOrder.Sort.OLDEST,
+            SavedPlaceOrder.Sort.LOCAL_TIME_EARLY,SavedPlaceOrder.Sort.LOCAL_TIME_LATE};
         private final java.util.Set<String> savedFilter=new java.util.HashSet<>();
         private final java.util.EnumSet<Hotspots.Category> pointFilter=java.util.EnumSet.noneOf(Hotspots.Category.class);
         private AlertDialog libraryDialog;
@@ -528,10 +536,10 @@ public final class WorldMapDialog {
             AlertDialog dialog=new AlertDialog.Builder(ui).setView(panel).create();libraryDialog=dialog;
             LinearLayout header=new LinearLayout(ui);header.setGravity(Gravity.CENTER_VERTICAL);
             LibraryIcon back=new LibraryIcon(ui,0,"Voltar"),filter=new LibraryIcon(ui,1,"Filtrar"),sort=new LibraryIcon(ui,2,"Ordenar por"),add=new LibraryIcon(ui,3,"Adicionar");
-            header.addView(back,new LinearLayout.LayoutParams(dp(activity,40),dp(activity,48)));
+            header.addView(back,new LinearLayout.LayoutParams(dp(activity,48),dp(activity,48)));
             TextView title=label(ui,"Locais",20);title.setTypeface(null,android.graphics.Typeface.BOLD);title.setGravity(Gravity.CENTER);
             header.addView(title,new LinearLayout.LayoutParams(0,dp(activity,48),1));
-            for(View v:new View[]{filter,sort,add})header.addView(v,new LinearLayout.LayoutParams(dp(activity,40),dp(activity,48)));
+            for(View v:new View[]{filter,sort,add})header.addView(v,new LinearLayout.LayoutParams(dp(activity,48),dp(activity,48)));
             panel.addView(header);back.setOnClickListener(v->dialog.dismiss());
             LinearLayout tabs=new LinearLayout(ui);String[] tabNames={"Favoritos","Pontos","Rotas","Eventos"};
             TextView[] tabLabels=new TextView[4];View[] indicators=new View[4];
@@ -555,14 +563,20 @@ public final class WorldMapDialog {
                 if(!warning.isEmpty())rows.addView(label(ui,warning,13));
                 long now=System.currentTimeMillis();boolean known=Control.locationKnown();double lat=Control.currentLatitude(),lon=Control.currentLongitude();
                 if(activeTab==0){
-                    List<SavedPlaces.Entry> list=new ArrayList<>();
-                    if(snapshot!=null)for(SavedPlaces.Entry e:snapshot.entries)if((savedFilter.isEmpty()||savedFilter.contains(e.category))&&(e.name+" "+e.category).toLowerCase(Locale.ROOT).contains(query))list.add(e);
-                    java.util.Comparator<SavedPlaces.Entry> byName=java.util.Comparator.comparing((SavedPlaces.Entry e)->e.name,String.CASE_INSENSITIVE_ORDER);
-                    switch(orders[0]){case 1:list.sort(byName.reversed());break;case 2:list.sort(java.util.Comparator.comparingLong((SavedPlaces.Entry e)->e.createdAtMs).reversed());break;case 3:if(known)list.sort(java.util.Comparator.comparingDouble(e->distanceMeters(lat,lon,e.latitude,e.longitude)));break;case 4:if(known&&Cooldown.hasHistory())list.sort(java.util.Comparator.comparingLong(e->Cooldown.remainingAt(e.latitude,e.longitude)));break;default:list.sort(byName);}
+                    // Shared with the quick Favoritos list, so both surfaces filter and order identically.
+                    List<SavedPlaces.Entry> list=SavedPlaceOrder.select(snapshot==null?null:snapshot.entries,
+                        new SavedPlaceOrder.Query(query,savedFilter==null||savedFilter.isEmpty()?null:savedFilter,
+                            savedOrders[Math.max(0,Math.min(savedOrders.length-1,orders[0]))]),
+                        (placeLat,placeLon)->{
+                            try{return java.util.TimeZone.getTimeZone(TimeZoneLookup.zoneId(placeLat,placeLon)).getOffset(now);}
+                            catch(RuntimeException unknown){return null;}
+                        },
+                        (placeLat,placeLon)->known?distanceMeters(lat,lon,placeLat,placeLon):Double.NaN,
+                        (placeLat,placeLon)->Cooldown.hasHistory()?Cooldown.remainingAt(placeLat,placeLon):-1);
                     LocalTimeClock clock=new LocalTimeClock();for(SavedPlaces.Entry e:list){
                         String local=clock.label(e.latitude,e.longitude,now,true,Locale.forLanguageTag("pt-BR"));
                         locationRow(rows,e.name,e.category,Collections.emptyList(),local,locationDistance(e.latitude,e.longitude),e.latitude,e.longitude,()->{dialog.dismiss();showPlace(e);});}
-                    if(list.isEmpty())rows.addView(label(ui,"Nenhum local salvo neste filtro. Use + para salvar.",14));
+                    if(list.isEmpty())rows.addView(label(ui,"No saved places in this filter. Use + to save one.",14));
                 }else if(activeTab==1){
                     List<Hotspots.Spot> list=new ArrayList<>();for(Hotspots.Spot p:Hotspots.ALL)if((pointFilter.isEmpty()||!Collections.disjoint(pointFilter,p.categories))&&(p.name+" "+p.country+" "+p.city+" "+p.categoryText()).toLowerCase(Locale.ROOT).contains(query))list.add(p);
                     java.util.Comparator<Hotspots.Spot> byName=java.util.Comparator.comparing((Hotspots.Spot p)->p.country).thenComparing(p->p.name);
@@ -573,8 +587,8 @@ public final class WorldMapDialog {
                 }else if(activeTab==2){
                     List<GpxStore.Entry> list=new ArrayList<>();for(GpxStore.Entry e:gpx)if(e.name.toLowerCase(Locale.ROOT).contains(query))list.add(e);
                     if(orders[2]==1)Collections.reverse(list);else if(orders[2]==2)list.sort(java.util.Comparator.comparingInt(e->e.count));
-                    for(GpxStore.Entry e:list)simpleLibraryRow(rows,e.name,e.count+" pontos GPX",()->{dialog.dismiss();GpxRouteDialog.showEntry(activity,e,routeUi::onGpxChosen);});
-                    if(list.isEmpty())rows.addView(label(ui,"Nenhuma rota salva. Use + para criar ou importar um GPX.",14));
+                    for(GpxStore.Entry e:list)routeRow(rows,e,()->{dialog.dismiss();GpxRouteDialog.showEntry(activity,e,routeUi==null?picked->{double[] start=picked.point(0);dialog.dismiss();map.select(start[0],start[1]);}:routeUi::onGpxChosen);});
+                    if(list.isEmpty())rows.addView(label(ui,"No saved routes yet. Use + to build a route or import a GPX.",14));
                 }else{
                     simpleLibraryRow(rows,"Missões e Pesquisas","Abrir painel de pesquisas",()->{dialog.dismiss();ResearchSettings.show(activity);});
                     simpleLibraryRow(rows,"Eventos","Abrir seletor de eventos",()->{dialog.dismiss();dev.pgrazor.events.EventPanel.showSelector(activity,Control.darkTheme());});
@@ -583,12 +597,12 @@ public final class WorldMapDialog {
             for(int i=0;i<4;i++){final int index=i;tabs.getChildAt(i).setOnClickListener(v->{activeTab=index;search.setText("");render.run();scroll.scrollTo(0,0);});}
             filter.setOnClickListener(v->{
                 if(activeTab==0){String[] values=SavedPlaces.CATEGORIES;boolean[] selected=new boolean[values.length];for(int i=0;i<values.length;i++)selected[i]=savedFilter.contains(values[i]);
-                    show(new AlertDialog.Builder(ui).setTitle("Filtrar favoritos").setMultiChoiceItems(values,selected,(d,i,on)->selected[i]=on).setNeutralButton("Todos",(d,w)->{savedFilter.clear();render.run();}).setNegativeButton("Cancelar",null).setPositiveButton("Aplicar",(d,w)->{savedFilter.clear();for(int i=0;i<values.length;i++)if(selected[i])savedFilter.add(values[i]);render.run();}).create());
+                    show(new AlertDialog.Builder(ui).setTitle(dev.pgrazor.PtBr.tr("Filtrar favoritos")).setMultiChoiceItems(values,selected,(d,i,on)->selected[i]=on).setNeutralButton("Todos",(d,w)->{savedFilter.clear();render.run();}).setNegativeButton("Cancelar",null).setPositiveButton("Aplicar",(d,w)->{savedFilter.clear();for(int i=0;i<values.length;i++)if(selected[i])savedFilter.add(values[i]);render.run();}).create());
                 }else if(activeTab==1){Hotspots.Category[] values=Hotspots.Category.values();String[] names=new String[values.length];boolean[] selected=new boolean[values.length];for(int i=0;i<values.length;i++){names[i]=values[i].label;selected[i]=pointFilter.contains(values[i]);}
                     show(new AlertDialog.Builder(ui).setTitle("Filtrar pontos").setMultiChoiceItems(names,selected,(d,i,on)->selected[i]=on).setNeutralButton("Todos",(d,w)->{pointFilter.clear();render.run();}).setNegativeButton("Cancelar",null).setPositiveButton("Aplicar",(d,w)->{pointFilter.clear();for(int i=0;i<values.length;i++)if(selected[i])pointFilter.add(values[i]);render.run();}).create());}
             });
-            sort.setOnClickListener(v->{final int tab=activeTab;String[] options=tab==0?new String[]{"Nome A–Z","Nome Z–A","Mais recentes","Distância","Cooldown estimado"}:tab==1?new String[]{"Ordem do catálogo","País e nome","Fuso: mais adiantado","Fuso: mais atrasado","Distância","Cooldown estimado"}:new String[]{"Nome A–Z","Nome Z–A","Quantidade de pontos"};
-                show(new AlertDialog.Builder(ui).setTitle("Ordenar por").setSingleChoiceItems(options,orders[tab],(d,i)->{orders[tab]=i;d.dismiss();render.run();}).setNegativeButton("Cancelar",null).create());});
+            sort.setOnClickListener(v->{final int tab=activeTab;String[] options=tab==0?new String[]{"Nome A–Z","Nome Z–A","Mais recentes","Distância","Cooldown estimado","Mais antigos","Horário local: mais cedo","Horário local: mais tarde"}:tab==1?new String[]{"Ordem do catálogo","País e nome","Fuso: mais adiantado","Fuso: mais atrasado","Distância","Cooldown estimado"}:new String[]{"Nome A–Z","Nome Z–A","Quantidade de pontos"};
+                show(new AlertDialog.Builder(ui).setTitle(dev.pgrazor.PtBr.tr("Ordenar por")).setSingleChoiceItems(options,orders[tab],(d,i)->{orders[tab]=i;d.dismiss();render.run();}).setNegativeButton("Cancelar",null).create());});
             add.setOnClickListener(v->{if(activeTab==2&&routeUi!=null){dialog.dismiss();routeUi.gpx.performClick();}else showSave(dialog);});
             search.addTextChangedListener(new android.text.TextWatcher(){public void beforeTextChanged(CharSequence s,int st,int count,int after){}public void onTextChanged(CharSequence s,int st,int before,int count){render.run();}public void afterTextChanged(android.text.Editable e){}});
             render.run();dialog.setOnShowListener(d->{MapTheme.fullScreen(dialog);render.run();});show(dialog);
@@ -599,6 +613,43 @@ public final class WorldMapDialog {
             String line=String.format(Locale.forLanguageTag("pt-BR"),"Distância: %.1f km",distanceMeters(Control.currentLatitude(),Control.currentLongitude(),lat,lon)/1000);
             return line+(Cooldown.hasHistory()?" · Cooldown est.: "+((Cooldown.remainingAt(lat,lon)+59999)/60000)+" min":" · Cooldown sem histórico");
         }
+        /** A saved route row with an explicit, confirmed Delete; deleting never starts or stops a walk. */
+        private void routeRow(LinearLayout rows,GpxStore.Entry entry,Runnable action){
+            LinearLayout card=new LinearLayout(ui);card.setOrientation(LinearLayout.VERTICAL);
+            card.setPadding(dp(activity,4),dp(activity,12),dp(activity,4),dp(activity,12));
+            LinearLayout top=new LinearLayout(ui);top.setGravity(Gravity.CENTER_VERTICAL);
+            TextView heading=label(ui,entry.name,17);heading.setTextColor(MapTheme.ink());
+            heading.setTypeface(null,android.graphics.Typeface.BOLD);top.addView(heading,new LinearLayout.LayoutParams(0,-2,1));
+            LibraryIcon remove=new LibraryIcon(ui,5,dev.pgrazor.PtBr.tr("Delete route ")+entry.name);
+            remove.setOnClickListener(v->confirmRouteDelete(entry));
+            top.addView(remove,new LinearLayout.LayoutParams(dp(activity,48),dp(activity,48)));
+            card.addView(top);
+            TextView detail=label(ui,String.format(Locale.forLanguageTag("pt-BR"),dev.pgrazor.PtBr.tr("%d GPX points"),entry.count),14);detail.setTextColor(MapTheme.muted());card.addView(detail);
+            card.setClickable(true);card.setFocusable(true);card.setOnClickListener(v->action.run());rows.addView(card);libraryDivider(rows);
+        }
+        private void confirmRouteDelete(GpxStore.Entry entry){
+            AlertDialog confirm=new AlertDialog.Builder(ui).setTitle(dev.pgrazor.PtBr.tr("Delete saved route?"))
+                .setMessage(dev.pgrazor.PtBr.tr("“"+entry.name+"” will be removed. Any active walk is unaffected."))
+                .setNegativeButton(dev.pgrazor.PtBr.tr("Cancel"),null)
+                .setPositiveButton(dev.pgrazor.PtBr.tr("Delete"),null).create();
+            confirm.setOnShowListener(d->confirm.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v->{
+                confirm.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(false);
+                storage.execute(()->{
+                    String error=null;
+                    try{new GpxStore(activity).delete(entry.id);}
+                    catch(IOException|RuntimeException e){error=e.getMessage()==null?dev.pgrazor.PtBr.tr("Could not delete that route."):e.getMessage();}
+                    final String failed=error;
+                    main.post(()->{
+                        if(closed)return;
+                        if(confirm.isShowing())confirm.dismiss();
+                        if(failed!=null){Toast.makeText(activity,failed,Toast.LENGTH_LONG).show();return;}
+                        if(libraryDialog!=null&&libraryDialog.isShowing())libraryDialog.dismiss();
+                        openLibrary();
+                    });
+                });
+            }));
+            show(confirm);
+        }
         private void simpleLibraryRow(LinearLayout rows,String title,String detail,Runnable action){
             LinearLayout row=new LinearLayout(ui);row.setOrientation(LinearLayout.VERTICAL);row.setPadding(dp(activity,4),dp(activity,14),dp(activity,4),dp(activity,14));
             TextView heading=label(ui,title,17);heading.setTypeface(null,android.graphics.Typeface.BOLD);heading.setTextColor(MapTheme.ink());row.addView(heading);
@@ -607,7 +658,7 @@ public final class WorldMapDialog {
         private void locationRow(LinearLayout rows,String name,String categories,List<String> icons,String local,String distance,double lat,double lon,Runnable action){
             LinearLayout card=new LinearLayout(ui);card.setOrientation(LinearLayout.VERTICAL);card.setPadding(dp(activity,4),dp(activity,12),dp(activity,4),dp(activity,12));
             LinearLayout top=new LinearLayout(ui);top.setGravity(Gravity.CENTER_VERTICAL);TextView heading=label(ui,name,17);heading.setTextColor(MapTheme.ink());heading.setTypeface(null,android.graphics.Typeface.BOLD);top.addView(heading,new LinearLayout.LayoutParams(0,-2,1));
-            LibraryIcon copy=new LibraryIcon(ui,4,"Copiar coordenadas de "+name);copy.setOnClickListener(v->CoordinateClipboard.copy(activity,lat,lon,"Coordenadas copiadas"));top.addView(copy,new LinearLayout.LayoutParams(dp(activity,40),dp(activity,40)));card.addView(top);
+            LibraryIcon copy=new LibraryIcon(ui,4,"Copiar coordenadas de "+name);copy.setOnClickListener(v->CoordinateClipboard.copy(activity,lat,lon,"Coordenadas copiadas"));top.addView(copy,new LinearLayout.LayoutParams(dp(activity,48),dp(activity,48)));card.addView(top);
             LinearLayout tags=new LinearLayout(ui);tags.setGravity(Gravity.CENTER_VERTICAL);
             for(String key:icons){if(!categoryIcons.containsKey(key))try(java.io.InputStream in=PgAssets.open(ui,"pgrazor/map-icons/"+key)){categoryIcons.put(key,android.graphics.BitmapFactory.decodeStream(in));}catch(Exception ex){categoryIcons.put(key,null);}
                 Bitmap bitmap=categoryIcons.get(key);if(bitmap!=null){android.widget.ImageView image=new android.widget.ImageView(ui);image.setImageBitmap(bitmap);image.setScaleType(android.widget.ImageView.ScaleType.FIT_CENTER);tags.addView(image,new LinearLayout.LayoutParams(dp(activity,20),dp(activity,20)));}}
@@ -632,7 +683,7 @@ public final class WorldMapDialog {
             dialog.setOnShowListener(d -> dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
                 final SavedPlaces.Entry entry;
                 try { entry = new SavedPlaces.Entry(name.getText().toString(), latitude, longitude,(String)category.getSelectedItem()); }
-                catch (IllegalArgumentException e) { name.setError(e.getMessage()); return; }
+                catch (IllegalArgumentException e) { name.setError(dev.pgrazor.PtBr.tr(e.getMessage())); return; }
                 dialog.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(false);
                 storage.execute(() -> {
                     try {
