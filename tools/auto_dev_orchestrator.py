@@ -15,6 +15,7 @@ AGENTS = {"chatgpt", "gemini", "arena"}
 ID = re.compile(r"[A-Z][A-Z0-9-]{2,47}")
 MODEL = re.compile(r"gemini-[A-Za-z0-9._-]{1,100}")
 MARKER = re.compile(r"^<!-- pgbr-auto-dev:v1:([A-Z][A-Z0-9-]{2,47}):reserved -->$")
+PAUSE_MARKER = re.compile(r"^<!-- pgbr-auto-dev:v1:([A-Z][A-Z0-9-]{2,47}):paused -->$")
 MAX_OUTPUT = 4096
 MAX_BYTES = 256 * 1024
 MAX_CALLS = 1
@@ -47,6 +48,19 @@ def reserved_ids(pages):
             and (m := MARKER.fullmatch(c.get("body", "").split("\n", 1)[0]))}
 
 
+def paused_batch(pages):
+    """Latest bot-recorded quota/access block; comments are chronological."""
+    blocked = None
+    for page in pages:
+        for comment in page:
+            if comment.get("user", {}).get("login") != "github-actions[bot]":
+                continue
+            marker = PAUSE_MARKER.fullmatch(comment.get("body", "").split("\n", 1)[0])
+            if marker:
+                blocked = marker[1]
+    return blocked
+
+
 def select(rows, used, configured):
     selected = []
     busy = set()
@@ -67,7 +81,11 @@ def free_configuration(env):
             env.get("PGBR_FREE_BILLING_CONFIRMED") != "true" or
             env.get("PGBR_GITHUB_FREE_BUDGET_CONFIRMED") != "true"):
         return {}
-    key = env.get("PGBR_GEMINI_FREE_KEY", "")
+    # Reuse the legacy secret only on explicit selection and billing attestation.
+    source = env.get("PGBR_GEMINI_KEY_SOURCE", "dedicated")
+    if source not in ("dedicated", "existing"):
+        return {}
+    key = env.get("GEMINI_API_KEY" if source == "existing" else "PGBR_GEMINI_FREE_KEY", "")
     model = env.get("PGBR_GEMINI_FREE_MODEL", "")
     return {"gemini": (model, key)} if key and MODEL.fullmatch(model) else {}
 
@@ -153,8 +171,13 @@ def main():
     if not configured:
         print("Free API not configured; no request made.")
         return
-    used = reserved_ids(gh("repos/" + REPO + "/issues/" + ISSUE + "/comments?per_page=100",
-                           "--paginate", "--slurp"))
+    pages = gh("repos/" + REPO + "/issues/" + ISSUE + "/comments?per_page=100",
+               "--paginate", "--slurp")
+    blocked = paused_batch(pages)
+    if blocked and os.environ.get("PGBR_GEMINI_RESUME_AFTER") != blocked:
+        print("Gemini paused after quota/access error; no request made.")
+        return
+    used = reserved_ids(pages)
     selected = select(rows, used, configured)
     args.output.mkdir(parents=True, exist_ok=True)
     # Reserve before calling. No automatic retry, paid fallback or quota bypass.
@@ -171,6 +194,9 @@ def main():
         except urllib.error.HTTPError as error:
             state = "quota-or-access-blocked" if error.code in (401, 403, 429) else "failed"
             digest = "none"
+            if state == "quota-or-access-blocked":
+                note("<!-- pgbr-auto-dev:v1:" + row["id"] + ":paused -->\n"
+                     "Gemini pausado: verificar cota, acesso e faturamento antes de retomar.")
         except Exception:
             digest = "none"
         run = os.environ.get("GITHUB_RUN_ID", "")
