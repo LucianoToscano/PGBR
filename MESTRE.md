@@ -376,3 +376,7 @@ PR [#319](https://github.com/LucianoToscano/PGBR/pull/319) aberta da branch ativ
 Continuação independente: `Control` expõe a idade monotônica do snapshot da camada de locais próximos junto com o conteúdo. Após 10 s, os pontos são descartados (`fail closed`) e o estado mostra “dados expiraram; aguardando atualização”, em vez de apresentar um feed vazio como se nunca tivesse carregado. Estado desconhecido inicial é diferenciado de expirado. Política isolada em `MapPoiFreshness.java`; fixture executável Java verifica limites 0/9.999/10.000 ms, idade negativa e descarte de conteúdo, mais contrato estático de status.
 
 PT-BR sincronizado em Sem Root/Root/glossário e fixture dinâmica. Validação: nesta fatia, 21 testes passaram e 5 foram skipped (JDK ausente); compilação/execução Java real não ocorreu aqui. Erro de contrato antigo no teste de apresentação após alteração da interface foi atualizado e reexecutado com sucesso. Essa fatia integra PR #319, ainda sem CI completa na última consulta.
+
+### Validação ampla local (26/11)
+
+`python -B -m unittest discover -s pgrazor/test -v`: 526 testes, 79 skips por ferramentas/dispositivos ausentes e 1 erro de ambiente no teste existente `test_iflowgo_request_policy_java.test_actual_java_policy` (`FileNotFoundError: javac`). Não é falha da lógica MAP-01; comprova que a suíte completa local não ficou inteiramente verde. Os focados de MAP-01 acima passaram; a checagem real Java/Root do CI da #319 ainda estava pendente. Não concluir build Android nesta máquina.
