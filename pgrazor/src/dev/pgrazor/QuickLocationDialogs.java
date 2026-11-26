@@ -126,7 +126,7 @@ public final class QuickLocationDialogs {
     private static void showFavoriteList(Activity activity,TeleportTarget target,SavedPlaces.Snapshot snap){
         final long now=System.currentTimeMillis();
         // One shared policy with the World Map Locais library: same filter, same order, same ties.
-        java.util.List<SavedPlaces.Entry> sorted=SavedPlaceOrder.select(snap.entries,
+        final java.util.List<SavedPlaces.Entry> filtered=SavedPlaceOrder.select(snap.entries,
             new SavedPlaceOrder.Query("",favoritesCategoryFilter==0?null:
                 java.util.Collections.singletonList(SavedPlaces.CATEGORIES[favoritesCategoryFilter-1]),
                 SORTS[Math.max(0,Math.min(SORTS.length-1,favoritesSort))]),
@@ -134,7 +134,7 @@ public final class QuickLocationDialogs {
             (lat,lon)->Control.locationKnown()?
                 WorldMapDialog.distanceMeters(Control.currentLatitude(),Control.currentLongitude(),lat,lon):Double.NaN,
             (lat,lon)->Cooldown.hasHistory()?Cooldown.remainingAt(lat,lon):-1);
-        sorted=new java.util.ArrayList<>(sorted);
+        final java.util.List<SavedPlaces.Entry> sorted=new java.util.ArrayList<>(filtered);
         String selected=favoritesCategoryFilter==0?dev.pgrazor.PtBr.tr("Todas"):dev.pgrazor.PtBr.tr(SavedPlaces.CATEGORIES[favoritesCategoryFilter-1]);
         AlertDialog.Builder builder=new AlertDialog.Builder(themed(activity))
             .setTitle(dev.pgrazor.PtBr.tr("Locais")+" • "+dev.pgrazor.PtBr.tr(selected))
