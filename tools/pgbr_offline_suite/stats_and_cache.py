@@ -11,6 +11,7 @@ from collections import OrderedDict
 from dataclasses import dataclass
 import hashlib
 import json
+import math
 from typing import Any, Callable, Dict, List, Optional
 
 
@@ -31,11 +32,11 @@ def aggregate_session_window(
     goals: Optional[Dict[str, float]] = None,
 ) -> Dict[str, Any]:
     """Aggregate deduplicated chronological samples over a window with explicit denominators (SYS-02)."""
-    if window_ms <= 0:
+    if isinstance(window_ms, bool) or not isinstance(window_ms, int) or window_ms <= 0:
         raise ValueError("window_ms deve ser > 0.")
     dedup: Dict[int, SessionSample] = {}
     for s in samples:
-        if s.timestamp_ms <= 0 or s.xp < 0 or s.caught < 0 or s.seen < 0 or s.stops < 0 or s.km < 0:
+        if isinstance(s.km, bool) or not math.isfinite(float(s.km)) or s.timestamp_ms <= 0 or s.xp < 0 or s.caught < 0 or s.seen < 0 or s.stops < 0 or s.km < 0:
             raise ValueError("Amostra de sessão inválida.")
         dedup[s.timestamp_ms] = s
     ordered = [dedup[k] for k in sorted(dedup.keys())]
@@ -92,49 +93,66 @@ def migrate_snapshot_schema(
     migrations: Dict[int, Callable[[Dict[str, Any]], Dict[str, Any]]],
     target_version: int,
 ) -> Dict[str, Any]:
-    """Run deterministic sequential schema migrations with deep-copy rollback on error (DATA-03)."""
+    """Run deterministic, idempotent sequential schema migrations with deep-copy isolation (DATA-03)."""
+    if isinstance(target_version, bool) or not isinstance(target_version, int) or target_version < 1:
+        raise ValueError(f"target_version inválida: {target_version}")
     if not isinstance(snapshot, dict) or "schema_version" not in snapshot:
         raise ValueError("Snapshot sem schema_version.")
     cur_ver = snapshot["schema_version"]
-    if not isinstance(cur_ver, int) or cur_ver < 1 or cur_ver > target_version:
+    if isinstance(cur_ver, bool) or not isinstance(cur_ver, int) or cur_ver < 1 or cur_ver > target_version:
         raise ValueError(f"Versão de schema inválida ou futura: {cur_ver} > {target_version}")
-    working = json.loads(json.dumps(snapshot))
+    working = json.loads(json.dumps(snapshot, allow_nan=False))
+    if working["schema_version"] == target_version:
+        return working
     while working["schema_version"] < target_version:
         v = working["schema_version"]
         if v not in migrations:
             raise ValueError(f"Migração ausente para versão {v} -> {v + 1}")
-        working = migrations[v](working)
-        working["schema_version"] = v + 1
+        nxt = migrations[v](json.loads(json.dumps(working, allow_nan=False)))
+        if not isinstance(nxt, dict):
+            raise ValueError(f"Migração {v} -> {v + 1} deve retornar dict.")
+        nxt["schema_version"] = v + 1
+        working = nxt
     return working
 
 
 class BoundedOfflineCache:
-    """Namespace-isolated, byte-bounded LRU cache with SHA-256 entry integrity (DATA-03 / SYS-05)."""
+    """Namespace-isolated, byte- and entry-bounded LRU cache with SHA-256 entry integrity (DATA-03 / SYS-05)."""
 
-    def __init__(self, max_bytes: int) -> None:
-        if max_bytes <= 0:
+    MAX_KEY_LEN = 256
+
+    def __init__(self, max_bytes: int, *, max_entries: int = 10_000) -> None:
+        if isinstance(max_bytes, bool) or not isinstance(max_bytes, int) or max_bytes <= 0:
             raise ValueError("max_bytes deve ser > 0.")
+        if isinstance(max_entries, bool) or not isinstance(max_entries, int) or max_entries <= 0:
+            raise ValueError("max_entries deve ser > 0.")
         self.max_bytes = max_bytes
+        self.max_entries = max_entries
         self._entries: "OrderedDict[str, Dict[str, Any]]" = OrderedDict()
         self._used_bytes = 0
 
-    @staticmethod
-    def _ns_key(namespace: str, key: str) -> str:
+    @classmethod
+    def _ns_key(cls, namespace: str, key: str) -> str:
+        if not isinstance(namespace, str) or not isinstance(key, str):
+            raise ValueError("Namespace e chave devem ser strings.")
         ns = namespace.strip()
         k = key.strip()
         if not ns or not k:
             raise ValueError("Namespace e chave não podem ser vazios.")
-        return f"{ns}:{k}"
+        full = f"{ns}:{k}"
+        if len(full) > cls.MAX_KEY_LEN:
+            raise ValueError(f"Chave excede limite de {cls.MAX_KEY_LEN} caracteres.")
+        return full
 
     def put(self, namespace: str, key: str, value: Any) -> int:
-        raw = json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
+        raw = json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False, allow_nan=False).encode("utf-8")
         size = len(raw)
         if size > self.max_bytes:
             raise ValueError("Item excede capacidade máxima do cache.")
         full_key = self._ns_key(namespace, key)
         if full_key in self._entries:
             self._used_bytes -= self._entries.pop(full_key)["size"]
-        while self._used_bytes + size > self.max_bytes and self._entries:
+        while (self._used_bytes + size > self.max_bytes or len(self._entries) >= self.max_entries) and self._entries:
             _, evicted = self._entries.popitem(last=False)
             self._used_bytes -= evicted["size"]
         digest = hashlib.sha256(raw).hexdigest()

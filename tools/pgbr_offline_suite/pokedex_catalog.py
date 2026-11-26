@@ -40,6 +40,19 @@ def generation_for_dex(dex_id: int) -> Optional[int]:
     return None
 
 
+UNKNOWN_FORM = "desconhecida"
+
+
+def classify_pokemon_form(form: str) -> Dict[str, Any]:
+    """Classify a form string explicitly without silently coercing unknown forms to 'normal'."""
+    if not isinstance(form, str) or not form.strip():
+        return {"raw_form": form, "normalized_form": UNKNOWN_FORM, "is_known": False, "status": "unknown_explicit"}
+    norm = form.strip().lower()
+    if norm in VALID_FORMS:
+        return {"raw_form": form, "normalized_form": norm, "is_known": True, "status": "known"}
+    return {"raw_form": form, "normalized_form": norm, "is_known": False, "status": "unknown_explicit"}
+
+
 @dataclass(frozen=True)
 class PokedexEntry:
     dex_id: int
@@ -52,16 +65,23 @@ class PokedexEntry:
     has_background: bool = False
     sprite_asset_id: str = ""
     provenance: str = "catalog-offline"
+    allow_unknown_form: bool = False
 
     def __post_init__(self) -> None:
-        if generation_for_dex(self.dex_id) is None:
+        if isinstance(self.dex_id, bool) or not isinstance(self.dex_id, int) or generation_for_dex(self.dex_id) is None:
             raise ValueError(f"National Dex fora do intervalo 1..1025: {self.dex_id}")
-        if self.form not in VALID_FORMS:
+        if not isinstance(self.form, str) or not self.form.strip():
+            raise ValueError(f"Forma inválida: {self.form}")
+        if self.form not in VALID_FORMS and not self.allow_unknown_form:
             raise ValueError(f"Forma inválida: {self.form}")
         if self.rarity not in VALID_RARITIES:
             raise ValueError(f"Raridade inválida: {self.rarity}")
         if not self.types or len(self.types) > 2:
             raise ValueError("Espécie deve ter 1 ou 2 tipos.")
+
+    @property
+    def form_status(self) -> str:
+        return "known" if self.form in VALID_FORMS else "unknown_explicit"
 
     @property
     def generation(self) -> int:
@@ -82,9 +102,11 @@ class PokedexCollection:
         # Explicit tri-state per canonical_key: True=owned, False=missing, absent/None=unknown
         self._owned: Dict[str, Optional[bool]] = {}
         for entry in entries:
-            self._entries[entry.canonical_key] = entry
+            self.add_entry(entry)
 
-    def add_entry(self, entry: PokedexEntry) -> None:
+    def add_entry(self, entry: PokedexEntry, *, allow_overwrite: bool = False) -> None:
+        if not allow_overwrite and entry.canonical_key in self._entries:
+            raise ValueError(f"canonical_key duplicada no catálogo Pokédex: {entry.canonical_key}")
         self._entries[entry.canonical_key] = entry
 
     def set_owned(self, canonical_key: str, owned: Optional[bool]) -> None:
@@ -155,7 +177,7 @@ class PokedexCollection:
             d["canonical_key"] = entry.canonical_key
             d["owned"] = self._owned.get(entry.canonical_key)
             rows.append(d)
-        return json.dumps({"schema": 1, "entries": rows}, ensure_ascii=False, indent=2)
+        return json.dumps({"schema": 1, "entries": rows}, ensure_ascii=False, indent=2, allow_nan=False)
 
     def export_csv(self) -> str:
         buf = io.StringIO()

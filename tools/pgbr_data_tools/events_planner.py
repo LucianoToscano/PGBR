@@ -10,6 +10,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
+import math
 import re
 from typing import Any, Dict, List, Optional, Tuple
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
@@ -68,6 +69,46 @@ def resolve_iana_zone(tz_name: str) -> ZoneInfo:
         raise ValueError(f"Fuso horário IANA desconhecido: {tz_name}") from exc
 
 
+def resolve_local_datetime(
+    local_iso: str,
+    tz_name: str,
+    *,
+    allow_ambiguous: bool = False,
+) -> Dict[str, Any]:
+    """Resolve a local wall-clock ISO timestamp in an IANA zone and detect DST ambiguity or gaps."""
+    if not isinstance(local_iso, str) or not local_iso.strip():
+        raise ValueError("Timestamp local ISO-8601 obrigatório.")
+    zone = resolve_iana_zone(tz_name)
+    naive = datetime.fromisoformat(local_iso.strip())
+    if naive.tzinfo is not None:
+        utc_dt = naive.astimezone(timezone.utc)
+        return {
+            "utc": utc_dt,
+            "local": utc_dt.astimezone(zone),
+            "timezone": tz_name.strip(),
+            "status": "explicit_offset",
+            "ambiguous": False,
+            "nonexistent": False,
+        }
+    dt0 = naive.replace(tzinfo=zone, fold=0)
+    dt1 = naive.replace(tzinfo=zone, fold=1)
+    rt0 = dt0.astimezone(timezone.utc).astimezone(zone)
+    nonexistent = (rt0.replace(tzinfo=None) != naive)
+    ambiguous = (not nonexistent) and (dt0.utcoffset() != dt1.utcoffset())
+    if nonexistent:
+        raise ValueError(f"Horário local inexistente (transição DST) em {tz_name}: {local_iso}")
+    if ambiguous and not allow_ambiguous:
+        raise ValueError(f"Horário local ambíguo (repetido em DST) em {tz_name}: {local_iso}")
+    return {
+        "utc": dt0.astimezone(timezone.utc),
+        "local": dt0,
+        "timezone": tz_name.strip(),
+        "status": "ambiguous_dst" if ambiguous else "unambiguous",
+        "ambiguous": ambiguous,
+        "nonexistent": False,
+    }
+
+
 def classify_event_window(
     event: EventEntry,
     now_utc: datetime,
@@ -115,7 +156,11 @@ def partition_schedule(
 ) -> Dict[str, List[Dict[str, Any]]]:
     """Partition events into active, upcoming, and expired (expired never leaks into active)."""
     out: Dict[str, List[Dict[str, Any]]] = {"active": [], "upcoming": [], "expired": []}
+    seen_ids: set[str] = set()
     for ev in events:
+        if ev.event_id in seen_ids:
+            raise ValueError(f"event_id duplicado na agenda: {ev.event_id}")
+        seen_ids.add(ev.event_id)
         item = classify_event_window(ev, now_utc, tz_name)
         out[item["status"]].append(item)
     for bucket in out.values():
@@ -244,25 +289,38 @@ class LocalReminderPlanner:
 
 _EMAIL_RE = re.compile(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}")
 _COORD_RE = re.compile(r"(?<!\d)-?(?:[1-8]?\d(?:\.\d{3,})|90\.0+)\s*,\s*-?(?:1[0-7]\d(?:\.\d{3,})|[1-9]?\d(?:\.\d{3,})|180\.0+)(?!\d)")
-_TOKEN_RE = re.compile(r"(?i)\b(?:bearer\s+[A-Za-z0-9._\-]{8,}|ghp_[A-Za-z0-9]{10,}|AIza[0-9A-Za-z_\-]{10,})")
-_SENSITIVE_KEYS = frozenset({"trainer", "trainer_name", "email", "account", "account_id", "token", "api_key", "secret", "password", "lat", "lon", "coords", "coordinates"})
+_TOKEN_RE = re.compile(
+    r"(?i)\b(?:bearer\s+[A-Za-z0-9._~+/=-]{8,}|(?:ghp|gho|sk|pk)_[A-Za-z0-9_\-]{10,}|"
+    r"AIza[0-9A-Za-z_\-]{10,}|eyJ[A-Za-z0-9_\-]{10,}\.[A-Za-z0-9_\-]{10,}\.[A-Za-z0-9_\-]{8,})"
+)
+_HOST_PATH_RE = re.compile(r"(?:[A-Za-z]:\\Users\\[^\s\"']+|/(?:Users|home)/[A-Za-z0-9._-]+(?:/[^\s\"']*)?)")
+_SENSITIVE_KEYS = frozenset({
+    "trainer", "trainer_name", "email", "account", "account_id", "token",
+    "api_key", "secret", "password", "lat", "lon", "coords", "coordinates",
+    "cookie", "session", "authorization", "phone", "telefone", "cpf",
+})
 
 
 def sanitize_diagnostic_payload(payload: Any) -> Any:
-    """Recursively redact private/sensitive fields from diagnostic or export data (SYS-03)."""
+    """Recursively redact private/sensitive fields and free-text values from export data (SYS-03)."""
     if isinstance(payload, dict):
         cleaned: Dict[str, Any] = {}
         for k, v in payload.items():
-            if str(k).strip().lower() in _SENSITIVE_KEYS:
+            if any(tok in str(k).strip().lower() for tok in _SENSITIVE_KEYS):
                 cleaned[k] = "[REDACTED]"
             else:
                 cleaned[k] = sanitize_diagnostic_payload(v)
         return cleaned
     if isinstance(payload, list):
         return [sanitize_diagnostic_payload(item) for item in payload]
+    if isinstance(payload, tuple):
+        return [sanitize_diagnostic_payload(item) for item in payload]
     if isinstance(payload, str):
         text = _EMAIL_RE.sub("[EMAIL]", payload)
         text = _TOKEN_RE.sub("[TOKEN]", text)
         text = _COORD_RE.sub("[COORDS]", text)
+        text = _HOST_PATH_RE.sub("[PATH]", text)
         return text
+    if isinstance(payload, float) and not math.isfinite(payload):
+        raise ValueError("Valores NaN ou infinito não são permitidos na exportação.")
     return payload
