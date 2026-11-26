@@ -2714,3 +2714,10 @@ Sem build, APK, Root module, SHA256SUMS de release, teste físico desta branch, 
 ## 26/11/2026 UTC — continuação da coordenação: #316 e main 617e91f
 
 `origin/main` verificada em `617e91f79ac57f9fcd61ad57c380ce977c2da0ed`. A branch Arena preservou seus commits locais #316; merge `1b321f2` reconciliou a main com resolução documental, mantendo uma só cópia dos arquivos e sem reescrever histórico. PR #317 (inspeção de manifesto assinado) e #318 (integridade dos sprites) continuam paralelas e separadas; seus checks Java/Root estavam em execução no momento da consulta. Não houve conflito em `WorldMapDialog.java` com essas PRs. Esta branch passa agora ao escopo independente MAP-01 descrito acima, sem depender da migração 0.439.0, crash #284 ou aparelho.
+
+## 26/11/2026 UTC — acompanhamento LMArena: PR #319 e regressões visuais históricas
+
+- PR #319 aberta da branch ativa para MAP-01 (teclado no mapa, seleção de destino só no preview e PT-BR sincronizado). Check `translate` passou; workflow de verificação geral estava em fila na consulta. Não publicar APK/release por essa PR; `device_tested=false`.
+- #317: todos os checks tinham passado na consulta; #318: aguardava a suíte completa Java/Root, logo não integrada/considerada concluída neste checkpoint. São trilhas independentes de assinatura de manifesto e integridade de sprites.
+- Releitura de #200: capturas de QA sem SHA do APK e sem Rota Visual ativa; não constituem reprodução suficiente de falha do trace. `WorldMapDialog` atual já tem layout unificado/compacto, filtros recolhidos e prévia trace opt-in, com contratos (`test_route_trace_java`) aprovados; quatro fixtures JVM foram skipped localmente por falta de JDK. Não trocar esses controles nem inventar causalidade.
+- #199 permanece protótipo experimental divergente, 36 commits à frente/40 atrás segundo seu registro; ainda falta reconciliação extensa em arquivos de mapa/runtime e validação da projeção em dispositivo. Preservar a PR e não mesclá-la automaticamente.
