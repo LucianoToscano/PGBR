@@ -50,6 +50,19 @@ def _snapshot_tree_hashes(root: Path) -> dict[str, str]:
 
 
 class TestGeminiG04906AssetAudit(unittest.TestCase):
+    def test_binary_io_preserves_crlf_and_ctrl_z_bytes(self):
+        with tempfile.TemporaryDirectory(prefix="pgbr-binary-io-") as td:
+            path = Path(td) / "binary.png"
+            payload = _make_png(1, 1)
+            self.assertIn(b"\r\n\x1a\n", payload[:8])
+            path.write_bytes(payload)
+            observed, error, size = image_probe._read_bounded_regular(path, len(payload))
+            self.assertIsNone(error)
+            self.assertEqual(observed, payload)
+            self.assertEqual(size, len(payload))
+            self.assertEqual(image_probe.probe_image_file(path)["sha256"], hashlib.sha256(payload).hexdigest())
+            self.assertTrue(image_probe.probe_image_file(path)["valid"])
+
     def test_real_repository_assets_audit_deterministic_and_non_mutating(self):
         assets_dir = ROOT / "pgrazor" / "assets"
         if not assets_dir.is_dir():

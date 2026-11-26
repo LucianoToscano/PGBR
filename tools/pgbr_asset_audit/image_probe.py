@@ -185,7 +185,9 @@ def _read_bounded_regular(path: Path, max_bytes: int) -> tuple[Optional[bytes], 
         return None, "non_regular_file", 0
     if st.st_size > max_bytes:
         return None, f"file_exceeds_max_bytes:{st.st_size}>{max_bytes}", st.st_size
-    flags = os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0) | getattr(os, "O_NONBLOCK", 0)
+    # Windows CRT text mode can translate CRLF and stop at Ctrl-Z in PNG data.
+    # Always request binary I/O where supported, preserving exact bytes and hashes.
+    flags = os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0) | getattr(os, "O_NONBLOCK", 0) | getattr(os, "O_BINARY", 0)
     fd = os.open(str(path), flags)
     try:
         fst = os.fstat(fd)
