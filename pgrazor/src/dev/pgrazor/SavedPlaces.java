@@ -120,11 +120,31 @@ public final class SavedPlaces {
     } }
 
     public boolean remove(String id) throws IOException { synchronized (LOCK) {
-        List<Entry> entries = new ArrayList<>(read().entries);
+        Snapshot snapshot=read();
+        if(snapshot.damaged)throw new IOException("Locais danificados; recuperação necessária.");
+        List<Entry> entries = new ArrayList<>(snapshot.entries);
         boolean removed = false;
         for (int i = entries.size() - 1; i >= 0; i--) if (entries.get(i).id.equals(id)) { entries.remove(i); removed = true; }
         if (removed) write(entries);
         return removed;
+    } }
+
+    /** Renames exactly one saved ID without changing coordinates, category, or creation time. */
+    public boolean rename(String id, String name) throws IOException { synchronized (LOCK) {
+        Snapshot snapshot=read();
+        if(snapshot.damaged)throw new IOException("Locais danificados; recuperação necessária.");
+        List<Entry> entries=new ArrayList<>(snapshot.entries);
+        for(int i=0;i<entries.size();i++){
+            Entry current=entries.get(i);
+            if(!current.id.equals(id))continue;
+            Entry updated=new Entry(current.id,name,current.latitude,current.longitude,current.category,current.createdAtMs);
+            for(Entry other:entries)
+                if(!other.id.equals(id)&&nameKey(other.name).equals(nameKey(updated.name)))
+                    throw new IllegalArgumentException("Já existe um local com esse nome.");
+            if(!updated.name.equals(current.name)){entries.set(i,updated);write(entries);}
+            return true;
+        }
+        return false;
     } }
 
     private static String nameKey(String name) {

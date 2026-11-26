@@ -90,6 +90,21 @@ public final class LocalAuditTest {
  check(LocalAuditPolicy.preview(15,-1,-1,33,none,Collections.emptyMap()).status==LocalAuditPolicy.Status.PROTECTED);
  check(LocalAuditPolicy.preview(15,-1,-1,34,none,Collections.emptyMap()).status==LocalAuditPolicy.Status.UNCERTAIN);
  check(LocalAuditPolicy.preview(-1,-1,-1,101,none,Collections.emptyMap()).status==LocalAuditPolicy.Status.UNCERTAIN);
+ // Upstream 0.3.7: distinct manually supplied shadow and Max protections.
+ var maxFlags=EnumSet.of(LocalAuditPolicy.Flag.SHADOW,LocalAuditPolicy.Flag.DYNAMAX,LocalAuditPolicy.Flag.GIGANTAMAX);
+ var maxPreview=LocalCollectionPreview.parse(
+  "A;10;1;2;3;SHADOW=1,DYNAMAX=0,GIGANTAMAX=0\n"+
+  "B;10;1;2;3;SHADOW=0,DYNAMAX=1,GIGANTAMAX=0\n"+
+  "C;10;1;2;3;SHADOW=0,DYNAMAX=?,GIGANTAMAX=1\n"+
+  "D;10;1;2;3;SHADOW=0,DYNAMAX=?,GIGANTAMAX=0\n"+
+  "E;10;1;2;3;SHADOW=0,DYNAMAX=0,GIGANTAMAX=0\n"+
+  "F;10;1;2;3;SHADOW=0,DYNAMAX=0,GIGANTAMAX=0,GIGANTAMAX=1",101,maxFlags);
+ check(maxPreview.protectedCount==3&&maxPreview.uncertainCount==1&&maxPreview.matchCount==1);
+ check(maxPreview.rejectedLines.equals(Arrays.asList(6)));
+ check(maxPreview.rows.get(0).decision.reasons.contains("sombrio"));
+ check(maxPreview.rows.get(1).decision.reasons.contains("Dynamax"));
+ check(maxPreview.rows.get(2).decision.reasons.contains("Gigantamax"));
+ check(maxPreview.rows.get(3).decision.reasons.contains("Dynamax não confirmado"));
  // Every optional protection must preserve a positive observation, and absent facts remain uncertain.
  for(LocalAuditPolicy.Flag f:LocalAuditPolicy.Flag.values()){
   var facts=new EnumMap<LocalAuditPolicy.Flag,Boolean>(LocalAuditPolicy.Flag.class);facts.put(f,true);

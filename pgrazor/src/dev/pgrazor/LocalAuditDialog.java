@@ -71,10 +71,10 @@ final class LocalAuditDialog {
  }
  static void batch(Activity a){
   LinearLayout b=body(a);
-  text(a,b,"Cole até 500 registros de uma fonte autorizada, um por linha. Formato: espécie;PC;IV ataque;IV defesa;IV PS;critérios. Use ? para desconhecido; critérios no formato EVENT=1,SHINY=0. Ausência de informação não significa falso. Não lê a coleção nem transfere Pokémon.");
+  text(a,b,"Cole até 500 registros de uma fonte autorizada, um por linha. Formato: espécie;PC;IV ataque;IV defesa;IV PS;critérios. Use ? para desconhecido; critérios no formato EVENT=1,SHINY=0,DYNAMAX=?,GIGANTAMAX=?. Ausência de informação não significa falso. Não lê a coleção nem transfere Pokémon.");
   EditText limit=numeric(a,b,"IV mínimo para preservar (0–100; 101 desativa só o limite de IV)","99",false,false);
   EditText protectedNames=input(a,b,"Espécies adicionais protegidas (nomes exatos separados por vírgulas)","");
-  text(a,b,"A lista é adicional aos 20 critérios; formas diferentes precisam de nomes próprios. Não usa dados do jogo.");
+  text(a,b,"A lista é adicional aos "+LocalAuditPolicy.Flag.values().length+" critérios; formas diferentes precisam de nomes próprios. Não usa dados do jogo.");
   EditText records=new EditText(MapTheme.wrap(a));records.setMinLines(4);records.setMaxLines(8);records.setHint("Rattata;478;4;4;5;EVENT=1,SHINY=0");privateInput(records);b.addView(records);
   LocalAuditPolicy.Flag[] flags=LocalAuditPolicy.Flag.values();CheckBox[] active=new CheckBox[flags.length];
   for(int i=0;i<flags.length;i++){CheckBox c=new CheckBox(MapTheme.wrap(a));c.setText("Proteger "+flags[i].label+" ("+flags[i].name()+")");c.setChecked(true);b.addView(c);active[i]=c;}
