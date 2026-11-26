@@ -32,6 +32,14 @@ _TYPE_INDEX["eletrico"] = 13
 _TYPE_INDEX["psiquico"] = 14
 _TYPE_INDEX["dragao"] = 16
 
+TYPE_CHART_METADATA: Dict[str, object] = {
+    "source": "pgrazor/native/battle_counter.h + LocalAuditPolicy.java + PvpChargedPreference.java",
+    "ruleset_version": "pogo-gen6-1.6x-v1",
+    "multiplier_base": 1.6,
+    "matrix_shape": (18, 18),
+    "precision_note": "Multiplicador exato por passo inteiro 1.6**steps; fail-closed para tipos inválidos ou duplicados.",
+}
+
 # Canonical 18x18 step matrix (-2 immunity, -1 resisted, 0 neutral, +1 super).
 CHART: Tuple[Tuple[int, ...], ...] = (
     ( 0,  0,  0,  0,  0, -1,  0, -2, -1,  0,  0,  0,  0,  0,  0,  0,  0,  0),  # Normal
