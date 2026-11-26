@@ -1618,6 +1618,8 @@ public final class PtBr {
         m.put("Selected route: “%s” (%d stops).", "Rota selecionada: “%s” (%d paradas).");
         m.put("Route %d", "Rota %d");
         m.put("%s\n%d stops", "%s\n%d paradas");
+        m.put("You are at\n%s", "Você está em\n%s");
+        m.put("Place name (up to %d characters)", "Nome do local (até %d caracteres)");
         LABELS = Collections.unmodifiableMap(m);
     }
     private PtBr() {}

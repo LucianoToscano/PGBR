@@ -77,6 +77,17 @@ class PtBrGlossaryTests(unittest.TestCase):
                 self.assertIn('source.endsWith("(")', text)
                 self.assertIn('source.endsWith("–")', text)
 
+    def test_locais_missing_format_keys(self):
+        entries = json.loads(GLOSSARY.read_text(encoding="utf-8"))["translations"]
+        for key, value in (
+            ("You are at\n%s", "Você está em\n%s"),
+            ("Place name (up to %d characters)", "Nome do local (até %d caracteres)"),
+        ):
+            self.assertEqual(entries[key], value)
+            row = "m.put(" + json.dumps(key, ensure_ascii=False) + ", " + json.dumps(value, ensure_ascii=False) + ");"
+            for source in JAVA:
+                self.assertIn(row, source.read_text(encoding="utf-8"))
+
     def test_screen_call_sites_apply_translations(self):
         """Keep the screenshot-visible UI translations attached to their render sites."""
         anchors = {
