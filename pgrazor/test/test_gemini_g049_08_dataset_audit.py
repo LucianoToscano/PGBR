@@ -32,6 +32,16 @@ def _snapshot_json_hashes(root: Path) -> dict[str, str]:
 
 
 class TestGeminiG04908DatasetAudit(unittest.TestCase):
+    def test_binary_read_hash_preserves_crlf_and_ctrl_z(self):
+        with tempfile.TemporaryDirectory() as td:
+            path = Path(td) / "bytes.csv"
+            payload = b"name,value\r\na,\x1a\r\n"
+            path.write_bytes(payload)
+            data, error, size = dataset_auditor._read_bounded_regular(path, len(payload))
+            self.assertIsNone(error)
+            self.assertEqual(data, payload)
+            self.assertEqual(size, len(payload))
+
     def test_real_repository_datasets_deterministic_and_non_mutating(self):
         before = _snapshot_json_hashes(ROOT)
         now = datetime(2026, 11, 26, 4, 0, 0, tzinfo=timezone.utc)
