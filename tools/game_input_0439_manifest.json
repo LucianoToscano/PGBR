@@ -1,0 +1,20 @@
+{
+  "schema": 1,
+  "game_version": "0.439.0",
+  "version_code": "2026111602",
+  "package_name": "com.nianticlabs.pokemongo",
+  "architecture": "arm64-v8a",
+  "archive_bytes": 169083658,
+  "archive_sha256": "c6d3c04c38ca2f2446957633b4fee8c93dcc9cebdbbaddc9cb9651722ef8f54f",
+  "splits": {
+    "base.apk": {
+      "bytes": 96874003,
+      "sha256": "3f619c876dcee8df595aece3bcda733e49907b609288e2dd202dac9d0e926957"
+    },
+    "split_config.arm64_v8a.apk": {
+      "bytes": 99174962,
+      "sha256": "d34256b45a235869f4459a8f2a468025ea22b071ee4ae976aad2dbb695f0b833"
+    }
+  },
+  "source": "Owner-provided APKM; archive SHA-256 matches upstream commit 39b52749eed81ed344140000a9a3ee200d41fbe0; not a runtime profile."
+}

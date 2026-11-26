@@ -147,6 +147,7 @@ public final class Control {
     private static volatile String quickSummaryStatus="";
     private static final Object quickBallLock=new Object();
     private static volatile boolean quickBallConfigured, quickBallReady, quickBallEnabled;
+    private static volatile boolean catchPreviewShown=true;
     private static volatile String quickBallStatus="";
     private static volatile boolean throwReady, throwCurve, throwAr, throwArReady;
     // Independent of throw rating, curveball and Quick Catch. Defaults off.
@@ -601,11 +602,11 @@ public final class Control {
     private static final Handler main = new Handler(Looper.getMainLooper());
     private static final CatchOutcomeController catchOutcome = new CatchOutcomeController(
         main, () -> pad==null ? null : pad.activity,
-        Control::quickBallAllowed, Control::autoTransferAllowed,
+        () -> catchPreviewShown && quickBallAllowed(), Control::autoTransferAllowed,
         detail -> event("quick-ball-toast",detail));
     private static final CatchOutcomeController mapThrowOutcome = new CatchOutcomeController(
         main, () -> pad==null ? null : pad.activity,
-        () -> autoThrow() && autoThrowOnMap() && hostLive(), () -> false,
+        () -> catchPreviewShown && autoThrow() && autoThrowOnMap() && hostLive(), () -> false,
         detail -> event("map-throw-toast",detail));
     private static final Object stateLock = new Object();
     private static final Object logLock = new Object();
@@ -1071,6 +1072,15 @@ public final class Control {
      * readiness, background or connection change discards queued work via {@link #invalidateQuickBallOutcome()}.
      */
     public static boolean quickBallOutcome(String outcome) { return catchOutcome.request(outcome); }
+    public static boolean catchPreviewShown(){return catchPreviewShown;}
+    public static void setCatchPreviewShown(boolean value){
+        if(catchPreviewShown==value)return;
+        catchPreviewShown=value;
+        // Cancel existing queued/displayed notices on a preference transition;
+        // do not reset map capture status or change capture/transfer execution.
+        catchOutcome.invalidate();mapThrowOutcome.invalidate();
+        saveSettings();
+    }
     private static void invalidateQuickBallOutcome() { catchOutcome.invalidate(); mapThrowOutcome.invalidate(); mapCatchStatus.clear(); }
     public static void configureInteractionDiagnostics(boolean configured) {
         interactionDiagnosticsConfigured=configured; interactionDiagnosticRunning=false;
@@ -1621,6 +1631,7 @@ public final class Control {
             vgpIconOpacity=100;vgpBackgroundOpacity=75;
             transferIvKeepPercent=90;
             trainerAliasEnabled=false;trainerPrivacyMode=0;trainerAlias="";
+            catchPreviewShown=true;
             idleWalking=false;engine.setIdleWalking(false);
             SmartCatchSettings.read(new Properties());
             GymAutomationSettings.read(new Properties());
@@ -1685,6 +1696,7 @@ public final class Control {
                 localTimeOverlay=Boolean.parseBoolean(p.getProperty("localTimeOverlay","false"));
                 encounterCounter=Boolean.parseBoolean(p.getProperty("encounterCounter","true"));encounterOverlay=Boolean.parseBoolean(p.getProperty("encounterOverlay","false"));
                 quickSummaryEnabled=Boolean.parseBoolean(p.getProperty("autoDismiss","false"));
+                catchPreviewShown=!"false".equals(p.getProperty("catchPreviewShown","true"));
                 spawnBooster=Boolean.parseBoolean(p.getProperty("spawnBooster","false"));
                 try{giftOptions=Integer.parseInt(p.getProperty("giftOptions","0"));}catch(NumberFormatException ignored){giftOptions=0;}
                 if(giftOptions<0||giftOptions>7)giftOptions=0;
@@ -1880,6 +1892,33 @@ public final class Control {
             }
         }
     }
+    /** Apply only explicit, validated appearance keys. Never reload gameplay or account state. */
+    static int copyAccountAppearance(Properties source) {
+        Properties p=AccountAppearancePolicy.select(source);
+        if(p.isEmpty())return 0;
+        synchronized(stateLock) {
+            if(settingsFile==null)throw new IllegalStateException("Configurações indisponíveis");
+            if(p.containsKey("darkTheme"))darkTheme=Boolean.parseBoolean(p.getProperty("darkTheme"));
+            if(p.containsKey("uiScalePercent"))uiScalePercent=Integer.parseInt(p.getProperty("uiScalePercent"));
+            if(p.containsKey("joystickSizeDp"))joystickSizeDp=Integer.parseInt(p.getProperty("joystickSizeDp"));
+            if(p.containsKey("joystickOpacity"))joystickOpacity=Integer.parseInt(p.getProperty("joystickOpacity"));
+            if(p.containsKey("joystickEternatusEffects"))joystickEternatusEffects=Boolean.parseBoolean(p.getProperty("joystickEternatusEffects"));
+            if(p.containsKey("eternatusFxIntensity"))eternatusFxIntensity=Integer.parseInt(p.getProperty("eternatusFxIntensity"));
+            if(p.containsKey("eternatusFxSpeed"))eternatusFxSpeed=Integer.parseInt(p.getProperty("eternatusFxSpeed"));
+            if(p.containsKey("menuIconSizeDp"))menuIconSizeDp=Integer.parseInt(p.getProperty("menuIconSizeDp"));
+            if(p.containsKey("gymIconSizeDp"))gymIconSizeDp=Integer.parseInt(p.getProperty("gymIconSizeDp"));
+            if(p.containsKey("gymIconOpacity"))gymIconOpacity=Integer.parseInt(p.getProperty("gymIconOpacity"));
+            if(p.containsKey("overlayBackgroundOpacity"))overlayBackgroundOpacity=Integer.parseInt(p.getProperty("overlayBackgroundOpacity"));
+            if(p.containsKey("menuLauncherSizeDp"))menuLauncherSizeDp=Integer.parseInt(p.getProperty("menuLauncherSizeDp"));
+            if(p.containsKey("menuLauncherOpacity"))menuLauncherOpacity=Integer.parseInt(p.getProperty("menuLauncherOpacity"));
+            if(p.containsKey("menuLauncherBgOpacity"))menuLauncherBgOpacity=Integer.parseInt(p.getProperty("menuLauncherBgOpacity"));
+            if(p.containsKey("gymBackgroundOpacity"))gymBackgroundOpacity=Integer.parseInt(p.getProperty("gymBackgroundOpacity"));
+            if(p.containsKey("vgpIconOpacity"))vgpIconOpacity=Integer.parseInt(p.getProperty("vgpIconOpacity"));
+            if(p.containsKey("vgpBackgroundOpacity"))vgpBackgroundOpacity=Integer.parseInt(p.getProperty("vgpBackgroundOpacity"));
+            saveSettings();
+        }
+        return p.size();
+    }
     // Capture current preferences under stateLock; serialization and AtomicFile IO run off the main thread.
     static void saveSettings() {
         synchronized(stateLock) {
@@ -1968,6 +2007,7 @@ public final class Control {
         p.setProperty("smartHealWhen",String.valueOf(healWhen)); p.setProperty("smartHealThreshold",String.valueOf(healThreshold));
         for(int i=0;i<3;i++)p.setProperty(PVP_RANK_KEYS[i],String.valueOf(pvpRanks[i]));
         p.setProperty("autoDismiss",String.valueOf(quickSummaryEnabled)); p.setProperty("fastBall",String.valueOf(quickBallEnabled));
+        p.setProperty("catchPreviewShown",String.valueOf(catchPreviewShown));
         p.setProperty("throwAr",String.valueOf(throwAr)); p.setProperty("curve",String.valueOf(throwCurve)); p.setProperty("grade",String.valueOf(throwGrade)); p.setProperty("throwVariety",String.valueOf(throwVariety));
         p.setProperty("throwAlwaysHit",String.valueOf(throwAlwaysHit));
         p.setProperty("mapTap",String.valueOf(mapTapMode));

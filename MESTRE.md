@@ -330,6 +330,8 @@ PGBR-CI-205 integrado após CI completo; PGBR-UI-SMALL candidata de correção e
 - #304 integrada: consulta de versões estáveis, instalação manual.
 - #306/#307 integradas: Locais e critérios locais Dynamax/Gigantamax.
 - #308 integrada: visibilidade temporária do joystick, merge f199496edb21db9cf5253563f2020b19e8423194.
-- #309/#310/#311 consolidadas, HEAD 9d7ac687d762544db600ea071975428241963c37, CI conjunto em execução ao registrar.
+- #309/#310/#311 integradas no merge 53f2029d76715506da7c4aa4825c13516bcc8aca; CI conjunto 45731449524/45731449535 aprovado; sem teste físico.
 - Nova candidata: validar variante e manifesto na consulta automática de atualizações; planejamento manual de bônus com estoque desconhecido explícito. Não são novas automações de jogo.
 - P0 restante: versão 0.439.0 não validada; QA física das regressões #90/#105; release LT049 não gerada.
+
+- Entrada 0.439.0: hashes de arquivo/splits e CRC verificados localmente; certificados e compatibilidade ainda não verificados. Ver tools/game_input_0439_manifest.json.
