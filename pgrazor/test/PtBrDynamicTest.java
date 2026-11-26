@@ -81,6 +81,7 @@ public final class PtBrDynamicTest {
         eq("Stop route","Interromper rota");
         eq("Nearby here","Próximos daqui");
         eq("Nearby layers unavailable","Camadas de locais próximos indisponíveis");
+        eq("Nearby game data expired; waiting for refresh","Os dados de locais do jogo expiraram; aguardando atualização");
         eq("No live results in range.","Nenhum resultado disponível no alcance selecionado.");
         eq("Encounter limit: 25","Limite de encontros: 25");
         eq("UI scale: 100%","Escala da interface: 100%");

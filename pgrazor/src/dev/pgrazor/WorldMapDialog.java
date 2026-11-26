@@ -887,7 +887,7 @@ public final class WorldMapDialog {
                 public int height() { return getHeight(); }
             }, new MapPoiLayer.Snapshots() {
                 public void setOpen(boolean open) { Control.setMapPoiOpen(open); }
-                public String read() { return Control.mapPoiSnapshot(); }
+                public MapPoiFreshness.Snapshot read() { return Control.mapPoiFreshness(); }
             }, this::invalidate);
             setFocusable(true);
             setFocusableInTouchMode(true);

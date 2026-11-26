@@ -1331,6 +1331,7 @@ public final class PtBr {
         m.put("Nearby layers off", "Camadas de locais próximos desativadas");
         m.put("Waiting for nearby game locations", "Aguardando locais próximos do jogo");
         m.put("Nearby layers unavailable", "Camadas de locais próximos indisponíveis");
+        m.put("Nearby game data expired; waiting for refresh", "Os dados de locais do jogo expiraram; aguardando atualização");
         m.put(" (egg)", " (ovo)");
         m.put("Stopped editing the preset; the filters stay as they are.", "A edição da predefinição foi interrompida. Os filtros permanecem inalterados.");
         m.put("Filter presets", "Predefinições de filtros");

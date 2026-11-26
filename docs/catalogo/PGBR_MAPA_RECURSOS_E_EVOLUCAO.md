@@ -231,3 +231,12 @@ Este registro consolida toda a discussão de cinco pastas, reutilização, catá
 
 ### 9.3. Regras de continuidade
 Toda nova entrega deve consultar Mestre canônico e este catálogo, verificar código e status atuais, referenciar IDs, preservar funções aprovadas, evitar PRs duplicadas e registrar resultado real. Ações reais em serviços externos exigem interfaces autorizadas e respeito às regras; o pedido de bug de reides fica como investigação/correção, não exploração automatizada. Nenhuma proposta, fixture, build ou PR comprova funcionamento em Android. `device_tested=false`, `provider_connected=false` até evidência contrária. Nenhum código, APK, versão, credencial ou configuração de automação foi alterado nesta consolidação.
+
+## 10. MAP-01 — subtarefas LMArena (checkpoint 26/11/2026)
+
+O catálogo amplo acima segue aberto; os itens seguintes são fatias implementáveis, não encerram MAP-01 nem significam homologação no Android.
+
+| Task | Estado | Implementação/PR | Testes/evidência | Próximo passo |
+|---|---|---|---|---|
+| MAP-01-KBD — acessibilidade World Map | Implementado, PR #319 aberto (`arena/1be548a6-pgbr`, base reconciliada `617e91f79ac57f9fcd61ad57c380ce977c2da0ed`) | Foco de teclado; setas movem viewport; Enter/DPAD_CENTER define apenas seleção/preview, sem chamada de movimento; PT-BR sincronizado | 3 contratos de teclado e 24 testes direcionados anteriores aprovados; 4 testes JVM de rota/layout skipped. `translate` CI passou; checks gerais ainda pendentes na consulta | Aguardar checks PR #319 e review; Android/TalkBack com hardware permitido continua separado (`device_tested=false`) |
+| MAP-01-POI-FRESH — transparência de idade do snapshot | Implementado no mesmo PR #319, revisão local posterior ao primeiro checkpoint | Snapshot com age monotônico; pontos omitidos após 10 s; UI distingue feed expirado de ausência inicial; sem inferência ou fonte nova | Nesta fatia: 21 testes passaram, 5 JDK-dependent skipped; contrato/JSON/diff-check passaram. Uma asserção antiga de interface corrigida e suíte repetida. Compilação Java/Android local indisponível | Confirmar CI Java/Root e testar estado vazio→carregado→expirado→renovado em build autorizado |

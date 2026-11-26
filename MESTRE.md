@@ -370,3 +370,9 @@ Validação deste lote: 24 testes direcionados aprovados; 4 JVM reais de projeç
 ## Continuidade LMArena — PR #319 e triagem #200/#199
 
 PR [#319](https://github.com/LucianoToscano/PGBR/pull/319) aberta da branch ativa com escopo MAP-01 restrito; `translate` passou, demais checks estavam pendentes na última consulta. #317 estava com todos os checks verdes; #318 ainda aguardava `Suite real check.py + compilação Java + Root`; não sobrepor nem duplicar esses arquivos. Issue #200 descreve capturas antigas cujo hash do APK não foi identificado e cujo mapa não estava em modo de rota ativa; código atual já tem linha compacta, filtros recolhidos e rota trace opt-in (testes de contrato passaram). #199 é protótipo visual divergente e não deve ser integrado sem reconciliação, CI na main atual e evidência de projeção autorizada. Não alegar homologação visual nem alterar V5.
+
+## 26/11/2026 — MAP-01 / validade explícita de POIs do mapa
+
+Continuação independente: `Control` expõe a idade monotônica do snapshot da camada de locais próximos junto com o conteúdo. Após 10 s, os pontos são descartados (`fail closed`) e o estado mostra “dados expiraram; aguardando atualização”, em vez de apresentar um feed vazio como se nunca tivesse carregado. Estado desconhecido inicial é diferenciado de expirado. Política isolada em `MapPoiFreshness.java`; fixture executável Java verifica limites 0/9.999/10.000 ms, idade negativa e descarte de conteúdo, mais contrato estático de status.
+
+PT-BR sincronizado em Sem Root/Root/glossário e fixture dinâmica. Validação: nesta fatia, 21 testes passaram e 5 foram skipped (JDK ausente); compilação/execução Java real não ocorreu aqui. Erro de contrato antigo no teste de apresentação após alteração da interface foi atualizado e reexecutado com sucesso. Essa fatia integra PR #319, ainda sem CI completa na última consulta.

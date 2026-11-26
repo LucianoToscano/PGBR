@@ -1325,6 +1325,7 @@
     "Nearby layers off": "Camadas de locais próximos desativadas",
     "Waiting for nearby game locations": "Aguardando locais próximos do jogo",
     "Nearby layers unavailable": "Camadas de locais próximos indisponíveis",
+    "Nearby game data expired; waiting for refresh": "Os dados de locais do jogo expiraram; aguardando atualização",
     " (egg)": " (ovo)",
     "Stopped editing the preset; the filters stay as they are.": "A edição da predefinição foi interrompida. Os filtros permanecem inalterados.",
     "Filter presets": "Predefinições de filtros",
