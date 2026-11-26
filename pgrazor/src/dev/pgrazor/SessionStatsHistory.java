@@ -21,6 +21,7 @@ public final class SessionStatsHistory {
     public static final long HOUR_MS = 3600_000L, DAY_MS = 24 * HOUR_MS;
     static final long SLOT_MS = 5 * 60_000L, KEEP_MS = DAY_MS + HOUR_MS;
     private static final int MAX_SAMPLES = 400;
+    private static final int MAX_STORED_CHARS = 80_000;
     private final TreeMap<Long, double[]> samples = new TreeMap<>();
     private long latestAt;
     private double[] latest;
@@ -39,6 +40,7 @@ public final class SessionStatsHistory {
     public synchronized boolean record(long now, double[] reading) {
         if (now <= 0 || reading == null || reading.length != READ_COUNT || !(reading[XP] > 0)) return false;
         for (int i = 0; i < READ_COUNT; i++) if (!finite(reading[i]) || reading[i] < (i == READ_BALANCE ? -1 : 0)) return false;
+        if (reading[READ_BALANCE] < 0 && reading[READ_BALANCE] != -1) return false;
         double[] v = new double[COUNT];
         System.arraycopy(reading, 0, v, 0, GAME_COUNTERS);
         double balance = reading[READ_BALANCE] >= 0 ? reading[READ_BALANCE] : -1;
@@ -122,7 +124,10 @@ public final class SessionStatsHistory {
     public synchronized String save() {
         StringBuilder out = new StringBuilder();
         for (double[] s : samples.values()) append(out, (long) s[0], s, 1);
-        if (latest != null) append(out, latestAt, latest, 0);
+        if (latest != null) {
+            double[] last = samples.isEmpty() ? null : samples.lastEntry().getValue();
+            if (last == null || (long) last[0] != latestAt) append(out, latestAt, latest, 0);
+        }
         return out.toString();
     }
     private static void append(StringBuilder out, long at, double[] v, int from) {
@@ -141,14 +146,14 @@ public final class SessionStatsHistory {
      *  stardust was tracked load with no stardust history. */
     public synchronized void load(String stored, long now) {
         samples.clear(); latest = null; latestAt = 0;
-        if (stored == null || stored.isEmpty() || stored.length() > 80_000) return;
+        if (stored == null || stored.isEmpty() || stored.length() > MAX_STORED_CHARS) return;
         for (String part : stored.split("\\|")) {
             int colon = part.indexOf(':');
             if (colon <= 0) continue;
             try {
                 long at = Long.parseLong(part.substring(0, colon));
                 String[] fields = part.substring(colon + 1).split(";", -1);
-                if ((fields.length != COUNT && fields.length != GAME_COUNTERS) || at <= 0 || at > now) continue;
+                if ((fields.length != COUNT && fields.length != GAME_COUNTERS) || at <= 0 || at > now || now - at > KEEP_MS + SLOT_MS) continue;
                 // Saved rows are chronological. A corrupted, older row must not reset valid history.
                 if (latest != null && at < latestAt) continue;
                 double[] v = new double[COUNT];
@@ -156,13 +161,19 @@ public final class SessionStatsHistory {
                 for (int i = 0; i < fields.length; i++) v[i] = Double.parseDouble(fields[i]);
                 boolean ok = v[XP] > 0;
                 for (int i = 0; i < COUNT; i++) ok &= finite(v[i]) && v[i] >= (i == BALANCE ? -1 : 0);
-                if (!ok) continue;
+                if (!ok || (v[BALANCE] < 0 && v[BALANCE] != -1)) continue;
+                // Old-format rows can precede newer rows, but cannot erase known dust totals.
+                if (fields.length == GAME_COUNTERS && latest != null && latest[BALANCE] >= 0) continue;
+                // A persisted reset is represented by a new history, not a decreasing dust total.
+                if (latest != null && (v[DUST] < latest[DUST] || v[DUST_SPENT] < latest[DUST_SPENT])) continue;
                 if (latest != null && !continues(v, at)) { /* history cleared; this sample starts it again */ }
                 put(at, v);
             } catch (NumberFormatException ignored) {}
         }
         if (latest != null) prune(now);
-        if (samples.isEmpty()) { latest = null; latestAt = 0; }
+        if (samples.isEmpty() || (latest != null && now - latestAt > KEEP_MS)) {
+            samples.clear(); latest = null; latestAt = 0;
+        }
     }
     synchronized int size() { return samples.size(); }
 }
