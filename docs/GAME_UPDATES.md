@@ -107,8 +107,8 @@ inspection, extraction and targeted fixture selection together.
 The candidate APKM is private and the active profile stays 0.437.0. The verifier checks the exact archive, metadata and split hashes. It can also reconstruct the two known parts into a temporary directory. Use the trusted SDK apksigner executable to verify both signatures and require the previous approved signer fingerprint; a changed signer is rejected pending review, never silently accepted.
 
 ```powershell
-python -B tools/verify_candidate_input.py path/to/candidate.apkm --apksigner "$env:ANDROID_HOME/build-tools/36.0.0/apksigner.bat"
-python -B tools/verify_candidate_input.py --parts path/to/part1 path/to/part2 --apksigner "$env:ANDROID_HOME/build-tools/36.0.0/apksigner.bat"
+python -B tools/verify_candidate_input.py path/to/candidate.apkm --require-signatures --apksigner "$env:ANDROID_HOME/build-tools/36.0.0/apksigner.bat"
+python -B tools/verify_candidate_input.py --parts path/to/part1 path/to/part2 --require-signatures --apksigner "$env:ANDROID_HOME/build-tools/36.0.0/apksigner.bat"
 ```
 
-Without apksigner the report explicitly sets apk_signatures_verified=false. Even a successful signature check is not runtime compatibility, and no command changes current.json or uploads the original package.
+For acceptance use `--require-signatures`: omission of `--apksigner` fails before any success report. Without the strict flag, hash-only inspection remains available and explicitly sets `apk_signatures_verified=false`. `signed_manifest_identity_verified=false` remains explicit even after successful certificate verification, because the signed Android manifest has not been parsed. Even a successful signature check is not runtime compatibility, and no command changes current.json or uploads the original package.
