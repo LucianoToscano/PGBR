@@ -388,3 +388,7 @@ No HEAD `364d567`, o job GitHub `Suite real check.py + compilacao Java + Root` f
 ## 26/11/2026 — nova main após #317 e reconciliação de entrada
 
 `origin/main` avançou para `84691417ea6c89be545db39a1af5d2909984b699` ao mesclar PR #317 (assinatura/identidade de manifesto); diff de main foi só em candidato/docs/tests e não conflita com MAP-01. Merge não-ff concluído e enviado como `e498ce6a`, conservando os dois checkpoints documentais. PR #318 segue aberta; Java/Root estava pendente na consulta mais recente. PR #319 está no HEAD `e498ce6a026a52142fbd875477bd5029d30fdbfd`, base main. Corrigida a omissão de `MapPoiFreshness.java` no harness explícito de Control. CI manual do HEAD atual `45743167687` passou em todos os seis jobs (inclui suite real `check.py`, Java/Root); workflow de governança `45743171548` também passou. Os checks associados à PR #319 (run 45743161378, governança 45743161217, translate 45743161408) estão todos verdes. #317 está merged; não duplicar #317/#318.
+
+## 26/11/2026 — main após #318 (integridade de sprites)
+
+`origin/main` avançou para `18a5cbeb665acba00a0211c64f07e3a8cc0d89ee` ao mesclar #318 após seis checks verdes (run 45742981881, suite Java/Root 3m03; governance 45742981824). Patch afeta `pgrazor/build.py`, sua fixture e o Mestre; nenhum arquivo de MAP-01. Merge não-ff da main foi iniciado na branch Arena com conflito somente no documento mestre, preservando ambos os registros. Reconciliar, executar fixture da #318 e refazer CI no HEAD resultante. PR #319 permanece aberta, sem merge; não remover trabalho de terceiros.

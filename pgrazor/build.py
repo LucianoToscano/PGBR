@@ -58,17 +58,46 @@ def item_icon_assets():
                 icons[path.name] = path
     return icons
 
-def feed_icon_assets():
-    """Only numeric base-species PNGs under the bundled feed sprite directory."""
-    source = ROOT / 'assets/feed-icons/pokemon'
+def feed_icon_assets(root=None):
+    """Package only base-species PNGs matching the pinned provenance manifest."""
+    root = ROOT if root is None else Path(root)
+    folder = root / 'assets/feed-icons'
+    source = folder / 'pokemon'
+    manifest = json.loads((folder / 'provenance.json').read_text(encoding='utf-8'))
+    if not re.fullmatch(r'[0-9a-f]{40}', manifest.get('commit', '')) or not manifest.get('repository'):
+        raise ValueError('Feed icon provenance revision missing')
+    expected = {}
+    for entry in manifest['sprites']:
+        dex = entry['dex']
+        if type(dex) is not int or dex <= 0 or dex > 999999:
+            raise ValueError('Invalid feed sprite ID')
+        name = f'{dex}.png'
+        if name in expected:
+            raise ValueError('Duplicate feed sprite ID: ' + name)
+        if (type(entry['bytes']) is not int or entry['bytes'] <= 0 or
+                not re.fullmatch(r'[0-9a-f]{64}', entry['sha256'])):
+            raise ValueError('Invalid feed sprite provenance: ' + name)
+        expected[name] = entry
+    if not expected:
+        raise ValueError('Empty feed sprite manifest')
     icons = {}
     for path in sorted(source.glob('*.png')):
         if not path.stem.isascii() or not path.stem.isdecimal():
             continue
         if path.is_symlink() or not path.resolve().is_relative_to(source.resolve()):
             raise ValueError('Feed icon escapes asset directory')
-        if path.is_file():
-            icons[path.name] = path
+        if not path.is_file() or path.name not in expected:
+            raise ValueError('Unlisted feed sprite: ' + path.name)
+        spec = expected[path.name]
+        if path.stat().st_size != spec['bytes']:
+            raise ValueError('Feed sprite size mismatch: ' + path.name)
+        data = path.read_bytes()
+        if len(data) != spec['bytes'] or hashlib.sha256(data).hexdigest() != spec['sha256']:
+            raise ValueError('Feed sprite hash mismatch: ' + path.name)
+        icons[path.name] = path
+    missing = expected.keys() - icons.keys()
+    if missing:
+        raise ValueError('Missing feed sprites: ' + ', '.join(sorted(missing)))
     return icons
 
 SDK = Path(os.environ.get('ANDROID_HOME', str(Path(os.environ.get('LOCALAPPDATA', str(Path.home()))) / 'Android/Sdk')))
