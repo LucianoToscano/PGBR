@@ -7,7 +7,7 @@ public final class LocalAuditPolicy {
  public enum Flag {
  SHINY("brilhante (shiny)"),HUNDO("IV 100%"),NUNDO("IV 0%"),LEGENDARY("lendário"),MYTHICAL("mítico"),ULTRA("Ultra Criatura"),
  LUCKY("sortudo"),FAVORITE("favorito"),SHADOW("sombrio"),PURIFIED("purificado"),COSTUME("fantasia"),EVENT("evento"),BACKGROUND("fundo especial"),
- XXL("XXL"),XXS("XXS"),LEGACY("ataque exclusivo ou legado"),PVP("relevante para PvP"),TAG("etiqueta protegida"),RESEARCH("pesquisa especial"),SPECIES("espécie protegida");
+ XXL("XXL"),XXS("XXS"),LEGACY("ataque exclusivo ou legado"),PVP("relevante para PvP"),TAG("etiqueta protegida"),RESEARCH("pesquisa especial"),SPECIES("espécie protegida"),DYNAMAX("Dynamax"),GIGANTAMAX("Gigantamax");
  public final String label;Flag(String label){this.label=label;}
  }
  public enum Status {PROTECTED,UNCERTAIN,MATCH}
