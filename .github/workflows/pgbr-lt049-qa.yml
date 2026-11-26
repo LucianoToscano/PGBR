@@ -1,17 +1,34 @@
 name: PGBR LT049 - atualização para 0.439.0 (QA)
 # LT049 QA requires a separately reviewed 0.439.0 profile and its exact private input. No fallback to 0.437.0.
-# Same hardening as the LT047 QA workflow: workflow_dispatch only, no release publication, pinned actions,
+# Manual or reviewed profile selection on main; no release publication, pinned actions,
 # real SHA-256 printed in the log and stored in SHA256SUMS.txt inside the artifact.
 # Existing tags/assets are immutable. The user-supplied PGSharp JSON is NOT bundled.
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'pgrazor/native/schema/game/current.json'
 permissions:
   contents: read
 concurrency:
   group: pgbr-lt049-apk-${{ github.ref }}
   cancel-in-progress: false
 jobs:
+  approved-profile:
+    if: github.repository == 'LucianoToscano/PGBR' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.12'
+      - run: python -B tools/lt049_pinned_input.py --check-profile
   native-pvp-fixture:
+    needs: approved-profile
     runs-on: ubuntu-latest
     timeout-minutes: 12
     steps:
@@ -138,7 +155,7 @@ jobs:
           $analyzer = Join-Path $sdk 'cmdline-tools/latest/bin/apkanalyzer.bat'
           if (!(Test-Path -LiteralPath $signer -PathType Leaf)) { throw 'apksigner oficial ausente' }
           if (!(Test-Path -LiteralPath $analyzer -PathType Leaf)) { throw 'apkanalyzer oficial ausente' }
-          python -B tools/verify_candidate_input.py pgrazor/input/game.apkm --require-signatures --apksigner $signer --apkanalyzer $analyzer
+          python -B tools/verify_candidate_input.py pgrazor/input/game.apkm --require-signatures --require-manifest-identity --apksigner $signer --apkanalyzer $analyzer
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: CMake e Ninja nativos
         run: python -m pip install "cmake==4.4.4" "ninja==1.13.2"
