@@ -14,8 +14,6 @@ import android.widget.TextView;
 import android.widget.Toast;
 import java.io.File;
 import java.io.IOException;
-import java.io.RandomAccessFile;
-import java.nio.charset.StandardCharsets;
 
 /**
  * PGBR Root run log, shown as an in-game dialog on the game's own activity. The patched APK uses
@@ -29,7 +27,6 @@ import java.nio.charset.StandardCharsets;
  * reported back; this needs no new storage permission.
  */
 final class RootedLogDialog {
-    private static final long MAX_TAIL = 65536;
 
     private RootedLogDialog() {}
 
@@ -92,12 +89,12 @@ final class RootedLogDialog {
                     File saved = LogExport.copyToExternal(app, file,includeSettings);
                     handler.post(() -> {
                         if (dialog.isShowing()) {save.setEnabled(true);bundle.setEnabled(true);}
-                        Toast.makeText(app, "Salvo em " + saved.getAbsolutePath(), Toast.LENGTH_LONG).show();
+                        Toast.makeText(app, Control.trainerPrivacyMode()!=0?"Diagnóstico filtrado salvo.":"Salvo em " + saved.getAbsolutePath(), Toast.LENGTH_LONG).show();
                     });
                 } catch (IOException error) {
                     handler.post(() -> {
                         if (dialog.isShowing()) {save.setEnabled(true);bundle.setEnabled(true);}
-                        Toast.makeText(app, "Save failed: " + error.getMessage(), Toast.LENGTH_LONG).show();
+                        Toast.makeText(app, "Não foi possível salvar ou verificar o diagnóstico.", Toast.LENGTH_LONG).show();
                     });
                 }
             }, "pgrazor-log-export").start();
@@ -111,7 +108,14 @@ final class RootedLogDialog {
             MapTheme.styleButtons(dialog);
             reload.run();
         });
-        DialogLifecycle.bind(activity, dialog, null);
+        final int openingPrivacyMode=Control.trainerPrivacyMode();
+        Runnable privacyCheck=new Runnable(){public void run(){
+            if(!dialog.isShowing())return;
+            if(Control.trainerPrivacyMode()!=openingPrivacyMode){text.setText("");dialog.dismiss();return;}
+            handler.postDelayed(this,250);
+        }};
+        DialogLifecycle.bind(activity, dialog, ()->handler.removeCallbacks(privacyCheck));
+        handler.post(privacyCheck);
         dialog.show();
     }
 
@@ -122,17 +126,14 @@ final class RootedLogDialog {
             text.setText(dev.pgrazor.PtBr.tr("No log file is available yet. Android logcat may contain startup errors."));
             return;
         }
-        try (RandomAccessFile input = new RandomAccessFile(file, "r")) {
-            long start = Math.max(0, input.length() - MAX_TAIL);
-            input.seek(start);
-            byte[] bytes = new byte[(int) (input.length() - start)];
-            input.readFully(bytes);
-            hint.setText(dev.pgrazor.PtBr.tr((start > 0 ? "Showing the latest 64 KiB. " : "")
+        try {
+            LogTail.Snapshot tail=LogTail.read(file);
+            hint.setText(dev.pgrazor.PtBr.tr((tail.truncated ? "Showing the latest 64 KiB. " : "")
                     + "TXT bruto contém o segmento atual e pode incluir dados privados. ZIP filtrado omite mensagens livres, identificadores e preferências não permitidas."));
-            text.setText(dev.pgrazor.PtBr.tr(LogExport.displayLog(bytes,Control.trainerPrivacyMode()!=0)));
-        } catch (IOException error) {
+            text.setText(dev.pgrazor.PtBr.tr(LogExport.displayLog(tail.bytes,Control.trainerPrivacyMode()!=0)));
+        } catch (IOException | SecurityException error) {
             hint.setText(dev.pgrazor.PtBr.tr(""));
-            text.setText(dev.pgrazor.PtBr.tr("Cannot read log: " + error.getMessage()));
+            text.setText("Não foi possível ler o registro. Tente atualizar.");
         }
     }
 }
