@@ -695,7 +695,7 @@ public final class PtBr {
         m.put("Could not export that route.", "Não foi possível exportar essa rota.");
         m.put("Could not open saved routes.", "Não foi possível abrir as rotas salvas.");
         m.put("No saved routes yet. Import a GPX file, or save a route you build on the map.", "Ainda não há rotas salvas. Importe um arquivo GPX ou salve uma rota criada no mapa.");
-        m.put("%d stops.\n\nUse this route loads it as a draft; Start it yourself afterwards.", "%d paradas.\n\nUsar esta rota a carrega como rascunho; depois você poderá iniciá-la.");
+        m.put("%d stops.\n\nUse this route loads it as a draft; Start it yourself afterwards.", "%d paradas.\n\nUsar esta rota carrega o trajeto como rascunho. Depois, toque em Iniciar para começar.");
         m.put("Could not open that route.", "Não foi possível abrir essa rota.");
         m.put("Selected “%s” (%d stops).", "“%s” selecionada (%d paradas).");
         m.put("” will be removed. Any active walk is unaffected.", "” será removida. A caminhada em andamento não será afetada.");
@@ -1613,6 +1613,10 @@ public final class PtBr {
         m.put("Invalid imported favorite", "Local importado inválido");
         m.put("Too many saved places", "Locais salvos em excesso");
         m.put("Invalid favorites rollback", "Reversão de locais inválida");
+        m.put("Select a route before previewing.", "Selecione uma rota antes de visualizar.");
+        m.put("Selected route: “%s” (%d stops).", "Rota selecionada: “%s” (%d paradas).");
+        m.put("Route %d", "Rota %d");
+        m.put("%s\n%d stops", "%s\n%d paradas");
         LABELS = Collections.unmodifiableMap(m);
     }
     private PtBr() {}

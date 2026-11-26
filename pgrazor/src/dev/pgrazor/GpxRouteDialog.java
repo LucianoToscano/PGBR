@@ -90,7 +90,7 @@ public final class GpxRouteDialog {
                     case 1: importGpx(activity, "the route builder", selection); break;
                     case 2: chooseSaved(activity, selection); break;
                     case 3: exportRoute(activity, source); break;
-                    case 4: GpxRoute current=source==null?null:source.route();if(current==null)note(activity,"Selecione uma rota antes de visualizar.");else GpxPreviewView.show(activity,current);break;
+                    case 4: GpxRoute current=source==null?null:source.route();if(current==null)note(activity,"Select a route before previewing.");else GpxPreviewView.show(activity,current);break;
                 }
             });
         present(activity, dialog);
@@ -185,14 +185,14 @@ public final class GpxRouteDialog {
         String[] rows = new String[entries.size()];
         for (int i = 0; i < rows.length; i++) {
             GpxStore.Entry e = entries.get(i);
-            rows[i] = String.format(Locale.forLanguageTag("pt-BR"), "%s\n%d paradas", e.name, e.count);
+            rows[i] = String.format(Locale.forLanguageTag("pt-BR"), dev.pgrazor.PtBr.tr("%s\n%d stops"), e.name, e.count);
         }
         present(activity, ChoiceList.attach(builder.create(), rows, which -> showEntry(activity, entries.get(which), selection)));
     }
 
     static void showEntry(Activity activity, GpxStore.Entry entry, Selection selection) {
         AlertDialog dialog = new AlertDialog.Builder(MapTheme.wrap(activity)).setTitle(dev.pgrazor.PtBr.tr(entry.name))
-            .setMessage(dev.pgrazor.PtBr.tr(String.format(Locale.forLanguageTag("pt-BR"), "%d paradas.\n\nUsar esta rota carrega o trajeto como rascunho. Depois, toque em Iniciar para começar.", entry.count)))
+            .setMessage(String.format(Locale.forLanguageTag("pt-BR"), dev.pgrazor.PtBr.tr("%d stops.\n\nUse this route loads it as a draft; Start it yourself afterwards."), entry.count))
             .setNegativeButton(dev.pgrazor.PtBr.tr("Cancel"), null)
             .setPositiveButton(dev.pgrazor.PtBr.tr("Use this route"), null)
             .setNeutralButton(dev.pgrazor.PtBr.tr("Delete"), null).create();
@@ -221,7 +221,7 @@ public final class GpxRouteDialog {
                 }
                 selection.onRoute(result);
                 if (detail.isShowing()) detail.dismiss();
-                note(activity, String.format(Locale.forLanguageTag("pt-BR"), "Rota selecionada: “%s” (%d paradas).", result.name, result.points().length));
+                note(activity, String.format(Locale.forLanguageTag("pt-BR"), dev.pgrazor.PtBr.tr("Selected route: “%s” (%d stops)."), result.name, result.points().length));
             });
         });
     }
@@ -357,7 +357,7 @@ public final class GpxRouteDialog {
     }
 
     private static String title(String name, int index) {
-        return name == null || name.trim().isEmpty() ? "Route " + (index + 1) : name.trim();
+        return name == null || name.trim().isEmpty() ? String.format(Locale.US, dev.pgrazor.PtBr.tr("Route %d"), index + 1) : name.trim();
     }
 
     private static String message(Throwable e, String fallback) {
