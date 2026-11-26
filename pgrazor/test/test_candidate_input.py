@@ -136,3 +136,25 @@ class CandidateInputTests(unittest.TestCase):
                     module.validate(path,expected,sdk,apkanalyzer=analyzer)
             with self.assertRaisesRegex(ValueError,"requires apksigner"):
                 module.validate(path,expected,apkanalyzer=analyzer)
+
+    def test_reject_ambiguous_metadata(self):
+        valid = '{"pname":"example","release_version":"0.439.0","versioncode":"2026111602","arches":["arm64-v8a"]}'
+        cases = [
+            (valid.replace('"pname":"example"', '"pname":"other","pname":"example"'), "Duplicate metadata key"),
+            (valid.replace('"versioncode":"2026111602"', '"versioncode":"0","versioncode":"2026111602"'), "Duplicate metadata key"),
+            ("[]", "Invalid archive metadata object"),
+            ("null", "Invalid archive metadata object"),
+            (valid.replace('"2026111602"', 'true'), "Invalid archive metadata version code"),
+            (valid.replace('"2026111602"', '2026111602.0'), "Invalid archive metadata version code"),
+        ]
+        for metadata, message in cases:
+            with self.subTest(metadata=metadata), tempfile.TemporaryDirectory() as folder:
+                path, expected = self.fixture(folder)
+                with zipfile.ZipFile(path, "w") as archive:
+                    archive.writestr("info.json", metadata)
+                    archive.writestr("base.apk", b"base")
+                    archive.writestr("split_config.arm64_v8a.apk", b"split")
+                expected["archive_bytes"] = path.stat().st_size
+                expected["archive_sha256"] = hashlib.sha256(path.read_bytes()).hexdigest()
+                with self.assertRaisesRegex(ValueError, message):
+                    module.validate(path, expected)
