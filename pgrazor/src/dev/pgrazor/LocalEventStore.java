@@ -19,6 +19,8 @@ import org.json.JSONObject;
  */
 public final class LocalEventStore {
     public static final int MAX_EVENTS = 2000;
+    public static final int MAX_STORE_BYTES = 16 * 1024 * 1024;
+    public static final int MAX_ID_LENGTH = 1024;
     public static final String STORE_FORMAT = "PGBR local events";
     public static final int STORE_VERSION = 1;
 
@@ -26,7 +28,7 @@ public final class LocalEventStore {
 
     /** Adds one event; returns {@code false} when the same identity is already stored. */
     public synchronized boolean add(SourceEvent event) {
-        if (event == null || event.sourceId.trim().isEmpty() || event.eventId.trim().isEmpty()) return false;
+        if (event == null || invalidIdentity(event.sourceId) || invalidIdentity(event.eventId)) return false;
         String key = key(event);
         if (events.containsKey(key)) return false;
         if (events.size() >= MAX_EVENTS) {
@@ -78,6 +80,13 @@ public final class LocalEventStore {
         return Collections.unmodifiableList(out);
     }
 
+    private static boolean invalidIdentity(String value) {
+        if (value == null || value.length() > MAX_ID_LENGTH) return true;
+        return value.codePoints().allMatch(cp -> Character.isWhitespace(cp) || Character.isSpaceChar(cp) ||
+                Character.getType(cp) == Character.FORMAT) ||
+                value.codePoints().anyMatch(Character::isISOControl);
+    }
+
     private static String key(SourceEvent event) {
         return event.sourceId.length() + ":" + event.sourceId + event.eventId;
     }
@@ -96,7 +105,10 @@ public final class LocalEventStore {
 
     /** Reads a stored document, ignoring unknown keys and rows that no longer validate. */
     public synchronized int mergeJson(String json, long now) throws JSONException {
-        if (json == null || json.trim().isEmpty()) return 0;
+        if (json == null || json.isEmpty()) return 0;
+        if (json.length() > MAX_STORE_BYTES || json.getBytes(java.nio.charset.StandardCharsets.UTF_8).length > MAX_STORE_BYTES)
+            throw new JSONException("Armazenamento local excede o limite");
+        if (json.trim().isEmpty()) return 0;
         JSONObject root = new JSONObject(json);
         if (!STORE_FORMAT.equals(root.optString("format")))
             throw new JSONException("Formato de armazenamento desconhecido");
