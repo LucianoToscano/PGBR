@@ -109,3 +109,52 @@ class CandidateInputTests(unittest.TestCase):
         self.assertNotEqual(result.returncode,0)
         self.assertIn("--require-signatures requires --apksigner",result.stderr)
         self.assertEqual(result.stdout,"")
+
+    def test_signed_manifest_identity(self):
+        with tempfile.TemporaryDirectory() as folder:
+            path,expected=self.fixture(folder)
+            expected["expected_signer_sha256"]="a"*64
+            sdk=Path(folder)/"apksigner"
+            analyzer=Path(folder)/"apkanalyzer"
+            sdk.touch()
+            analyzer.touch()
+            sig=subprocess.CompletedProcess([],0,"Signer #1 certificate SHA-256 digest: "+"a"*64+"\n","")
+            def manifest(split="", package="example", code="2026111602", version="0.439.0"):
+                return subprocess.CompletedProcess([],0,
+                    f'<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="{package}" android:versionCode="{code}" android:versionName="{version}" split="{split}"/>',"")
+            with patch.object(module.subprocess,"run",side_effect=[sig,manifest(),sig,manifest("config.arm64_v8a")]) as run:
+                report=module.validate(path,expected,sdk,require_signatures=True,apkanalyzer=analyzer)
+                self.assertTrue(report["signed_manifest_identity_verified"])
+                self.assertFalse(report["runtime_compatibility_verified"])
+                self.assertEqual(run.call_count,4)
+            for bad in [manifest(package="wrong"),manifest(code="1"),manifest(version="0.437.0"),manifest(split="wrong"),subprocess.CompletedProcess([],0,"broken XML",""),subprocess.CompletedProcess([],1,"","error")]:
+                with patch.object(module.subprocess,"run",side_effect=[sig,bad]):
+                    with self.assertRaises(ValueError):
+                        module.validate(path,expected,sdk,apkanalyzer=analyzer)
+            with patch.object(module.subprocess,"run",side_effect=[sig,manifest(),sig,manifest("wrong")]):
+                with self.assertRaisesRegex(ValueError,"identity mismatch"):
+                    module.validate(path,expected,sdk,apkanalyzer=analyzer)
+            with self.assertRaisesRegex(ValueError,"requires apksigner"):
+                module.validate(path,expected,apkanalyzer=analyzer)
+
+    def test_reject_ambiguous_metadata(self):
+        valid = '{"pname":"example","release_version":"0.439.0","versioncode":"2026111602","arches":["arm64-v8a"]}'
+        cases = [
+            (valid.replace('"pname":"example"', '"pname":"other","pname":"example"'), "Duplicate metadata key"),
+            (valid.replace('"versioncode":"2026111602"', '"versioncode":"0","versioncode":"2026111602"'), "Duplicate metadata key"),
+            ("[]", "Invalid archive metadata object"),
+            ("null", "Invalid archive metadata object"),
+            (valid.replace('"2026111602"', 'true'), "Invalid archive metadata version code"),
+            (valid.replace('"2026111602"', '2026111602.0'), "Invalid archive metadata version code"),
+        ]
+        for metadata, message in cases:
+            with self.subTest(metadata=metadata), tempfile.TemporaryDirectory() as folder:
+                path, expected = self.fixture(folder)
+                with zipfile.ZipFile(path, "w") as archive:
+                    archive.writestr("info.json", metadata)
+                    archive.writestr("base.apk", b"base")
+                    archive.writestr("split_config.arm64_v8a.apk", b"split")
+                expected["archive_bytes"] = path.stat().st_size
+                expected["archive_sha256"] = hashlib.sha256(path.read_bytes()).hexdigest()
+                with self.assertRaisesRegex(ValueError, message):
+                    module.validate(path, expected)

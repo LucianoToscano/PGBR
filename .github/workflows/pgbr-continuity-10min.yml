@@ -4,6 +4,12 @@ on:
   schedule:
     - cron: '*/10 * * * *'
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'tools/auto_dev_queue.json'
+      - 'tools/auto_dev_orchestrator.py'
+      - '.github/workflows/pgbr-continuity-10min.yml'
   pull_request:
     branches: [main]
     paths:
@@ -33,6 +39,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}
+          QUEUE_TEST_REF: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || '' }}
         shell: bash
         run: |
           set -euo pipefail
@@ -44,7 +51,9 @@ jobs:
           prs=$(gh api --paginate "repos/$REPO/pulls?state=open&per_page=100" | jq -s '[.[][]] | length')
           queue=$(mktemp)
           trap 'rm -f "$queue"' EXIT
-          gh api "repos/$REPO/contents/MESTRE.md?ref=$sha" --jq '.content' | base64 --decode > "$queue"
+          queue_ref="${QUEUE_TEST_REF:-$sha}"
+          [[ "$queue_ref" =~ ^[0-9a-f]{40}$ ]]
+          gh api "repos/$REPO/contents/MESTRE.md?ref=$queue_ref" --jq '.content' | base64 --decode > "$queue"
           # Validate stable numbered IDs; only IDs and counts enter the report.
           queue_report=$(python3 - "$queue" <<'PY'
           import pathlib, re, sys
@@ -82,7 +91,7 @@ jobs:
             printf -- '- [Arquivo Mestre nesta HEAD](https://github.com/%s/blob/%s/PGBR_ARQUIVO_MESTRE_UNICO.md), blob `%s`\n' "$REPO" "$sha" "$master"
             printf -- '- [Issues abertas](https://github.com/%s/issues): %s\n' "$REPO" "$issues"
             printf -- '- [PRs abertas](https://github.com/%s/pulls): %s\n' "$REPO" "$prs"
-            printf '\n## Fila numerada do MESTRE.md na mesma HEAD\n\n%s\n' "$queue_report"
+            printf '\n## Fila numerada do MESTRE.md na revisão %s\n\n%s\n' "$queue_ref" "$queue_report"
             printf '\n## CI da HEAD (não equivale a teste físico)\n\n'
             for workflow in pgbr-codigo-ci.yml pgbr-auditoria-mestre.yml; do
               runs=$(gh api "repos/$REPO/actions/workflows/$workflow/runs?branch=main&head_sha=$sha&per_page=100")
@@ -129,3 +138,38 @@ jobs:
               printf 'Solicitado CI ausente: %s\n' "$workflow" >> "$GITHUB_STEP_SUMMARY"
             fi
           done
+
+
+  auto-dev-proposals:
+    needs: audit
+    if: github.repository == 'LucianoToscano/PGBR' && github.ref == 'refs/heads/main' && github.event_name != 'pull_request' && vars.PGBR_AUTO_DEV_ENABLED == 'true' && vars.PGBR_AUTO_DEV_MODE == 'free' && vars.PGBR_FREE_BILLING_CONFIRMED == 'true' && vars.PGBR_GITHUB_FREE_BUDGET_CONFIRMED == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ needs.audit.outputs.head }}
+          persist-credentials: false
+      - name: Dispatch reviewed batches (proposals only)
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PGBR_AUTO_DEV_ENABLED: ${{ vars.PGBR_AUTO_DEV_ENABLED }}
+          PGBR_AUTO_DEV_MODE: ${{ vars.PGBR_AUTO_DEV_MODE }}
+          PGBR_FREE_BILLING_CONFIRMED: ${{ vars.PGBR_FREE_BILLING_CONFIRMED }}
+          PGBR_GITHUB_FREE_BUDGET_CONFIRMED: ${{ vars.PGBR_GITHUB_FREE_BUDGET_CONFIRMED }}
+          PGBR_GEMINI_KEY_SOURCE: ${{ vars.PGBR_GEMINI_KEY_SOURCE || 'dedicated' }}
+          PGBR_GEMINI_RESUME_AFTER: ${{ vars.PGBR_GEMINI_RESUME_AFTER }}
+          PGBR_GEMINI_FREE_KEY: ${{ vars.PGBR_GEMINI_KEY_SOURCE != 'existing' && secrets.PGBR_GEMINI_FREE_KEY || '' }}
+          GEMINI_API_KEY: ${{ vars.PGBR_GEMINI_KEY_SOURCE == 'existing' && secrets.GEMINI_API_KEY || '' }}
+          PGBR_GEMINI_FREE_MODEL: ${{ vars.PGBR_GEMINI_FREE_MODEL }}
+        run: python3 -B tools/auto_dev_orchestrator.py --queue tools/auto_dev_queue.json --output "$RUNNER_TEMP/pgbr-auto-dev" --live
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: always()
+        with:
+          name: pgbr-auto-dev-proposals-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/pgbr-auto-dev/*.json
+          if-no-files-found: ignore
+          retention-days: 1

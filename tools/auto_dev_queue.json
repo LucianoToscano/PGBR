@@ -1,0 +1,32 @@
+{
+  "version": 1,
+  "batches": [
+    {
+      "id": "C-AUTODEV-PILOT-01",
+      "agent": "chatgpt",
+      "tasks": [
+        "Propor um contrato de recibo de entrega versionado, com SHA base/head, CI e estado de homologação separados.",
+        "Propor testes de reserva idempotente, cancelamento e recuperação manual de uma chamada API com resultado incerto.",
+        "Definir os limites de orçamento e aprovação para o futuro executor isolado de patches."
+      ]
+    },
+    {
+      "id": "G-AUTODEV-PILOT-01",
+      "agent": "gemini",
+      "tasks": [
+        "Propor casos de teste independentes para cálculo CP/PvP offline, formas desconhecidas e dados incompletos.",
+        "Propor critérios de validação de proveniência de datasets, sem acesso a dados pessoais ou serviços privados.",
+        "Propor fixtures sintéticas para preservação de coleção, sem executar transferência ou ações no jogo."
+      ]
+    },
+    {
+      "id": "A-AUTODEV-PILOT-01",
+      "agent": "arena",
+      "tasks": [
+        "Propor testes de acessibilidade PT-BR para menus próprios, foco por teclado e leitura de tela.",
+        "Propor testes offline de importação GPX pessoal com UTF-8, segmentos vazios e preservação de dados.",
+        "Propor critérios de privacidade visual e fallback de ícones sem mudar o jogo original."
+      ]
+    }
+  ]
+}
