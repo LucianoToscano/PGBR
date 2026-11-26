@@ -106,7 +106,19 @@ def validate(path, expected, apksigner=None, *, require_signatures=False, apkana
             raise ValueError("Unexpected APK split set")
         if archive.getinfo("info.json").file_size > 65536:
             raise ValueError("Metadata exceeds size limit")
-        info = json.loads(archive.read("info.json"))
+        def unique_object(pairs):
+            result = {}
+            for key, value in pairs:
+                if key in result:
+                    raise ValueError("Duplicate metadata key: " + key)
+                result[key] = value
+            return result
+        info = json.loads(archive.read("info.json"), object_pairs_hook=unique_object)
+        if not isinstance(info, dict):
+            raise ValueError("Invalid archive metadata object")
+        code = info.get("versioncode")
+        if type(code) not in (str, int):
+            raise ValueError("Invalid archive metadata version code")
         if (info.get("pname") != expected["package_name"] or
             info.get("release_version") != expected["game_version"] or
             str(info.get("versioncode")) != expected["version_code"] or
