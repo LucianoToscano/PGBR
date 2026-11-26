@@ -23,7 +23,7 @@ final class SettingsBackup {
         LinearLayout root=new LinearLayout(activity);root.setOrientation(LinearLayout.VERTICAL);
         int p=MapTheme.dp(activity,20);root.setPadding(p,p*3,p,p*2);
         TextView title=new TextView(activity);title.setText(dev.pgrazor.PtBr.tr("Settings backup"));title.setTextSize(22);root.addView(title);
-        TextView detail=new TextView(activity);detail.setText(dev.pgrazor.PtBr.tr("Save a backup outside the app to keep settings through reinstalls. Includes favorites and their coordinates. Login tokens, current location, cooldown history and active routes are excluded.\n\nImport replaces the included settings and favorites. VGP stays off."));detail.setPadding(0,p,0,p);root.addView(detail);
+        TextView detail=new TextView(activity);detail.setText(dev.pgrazor.PtBr.tr("Save a backup outside the app to keep settings through reinstalls. Includes favorites and their coordinates. Login tokens, current location, cooldown history and active routes are excluded.\n\nImport replaces the included settings and favorites. VGP stays off."));detail.append("\n\nO arquivo pode conter nomes, apelido, favoritos, coordenadas e dados importados. Guarde-o em local privado; o modo de privacidade não anonimiza o backup completo.");detail.setPadding(0,p,0,p);root.addView(detail);
         export=new Button(activity);export.setText(dev.pgrazor.PtBr.tr("Export settings"));root.addView(export);
         restore=new Button(activity);restore.setText(dev.pgrazor.PtBr.tr("Import settings"));root.addView(restore);
         pgsharpImport=new Button(activity);pgsharpImport.setText("Importar dados PGSharp (JSON convertido)");root.addView(pgsharpImport);
@@ -109,9 +109,7 @@ final class SettingsBackup {
                     JSONObject document;
                     try(InputStream in=activity.getContentResolver().openInputStream(uri)){
                         if(in==null)throw new IOException("Cannot open backup");
-                        ByteArrayOutputStream out=new ByteArrayOutputStream();byte[] buf=new byte[8192];int n;
-                        while((n=in.read(buf))!=-1){if(out.size()+n>LIMIT)throw new IOException("Backup is too large");out.write(buf,0,n);}
-                        document=new JSONObject(new String(out.toByteArray(),StandardCharsets.UTF_8));
+                        document=new JSONObject(BackupInput.readJson(in,LIMIT));
                     }
                     if(request==IMPORT){
                         SettingsBackupStore.restore(activity,document);message="Settings restored. Return to the game to use them. VGP is off.";
@@ -123,7 +121,7 @@ final class SettingsBackup {
             }catch(Exception e){
                 message=SettingsBackupStore.rollbackFailed(e)
                     ?"Backup failed and rollback was incomplete. Check your settings and storage before retrying."
-                    :"Backup failed: "+(e.getMessage()==null?"Invalid file or storage unavailable":e.getMessage());
+                    :BackupInput.safeFailure(e);
             }
             final String text=message;activity.runOnUiThread(()->{busy=false;if(activity.isFinishing()||activity.isDestroyed())return;status.setText(dev.pgrazor.PtBr.tr(text));export.setEnabled(true);restore.setEnabled(true);pgsharpImport.setEnabled(true);pgsharpView.setEnabled(true);back.setEnabled(true);});
         },"pgrazor-settings-backup").start();
