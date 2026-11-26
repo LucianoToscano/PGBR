@@ -158,3 +158,53 @@ class CandidateInputTests(unittest.TestCase):
                 expected["archive_sha256"] = hashlib.sha256(path.read_bytes()).hexdigest()
                 with self.assertRaisesRegex(ValueError, message):
                     module.validate(path, expected)
+
+    def test_required_manifest_gate_without_both_tools(self):
+        with tempfile.TemporaryDirectory() as folder:
+            path, expected = self.fixture(folder)
+            for signer, analyzer in ((None, None), (Path(folder)/"apksigner", None), (None, Path(folder)/"apkanalyzer")):
+                with self.subTest(signer=signer, analyzer=analyzer), self.assertRaisesRegex(ValueError, "Signed manifest identity required"):
+                    module.validate(path, expected, signer, apkanalyzer=analyzer, require_manifest_identity=True)
+
+    def test_required_manifest_cli_rejects_incomplete_tool_set(self):
+        command = [__import__("sys").executable, str(ROOT / "tools/verify_candidate_input.py"), "missing.apkm", "--require-manifest-identity"]
+        for extra in ([], ["--apksigner", "missing"], ["--apkanalyzer", "missing"]):
+            with self.subTest(extra=extra):
+                result = subprocess.run(command + extra, capture_output=True, text=True)
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn("--require-manifest-identity requires --apksigner and --apkanalyzer", result.stderr)
+                self.assertEqual(result.stdout, "")
+
+    def test_reject_symbolic_candidate_and_parts(self):
+        with tempfile.TemporaryDirectory() as folder:
+            path, expected = self.fixture(folder)
+            link = Path(folder)/"linked.apkm"
+            try:
+                link.symlink_to(path)
+            except OSError:
+                self.skipTest("symlink privilege unavailable")
+            with self.assertRaisesRegex(ValueError, "regular file"):
+                module.validate(link, expected)
+            expected["parts"] = [{"bytes": path.stat().st_size, "sha256": expected["archive_sha256"]}]
+            with self.assertRaisesRegex(ValueError, "regular file"):
+                module.assemble_parts([link], expected, Path(folder)/"joined.apkm")
+
+    def test_manifest_xml_rejects_dtd_and_excessive_size(self):
+        with tempfile.TemporaryDirectory() as folder:
+            path, expected = self.fixture(folder)
+            for raw in ('<!DOCTYPE manifest [<!ENTITY x "bad">]><manifest/>', "x"*(4*1024*1024+1)):
+                with self.subTest(length=len(raw)), patch.object(module.subprocess, "run", return_value=subprocess.CompletedProcess([],0,raw,"")):
+                    with self.assertRaisesRegex(ValueError, "Unsafe or oversized"):
+                        module.verify_manifest_identity(path, "base.apk", expected, Path(folder)/"apkanalyzer")
+
+    def test_signer_extraction_rejects_changed_split_length(self):
+        with tempfile.TemporaryDirectory() as folder:
+            path, expected = self.fixture(folder)
+            expected["expected_signer_sha256"] = "a"*64
+            expected["splits"]["base.apk"]["bytes"] += 1
+            sdk = Path(folder)/"apksigner"
+            sdk.touch()
+            with patch.object(module.subprocess, "run") as run:
+                with self.assertRaisesRegex(ValueError, "Extracted split size mismatch"):
+                    module.verify_signers(path, expected, sdk)
+                run.assert_not_called()

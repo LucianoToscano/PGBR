@@ -4,7 +4,6 @@ import hashlib
 import json
 from pathlib import Path
 import re
-import shutil
 import subprocess
 import tempfile
 import zipfile
@@ -19,7 +18,10 @@ def assemble_parts(parts, expected, destination):
         raise ValueError("Wrong part count")
     with Path(destination).open("xb") as output:
         for path, spec in zip(parts, expected["parts"]):
-            if Path(path).stat().st_size != spec["bytes"]:
+            path = Path(path)
+            if path.is_symlink() or not path.is_file():
+                raise ValueError("Part must be a regular file, not a symbolic link")
+            if path.stat().st_size != spec["bytes"]:
                 raise ValueError("Part size mismatch")
             digest = hashlib.sha256()
             copied = 0
@@ -41,6 +43,8 @@ def verify_manifest_identity(target, name, expected, analyzer):
                             errors="strict", timeout=120, check=False)
     if result.returncode != 0:
         raise ValueError("APK manifest inspection failed: " + name)
+    if len(result.stdout) > 4 * 1024 * 1024 or "<!DOCTYPE" in result.stdout or "<!ENTITY" in result.stdout:
+        raise ValueError("Unsafe or oversized APK manifest XML: " + name)
     try:
         root = ET.fromstring(result.stdout)
     except ET.ParseError as error:
@@ -68,8 +72,17 @@ def verify_signers(path, expected, apksigner, apkanalyzer=None):
         with zipfile.ZipFile(path) as archive:
             for number, name in enumerate(expected["splits"]):
                 target = Path(directory) / f"split-{number}.apk"
+                if archive.getinfo(name).file_size != expected["splits"][name]["bytes"]:
+                    raise ValueError("Extracted split size mismatch: " + name)
+                copied = 0
                 with archive.open(name) as source, target.open("xb") as output:
-                    shutil.copyfileobj(source, output, 1024 * 1024)
+                    while block := source.read(1024 * 1024):
+                        copied += len(block)
+                        if copied > expected["splits"][name]["bytes"]:
+                            raise ValueError("Extracted split exceeds expected size: " + name)
+                        output.write(block)
+                if copied != expected["splits"][name]["bytes"]:
+                    raise ValueError("Extracted split size mismatch: " + name)
                 # Recheck bytes after extraction, including if source changed.
                 with target.open("rb") as stream:
                     if hashlib.file_digest(stream, "sha256").hexdigest() != expected["splits"][name]["sha256"]:
@@ -86,12 +99,16 @@ def verify_signers(path, expected, apksigner, apkanalyzer=None):
                     verify_manifest_identity(target, name, expected, analyzer)
 
 
-def validate(path, expected, apksigner=None, *, require_signatures=False, apkanalyzer=None):
+def validate(path, expected, apksigner=None, *, require_signatures=False, apkanalyzer=None, require_manifest_identity=False):
+    if require_manifest_identity and (apksigner is None or apkanalyzer is None):
+        raise ValueError("Signed manifest identity required: supply trusted apksigner and apkanalyzer")
     if apkanalyzer is not None and apksigner is None:
         raise ValueError("Manifest identity verification requires apksigner")
     if require_signatures and apksigner is None:
         raise ValueError("Signature verification required: supply trusted apksigner")
     path = Path(path)
+    if path.is_symlink() or not path.is_file():
+        raise ValueError("Candidate must be a regular file, not a symbolic link")
     if path.stat().st_size != expected["archive_bytes"]:
         raise ValueError("Archive size mismatch")
     with path.open("rb") as stream:
@@ -149,7 +166,11 @@ def main():
     parser.add_argument("--require-signatures", action="store_true",
                         help="Reject unsigned preflight reports; requires --apksigner")
     parser.add_argument("--apkanalyzer", type=Path, help="Trusted SDK manifest inspection tool; requires --apksigner")
+    parser.add_argument("--require-manifest-identity", action="store_true",
+                        help="Require both trusted SDK tools; reject signature-only reports")
     args = parser.parse_args()
+    if args.require_manifest_identity and (args.apksigner is None or args.apkanalyzer is None):
+        parser.error("--require-manifest-identity requires --apksigner and --apkanalyzer")
     if args.apkanalyzer is not None and args.apksigner is None:
         parser.error("--apkanalyzer requires --apksigner")
     if args.require_signatures and args.apksigner is None:
@@ -162,10 +183,10 @@ def main():
             with tempfile.TemporaryDirectory(prefix="pgbr-candidate-join-") as directory:
                 joined = Path(directory) / "candidate.apkm"
                 assemble_parts(args.parts, expected, joined)
-                report = validate(joined, expected, args.apksigner, require_signatures=args.require_signatures, apkanalyzer=args.apkanalyzer)
+                report = validate(joined, expected, args.apksigner, require_signatures=args.require_signatures, apkanalyzer=args.apkanalyzer, require_manifest_identity=args.require_manifest_identity)
                 report["parts_verified"] = True
         else:
-            report = validate(args.input, expected, args.apksigner, require_signatures=args.require_signatures, apkanalyzer=args.apkanalyzer)
+            report = validate(args.input, expected, args.apksigner, require_signatures=args.require_signatures, apkanalyzer=args.apkanalyzer, require_manifest_identity=args.require_manifest_identity)
         print(json.dumps(report, indent=2))
     except (OSError, ValueError, KeyError, zipfile.BadZipFile, subprocess.TimeoutExpired) as error:
         parser.exit(1, "Rejected: " + str(error) + "\n")
