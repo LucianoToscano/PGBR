@@ -205,7 +205,7 @@ public final class Pad {
             public void refresh(){ Pad.this.refresh(); }
             public void applyTheme(){ Pad.this.applyTheme(); }
             public void releaseJoystick(boolean preserveWalk){ stick.release(preserveWalk); }
-            public void setJoystickVisible(boolean visible){ stick.release(true); Control.setJoystickVisible(visible); joystickOverlay.setVisibility(visible?View.VISIBLE:View.GONE); }
+            public void setJoystickVisible(boolean visible){ stick.release(true); Control.setJoystickVisible(visible); refreshJoystickVisibility(); }
             public void openMap(){ openWorldMap(); }
             public void editLocation(){ edit(); }
             public void resetOverlayPositions(){ Pad.this.resetOverlayPositions(); }
@@ -742,7 +742,18 @@ public final class Pad {
             b.setAlpha(on?1f:0.7f);
         }
     }
+    /** Temporary display gate: never changes the stored joystick preference. */
+    private void refreshJoystickVisibility() {
+        if(joystickOverlay==null||stick==null)return;
+        boolean visible=JoystickDisplayPolicy.visible(Control.joystickVisible(),overlaysHidden,
+            settings.isVisible(),quickMenu!=null&&quickMenu.isShowing(),Control.catchScreenVisible(),
+            activity.hasWindowFocus(),ShundoSniper.dark()&&!settings.isVisible());
+        if(!visible&&(stick.pointer>=0||stick.isLocked))stick.release(true);
+        int wanted=visible?View.VISIBLE:View.GONE;
+        if(joystickOverlay.getVisibility()!=wanted)joystickOverlay.setVisibility(wanted);
+    }
     private void refresh() {
+        refreshJoystickVisibility();
         applyMapScale();
         refreshBattleShortcuts();
         if(gymFeedOverlay!=null)gymFeedOverlay.refresh(!settings.isVisible()&&!(quickMenu!=null&&quickMenu.isShowing()));
@@ -810,6 +821,7 @@ public final class Pad {
             if (closed) return;
             Control.checkLease();
             long now = SystemClock.elapsedRealtime();
+            refreshJoystickVisibility();
             stick.applyMotion(now);
             boolean wasWalking = Control.engine.walking;
             MotionEngine.RouteProgress before=Control.engine.routeProgress();
