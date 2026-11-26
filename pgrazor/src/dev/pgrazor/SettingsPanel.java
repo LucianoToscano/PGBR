@@ -354,6 +354,10 @@ final class SettingsPanel {
         // Home screen: the always-visible location status, then one icon row per category.
         home = new LinearLayout(activity); home.setOrientation(LinearLayout.VERTICAL); body.addView(home);
         coords = text("", 16, ink()); coords.setPadding(dp(4), dp(6), dp(4), dp(10)); home.addView(coords);
+        Button releaseCheck=button("Verificar atualização do PGBR");
+        releaseCheck.setAllCaps(false);
+        releaseCheck.setOnClickListener(v->ReleaseCheck.check(activity, releaseCheck));
+        home.addView(releaseCheck,new LinearLayout.LayoutParams(-1,-2));
         // Session stats from read-only lifetime counters; accounts are kept in separate local histories.
         LinearLayout sessionCard=new LinearLayout(activity);sessionCard.setOrientation(LinearLayout.VERTICAL);
         sessionCard.setPadding(dp(12),dp(10),dp(12),dp(10));
