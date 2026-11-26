@@ -42,6 +42,17 @@ class JsonStubParityTest(unittest.TestCase):
         self.assertIn('public static final Object NULL', body)
         self.assertIn('public boolean isNull(String key)', body)
 
+    def test_null_marker_serializes_as_bare_null(self):
+        """Android: JSONObject.NULL vira `null` sem aspas — não a STRING "null".
+
+        O espelho gravava send\"null\" e a releitura devolvia o TEXTO "null". Um backup com
+        name/id nulos passava como válido no JVM e falhava no aparelho: foi a causa real de
+        "SettingsBackupRulesTest: Accepted invalid backup" (campo nulo virava nome "null").
+        """
+        write = self.read('Json.java').split('private static String writeValue(Object value)')[1]
+        write = '\n'.join(write.splitlines()[:6])  # só o começo do método, não o arquivo todo
+        self.assertIn('value == JSONObject.NULL', write)
+
     def test_android_types_used_by_the_app_are_present(self):
         """Tipos que o app usa de verdade precisam existir, senão o teste mede o espelho, não o app."""
         self.assertTrue((STUB / 'JSONTokener.java').exists(), 'Android tem JSONTokener')
