@@ -384,3 +384,7 @@ PT-BR sincronizado em Sem Root/Root/glossário e fixture dinâmica. Validação:
 ### Correção de CI MAP-01 identificada após publicação
 
 No HEAD `364d567`, o job GitHub `Suite real check.py + compilacao Java + Root` falhou no teste que compila `Control.java`: a fixture `test_control_java.py` lista explicitamente fontes Java, mas ainda não incluía o novo `MapPoiFreshness.java`. Inspecionei as anotações do check-run; a falha não era regra temporal nem compilação Android. Atualizado o input-source list do harness e acrescentado contrato que impede nova omissão. Reexecutar CI no novo HEAD; não considerar a falha do HEAD anterior corrigida sem resultado verde.
+
+## 26/11/2026 — nova main após #317 e reconciliação de entrada
+
+`origin/main` avançou para `84691417ea6c89be545db39a1af5d2909984b699` ao mesclar PR #317 (assinatura/identidade de manifesto); a mudança é somente em arquivos de candidato/docs/tests e não conflita com MAP-01. Iniciado merge não-ff da main mais recente na branch atual; a única divergência textual está em `PGBR_ARQUIVO_MESTRE_UNICO.md` e está sendo resolvida conservando ambos os checkpoints, além do novo patch MAP-01. PR #318 segue aberta com CI 45742981881: Java/Root ainda in progress na consulta. PR #319 HEAD `fc79c77382d6218fb20500b681306e307229918a`; run inicial no HEAD `364d567` falhou porque harness explícito não incluía `MapPoiFreshness.java`; correção incluída no fc79. Run manual `45743062095` para fc79 em andamento; aguardar resultado. Não duplicar código de #317/#318.
