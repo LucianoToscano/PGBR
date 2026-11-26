@@ -153,7 +153,8 @@ public final class LocalAuditPolicy {
    case "unknown-effect":return "Eficácia de pelo menos um ataque não confirmada.";
    case "unverified-slots":return "Associação entre os dois botões e suas classificações não confirmada.";
    case "unavailable-pair":return "Par de carregados não confirmado. Não prova que haja dois ataques.";
-   case "only-one-ready":return "Somente um ataque disponível ou nenhum pronto para a política atual; confira a energia e a classificação.";
+   case "only-one-ready":return "Um dos carregados não estava pronto; em registros antigos também pode significar nenhum pronto. Confira os indicadores da última leitura.";
+   case "none-ready":return "Nenhum dos dois botões observados foi confirmado pronto na última leitura; não prova o estado atual nem a quantidade real de golpes.";
    case "effectiveness":return "Classificação por eficácia disponível; não prova execução ou dano.";
    case "known-super":return "Há classificação supereficaz confirmada; a outra pode ser desconhecida.";
    case "off":return "Preferência de Ataque Inteligente desligada.";

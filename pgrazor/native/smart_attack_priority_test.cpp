@@ -246,7 +246,14 @@ int main() {
   allowed=admit_display(true,5320,guarded,2);
   assert(!allowed.hold&&allowed.index==1); // super wins when both ready
   guarded[0].ready=false;guarded[1].ready=false;
-  assert(admit_display(true,5320,guarded,2).hold); // neither ready: fast remains available
+  allowed=admit_display(true,5320,guarded,2);
+  assert(allowed.hold&&allowed.index==-1&&allowed.reason==DisplayReason::NONE_READY);
+  // Physical report 26 Nov: both Normal, both unready, three raw observations.
+  // The pure policy receives the two canonical slots; no change to admission.
+  guarded[0].sample.tier=guarded[1].sample.tier=Tier::NEUTRAL;
+  allowed=admit_display(true,5320,guarded,2);
+  assert(allowed.hold&&allowed.index==-1&&allowed.reason==DisplayReason::NONE_READY);
+  assert(inspect_display(true,5320,guarded,2).reason==DisplayReason::NONE_READY);
   guarded[0].ready=true;
   assert(!admit_display(false,5320,guarded,2).hold); // OFF: original order
   assert(admit_display(true,5320,guarded,1).hold); // engine handles actual single-display separately
