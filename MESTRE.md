@@ -342,3 +342,62 @@ PGBR-CI-205 integrado após CI completo; PGBR-UI-SMALL candidata de correção e
 - Verificadas localmente as duas partes do APKM, 85000000 e 84083658 bytes; concatenação SHA-256 c6d3c04c38ca2f2446957633b4fee8c93dcc9cebdbbaddc9cb9651722ef8f54f. Nova candidata adiciona reconstrução temporária com hashes fixados e verificação opcional por apksigner oficial, com assinatura esperada do perfil aprovado anterior; teste de assinatura real ainda não executado. Perfil 0.437.0 mantido.
 
 - #313 integrada com CI 45734462973/45734462962 aprovado, merge 74d98a31df205dda822348f5a387aca0a7390a89. Assinatura real 0.439.0 ainda não confirmada. Nova candidata SYS-01/SYS-03: ocultar coordenadas na lista de contas em modo privado, preservar lifecycle da cópia de aparência e respeitar desativação de avisos pendentes. Homologação física separada.
+
+
+## 26/11/2026 — Checkpoint Arena LT049: QA local e bloqueios P0
+
+Branch ativa `arena/1be548a6-pgbr`, base/HEAD `2357ae1d74b7fdad200fb695d55978d395954a83`; nenhum código de release, APK ou perfil foi alterado neste ciclo. Mantidos BAT-01 V5 e `current.json` em 0.437.0. PR #315 segue como receita QA baseada em 0.437.0; seus checks não satisfazem o alvo obrigatório 0.439.0.
+
+- QA local: `python -B tools/native_host_tests.py` passou (27 fixtures C++ host, incluindo `rocket_minigame_white_layer_test`; sem cobertura de Android/dispositivo). `unittest discover -s pgrazor/test -p 'test_*.py'`: 519 testes, 78 skips e 1 erro de ambiente: teste Java real `test_iflowgo_request_policy_java` não encontrou `javac`. `python -B tools/check.py` parou antes de modificar arquivos: faltam `java`, `javac`, Android SDK platform/sources `android-36`. Não interpretar como falha funcional nem como suíte verde.
+- P0 startup #284 permanece aberto. O hotfix #290 e seus checks de CI (run 45538006194; QA 45538006290) foram aprovados, mas o proprietário reportou novo crash físico em 25/11 sem hash do APK instalado nem logcat. Portanto o suspeito regex está corrigido no código atual, mas não é causa física confirmada nem aceite de inicialização; não mascarar, apagar dados ou distribuir como corrigido.
+- Entrada 0.439.0: manifesto local fixa APKM e splits; certificado real continua sem validação criptográfica nesta sessão; perfil/runtime compatíveis não demonstrados. Não ativar `current.json` nem compilar LT049 a partir do perfil 0.437.0.
+- A busca exata do `PGBR_Lista_Geral_Pendencias_2026-11-25.docx` não encontrou resultado em Drive nem Gmail; documento continua pendente, sem substituição por arquivos parecidos.
+- Próximo: obter hash exato e logcat sanitizado da reprovação de startup e testar em aparelho autorizado preservando dados; obter JDK/SDK para suíte completa; concluir validação assinada e inspeção/compatibilidade 0.439.0 antes de elaborar perfil novo. `device_tested=false` para LT049; `provider_connected=false`.
+
+## 26/11/2026 — Lote LT049 #316: gate estrito da assinatura de entrada
+
+Incorporados ao branch ativo `arena/1be548a6-pgbr` os três commits de código/teste/documentação de #316 por cherry-pick, após confirmar base comum `2357ae1d74b7fdad200fb695d55978d395954a83`, revisão sem conflito de arquivos de runtime e CI do PR verde (suite real Java/Root, NDK ARM64, host C++, website e governança). Commits locais: `d2f9c5c`, `c859abf`, `55a1b71`. O verificador agora tem opção `--require-signatures`, falha antes do relatório quando falta apksigner confiável, e reporta explicitamente `signed_manifest_identity_verified=false`; inspeção hash-only segue disponível e não é apresentada como validação criptográfica. `python -B -m unittest pgrazor.test.test_candidate_input -v`: 5/5 aprovados; `git diff --check` aprovado. PR #316 continua aberta na origem; não mesclar novamente o mesmo patch. Assinatura real, identidade de manifesto, compatibilidade de execução, migração para 0.439.0 e build LT049 continuam pendentes.
+
+## 26/11/2026 — Reconciliação da branch ativa com main após #316
+
+`origin/main` avançou de `2357ae1d74b7fdad200fb695d55978d395954a83` para `617e91f79ac57f9fcd61ad57c380ce977c2da0ed`, merge da #316. Reconciliação da branch `arena/1be548a6-pgbr` em andamento, preservando os commits próprios e mantendo uma única cópia dos arquivos funcionais do gate. PRs #317 (manifesto assinado) e #318 (integridade de sprites) são trabalho paralelo declarado do ChatGPT; acompanhar checks e evitar duplicar seus arquivos. Para a frente LMArena, priorizar código de Map/Locais/GPX/visual/PT-BR em commits independentes, sem aguardar bloqueios 0.439.0/#284/dispositivo. V5 permanece intocada.
+
+## 26/11/2026 — MAP-01 / acessibilidade do mapa por teclado
+
+Em `WorldMapDialog.MapView`, o mapa passa a aceitar foco de teclado: setas deslocam o viewport (sem mudar posição do jogo), Enter/centro seleciona as coordenadas do centro no rótulo/preview e anuncia a leitura do rótulo de coordenadas atualizado. Não chama listener de teleporte, `walk.onDestination` ou movimento. A descrição acessível informa esses comandos; chave PT-BR sincronizada em `PtBr.java`, `RootPtBr.java` e `i18n/pt-BR.json`. Novo contrato `test_worldmap_keyboard_accessibility.py` cobre foco, direções, seleção sem movimento e sincronização textual.
+
+Validação deste lote: 24 testes direcionados aprovados; 4 JVM reais de projeção/layout ficaram skipped por ausência de JDK; contratos estáticos e `git diff --check` passaram. Sem alteração de GPX, movimento, preferências, rotas oficiais, POIs ou V5. Ainda exige build Android/uso com teclado e leitor de tela autorizado; `device_tested=false`.
+
+## Continuidade LMArena — PR #319 e triagem #200/#199
+
+PR [#319](https://github.com/LucianoToscano/PGBR/pull/319) aberta da branch ativa com escopo MAP-01 restrito; `translate` passou, demais checks estavam pendentes na última consulta. #317 estava com todos os checks verdes; #318 ainda aguardava `Suite real check.py + compilação Java + Root`; não sobrepor nem duplicar esses arquivos. Issue #200 descreve capturas antigas cujo hash do APK não foi identificado e cujo mapa não estava em modo de rota ativa; código atual já tem linha compacta, filtros recolhidos e rota trace opt-in (testes de contrato passaram). #199 é protótipo visual divergente e não deve ser integrado sem reconciliação, CI na main atual e evidência de projeção autorizada. Não alegar homologação visual nem alterar V5.
+
+## 26/11/2026 — MAP-01 / validade explícita de POIs do mapa
+
+Continuação independente: `Control` expõe a idade monotônica do snapshot da camada de locais próximos junto com o conteúdo. Após 10 s, os pontos são descartados (`fail closed`) e o estado mostra “dados expiraram; aguardando atualização”, em vez de apresentar um feed vazio como se nunca tivesse carregado. Estado desconhecido inicial é diferenciado de expirado. Política isolada em `MapPoiFreshness.java`; fixture executável Java verifica limites 0/9.999/10.000 ms, idade negativa e descarte de conteúdo, mais contrato estático de status.
+
+PT-BR sincronizado em Sem Root/Root/glossário e fixture dinâmica. Validação: nesta fatia, 21 testes passaram e 5 foram skipped (JDK ausente); compilação/execução Java real não ocorreu aqui. Erro de contrato antigo no teste de apresentação após alteração da interface foi atualizado e reexecutado com sucesso. Essa fatia integra PR #319, ainda sem CI completa na última consulta.
+
+### Validação ampla local (26/11)
+
+`python -B -m unittest discover -s pgrazor/test -v`: 526 testes, 79 skips por ferramentas/dispositivos ausentes e 1 erro de ambiente no teste existente `test_iflowgo_request_policy_java.test_actual_java_policy` (`FileNotFoundError: javac`). Não é falha da lógica MAP-01; comprova que a suíte completa local não ficou inteiramente verde. Os focados de MAP-01 acima passaram; a checagem real Java/Root do CI da #319 ainda estava pendente. Não concluir build Android nesta máquina.
+
+### Correção de CI MAP-01 identificada após publicação
+
+No HEAD `364d567`, o job GitHub `Suite real check.py + compilacao Java + Root` falhou no teste que compila `Control.java`: a fixture `test_control_java.py` lista explicitamente fontes Java, mas ainda não incluía o novo `MapPoiFreshness.java`. Inspecionei as anotações do check-run; a falha não era regra temporal nem compilação Android. Atualizado o input-source list do harness e acrescentado contrato que impede nova omissão. Reexecutar CI no novo HEAD; não considerar a falha do HEAD anterior corrigida sem resultado verde.
+
+## 26/11/2026 — nova main após #317 e reconciliação de entrada
+
+`origin/main` avançou para `84691417ea6c89be545db39a1af5d2909984b699` ao mesclar PR #317 (assinatura/identidade de manifesto); diff de main foi só em candidato/docs/tests e não conflita com MAP-01. Merge não-ff concluído e enviado como `e498ce6a`, conservando os dois checkpoints documentais. PR #318 segue aberta; Java/Root estava pendente na consulta mais recente. PR #319 está no HEAD `e498ce6a026a52142fbd875477bd5029d30fdbfd`, base main. Corrigida a omissão de `MapPoiFreshness.java` no harness explícito de Control. CI manual do HEAD atual `45743167687` passou em todos os seis jobs (inclui suite real `check.py`, Java/Root); workflow de governança `45743171548` também passou. Os checks associados à PR #319 (run 45743161378, governança 45743161217, translate 45743161408) estão todos verdes. #317 está merged; não duplicar #317/#318.
+
+## 26/11/2026 — main após #318 (integridade de sprites)
+
+`origin/main` avançou para `18a5cbeb665acba00a0211c64f07e3a8cc0d89ee` ao mesclar #318 após seis checks verdes (run 45742981881, suite Java/Root 3m03; governance 45742981824). Patch de `pgrazor/build.py` e fixture #318 foi recebido via merge não-ff e preservado em `67642193`; conflito exclusivamente documental resolvido conservando ambos os registros. Fixture #318 passou localmente (2/2). CI da revisão `67642193` passou: PR code run `45743740630` (6/6 incluindo Java/Root), governance `45743740395` (também manual `45743744722`) e PT-BR translate `45743740326`. PR #319 continua aberta; não remover trabalho de terceiros.
+
+## 26/11/2026 — main após #322 e CI MAP-01 reconciliado
+
+`origin/main` atual `2f559ef912213fd82ffe785409fa09b0b863fbad` inclui #317, #318 e #322 (hardening do manifesto de sprites). Main foi mesclada na branch ativa em `ce312b3743c70953e7d4cb06d65405735df5fb33`; conflito somente documental, preservando ambos os históricos e sem cherry-pick repetido. A fixture atualizada de sprites passou localmente 4/4.
+
+PR #319 HEAD code `ce312b37` permanece aberta. CI do PR `45744289804` passou 6/6, incluindo `check.py`, compilação do app Java e Root (4m19s); governança `45744289838` e PT-BR `45744289872` também passaram. Falha histórica no head `364d567` foi corrigida ao incluir `MapPoiFreshness.java` no harness. Commit subsequente `b2f6b3c8` é documentação/merge only; não confundir CI verde anterior com validação física. `device_tested=false`.
+
+Reconciliação candidata MAP-01 #319; CI atual obrigatório, device_tested=false.

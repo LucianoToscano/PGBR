@@ -195,7 +195,8 @@ class RouteTraceTest(unittest.TestCase):
     def test_poi_presentation_distinguishes_unavailable_from_empty(self):
         poi=(ROOT/"src/dev/pgrazor/MapPoiLayer.java").read_text(encoding="utf-8")
         refresh=poi[poi.index("    void refresh()"):poi.index("    void draw(Canvas")]
-        self.assertIn('if (snapshot == null) snapshot = "";',refresh)
+        self.assertIn('String snapshot = state == null ? "" : state.value;',refresh)
+        self.assertIn('long snapshotAge = state == null ? -1 : state.ageMillis;',refresh)
         self.assertIn('pois = new JSONArray();',refresh)
         self.assertIn('snapshotInvalid = false;',refresh)
         self.assertIn('decoded.has("error") || points == null',refresh)

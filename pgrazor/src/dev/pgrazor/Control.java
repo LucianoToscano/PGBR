@@ -62,7 +62,12 @@ public final class Control {
     public static void setAutoWalkPlanning(boolean open){autoWalkPlanning=open;if(!open&&!mapPoiOpen){mapPoiSnapshot="";mapPoiAt=0;}}
     public static boolean mapPoiAllowed(){return (mapPoiOpen||autoWalkPlanning)&&hostLive();}
     public static void setMapPoiSnapshot(String value){if((mapPoiOpen||autoWalkPlanning)&&value!=null&&value.length()<160000){mapPoiSnapshot=value;mapPoiAt=SystemClock.elapsedRealtime();}}
-    public static String mapPoiSnapshot(){return SystemClock.elapsedRealtime()-mapPoiAt<10000?mapPoiSnapshot:"";}
+    public static String mapPoiSnapshot(){return mapPoiFreshness().value;}
+    static MapPoiFreshness.Snapshot mapPoiFreshness(){
+        String value=mapPoiSnapshot;long at=mapPoiAt;
+        long age=at<=0?-1:SystemClock.elapsedRealtime()-at;
+        return new MapPoiFreshness.Snapshot(value,age,MapPoiFreshness.isFresh(age));
+    }
     public static final MotionEngine engine = new MotionEngine();
     private static final GameRoutesController gameRoutes = new GameRoutesController(
         engine, SystemClock::elapsedRealtime, System::currentTimeMillis);
