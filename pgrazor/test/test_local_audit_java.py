@@ -83,7 +83,7 @@ class LocalAuditTests(unittest.TestCase):
         source=(ROOT/'src/dev/pgrazor/LocalAuditDialog.java').read_text(encoding='utf-8')
         panel=source.split(' static String galleryLabel(int id){',1)[1].split(' static void tagReview(Activity a){',1)[0]
         self.assertIn('case 301:return "Ovo da Sorte"',panel)
-        self.assertIn('default:return "Item"',panel)
+        self.assertIn('default:return "Item de catálogo (nome não confirmado)"',panel)
         self.assertIn('Consultar ID de catálogo',panel)
         self.assertIn('id<1||id>999999',panel)
         self.assertIn('inspected.removeAllViews()',panel)

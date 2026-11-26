@@ -189,7 +189,11 @@ final class LocalAuditDialog {
    case 504:return "Módulo Atrair Magnético";
    case 505:return "Módulo Atrair Chuvoso";
    case 506:return "Módulo Atrair Dourado";
-   case 708:return "Fruta Caxí Prateada";
+   case 701:return "Fruta Frambo";
+   case 703:return "Fruta Anaba";
+   case 705:return "Fruta Caxi";
+   case 706:return "Fruta Frambo Dourada";
+   case 708:return "Fruta Caxi Prateada";
    case 709:return "Poffin";
    case 801:return "Câmera";
    case 802:return "Adesivos";
@@ -226,7 +230,7 @@ final class LocalAuditDialog {
    case 1353:return "Energia de Fusão Blaze";
    case 1001:return "Expansão de armazenamento Pokémon";
    case 1003:return "Expansão de cartões postais";
-   default:return "Item";
+   default:return "Item de catálogo (nome não confirmado)";
   }
  }
  static void itemGallery(Activity a){
