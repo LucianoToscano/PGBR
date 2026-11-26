@@ -123,6 +123,17 @@ public final class LocalAuditPolicy {
   }
   return new StockAdvice(-1,unknown);
  }
+ /** Manual planning, using only the duration and stock confirmed by the user. */
+ public static final class BoostPlan {
+  public final int needed,available,shortfall;
+  BoostPlan(int n,int a){needed=n;available=a;shortfall=a<0?-1:Math.max(0,n-a);}
+ }
+ public static BoostPlan planBoost(int minutes,int activeMinutes,int duration,int stock){
+  if(minutes<0||minutes>1440||activeMinutes<0||activeMinutes>1440||
+     duration<1||duration>1440||stock< -1||stock>100000)throw new IllegalArgumentException("Limites inválidos");
+  int remaining=Math.max(0,minutes-activeMinutes);
+  return new BoostPlan((remaining+duration-1)/duration,stock);
+ }
  public static String reason(int code){
  switch(code){
  case 0:return "Corresponde ao filtro";case 1:return "Proteção geral ativa";case 2:return "Lista de espécies inválida";

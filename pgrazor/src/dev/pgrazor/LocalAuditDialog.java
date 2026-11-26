@@ -8,7 +8,7 @@ final class LocalAuditDialog {
  private LocalAuditDialog(){}
  static void show(Activity a){
   AlertDialog d=new AlertDialog.Builder(MapTheme.wrap(a)).setTitle("Análise local • sem ações no jogo")
-   .setItems(new String[]{"Prévia de proteção da coleção","Simular ataques carregados","Interpretar código de diagnóstico","Avaliar lista de Pokémon","Planejar energia PvP","Interpretar diagnóstico PvP","Planejar alternativas de frutas","Preparar equipe Max (manual)","Resumir diagnóstico filtrado","Conferir etiquetas (manual)","Conferir ícones instalados"},(x,i)->{if(i==0)collection(a);else if(i==1)combat(a);else if(i==2)reason(a);else if(i==3)batch(a);else if(i==4)energyPlan(a);else if(i==5)battleDiagnostic(a);else if(i==6)berryPlan(a);else if(i==7)maxPlan(a);else if(i==8)summarize(a);else if(i==9)tagReview(a);else itemGallery(a);})
+   .setItems(new String[]{"Prévia de proteção da coleção","Simular ataques carregados","Interpretar código de diagnóstico","Avaliar lista de Pokémon","Planejar energia PvP","Interpretar diagnóstico PvP","Planejar alternativas de frutas","Preparar equipe Max (manual)","Resumir diagnóstico filtrado","Conferir etiquetas (manual)","Conferir ícones instalados","Planejar Ovo da Sorte e Pedaço de Estrela"},(x,i)->{if(i==0)collection(a);else if(i==1)combat(a);else if(i==2)reason(a);else if(i==3)batch(a);else if(i==4)energyPlan(a);else if(i==5)battleDiagnostic(a);else if(i==6)berryPlan(a);else if(i==7)maxPlan(a);else if(i==8)summarize(a);else if(i==9)tagReview(a);else if(i==10)itemGallery(a);else boostPlan(a);})
    .setNegativeButton("Fechar",null).create();present(a,d);
  }
  static void present(Activity a,AlertDialog d){DialogLifecycle.bind(a,d,null);d.setOnShowListener(x->MapTheme.styleButtons(d));d.show();}
@@ -385,6 +385,29 @@ final class LocalAuditDialog {
    result.setText(out);
   }catch(IllegalArgumentException invalid){result.setText("Confira nomes, estoque e custo.");}});
   presentPrivate(a,new AlertDialog.Builder(MapTheme.wrap(a)).setTitle("Preparação manual Max").setView(scroll(a,b)).setPositiveButton("Fechar",null).create());
+ }
+ static void boostPlan(Activity a){
+  LinearLayout b=body(a);
+  text(a,b,"Planejamento manual: informe a duração real mostrada no jogo, inclusive bônus de evento. Este painel não lê o inventário nem usa itens.");
+  EditText minutes=numeric(a,b,"Duração planejada (minutos)","60",false,false);
+  EditText eggActive=numeric(a,b,"Ovo da Sorte: minutos restantes já ativos","0",false,false);
+  EditText eggDuration=numeric(a,b,"Ovo da Sorte: duração por item (minutos)","30",false,false);
+  EditText eggStock=numeric(a,b,"Ovos da Sorte disponíveis (-1 desconhecido)","-1",false,true);
+  EditText starActive=numeric(a,b,"Pedaço de Estrela: minutos restantes já ativos","0",false,false);
+  EditText starDuration=numeric(a,b,"Pedaço de Estrela: duração por item (minutos)","30",false,false);
+  EditText starStock=numeric(a,b,"Pedaços de Estrela disponíveis (-1 desconhecido)","-1",false,true);
+  TextView result=text(a,b,"");
+  invalidateOnEdit(result,minutes,eggActive,eggDuration,eggStock,starActive,starDuration,starStock);
+  action(a,b,"Calcular consumo estimado",()->{try{
+   int period=integer(minutes);
+   LocalAuditPolicy.BoostPlan egg=LocalAuditPolicy.planBoost(period,integer(eggActive),integer(eggDuration),integer(eggStock));
+   LocalAuditPolicy.BoostPlan star=LocalAuditPolicy.planBoost(period,integer(starActive),integer(starDuration),integer(starStock));
+   result.setText(boostLine("Ovo da Sorte",egg)+"\n"+boostLine("Pedaço de Estrela",star)+"\nEstimativa com os dados informados; nenhum item foi usado.");
+  }catch(IllegalArgumentException invalid){result.setText("Confira as durações e o estoque informado.");}});
+  present(a,new AlertDialog.Builder(MapTheme.wrap(a)).setTitle("Planejamento de bônus").setView(scroll(a,b)).setPositiveButton("Fechar",null).create());
+ }
+ private static String boostLine(String name,LocalAuditPolicy.BoostPlan plan){
+  return name+": "+plan.needed+" item(ns) adicional(is)"+(plan.available<0?" • estoque desconhecido":" • faltam "+plan.shortfall);
  }
  static void berryPlan(Activity a){
   LinearLayout b=body(a);text(a,b,"Escolha até três frutas em ordem de preferência e informe o estoque que você verificou: -1 desconhecido, 0 indisponível. O painel não lê inventário nem usa frutas.");

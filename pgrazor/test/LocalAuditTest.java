@@ -251,6 +251,15 @@ public final class LocalAuditTest {
  check(LocalAuditPolicy.reviewTags(Collections.emptySet(),Collections.emptySet(),true)==LocalAuditPolicy.TagObservation.UNKNOWN);
  check(LocalAuditPolicy.reviewTags(Collections.singleton("A, B"),Collections.singleton("A"),true)==LocalAuditPolicy.TagObservation.NO_MATCH);
  try{LocalAuditPolicy.tagCatalog(String.join("\n",Collections.nCopies(201,"X")));throw new AssertionError();}catch(IllegalArgumentException expected){}
+ check(LocalAuditPolicy.planBoost(60,0,30,2).needed==2);
+ check(LocalAuditPolicy.planBoost(61,0,30,2).shortfall==1);
+ check(LocalAuditPolicy.planBoost(60,60,30,0).needed==0);
+ check(LocalAuditPolicy.planBoost(0,10,30,0).shortfall==0);
+ check(LocalAuditPolicy.planBoost(60,1,60,-1).shortfall==-1);
+ check(LocalAuditPolicy.planBoost(1440,0,1,0).needed==1440);
+ for(int[] values:new int[][]{{-1,0,30,0},{1441,0,30,0},{60,-1,30,0},{60,0,0,0},{60,0,30,-2}}){
+  try{LocalAuditPolicy.planBoost(values[0],values[1],values[2],values[3]);throw new AssertionError("invalid boost plan");}catch(IllegalArgumentException expected){}
+ }
  check(LocalAuditPolicy.reviewStock(new int[]{0,2,3}).index==1);
  check(LocalAuditPolicy.reviewStock(new int[]{-1,2}).earlierUnknown);
  check(LocalAuditPolicy.reviewStock(new int[]{0,-1}).index==-1&&LocalAuditPolicy.reviewStock(new int[]{0,-1}).earlierUnknown);
