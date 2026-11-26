@@ -41,7 +41,7 @@ final class UpdateChecker {
     static void checkAutomatically(Activity activity){
         if(!automaticEnabled(activity))return;
         MAIN.postDelayed(()->{
-            if(!visible(activity))return;
+            if(!visible(activity)||!automaticEnabled(activity))return;
             SharedPreferences p=prefs(activity);
             long now=System.currentTimeMillis(),last=p.getLong("last-check",0);
             if(last>0&&now>=last&&now-last<CHECK_INTERVAL)return;
@@ -71,7 +71,7 @@ final class UpdateChecker {
             final Release found=release;final String error=failure;
             RUNNING.set(false);
             MAIN.post(()->{
-                if(!visible(activity))return;
+                if(!visible(activity)||(automatic&&!automaticEnabled(activity)))return;
                 if(error!=null){if(!automatic)message(activity,error);return;}
                 if(!ReleaseCheckRules.newer(found.version,BuildVersion.NAME)){
                     if(!automatic)message(activity,"Você já está na versão mais recente publicada.\n\nInstalada: "+BuildVersion.NAME);

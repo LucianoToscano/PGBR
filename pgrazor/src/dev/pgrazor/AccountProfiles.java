@@ -71,7 +71,7 @@ final class AccountProfiles {
     static AccountProfileStore store(){return store;}
     static boolean canSwitch(){return store!=null&&available&&verified&&!switching&&!restarting&&!deleting&&!copyingAppearance;}
     static boolean canDelete(String id){return canSwitch()&&!startupId.equals(id)&&store.get(id)!=null;}
-    static boolean canResetSignIn(){return store!=null&&available&&!verified&&!switching&&!restarting&&!deleting;}
+    static boolean canResetSignIn(){return store!=null&&available&&!verified&&!switching&&!restarting&&!deleting&&!copyingAppearance;}
     static void resetSignIn(){
         if(!canResetSignIn())return;
         switching=true;commands.issue("reset-login:"+java.util.UUID.randomUUID());message="Restoring sign-in choices...";
