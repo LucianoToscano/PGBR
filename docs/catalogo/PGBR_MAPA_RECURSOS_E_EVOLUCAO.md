@@ -255,3 +255,5 @@ O catálogo amplo acima segue aberto; os itens seguintes são fatias implementá
 - **SYS-01/DATA-04 (GPX + Locais):** frases com contagem deixaram de ser montadas em português no Java; 1604 chaves sincronizadas nas duas UIs.
 - **SYS-05 (harness JVM):** espelho de `org.json` alinhado ao Android para `JSONObject.NULL`, encerrando a falha antiga de validação de backup com nome/id nulos.
 - Limites: `device_tested=false`, `provider_connected=false`, sem APK LT049.
+
+- **Reconciliação final (26/11/2026 UTC):** branch `arena/64947e58-pgbr` reconciliada com a main `3447401` sem force push, preservando os registros das três IAs; CI 5/5 verde no HEAD final; 591 testes locais com apenas o erro ambiental do dexlib2.

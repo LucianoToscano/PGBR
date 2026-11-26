@@ -87,7 +87,7 @@ public final class HotspotsDialog {
 
     public static void showQuick(Activity activity,Action teleport,Action walk) {
         show(activity,spot->{
-            AlertDialog actions=new AlertDialog.Builder(MapTheme.wrap(activity)).setTitle(dev.pgrazor.PtBr.tr(spot.name))
+            AlertDialog actions=new AlertDialog.Builder(MapTheme.wrap(activity)).setTitle(spot.name)
                 .setMessage(dev.pgrazor.PtBr.tr(spot.city+", "+spot.country+String.format(Locale.US,"\n%.6f, %.6f",spot.latitude,spot.longitude)))
                 .setNegativeButton(dev.pgrazor.PtBr.tr("Cancel"),null).setNeutralButton(dev.pgrazor.PtBr.tr("Walk"),null).setPositiveButton(dev.pgrazor.PtBr.tr("Teleport"),null).create();
             DialogLifecycle.bind(activity,actions,null);

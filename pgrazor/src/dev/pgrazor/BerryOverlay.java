@@ -27,7 +27,11 @@ final class BerryOverlay extends View {
         boolean visible=Control.encounterBerryVisible();setVisibility(visible?VISIBLE:GONE);
         if(!visible)picker.close();
         int id=Control.autoBerrySelected();
-        setContentDescription("Catch berry: "+NAMES[index(id)]+(id==0?"":", "+Control.berryCount(id)+" available")+". Tap to choose berry priorities.");
+        // TalkBack reads this: build it from translated fragments and the name owned by the ID, so a
+        // berry can never be announced with another berry's name.
+        setContentDescription(dev.pgrazor.PtBr.tr("Catch berry: ")+BerryPriorityPicker.display(index(id))
+            +(id==0?"":", "+Control.berryCount(id)+" "+dev.pgrazor.PtBr.tr("available"))
+            +". "+dev.pgrazor.PtBr.tr("Tap to choose berry priorities."));
         setEnabled(!Control.encounterBerryBusy());invalidate();picker.refresh();
     }
     void close(){picker.close();}
