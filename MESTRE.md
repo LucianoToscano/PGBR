@@ -401,3 +401,10 @@ No HEAD `364d567`, o job GitHub `Suite real check.py + compilacao Java + Root` f
 PR #319 HEAD code `ce312b37` permanece aberta. CI do PR `45744289804` passou 6/6, incluindo `check.py`, compilação do app Java e Root (4m19s); governança `45744289838` e PT-BR `45744289872` também passaram. Falha histórica no head `364d567` foi corrigida ao incluir `MapPoiFreshness.java` no harness. Commit subsequente `b2f6b3c8` é documentação/merge only; não confundir CI verde anterior com validação física. `device_tested=false`.
 
 Reconciliação candidata MAP-01 #319; CI atual obrigatório, device_tested=false.
+
+
+## LT049 — atualização obrigatória para 0.439.0
+- #314 integrada no merge 2357ae1d74b7fdad200fb695d55978d395954a83, CI 45735208617/45735208658 aprovado.
+- Proprietário determinou LT049 sobre 0.439.0, não 0.437.0. Receita #315 atualizada: gate de identidade 0.439.0 antes de recuperar o original e assinatura, sem fallback; verificação apksigner antes da compilação. Perfil ativo ainda 0.437.0 até validação da migração. Original íntegro e hashes internos correspondem ao upstream; 537 entradas comuns alteradas e 25 específicas PGBR ausentes no upstream. Compatibilidade e arquivo no draft privado ainda não confirmados. Sem build ou publicação.
+
+Reconciliação QA LT049 #315: receita 0.439.0 separada, gates de assinatura e identidade obrigatórios; perfil ativo anterior preservado. Sem APK gerado nem teste físico.
