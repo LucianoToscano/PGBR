@@ -513,3 +513,17 @@ Checkpoint imutável do APK QA: `403150f8a402e7101840fafcf7772bf946290c77`. #349
 | ZIP do artefato | c0dc67e5070fb3a8faf6461af43dbe0dd89519aea6a39ac42cbab8a7fb5d1451 |
 
 QA concluída, não release publicada; device_tested=false; provider_connected=false. Os registros anteriores de bloqueio são históricos, não estado atual. Próximo ciclo LT050: despacho das três IAs na issue #320 comentário 7183816749. #351 recupera 17 arquivos offline da #328 sem sobrescrever código compartilhado, CI e auditoria pendentes; #328 preservada. Reservas Gemini G-050-01, Arena A-050-01, GPT C-050-01, sem duplicar G-049-10/A-049-02. Não modificar o artefato LT049 nem afirmar teste físico. Entregas externas dependem de recibos reais.
+
+
+## 26/11/2026 — LT049 R2 QA concluída e avanço Gemini
+
+R2 compilada no commit e1c19a420a14d83fafe23085f93179ce187b2022 (#355, CI 2/2). [Run 45771185121](https://github.com/LucianoToscano/PGBR/actions/runs/45771185121), 4/4 jobs aprovados. [Artefato R2 15094218270](https://github.com/LucianoToscano/PGBR/actions/runs/45771185121/artifacts/15094218270), 204658288 bytes, expira em 26/12/2026. Hashes lidos do job 139744155822:
+
+| Arquivo | SHA-256 |
+|---|---|
+| PGBR-v0.00.49-LT.apk | a705f220589017fe2134c42b9fc3242e04311e8b365b41c8c4407a5a4ec2ad3b |
+| PGBR-v0.00.49-LT-Root.apk | 01fc180c60a92ba92f8f6ebfb3eb699430b224878d693ab1f33645ef89601719 |
+| PGBR-v0.00.49-LT-Root-module.zip | 19d5d84f9d693f400b046e68e9a9adb9cf2c9bf7088214725b82680335a4f0c1 |
+| ZIP do artefato | 44b8b0aca2305499624874aa0b9b93dd4d9d56b64e1fcb223c1cc05f93bad357 |
+
+QA privada; preserva artefato anterior. device_tested=false; provider_connected=false; recuperação dos carregados não confirmada no aparelho. #356 Auto Rocket ainda rascunho e não integra R2. Imagens de itens não substituídas. #351 integrada com CI 2/2 em 4ea5bbf6f91d10bd8f33b1e2b5dead37c1c44ae0; 17 arquivos offline e ajuste CI. Patches Gemini 0015, 0016, 0017 com SHA256 conferido e blobs verificados, PRs #357, #359, #358 respectivamente, ainda sujeitos ao CI e revisão. Despacho G-050-03 na issue #320 comentário 7185126944. Nenhuma afirmação de UI Android integrada nem nova build LT050.
