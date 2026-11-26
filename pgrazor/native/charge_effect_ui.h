@@ -1,5 +1,5 @@
 #pragma once
-// Optional version-specific VNext charged-display classifier (0.437.0).
+// Optional VNext charged-display classifier; legacy names or unique typed fields.
 // Resolves fields and enum literals by exact runtime metadata, never by guessed offsets.
 // Only observations produced AFTER ObserveBattleState can be used. A state token is
 // a short-lived display-update batch hint, NOT a verified opponent identifier.
@@ -73,7 +73,13 @@ inline bool type_named(const PgrMetaExports &m,const void *type,const char *expe
   return match;
 }
 
-inline bool resolve(const PgrBootBinding &boot,const void *display_class,Binding &out) {
+// Optional field enumeration is used only if the historical field names no
+// longer resolve. Accept an exact declaring class, instance field, Int32 enum
+// and a unique semantic enum-literal signature. Ambiguity fails closed.
+using FieldIterator = const void *(*)(const void *, void **);
+
+inline bool resolve(const PgrBootBinding &boot,const void *display_class,Binding &out,
+                    FieldIterator enumerate=nullptr) {
   out={};
   const auto &m=boot.meta;
   if(!display_class||boot.status!=PGR_BOOT_OK||
@@ -89,33 +95,66 @@ inline bool resolve(const PgrBootBinding &boot,const void *display_class,Binding
   auto is_enum=reinterpret_cast<bool (*)(const void *)>(m.class_is_enum);
   auto enum_base=reinterpret_cast<const void *(*)(const void *)>(m.class_enum_basetype);
   auto static_get=reinterpret_cast<void (*)(const void *,void *)>(boot.runtime.field_static_get_value);
-  const void *slot=find(display_class,"ervu");
-  const void *tier=find(display_class,"erwh");
+  auto instance=[&](const void *f)->bool{
+    return f&&parent(f)==display_class&&!(flags(f)&0x50);
+  };
   const void *show=find(display_class,"showEffectiveness");
-  if(!slot||!tier||!show||parent(slot)!=display_class||
-     parent(tier)!=display_class||parent(show)!=display_class||
-     (flags(slot)&0x50)||(flags(tier)&0x50)||(flags(show)&0x50)||
-     !type_named(m,field_type(show),"System.Boolean"))return false;
-  const void *slot_cls=from_type(field_type(slot));
-  const void *tier_cls=from_type(field_type(tier));
-  if(!slot_cls||!tier_cls||!is_enum(slot_cls)||!is_enum(tier_cls)||
-     !type_named(m,enum_base(slot_cls),"System.Int32")||
-     !type_named(m,enum_base(tier_cls),"System.Int32"))return false;
+  if(!instance(show)||!type_named(m,field_type(show),"System.Boolean"))return false;
   auto literal=[&](const void *cls,const char *name,int32_t &v)->bool{
     const void *f=find(cls,name);
     if(!f||parent(f)!=cls||(static_cast<uint32_t>(flags(f))&0x8050u)!=0x8050u)return false;
     static_get(f,&v);
     return true;
   };
-  if(!literal(slot_cls,"Charge",out.slot_first)||
-     !literal(slot_cls,"Charge2",out.slot_second)||
-     !literal(tier_cls,"Normal",out.tier_neutral)||
-     !literal(tier_cls,"SuperEffective",out.tier_super)||
-     !literal(tier_cls,"NotVeryEffective",out.tier_resisted)||
-     out.slot_first==out.slot_second||
-     out.tier_neutral==out.tier_super||out.tier_neutral==out.tier_resisted||
-     out.tier_super==out.tier_resisted)return false;
-  out.slot_field=slot;out.tier_field=tier;out.show_field=show;out.valid=true;
+  auto enum_class=[&](const void *f)->const void *{
+    if(!instance(f))return nullptr;
+    const void *type=field_type(f);
+    const void *cls=type?from_type(type):nullptr;
+    return cls&&is_enum(cls)&&type_named(m,enum_base(cls),"System.Int32")?cls:nullptr;
+  };
+  auto slot_match=[&](const void *f,Binding &v)->bool{
+    const void *cls=enum_class(f);
+    if(!cls||!literal(cls,"Charge",v.slot_first)||!literal(cls,"Charge2",v.slot_second)||
+       v.slot_first==v.slot_second)return false;
+    v.slot_field=f;return true;
+  };
+  auto tier_match=[&](const void *f,Binding &v)->bool{
+    const void *cls=enum_class(f);
+    if(!cls||!literal(cls,"Normal",v.tier_neutral)||
+       !literal(cls,"SuperEffective",v.tier_super)||
+       !literal(cls,"NotVeryEffective",v.tier_resisted)||
+       v.tier_neutral==v.tier_super||v.tier_neutral==v.tier_resisted||
+       v.tier_super==v.tier_resisted)return false;
+    v.tier_field=f;return true;
+  };
+  Binding candidate{};
+  // Preserve the previously verified 0.437.0 binding when still available.
+  if(!slot_match(find(display_class,"ervu"),candidate)||
+     !tier_match(find(display_class,"erwh"),candidate)||
+     candidate.slot_field==candidate.tier_field) {
+    if(!enumerate)return false;
+    candidate={};
+    void *iter=nullptr;
+    unsigned count=0;
+    while(const void *f=enumerate(display_class,&iter)) {
+      if(++count>256)return false;
+      Binding slot{},tier{};
+      const bool is_slot=slot_match(f,slot),is_tier=tier_match(f,tier);
+      if(is_slot&&is_tier)return false;
+      if(is_slot){
+        if(candidate.slot_field)return false;
+        candidate.slot_field=f;candidate.slot_first=slot.slot_first;candidate.slot_second=slot.slot_second;
+      }
+      if(is_tier){
+        if(candidate.tier_field)return false;
+        candidate.tier_field=f;candidate.tier_neutral=tier.tier_neutral;
+        candidate.tier_super=tier.tier_super;candidate.tier_resisted=tier.tier_resisted;
+      }
+    }
+    if(!candidate.slot_field||!candidate.tier_field||
+       candidate.slot_field==candidate.tier_field)return false;
+  }
+  candidate.show_field=show;candidate.valid=true;out=candidate;
   return true;
 }
 
