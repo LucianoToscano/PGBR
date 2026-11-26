@@ -31,6 +31,30 @@ class GpxJavaTests(unittest.TestCase):
         self.assertLess(export.index("GpxCodec.encode(route)"), export.index("openOutputStream(uri"))
         self.assertIn("out.write(encoded)", export)
 
+    def test_route_dialog_sentences_come_from_the_dictionary(self):
+        """Toda frase com contagem de paradas vem do dicionário único, não de plural inglês montado.
+
+        Antes, a lista de rotas salvas e o detalhe da rota montavam a frase em português dentro do
+        Java ("%d paradas"). Isso impedia reutilizar a mesma tela em outra língua e deixava a
+        contagem de uma parada errada em inglês. Agora a chave carrega o %d e o texto inteiro vem
+        do dicionário.
+        """
+        import json
+        dialog = (ROOT / "src/dev/pgrazor/GpxRouteDialog.java").read_text(encoding="utf-8")
+        entries = json.loads((ROOT / "i18n/pt-BR.json").read_text(encoding="utf-8"))["translations"]
+        for key in ("%s\n%d stops",
+                    "%d stops.\n\nUse this route loads it as a draft; Start it yourself afterwards.",
+                    "Selected route: “%s” (%d stops).",
+                    "Select a route before previewing.",
+                    "Route %d"):
+            with self.subTest(key=key):
+                self.assertIn(key, entries, "chave ausente do dicionário: " + key)
+                self.assertNotEqual(entries[key], key)
+        # A frase aparece no código apenas como chave (dentro de PtBr.tr), nunca já traduzida.
+        self.assertIn('PtBr.tr("%s\\n%d stops")', dialog)
+        self.assertIn('PtBr.tr("Selected route: “%s” (%d stops).")', dialog)
+        self.assertNotIn("%d paradas", dialog, "frase em português montada no Java")
+
     def test_codec_and_route(self):
         compiler, runtime = java_tools()
         with tempfile.TemporaryDirectory(prefix='pgrazor-gpx-codec-') as directory:
@@ -67,8 +91,11 @@ final class AccountProfiles {
             data = work / 'data'
             data.mkdir()
             classes = work / 'classes'
-            sources = [stub, profiles, ROOT / 'src/dev/pgrazor/GpxRoute.java', ROOT / 'src/dev/pgrazor/GpxCodec.java',
-                       ROOT / 'src/dev/pgrazor/GpxStore.java', ROOT / 'test/GpxStoreTest.java']
+            # The real PtBr is compiled with the store: the store's user-facing errors are translated
+            # through the same dictionary the rest of the UI uses, so the harness must not stub it.
+            sources = [stub, profiles, ROOT / 'src/dev/pgrazor/PtBr.java', ROOT / 'src/dev/pgrazor/GpxRoute.java',
+                       ROOT / 'src/dev/pgrazor/GpxCodec.java', ROOT / 'src/dev/pgrazor/GpxStore.java',
+                       ROOT / 'test/GpxStoreTest.java']
             compiled = subprocess.run([str(compiler), '-encoding', 'UTF-8', '-d', str(classes), *map(str, sources)],
                                       capture_output=True, text=True, timeout=30)
             self.assertEqual(compiled.returncode, 0, compiled.stdout + compiled.stderr)

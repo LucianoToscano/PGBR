@@ -144,7 +144,11 @@ final class Json {
     }
 
     private static String writeValue(Object value) {
-        if (value == null) return "null";
+        // JSONObject.NULL é um objeto marcador, não um texto. Sem esta checagem o stub gravava
+        // "null" ENTRE ASPAS e o JSON relido trazia a STRING "null"; no Android o campo volta
+        // como nulo de verdade. Era essa divergência que fazia um backup com name/id nulos
+        // parecer válido só no JVM (SettingsBackupRulesTest: "Accepted invalid backup").
+        if (value == null || value == JSONObject.NULL) return "null";
         if (value instanceof JSONObject) return value.toString();
         if (value instanceof JSONArray) return value.toString();
         if (value instanceof Boolean) return value.toString();

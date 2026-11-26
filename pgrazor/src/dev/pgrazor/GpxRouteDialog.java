@@ -82,7 +82,7 @@ public final class GpxRouteDialog {
     /** The World-map GPX menu: Save route, Import GPX, Saved routes, Export route. */
     public static void menu(Activity activity, Source source, Selection selection) {
         if (!alive(activity)) return;
-        String[] items = {"Save route", "Import GPX", "Saved routes", "Export route", "Prévia visual do GPX"};
+        String[] items = {dev.pgrazor.PtBr.tr("Save route"), dev.pgrazor.PtBr.tr("Import GPX"), dev.pgrazor.PtBr.tr("Saved routes"), dev.pgrazor.PtBr.tr("Export route"), dev.pgrazor.PtBr.tr("GPX visual preview")};
         AlertDialog dialog = ChoiceList.attach(new AlertDialog.Builder(MapTheme.wrap(activity)).setTitle(dev.pgrazor.PtBr.tr("GPX routes"))
             .setNegativeButton(dev.pgrazor.PtBr.tr("Close"), null).create(), items, which -> {
                 switch (which) {
@@ -90,7 +90,7 @@ public final class GpxRouteDialog {
                     case 1: importGpx(activity, "the route builder", selection); break;
                     case 2: chooseSaved(activity, selection); break;
                     case 3: exportRoute(activity, source); break;
-                    case 4: GpxRoute current=source==null?null:source.route();if(current==null)note(activity,"Selecione uma rota antes de visualizar.");else GpxPreviewView.show(activity,current);break;
+                    case 4: GpxRoute current=source==null?null:source.route();if(current==null)note(activity,"Select a route before previewing.");else GpxPreviewView.show(activity,current);break;
                 }
             });
         present(activity, dialog);
@@ -136,8 +136,9 @@ public final class GpxRouteDialog {
     private static void deliverImported(Activity activity, GpxRoute route, String where, Selection selection) {
         int count = route.points().length;
         selection.onRoute(route); // never auto-starts; only hands the route to the caller
-        note(activity, String.format(Locale.US, "Imported “%s” (%d %s). Ready in %s.",
-            route.name, count, count == 1 ? "stop" : "stops", where));
+        // The whole sentence is translated once, so a Portuguese UI never prints "1 stop" or "stops".
+        note(activity, String.format(Locale.forLanguageTag("pt-BR"), dev.pgrazor.PtBr.tr("Imported “%s” (%d %s). Ready in the route builder."),
+            route.name, count, count == 1 ? dev.pgrazor.PtBr.tr("stop") : dev.pgrazor.PtBr.tr("stops")));
     }
 
     // ---- export --------------------------------------------------------------------------
@@ -179,19 +180,19 @@ public final class GpxRouteDialog {
 
     private static void showList(Activity activity, List<GpxStore.Entry> entries, Selection selection) {
         AlertDialog.Builder builder = new AlertDialog.Builder(MapTheme.wrap(activity))
-            .setTitle(dev.pgrazor.PtBr.tr("Saved routes (" + entries.size() + ")")).setNegativeButton(dev.pgrazor.PtBr.tr("Close"), null);
+            .setTitle(String.format(Locale.forLanguageTag("pt-BR"), dev.pgrazor.PtBr.tr("Saved routes (%d)"), entries.size())).setNegativeButton(dev.pgrazor.PtBr.tr("Close"), null);
         if (entries.isEmpty()) { builder.setMessage(dev.pgrazor.PtBr.tr("No saved routes yet. Import a GPX file, or save a route you build on the map.")); present(activity, builder.create()); return; }
         String[] rows = new String[entries.size()];
         for (int i = 0; i < rows.length; i++) {
             GpxStore.Entry e = entries.get(i);
-            rows[i] = String.format(Locale.forLanguageTag("pt-BR"), "%s\n%d paradas", e.name, e.count);
+            rows[i] = String.format(Locale.forLanguageTag("pt-BR"), dev.pgrazor.PtBr.tr("%s\n%d stops"), e.name, e.count);
         }
         present(activity, ChoiceList.attach(builder.create(), rows, which -> showEntry(activity, entries.get(which), selection)));
     }
 
     static void showEntry(Activity activity, GpxStore.Entry entry, Selection selection) {
         AlertDialog dialog = new AlertDialog.Builder(MapTheme.wrap(activity)).setTitle(dev.pgrazor.PtBr.tr(entry.name))
-            .setMessage(dev.pgrazor.PtBr.tr(String.format(Locale.forLanguageTag("pt-BR"), "%d paradas.\n\nUsar esta rota carrega o trajeto como rascunho. Depois, toque em Iniciar para começar.", entry.count)))
+            .setMessage(String.format(Locale.forLanguageTag("pt-BR"), dev.pgrazor.PtBr.tr("%d stops.\n\nUse this route loads it as a draft; Start it yourself afterwards."), entry.count))
             .setNegativeButton(dev.pgrazor.PtBr.tr("Cancel"), null)
             .setPositiveButton(dev.pgrazor.PtBr.tr("Use this route"), null)
             .setNeutralButton(dev.pgrazor.PtBr.tr("Delete"), null).create();
@@ -220,7 +221,7 @@ public final class GpxRouteDialog {
                 }
                 selection.onRoute(result);
                 if (detail.isShowing()) detail.dismiss();
-                note(activity, String.format(Locale.forLanguageTag("pt-BR"), "Rota selecionada: “%s” (%d paradas).", result.name, result.points().length));
+                note(activity, String.format(Locale.forLanguageTag("pt-BR"), dev.pgrazor.PtBr.tr("Selected route: “%s” (%d stops)."), result.name, result.points().length));
             });
         });
     }
@@ -262,7 +263,7 @@ public final class GpxRouteDialog {
         int pad = MapTheme.dp(ui, 20);
         form.setPadding(pad, 0, pad, 0);
         int count = current.points().length;
-        form.addView(label(ui, count + (count == 1 ? " stop" : " stops") + " will be saved.", 14));
+        form.addView(label(ui, String.format(Locale.forLanguageTag("pt-BR"), dev.pgrazor.PtBr.tr("%d stops will be saved."), count), 14));
         EditText name = new EditText(ui);
         name.setHint(dev.pgrazor.PtBr.tr("Route name"));
         name.setSingleLine(true);
@@ -356,7 +357,7 @@ public final class GpxRouteDialog {
     }
 
     private static String title(String name, int index) {
-        return name == null || name.trim().isEmpty() ? "Route " + (index + 1) : name.trim();
+        return name == null || name.trim().isEmpty() ? String.format(Locale.US, dev.pgrazor.PtBr.tr("Route %d"), index + 1) : name.trim();
     }
 
     private static String message(Throwable e, String fallback) {

@@ -83,7 +83,7 @@ class PtBrGlossaryTests(unittest.TestCase):
             "BatchEvolutionSettings.java": 'PtBr.tr(message)',
             "GiftBatchSettings.java": 'PtBr.tr("Skipped ")',
             "MapPoiLayer.java": 'PtBr.tr(poiShortLabel(',
-            "GpxRouteDialog.java": '%d paradas',
+            "GpxRouteDialog.java": 'PtBr.tr("%s\\n%d stops")',
             "ResearchSettings.java": 'PtBr.tr(categoryName(category))',
             "CatchOutcomeController.java": 'Toast.makeText(screen,dev.pgrazor.PtBr.tr(message)',
             "TeleportDialog.java": 'PtBr.tr(warning(lat,lon))',

@@ -99,7 +99,7 @@ class SavedPlacesConcurrencyTests(unittest.TestCase):
             json=sdk_json_sources(work) or sorted(STUB_JSON.glob("*.java"))
             self.assertTrue(json,"org.json sources required")
             subprocess.run([str(compiler),"-encoding","UTF-8","-d",tmp,
-                *map(str,sources+json+[ROOT/"src/dev/pgrazor/SavedPlaces.java"])],check=True,timeout=45)
+                *map(str,sources+json+[ROOT/"src/dev/pgrazor/PtBr.java",ROOT/"src/dev/pgrazor/SavedPlaces.java"])],check=True,timeout=45)
             subprocess.run([str(runtime),"-cp",tmp,"dev.pgrazor.SavedPlacesRaceHarness"],check=True,timeout=60)
 if __name__=="__main__":
     unittest.main()

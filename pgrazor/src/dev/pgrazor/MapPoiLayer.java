@@ -255,8 +255,8 @@ final class MapPoiLayer {
         final boolean known=Control.locationKnown();final double lat=Control.currentLatitude(),lon=Control.currentLongitude();
         if(known)rows.sort(java.util.Comparator.comparingDouble(p->WorldMapDialog.distanceMeters(lat,lon,p.optDouble("lat"),p.optDouble("lon"))));
         int count=Math.min(200,rows.size());String[] labels=new String[count];for(int i=0;i<count;i++){JSONObject p=rows.get(i);String line=dev.pgrazor.PtBr.tr(poiShortLabel(p));int boss=p.optInt("boss",0);if(p.optLong("raidEnd")>now&&boss>0&&!p.optBoolean("egg")){String name=bossName(boss);line+=" • "+(name==null?"#"+boss:name);}if(known)line+=String.format(Locale.forLanguageTag("pt-BR")," • %.0f m",WorldMapDialog.distanceMeters(lat,lon,p.optDouble("lat"),p.optDouble("lon")));if(p.optLong("raidEnd")>now)line+=" • "+countdown(p.optLong("raidEnd")-now);labels[i]=line;}
-        AlertDialog.Builder b=new AlertDialog.Builder(dialogContext).setTitle("Recursos próximos ("+count+"/"+rows.size()+")").setNegativeButton("Fechar",null);
-        AlertDialog d=count==0?b.setMessage("Nenhum recurso disponível nas camadas selecionadas.").create():ChoiceList.attach(b.create(),labels,i->showPoiDetails(rows.get(i)));
+        AlertDialog.Builder b=new AlertDialog.Builder(dialogContext).setTitle(String.format(Locale.ROOT,dev.pgrazor.PtBr.tr("Nearby resources (%d/%d)"),count,rows.size())).setNegativeButton("Fechar",null);
+        AlertDialog d=count==0?b.setMessage(dev.pgrazor.PtBr.tr("No resource available in the selected layers.")).create():ChoiceList.attach(b.create(),labels,i->showPoiDetails(rows.get(i)));
         registerPoiDialog(d);d.show();
     }
     void openDetails(List<JSONObject> hits) {
@@ -270,7 +270,7 @@ final class MapPoiLayer {
     private String poiShortLabel(JSONObject point) {
         long now = System.currentTimeMillis();
         if (point.optLong("raidEnd") > now) { String tier = point.optString("tier", ""); return "Raid" + (tier.isEmpty() ? "" : " " + tier) + (point.optBoolean("egg") ? " (egg)" : ""); }
-        if ("stop".equals(point.optString("kind"))) { String rocket = rocketName(point, now); return rocket == null ? "PokéStop" : "PokéStop · Team GO Rocket " + rocket; }
+        if ("stop".equals(point.optString("kind"))) { String rocket = rocketName(point, now); return rocket == null ? dev.pgrazor.PtBr.tr("PokéStop") : dev.pgrazor.PtBr.tr("PokéStop") + " · Team GO Rocket " + rocket; }
         String team = point.optString("team", ""); return "Gym" + (team.isEmpty() ? "" : " (" + team + ")");
     }
     private void registerPoiDialog(AlertDialog dialog) {
@@ -330,35 +330,36 @@ final class MapPoiLayer {
         long now = System.currentTimeMillis();
         boolean stop = "stop".equals(p.optString("kind"));
         if (stop) {
-            sb.append("PokéStop loaded nearby by the game.\n");
+            sb.append(dev.pgrazor.PtBr.tr("PokéStop loaded nearby by the game.")).append('\n');
             String rocket = rocketName(p, now);
-            if (rocket != null) sb.append("\nTeam GO Rocket ").append(rocket).append(" — ends in ").append(countdown(p.optLong("incidentEnd") - now)).append('\n');
+            if (rocket != null) sb.append('\n').append(dev.pgrazor.PtBr.tr("Team GO Rocket ")).append(dev.pgrazor.PtBr.tr(rocket)).append(dev.pgrazor.PtBr.tr(" — ends in ")).append(countdown(p.optLong("incidentEnd") - now)).append('\n');
         }
         else {
             String team = p.optString("team", "");
-            sb.append("Team: ").append(team.isEmpty() ? "Unknown" : team).append('\n');
+            sb.append(dev.pgrazor.PtBr.tr("Team: ")).append(team.isEmpty() ? dev.pgrazor.PtBr.tr("Unknown") : team).append('\n');
             // Six defenders per gym: official Pokemon GO Help Center, Battling at Gyms (verified 2026-10-21).
             int slots = p.optInt("slots", -1);
-            if (slots >= 0 && slots <= 6) sb.append("Defenders: ").append(6 - slots).append("/6 (" + slots + " slots open)\n");
-            else sb.append("Defenders: unavailable\n");
+            if (slots >= 0 && slots <= 6)
+                sb.append(String.format(Locale.ROOT, dev.pgrazor.PtBr.tr("Defenders: %d/6 (%d slots open)"), 6 - slots, slots)).append('\n');
+            else sb.append(dev.pgrazor.PtBr.tr("Defenders: unavailable")).append('\n');
         }
         if (p.optLong("raidEnd") > now) {
             sb.append('\n'); boolean egg = p.optBoolean("egg"); String tier = p.optString("tier", "");
-            sb.append("Raid tier: ").append(tier.isEmpty() ? "Unknown" : tier.replace("_", " ").replaceAll("([0-9])([A-Za-z])", "$1 $2").trim()).append('\n');
+            sb.append(dev.pgrazor.PtBr.tr("Raid tier: ")).append(tier.isEmpty() ? dev.pgrazor.PtBr.tr("Unknown") : tier.replace("_", " ").replaceAll("([0-9])([A-Za-z])", "$1 $2").trim()).append('\n');
             if (egg) {
                 long start = p.optLong("raidStart", 0);
-                sb.append("Egg — boss not yet revealed");
-                if (start > now) sb.append("; hatches in ").append(countdown(start - now));
+                sb.append(dev.pgrazor.PtBr.tr("Egg — boss not yet revealed"));
+                if (start > now) sb.append(dev.pgrazor.PtBr.tr("; hatches in ")).append(countdown(start - now));
                 sb.append('\n');
             } else {
                 int boss = p.optInt("boss", 0);
                 String name = boss > 0 ? bossName(boss) : null; // base species only; forms (e.g. Mega X/Y) not inferred
-                sb.append("Boss: ").append(boss > 0 ? (name != null ? name : ("#" + boss)) : "unknown").append('\n');
+                sb.append(dev.pgrazor.PtBr.tr("Boss: ")).append(boss > 0 ? (name != null ? name : ("#" + boss)) : dev.pgrazor.PtBr.tr("unknown")).append('\n');
             }
-            long end = p.optLong("raidEnd", 0); if (end > now) sb.append("Ends in ").append(countdown(end - now)).append('\n');
+            long end = p.optLong("raidEnd", 0); if (end > now) sb.append(dev.pgrazor.PtBr.tr("Ends in ")).append(countdown(end - now)).append('\n');
         }
-        if (p.optLong("raidEnd") > 0 && p.optLong("raidEnd") <= now) sb.append("\nRaid ended.\n");
-        if (gone) sb.insert(0, "Last known data - no fresh nearby snapshot.\n\n");
+        if (p.optLong("raidEnd") > 0 && p.optLong("raidEnd") <= now) sb.append('\n').append(dev.pgrazor.PtBr.tr("Raid ended.")).append('\n');
+        if (gone) sb.insert(0, dev.pgrazor.PtBr.tr("Last known data - no fresh nearby snapshot.")+"\n\n");
         return sb.toString().trim();
     }
     /** "Grunt", "Leader" or "Giovanni" for a stop with an unexpired Team GO Rocket invasion, else null.

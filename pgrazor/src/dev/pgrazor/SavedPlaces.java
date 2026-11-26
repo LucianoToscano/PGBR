@@ -88,8 +88,8 @@ public final class SavedPlaces {
 
     public void add(Entry entry) throws IOException { synchronized (LOCK) {
         List<Entry> entries = new ArrayList<>(read().entries);
-        if (entries.size() >= LIMIT) throw new IllegalArgumentException("Você atingiu o limite de 200 favoritos. Exclua um antes de adicionar outro.");
-        for (Entry existing : entries) if (nameKey(existing.name).equalsIgnoreCase(nameKey(entry.name))) throw new IllegalArgumentException("A place with this name already exists. Choose another name.");
+        if (entries.size() >= LIMIT) throw new IllegalArgumentException(String.format(java.util.Locale.ROOT, "Você atingiu o limite de %d favoritos. Exclua um antes de adicionar outro.", LIMIT));
+        for (Entry existing : entries) if (nameKey(existing.name).equalsIgnoreCase(nameKey(entry.name))) throw new IllegalArgumentException(dev.pgrazor.PtBr.tr("A place with this name already exists. Choose another name."));
         entries.add(entry);
         write(entries);
     } }
@@ -97,25 +97,25 @@ public final class SavedPlaces {
     /** Import an all-or-nothing list, retaining existing entries and skipping repeated names (distinct labels may share a location). */
     int merge(List<Entry> additions) throws IOException { synchronized (LOCK) {
         Snapshot snapshot=read();
-        if(snapshot.damaged)throw new IOException("Existing favorites are damaged.");
+        if(snapshot.damaged)throw new IOException(dev.pgrazor.PtBr.tr("Existing favorites are damaged."));
         List<Entry> merged=new ArrayList<>(snapshot.entries);
         Set<String> names=new java.util.TreeSet<>(String.CASE_INSENSITIVE_ORDER);
         for(Entry e:merged)names.add(nameKey(e.name));
         int added=0;
         for(Entry e:additions) {
-            if(e==null)throw new IOException("Invalid imported favorite");
+            if(e==null)throw new IOException(dev.pgrazor.PtBr.tr("Invalid imported favorite"));
             String n=nameKey(e.name);
             if(names.contains(n))continue;
             merged.add(e);names.add(n);added++;
         }
-        if(merged.size()>LIMIT)throw new IOException("Too many saved places");
+        if(merged.size()>LIMIT)throw new IOException(dev.pgrazor.PtBr.tr("Too many saved places"));
         if(added>0)write(merged);
         return added;
     } }
 
     /** Roll back an importer without deleting favorites that existed before the import. */
     void restoreSnapshot(Snapshot snapshot) throws IOException { synchronized (LOCK) {
-        if(snapshot==null||snapshot.damaged)throw new IOException("Invalid favorites rollback");
+        if(snapshot==null||snapshot.damaged)throw new IOException(dev.pgrazor.PtBr.tr("Invalid favorites rollback"));
         write(new ArrayList<>(snapshot.entries));
     } }
 
@@ -160,9 +160,9 @@ public final class SavedPlaces {
                 object.put("category",entry.category);object.put("createdAtMs",entry.createdAtMs);
                 array.put(object);
             }
-        } catch (JSONException e) { throw new IOException("Could not encode saved places.", e); }
+        } catch (JSONException e) { throw new IOException(dev.pgrazor.PtBr.tr("Could not encode saved places."), e); }
         String encoded = array.toString();
-        if (encoded.length() > JSON_LIMIT) throw new IOException("Saved places exceed the storage limit.");
+        if (encoded.length() > JSON_LIMIT) throw new IOException(dev.pgrazor.PtBr.tr("Saved places exceed the storage limit."));
         SharedPreferences.Editor editor = preferences.edit();
         // Preserve one bounded copy of a damaged document before replacing it with salvaged valid entries.
         if (read().damaged) {
@@ -175,6 +175,6 @@ public final class SavedPlaces {
                 throw new IOException("Locais danificados: tipo inválido; original preservado.", invalidType);
             }
         }
-        if (!editor.putString("places", encoded).commit()) throw new IOException("Could not save places to device storage. Please retry.");
+        if (!editor.putString("places", encoded).commit()) throw new IOException(dev.pgrazor.PtBr.tr("Could not save places to device storage. Please retry."));
     }
 }

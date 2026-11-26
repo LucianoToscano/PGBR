@@ -240,3 +240,18 @@ O catálogo amplo acima segue aberto; os itens seguintes são fatias implementá
 |---|---|---|---|---|
 | MAP-01-KBD — acessibilidade World Map | Implementado, PR #319 aberta (`arena/1be548a6-pgbr`, merge-base `2f559ef912213fd82ffe785409fa09b0b863fbad`, incluindo #317/#318/#322 da main) | Foco de teclado; setas movem viewport; Enter/DPAD_CENTER define apenas seleção/preview, sem chamada de movimento; PT-BR sincronizado | 3 contratos de teclado e suíte focada local: 25 passaram, 5 JDK-dependent skipped. CI PR code `45744289804` passou 6/6, incluindo `check.py` e compilações Java/Root; governance `45744289838`, translate `45744289872` passaram | Aguardar review; Android/TalkBack com hardware permitido continua separado (`device_tested=false`) |
 | MAP-01-POI-FRESH — transparência de idade do snapshot | Implementado no mesmo PR #319, HEAD code `ce312b37` | Snapshot com age monotônico; pontos omitidos após 10 s; UI distingue feed expirado de ausência inicial; sem inferência ou fonte nova | Nesta fatia: 21 testes passaram, 5 JDK-dependent skipped; contrato/JSON/diff-check passaram. CI code `45744289804` incluiu execução Java/Root verde; compilação local indisponível | Testar estado vazio→carregado→expirado→renovado em build autorizado e TalkBack; sem alegar validação física |
+
+## 10. Atualização 26/11/2026 UTC — LT049 / A-049-01 (LMArena)
+
+- **MAP-02 (Locais e Favoritos):** política de filtro e ordenação unificada em `SavedPlaceOrder` e usada pelas duas superfícies (biblioteca "Locais" do Mapa Mundial e lista rápida "Favoritos"). Antes cada tela tinha seu próprio comparador, mostrando a mesma coleção em ordens diferentes. Cobertura: busca com dobra de acentos, união de categorias, 8 ordenações, valores não medidos por último, ordem total com desempate por nome e id.
+- **MAP-03 (GPX):** exclusão de rota disponível na aba "Rotas" da biblioteca, com confirmação, execução fora da UI thread e erro traduzido; nenhuma ação de movimento associada.
+- **SYS-01/DATA-04 (PT-BR):** 52 chaves novas/ajustadas sincronizadas nas duas UIs (1600 entradas cada); frases montadas em inglês das telas de Locais/GPX substituídas por chave única com `%d`.
+- **Acessibilidade:** alvos de toque dos ícones da biblioteca em 48dp.
+- Sem alteração de privacidade, V5, runtime ou contratos nativos. `device_tested=false`; `provider_connected=false`.
+
+### Atualização 26/11/2026 UTC — A-049-01 (continuação)
+
+- **MAP-04 (Mapa Mundial):** limites de zoom/pan consolidados em `MapOptics`, com o nível 0 (mundo inteiro) tratado como caso próprio e teste JVM executando a aritmética real.
+- **SYS-01/DATA-04 (GPX + Locais):** frases com contagem deixaram de ser montadas em português no Java; 1604 chaves sincronizadas nas duas UIs.
+- **SYS-05 (harness JVM):** espelho de `org.json` alinhado ao Android para `JSONObject.NULL`, encerrando a falha antiga de validação de backup com nome/id nulos.
+- Limites: `device_tested=false`, `provider_connected=false`, sem APK LT049.
