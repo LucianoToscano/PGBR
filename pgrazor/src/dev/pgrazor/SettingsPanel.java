@@ -371,6 +371,20 @@ final class SettingsPanel {
         sessionStatsToggle.setOnClickListener(v->{
             sessionStats24h=!sessionStats24h;refreshSessionStats();
         });
+        Button copyStats=button("Copiar resumo da sessão");sessionCard.addView(copyStats);
+        copyStats.setOnClickListener(v->{
+            long window=sessionStats24h?SessionStatsHistory.DAY_MS:SessionStatsHistory.HOUR_MS;
+            String summary=SessionStatsPresentation.exportSummary(SessionStats.change(window),window);
+            if(summary==null){
+                android.widget.Toast.makeText(activity,"Ainda não há dados suficientes.",android.widget.Toast.LENGTH_SHORT).show();return;
+            }
+            android.content.ClipboardManager clipboard=(android.content.ClipboardManager)
+                activity.getSystemService(android.content.Context.CLIPBOARD_SERVICE);
+            if(clipboard!=null){
+                clipboard.setPrimaryClip(android.content.ClipData.newPlainText("PGBR — Estatísticas locais",summary));
+                android.widget.Toast.makeText(activity,"Resumo sem identificação da conta copiado.",android.widget.Toast.LENGTH_SHORT).show();
+            }
+        });
         LinearLayout.LayoutParams cardParams=new LinearLayout.LayoutParams(-1,-2);
         cardParams.bottomMargin=dp(10);home.addView(sessionCard,cardParams);
         settingsSearch = new EditText(activity);
@@ -1499,16 +1513,7 @@ final class SettingsPanel {
             sessionStatsSummary.setText("Aguardando estatísticas do jogo…");
             return;
         }
-        java.util.Locale pt=new java.util.Locale("pt","BR");
-        sessionStatsSummary.setText(String.format(pt,
-            "XP +%,d · Poeira +%,d\nCapturas %,d · Encontros %,d\nPoképaradas %,d · Caminhada %.2f km · Ovos %,d",
-            Math.round(changes.get(SessionStatsHistory.XP)),
-            Math.round(changes.get(SessionStatsHistory.DUST)),
-            Math.round(changes.get(SessionStatsHistory.CAUGHT)),
-            Math.round(changes.get(SessionStatsHistory.SEEN)),
-            Math.round(changes.get(SessionStatsHistory.STOPS)),
-            changes.get(SessionStatsHistory.KM),
-            Math.round(changes.get(SessionStatsHistory.HATCHED))));
+        sessionStatsSummary.setText(SessionStatsPresentation.describe(changes,window));
     }
     private void refreshHome(){
         if(current>=0)return;
