@@ -5,16 +5,16 @@ import unittest
 ROOT = Path(__file__).resolve().parents[2]
 
 class Lt049QaContract(unittest.TestCase):
-    def test_manual_qa_only(self):
+    def test_qa_only_after_manual_dispatch_or_profile_selection_on_main(self):
         workflow = (ROOT / ".github/workflows/pgbr-lt049-qa.yml").read_text(encoding="utf-8")
-        for term in ("workflow_dispatch:", "PGRAZOR_VERSION: v0.00.49-LT",
+        for term in ("workflow_dispatch:", "  push:", "branches: [main]", "\u0027pgrazor/native/schema/game/current.json\u0027", "needs: approved-profile", "PGRAZOR_VERSION: v0.00.49-LT",
                      "github.ref == 'refs/heads/main'", "tools/lt049_pinned_input.py --check-profile",
                      "PGBR-v0.00.49-LT.apk", "PGBR-v0.00.49-LT-Root.apk",
                      "PGBR-v0.00.49-LT-Root-module.zip", "SHA256SUMS.txt",
                      "tools/verify_release.py dist/pgbr-lt049 --tag v0.00.49-LT",
                      "tools/lt049_pinned_input.py", "tools/check.py", "--apksigner"):
             self.assertIn(term, workflow)
-        for term in ("  push:", "  pull_request:", "gh release create", "gh release upload"):
+        for term in ("  pull_request:", "  pull_request_target:", "gh release create", "gh release upload"):
             self.assertNotIn(term, workflow)
 
     def test_historical_recipe_preserved(self):
@@ -39,7 +39,7 @@ class Lt049QaContract(unittest.TestCase):
 
     def test_signed_manifest_gate_before_build(self):
         workflow = (ROOT / '.github/workflows/pgbr-lt049-qa.yml').read_text(encoding='utf-8')
-        gate = 'tools/verify_candidate_input.py pgrazor/input/game.apkm --require-signatures --apksigner $signer --apkanalyzer $analyzer'
+        gate = 'tools/verify_candidate_input.py pgrazor/input/game.apkm --require-signatures --require-manifest-identity --apksigner $signer --apkanalyzer $analyzer'
         self.assertIn(gate, workflow)
         self.assertIn("'cmdline-tools/latest/bin/apkanalyzer.bat'", workflow)
         self.assertLess(workflow.index(gate), workflow.index('run: python -B pgrazor/nonroot.py'))
