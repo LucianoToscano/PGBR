@@ -204,6 +204,8 @@ def main():
         note("AUTO DEV " + row["id"] + ": " + state + "; SHA256 " + digest +
              "; run " + run + " attempt " + attempt +
              ". Proposta não aplicada. Sem retry automático ou fallback pago.")
+        if state != "proposal":
+            raise SystemExit(f"Gemini dispatch {row['id']}: {state}")
     print("Dispatched:", len(selected))
 
 
