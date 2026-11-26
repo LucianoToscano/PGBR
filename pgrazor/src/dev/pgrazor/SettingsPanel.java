@@ -78,6 +78,7 @@ final class SettingsPanel {
     private Button autoBallTarget, berryPriority;
     private Button vgpIconStyleButton, vgpStartStopButton, joystickStyleButton, eternatusIntensityButton, eternatusSpeedButton;
     private BerryPriorityPicker berryPicker;
+    private Switch catchPreviewSwitch;
     private TextView quickSummaryLabel, vgpStatus, cutsceneStatus, healStatus, smartBattleStatus,
         smartAttackNativeStatus;
     private Switch healSwitch, healReviveSwitch, smartBattleSwitch, smartAttackSwitch, gymRepeatSwitch;
@@ -772,6 +773,12 @@ final class SettingsPanel {
         quickSummarySwitch.setChecked(Control.quickSummaryEnabled());
         quickSummarySwitch.setOnCheckedChangeListener((v,checked) -> { if(checked==Control.quickSummaryEnabled())return; Control.setQuickSummaryEnabled(quickSummarySwitch.isChecked()); host.refresh(); });
         quickSummaryStatus = caption(quick, "");
+
+        LinearLayout preview=group(page,"Prévia de captura");
+        catchPreviewSwitch=switchRow(preview,"Mostrar resultado da captura");
+        catchPreviewSwitch.setChecked(Control.catchPreviewShown());
+        catchPreviewSwitch.setOnCheckedChangeListener((v,on)->{if(on!=Control.catchPreviewShown())Control.setCatchPreviewShown(on);});
+        caption(preview,"Exibe os resultados confirmados disponíveis: capturado, escapou ou fugiu. Não altera o Quick Catch nem a captura.");
 
         // ----- Throws, ball choice and auto throw (gated by ball-animation support) -----
         LinearLayout throwC = group(page, "Throws"); ballGated.add((View)throwC.getParent());
@@ -1848,6 +1855,7 @@ final class SettingsPanel {
         quickSummaryLabel.setText(dev.pgrazor.PtBr.tr(Control.quickSummaryAutoDismiss() ? "Quick catch" : "Faster catch summary"));
         quickSummarySwitch.setChecked(Control.quickSummaryEnabled());
         quickSummarySwitch.setEnabled(Control.quickSummaryConfigured());
+        catchPreviewSwitch.setChecked(Control.catchPreviewShown());
         quickBallStatus.setText(dev.pgrazor.PtBr.tr(Control.quickBallStatus()));
     }
 

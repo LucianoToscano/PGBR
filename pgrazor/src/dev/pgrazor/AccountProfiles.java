@@ -20,7 +20,7 @@ final class AccountProfiles {
     private static AccountProfileStore store;
     private static final java.util.Set<SharedPreferences> openPreferences=java.util.Collections.newSetFromMap(new java.util.concurrent.ConcurrentHashMap<SharedPreferences,Boolean>());
     private static String startupId = "default";
-    private static volatile boolean initialized, verified, available, switching, restarting, deleting;
+    private static volatile boolean initialized, verified, available, switching, restarting, deleting, copyingAppearance;
     // Whether the game has reported account-switch support yet, and whether the "storage missing"
     // reason has already been logged this episode, so prerequisite diagnostics stay bounded.
     private static volatile boolean supportKnown, storageMissingNoted;
@@ -69,7 +69,7 @@ final class AccountProfiles {
     static String currentId(){return startupId;}
     static boolean matchesAutomationIdentity(String id){return verified&&!switching&&!restarting&&id!=null&&id.equals(observed);}
     static AccountProfileStore store(){return store;}
-    static boolean canSwitch(){return store!=null&&available&&verified&&!switching&&!restarting&&!deleting;}
+    static boolean canSwitch(){return store!=null&&available&&verified&&!switching&&!restarting&&!deleting&&!copyingAppearance;}
     static boolean canDelete(String id){return canSwitch()&&!startupId.equals(id)&&store.get(id)!=null;}
     static boolean canResetSignIn(){return store!=null&&available&&!verified&&!switching&&!restarting&&!deleting;}
     static void resetSignIn(){
@@ -188,6 +188,44 @@ final class AccountProfiles {
         io.execute(()->{
             try{AccountProfileStore.Profile profile=store.add(label);main.post(()->switchTo(activity,profile.id));}
             catch(Exception error){main.post(()->{message="Could not add account";diag("account-command","add account failed");});}
+        });
+    }
+    /** One-way, explicit visual preset copy. Source and private per-account state stay untouched. */
+    static void copyAppearance(Activity activity,String sourceId,java.util.function.Consumer<String> completed){
+        if(!canSwitch()||startupId.equals(sourceId)||store.get(sourceId)==null){
+            completed.accept("Conta de origem indisponível.");return;
+        }
+        copyingAppearance=true;
+        final long epoch=generation;
+        final String destination=startupId;
+        io.execute(()->{
+            java.util.Properties source=new java.util.Properties();
+            try(java.io.InputStream in=new android.util.AtomicFile(store.dataFile(sourceId,"pgrazor-settings-v1.properties")).openRead()){
+                java.io.ByteArrayOutputStream bytes=new java.io.ByteArrayOutputStream();
+                byte[] block=new byte[4096];
+                for(int n;(n=in.read(block))!=-1;){
+                    if(bytes.size()+n>256*1024)throw new IOException("Limite excedido");
+                    bytes.write(block,0,n);
+                }
+                source.load(new java.io.ByteArrayInputStream(bytes.toByteArray()));
+            }catch(Exception error){main.post(()->{copyingAppearance=false;completed.accept("Não foi possível ler a aparência salva.");});return;}
+            main.post(()->{
+                if(epoch!=generation||!destination.equals(startupId)||switching||restarting||deleting||!verified||
+                    activity.isFinishing()||activity.isDestroyed()){
+                    copyingAppearance=false;completed.accept("Cópia cancelada: a sessão mudou.");return;
+                }
+                final int copied;
+                try{copied=Control.copyAccountAppearance(source);}
+                catch(RuntimeException invalid){copyingAppearance=false;completed.accept("Configurações indisponíveis.");return;}
+                if(copied==0){copyingAppearance=false;completed.accept("Nenhuma preferência de aparência válida encontrada.");return;}
+                io.execute(()->{
+                    String result;
+                    try{Control.flushSettings(2500);result="Aparência copiada ("+copied+" preferências). Reabra o aplicativo para atualizar toda a interface.";}
+                    catch(IOException failed){result="Cópia aplicada na memória, mas não foi possível confirmar a gravação.";}
+                    final String message=result;
+                    main.post(()->{copyingAppearance=false;completed.accept(message);});
+                });
+            });
         });
     }
     static void rename(String id,String label,Runnable updated){io.execute(()->{

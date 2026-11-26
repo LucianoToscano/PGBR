@@ -19,6 +19,11 @@ public interface SharedPreferences {Editor edit(); interface Editor {boolean com
     'android/app/Activity.java': '''package android.app; public class Activity extends android.content.Context {
 public boolean finishing,destroyed; public boolean isFinishing(){return finishing;}
 public boolean isDestroyed(){return destroyed;}}''',
+    'android/util/AtomicFile.java': '''package android.util;
+public class AtomicFile {
+private final java.io.File file; public AtomicFile(java.io.File f){file=f;}
+public java.io.FileInputStream openRead() throws java.io.FileNotFoundException{return new java.io.FileInputStream(file);}
+}''',
     'android/os/Looper.java': 'package android.os; public class Looper {public static Looper getMainLooper(){return null;}}',
     'android/os/Handler.java': '''package android.os; public class Handler {
 public static final java.util.ArrayDeque<Runnable> queue=new java.util.ArrayDeque<>();
@@ -33,6 +38,8 @@ static android.app.Activity activity; static java.util.List<String> events=new j
 static android.app.Activity accountActivity(){return activity;}
 static void event(String k,String d){events.add(k+":"+d);}
 static void flushAccountWrites() throws java.io.IOException{}
+static int copyAccountAppearance(java.util.Properties source){throw new AssertionError("Unexpected appearance copy during restart test");}
+static void flushSettings(long timeout) throws java.io.IOException{throw new AssertionError("Unexpected appearance flush during restart test");}
 static void quiesceAccounts() throws java.io.IOException{}
 static int syncTrainerPrivacyDisplay(){return 0;}}''',
     'dev/pgrazor/AccountProfileStore.java': '''package dev.pgrazor; class AccountProfileStore {

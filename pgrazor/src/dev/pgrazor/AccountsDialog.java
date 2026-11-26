@@ -17,6 +17,7 @@ final class AccountsDialog {
         ScrollView scroll=new ScrollView(ui);LinearLayout rows=new LinearLayout(ui);rows.setOrientation(1);scroll.addView(rows);body.addView(scroll,new LinearLayout.LayoutParams(-1,0,1));
         AccountProfileStore store=AccountProfiles.store();
         java.util.ArrayList<Button> switches=new java.util.ArrayList<>();
+        java.util.ArrayList<Button> appearanceCopies=new java.util.ArrayList<>();
         java.util.LinkedHashMap<Button,String> deletions=new java.util.LinkedHashMap<>();
         int accountNumber=0;
         if(store!=null)for(AccountProfileStore.Profile profile:store.list()){
@@ -54,6 +55,15 @@ final class AccountsDialog {
             Button change=new Button(ui);change.setText(dev.pgrazor.PtBr.tr("Switch"));change.setEnabled(AccountProfiles.canSwitch()&&!profile.id.equals(AccountProfiles.currentId()));actions.addView(change);
             if(!profile.id.equals(AccountProfiles.currentId()))switches.add(change);
             change.setOnClickListener(v->confirm(activity,profile));rows.addView(row);
+            if(!profile.id.equals(AccountProfiles.currentId())){
+                Button copyAppearance=new Button(ui);copyAppearance.setText("Copiar aparência para a conta atual");
+                copyAppearance.setEnabled(AccountProfiles.canSwitch());row.addView(copyAppearance);appearanceCopies.add(copyAppearance);
+                copyAppearance.setOnClickListener(v->new AlertDialog.Builder(ui)
+                    .setTitle("Copiar aparência?")
+                    .setMessage("Substitui somente tema, escala, tamanhos, opacidade e efeitos visuais da conta atual. Login, privacidade, localização, rotas e outras preferências permanecem separados. A conta de origem não muda.")
+                    .setNegativeButton("Cancelar",null).setPositiveButton("Copiar",(d,w)->AccountProfiles.copyAppearance(activity,profile.id,
+                        result->{if(!activity.isFinishing()&&!activity.isDestroyed())Toast.makeText(activity,result,Toast.LENGTH_LONG).show();})).show());
+            }
             Button delete=new Button(ui);delete.setText(dev.pgrazor.PtBr.tr("Delete"));delete.setEnabled(AccountProfiles.canDelete(profile.id));actions.addView(delete);deletions.put(delete,profile.id);
             delete.setContentDescription(dev.pgrazor.PtBr.tr(profile.id.equals(AccountProfiles.currentId())?"Switch accounts before deleting the current account":"Delete saved account"));
             delete.setOnClickListener(v->new AlertDialog.Builder(ui).setTitle(dev.pgrazor.PtBr.tr("Delete "+Control.visibleTrainerName(profile.label)+"?"))
@@ -74,6 +84,7 @@ final class AccountsDialog {
             boolean enabled=AccountProfiles.canSwitch();add.setEnabled(enabled);
             reset.setEnabled(AccountProfiles.canResetSignIn());reset.setVisibility(enabled?android.view.View.GONE:android.view.View.VISIBLE);
             for(Button button:switches)button.setEnabled(enabled);
+            for(Button button:appearanceCopies)button.setEnabled(enabled);
             for(java.util.Map.Entry<Button,String> entry:deletions.entrySet())entry.getKey().setEnabled(AccountProfiles.canDelete(entry.getValue()));
             handler.postDelayed(this,500);
         }};

@@ -654,8 +654,45 @@ public final class WorldMapDialog {
                 .setMessage(dev.pgrazor.PtBr.tr(String.format(Locale.US, "%.6f, %.6f\n\nSelect shows this destination on the map. Choose Teleport or Walk here there to apply it.", entry.latitude, entry.longitude)))
                 .setNegativeButton(dev.pgrazor.PtBr.tr("Cancel"), null)
                 .setPositiveButton(dev.pgrazor.PtBr.tr("Select on map"), (d, which) -> map.select(entry.latitude, entry.longitude))
-                .setNeutralButton(dev.pgrazor.PtBr.tr("Delete"), null).create();
-            dialog.setOnShowListener(d -> dialog.getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener(v -> confirmDelete(entry, dialog)));
+                .setNeutralButton("Mais ações", null).create();
+            dialog.setOnShowListener(d -> dialog.getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener(v -> showPlaceActions(entry, dialog)));
+            show(dialog);
+        }
+        private void showPlaceActions(SavedPlaces.Entry entry, AlertDialog details) {
+            if(closed)return;
+            show(new AlertDialog.Builder(ui).setTitle("Ações do local")
+                .setItems(new String[]{"Copiar coordenadas","Renomear","Excluir"},(d,which)->{
+                    if(which==0)CoordinateClipboard.copy(activity,entry.latitude,entry.longitude,"Coordenadas copiadas");
+                    else if(which==1)renamePlace(entry,details);
+                    else if(which==2)confirmDelete(entry,details);
+                }).setNegativeButton("Voltar",null).create());
+        }
+        private void renamePlace(SavedPlaces.Entry entry, AlertDialog details) {
+            EditText name=new EditText(ui);name.setSingleLine(true);
+            name.setInputType(InputType.TYPE_CLASS_TEXT|InputType.TYPE_TEXT_FLAG_CAP_SENTENCES);
+            name.setFilters(new InputFilter[]{new InputFilter.LengthFilter(SavedPlaces.NAME_LIMIT)});
+            name.setText(entry.name);
+            AlertDialog dialog=new AlertDialog.Builder(ui).setTitle("Renomear local")
+                .setView(name).setNegativeButton("Cancelar",null).setPositiveButton("Salvar",null).create();
+            dialog.setOnShowListener(d->dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v->{
+                String requested=name.getText().toString();
+                dialog.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(false);
+                storage.execute(()->{
+                    String error=null;
+                    try{if(!store().rename(entry.id,requested))error="Local não encontrado.";}
+                    catch(IOException|RuntimeException e){error=e.getMessage()==null?"Não foi possível renomear.":e.getMessage();}
+                    final String failed=error;
+                    main.post(()->{
+                        if(closed)return;
+                        if(failed==null){
+                            if(dialog.isShowing()){dialog.dismiss();details.dismiss();refreshMarkerLayers();openLibrary();}
+                            else refreshMarkerLayers();
+                        }else if(dialog.isShowing()){
+                            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(true);name.setError(failed);
+                        }
+                    });
+                });
+            }));
             show(dialog);
         }
         private void confirmDelete(SavedPlaces.Entry entry, AlertDialog details) {
