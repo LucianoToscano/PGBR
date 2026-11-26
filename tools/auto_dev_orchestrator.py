@@ -1,6 +1,5 @@
-"""Bounded three-provider proposal dispatcher. No model output is executed."""
+"""Free-only proposal dispatcher; ChatGPT and Arena use shared coordination. No model output is executed."""
 import argparse
-from concurrent.futures import ThreadPoolExecutor
 import hashlib
 import json
 import os
@@ -12,15 +11,13 @@ import urllib.request
 
 REPO = "LucianoToscano/PGBR"
 ISSUE = "320"
-AGENTS = {"chatgpt": ("OPENAI_API_KEY", "PGBR_OPENAI_MODEL"),
-          "gemini": ("GEMINI_API_KEY", "PGBR_GEMINI_MODEL"),
-          "arena": ("ARENA_API_KEY", "PGBR_ARENA_MODEL")}
+AGENTS = {"chatgpt", "gemini", "arena"}
 ID = re.compile(r"[A-Z][A-Z0-9-]{2,47}")
-MODEL = re.compile(r"[A-Za-z0-9][A-Za-z0-9._:/-]{0,119}")
+MODEL = re.compile(r"gemini-[A-Za-z0-9._-]{1,100}")
 MARKER = re.compile(r"^<!-- pgbr-auto-dev:v1:([A-Z][A-Z0-9-]{2,47}):reserved -->$")
 MAX_OUTPUT = 4096
 MAX_BYTES = 256 * 1024
-MAX_CALLS = 3
+MAX_CALLS = 1
 
 
 def validate_queue(data):
@@ -55,7 +52,7 @@ def select(rows, used, configured):
     busy = set()
     for row in rows:
         agent = row["agent"]
-        if row["id"] in used or agent in busy or agent not in configured:
+        if row["id"] in used or agent in busy or agent not in configured or agent != "gemini":
             continue
         selected.append(row)
         busy.add(agent)
@@ -64,25 +61,26 @@ def select(rows, used, configured):
     return selected
 
 
+def free_configuration(env):
+    """Explicit owner attestation; a key alone cannot prove billing status."""
+    if (env.get("PGBR_AUTO_DEV_MODE") != "free" or
+            env.get("PGBR_FREE_BILLING_CONFIRMED") != "true" or
+            env.get("PGBR_GITHUB_FREE_BUDGET_CONFIRMED") != "true"):
+        return {}
+    key = env.get("PGBR_GEMINI_FREE_KEY", "")
+    model = env.get("PGBR_GEMINI_FREE_MODEL", "")
+    return {"gemini": (model, key)} if key and MODEL.fullmatch(model) else {}
+
+
 def request_spec(agent, model, key, prompt):
+    if agent != "gemini":
+        raise ValueError("provider disabled in free mode")
     if not MODEL.fullmatch(model):
-        raise ValueError("invalid model ID")
-    bearer = {"Authorization": "Bearer " + key}
-    if agent == "chatgpt":
-        return ("https://api.openai.com/v1/responses", bearer,
-                {"model": model, "input": prompt, "max_output_tokens": MAX_OUTPUT, "store": False})
-    if agent == "gemini":
-        if not re.fullmatch(r"[A-Za-z0-9._-]+", model):
-            raise ValueError("invalid Gemini model ID")
-        return ("https://generativelanguage.googleapis.com/v1beta/models/" + model + ":generateContent",
-                {"x-goog-api-key": key},
-                {"contents": [{"parts": [{"text": prompt}]}],
-                 "generationConfig": {"maxOutputTokens": MAX_OUTPUT}})
-    if agent == "arena":
-        return ("https://api.arena.ai/v1/chat/completions", bearer,
-                {"model": model, "messages": [{"role": "user", "content": prompt}],
-                 "max_tokens": MAX_OUTPUT, "stream": False})
-    raise ValueError("unknown provider")
+        raise ValueError("invalid Gemini model ID")
+    return ("https://generativelanguage.googleapis.com/v1beta/models/" + model + ":generateContent",
+            {"x-goog-api-key": key},
+            {"contents": [{"parts": [{"text": prompt}]}],
+             "generationConfig": {"maxOutputTokens": MAX_OUTPUT}})
 
 
 class NoRedirect(urllib.request.HTTPRedirectHandler):
@@ -91,21 +89,12 @@ class NoRedirect(urllib.request.HTTPRedirectHandler):
 
 
 def response_text(agent, data):
-    if agent == "chatgpt":
-        if data.get("status") != "completed":
-            raise ValueError("incomplete response")
-        chunks = [p["text"] for item in data.get("output", []) if item.get("type") == "message"
-                  for p in item.get("content", []) if p.get("type") == "output_text"]
-    elif agent == "gemini":
-        choice = data["candidates"][0]
-        if choice.get("finishReason") != "STOP":
-            raise ValueError("incomplete response")
-        chunks = [p["text"] for p in choice["content"]["parts"] if "text" in p and not p.get("thought")]
-    else:
-        choice = data["choices"][0]
-        if choice.get("finish_reason") != "stop":
-            raise ValueError("incomplete response")
-        chunks = [choice["message"]["content"]]
+    if agent != "gemini":
+        raise ValueError("provider disabled in free mode")
+    choice = data["candidates"][0]
+    if choice.get("finishReason") != "STOP":
+        raise ValueError("incomplete response")
+    chunks = [p["text"] for p in choice["content"]["parts"] if "text" in p and not p.get("thought")]
     result = "\n".join(chunks).strip()
     if not result or len(result.encode("utf-8")) > MAX_BYTES:
         raise ValueError("empty or oversized response")
@@ -160,36 +149,35 @@ def main():
         raise SystemExit("live dispatch denied")
     if gh("repos/" + REPO + "/issues/" + ISSUE).get("state") != "open":
         raise SystemExit("coordination issue closed")
-    configured = {a: (os.environ.get(model, ""), os.environ.get(key, ""))
-                  for a, (key, model) in AGENTS.items()
-                  if os.environ.get(key) and os.environ.get(model)}
+    configured = free_configuration(os.environ)
+    if not configured:
+        print("Free API not configured; no request made.")
+        return
     used = reserved_ids(gh("repos/" + REPO + "/issues/" + ISSUE + "/comments?per_page=100",
                            "--paginate", "--slurp"))
     selected = select(rows, used, configured)
     args.output.mkdir(parents=True, exist_ok=True)
-    # Reserve before every potentially paid call. Cancellation/failure requires
-    # a new reviewed ID; do not automatically retry an uncertain charge.
+    # Reserve before calling. No automatic retry, paid fallback or quota bypass.
     for row in selected:
         note("<!-- pgbr-auto-dev:v1:" + row["id"] + ":reserved -->\n"
-             "Lote reservado para " + row["agent"] + "; proposta, não execução de código.")
-    with ThreadPoolExecutor(max_workers=MAX_CALLS) as pool:
-        futures = [(row, pool.submit(call, row, *configured[row["agent"]])) for row in selected]
-        for row, future in futures:
-            state = "failed"
-            try:
-                report = future.result()
-                payload = json.dumps(report, ensure_ascii=False, indent=2).encode("utf-8")
-                (args.output / (row["id"] + ".json")).write_bytes(payload)
-                state = "proposal"
-                digest = hashlib.sha256(payload).hexdigest()
-            except Exception:
-                # Provider exception bodies may contain secrets. Never log them.
-                digest = "none"
-            run = os.environ.get("GITHUB_RUN_ID", "")
-            attempt = os.environ.get("GITHUB_RUN_ATTEMPT", "")
-            note("AUTO DEV " + row["id"] + ": " + state + "; SHA256 " + digest +
-                 "; run " + run + " attempt " + attempt +
-                 ". Proposta não aplicada. Requer auditoria independente; sem retry automático.")
+             "Lote reservado para Gemini free; proposta, não execução de código.")
+        state = "failed"
+        try:
+            report = call(row, *configured[row["agent"]])
+            payload = json.dumps(report, ensure_ascii=False, indent=2).encode("utf-8")
+            (args.output / (row["id"] + ".json")).write_bytes(payload)
+            state = "proposal"
+            digest = hashlib.sha256(payload).hexdigest()
+        except urllib.error.HTTPError as error:
+            state = "quota-or-access-blocked" if error.code in (401, 403, 429) else "failed"
+            digest = "none"
+        except Exception:
+            digest = "none"
+        run = os.environ.get("GITHUB_RUN_ID", "")
+        attempt = os.environ.get("GITHUB_RUN_ATTEMPT", "")
+        note("AUTO DEV " + row["id"] + ": " + state + "; SHA256 " + digest +
+             "; run " + run + " attempt " + attempt +
+             ". Proposta não aplicada. Sem retry automático ou fallback pago.")
     print("Dispatched:", len(selected))
 
 
