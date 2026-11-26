@@ -4,7 +4,9 @@ from __future__ import annotations
 from dataclasses import dataclass, field, asdict
 import hashlib
 import json
+import math
 import os
+import stat
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Set, Tuple
 
@@ -173,6 +175,8 @@ class AtomicSnapshotStore:
     SCHEMA_VERSION = 1
 
     def __init__(self, path: Path, *, max_bytes: int = 2_000_000) -> None:
+        if isinstance(max_bytes, bool) or not isinstance(max_bytes, int) or max_bytes <= 0:
+            raise ValueError("max_bytes must be a positive integer")
         self.path = Path(path)
         self.backup_path = self.path.with_suffix(self.path.suffix + ".bak")
         self.max_bytes = max_bytes
@@ -181,11 +185,51 @@ class AtomicSnapshotStore:
     def _sha256(payload: bytes) -> str:
         return hashlib.sha256(payload).hexdigest()
 
+    @staticmethod
+    def _read_bounded_regular(path: Path, max_bytes: int) -> bytes:
+        if path.is_symlink():
+            raise ValueError("Symlink snapshot refused")
+        flags = os.O_RDONLY | getattr(os, "O_BINARY", 0) | getattr(os, "O_NOFOLLOW", 0)
+        fd = os.open(str(path), flags)
+        try:
+            st = os.fstat(fd)
+            if not stat.S_ISREG(st.st_mode):
+                raise ValueError("Snapshot must be a regular file")
+            chunks: List[bytes] = []
+            total = 0
+            while total <= max_bytes:
+                chunk = os.read(fd, min(65536, max_bytes + 1 - total))
+                if not chunk:
+                    break
+                chunks.append(chunk)
+                total += len(chunk)
+            if total > max_bytes:
+                raise ValueError("Snapshot exceeds size limit")
+            return b"".join(chunks)
+        finally:
+            os.close(fd)
+
+    @staticmethod
+    def _write_atomic_regular(target: Path, payload: bytes) -> None:
+        if target.exists() and target.is_symlink():
+            raise ValueError("Symlink target refused")
+        tmp = target.with_name(f".{target.name}.tmp")
+        flags = os.O_WRONLY | os.O_CREAT | os.O_TRUNC | getattr(os, "O_BINARY", 0) | getattr(os, "O_NOFOLLOW", 0)
+        fd = os.open(str(tmp), flags, 0o600)
+        try:
+            os.write(fd, payload)
+            os.fsync(fd)
+        finally:
+            os.close(fd)
+        os.replace(tmp, target)
+
     def save(self, namespace: str, revision: str, data: Any) -> str:
         """Atomically write envelope + checksum, preserving previous valid snapshot as .bak."""
-        if not namespace.strip() or not revision.strip():
+        if not isinstance(namespace, str) or not isinstance(revision, str) or not namespace.strip() or not revision.strip():
             raise ValueError("namespace and revision must be non-empty")
-        canonical = json.dumps(data, sort_keys=True, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
+        canonical = json.dumps(
+            data, sort_keys=True, ensure_ascii=False, separators=(",", ":"), allow_nan=False
+        ).encode("utf-8")
         digest = self._sha256(canonical)
         envelope = {
             "schema": self.SCHEMA_VERSION,
@@ -194,30 +238,24 @@ class AtomicSnapshotStore:
             "sha256": digest,
             "data": data,
         }
-        raw = json.dumps(envelope, ensure_ascii=False, indent=2).encode("utf-8")
+        raw = json.dumps(envelope, ensure_ascii=False, indent=2, allow_nan=False).encode("utf-8")
         if len(raw) > self.max_bytes:
             raise ValueError(f"Snapshot exceeds max_bytes ({len(raw)} > {self.max_bytes})")
         self.path.parent.mkdir(parents=True, exist_ok=True)
         if self.path.exists():
-            prev = self.path.read_bytes()
-            tmp_bak = self.backup_path.with_suffix(".bak.tmp")
-            tmp_bak.write_bytes(prev)
-            os.replace(tmp_bak, self.backup_path)
-        tmp = self.path.with_suffix(self.path.suffix + ".tmp")
-        tmp.write_bytes(raw)
-        os.replace(tmp, self.path)
+            prev = self._read_bounded_regular(self.path, self.max_bytes)
+            self._write_atomic_regular(self.backup_path, prev)
+        self._write_atomic_regular(self.path, raw)
         return digest
 
     def load(self) -> Dict[str, Any]:
         """Load and verify checksum; raises ValueError on corruption (never silently resets)."""
-        raw = self.path.read_bytes()
-        if len(raw) > self.max_bytes:
-            raise ValueError("Snapshot exceeds size limit")
+        raw = self._read_bounded_regular(self.path, self.max_bytes)
         env = json.loads(raw.decode("utf-8"))
-        if not isinstance(env, dict) or env.get("schema") != self.SCHEMA_VERSION:
+        if not isinstance(env, dict) or env.get("schema") != self.SCHEMA_VERSION or "data" not in env:
             raise ValueError("Unsupported snapshot schema")
         canonical = json.dumps(
-            env["data"], sort_keys=True, ensure_ascii=False, separators=(",", ":")
+            env["data"], sort_keys=True, ensure_ascii=False, separators=(",", ":"), allow_nan=False
         ).encode("utf-8")
         if self._sha256(canonical) != env.get("sha256"):
             raise ValueError("Snapshot checksum mismatch")
@@ -227,14 +265,14 @@ class AtomicSnapshotStore:
         """Restore previous verified snapshot from .bak when current file is corrupted."""
         if not self.backup_path.exists():
             raise FileNotFoundError("No backup snapshot available for rollback")
-        bak_bytes = self.backup_path.read_bytes()
+        bak_bytes = self._read_bounded_regular(self.backup_path, self.max_bytes)
         env = json.loads(bak_bytes.decode("utf-8"))
+        if not isinstance(env, dict) or env.get("schema") != self.SCHEMA_VERSION or "data" not in env:
+            raise ValueError("Backup snapshot is also corrupted")
         canonical = json.dumps(
-            env["data"], sort_keys=True, ensure_ascii=False, separators=(",", ":")
+            env["data"], sort_keys=True, ensure_ascii=False, separators=(",", ":"), allow_nan=False
         ).encode("utf-8")
         if self._sha256(canonical) != env.get("sha256"):
             raise ValueError("Backup snapshot is also corrupted")
-        tmp = self.path.with_suffix(self.path.suffix + ".tmp")
-        tmp.write_bytes(bak_bytes)
-        os.replace(tmp, self.path)
+        self._write_atomic_regular(self.path, bak_bytes)
         return env

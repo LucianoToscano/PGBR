@@ -9,6 +9,15 @@ import math
 from typing import Dict, List, Optional, Tuple
 
 # Official Pokemon GO CP Multiplier table for levels 1.0..51.0 (step 0.5).
+CPM_TABLE_METADATA: Dict[str, object] = {
+    "source": "Pokemon GO Game Master CPM table (half-levels 1.0..51.0)",
+    "ruleset_version": "pogo-cpm-lvl51-v1",
+    "min_level": 1.0,
+    "max_level": 51.0,
+    "level_step": 0.5,
+    "precision_note": "Valores float64 de CPM com arredondamento floor no CP e HP mínimo 10.",
+}
+
 CPM_TABLE: Dict[float, float] = {
     1.0: 0.094, 1.5: 0.1351374318, 2.0: 0.16639787, 2.5: 0.192650919,
     3.0: 0.21573247, 3.5: 0.2365726613, 4.0: 0.25572005, 4.5: 0.2735303812,
@@ -134,13 +143,37 @@ LEAGUE_CAPS: Dict[str, int] = {
 }
 
 
+def _require_strict_int(value: object, lo: int, hi: int, name: str) -> int:
+    if isinstance(value, bool) or not isinstance(value, int) or not (lo <= value <= hi):
+        raise ValueError(f"{name} must be an integer in {lo}..{hi}")
+    return value
+
+
+def _require_valid_base_stats(base: BaseStats) -> None:
+    if not isinstance(base, BaseStats):
+        raise ValueError("base must be a BaseStats instance")
+    _require_strict_int(base.attack, 1, 2000, "base.attack")
+    _require_strict_int(base.defense, 1, 2000, "base.defense")
+    _require_strict_int(base.stamina, 1, 2000, "base.stamina")
+
+
+def _require_valid_level(level: float) -> float:
+    if isinstance(level, bool) or not isinstance(level, (int, float)) or not math.isfinite(float(level)):
+        raise ValueError(f"Unsupported level: {level}")
+    lv = float(level)
+    if lv not in CPM_TABLE:
+        raise ValueError(f"Unsupported level: {level}")
+    return lv
+
+
 def compute_cp(base: BaseStats, atk_iv: int, def_iv: int, sta_iv: int, level: float) -> int:
     """Compute Pokemon GO CP for given base stats, IVs (0..15), and half-level (1.0..51.0)."""
-    if not (0 <= atk_iv <= 15 and 0 <= def_iv <= 15 and 0 <= sta_iv <= 15):
-        raise ValueError("IVs must be in 0..15")
-    if level not in CPM_TABLE:
-        raise ValueError(f"Unsupported level: {level}")
-    cpm = CPM_TABLE[level]
+    _require_valid_base_stats(base)
+    _require_strict_int(atk_iv, 0, 15, "atk_iv")
+    _require_strict_int(def_iv, 0, 15, "def_iv")
+    _require_strict_int(sta_iv, 0, 15, "sta_iv")
+    lv = _require_valid_level(level)
+    cpm = CPM_TABLE[lv]
     atk = base.attack + atk_iv
     dfn = base.defense + def_iv
     sta = base.stamina + sta_iv
@@ -152,7 +185,12 @@ def compute_stat_product(
     base: BaseStats, atk_iv: int, def_iv: int, sta_iv: int, level: float
 ) -> float:
     """Compute PvP stat product: effective_atk * effective_def * floor(effective_hp)."""
-    cpm = CPM_TABLE[level]
+    _require_valid_base_stats(base)
+    _require_strict_int(atk_iv, 0, 15, "atk_iv")
+    _require_strict_int(def_iv, 0, 15, "def_iv")
+    _require_strict_int(sta_iv, 0, 15, "sta_iv")
+    lv = _require_valid_level(level)
+    cpm = CPM_TABLE[lv]
     atk = (base.attack + atk_iv) * cpm
     dfn = (base.defense + def_iv) * cpm
     hp = max(10, math.floor((base.stamina + sta_iv) * cpm))
@@ -170,8 +208,8 @@ def power_up_cost(
     """Calculate total Stardust, Candy, and XL Candy without spending resources."""
     if shadow and purified:
         raise ValueError("Pokemon cannot be both Shadow and Purified")
-    if from_level not in CPM_TABLE or to_level not in CPM_TABLE:
-        raise ValueError("Levels must be valid half-steps")
+    from_level = _require_valid_level(from_level)
+    to_level = _require_valid_level(to_level)
     if to_level < from_level or to_level > 50.0:
         raise ValueError("Invalid level range (max power-up is 50.0; 51.0 is Best Buddy)")
     dust_total = 0
@@ -203,6 +241,12 @@ def best_level_under_cap(
     base: BaseStats, atk_iv: int, def_iv: int, sta_iv: int, cp_cap: int, max_level: float = 50.0
 ) -> Optional[Tuple[float, int, float]]:
     """Find highest half-level <= max_level whose CP <= cp_cap."""
+    _require_valid_base_stats(base)
+    _require_strict_int(atk_iv, 0, 15, "atk_iv")
+    _require_strict_int(def_iv, 0, 15, "def_iv")
+    _require_strict_int(sta_iv, 0, 15, "sta_iv")
+    _require_strict_int(cp_cap, 10, 1_000_000, "cp_cap")
+    max_level = _require_valid_level(max_level)
     best: Optional[Tuple[float, int, float]] = None
     lvl = 1.0
     while lvl <= max_level:
@@ -229,8 +273,11 @@ def evaluate_pvp_rank(
     key = league.strip().lower()
     if key not in LEAGUE_CAPS:
         raise ValueError(f"Unknown league: {league}")
-    if not (0 <= iv_floor <= 15):
-        raise ValueError("iv_floor must be in 0..15")
+    _require_strict_int(iv_floor, 0, 15, "iv_floor")
+    _require_strict_int(atk_iv, 0, 15, "atk_iv")
+    _require_strict_int(def_iv, 0, 15, "def_iv")
+    _require_strict_int(sta_iv, 0, 15, "sta_iv")
+    max_level = _require_valid_level(max_level)
     if atk_iv < iv_floor or def_iv < iv_floor or sta_iv < iv_floor:
         raise ValueError("IVs below iv_floor")
     cap = LEAGUE_CAPS[key]

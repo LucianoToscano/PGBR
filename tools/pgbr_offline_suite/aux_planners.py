@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime, timezone
+import math
 from typing import Any, Dict, List, Optional
 
 BUDDY_EXCITED_THRESHOLD = 32
@@ -56,6 +57,10 @@ def plan_egg_incubation(
     event_distance_multiplier: float = 1.0,
 ) -> Dict[str, Any]:
     """Compute effective hatch distance for 2/5/7/10/12 km eggs (AUX-01)."""
+    if isinstance(egg_km, bool) or not isinstance(egg_km, (int, float)) or not math.isfinite(float(egg_km)):
+        raise ValueError(f"Distância base de ovo inválida: {egg_km}")
+    if isinstance(event_distance_multiplier, bool) or not isinstance(event_distance_multiplier, (int, float)) or not math.isfinite(float(event_distance_multiplier)):
+        raise ValueError("Multiplicador de evento deve ser finito e estar em 0.1..1.0.")
     if egg_km not in {2.0, 5.0, 7.0, 10.0, 12.0}:
         raise ValueError(f"Distância base de ovo inválida: {egg_km}")
     if not (0.1 <= event_distance_multiplier <= 1.0):

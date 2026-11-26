@@ -10,6 +10,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field, asdict
 from datetime import datetime, timezone
 import json
+import math
 import re
 from typing import Any, Dict, List, Optional, Sequence, Set
 from zoneinfo import ZoneInfo
@@ -60,7 +61,7 @@ class MacroRoutine:
         )
 
     def to_json(self) -> str:
-        return json.dumps(asdict(self), ensure_ascii=False, indent=2)
+        return json.dumps(asdict(self), ensure_ascii=False, indent=2, allow_nan=False)
 
     @classmethod
     def from_json(cls, raw: str) -> "MacroRoutine":
@@ -86,10 +87,14 @@ def validate_routine_safety(routine: MacroRoutine, *, max_repeat: int = 10, max_
         errors.append("Identidade ou nome da rotina vazio")
     if len(routine.cards) > max_cards:
         errors.append(f"Excede limite de cartões ({len(routine.cards)} > {max_cards})")
+    seen_card_ids: set[str] = set()
     for card in routine.cards:
+        if card.card_id in seen_card_ids:
+            errors.append(f"card_id duplicado na rotina: {card.card_id}")
+        seen_card_ids.add(card.card_id)
         if card.action not in SAFE_CAPABILITIES:
             errors.append(f"Ação não permitida ou desconhecida: {card.action}")
-        if card.repeat < 1 or card.repeat > max_repeat:
+        if isinstance(card.repeat, bool) or not isinstance(card.repeat, int) or card.repeat < 1 or card.repeat > max_repeat:
             errors.append(f"Repetição fora do limite em {card.card_id}: {card.repeat}")
     return errors
 
@@ -161,16 +166,32 @@ class SeasonalEventTemplate:
     bonuses: Tuple[str, ...] = ()
 
     def is_active_at(self, now_utc: Optional[datetime] = None) -> bool:
-        """Evaluate active window in template's IANA timezone; expired templates NEVER activate (AUTO-11)."""
-        tz = ZoneInfo(self.iana_timezone)
-        ref = (now_utc or datetime.now(timezone.utc)).astimezone(tz)
-        start = datetime.fromisoformat(self.start_local_iso).replace(tzinfo=tz)
-        end = datetime.fromisoformat(self.end_local_iso).replace(tzinfo=tz)
-        return start <= ref < end
+        """Evaluate active window in template's IANA timezone; rejects naive now_utc and DST ambiguity (AUTO-11)."""
+        from .events_planner import resolve_local_datetime
+
+        if now_utc is not None and now_utc.tzinfo is None:
+            raise ValueError("now_utc exige tzinfo explícito (UTC ou offset).")
+        ref_utc = (now_utc or datetime.now(timezone.utc)).astimezone(timezone.utc)
+        start_utc = resolve_local_datetime(self.start_local_iso, self.iana_timezone)["utc"]
+        end_utc = resolve_local_datetime(self.end_local_iso, self.iana_timezone)["utc"]
+        if end_utc <= start_utc:
+            raise ValueError("Janela sazonal inválida: término <= início.")
+        return start_utc <= ref_utc < end_utc
+
+
+_FREE_EMAIL_RE = re.compile(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}")
+_FREE_TOKEN_RE = re.compile(
+    r"(?i)\b(?:bearer\s+[A-Za-z0-9._~+/=-]{8,}|(?:ghp|gho|sk|pk)_[A-Za-z0-9_\-]{10,}|"
+    r"AIza[0-9A-Za-z_\-]{10,}|eyJ[A-Za-z0-9_\-]{10,}\.[A-Za-z0-9_\-]{10,}\.[A-Za-z0-9_\-]{8,})"
+)
+_FREE_COORD_RE = re.compile(
+    r"(?<!\d)-?(?:[1-8]?\d(?:\.\d{3,})|90\.0+)\s*,\s*-?(?:1[0-7]\d(?:\.\d{3,})|[1-9]?\d(?:\.\d{3,})|180\.0+)(?!\d)"
+)
+_FREE_HOST_PATH_RE = re.compile(r"(?:[A-Za-z]:\\Users\\[^\s\"']+|/(?:Users|home)/[A-Za-z0-9._-]+(?:/[^\s\"']*)?)")
 
 
 def sanitize_export_record(obj: Any) -> Any:
-    """Recursively strip credentials, tokens, emails, and private coordinates (AUTO-13)."""
+    """Recursively strip credentials, tokens, emails, coordinates, and host paths in keys and free text (AUTO-13)."""
     if isinstance(obj, dict):
         out: Dict[str, Any] = {}
         for k, v in obj.items():
@@ -181,4 +202,14 @@ def sanitize_export_record(obj: Any) -> Any:
         return out
     if isinstance(obj, list):
         return [sanitize_export_record(item) for item in obj]
+    if isinstance(obj, tuple):
+        return [sanitize_export_record(item) for item in obj]
+    if isinstance(obj, str):
+        text = _FREE_EMAIL_RE.sub("[REDACTED_EMAIL]", obj)
+        text = _FREE_TOKEN_RE.sub("[REDACTED_TOKEN]", text)
+        text = _FREE_COORD_RE.sub("[REDACTED_COORD]", text)
+        text = _FREE_HOST_PATH_RE.sub("[REDACTED_PATH]", text)
+        return text
+    if isinstance(obj, float) and not math.isfinite(obj):
+        raise ValueError("Valores NaN ou infinito não são permitidos na exportação.")
     return obj

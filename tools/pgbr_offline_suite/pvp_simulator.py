@@ -40,6 +40,17 @@ _CHART: Tuple[Tuple[int, ...], ...] = (
 )
 
 PVP_BONUS_MULTIPLIER = 1.3
+MAX_SIMULATION_TURNS = 1000
+PVP_RULESET_METADATA: Dict[str, Any] = {
+    "source": "Pokemon GO Trainer Battles 0.5s turn model (offline deterministic approximation)",
+    "ruleset_version": "pogo-pvp-1v1-offline-v1",
+    "stab_multiplier": 1.2,
+    "shadow_atk_mult": 1.2,
+    "shadow_def_mult": 1.0 / 1.2,
+    "pvp_bonus_multiplier": PVP_BONUS_MULTIPLIER,
+    "max_simulation_turns": MAX_SIMULATION_TURNS,
+    "limits_note": "Sem buffs/debuffs probabilísticos, sem troca/lag de rede e limitado a 1v1 determinístico.",
+}
 STAB_MULTIPLIER = 1.2
 SHADOW_ATK_MULT = 1.2
 SHADOW_DEF_MULT = 1.0 / 1.2
@@ -104,6 +115,26 @@ def _best_ready_charged(attacker: PvpFighter, defender: PvpFighter, energy: int)
     return max(ready, key=lambda m: calc_pvp_damage(attacker, defender, m.move_type, m.power) / m.energy_cost)
 
 
+def _validate_fighter(f: PvpFighter) -> None:
+    if isinstance(f.attack, bool) or not isinstance(f.attack, (int, float)) or not math.isfinite(float(f.attack)) or f.attack <= 0:
+        raise ValueError(f"Ataque efetivo inválido para {f.name}: {f.attack}")
+    if isinstance(f.defense, bool) or not isinstance(f.defense, (int, float)) or not math.isfinite(float(f.defense)) or f.defense <= 0:
+        raise ValueError(f"Defesa efetiva inválida para {f.name}: {f.defense}")
+    if isinstance(f.hp, bool) or not isinstance(f.hp, int) or f.hp <= 0:
+        raise ValueError(f"HP inválido para {f.name}: {f.hp}")
+    if isinstance(f.fast_move.turns, bool) or not isinstance(f.fast_move.turns, int) or not (1 <= f.fast_move.turns <= 10):
+        raise ValueError(f"Turnos inválidos no golpe rápido {f.fast_move.name}: {f.fast_move.turns}")
+    if isinstance(f.fast_move.power, bool) or not isinstance(f.fast_move.power, int) or f.fast_move.power < 0:
+        raise ValueError(f"Poder inválido no golpe rápido {f.fast_move.name}")
+    if isinstance(f.fast_move.energy_gain, bool) or not isinstance(f.fast_move.energy_gain, int) or f.fast_move.energy_gain < 0:
+        raise ValueError(f"Energia inválida no golpe rápido {f.fast_move.name}")
+    for cm in f.charged_moves:
+        if isinstance(cm.power, bool) or not isinstance(cm.power, int) or cm.power < 0:
+            raise ValueError(f"Poder inválido no golpe carregado {cm.name}")
+        if isinstance(cm.energy_cost, bool) or not isinstance(cm.energy_cost, int) or not (1 <= cm.energy_cost <= 100):
+            raise ValueError(f"Custo de energia inválido no golpe carregado {cm.name}: {cm.energy_cost}")
+
+
 def simulate_1v1(
     a: PvpFighter,
     b: PvpFighter,
@@ -112,9 +143,13 @@ def simulate_1v1(
     shields_b: int = 1,
     max_turns: int = 480,
 ) -> Dict[str, Any]:
-    """Run a deterministic offline 1v1 PvP simulation."""
-    if not (0 <= shields_a <= 2 and 0 <= shields_b <= 2):
+    """Run a deterministic offline 1v1 PvP simulation with explicit hard limits."""
+    if isinstance(shields_a, bool) or isinstance(shields_b, bool) or not (0 <= shields_a <= 2 and 0 <= shields_b <= 2):
         raise ValueError("Escudos devem estar em 0..2.")
+    if isinstance(max_turns, bool) or not isinstance(max_turns, int) or not (1 <= max_turns <= MAX_SIMULATION_TURNS):
+        raise ValueError(f"max_turns deve ser inteiro em 1..{MAX_SIMULATION_TURNS}.")
+    _validate_fighter(a)
+    _validate_fighter(b)
     hp_a, hp_b = a.hp, b.hp
     en_a, en_b = 0, 0
     sh_a, sh_b = shields_a, shields_b
@@ -174,6 +209,13 @@ def simulate_1v1(
         "turns": turn,
         "hp_remaining": {a.name: hp_a, b.name: hp_b},
         "shields_remaining": {a.name: sh_a, b.name: sh_b},
+        "truncated_by_turn_limit": (turn >= max_turns and hp_a > 0 and hp_b > 0),
+        "max_turns_limit": max_turns,
+        "simulation_limits": {
+            "deterministic_1v1_only": True,
+            "no_buffs_or_switches": True,
+            "ruleset_version": PVP_RULESET_METADATA["ruleset_version"],
+        },
         "energy_remaining": {a.name: en_a, b.name: en_b},
         "offline_simulation": True,
         "device_tested": False,

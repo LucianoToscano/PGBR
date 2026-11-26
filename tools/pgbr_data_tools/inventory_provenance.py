@@ -11,7 +11,7 @@ from pathlib import Path
 import re
 from typing import Any, Dict, List, Tuple
 
-from .type_chart import CHART, TYPES_PT
+from .type_chart import CHART, TYPES_EN, TYPES_PT
 
 # Categorized PT-BR glossary with explicit fallback (DATA-04).
 PTBR_DATA_GLOSSARY: Dict[str, Dict[str, str]] = {
@@ -146,9 +146,79 @@ def verify_cross_language_type_charts(repo_root: Path) -> Dict[str, Any]:
                     mismatches.append(
                         f"{name}[{TYPES_PT[r]}->{TYPES_PT[c]}]: {rows[r][c]} != {CHART[r][c]}"
                     )
+    # Also cross-check pgbr_offline_suite.pvp_simulator type chart if present
+    extra_checked: List[str] = []
+    disagreements: List[Dict[str, Any]] = []
+    for msg in mismatches:
+        disagreements.append({"detail": msg})
+    try:
+        from tools.pgbr_offline_suite import pvp_simulator as _pvp_sim
+
+        extra_checked = ["python_pvp_simulator"]
+        for r in range(18):
+            atk_en = TYPES_EN[r]
+            for c in range(18):
+                dfn_en = TYPES_EN[c]
+                sim_mult = _pvp_sim.type_multiplier(atk_en, (dfn_en,))
+                expected_mult = 1.6 ** CHART[r][c]
+                if abs(sim_mult - expected_mult) > 1e-9:
+                    msg = (
+                        f"python_pvp_simulator[{TYPES_PT[r]}->{TYPES_PT[c]}]: "
+                        f"{sim_mult} != {expected_mult}"
+                    )
+                    mismatches.append(msg)
+                    disagreements.append(
+                        {
+                            "source": "python_pvp_simulator",
+                            "attacker": TYPES_PT[r],
+                            "defender": TYPES_PT[c],
+                            "observed": sim_mult,
+                            "expected": expected_mult,
+                            "detail": msg,
+                        }
+                    )
+    except Exception:
+        missing.append("python_pvp_simulator")
+
     return {
-        "ok": len(mismatches) == 0 and len(missing) == 0 and len(checked) == len(files),
+        "ok": len(mismatches) == 0 and len(missing) == 0 and len(checked) == len(files) and len(extra_checked) == 1,
+        "has_disagreement": len(mismatches) > 0,
         "checked_sources": checked,
+        "all_checked_sources": checked + extra_checked,
         "missing_sources": missing,
         "mismatches": mismatches,
+        "disagreements": disagreements,
+    }
+
+
+def compare_type_chart_sources(
+    source_a_name: str,
+    matrix_a: List[Tuple[int, ...]],
+    source_b_name: str,
+    matrix_b: List[Tuple[int, ...]],
+) -> Dict[str, Any]:
+    """Explicitly compare two 18x18 type matrices and surface every disagreement cell-by-cell."""
+    extra_checked: List[str] = []
+    disagreements: List[Dict[str, Any]] = []
+    if len(matrix_a) != 18 or len(matrix_b) != 18:
+        raise ValueError("Ambas as matrizes devem ter exatamente 18 linhas.")
+    for r in range(18):
+        if len(matrix_a[r]) != 18 or len(matrix_b[r]) != 18:
+            raise ValueError(f"Linha {r} deve ter exatamente 18 colunas.")
+        for c in range(18):
+            if matrix_a[r][c] != matrix_b[r][c]:
+                disagreements.append(
+                    {
+                        "attacker": TYPES_PT[r],
+                        "defender": TYPES_PT[c],
+                        source_a_name: matrix_a[r][c],
+                        source_b_name: matrix_b[r][c],
+                    }
+                )
+    return {
+        "ok": len(disagreements) == 0,
+        "has_disagreement": len(disagreements) > 0,
+        "sources": [source_a_name, source_b_name],
+        "disagreement_count": len(disagreements),
+        "disagreements": disagreements,
     }

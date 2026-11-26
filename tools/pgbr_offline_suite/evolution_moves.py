@@ -35,6 +35,14 @@ class EvolutionBranch:
     moves: Tuple[MoveEligibility, ...] = ()
 
 
+EVOLUTION_CALC_METADATA: Dict[str, Any] = {
+    "source": "Pokemon GO standard CP formula with CPM floor",
+    "ruleset_version": "pogo-cp-formula-v1",
+    "cpm_valid_range": (0.05, 1.5),
+    "precision_note": "Floor inteiro com CP mínimo 10; rejeita bool, NaN, infinito e atributos <= 0.",
+}
+
+
 def compute_cp_from_cpm(
     base_atk: int,
     base_def: int,
@@ -44,12 +52,15 @@ def compute_cp_from_cpm(
     iv_sta: int,
     cpm: float,
 ) -> int:
+    for stat_name, val in (("base_atk", base_atk), ("base_def", base_def), ("base_sta", base_sta)):
+        if isinstance(val, bool) or not isinstance(val, int) or val <= 0 or val > 2000:
+            raise ValueError(f"{stat_name} inválido: {val}")
     for iv in (iv_atk, iv_def, iv_sta):
-        if not (0 <= iv <= 15):
+        if isinstance(iv, bool) or not isinstance(iv, int) or not (0 <= iv <= 15):
             raise ValueError(f"IV fora do intervalo 0..15: {iv}")
-    if not math.isfinite(cpm) or cpm <= 0.0:
+    if isinstance(cpm, bool) or not isinstance(cpm, (int, float)) or not math.isfinite(float(cpm)) or cpm <= 0.0 or cpm > 2.0:
         raise ValueError("CPM inválido.")
-    raw = (base_atk + iv_atk) * math.sqrt(base_def + iv_def) * math.sqrt(base_sta + iv_sta) * (cpm ** 2) / 10.0
+    raw = (base_atk + iv_atk) * math.sqrt(base_def + iv_def) * math.sqrt(base_sta + iv_sta) * (float(cpm) ** 2) / 10.0
     return max(10, int(math.floor(raw)))
 
 
