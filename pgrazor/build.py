@@ -63,19 +63,40 @@ def feed_icon_assets(root=None):
     root = ROOT if root is None else Path(root)
     folder = root / 'assets/feed-icons'
     source = folder / 'pokemon'
-    manifest = json.loads((folder / 'provenance.json').read_text(encoding='utf-8'))
-    if not re.fullmatch(r'[0-9a-f]{40}', manifest.get('commit', '')) or not manifest.get('repository'):
+    manifest_path = folder / 'provenance.json'
+    for path in (root / 'assets', folder, source, manifest_path):
+        if path.is_symlink():
+            raise ValueError('Feed icon provenance path is a symlink')
+    def unique_keys(pairs):
+        result = {}
+        for key, value in pairs:
+            if key in result:
+                raise ValueError('Duplicate feed manifest key: ' + key)
+            result[key] = value
+        return result
+    manifest = json.loads(manifest_path.read_text(encoding='utf-8'), object_pairs_hook=unique_keys)
+    if not isinstance(manifest, dict):
+        raise ValueError('Invalid feed sprite manifest object')
+    revision, repository = manifest.get('commit'), manifest.get('repository')
+    if (not isinstance(revision, str) or not re.fullmatch(r'[0-9a-f]{40}', revision)
+            or not isinstance(repository, str) or not repository.strip()):
         raise ValueError('Feed icon provenance revision missing')
+    entries = manifest.get('sprites')
+    if not isinstance(entries, list):
+        raise ValueError('Invalid feed sprite manifest list')
     expected = {}
-    for entry in manifest['sprites']:
-        dex = entry['dex']
+    for entry in entries:
+        if not isinstance(entry, dict):
+            raise ValueError('Invalid feed sprite manifest entry')
+        dex = entry.get('dex')
         if type(dex) is not int or dex <= 0 or dex > 999999:
             raise ValueError('Invalid feed sprite ID')
         name = f'{dex}.png'
         if name in expected:
             raise ValueError('Duplicate feed sprite ID: ' + name)
-        if (type(entry['bytes']) is not int or entry['bytes'] <= 0 or
-                not re.fullmatch(r'[0-9a-f]{64}', entry['sha256'])):
+        size, digest = entry.get('bytes'), entry.get('sha256')
+        if (type(size) is not int or size <= 0 or
+                not isinstance(digest, str) or not re.fullmatch(r'[0-9a-f]{64}', digest)):
             raise ValueError('Invalid feed sprite provenance: ' + name)
         expected[name] = entry
     if not expected:
