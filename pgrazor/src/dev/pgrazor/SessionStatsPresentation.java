@@ -19,10 +19,10 @@ final class SessionStatsPresentation {
         if(c==null||window<=0)return "Aguardando estatísticas do jogo…";
         long covered=Math.max(0,Math.min(window,c.coveredMs));
         String period=covered==0?"Aguardando segunda leitura":covered<60_000?"Menos de 1 min observado":
-                number(covered/60_000.0,0)+" min observados";
+                number(Math.floor(covered/60_000.0),0)+" min observados";
         String coverage=period+(covered<window?" · período parcial":" · período completo");
-        return coverage+"\nXP +"+count(c,SessionStatsHistory.XP)+" · Poeira +"+count(c,SessionStatsHistory.DUST)
-            +" / −"+count(c,SessionStatsHistory.DUST_SPENT)+" (estimativa pelo saldo)"
+        String dust=c.dustObserved?"Poeira +"+count(c,SessionStatsHistory.DUST)+" / −"+count(c,SessionStatsHistory.DUST_SPENT)+" (estimativa pelo saldo)":"Poeira: dados insuficientes";
+        return coverage+"\nXP +"+count(c,SessionStatsHistory.XP)+" · "+dust
             +"\nCapturas "+count(c,SessionStatsHistory.CAUGHT)+" · Encontros "+count(c,SessionStatsHistory.SEEN)
             +"\nPoképaradas "+count(c,SessionStatsHistory.STOPS)+" · Caminhada "+number(c.get(SessionStatsHistory.KM),2)
             +" km · Ovos "+count(c,SessionStatsHistory.HATCHED)

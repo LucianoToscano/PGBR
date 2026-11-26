@@ -30,7 +30,9 @@ public final class SessionStatsHistory {
     public static final class Change {
         public final double[] values;
         public final long coveredMs, updatedAt;
-        Change(double[] values, long coveredMs, long updatedAt) { this.values = values; this.coveredMs = coveredMs; this.updatedAt = updatedAt; }
+        public final boolean dustObserved;
+        Change(double[] values, long coveredMs, long updatedAt) { this(values, coveredMs, updatedAt, true); }
+        Change(double[] values, long coveredMs, long updatedAt, boolean dustObserved) { this.values = values.clone(); this.coveredMs = coveredMs; this.updatedAt = updatedAt; this.dustObserved = dustObserved; }
         public double get(int index) { return values[index]; }
     }
 
@@ -118,7 +120,8 @@ public final class SessionStatsHistory {
         }
         double[] out = new double[DUST_SPENT + 1];
         for (int i = 0; i < out.length; i++) out[i] = Math.max(0, latest[i] - base[i]);
-        return new Change(out, Math.max(0, covered), latestAt);
+        // A known balance at the window baseline is necessary to interpret dust deltas.
+        return new Change(out, Math.max(0, covered), latestAt, covered > 0 && latest[BALANCE] >= 0 && base[BALANCE] >= 0 && (before == null || before[BALANCE + 1] >= 0));
     }
     /** {@code at:v0;v1;...|...} for storage, oldest first, with the newest reading last. */
     public synchronized String save() {
