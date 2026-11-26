@@ -29,6 +29,8 @@ class MapPoiFreshnessJavaTests(unittest.TestCase):
         self.assertLess(status.index('"Nearby layers unavailable"'), status.index('"Nearby game data expired; waiting for refresh"'))
         self.assertLess(status.index('"Nearby game data expired; waiting for refresh"'), status.index('"Waiting for nearby game locations"'))
         self.assertIn("MapPoiFreshness.Snapshot read()", layer)
+        control_test = (ROOT / "test/test_control_java.py").read_text(encoding="utf-8")
+        self.assertIn("'Control.java', 'MapPoiFreshness.java'", control_test)
 
 
 if __name__ == "__main__":

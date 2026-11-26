@@ -380,3 +380,7 @@ PT-BR sincronizado em Sem Root/Root/glossário e fixture dinâmica. Validação:
 ### Validação ampla local (26/11)
 
 `python -B -m unittest discover -s pgrazor/test -v`: 526 testes, 79 skips por ferramentas/dispositivos ausentes e 1 erro de ambiente no teste existente `test_iflowgo_request_policy_java.test_actual_java_policy` (`FileNotFoundError: javac`). Não é falha da lógica MAP-01; comprova que a suíte completa local não ficou inteiramente verde. Os focados de MAP-01 acima passaram; a checagem real Java/Root do CI da #319 ainda estava pendente. Não concluir build Android nesta máquina.
+
+### Correção de CI MAP-01 identificada após publicação
+
+No HEAD `364d567`, o job GitHub `Suite real check.py + compilacao Java + Root` falhou no teste que compila `Control.java`: a fixture `test_control_java.py` lista explicitamente fontes Java, mas ainda não incluía o novo `MapPoiFreshness.java`. Inspecionei as anotações do check-run; a falha não era regra temporal nem compilação Android. Atualizado o input-source list do harness e acrescentado contrato que impede nova omissão. Reexecutar CI no novo HEAD; não considerar a falha do HEAD anterior corrigida sem resultado verde.

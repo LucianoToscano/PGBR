@@ -2732,3 +2732,7 @@ Sem build, APK, Root module, SHA256SUMS de release, teste físico desta branch, 
 ### Execução ampla de regressão local — 26/11/2026 UTC
 
 `python -B -m unittest discover -s pgrazor/test -v` executou 526 casos: 446 passaram, 79 foram skipped por ferramentas/JDK/Android indisponíveis, e 1 erro de ambiente em `test_iflowgo_request_policy_java.test_actual_java_policy`, que chama `javac` sem testar disponibilidade e recebeu `FileNotFoundError`. Esse erro é preexistente e independente das alterações MAP-01. Resultado global, portanto, **não totalmente verde**; não mascarar como sucesso. A compilação Java/Root da PR #319 ainda aguardava CI nesta consulta. Testes direcionados de teclado/POI/rotas/PT-BR continuam verdes, com skips de JDK explícitos.
+
+### Diagnóstico de CI da PR #319 — HEAD `364d567` (26/11/2026 UTC)
+
+O job `Suite real check.py + compilacao Java + Root` falhou em `test_control_java.test_quick_summary_policy_and_location_isolation`: fixture compila uma lista explícita de fontes e não tinha incluído a dependência nova `MapPoiFreshness.java` usada por `Control.java`. A evidência veio das 9 anotações via API do check-run; o pacote de logs foi inacessível nesta sandbox, mas a mensagem da anotação contém os três `cannot find symbol/package` e o teste exato. Corrigida a lista de fontes do harness e adicionada asserção estática para garantir inclusão futura. Outras verificações desse run passaram; nova execução é obrigatória após o patch. Resultado HEAD antigo permanece failure no histórico, não mascarar.
