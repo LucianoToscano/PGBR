@@ -151,8 +151,68 @@ public final class QuickLocationDialogs {
                 place.name,place.category,zone,place.latitude,place.longitude);
         }
         show(activity,ChoiceList.attach(builder.create(),names,which->
-            TeleportDialog.confirm(activity,sorted.get(which).latitude,
-                sorted.get(which).longitude,target::teleport)));
+            showPlaceActions(activity,target,sorted.get(which))));
+    }
+
+    private static void showPlaceActions(Activity activity,TeleportTarget target,SavedPlaces.Entry place){
+        if(activity.isFinishing()||activity.isDestroyed())return;
+        show(activity,new AlertDialog.Builder(themed(activity))
+            .setTitle(place.name)
+            .setItems(new String[]{"Copiar coordenadas","Renomear","Excluir","Teleporte"},(d,which)->{
+                switch(which){
+                    case 0:CoordinateClipboard.copy(activity,place.latitude,place.longitude,"Coordenadas copiadas");break;
+                    case 1:renamePlace(activity,target,place);break;
+                    case 2:confirmRemovePlace(activity,target,place);break;
+                    case 3:TeleportDialog.confirm(activity,place.latitude,place.longitude,target::teleport);break;
+                    default:break;
+                }
+            }).setNegativeButton("Voltar",(d,w)->showFavorites(activity,target)).create());
+    }
+
+    private static void renamePlace(Activity activity,TeleportTarget target,SavedPlaces.Entry place){
+        EditText name=input(themed(activity),"Nome do local");
+        name.setFilters(new android.text.InputFilter[]{new android.text.InputFilter.LengthFilter(SavedPlaces.NAME_LIMIT)});
+        name.setText(place.name);
+        AlertDialog dialog=new AlertDialog.Builder(themed(activity)).setTitle("Renomear local")
+            .setView(name).setNegativeButton("Cancelar",null).setPositiveButton("Salvar",null).create();
+        dialog.setOnShowListener(d->dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v->{
+            String requested=name.getText().toString();
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(false);
+            new Thread(()->{
+                String error=null;
+                try{
+                    if(!new SavedPlaces(activity).rename(place.id,requested))error="Local não encontrado.";
+                }catch(java.io.IOException|RuntimeException e){error=e.getMessage()==null?"Não foi possível renomear.":e.getMessage();}
+                final String failed=error;
+                activity.runOnUiThread(()->{
+                    if(activity.isFinishing()||activity.isDestroyed()||!dialog.isShowing())return;
+                    if(failed!=null){name.setError(failed);dialog.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(true);return;}
+                    dialog.dismiss();showFavorites(activity,target);
+                });
+            },"pgbr-place-rename").start();
+        }));
+        show(activity,dialog);
+    }
+
+    private static void confirmRemovePlace(Activity activity,TeleportTarget target,SavedPlaces.Entry place){
+        AlertDialog dialog=new AlertDialog.Builder(themed(activity)).setTitle("Excluir local?")
+            .setMessage(place.name).setNegativeButton("Cancelar",null).setPositiveButton("Excluir",null).create();
+        dialog.setOnShowListener(d->dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v->{
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(false);
+            new Thread(()->{
+                String error=null;
+                try{
+                    if(!new SavedPlaces(activity).remove(place.id))error="Local não encontrado.";
+                }catch(java.io.IOException|RuntimeException e){error="Não foi possível excluir o local.";}
+                final String failed=error;
+                activity.runOnUiThread(()->{
+                    if(activity.isFinishing()||activity.isDestroyed()||!dialog.isShowing())return;
+                    if(failed!=null){Toast.makeText(activity,failed,Toast.LENGTH_LONG).show();dialog.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(true);return;}
+                    dialog.dismiss();showFavorites(activity,target);
+                });
+            },"pgbr-place-remove").start();
+        }));
+        show(activity,dialog);
     }
 
     private static void showFavoriteOptions(Activity activity,TeleportTarget target,SavedPlaces.Snapshot snap){

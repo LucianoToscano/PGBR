@@ -282,7 +282,7 @@ class ControlJavaTests(unittest.TestCase):
                 'Control.java', 'AutoMaxBattle.java', 'SettingsBackupStore.java', 'SettingsBackupRules.java', 'LiveFeedFilters.java', 'AutoRaidPreferences.java', 'QuickMenuVisibilityPolicy.java', 'PvpBattleMode.java', 'SharedBattleOptions.java', 'TrainerAliasPolicy.java', 'MapCatchStatus.java', 'MotionEngine.java', 'LocationState.java', 'GameRoutesController.java',
                 'CameraHeadingState.java', 'CameraSteering.java',
                 'BerryPriority.java', 'MapTapSequence.java', 'CooldownState.java',
-                'VgpController.java', 'CatchOutcomeController.java', 'SettingsWriter.java', 'SmartCatchPreferences.java', 'GymAutomationPreferences.java', 'BuddyEmotionPreferences.java', 'ResearchPreferences.java'))
+                'VgpController.java', 'CatchOutcomeController.java', 'SettingsWriter.java', 'AccountAppearancePolicy.java', 'SmartCatchPreferences.java', 'GymAutomationPreferences.java', 'BuddyEmotionPreferences.java', 'ResearchPreferences.java'))
             sources.extend([ROOT / 'test/ControlWildEventTest.java', ROOT / 'test/ControlEggInventoryTest.java', ROOT / 'test/ControlAdventureSyncTest.java', ROOT / 'test/ControlLogRetentionTest.java', ROOT / 'test/ControlQuickSummaryTest.java',ROOT / 'test/ControlQuickBallTest.java',
                             ROOT / 'test/ControlQuickBallOutcomeTest.java',ROOT / 'test/ControlSettingsTest.java',
                             ROOT / 'test/VgpControllerTest.java',ROOT / 'test/CooldownTest.java',ROOT / 'test/ControlCooldownTest.java',
