@@ -6,6 +6,7 @@ import re
 import shutil
 import subprocess
 import sys
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 ROOT = Path(__file__).resolve().parents[1]
 PROJECT = ROOT / 'pgrazor'
@@ -20,6 +21,10 @@ def run(*args, **kwargs):
 def preflight():
     """Explain missing prerequisites before invoking subprocesses."""
     missing=[]
+    try:
+        ZoneInfo('America/Fortaleza')
+    except ZoneInfoNotFoundError:
+        missing.append('IANA time zone data: python -m pip install --require-hashes --only-binary=:all: -r tools/requirements-offline.txt')
     for executable in ('javac', 'java', 'node'):
         if not shutil.which(executable):
             missing.append(executable)
