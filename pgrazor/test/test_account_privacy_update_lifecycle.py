@@ -9,7 +9,7 @@ class AccountPrivacyUpdateLifecycleTests(unittest.TestCase):
         self.assertIn("final int openingPrivacyMode=Control.trainerPrivacyMode()",source)
         self.assertIn('if(openingPrivacyMode==0)try{android.util.AtomicFile',source)
         self.assertIn('hidden.setText("Coordenadas ocultas")',source)
-        self.assertIn("if(Control.trainerPrivacyMode()!=openingPrivacyMode){dialog.dismiss();return;}",source)
+        self.assertIn("if(Control.trainerPrivacyMode()!=openingPrivacyMode){dismissChildren(children);dialog.dismiss();return;}",source)
 
     def test_copy_appearance_and_account_removal_lifecycle(self):
         source=(ROOT/"AccountsDialog.java").read_text(encoding="utf-8")
