@@ -40,6 +40,27 @@ class AutoDevTests(unittest.TestCase):
             self.assertEqual(m.free_configuration(invalid), {})
         self.assertEqual(m.free_configuration({"GEMINI_API_KEY": "ordinary-key"}), {})
 
+    def test_existing_key_only_with_explicit_selection(self):
+        env = {"PGBR_AUTO_DEV_MODE": "free", "PGBR_FREE_BILLING_CONFIRMED": "true",
+               "PGBR_GITHUB_FREE_BUDGET_CONFIRMED": "true", "GEMINI_API_KEY": "legacy-key",
+               "PGBR_GEMINI_FREE_MODEL": "gemini-test"}
+        self.assertEqual(m.free_configuration(env), {})
+        env["PGBR_GEMINI_KEY_SOURCE"] = "existing"
+        self.assertEqual(m.free_configuration(env), {"gemini": ("gemini-test", "legacy-key")})
+        env["PGBR_FREE_BILLING_CONFIRMED"] = "false"
+        self.assertEqual(m.free_configuration(env), {})
+        env["PGBR_FREE_BILLING_CONFIRMED"] = "true"
+        env["PGBR_GEMINI_KEY_SOURCE"] = "unknown"
+        self.assertEqual(m.free_configuration(env), {})
+
+    def test_pause_ignores_untrusted_comments(self):
+        def comment(user, ident):
+            return {"user": {"login": user}, "body": "<!-- pgbr-auto-dev:v1:" + ident + ":paused -->\nreceipt"}
+        pages = [[comment("github-actions[bot]", "G-TEST-01")],
+                 [comment("github-actions[bot]", "G-TEST-02"), comment("other", "G-TEST-03")]]
+        self.assertEqual(m.paused_batch(pages), "G-TEST-02")
+        self.assertIsNone(m.paused_batch([[comment("other", "G-TEST-03")]]))
+
     def test_provider_payloads(self):
         url, headers, body = m.request_spec("gemini", "gemini-test", "secret", "public task")
         self.assertEqual(url, "https://generativelanguage.googleapis.com/v1beta/models/gemini-test:generateContent")
