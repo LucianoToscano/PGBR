@@ -145,6 +145,8 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Preparar DEX fixado antes do gate
         run: python -c "import sys; sys.path.insert(0, 'pgrazor'); import dex_bridges; dex_bridges.dependencies(download=True)"
+      - name: Instalar dados de fuso IANA fixados para testes offline
+        run: python -m pip install --require-hashes --only-binary=:all: --no-deps -r tools/requirements-offline.txt
       - name: Testar Java Python Node geradores e vendor
         shell: pwsh
         run: |
