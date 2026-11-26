@@ -72,7 +72,7 @@ struct DisplayCandidate {
 enum class DisplayReason : uint8_t {
   OFF=0, EFFECTIVENESS=1, UNAVAILABLE_PAIR=2, ONLY_ONE_READY=3,
   UNKNOWN_EFFECT=4, STALE_EFFECT=5, UNVERIFIED_SLOTS=6,
-  KNOWN_SUPER=7, ACTOR_UNKNOWN=8, ACTOR_REFRESH=9
+  KNOWN_SUPER=7, ACTOR_UNKNOWN=8, ACTOR_REFRESH=9, NONE_READY=10
 };
 struct DisplayDecision {
   int index=-1;
@@ -85,6 +85,7 @@ inline DisplayDecision inspect_display(bool enabled,uint64_t now,
   if(!items||count!=2||now==0)return {-1,DisplayReason::UNAVAILABLE_PAIR};
   constexpr uint64_t kMaxAgeMs=200;
   const auto &a=items[0],&b=items[1];
+  if(!a.ready&&!b.ready)return {-1,DisplayReason::NONE_READY};
   if(!a.ready||!b.ready)return {-1,DisplayReason::ONLY_ONE_READY};
   if(!a.sample.batch_token||!b.sample.batch_token||
      pgr_charge_effect_ui::pack_observation(a.sample)==0||
@@ -162,6 +163,7 @@ inline DisplayAdmission admit_display(bool enabled,uint64_t now,
   // Old behavior fell back to first ready here; the new Smart Attack mode
   // fail-closes charged automation rather than undoing its own policy.
   if(ranking.index<0)return {-1,true,ranking.reason};
+  if(!items[0].ready&&!items[1].ready)return {-1,true,DisplayReason::NONE_READY};
   const int best=ranking.index,other=1-best;
   if(items[best].ready)return {best,false,ranking.reason};
   // Smart ON: reserve energy for ANY confirmed strictly better tier.

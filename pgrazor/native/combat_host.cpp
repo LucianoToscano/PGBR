@@ -401,6 +401,7 @@ const char *smart_charge_reason(int32_t aux) {
         case 7: return "known-super-other-unknown";
         case 8: return "actor-unknown";
         case 9: return "actor-refresh";
+        case 10: return "none-ready";
         default: return "unknown";
     }
 }
@@ -545,6 +546,7 @@ void drain_leaf_events(uint64_t tid) {
                         (flags&8192u)?"true":"false");
                     queue_event(PGR_CBH_EV_BATTLE_ACTION,rev.id,rev.aux,tid,buf);
                     if(held)transport_text_action(47,
+                        rev.id==10?"Ataque Inteligente: nenhum carregado pronto na última leitura":
                         rev.id==3?"Ataque Inteligente: aguardando o melhor carregado":
                         rev.id==8?"Ataque Inteligente: aguardando adversário identificado":
                         rev.id==9?"Ataque Inteligente: atualizando golpes após troca":
