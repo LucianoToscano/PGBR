@@ -153,6 +153,42 @@ public final class SessionStatsHistoryTest {
         check(d.size() <= 25 * 12 + 2, "pruned to about 25 hours: " + d.size());
         d.load("garbage|12:1;2|" + saved.substring(0, 20), T0);
         check(d.change(SessionStatsHistory.HOUR_MS) == null, "malformed storage is ignored");
+        // Independent persistence/precision batch: no Android preferences or runtime changes.
+        SessionStatsHistory local = new SessionStatsHistory();
+        check(!local.record(T0, v(100,0,0,0,0,0,-0.5)), "fractional negative dust balance rejected");
+        check(!local.record(0, v(100,0,0,0,0,0,0)), "zero timestamp rejected");
+        check(!local.record(T0, v(100,0,0,0,Double.POSITIVE_INFINITY,0,0)), "infinite distance rejected");
+        check(!local.record(T0, null), "null sample rejected");
+        check(local.record(T0, v(100,0,0,0,0,0,10)), "valid local sample");
+        check(!local.save().contains("|"), "single sample serialized once");
+        String canonical = local.save();
+        local.load(canonical, T0);
+        check(canonical.equals(local.save()), "canonical serialization round trip");
+        check(local.record(T0 + MIN, v(200,0,0,0,0,0,20)), "valid later sample");
+        check(local.save().contains("|"), "newest distinct instant kept");
+        String twoSamples = local.save();
+        local.load(twoSamples, T0 + MIN);
+        check(twoSamples.equals(local.save()), "distinct sample round trip");
+        local.load(twoSamples, T0 + SessionStatsHistory.KEEP_MS + 2 * MIN);
+        check(local.change(SessionStatsHistory.HOUR_MS) == null, "expired history no longer presented as current");
+        local.load(T0 + ":100;0;0;0;0;0;0;0;-0.5", T0);
+        check(local.change(SessionStatsHistory.HOUR_MS) == null, "invalid persisted balance rejected");
+        local.load(T0 + ":100;0;0;0;0;0;10;4;20|" +
+                (T0 + MIN) + ":200;0;0;0;0;0;9;4;25|" +
+                (T0 + 2 * MIN) + ":300;0;0;0;0;0;15;6;25", T0 + 2 * MIN);
+        near(5, local.change(SessionStatsHistory.HOUR_MS).get(SessionStatsHistory.DUST), "corrupt earned row skipped");
+        near(2, local.change(SessionStatsHistory.HOUR_MS).get(SessionStatsHistory.DUST_SPENT), "valid spent total preserved");
+        local.load(T0 + ":100;0;0;0;0;0;10;4;20|" +
+                (T0 + MIN) + ":200;0;0;0;0;0|" +
+                (T0 + 2 * MIN) + ":300;0;0;0;0;0;15;6;25", T0 + 2 * MIN);
+        near(200, local.change(SessionStatsHistory.HOUR_MS).get(SessionStatsHistory.XP), "legacy row cannot overwrite modern dust");
+        near(5, local.change(SessionStatsHistory.HOUR_MS).get(SessionStatsHistory.DUST), "legacy row leaves dust intact");
+        local.load(T0 + ":100;0;0;0;0;0;10;4;20|" +
+                (T0 + MIN) + ":200;0;0;0;0;0;12;3;22|" +
+                (T0 + 2 * MIN) + ":300;0;0;0;0;0;15;6;25", T0 + 2 * MIN);
+        near(2, local.change(SessionStatsHistory.HOUR_MS).get(SessionStatsHistory.DUST_SPENT), "corrupt spent row skipped");
+        local.load("x".repeat(80_001), T0);
+        check(local.change(SessionStatsHistory.HOUR_MS) == null, "oversized history rejected");
         System.out.println("SessionStatsHistory: " + checks + " checks passed");
     }
 }
