@@ -40,7 +40,7 @@ final class MapPoiLayer {
     /** The nearby-point feed; opening the layer signals the game to keep snapshots fresh. */
     interface Snapshots {
         void setOpen(boolean open);
-        String read();
+        MapPoiFreshness.Snapshot read();
     }
 
     private final Context context; // asset access and density
@@ -96,8 +96,9 @@ final class MapPoiLayer {
 
     void refresh() {
         if (closed) return; snapshots.setOpen(layers != 0);
-        String snapshot = snapshots.read();
-        if (snapshot == null) snapshot = "";
+        MapPoiFreshness.Snapshot state = snapshots.read();
+        String snapshot = state == null ? "" : state.value;
+        long snapshotAge = state == null ? -1 : state.ageMillis;
         if (!snapshot.equals(lastPois)) {
             lastPois = snapshot;
             pois = new JSONArray();
@@ -114,7 +115,8 @@ final class MapPoiLayer {
         }
         if (poiStatus != null) {
             String message = layers == 0 ? "Nearby layers off" : snapshotInvalid
-                    ? "Nearby layers unavailable" : snapshot.trim().isEmpty()
+                    ? "Nearby layers unavailable" : MapPoiFreshness.isExpired(snapshotAge)
+                    ? "Nearby game data expired; waiting for refresh" : snapshot.trim().isEmpty()
                     ? "Waiting for nearby game locations" : "Nearby locations loaded by the game (" + pois.length() + ")";
             poiStatus.setText(dev.pgrazor.PtBr.tr(message));
         }
