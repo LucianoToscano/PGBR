@@ -27,6 +27,22 @@
         "Propor testes offline de importação GPX pessoal com UTF-8, segmentos vazios e preservação de dados.",
         "Propor critérios de privacidade visual e fallback de ícones sem mudar o jogo original."
       ]
+    },
+    {
+      "id": "G-049-04",
+      "agent": "gemini",
+      "tasks": [
+        "Proponha fixtures adversariais independentes para PC/IV/PvP offline, incluindo limites numéricos e formas desconhecidas.",
+        "Proponha testes de precisão e desempate do ranking PvP e verificação independente das tabelas de tipos e multiplicadores.",
+        "Proponha testes de datas, fusos, horários ambíguos e limites de eventos offline.",
+        "Proponha testes de normalização Unicode, nomes, identificadores e deduplicação.",
+        "Proponha testes de importação/exportação offline de arquivos inválidos e limites de tamanho.",
+        "Proponha testes de cache limitado, invalidação e recuperação de dados corrompidos.",
+        "Proponha testes de migração de dados locais idempotente e preservação dos dados existentes.",
+        "Proponha fixtures para sanitização de dados e erros sem exposição de credenciais.",
+        "Proponha testes independentes de proveniência e verificação de hashes de datasets.",
+        "Documente precisão, limitações e critérios de aceitação dos simuladores offline. Referência: PR #328, G-049-02/03; sem acesso ao código privado, não afirme testes executados, não duplique fixtures conhecidas. Sem rede, ações no jogo, alterações de runtime, V5 ou segredos."
+      ]
     }
   ]
 }

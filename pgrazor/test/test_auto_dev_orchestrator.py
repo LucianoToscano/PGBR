@@ -82,6 +82,23 @@ class AutoDevTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             m.response_text("chatgpt", {})
 
+    def test_failure_diagnostics_never_include_provider_text(self):
+        from urllib.error import HTTPError, URLError
+        secret = "private-key-and-url"
+        cases = [
+            (HTTPError("https://example.invalid/" + secret, 403, secret, None, None), "http-403"),
+            (HTTPError("https://example.invalid/" + secret, 400, secret, None, None), "http-400"),
+            (TimeoutError(secret), "timeout"),
+            (URLError(secret), "transport-error"),
+            (ValueError(secret), "invalid-or-incomplete-response"),
+            (OSError(secret), "local-io-error"),
+            (RuntimeError(secret), "unexpected-error"),
+        ]
+        for error, expected in cases:
+            result = m.safe_failure_reason(error)
+            self.assertEqual(result, expected)
+            self.assertNotIn(secret, result)
+
 
 if __name__ == "__main__":
     unittest.main()
