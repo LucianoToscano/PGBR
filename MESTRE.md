@@ -452,10 +452,67 @@ Status: ABERTO; capturas de uma versão instalada sem SHA informado. Reconciliar
 - **Lição de gate registrada duas vezes.** O parser de sintaxe local aprova o que o `javac -source 8` reprova: o CI pegou (a) captura de variável não final em lambda (`QuickLocationDialogs`, commit `1d5568a`) e (b) troca de argumentos `double`/`int` em `MapOptics.scaleFor` (commit seguinte). Ambos corrigidos no código, e o segundo virou teste: `test_map_optics_java` **compila** as chamadas `MapOptics.*` extraídas da view.
 - **CI real.** Runs `45750552712` (falhou, defeito real encontrado), `45751244882` **5/5 jobs SUCCESS** no HEAD final. Suíte local: **556 testes**, resta apenas o erro ambiental do jar `dexlib2-2.5.2.jar` ausente (pré-existente na base `617e91f`). Limites inalterados: `device_tested=false`, `provider_connected=false`, sem APK LT049, sem declaração de compatibilidade 0.439.0.
 
-## 26/11/2026 UTC — A-049-01 (LMArena): reconciliação final e CI verde no HEAD
-- A main avançou para `34474014…` (#329, #336, #337) durante o lote. A branch `arena/64947e58-pgbr` foi reconciliada **sem force push**; conflitos eram todos documentais ou de teste de dicionário e foram resolvidos preservando **os dois lados**: `PtBrDynamicTest` soma as asserções da main (`Nearby game data expired…`) e as 20 deste lote; Mestre único, `MESTRE.md` e catálogo mantêm o texto integrado da main e o recibo A-049-01.
-- CI no HEAD final: run [45751930966](https://github.com/LucianoToscano/PGBR/actions/runs/45751930966) **5/5 jobs SUCCESS** (`Suite real check.py + compilacao Java + Root` incluso); governança e PT-BR Drive também verdes no mesmo SHA. Suíte local pós-mesclagem: **591 testes**, resta apenas o erro ambiental do jar `dexlib2-2.5.2.jar` ausente.
-- PR [#327](https://github.com/LucianoToscano/PGBR/pull/327) pronta para revisão (MERGEABLE). Limites inalterados: `device_tested=false`, `provider_connected=false`, sem APK LT049, sem declaração de compatibilidade 0.439.0.
+## 26/11/2026 UTC — Fechamento de integração LT049 e abertura de LT050 por ordem do proprietário
+
+**Base de código consolidada confirmada:** `64f9275791abf62fcf5545ebb39252af5648a381`. LT049 é candidata em consolidação, não release publicada; LT050 é o próximo ciclo de desenvolvimento. O campo histórico RELEASE_TAG não é alterado sem prova de publicação. Não perder funcionalidades, pendências, V5, dados, proteções, rotas oficiais, histórico ou branches.
+
+### Entregas integradas com evidências
+| PR | Alteração | Merge confirmado |
+|---|---|---|
+| #322 | Validação de manifesto de sprites | 2f559ef912213fd82ffe785409fa09b0b863fbad |
+| #321 | AUTO DEV gratuito e bloqueios de cobrança | 78d57fe5f37187fd3ce61563e22d299a560215d2 |
+| #324 | Validação de metadados APKM | b820ed70af7b81797a738eb1e4cb9470720cdaac |
+| #323 | Gatilho AUTO DEV na main | 6f3df635425e6923aa5c007ccf4651c842299717 |
+| #326 | Mapa, teclado, validade de POI e PT-BR | 4104259eca41ae0e8575e6dac89f2fe23b260e86 |
+| #330 | Fila offline e motivos sanitizados de falha | 9b7e15cfb0f73d1bacbf6342827487ab30b1f2ae |
+| #332 | Integridade dos pacotes de release | cbbea6405393cfba1f9f09c1053bd52b14280846 |
+| #333 | Estado de erro real no AUTO DEV | 5c023155aeb48d05f94d8a05617ea875878e8d10 |
+| #331 | Receita QA LT049 e identidade assinada | 9e9fea2d5f867bd296b6db93da7f7fd53a0e39c2 |
+| #334 | Validação do histórico de estatísticas | f4016e8abfbbb0570dc3c8da72c2464efcfa6f3e |
+| #335 | Isolamento de histórico e perfis | 9fc9917d6f984fd3c99f8aa77c167fb7a445cb20 |
+| #329 | Registro de 12 requisitos das capturas, somente documentação | ver PR #329; CI 2/2 |
+| #336 | Identidade estrita APKM | ver PR #336; CI 2/2 |
+| #337 | Integridade do armazenamento local | ver PR #337; CI 2/2 |
+| #338 | Prévia e confirmação de limites da Bolsa | b64ada8530004530eb722b0437f730280f416d59 |
+| #339 | Fechamento de janelas privadas de contas | 28cbb69f1ec98ca2889d08a47521fb620462f92b |
+| #341 | Estatísticas 1h/24h, cobertura e cópia sanitizada | ac1fd6af191ffd1e79c98a21d3ad118217ee966f |
+| #342 | Leitura limitada e privacidade dos backups | b85bd799d1d90f67b187935408fdbe1f305dfb5b |
+| #327 | Locais/GPX, MapOptics, ordenação, acessibilidade, traduções e harness JSON | c76b1e371deefa0bee586184441d1f4838d9edf6 |
+| #340 | Auditoria offline de sprites (Gemini 0011/0012), leitura binária Windows | b19949f3a6ce4c61792defe4e8d8dba47d5a8daf |
+| #343 | Visualizador de logs Root/sem Root, privacidade e limite de leitura | 7e46cb670d30e76dcd214ca9ce1f0ddef1ce11f1 |
+| #345 | Preparação segura do APKM e chave temporária | c3e8f92a8691cb7ddaff63d79873c86431a6687a |
+| #344 | Auditoria offline de datasets, privacidade e limites (Gemini 0013/0014) | 64f9275791abf62fcf5545ebb39252af5648a381 |
+
+Evidências recentes: #327 runs 45751930949/45751930997/45751931018/45751930966 verdes; #340 45752824973/45752825273 verdes; #343 45753353832/45753353790 verdes; #345 45753516669/45753516714 verdes. São validações de código, não homologação em aparelho.
+
+### Bloqueios LT049 e continuidade LT050
+- #328, HEAD 0ba0736fcbdaeabad4392043df6d8ee9f9e40f73: 21 arquivos offline, governança verde, CI de código não confirmado. Não integrar sem gate.
+- #344 integrada após CI 2/2 (45754983203/45754983228), merge 64f9275791abf62fcf5545ebb39252af5648a381; auditoria offline, não homologação física.
+- 0010 Gemini: recibo recuperado, não importar integralmente validador redundante de ícones; conservar trabalho reaproveitável e revisar sem duplicação.
+- G-049-10 (pesquisas offline) e A-049-02 (apresentação WorldMapDialog) já despachados, aproveitar entregas na fila LT050, sem pedir reimplementação. Reservar G-050-01/A-050-01/C-050-01 para os próximos lotes efetivamente livres, em branches independentes. Coordenação na issue #320; ChatGPT responsável por integração, QA, release e tarefas próprias não sobrepostas. Trabalho futuro não deve impedir correções necessárias para liberar LT049.
+- Perfil ativo em `pgrazor/native/schema/game/current.json`: 0.437.0.json; arquivo 0.439.0.json ausente na main na conferência. A receita QA LT049 exige perfil 0.439.0 revisado, identidade original, assinatura e CI; sem fallback. Presença do original no draft privado ainda não confirmada. Não renomear APK anterior para LT049, não aprovar perfil indiscriminadamente e não publicar tag/artefato sem evidência. APK LT049 ainda não gerado, device_tested=false, provider_connected=false.
+- Conservar todos os itens abertos do índice com seus critérios de aceite. Não confundir fechamento do lote de código com conclusão total ou publicação. Módulos e patches offline não equivalem a uma função integrada na interface Android.
+- Ordem do proprietário: finalizar a LT049, gerar APK verificável e depois prosseguir em LT050. Cada novo comando de avanço deve recuperar o estado atual, incorporar entregas pendentes e distribuir o próximo lote sem duplicação.
+
+
+
+## LT049 — migração candidata 0.439.0 (26/11/2026)
+
+Origem upstream: `jpitty03/PGRazor@39b52749eed81ed344140000a9a3ee200d41fbe0`. O commit explica que o jogo removeu CombatUI, CombatDirectorV2 e CombatChargeAttackDisplay; as 25 entradas ausentes pertencem à interface Legacy removida, não são endereços a inventar. Perfil anterior PGBR idêntico byte a byte ao upstream anterior (`c6efee8fa88a2eed1a074e180df9bb8a7fadd5ae`), assim como os seis arquivos gerados anteriores. Importação por hunks exatos, sem substituir arquivos com alterações PGBR; perfil 0.439.0 e seis saídas geradas correspondem ao upstream revisado. Perfil 0.437.0 preservado para rollback. Original passou assinaturas e identidade no run 45758860479. #348 integrada, prepara build QA automaticamente após seleção de perfil na main. A migração ainda depende de CI e avaliação das regressões próprias PGBR, sem APK ou homologação física confirmados. device_tested=false; provider_connected=false. Não publicar antes dos testes e hashes reais.
+
+
+## 26/11/2026 — LT049 QA entregue e início LT050
+
+Checkpoint imutável do APK QA: `403150f8a402e7101840fafcf7772bf946290c77`. #349 integrou o perfil 0.439.0 (CI 2/2), #350 corrigiu a validação de manifesto Windows via verificação assinada em Linux e igualdade SHA-256 (CI 2/2). Run [45762103569](https://github.com/LucianoToscano/PGBR/actions/runs/45762103569) concluído com sucesso, 4/4 jobs; job 139714467533 verificou os três arquivos via tools/verify_release.py. Artefato [15091455644](https://github.com/LucianoToscano/PGBR/actions/runs/45762103569/artifacts/15091455644), 204653488 bytes, expira em 26/12/2026. Hashes lidos dos logs reais:
+
+| Arquivo | SHA-256 |
+|---|---|
+| PGBR-v0.00.49-LT.apk | 5c3ac782e9b458451599aad9410a27ce65461fafcdd37323da3513ecae0daf9b |
+| PGBR-v0.00.49-LT-Root.apk | c8401c01b7348a74a5fc7e72049e934187207a651e3625630688b34364f8ccfc |
+| PGBR-v0.00.49-LT-Root-module.zip | 220074b3ca2c1a2fd9e1ad5537629cd299df41e60a5d230f78122dc54b83b6fd |
+| ZIP do artefato | c0dc67e5070fb3a8faf6461af43dbe0dd89519aea6a39ac42cbab8a7fb5d1451 |
+
+QA concluída, não release publicada; device_tested=false; provider_connected=false. Os registros anteriores de bloqueio são históricos, não estado atual. Próximo ciclo LT050: despacho das três IAs na issue #320 comentário 7183816749. #351 recupera 17 arquivos offline da #328 sem sobrescrever código compartilhado, CI e auditoria pendentes; #328 preservada. Reservas Gemini G-050-01, Arena A-050-01, GPT C-050-01, sem duplicar G-049-10/A-049-02. Não modificar o artefato LT049 nem afirmar teste físico. Entregas externas dependem de recibos reais.
 
 ## 26/11/2026 UTC — A-049-01 (LMArena): PR #327 integrada na main
 - A PR [#327](https://github.com/LucianoToscano/PGBR/pull/327) foi integrada pelo proprietário em `c76b1e3` (merge commit da `arena/64947e58-pgbr`, HEAD `676388f`). A main já contém `MapOptics.java`, `SavedPlaceOrder.java`, os testes novos e o recibo A-049-01 nos três documentos.

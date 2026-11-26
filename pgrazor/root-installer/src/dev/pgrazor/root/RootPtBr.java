@@ -741,7 +741,7 @@ public final class RootPtBr {
         m.put("Raid", "Reide");
         m.put("That result just expired.", "Esse resultado acabou de expirar.");
         m.put("That result has no valid location.", "Esse resultado não possui localização válida.");
-        m.put("Teleported to the selected result.", "Teletransportado para o resultado selecionado.");
+        m.put("Teleported to the selected result.", "Teleporte realizado para o resultado selecionado.");
         m.put("Walking to the selected result.", "Caminhando para o resultado selecionado.");
         m.put("Couldn't open the map for that result.", "Não foi possível abrir o mapa desse resultado.");
         m.put("Distance: ", "Distância: ");
@@ -879,7 +879,7 @@ public final class RootPtBr {
         m.put("Local time at spoofed location: ", "Hora no local simulado: ");
         m.put(". Drag to move.", ". Arraste para mover.");
         m.put("Teleport cooldown", "Tempo de espera do teleporte");
-        m.put("Invalid teleport coordinates", "Coordenadas inválidas para teletransporte");
+        m.put("Invalid teleport coordinates", "Coordenadas inválidas para Teleporte");
         m.put("Open even when item bag is full", "Abrir mesmo com a bolsa cheia");
         m.put("Uses the game's full-bag reward setting. Full-bag opening may award fewer rewards.", "Usa a configuração do jogo para recompensas com a bolsa cheia. Abrir assim pode conceder menos recompensas.");
         m.put("Send &amp; Open Gifts", "Enviar e abrir presentes");
@@ -1163,8 +1163,8 @@ public final class RootPtBr {
         m.put("LivePokeMap (sign-in)", "LivePokeMap (requer login)");
         m.put("PoGoCoordinates (slow)", "PoGoCoordinates (lento)");
         m.put("Species: ", "Espécies: ");
-        m.put("Time between teleports", "Intervalo entre teletransportes");
-        m.put("Time between teleports: ", "Intervalo entre teletransportes: ");
+        m.put("Time between teleports", "Intervalo entre teleportes");
+        m.put("Time between teleports: ", "Intervalo entre teleportes: ");
         m.put("Right away", "Imediatamente");
         m.put("60 seconds", "60 segundos");
         m.put("90 seconds", "90 segundos");
@@ -1617,6 +1617,8 @@ public final class RootPtBr {
         m.put("Selected route: “%s” (%d stops).", "Rota selecionada: “%s” (%d paradas).");
         m.put("Route %d", "Rota %d");
         m.put("%s\n%d stops", "%s\n%d paradas");
+        m.put("You are at\n%s", "Você está em\n%s");
+        m.put("Place name (up to %d characters)", "Nome do local (até %d caracteres)");
         LABELS = Collections.unmodifiableMap(m);
     }
     private RootPtBr() {}
