@@ -53,11 +53,14 @@ public final class LogActivity extends Activity {
     private void refresh() {
         File file = Control.currentLog();
         if(file == null) { text.setText(dev.pgrazor.PtBr.tr("No log file is available. Android logcat may contain startup errors.")); return; }
-        try (RandomAccessFile input = new RandomAccessFile(file,"r")) {
-            long start = Math.max(0,input.length()-65536); input.seek(start);
-            byte[] bytes = new byte[(int)(input.length()-start)]; input.readFully(bytes);
-            text.setText(dev.pgrazor.PtBr.tr((start>0 ? "Showing latest 64 KiB. Export saves the current log segment, including retained startup diagnostics.\n" : "") + LogExport.displayLog(bytes,Control.trainerPrivacyMode()!=0)));
-        } catch(IOException error) { text.setText(dev.pgrazor.PtBr.tr("Cannot read log: "+error.getMessage())); }
+        try {
+            LogTail.Snapshot tail=LogTail.read(file);
+            text.setText(dev.pgrazor.PtBr.tr((tail.truncated ? "Showing latest 64 KiB. Export saves the current log segment, including retained startup diagnostics.\n" : "") + LogExport.displayLog(tail.bytes,Control.trainerPrivacyMode()!=0)));
+        } catch(IOException | SecurityException error) { text.setText("Não foi possível ler o registro. Tente atualizar."); }
+    }
+    @Override protected void onResume(){
+        super.onResume();
+        if(text!=null)refresh();
     }
     protected void onActivityResult(int request,int result,Intent data) {
         super.onActivityResult(request,result,data);
@@ -67,6 +70,6 @@ public final class LogActivity extends Activity {
             if(request==40&&Control.trainerPrivacyMode()!=0){Toast.makeText(this,"TXT bruto bloqueado no modo de privacidade.",Toast.LENGTH_LONG).show();return;}
             LogExport.save(this,data.getData(),Control.currentLog(),request==41);
             Toast.makeText(this,request==41?"Log and settings saved":"Log saved",Toast.LENGTH_SHORT).show();
-        } catch(IOException error) { Toast.makeText(this,"Falha ao salvar: "+error.getMessage(),Toast.LENGTH_LONG).show(); }
+        } catch(IOException error) { Toast.makeText(this,"Não foi possível salvar ou verificar o diagnóstico.",Toast.LENGTH_LONG).show(); }
     }
 }
