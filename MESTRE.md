@@ -340,3 +340,5 @@ PGBR-CI-205 integrado após CI completo; PGBR-UI-SMALL candidata de correção e
 ## 26/11/2026 UTC — recibo #312 e validação de entrada
 - #312 integrada: merge daeda9cfdae5f96bbf4f74933a60b88878fdfe08, HEAD 260d94178299dea72f5fcab17d32f8d06f827de9, workflows 45732025138/45732024960 concluídos com sucesso.
 - Verificadas localmente as duas partes do APKM, 85000000 e 84083658 bytes; concatenação SHA-256 c6d3c04c38ca2f2446957633b4fee8c93dcc9cebdbbaddc9cb9651722ef8f54f. Nova candidata adiciona reconstrução temporária com hashes fixados e verificação opcional por apksigner oficial, com assinatura esperada do perfil aprovado anterior; teste de assinatura real ainda não executado. Perfil 0.437.0 mantido.
+
+- LT049: receita de QA separada, base aprovada 0.437.0; ainda não compilada nem publicada. 0.439.0 não validada. Ver docs/releases/v0.00.49-LT.md. Conferir #314 e CI da receita antes de execução na main.
