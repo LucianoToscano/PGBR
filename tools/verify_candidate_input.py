@@ -59,7 +59,9 @@ def verify_signers(path, expected, apksigner):
                     raise ValueError("Unexpected APK signer: " + name)
 
 
-def validate(path, expected, apksigner=None):
+def validate(path, expected, apksigner=None, *, require_signatures=False):
+    if require_signatures and apksigner is None:
+        raise ValueError("Signature verification required: supply trusted apksigner")
     path = Path(path)
     if path.stat().st_size != expected["archive_bytes"]:
         raise ValueError("Archive size mismatch")
@@ -93,6 +95,7 @@ def validate(path, expected, apksigner=None):
         verify_signers(path, expected, apksigner)
     return {"archive_identity_verified": True, "split_hashes_verified": True,
             "archive_metadata_verified": True, "apk_signatures_verified": apksigner is not None,
+            "signed_manifest_identity_verified": False,
             "runtime_compatibility_verified": False, "game_version": expected["game_version"],
             "sha256": digest}
 
@@ -102,7 +105,11 @@ def main():
     parser.add_argument("input", type=Path, nargs="?")
     parser.add_argument("--parts", type=Path, nargs=2, metavar=("PART1", "PART2"))
     parser.add_argument("--apksigner", type=Path, help="Trusted executable from the Android SDK")
+    parser.add_argument("--require-signatures", action="store_true",
+                        help="Reject unsigned preflight reports; requires --apksigner")
     args = parser.parse_args()
+    if args.require_signatures and args.apksigner is None:
+        parser.error("--require-signatures requires --apksigner")
     if (args.input is None) == (args.parts is None):
         parser.error("Supply one input or --parts PART1 PART2")
     try:
@@ -111,10 +118,10 @@ def main():
             with tempfile.TemporaryDirectory(prefix="pgbr-candidate-join-") as directory:
                 joined = Path(directory) / "candidate.apkm"
                 assemble_parts(args.parts, expected, joined)
-                report = validate(joined, expected, args.apksigner)
+                report = validate(joined, expected, args.apksigner, require_signatures=args.require_signatures)
                 report["parts_verified"] = True
         else:
-            report = validate(args.input, expected, args.apksigner)
+            report = validate(args.input, expected, args.apksigner, require_signatures=args.require_signatures)
         print(json.dumps(report, indent=2))
     except (OSError, ValueError, KeyError, zipfile.BadZipFile, subprocess.TimeoutExpired) as error:
         parser.exit(1, "Rejected: " + str(error) + "\n")
