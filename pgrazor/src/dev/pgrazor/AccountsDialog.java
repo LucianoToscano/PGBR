@@ -20,6 +20,7 @@ final class AccountsDialog {
         java.util.ArrayList<Button> appearanceCopies=new java.util.ArrayList<>();
         java.util.LinkedHashMap<Button,String> deletions=new java.util.LinkedHashMap<>();
         final int openingPrivacyMode=Control.trainerPrivacyMode();
+        final java.util.ArrayList<AlertDialog> children=new java.util.ArrayList<>();
         int accountNumber=0;
         if(store!=null)for(AccountProfileStore.Profile profile:store.list()){
             final int rowNumber=++accountNumber;
@@ -33,6 +34,7 @@ final class AccountsDialog {
             LinearLayout actions=new LinearLayout(ui);actions.setGravity(Gravity.END);row.addView(actions);
             Button rename=new Button(ui);rename.setText(dev.pgrazor.PtBr.tr("Rename"));actions.addView(rename);
             rename.setOnClickListener(v -> {
+                if(Control.trainerPrivacyMode()!=openingPrivacyMode)return;
                 EditText name = new EditText(ui);
                 name.setSingleLine(true);
                 boolean privateName = Control.trainerPrivacyMode() != 0;
@@ -52,11 +54,11 @@ final class AccountsDialog {
                         editor.dismiss();
                     });
                 }));
-                editor.show();
+                showChild(children,editor);
             });
             Button change=new Button(ui);change.setText(dev.pgrazor.PtBr.tr("Switch"));change.setEnabled(AccountProfiles.canSwitch()&&!profile.id.equals(AccountProfiles.currentId()));actions.addView(change);
             if(!profile.id.equals(AccountProfiles.currentId()))switches.add(change);
-            change.setOnClickListener(v->confirm(activity,profile));rows.addView(row);
+            change.setOnClickListener(v->{if(Control.trainerPrivacyMode()==openingPrivacyMode)confirm(activity,profile,children);});rows.addView(row);
             final Button copyAppearance;
             if(!profile.id.equals(AccountProfiles.currentId())){
                 copyAppearance=new Button(ui);copyAppearance.setText("Copiar aparência para a conta atual");
@@ -69,9 +71,10 @@ final class AccountsDialog {
             }else copyAppearance=null;
             Button delete=new Button(ui);delete.setText(dev.pgrazor.PtBr.tr("Delete"));delete.setEnabled(AccountProfiles.canDelete(profile.id));actions.addView(delete);deletions.put(delete,profile.id);
             delete.setContentDescription(dev.pgrazor.PtBr.tr(profile.id.equals(AccountProfiles.currentId())?"Switch accounts before deleting the current account":"Delete saved account"));
-            delete.setOnClickListener(v->new AlertDialog.Builder(ui).setTitle(dev.pgrazor.PtBr.tr("Delete "+Control.visibleTrainerName(profile.label)+"?"))
+            delete.setOnClickListener(v->{if(Control.trainerPrivacyMode()!=openingPrivacyMode)return;
+                showChild(children,new AlertDialog.Builder(ui).setTitle(dev.pgrazor.PtBr.tr("Delete "+Control.visibleTrainerName(profile.label)+"?"))
                 .setMessage(dev.pgrazor.PtBr.tr("Remove this saved sign-in, settings, location, favorites and routes from this device? Your Pokémon GO account will not be deleted."))
-                .setNegativeButton(dev.pgrazor.PtBr.tr("Cancel"),null).setPositiveButton(dev.pgrazor.PtBr.tr("Delete"),(d,w)->AccountProfiles.delete(activity,profile.id,()->{switches.remove(change);if(copyAppearance!=null)appearanceCopies.remove(copyAppearance);deletions.remove(delete);rows.removeView(row);})).show());
+                .setNegativeButton(dev.pgrazor.PtBr.tr("Cancel"),null).setPositiveButton(dev.pgrazor.PtBr.tr("Delete"),(d,w)->AccountProfiles.delete(activity,profile.id,()->{switches.remove(change);if(copyAppearance!=null)appearanceCopies.remove(copyAppearance);deletions.remove(delete);rows.removeView(row);})).create());});
         }
         Button add=new Button(ui);add.setText(dev.pgrazor.PtBr.tr("Add account"));add.setEnabled(AccountProfiles.canSwitch());body.addView(add);
         Button reset=new Button(ui);reset.setText(dev.pgrazor.PtBr.tr("Reset sign-in choices"));body.addView(reset);
@@ -84,7 +87,7 @@ final class AccountsDialog {
         Runnable refresh=new Runnable(){public void run(){
             if(!dialog.isShowing())return;
             // Do not retain a previously rendered private label or coordinates after a mode change.
-            if(Control.trainerPrivacyMode()!=openingPrivacyMode){dialog.dismiss();return;}
+            if(Control.trainerPrivacyMode()!=openingPrivacyMode){dismissChildren(children);dialog.dismiss();return;}
             status.setText(dev.pgrazor.PtBr.tr(Control.visibleTrainerName(AccountProfiles.status())));
             boolean enabled=AccountProfiles.canSwitch();add.setEnabled(enabled);
             reset.setEnabled(AccountProfiles.canResetSignIn());reset.setVisibility(enabled?android.view.View.GONE:android.view.View.VISIBLE);
@@ -94,11 +97,20 @@ final class AccountsDialog {
             handler.postDelayed(this,500);
         }};
         dialog.setOnShowListener(d->{MapTheme.fullScreen(dialog);MapTheme.style(body);MapTheme.styleButtons(dialog);handler.post(refresh);});
-        DialogLifecycle.bind(activity,dialog,()->handler.removeCallbacksAndMessages(null));dialog.show();
+        DialogLifecycle.bind(activity,dialog,()->{handler.removeCallbacksAndMessages(null);dismissChildren(children);});dialog.show();
     }
-    private static void confirm(Activity activity,AccountProfileStore.Profile profile){
-        new AlertDialog.Builder(MapTheme.wrap(activity)).setTitle(dev.pgrazor.PtBr.tr("Switch to "+Control.visibleTrainerName(profile.label)+"?"))
+    private static void showChild(java.util.ArrayList<AlertDialog> children,AlertDialog child){
+        children.add(child);
+        child.setOnDismissListener(d->children.remove(child));
+        child.show();
+    }
+    private static void dismissChildren(java.util.ArrayList<AlertDialog> children){
+        for(AlertDialog child:new java.util.ArrayList<>(children))if(child.isShowing())child.dismiss();
+        children.clear();
+    }
+    private static void confirm(Activity activity,AccountProfileStore.Profile profile,java.util.ArrayList<AlertDialog> children){
+        showChild(children,new AlertDialog.Builder(MapTheme.wrap(activity)).setTitle(dev.pgrazor.PtBr.tr("Switch to "+Control.visibleTrainerName(profile.label)+"?"))
             .setMessage(dev.pgrazor.PtBr.tr("Movement and automation will stop. The game will restart with this account's saved sign-in and location. Sign in if this account hasn't been saved yet."))
-            .setNegativeButton(dev.pgrazor.PtBr.tr("Cancel"),null).setPositiveButton(dev.pgrazor.PtBr.tr("Switch"),(d,w)->AccountProfiles.switchTo(activity,profile.id)).show();
+            .setNegativeButton(dev.pgrazor.PtBr.tr("Cancel"),null).setPositiveButton(dev.pgrazor.PtBr.tr("Switch"),(d,w)->AccountProfiles.switchTo(activity,profile.id)).create());
     }
 }
