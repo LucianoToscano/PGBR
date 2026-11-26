@@ -38,6 +38,7 @@ class CandidateInputTests(unittest.TestCase):
             report=module.validate(path,expected)
             self.assertTrue(report["split_hashes_verified"])
             self.assertFalse(report["apk_signatures_verified"])
+            self.assertFalse(report["signed_manifest_identity_verified"])
             self.assertFalse(report["runtime_compatibility_verified"])
             expected["splits"]["base.apk"]["sha256"]="0"*64
             with self.assertRaisesRegex(ValueError,"Split hash"):
@@ -80,7 +81,8 @@ class CandidateInputTests(unittest.TestCase):
             sdk.touch()
             success=subprocess.CompletedProcess([],0,"Signer #1 certificate SHA-256 digest: "+"a"*64+"\n","")
             with patch.object(module.subprocess,"run",return_value=success) as verify:
-                report=module.validate(path,expected,sdk)
+                report=module.validate(path,expected,sdk,require_signatures=True)
+                self.assertFalse(report["signed_manifest_identity_verified"])
                 self.assertTrue(report["apk_signatures_verified"])
                 self.assertFalse(report["runtime_compatibility_verified"])
                 self.assertEqual(verify.call_count,2)
@@ -92,3 +94,18 @@ class CandidateInputTests(unittest.TestCase):
                 with patch.object(module.subprocess,"run",return_value=failed):
                     with self.assertRaises(ValueError):
                         module.validate(path,expected,sdk)
+
+    def test_required_signature_gate_rejects_missing_tool(self):
+        with tempfile.TemporaryDirectory() as folder:
+            path,expected=self.fixture(folder)
+            with self.assertRaisesRegex(ValueError,"Signature verification required"):
+                module.validate(path,expected,require_signatures=True)
+            with self.assertRaises(OSError):
+                module.validate(path,expected,Path(folder)/"missing",require_signatures=True)
+
+    def test_required_signature_cli_does_not_emit_success_report(self):
+        result=subprocess.run([__import__("sys").executable, str(ROOT / "tools/verify_candidate_input.py"),
+                               "missing.apkm", "--require-signatures"], capture_output=True, text=True)
+        self.assertNotEqual(result.returncode,0)
+        self.assertIn("--require-signatures requires --apksigner",result.stderr)
+        self.assertEqual(result.stdout,"")
