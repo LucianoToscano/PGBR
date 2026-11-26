@@ -239,3 +239,10 @@ Toda nova entrega deve consultar Mestre canônico e este catálogo, verificar c�
 - **SYS-01/DATA-04 (PT-BR):** 52 chaves novas/ajustadas sincronizadas nas duas UIs (1600 entradas cada); frases montadas em inglês das telas de Locais/GPX substituídas por chave única com `%d`.
 - **Acessibilidade:** alvos de toque dos ícones da biblioteca em 48dp.
 - Sem alteração de privacidade, V5, runtime ou contratos nativos. `device_tested=false`; `provider_connected=false`.
+
+### Atualização 26/11/2026 UTC — A-049-01 (continuação)
+
+- **MAP-04 (Mapa Mundial):** limites de zoom/pan consolidados em `MapOptics`, com o nível 0 (mundo inteiro) tratado como caso próprio e teste JVM executando a aritmética real.
+- **SYS-01/DATA-04 (GPX + Locais):** frases com contagem deixaram de ser montadas em português no Java; 1604 chaves sincronizadas nas duas UIs.
+- **SYS-05 (harness JVM):** espelho de `org.json` alinhado ao Android para `JSONObject.NULL`, encerrando a falha antiga de validação de backup com nome/id nulos.
+- Limites: `device_tested=false`, `provider_connected=false`, sem APK LT049.
