@@ -6,7 +6,7 @@ Para o módulo Zygisk e o instalador Root separados, consulte [PGBR Root](ROOTED
 
 ## Requisitos
 
-O conjunto de ferramentas para empacotar o APK atualmente oferece suporte ao Windows. Instale Python 3.12+, Node.js 22+, JDK 17+ e Android SDK. Os scripts Python de compilação usam a biblioteca padrão; a compilação nativa também exige Git, CMake 4.4.4 e Ninja 1.13.2.
+O conjunto de ferramentas para empacotar o APK atualmente oferece suporte ao Windows. Instale Python 3.12+, Node.js 22+, JDK 17+ e Android SDK. Os scripts Python de compilação usam a biblioteca padrão; os testes e ferramentas offline de eventos precisam de uma base IANA de fusos horários (`tzdata` fixado para Windows); a compilação nativa também exige Git, CMake 4.4.4 e Ninja 1.13.2.
 
 Os pacotes padrão do SDK são `platforms;android-36.1` e `build-tools;36.1.0`. O CI utiliza API 36 / Build Tools 36.0.0. O núcleo do jogo exige NDK `27.3.13750724`, e a integração ART exige NDK `29.0.14206865`. Instale ambos, pois atendem a exigências diferentes de compilação.
 
@@ -20,6 +20,7 @@ $env:ANDROID_HOME = $env:ANDROID_SDK_ROOT
 $env:PGRAZOR_ANDROID_PLATFORM = 'android-36'
 $env:PGRAZOR_BUILD_TOOLS = '36.0.0'
 python -m pip install "cmake==4.4.4" "ninja==1.13.2"
+python -m pip install --require-hashes --only-binary=:all: -r tools/requirements-offline.txt
 sdkmanager "platforms;android-36" "build-tools;36.0.0" "ndk;27.3.13750724" "ndk;29.0.14206865"
 $env:ANDROID_NDK_HOME = Join-Path $env:ANDROID_SDK_ROOT 'ndk/27.3.13750724'
 $env:PGRAZOR_ART_NDK = Join-Path $env:ANDROID_SDK_ROOT 'ndk/29.0.14206865'
