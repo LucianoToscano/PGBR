@@ -341,4 +341,8 @@ PGBR-CI-205 integrado após CI completo; PGBR-UI-SMALL candidata de correção e
 - #312 integrada: merge daeda9cfdae5f96bbf4f74933a60b88878fdfe08, HEAD 260d94178299dea72f5fcab17d32f8d06f827de9, workflows 45732025138/45732024960 concluídos com sucesso.
 - Verificadas localmente as duas partes do APKM, 85000000 e 84083658 bytes; concatenação SHA-256 c6d3c04c38ca2f2446957633b4fee8c93dcc9cebdbbaddc9cb9651722ef8f54f. Nova candidata adiciona reconstrução temporária com hashes fixados e verificação opcional por apksigner oficial, com assinatura esperada do perfil aprovado anterior; teste de assinatura real ainda não executado. Perfil 0.437.0 mantido.
 
-- LT049: receita de QA separada, base aprovada 0.437.0; ainda não compilada nem publicada. 0.439.0 não validada. Ver docs/releases/v0.00.49-LT.md. Conferir #314 e CI da receita antes de execução na main.
+- #313 integrada com CI 45734462973/45734462962 aprovado, merge 74d98a31df205dda822348f5a387aca0a7390a89. Assinatura real 0.439.0 ainda não confirmada. Nova candidata SYS-01/SYS-03: ocultar coordenadas na lista de contas em modo privado, preservar lifecycle da cópia de aparência e respeitar desativação de avisos pendentes. Homologação física separada.
+
+## LT049 — atualização obrigatória para 0.439.0
+- #314 integrada no merge 2357ae1d74b7fdad200fb695d55978d395954a83, CI 45735208617/45735208658 aprovado.
+- Proprietário determinou LT049 sobre 0.439.0, não 0.437.0. Receita #315 atualizada: gate de identidade 0.439.0 antes de recuperar o original e assinatura, sem fallback; verificação apksigner antes da compilação. Perfil ativo ainda 0.437.0 até validação da migração. Original íntegro e hashes internos correspondem ao upstream; 537 entradas comuns alteradas e 25 específicas PGBR ausentes no upstream. Compatibilidade e arquivo no draft privado ainda não confirmados. Sem build ou publicação.

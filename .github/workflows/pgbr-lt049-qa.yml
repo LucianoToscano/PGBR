@@ -1,5 +1,5 @@
-name: PGBR LT049 - candidato QA consolidado (base 0.437.0)
-# LT049 QA: consolidated changes, using the currently approved 0.437.0 game input; not 0.439.0 compatibility.
+name: PGBR LT049 - atualização para 0.439.0 (QA)
+# LT049 QA requires a separately reviewed 0.439.0 profile and its exact private input. No fallback to 0.437.0.
 # Same hardening as the LT047 QA workflow: workflow_dispatch only, no release publication, pinned actions,
 # real SHA-256 printed in the log and stored in SHA256SUMS.txt inside the artifact.
 # Existing tags/assets are immutable. The user-supplied PGSharp JSON is NOT bundled.
@@ -72,6 +72,11 @@ jobs:
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
         with:
           python-version: '3.12'
+      - name: Bloquear compilação até existir perfil 0.439.0 aprovado
+        run: |
+          python -B tools/lt049_pinned_input.py --check-profile
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          Write-Host "QA source commit: $env:GITHUB_SHA; PGBR v0.00.49-LT; game profile 0.439.0; no device homologation"
       # Fail fast before SDK/NDK setup if draft asset access is not granted.
       - name: Pasta temporaria de assinatura
         run: Add-Content -LiteralPath $env:GITHUB_ENV -Value "PGRAZOR_KEYSTORE=$env:RUNNER_TEMP\pgrazor-selector.jks"
@@ -79,12 +84,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           PGRAZOR_KEYSTORE_BASE64: ${{ secrets.PGRAZOR_KEYSTORE_BASE64 }}
-        run: python -B tools/lt028_pinned_input.py
-      - name: Confirmar identidade do candidato e perfil ativo
-        run: |
-          python -c "import json,pathlib; p=json.loads(pathlib.Path('pgrazor/native/schema/game/current.json').read_text()); assert p['profile']=='0.437.0.json', 'LT049 QA recipe requires approved 0.437.0 input'"
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          Write-Host "QA source commit: $env:GITHUB_SHA; PGBR v0.00.49-LT; game profile 0.437.0; no device homologation"
+        run: python -B tools/lt049_pinned_input.py
       - name: Testar configurações PvP editáveis sem ativar ações não suportadas
         run: python -B pgrazor/test/test_pvp_settings_ui.py
       - name: Testar preferências sincronizadas Rocket e PvP
@@ -129,6 +129,13 @@ jobs:
           log-accepted-android-sdk-licenses: false
       - name: Android SDK e NDK
         run: sdkmanager "platforms;android-36" "build-tools;36.0.0" "sources;android-36" "ndk;27.3.13750724" "ndk;29.0.14206865"
+      - name: Verificar assinaturas originais dos APKs 0.439.0
+        run: |
+          $sdk = $env:ANDROID_SDK_ROOT
+          if (!$sdk) { $sdk = $env:ANDROID_HOME }
+          if (!$sdk) { throw 'SDK indisponivel' }
+          python -B tools/verify_candidate_input.py pgrazor/input/game.apkm --apksigner (Join-Path $sdk 'build-tools/36.0.0/apksigner.bat')
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: CMake e Ninja nativos
         run: python -m pip install "cmake==4.4.4" "ninja==1.13.2"
       - name: Configuracao nativa

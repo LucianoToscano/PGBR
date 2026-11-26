@@ -19,15 +19,17 @@ final class AccountsDialog {
         java.util.ArrayList<Button> switches=new java.util.ArrayList<>();
         java.util.ArrayList<Button> appearanceCopies=new java.util.ArrayList<>();
         java.util.LinkedHashMap<Button,String> deletions=new java.util.LinkedHashMap<>();
+        final int openingPrivacyMode=Control.trainerPrivacyMode();
         int accountNumber=0;
         if(store!=null)for(AccountProfileStore.Profile profile:store.list()){
             final int rowNumber=++accountNumber;
             LinearLayout row=new LinearLayout(ui);row.setOrientation(1);row.setPadding(0,pad/2,0,pad/2);
             TextView label=new TextView(ui);label.setText(dev.pgrazor.PtBr.tr((Control.trainerPrivacyMode()==1?"Conta "+rowNumber:Control.visibleTrainerName(profile.label))+(profile.id.equals(AccountProfiles.currentId())?" (current)":"")));label.setTextSize(17);row.addView(label);
-            try{android.util.AtomicFile f=new android.util.AtomicFile(store.dataFile(profile.id,"pgrazor-location-state-v1.txt"));
+            if(openingPrivacyMode==0)try{android.util.AtomicFile f=new android.util.AtomicFile(store.dataFile(profile.id,"pgrazor-location-state-v1.txt"));
                 LocationState location=LocationState.decode(new String(f.readFully(),java.nio.charset.StandardCharsets.UTF_8));
                 TextView coords=new TextView(ui);coords.setText(dev.pgrazor.PtBr.tr(String.format(Locale.US,"%.5f, %.5f",location.latitude,location.longitude)));row.addView(coords);
             }catch(Exception ignored){}
+            else {TextView hidden=new TextView(ui);hidden.setText("Coordenadas ocultas");row.addView(hidden);}
             LinearLayout actions=new LinearLayout(ui);actions.setGravity(Gravity.END);row.addView(actions);
             Button rename=new Button(ui);rename.setText(dev.pgrazor.PtBr.tr("Rename"));actions.addView(rename);
             rename.setOnClickListener(v -> {
@@ -55,20 +57,21 @@ final class AccountsDialog {
             Button change=new Button(ui);change.setText(dev.pgrazor.PtBr.tr("Switch"));change.setEnabled(AccountProfiles.canSwitch()&&!profile.id.equals(AccountProfiles.currentId()));actions.addView(change);
             if(!profile.id.equals(AccountProfiles.currentId()))switches.add(change);
             change.setOnClickListener(v->confirm(activity,profile));rows.addView(row);
+            final Button copyAppearance;
             if(!profile.id.equals(AccountProfiles.currentId())){
-                Button copyAppearance=new Button(ui);copyAppearance.setText("Copiar aparência para a conta atual");
+                copyAppearance=new Button(ui);copyAppearance.setText("Copiar aparência para a conta atual");
                 copyAppearance.setEnabled(AccountProfiles.canSwitch());row.addView(copyAppearance);appearanceCopies.add(copyAppearance);
                 copyAppearance.setOnClickListener(v->new AlertDialog.Builder(ui)
                     .setTitle("Copiar aparência?")
                     .setMessage("Substitui somente tema, escala, tamanhos, opacidade e efeitos visuais da conta atual. Login, privacidade, localização, rotas e outras preferências permanecem separados. A conta de origem não muda.")
                     .setNegativeButton("Cancelar",null).setPositiveButton("Copiar",(d,w)->AccountProfiles.copyAppearance(activity,profile.id,
                         result->{if(!activity.isFinishing()&&!activity.isDestroyed())Toast.makeText(activity,result,Toast.LENGTH_LONG).show();})).show());
-            }
+            }else copyAppearance=null;
             Button delete=new Button(ui);delete.setText(dev.pgrazor.PtBr.tr("Delete"));delete.setEnabled(AccountProfiles.canDelete(profile.id));actions.addView(delete);deletions.put(delete,profile.id);
             delete.setContentDescription(dev.pgrazor.PtBr.tr(profile.id.equals(AccountProfiles.currentId())?"Switch accounts before deleting the current account":"Delete saved account"));
             delete.setOnClickListener(v->new AlertDialog.Builder(ui).setTitle(dev.pgrazor.PtBr.tr("Delete "+Control.visibleTrainerName(profile.label)+"?"))
                 .setMessage(dev.pgrazor.PtBr.tr("Remove this saved sign-in, settings, location, favorites and routes from this device? Your Pokémon GO account will not be deleted."))
-                .setNegativeButton(dev.pgrazor.PtBr.tr("Cancel"),null).setPositiveButton(dev.pgrazor.PtBr.tr("Delete"),(d,w)->AccountProfiles.delete(activity,profile.id,()->{switches.remove(change);deletions.remove(delete);rows.removeView(row);})).show());
+                .setNegativeButton(dev.pgrazor.PtBr.tr("Cancel"),null).setPositiveButton(dev.pgrazor.PtBr.tr("Delete"),(d,w)->AccountProfiles.delete(activity,profile.id,()->{switches.remove(change);if(copyAppearance!=null)appearanceCopies.remove(copyAppearance);deletions.remove(delete);rows.removeView(row);})).show());
         }
         Button add=new Button(ui);add.setText(dev.pgrazor.PtBr.tr("Add account"));add.setEnabled(AccountProfiles.canSwitch());body.addView(add);
         Button reset=new Button(ui);reset.setText(dev.pgrazor.PtBr.tr("Reset sign-in choices"));body.addView(reset);
@@ -80,6 +83,8 @@ final class AccountsDialog {
         android.os.Handler handler=new android.os.Handler(android.os.Looper.getMainLooper());
         Runnable refresh=new Runnable(){public void run(){
             if(!dialog.isShowing())return;
+            // Do not retain a previously rendered private label or coordinates after a mode change.
+            if(Control.trainerPrivacyMode()!=openingPrivacyMode){dialog.dismiss();return;}
             status.setText(dev.pgrazor.PtBr.tr(Control.visibleTrainerName(AccountProfiles.status())));
             boolean enabled=AccountProfiles.canSwitch();add.setEnabled(enabled);
             reset.setEnabled(AccountProfiles.canResetSignIn());reset.setVisibility(enabled?android.view.View.GONE:android.view.View.VISIBLE);

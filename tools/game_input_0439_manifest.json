@@ -28,5 +28,8 @@
       "bytes": 84083658,
       "sha256": "68de9eec6d40ad5e88cdaaaf1e75152496d66ecff486f0eb741f1d0e8b9d001d"
     }
-  ]
+  ],
+  "library_sha256": "5d1c398ae58becffe204cd470b51fb4277f439acac897f7aeb80c0b481f33ed5",
+  "metadata_sha256": "7463b16e774d8e3f8316b8e5b0142d5a5839cbd5688427766bbc67ce6f105986",
+  "component_hash_source": "Direct SHA-256 of files inside owner-provided APKM, matching upstream 0.439.0 profile blob 281d58c626c76ce009f4f44475cf8d3ab870d916."
 }
