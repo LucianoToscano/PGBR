@@ -945,11 +945,12 @@ public final class WorldMapDialog {
                 public boolean onScaleBegin(ScaleGestureDetector detector){multiTouch=true;return true;}
                 public boolean onScale(ScaleGestureDetector detector){
                     double old=world(),minimum=Math.max(1,Math.min(getWidth(),getHeight()));
-                    double next=Math.max(minimum,Math.min(tileSize*Math.pow(2,19),old*detector.getScaleFactor()));
+                    // Same arithmetic as the buttons and world view, from one place (MapOptics).
+                    double next=MapOptics.clampWorld(old*detector.getScaleFactor(),tileSize,minimum);
                     double dx=detector.getFocusX()-getWidth()/2.0,dy=detector.getFocusY()-getHeight()/2.0;
                     double anchorX=MapProjection.offsetX(centerX,dx,old),anchorY=MapProjection.offsetY(centerY,dy,old);
-                    zoom=Math.max(0,Math.min(19,(int)Math.floor(Math.log(next/tileSize)/Math.log(2))));
-                    zoomScale=next/((zoom==0?minimum:tileSize)*(1<<zoom));
+                    zoom=MapOptics.levelFor(next,tileSize,minimum);
+                    zoomScale=MapOptics.scaleFor(next,tileSize,zoom,minimum);
                     centerX=MapProjection.offsetX(anchorX,-dx,next);centerY=MapProjection.offsetY(anchorY,-dy,next);
                     viewportChanged();return true;
                 }
@@ -971,7 +972,7 @@ public final class WorldMapDialog {
         }
         private double displayedTileSize() { return (zoom == 0 ? Math.max(1, Math.min(getWidth(), getHeight())) : tileSize)*zoomScale; }
         private double world() { return MapProjection.worldPixels(zoom, displayedTileSize()); }
-        void zoom(int amount) { int next = Math.max(0, Math.min(19, zoom + amount)); if (next != zoom) { zoom = next; viewportChanged(); } }
+        void zoom(int amount) { int next = MapOptics.step(zoom, amount); if (next != zoom) { zoom = next; viewportChanged(); } }
         void worldView() { zoomScale=1; zoom = 0; centerX = .5; centerY = .5; viewportChanged(); }
         void centerCurrentLocation() {
             double lat=Control.currentLatitude(),lon=Control.currentLongitude();
