@@ -151,7 +151,10 @@ jobs:
           PGBR_AUTO_DEV_MODE: ${{ vars.PGBR_AUTO_DEV_MODE }}
           PGBR_FREE_BILLING_CONFIRMED: ${{ vars.PGBR_FREE_BILLING_CONFIRMED }}
           PGBR_GITHUB_FREE_BUDGET_CONFIRMED: ${{ vars.PGBR_GITHUB_FREE_BUDGET_CONFIRMED }}
-          PGBR_GEMINI_FREE_KEY: ${{ secrets.PGBR_GEMINI_FREE_KEY }}
+          PGBR_GEMINI_KEY_SOURCE: ${{ vars.PGBR_GEMINI_KEY_SOURCE || 'dedicated' }}
+          PGBR_GEMINI_RESUME_AFTER: ${{ vars.PGBR_GEMINI_RESUME_AFTER }}
+          PGBR_GEMINI_FREE_KEY: ${{ vars.PGBR_GEMINI_KEY_SOURCE != 'existing' && secrets.PGBR_GEMINI_FREE_KEY || '' }}
+          GEMINI_API_KEY: ${{ vars.PGBR_GEMINI_KEY_SOURCE == 'existing' && secrets.GEMINI_API_KEY || '' }}
           PGBR_GEMINI_FREE_MODEL: ${{ vars.PGBR_GEMINI_FREE_MODEL }}
         run: python3 -B tools/auto_dev_orchestrator.py --queue tools/auto_dev_queue.json --output "$RUNNER_TEMP/pgbr-auto-dev" --live
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
