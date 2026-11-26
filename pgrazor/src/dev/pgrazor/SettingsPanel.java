@@ -1579,9 +1579,11 @@ final class SettingsPanel {
         LinearLayout form=new LinearLayout(activity);form.setOrientation(LinearLayout.VERTICAL);form.setPadding(dp(16),dp(8),dp(16),dp(8));
         CheckBox enabled=new CheckBox(activity);enabled.setText(dev.pgrazor.PtBr.tr("Enable automatic item transfer"));enabled.setChecked(Control.itemTransferEnabled());form.addView(enabled);
         TextView explanation=new TextView(activity);explanation.setText(dev.pgrazor.PtBr.tr("Check items to trim and set the maximum to keep. Saving applies to your current bag and future items. A limit of 0 removes all of that item. Unchecked items are kept."));form.addView(explanation);
+        final String originalRules=Control.itemRules(), originalLimits=Control.itemLimits();
+        final boolean originalEnabled=Control.itemTransferEnabled();
         java.util.Map<Integer,Integer> limits=new java.util.HashMap<>();java.util.Set<Integer> selected=new java.util.HashSet<>();
-        for(String row:Control.itemLimits().split(";"))try{String[] b=row.split(":");limits.put(Integer.parseInt(b[0]),Integer.parseInt(b[1]));}catch(RuntimeException ignored){}
-        for(String row:Control.itemRules().split(";"))try{String[] b=row.split(":");int id=Integer.parseInt(b[0]);selected.add(id);limits.put(id,Integer.parseInt(b[1]));}catch(RuntimeException ignored){}
+        for(String row:originalLimits.split(";"))try{String[] b=row.split(":");limits.put(Integer.parseInt(b[0]),Integer.parseInt(b[1]));}catch(RuntimeException ignored){}
+        for(String row:originalRules.split(";"))try{String[] b=row.split(":");int id=Integer.parseInt(b[0]);selected.add(id);limits.put(id,Integer.parseInt(b[1]));}catch(RuntimeException ignored){}
         LinearLayout rows=new LinearLayout(activity);rows.setOrientation(LinearLayout.VERTICAL);ScrollView scroll=new ScrollView(activity);scroll.addView(rows);form.addView(scroll,new LinearLayout.LayoutParams(-1,dp(380)));
         java.util.Map<Integer,CheckBox> boxes=new java.util.LinkedHashMap<>();java.util.Map<Integer,EditText> inputs=new java.util.LinkedHashMap<>();
         Runnable populate=()->{for(String row:Control.itemCatalog().split("\n")){String[] b=row.split("\\|",-1);if(b.length!=3)continue;int id;try{id=Integer.parseInt(b[0]);}catch(NumberFormatException invalid){continue;}if(boxes.containsKey(id)){boxes.get(id).setText(dev.pgrazor.PtBr.tr((dev.pgrazor.PtBr.tr(b[1])+" ("+b[2]+" na bolsa)")));continue;}
@@ -1600,8 +1602,43 @@ final class SettingsPanel {
         final Runnable[] poll=new Runnable[1];poll[0]=()->{if(!dialog.isShowing())return;Control.requestItemCatalog();populate.run();dependencies.run();status.setText(dev.pgrazor.PtBr.tr(Control.itemStatus()));handler.postDelayed(poll[0],1000);};
         itemDialogs.add(dialog);
         dialog.setOnDismissListener(d->{handler.removeCallbacks(poll[0]);itemDialogs.remove(dialog);});dialog.show();styleTree(form);handler.post(poll[0]);
-        dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v->{StringBuilder rules=new StringBuilder(),all=new StringBuilder();for(java.util.Map.Entry<Integer,EditText> e:inputs.entrySet()){int cap;try{cap=Integer.parseInt(e.getValue().getText().toString().trim());if(cap<0||cap>100000)throw new NumberFormatException();}catch(NumberFormatException invalid){e.getValue().setError(dev.pgrazor.PtBr.tr("Enter 0 to 100000"));return;}String rule=e.getKey()+":"+cap+";";all.append(rule);if(boxes.get(e.getKey()).isChecked())rules.append(rule);}
-            Control.saveItemRules(enabled.isChecked(),rules.toString(),all.toString());dialog.dismiss();host.refresh();});
+        dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v->{
+            // Start from the stored choices, including rows temporarily missing from the catalog.
+            java.util.Map<Integer,Integer> draft=new java.util.TreeMap<>(limits);
+            java.util.Set<Integer> checked=new java.util.HashSet<>(selected);
+            for(java.util.Map.Entry<Integer,EditText> e:inputs.entrySet()){
+                int cap;
+                try{cap=Integer.parseInt(e.getValue().getText().toString().trim());if(cap<0||cap>100000)throw new NumberFormatException();}
+                catch(NumberFormatException invalid){e.getValue().setError(dev.pgrazor.PtBr.tr("Enter 0 to 100000"));return;}
+                draft.put(e.getKey(),cap);
+                if(boxes.get(e.getKey()).isChecked())checked.add(e.getKey());else checked.remove(e.getKey());
+            }
+            StringBuilder rules=new StringBuilder(),all=new StringBuilder();
+            for(java.util.Map.Entry<Integer,Integer> e:draft.entrySet()){
+                String rule=e.getKey()+":"+e.getValue()+";";
+                all.append(rule);if(checked.contains(e.getKey()))rules.append(rule);
+            }
+            final boolean active=enabled.isChecked();
+            final String nextRules=rules.toString(), nextLimits=all.toString();
+            Runnable apply=()->{
+                if(!dialog.isShowing()||activity.isFinishing()||activity.isDestroyed())return;
+                if(!originalRules.equals(Control.itemRules())||!originalLimits.equals(Control.itemLimits())||
+                        originalEnabled!=Control.itemTransferEnabled()){
+                    status.setText("As regras mudaram. Feche e reabra esta janela antes de salvar.");
+                    return;
+                }
+                try{Control.saveItemRules(active,nextRules,nextLimits);}
+                catch(IllegalArgumentException invalid){status.setText("Limites inválidos. Nenhuma alteração aplicada.");return;}
+                dialog.dismiss();host.refresh();
+            };
+            if(!active){apply.run();return;}
+            // The catalog may be cached or incomplete. Never claim this is a live bag count.
+            String summary=ItemRulePreview.describe(draft,checked,Control.itemCatalog());
+            new AlertDialog.Builder(dialogContext()).setTitle("Revisar regras da bolsa")
+                .setMessage(summary)
+                .setNegativeButton(dev.pgrazor.PtBr.tr("Cancel"),null)
+                .setPositiveButton("Confirmar limites",(review,which)->apply.run()).show();
+        });
     }
 
     void refresh() {
