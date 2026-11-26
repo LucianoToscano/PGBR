@@ -290,6 +290,8 @@ public final class WorldMapDialog {
     static double distanceMeters(double lat1,double lon1,double lat2,double lon2){double p=Math.toRadians(lat2-lat1),q=Math.toRadians(lon2-lon1);double a=Math.sin(p/2)*Math.sin(p/2)+Math.cos(Math.toRadians(lat1))*Math.cos(Math.toRadians(lat2))*Math.sin(q/2)*Math.sin(q/2);return 12742017.6*Math.asin(Math.sqrt(Math.max(0,Math.min(1,a))));}
     private static int dp(Context c, float value) { return Math.round(value * c.getResources().getDisplayMetrics().density); }
     private static TextView label(Context c, String text, int size) { TextView v = new TextView(c); v.setText(dev.pgrazor.PtBr.tr(text)); v.setTextSize(size); return v; }
+    /** Like {@link #label}, but for text the player typed or imported (place/route names): never translated. */
+    private static TextView labelRaw(Context c, String text, int size) { TextView v = new TextView(c); v.setText(text); v.setTextSize(size); return v; }
     private static Button button(Context c, String text) { Button b = new Button(c); b.setText(dev.pgrazor.PtBr.tr(text)); b.setAllCaps(false); b.setTextSize(13); b.setPadding(0, 0, 0, 0); return b; }
 
     /** Route mode reuses the map toolbar and dialog action rather than consuming another row. */
@@ -619,7 +621,8 @@ public final class WorldMapDialog {
             LinearLayout card=new LinearLayout(ui);card.setOrientation(LinearLayout.VERTICAL);
             card.setPadding(dp(activity,4),dp(activity,12),dp(activity,4),dp(activity,12));
             LinearLayout top=new LinearLayout(ui);top.setGravity(Gravity.CENTER_VERTICAL);
-            TextView heading=label(ui,entry.name,17);heading.setTextColor(MapTheme.ink());
+            // The saved route name is user data: shown exactly as stored, never passed through the translator.
+            TextView heading=labelRaw(ui,entry.name,17);heading.setTextColor(MapTheme.ink());
             heading.setTypeface(null,android.graphics.Typeface.BOLD);top.addView(heading,new LinearLayout.LayoutParams(0,-2,1));
             LibraryIcon remove=new LibraryIcon(ui,5,dev.pgrazor.PtBr.tr("Delete route ")+entry.name);
             remove.setOnClickListener(v->confirmRouteDelete(entry));
@@ -658,7 +661,7 @@ public final class WorldMapDialog {
         }
         private void locationRow(LinearLayout rows,String name,String categories,List<String> icons,String local,String distance,double lat,double lon,Runnable action){
             LinearLayout card=new LinearLayout(ui);card.setOrientation(LinearLayout.VERTICAL);card.setPadding(dp(activity,4),dp(activity,12),dp(activity,4),dp(activity,12));
-            LinearLayout top=new LinearLayout(ui);top.setGravity(Gravity.CENTER_VERTICAL);TextView heading=label(ui,name,17);heading.setTextColor(MapTheme.ink());heading.setTypeface(null,android.graphics.Typeface.BOLD);top.addView(heading,new LinearLayout.LayoutParams(0,-2,1));
+            LinearLayout top=new LinearLayout(ui);top.setGravity(Gravity.CENTER_VERTICAL);TextView heading=labelRaw(ui,name,17);heading.setTextColor(MapTheme.ink());heading.setTypeface(null,android.graphics.Typeface.BOLD);top.addView(heading,new LinearLayout.LayoutParams(0,-2,1));
             LibraryIcon copy=new LibraryIcon(ui,4,"Copiar coordenadas de "+name);copy.setOnClickListener(v->CoordinateClipboard.copy(activity,lat,lon,"Coordenadas copiadas"));top.addView(copy,new LinearLayout.LayoutParams(dp(activity,48),dp(activity,48)));card.addView(top);
             LinearLayout tags=new LinearLayout(ui);tags.setGravity(Gravity.CENTER_VERTICAL);
             for(String key:icons){if(!categoryIcons.containsKey(key))try(java.io.InputStream in=PgAssets.open(ui,"pgrazor/map-icons/"+key)){categoryIcons.put(key,android.graphics.BitmapFactory.decodeStream(in));}catch(Exception ex){categoryIcons.put(key,null);}
@@ -702,7 +705,7 @@ public final class WorldMapDialog {
             show(dialog);
         }
         private void showPlace(SavedPlaces.Entry entry) {
-            AlertDialog dialog = new AlertDialog.Builder(ui).setTitle(dev.pgrazor.PtBr.tr(entry.name))
+            AlertDialog dialog = new AlertDialog.Builder(ui).setTitle(entry.name)
                 .setMessage(dev.pgrazor.PtBr.tr(String.format(Locale.US, "%.6f, %.6f\n\nSelect shows this destination on the map. Choose Teleport or Walk here there to apply it.", entry.latitude, entry.longitude)))
                 .setNegativeButton(dev.pgrazor.PtBr.tr("Cancel"), null)
                 .setPositiveButton(dev.pgrazor.PtBr.tr("Select on map"), (d, which) -> map.select(entry.latitude, entry.longitude))

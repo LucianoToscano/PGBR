@@ -22,7 +22,12 @@ class VisualLabels(unittest.TestCase):
 
     def test_gallery_names_known_berries_and_unknown_fallback(self):
         source = (ROOT / "pgrazor/src/dev/pgrazor/LocalAuditDialog.java").read_text(encoding="utf-8")
-        for id_, name in ((701,"Fruta Frambo"), (703,"Fruta Anaba"), (705,"Fruta Caxi"), (706,"Fruta Frambo Dourada"), (708,"Fruta Caxi Prateada")):
+        # IDs follow the item table: 703 is Nanab (banana) and 705 is Pinap (pineapple).
+        for id_, name in ((701,"Fruta Frambo"), (702,"Fruta Bluk"), (703,"Fruta Caxí"), (704,"Fruta Wepear"),
+                          (705,"Fruta Abacaxi"), (706,"Fruta Frambo Dourada"), (707,"Fruta Caxí Dourada"),
+                          (708,"Fruta Abacaxi Prateada")):
             self.assertIn(f'case {id_}:return "{name}";', source)
+        # Spellings that must never come back.
+        for wrong in ("Fruta Anaba", "Fruta Caxi", "Fruta Caxí Prateada"):
+            self.assertNotIn(f'return "{wrong}";', source)
         self.assertIn('default:return "Item de catálogo (nome não confirmado)";', source)
-        self.assertNotIn("Fruta Caxí Prateada", source)

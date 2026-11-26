@@ -166,14 +166,30 @@ final class LocalAuditDialog {
  }
  static void reason(Activity a){LinearLayout b=body(a);EditText code=numeric(a,b,"Código do diagnóstico (reasonCode)","12",false,false);TextView r=text(a,b,"");invalidateOnEdit(r,code);action(a,b,"Interpretar",()->{try{r.setText(LocalAuditPolicy.reason(integer(code)));}catch(RuntimeException e){r.setText("Código inválido.");}});present(a,new AlertDialog.Builder(MapTheme.wrap(a)).setTitle("Motivos de proteção").setView(scroll(a,b)).setPositiveButton("Fechar",null).create());}
  static final int[] GALLERY_IDS={1,2,3,4,5,6,7,101,102,103,104,201,202,301,302,303,304,305,401,405,406,407,501,502,503,504,505,506,701,702,703,704,705,706,707,708,709,801,802,803,901,902,903,904,1001,1003,1101,1102,1103,1104,1105,1106,1107,1150,1151,1152,1153,1154,1155,1201,1202,1203,1204,1301,1302,1350,1351,1352,1353,1401,1402,1403,1404,1405,1406,1408,1410,1411,1501,1502,1503,1504,1505,1506,1507,1600,1601,1602,1606,1607,1609};
+ /**
+  * IDs whose bundled sprite is known NOT to depict the item, or to depict nothing at all.
+  *
+  * <p>A PNG that decodes proves the file is a valid image and nothing more: every sprite here is
+  * byte-identical to its Drive reference, yet byte identity says only that the copy is faithful to
+  * the file it came from. {@code item-1609} is literally the letters "TMP" — a placeholder — and it
+  * is byte-identical to the Drive reference too. 1350/1351 are two variants of the same artwork and
+  * no catalogue confirms which is which, so they stay unnamed.
+  */
+ static boolean spriteIdentityUnconfirmed(int id){
+  return id==1350||id==1351||id==1602||id==1606||id==1607||id==1609;
+ }
+ /** Shown under a gallery row: separates "the image loaded" from "the image is the right item". */
+ static String identityNote(int id){
+  return spriteIdentityUnconfirmed(id)?"imagem carregada; identidade visual não confirmada":"";
+ }
  static String galleryLabel(int id){
   switch(id){
    case 1:return "Poké Bola";case 2:return "Grande Bola";case 3:return "Ultra Bola";
    case 101:return "Poção";case 102:return "Superpoção";case 103:return "Hiperpoção";case 104:return "Poção Máxima";
    case 201:return "Reviver";case 202:return "Reviver Máximo";case 301:return "Ovo da Sorte";
-   case 4:return "Master Ball";
-   case 5:return "Premier Ball";
-   case 6:return "Beast Ball";
+   case 4:return "Bola Mestra";
+   case 5:return "Bola Premier";
+   case 6:return "Bola Besta";
    case 7:return "Bola Safári";
    case 302:return "Cogumelo Max";
    case 303:return "Amuleto da Sorte";
@@ -190,10 +206,13 @@ final class LocalAuditDialog {
    case 505:return "Módulo Atrair Chuvoso";
    case 506:return "Módulo Atrair Dourado";
    case 701:return "Fruta Frambo";
-   case 703:return "Fruta Anaba";
-   case 705:return "Fruta Caxi";
+   case 702:return "Fruta Bluk";
+   case 703:return "Fruta Caxí";
+   case 704:return "Fruta Wepear";
+   case 705:return "Fruta Abacaxi";
    case 706:return "Fruta Frambo Dourada";
-   case 708:return "Fruta Caxi Prateada";
+   case 707:return "Fruta Caxí Dourada";
+   case 708:return "Fruta Abacaxi Prateada";
    case 709:return "Poffin";
    case 801:return "Câmera";
    case 802:return "Adesivos";
@@ -210,7 +229,13 @@ final class LocalAuditDialog {
    case 1106:return "Pedra de Sinnoh";
    case 1107:return "Pedra de Unova";
    case 1302:return "Doce Raro GG";
+   case 1401:return "Passe de Reide";
+   case 1402:return "Passe de Batalha Premium";
+   case 1403:return "Passe de Reide EX";
+   case 1404:return "Pedaço de Estrela";
    case 1405:return "Presente";
+   case 1406:return "Medalhão de Equipe";
+   case 1408:return "Passe de Reide Remoto";
    case 1410:return "Cargas de Vínculo";
    case 1411:return "Porta-vínculo";
    case 1501:return "Componente Misterioso";
@@ -228,6 +253,11 @@ final class LocalAuditDialog {
    case 1154:return "Energia Escudo Coroado";
    case 1352:return "Energia de Fusão Volt";
    case 1353:return "Energia de Fusão Blaze";
+   case 1201:return "MT de Ataque Rápido";
+   case 1202:return "MT de Ataque Carregado";
+   case 1203:return "MT de Ataque Rápido Élite";
+   case 1204:return "MT de Ataque Carregado Élite";
+   case 1301:return "Doce Raro";
    case 1001:return "Expansão de armazenamento Pokémon";
    case 1003:return "Expansão de cartões postais";
    default:return "Item de catálogo (nome não confirmado)";
@@ -248,7 +278,7 @@ final class LocalAuditDialog {
     int id=integer(lookup);if(id<1||id>999999)throw new IllegalArgumentException();
     ItemBadge badge=new ItemBadge(MapTheme.wrap(a),id);
     inspected.addView(badge,new LinearLayout.LayoutParams(MapTheme.dp(a,56),MapTheme.dp(a,56)));
-    text(a,inspected,galleryLabel(id)+" • ID "+id+" • "+(badge.hasDecodedSprite()?"Imagem decodificada; confira a identidade":badge.spriteStatus()+"; não atribua outro ID por semelhança"));
+    String identity=spriteIdentityUnconfirmed(id)?" • identidade visual não confirmada":"";text(a,inspected,galleryLabel(id)+" • ID "+id+" • "+(badge.hasDecodedSprite()?"Imagem decodificada; confira a identidade":badge.spriteStatus()+"; não atribua outro ID por semelhança")+identity);
    }catch(IllegalArgumentException invalid){text(a,inspected,"Informe um ID válido de catálogo.");}
   });
   LinearLayout gallery=body(a);b.addView(gallery);
@@ -263,7 +293,7 @@ final class LocalAuditDialog {
     int id=GALLERY_IDS[i];LinearLayout row=new LinearLayout(MapTheme.wrap(a));row.setGravity(android.view.Gravity.CENTER_VERTICAL);
     ItemBadge badge=new ItemBadge(MapTheme.wrap(a),id);
     row.addView(badge,new LinearLayout.LayoutParams(MapTheme.dp(a,48),MapTheme.dp(a,48)));
-    TextView label=new TextView(MapTheme.wrap(a));label.setText(galleryLabel(id)+" • ID "+id+"\n"+badge.spriteStatus());
+    TextView label=new TextView(MapTheme.wrap(a));String note=identityNote(id);label.setText(galleryLabel(id)+" • ID "+id+"\n"+badge.spriteStatus()+(note.isEmpty()?"":" • "+note));
     row.addView(label,new LinearLayout.LayoutParams(0,-2,1));gallery.addView(row);
    }
   };
@@ -415,7 +445,9 @@ final class LocalAuditDialog {
  }
  static void berryPlan(Activity a){
   LinearLayout b=body(a);text(a,b,"Escolha até três frutas em ordem de preferência e informe o estoque que você verificou: -1 desconhecido, 0 indisponível. O painel não lê inventário nem usa frutas.");
-  String[] names={"Nenhuma","Fruta Frambo","Fruta Anaba","Fruta Caxi","Fruta Frambo Dourada","Fruta Caxi Prateada"};
+  // Names come from the IDs, in the same order as the picker, so this dialog cannot drift from it.
+  String[] names=new String[BerryPriorityPicker.IDS.length];
+  for(int i=0;i<names.length;i++)names[i]=BerryPriorityPicker.display(i);
   Spinner[] order=new Spinner[3];EditText[] count=new EditText[3];
   for(int i=0;i<3;i++){order[i]=select(a,b,"Preferência "+(i+1),names);count[i]=numeric(a,b,"Estoque "+(i+1),"-1",false,true);}
   TextView result=text(a,b,"");invalidateOnEdit(result,count);invalidateOnSelection(result,order);

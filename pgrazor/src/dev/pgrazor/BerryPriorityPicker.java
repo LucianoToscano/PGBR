@@ -13,6 +13,8 @@ import java.io.InputStream;
 final class BerryPriorityPicker {
     static final int[] IDS={0,701,703,705,706,707};
     static final String[] NAMES={"Off","Razz Berry","Nanab Berry","Pinap Berry","Golden Razz Berry","Silver Pinap Berry"};
+    /** Visible name for a row, derived from the berry ID so no label can land on the wrong berry. */
+    static String display(int index){return index==0?dev.pgrazor.PtBr.tr("Off"):BerryPriority.displayName(IDS[index]);}
     private final Activity activity;
     private final Runnable changed;
     private final Bitmap[] icons=new Bitmap[IDS.length];
@@ -30,9 +32,9 @@ final class BerryPriorityPicker {
     static String summary(){
         StringBuilder names=new StringBuilder();
         for(int id:BerryPriority.parse(Control.berryPriority()))for(int i=1;i<IDS.length;i++)if(IDS[i]==id){
-            if(names.length()>0)names.append(" \u2192 ");names.append(NAMES[i]);break;
+            if(names.length()>0)names.append(" \u2192 ");names.append(display(i));break;
         }
-        return names.length()==0?"Off":names.toString();
+        return names.length()==0?dev.pgrazor.PtBr.tr("Off"):names.toString();
     }
     void show(){
         if(picker!=null||activity.isFinishing()||activity.isDestroyed())return;
@@ -67,11 +69,11 @@ final class BerryPriorityPicker {
         for(int i=0;i<IDS.length;i++){
             int rank=0;for(int j=0;j<priority.length;j++)if(priority[j]==IDS[i])rank=j+1;
             boolean selected=rank>0||(IDS[i]==0&&priority.length==0);
-            labels[i].setText(dev.pgrazor.PtBr.tr(NAMES[i]+(IDS[i]==0?"":" ("+Math.max(0,Control.berryCount(IDS[i]))+")")));
+            labels[i].setText(display(i)+(IDS[i]==0?"":" ("+Math.max(0,Control.berryCount(IDS[i]))+")"));
             labels[i].setTextColor(MapTheme.ink());ranks[i].setText(dev.pgrazor.PtBr.tr(rank==0?"":String.valueOf(rank)));ranks[i].setTextColor(MapTheme.accent());
             GradientDrawable bg=new GradientDrawable();bg.setCornerRadius(pickerDp(10));bg.setColor(MapTheme.surface());if(selected)bg.setStroke(Math.max(1,pickerDp(1)),MapTheme.accent());rows[i].setBackground(bg);
             // No stock gating: priorities are retained and become usable when inventory replenishes.
-            rows[i].setContentDescription(dev.pgrazor.PtBr.tr(NAMES[i]+(rank==0?"":", priority "+rank)));
+            rows[i].setContentDescription(display(i)+(rank==0?"":dev.pgrazor.PtBr.tr(", priority ")+rank));
         }
     }
 }

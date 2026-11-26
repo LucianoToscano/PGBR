@@ -269,7 +269,7 @@ public final class PtBr {
         m.put("Use the free daily raid pass", "Usar o passe diário gratuito");
         m.put("Use Premium Battle passes", "Usar passes de batalha premium");
         m.put("Use a Razz Berry on bonus catches", "Usar Fruta Frambo em capturas bônus");
-        m.put("Use a Golden Razz Berry on bonus catches", "Usar Fruta Frambo dourada em capturas bônus");
+        m.put("Use a Golden Razz Berry on bonus catches", "Usar Fruta Frambo Dourada em capturas bônus");
         m.put("Raid tiers: ", "Níveis de reide: ");
         m.put("Raid bosses: ", "Chefes de reide: ");
         m.put("Maximum raids: ", "Máximo de reides: ");
@@ -531,13 +531,13 @@ public final class PtBr {
         m.put("Heading (0–359°)", "Direção (0–359°)");
         m.put("Start session", "Iniciar sessão");
         m.put("Stop session", "Encerrar sessão");
-        m.put("Feeds the gyms you currently defend once, using surplus berries. Nanab is fed down to its ", "Alimenta uma vez os Ginásios que você defende usando frutas excedentes. Nanab é usada até atingir sua ");
-        m.put("reserve, then surplus Razz. Pinap is optional and off by default. A single batch runs now — there is no ", "reserva, depois as Razz excedentes. Pinap é opcional e vem desativada. O lote é executado uma única vez; não há ");
+        m.put("Feeds the gyms you currently defend once, using surplus berries. Nanab is fed down to its ", "Alimenta uma vez os Ginásios que você defende com frutas excedentes. A Fruta Caxí é usada até atingir sua ");
+        m.put("reserve, then surplus Razz. Pinap is optional and off by default. A single batch runs now — there is no ", "reserva, depois a Fruta Frambo excedente. A Fruta Abacaxi é opcional e vem desativada. O lote é executado uma única vez, sem ");
         m.put("recurring schedule. The game's own server limits still apply, so some feeds may be declined. No dust or ", "repetição agendada. Os limites do servidor do jogo continuam valendo, então algumas alimentações podem ser recusadas. Nenhuma Poeira Estelar ou ");
-        m.put("Nanab Berry reserve (0–1000)", "Reserva de Fruta Nanab (0–1000)");
+        m.put("Nanab Berry reserve (0–1000)", "Reserva de Fruta Caxí (0–1000)");
         m.put("Razz Berry reserve (0–1000)", "Reserva de Fruta Frambo (0–1000)");
-        m.put("Also feed surplus Pinap berries", "Usar também Frutas Caxi excedentes");
-        m.put("Pinap Berry reserve (0–1000)", "Reserva de Fruta Caxi (0–1000)");
+        m.put("Also feed surplus Pinap berries", "Usar também Frutas Abacaxi excedentes");
+        m.put("Pinap Berry reserve (0–1000)", "Reserva de Fruta Abacaxi (0–1000)");
         m.put("Start feed", "Iniciar alimentação");
         m.put("Stop feed", "Parar alimentação");
         m.put("Enter a heading from 0 to 359.", "Digite uma direção entre 0 e 359.");
@@ -1289,7 +1289,7 @@ public final class PtBr {
         m.put("Dragon Scale", "Escama de Dragão");
         m.put("Up-Grade", "Melhora");
         // Inventory aliases exposed by game catalog builds, not sprite IDs.
-        m.put("Golden Pinap Berry", "Fruta Caxí Dourada");
+        m.put("Golden Pinap Berry", "Fruta Abacaxi Dourada");
         m.put("Kings Rock", "Pedra do Rei");
         m.put("Up Grade", "Melhora");
         m.put("Gen4 Evolution Stone", "Pedra de Sinnoh");
@@ -1579,7 +1579,7 @@ public final class PtBr {
         m.put("Ordenar por", "Ordenar por");
         m.put("Delete route ", "Excluir rota ");
         m.put("%d GPX points", "%d pontos GPX");
-        m.put("PokéStop loaded nearby by the game.", "PokéParada carregada pelo jogo nas proximidades.");
+        m.put("PokéStop loaded nearby by the game.", "Poképarada carregada pelo jogo nas proximidades.");
         m.put("Defenders: %d/6 (%d slots open)", "Defensores: %d/6 (%d vagas livres)");
         m.put("Defenders: unavailable", "Defensores: indisponível");
         m.put("unknown", "desconhecido");
@@ -1620,6 +1620,12 @@ public final class PtBr {
         m.put("%s\n%d stops", "%s\n%d paradas");
         m.put("You are at\n%s", "Você está em\n%s");
         m.put("Place name (up to %d characters)", "Nome do local (até %d caracteres)");
+        m.put(", priority ", ", prioridade ");
+        m.put("available", "disponíveis");
+        m.put("Tap to choose berry priorities.", "Toque para escolher as prioridades de fruta.");
+        m.put("Bluk Berry", "Fruta Bluk");
+        m.put("Wepear Berry", "Fruta Wepear");
+        m.put("Golden Nanab Berry", "Fruta Caxí Dourada");
         LABELS = Collections.unmodifiableMap(m);
     }
     private PtBr() {}
