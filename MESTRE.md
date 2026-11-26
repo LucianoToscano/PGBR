@@ -360,3 +360,9 @@ Incorporados ao branch ativo `arena/1be548a6-pgbr` os três commits de código/t
 ## 26/11/2026 — Reconciliação da branch ativa com main após #316
 
 `origin/main` avançou de `2357ae1d74b7fdad200fb695d55978d395954a83` para `617e91f79ac57f9fcd61ad57c380ce977c2da0ed`, merge da #316. Reconciliação da branch `arena/1be548a6-pgbr` em andamento, preservando os commits próprios e mantendo uma única cópia dos arquivos funcionais do gate. PRs #317 (manifesto assinado) e #318 (integridade de sprites) são trabalho paralelo declarado do ChatGPT; acompanhar checks e evitar duplicar seus arquivos. Para a frente LMArena, priorizar código de Map/Locais/GPX/visual/PT-BR em commits independentes, sem aguardar bloqueios 0.439.0/#284/dispositivo. V5 permanece intocada.
+
+## 26/11/2026 — MAP-01 / acessibilidade do mapa por teclado
+
+Em `WorldMapDialog.MapView`, o mapa passa a aceitar foco de teclado: setas deslocam o viewport (sem mudar posição do jogo), Enter/centro seleciona as coordenadas do centro no rótulo/preview e anuncia a leitura do rótulo de coordenadas atualizado. Não chama listener de teleporte, `walk.onDestination` ou movimento. A descrição acessível informa esses comandos; chave PT-BR sincronizada em `PtBr.java`, `RootPtBr.java` e `i18n/pt-BR.json`. Novo contrato `test_worldmap_keyboard_accessibility.py` cobre foco, direções, seleção sem movimento e sincronização textual.
+
+Validação deste lote: 24 testes direcionados aprovados; 4 JVM reais de projeção/layout ficaram skipped por ausência de JDK; contratos estáticos e `git diff --check` passaram. Sem alteração de GPX, movimento, preferências, rotas oficiais, POIs ou V5. Ainda exige build Android/uso com teclado e leitor de tela autorizado; `device_tested=false`.

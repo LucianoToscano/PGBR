@@ -602,7 +602,7 @@ public final class RootPtBr {
         m.put("Delete saved place?", "Excluir local salvo?");
         m.put(" will be removed from your saved places. The current location stays unchanged.", " será removido dos locais salvos. A localização atual não será alterada.");
         m.put("Could not delete place. Please retry.", "Não foi possível excluir o local. Tente novamente.");
-        m.put("World map. Blue dot is your current location; red pin is the destination. Drag to pan, pinch to zoom, tap to select destination.", "Mapa-múndi. O ponto azul indica sua localização atual; o pino vermelho, o destino. Arraste para mover, use dois dedos para ampliar ou reduzir e toque para selecionar.");
+        m.put("World map. Blue dot is your current location; red pin is the destination. Drag to pan, pinch to zoom, tap to select destination. Use arrow keys to pan and Enter to select the map center.", "Mapa-múndi. O ponto azul indica sua localização atual; o pino vermelho, o destino. Arraste ou use as setas para mover, use dois dedos para ampliar ou reduzir e toque ou pressione Enter para selecionar o centro do mapa.");
         m.put("Selected: %.6f, %.6f", "Selecionado: %.6f, %.6f");
         m.put("Search near the map area, or enter coordinates (latitude, longitude). Add a city for places farther away.", "Pesquise na área do mapa ou digite coordenadas (latitude, longitude). Inclua uma cidade para procurar locais mais distantes.");
         m.put("Place, address or coordinates", "Local, endereço ou coordenadas");

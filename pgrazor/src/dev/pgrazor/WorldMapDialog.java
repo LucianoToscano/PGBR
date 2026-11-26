@@ -20,6 +20,7 @@ import android.text.InputFilter;
 import android.text.InputType;
 import android.text.method.LinkMovementMethod;
 import android.view.Gravity;
+import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
 import android.view.View;
@@ -888,7 +889,9 @@ public final class WorldMapDialog {
                 public void setOpen(boolean open) { Control.setMapPoiOpen(open); }
                 public String read() { return Control.mapPoiSnapshot(); }
             }, this::invalidate);
-            setContentDescription(dev.pgrazor.PtBr.tr("World map. Blue dot is your current location; red pin is the destination. Drag to pan, pinch to zoom, tap to select destination."));
+            setFocusable(true);
+            setFocusableInTouchMode(true);
+            setContentDescription(dev.pgrazor.PtBr.tr("World map. Blue dot is your current location; red pin is the destination. Drag to pan, pinch to zoom, tap to select destination. Use arrow keys to pan and Enter to select the map center."));
             // Use the activity hardware renderer; tile I/O stays on the worker.
             pinch=new ScaleGestureDetector(activity,new ScaleGestureDetector.SimpleOnScaleGestureListener(){
                 public boolean onScaleBegin(ScaleGestureDetector detector){multiTouch=true;return true;}
@@ -929,6 +932,14 @@ public final class WorldMapDialog {
             centerX=MapProjection.x(lon);centerY=MapProjection.y(lat);viewportChanged();
         }
         void centerSelection() { zoomScale=1; if (zoom == 0) zoom = 14; centerX = MapProjection.x(longitude); centerY = MapProjection.y(latitude); viewportChanged(); }
+        private void selectMapCenter() {
+            selectCoordinates(MapProjection.latitude(centerY),MapProjection.longitude(centerX));
+        }
+        private void selectCoordinates(double latitude,double longitude) {
+            this.latitude=latitude;this.longitude=longitude;selectedResource="";
+            updateSelection();invalidate();performClick();
+            selectionLabel.announceForAccessibility(selectionLabel.getText());
+        }
         void select(double latitude, double longitude) {
             this.latitude = latitude; this.longitude = longitude;selectedResource="";
             zoomScale=1; zoom = 14; centerX = MapProjection.x(longitude); centerY = MapProjection.y(latitude);
@@ -1104,6 +1115,22 @@ public final class WorldMapDialog {
             }
         }
 
+        @Override public boolean onKeyDown(int keyCode,KeyEvent event) {
+            if(keyCode==KeyEvent.KEYCODE_DPAD_CENTER||keyCode==KeyEvent.KEYCODE_ENTER) {
+                selectMapCenter();return true;
+            }
+            if(zoom==0&&zoomScale<=1)return super.onKeyDown(keyCode,event);
+            double step=dp(getContext(),64);
+            switch(keyCode) {
+                case KeyEvent.KEYCODE_DPAD_LEFT: centerX=MapProjection.offsetX(centerX,-step,world());break;
+                case KeyEvent.KEYCODE_DPAD_RIGHT: centerX=MapProjection.offsetX(centerX,step,world());break;
+                case KeyEvent.KEYCODE_DPAD_UP: centerY=MapProjection.offsetY(centerY,-step,world());break;
+                case KeyEvent.KEYCODE_DPAD_DOWN: centerY=MapProjection.offsetY(centerY,step,world());break;
+                default:return super.onKeyDown(keyCode,event);
+            }
+            viewportChanged();return true;
+        }
+
         public boolean onTouchEvent(MotionEvent event) {
             pinch.onTouchEvent(event);
             switch (event.getActionMasked()) {
@@ -1129,9 +1156,9 @@ public final class WorldMapDialog {
                         if (!hits.isEmpty()) { performClick(); poiLayer.openDetails(hits); getParent().requestDisallowInterceptTouchEvent(false); return true; }
                         if(insideWorld&&pickResource(event.getX(),event.getY())){performClick();getParent().requestDisallowInterceptTouchEvent(false);return true;}
                         if (insideWorld) {
-                            selectedResource="";longitude = MapProjection.longitude(MapProjection.offsetX(centerX, event.getX() - getWidth() / 2.0, world()));
-                            latitude = MapProjection.latitude(MapProjection.offsetY(centerY, event.getY() - getHeight() / 2.0, world()));
-                            updateSelection(); invalidate(); performClick();
+                            double selectedLongitude=MapProjection.longitude(MapProjection.offsetX(centerX, event.getX() - getWidth() / 2.0, world()));
+                            double selectedLatitude=MapProjection.latitude(MapProjection.offsetY(centerY, event.getY() - getHeight() / 2.0, world()));
+                            selectCoordinates(selectedLatitude,selectedLongitude);
                         }
                     }
                     getParent().requestDisallowInterceptTouchEvent(false); return true;
