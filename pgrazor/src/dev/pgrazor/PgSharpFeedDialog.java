@@ -73,6 +73,27 @@ public final class PgSharpFeedDialog {
             warning.setTextColor(MapTheme.muted());
             root.addView(warning);
 
+            Button quick = new Button(ui);
+            quick.setText("Sniper I · PGSharp (importados)");
+            quick.setOnClickListener(v -> {
+                if (closed) return;
+                dialog.dismiss();
+                SniperDialog.showPgSharpQuick(activity);
+            });
+            root.addView(quick, new LinearLayout.LayoutParams(-1, MapTheme.dp(ui, 48)));
+
+            Button advanced = new Button(ui);
+            advanced.setText("Sniper II · PGSharp (importados)");
+            advanced.setOnClickListener(v -> {
+                if (closed) return;
+                dialog.dismiss();
+                SniperDialog.showPgSharpAdvanced(activity);
+            });
+            root.addView(advanced, new LinearLayout.LayoutParams(-1, MapTheme.dp(ui, 48)));
+
+            root.addView(text("Estes atalhos usam os motores próprios do PGBR com dados importados. "
+                    + "O feed original e a verificação remota da key ainda não estão integrados.", 12));
+
             Button fallback = new Button(ui);
             fallback.setText("Abrir Sniper 100% IV do PGBR");
             fallback.setOnClickListener(v -> {

@@ -130,6 +130,30 @@ public final class SniperSearchTest {
         check(empty.isEmpty() && empty.shown == 0, "Sem dados, resultado vazio e honesto");
         check(empty.summary().contains("exibidos 0"), "Resumo não inventa resultado: " + empty.summary());
 
+        // Dedicated PGSharp screen: exercise the real local adapter with a mixed store,
+        // and no unfiltered fallback. The source label is still an imported claim.
+        LocalEventStore scoped = new LocalEventStore();
+        scoped.add(SourceEvent.builder(SourceRegistry.PGSHARP, "pg-only", SourceEvent.Kind.POKEMON)
+                .coordinates(-23.55, -46.63).pokemonId(25).ivPercent(100.0)
+                .expiresAt(NOW + 600_000).build());
+        scoped.add(SourceEvent.builder(SourceRegistry.PGSHARP, "pg-expired", SourceEvent.Kind.POKEMON)
+                .coordinates(-23.55, -46.63).pokemonId(25).ivPercent(100.0)
+                .expiresAt(NOW - 1000).build());
+        scoped.add(row("other-import", -23.55, -46.63, NOW + 600_000, false));
+        scoped.add(SourceEvent.builder(SourceRegistry.POKELIST, "other-source", SourceEvent.Kind.POKEMON)
+                .coordinates(-23.55, -46.63).pokemonId(25).ivPercent(100.0)
+                .expiresAt(NOW + 600_000).build());
+        List<SourceAdapter> onlyPg = java.util.Collections.singletonList(new LocalSourceAdapters.PGSharp(scoped));
+        SourceQuery pgQuery = SourceQuery.builder().pokemon(25).build();
+        for (SniperSearch.Outcome outcome : new SniperSearch.Outcome[]{
+                SniperSearch.sniper1(pgQuery, onlyPg, null, NOW, -23.55, -46.63, 0L),
+                SniperSearch.sniper2(pgQuery, onlyPg, null, NOW, -23.55, -46.63, 0L)}) {
+            check(outcome.results.size() == 1 && "pg-only".equals(outcome.results.get(0).event.eventId),
+                    "PGSharp-only mode excludes other sources and expired data");
+            check(outcome.contributions.size() == 1 && SourceRegistry.PGSHARP.equals(outcome.contributions.get(0).sourceId),
+                    "PGSharp-only mode does not merge the general local store");
+        }
+
         System.out.println("SniperSearchTest: OK");
     }
 }

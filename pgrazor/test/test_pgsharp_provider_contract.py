@@ -41,6 +41,19 @@ class PgSharpProviderContractTests(unittest.TestCase):
         self.assertIn("HundoFeedDialog.show(activity)", self.ui)
         self.assertIn("Não é transmitida", self.ui)
 
+    def test_dedicated_snipers_use_only_imported_pgsharp_rows(self):
+        sniper = (SRC / "SniperDialog.java").read_text(encoding="utf-8")
+        self.assertIn("SniperDialog.showPgSharpQuick(activity)", self.ui)
+        self.assertIn("SniperDialog.showPgSharpAdvanced(activity)", self.ui)
+        self.assertIn("show(activity, false, true)", sniper)
+        self.assertIn("show(activity, true, true)", sniper)
+        self.assertIn("source.setEnabled(false)", sniper)
+        self.assertIn("singletonList(new LocalSourceAdapters.PGSharp(store))", sniper)
+        self.assertIn("final LocalEventStore local = pgSharpOnly ? null : store;", sniper)
+        self.assertIn("sniper1(query, selected, local,", sniper)
+        self.assertIn("sniper2(query, selected, local,", sniper)
+        self.assertIn("Não é o Sniper original nem consulta ao serviço PGSharp.", sniper)
+
     def test_key_is_local_encrypted_and_not_an_account_session(self):
         for snippet in ("getNoBackupFilesDir()", "AndroidKeyStore", "AES/GCM/NoPadding",
                         "ATOMIC_MOVE", "GCMParameterSpec", "cipher.updateAAD(HEADER)",

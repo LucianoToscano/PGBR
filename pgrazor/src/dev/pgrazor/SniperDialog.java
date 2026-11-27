@@ -58,7 +58,15 @@ public final class SniperDialog {
     private static final String[] LEAGUES = {"Sem PvP", "Great League (GL)", "Ultra League (UL)"};
     private static final String[] LOGIC = {"Todos os critérios (E)", "Qualquer critério (OU)"};
 
+    /** Dedicated PGBR screens; only the user's imported PGSharp records, not a live provider. */
+    public static void showPgSharpQuick(Activity activity) { show(activity, false, true); }
+    public static void showPgSharpAdvanced(Activity activity) { show(activity, true, true); }
+
     private static void show(Activity activity, boolean advanced) {
+        show(activity, advanced, false);
+    }
+
+    private static void show(Activity activity, boolean advanced, boolean pgSharpOnly) {
         if (activity == null || activity.isFinishing() || activity.isDestroyed()) return;
         Context ui = MapTheme.wrap(activity);
         LinearLayout root = new LinearLayout(ui);
@@ -66,11 +74,12 @@ public final class SniperDialog {
         int pad = MapTheme.dp(ui, 12);
         root.setPadding(pad, pad, pad, pad);
         AlertDialog dialog = new AlertDialog.Builder(ui)
-                .setTitle(advanced ? "Sniper 2 · busca avançada" : "Sniper 1 · busca rápida")
+                .setTitle(pgSharpOnly ? (advanced ? "Sniper II · PGSharp (importados)" : "Sniper I · PGSharp (importados)")
+                        : (advanced ? "Sniper 2 · busca avançada" : "Sniper 1 · busca rápida"))
                 .setView(root)
                 .setNegativeButton("Fechar", null)
                 .create();
-        Screen screen = new Screen(activity, ui, dialog, root, advanced);
+        Screen screen = new Screen(activity, ui, dialog, root, advanced, pgSharpOnly);
         DialogLifecycle.bind(activity, dialog, screen::close);
         dialog.setOnShowListener(ignored -> {
             MapTheme.style(root);
@@ -85,6 +94,7 @@ public final class SniperDialog {
         private final Context ui;
         private final AlertDialog dialog;
         private final boolean advanced;
+        private final boolean pgSharpOnly;
         private final Handler main = new Handler(Looper.getMainLooper());
         private final ExecutorService worker = Executors.newSingleThreadExecutor(task -> {
             Thread thread = new Thread(task, "pgbr-sniper");
@@ -111,11 +121,12 @@ public final class SniperDialog {
         private boolean busy;
         private int selectedSource = 0;
 
-        Screen(Activity activity, Context ui, AlertDialog dialog, LinearLayout root, boolean advanced) {
+        Screen(Activity activity, Context ui, AlertDialog dialog, LinearLayout root, boolean advanced, boolean pgSharpOnly) {
             this.activity = activity;
             this.ui = ui;
             this.dialog = dialog;
             this.advanced = advanced;
+            this.pgSharpOnly = pgSharpOnly;
             this.store = SourceDataStore.events(activity, System.currentTimeMillis());
             this.icons = new LiveFeedIcons(activity);
 
@@ -124,11 +135,19 @@ public final class SniperDialog {
             source = new Spinner(ui);
             source.setAdapter(new ArrayAdapter<>(ui, android.R.layout.simple_spinner_dropdown_item,
                     SOURCE_LABELS));
-            source.setSelection(0);
+            if (pgSharpOnly) {
+                selectedSource = java.util.Arrays.asList(SOURCES).indexOf(SourceRegistry.PGSHARP);
+                source.setSelection(selectedSource);
+                source.setEnabled(false);
+                TextView scope = new TextView(ui);
+                scope.setText("Somente registros PGSharp importados por você. Não é o Sniper original nem consulta ao serviço PGSharp.");
+                scope.setTextColor(MapTheme.muted());
+                root.addView(scope, new LinearLayout.LayoutParams(-1, -2));
+            } else source.setSelection(0);
             source.setOnItemSelectedListener(new android.widget.AdapterView.OnItemSelectedListener() {
                 @Override public void onItemSelected(android.widget.AdapterView<?> parent, View view,
                                                      int position, long id) {
-                    selectedSource = position;
+                    if (!pgSharpOnly) selectedSource = position;
                 }
                 @Override public void onNothingSelected(android.widget.AdapterView<?> parent) { }
             });
@@ -298,6 +317,8 @@ public final class SniperDialog {
         }
 
         private List<SourceAdapter> adapters() {
+            if (pgSharpOnly)
+                return java.util.Collections.singletonList(new LocalSourceAdapters.PGSharp(store));
             List<SourceAdapter> list = new ArrayList<>();
             String selected = SOURCES[selectedSource];
             if ("import".equals(selected)) {
@@ -330,6 +351,9 @@ public final class SniperDialog {
             busy = true;
             status.setText("Buscando…");
             final List<SourceAdapter> selected = adapters();
+            // SniperSearch normally merges the entire local store. Do not pass that
+            // fallback to a PGSharp-only screen: the adapter already selects its rows.
+            final LocalEventStore local = pgSharpOnly ? null : store;
             final double lat = Control.latitude(), lon = Control.longitude();
             final long now = System.currentTimeMillis();
             worker.execute(() -> {
@@ -337,8 +361,8 @@ public final class SniperDialog {
                 String failure = null;
                 try {
                     outcome = advanced
-                            ? SniperSearch.sniper2(query, selected, store, now, lat, lon, 0L)
-                            : SniperSearch.sniper1(query, selected, store, now, lat, lon, 0L);
+                            ? SniperSearch.sniper2(query, selected, local, now, lat, lon, 0L)
+                            : SniperSearch.sniper1(query, selected, local, now, lat, lon, 0L);
                 } catch (Exception error) {
                     failure = error.getMessage() == null ? "Falha na busca." : error.getMessage();
                 }
