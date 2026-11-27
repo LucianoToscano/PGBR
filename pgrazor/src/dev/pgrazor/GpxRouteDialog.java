@@ -191,7 +191,7 @@ public final class GpxRouteDialog {
     }
 
     static void showEntry(Activity activity, GpxStore.Entry entry, Selection selection) {
-        AlertDialog dialog = new AlertDialog.Builder(MapTheme.wrap(activity)).setTitle(dev.pgrazor.PtBr.tr(entry.name))
+        AlertDialog dialog = new AlertDialog.Builder(MapTheme.wrap(activity)).setTitle(entry.name)
             .setMessage(String.format(Locale.forLanguageTag("pt-BR"), dev.pgrazor.PtBr.tr("%d stops.\n\nUse this route loads it as a draft; Start it yourself afterwards."), entry.count))
             .setNegativeButton(dev.pgrazor.PtBr.tr("Cancel"), null)
             .setPositiveButton(dev.pgrazor.PtBr.tr("Use this route"), null)
@@ -269,7 +269,8 @@ public final class GpxRouteDialog {
         name.setSingleLine(true);
         name.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_CAP_SENTENCES);
         name.setFilters(new InputFilter[]{new InputFilter.LengthFilter(NAME_LIMIT)});
-        name.setText(dev.pgrazor.PtBr.tr(current.name));
+        // A stored route name is user data; translating it would rename the player's route on screen.
+        name.setText(current.name);
         form.addView(name);
         AlertDialog dialog = new AlertDialog.Builder(ui).setTitle(dev.pgrazor.PtBr.tr("Save route")).setView(form)
             .setNegativeButton(dev.pgrazor.PtBr.tr("Cancel"), null).setPositiveButton(dev.pgrazor.PtBr.tr("Save"), null).create();
