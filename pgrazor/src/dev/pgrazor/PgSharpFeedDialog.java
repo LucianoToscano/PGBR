@@ -82,6 +82,15 @@ public final class PgSharpFeedDialog {
             });
             root.addView(fallback, new LinearLayout.LayoutParams(-1, MapTheme.dp(ui, 48)));
 
+            Button hybridLab = new Button(ui);
+            hybridLab.setText("Laborat\u00f3rio h\u00edbrido 100% IV");
+            hybridLab.setOnClickListener(v -> {
+                if (closed) return;
+                dialog.dismiss();
+                PgSharpHundoLabDialog.show(activity);
+            });
+            root.addView(hybridLab, new LinearLayout.LayoutParams(-1, MapTheme.dp(ui, 48)));
+
             root.addView(text("Filtros e resultados importados", 17));
             root.addView(text("Importe configurações ou resultados que você exportou. "
                     + "São dados locais, não consultas ao serviço PGSharp.", 13));
