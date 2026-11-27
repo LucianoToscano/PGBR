@@ -97,6 +97,24 @@ final class LocalImportDialog {
                         });
                         return;
                     }
+                    final long now = System.currentTimeMillis();
+                    final PgSharpSnapshotImport.Result pgSnapshot = PgSharpSnapshotImport.tryParse(text, now);
+                    if (pgSnapshot != null) {
+                        int added = 0;
+                        if (!pgSnapshot.invalid && !pgSnapshot.events.isEmpty()) {
+                            LocalEventStore scoped = SourceDataStore.events(activity, now);
+                            added = scoped.addAll(pgSnapshot.events);
+                            if (added > 0) SourceDataStore.saveEvents(activity, scoped);
+                        }
+                        final int stored = added;
+                        main.post(() -> {
+                            if (activity.isFinishing() || activity.isDestroyed()) return;
+                            confirm.setEnabled(true);
+                            report.setText(pgSnapshot.summary() + "\nRegistros novos guardados: " + stored + ".");
+                            if (stored > 0 && onImported != null) onImported.run();
+                        });
+                        return;
+                    }
                     final LocalEventImport.Report result = LocalEventImport.parse(text,
                             System.currentTimeMillis(), LocalEventImport.IMPORT_SOURCE);
                     final LocalEventStore store = SourceDataStore.events(activity, System.currentTimeMillis());

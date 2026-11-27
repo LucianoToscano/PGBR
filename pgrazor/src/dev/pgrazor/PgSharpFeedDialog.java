@@ -106,6 +106,8 @@ public final class PgSharpFeedDialog {
             root.addView(text("Filtros e resultados importados", 17));
             root.addView(text("Importe configurações ou resultados que você exportou. "
                     + "São dados locais, não consultas ao serviço PGSharp.", 13));
+            root.addView(text("O formato pgs-authorized-hundo-export-v1 permite carregar um snapshot "
+                    + "100% IV nos dois Snipers. A origem é declarada por você, não autenticada.", 12));
             Button importData = new Button(ui);
             importData.setText("Importar filtros e resultados");
             importData.setOnClickListener(v -> {

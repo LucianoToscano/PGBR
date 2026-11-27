@@ -22,6 +22,7 @@ SOURCES = [
     'SourceSearchResult.java', 'SourceAdapter.java', 'SourceUnavailableException.java',
     'SourceAdapterSupport.java', 'PresetCodec.java', 'AlertEngine.java', 'SniperSearch.java',
     'PgSharpFilterMapping.java', 'LocalStoreAdapter.java', 'LocalSourceAdapters.java',
+    'PgSharpHundoBridge.java', 'PgSharpSnapshotImport.java',
     'PoGoCoordinatesSourceAdapter.java', 'PGBRHundoSourceAdapter.java',
     'LiveFeedData.java', 'PokeListFeedData.java', 'IFlowGoFeedData.java', 'PogoFeedData.java',
     'HundoFeedData.java',
@@ -30,6 +31,7 @@ SOURCES = [
 TESTS = [
     'SourceModelTest', 'EventFilterEngineTest', 'LocalEventImportTest', 'SniperSearchTest',
     'PresetCodecTest', 'PgSharpFilterMappingTest', 'SourceAdaptersTest', 'FeedSourceEventsTest',
+    'PgSharpSnapshotImportTest',
 ]
 
 
