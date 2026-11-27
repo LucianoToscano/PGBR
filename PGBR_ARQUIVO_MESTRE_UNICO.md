@@ -2993,3 +2993,8 @@ Merges efetivos: #357 (Gemini 0015, catálogo offline) 7bcfcbfdb0db5cba852e7cfd1
 
 - HEAD anterior `c8a045f580438cd0a46f6876c949b306a20dd696`: governança e QA PGSharp aprovados (46050476124 / 46050475948); CI geral [46050475979](https://github.com/LucianoToscano/PGBR/actions/runs/46050475979) teve 673 testes, um erro e um skip. Job 140680238063 comprovou falha javac LambdaMetafactory no teste real do DEX experimental. Os quatro demais jobs do CI geral passaram.
 - Corrigida exclusivamente a receita experimental: javac usa classpath Android, seguindo build.py existente, e D8 recebe JAR temporário. Mantido o teste real de compilação e todos os gates de identidade e assinatura. Nenhuma alteração em runtime original ou main. Novo CI pendente; APK não montado, device_tested=false, provider_connected=false.
+
+
+## 27/11/2026 — QA e artefato isolado do DEX híbrido (#366)
+
+- HEAD anterior `61cdce835fdce5a7c971e7f24554053958dc852f`: governança e QA PGSharp concluídos com sucesso (46051221745 e 46051221758); CI geral 46051221859 ainda em execução na conferência, quatro jobs concluídos. Criado workflow direcionado `pgbr-private-hybrid-payload.yml` em Linux com SDK 36 / JDK 17, teste real do payload e upload somente do DEX de autoria PGBR mais checksum. Sem acesso a binários PGSharp, secrets de assinatura, produção, publicação de APK ou acesso remoto ao feed. Resultado do novo workflow ainda não confirmado; device_tested=false, provider_connected=false.

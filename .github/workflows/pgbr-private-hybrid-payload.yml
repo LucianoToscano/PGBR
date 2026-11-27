@@ -1,0 +1,42 @@
+name: PGBR - private hybrid payload QA
+on:
+  pull_request:
+    paths:
+      - 'tools/pgsharp_hybrid/**'
+      - 'pgrazor/src/dev/pgrazor/PgSharpHundoBridge.java'
+      - 'pgrazor/test/test_pgsharp_hybrid_private.py'
+      - '.github/workflows/pgbr-private-hybrid-payload.yml'
+permissions:
+  contents: read
+jobs:
+  own-payload:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: android-actions/setup-android@v3
+      - name: Install pinned Android platform and tools
+        run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
+      - name: Compile and validate PGBR-owned payload only
+        run: |
+          python -B pgrazor/test/test_pgsharp_hybrid_private.py
+          mkdir -p dist/private-hybrid-payload
+          python -B tools/pgsharp_hybrid/private_build.py --sdk "$ANDROID_SDK_ROOT" compile-payload --output dist/private-hybrid-payload/pgbr-panel.dex
+          cd dist/private-hybrid-payload
+          sha256sum pgbr-panel.dex > SHA256SUMS.txt
+          cat SHA256SUMS.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: PGBR-private-hybrid-owned-payload
+          path: dist/private-hybrid-payload/
+          if-no-files-found: error
+          retention-days: 7
