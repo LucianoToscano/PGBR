@@ -3003,3 +3003,9 @@ Merges efetivos: #357 (Gemini 0015, catálogo offline) 7bcfcbfdb0db5cba852e7cfd1
 ## 27/11/2026 — correção do setup Android no workflow isolado #366
 
 - Run [46051500585](https://github.com/LucianoToscano/PGBR/actions/runs/46051500585), job 140683673892, falhou antes de compilar: ação setup-android solicitou pacote obsoleto `tools`. Ajustado para ação fixada e `packages: platform-tools`, como nos workflows aprovados do PGBR; SDK API 36/build-tools 36.0.0 continuam obrigatórios. Teste de compilação e artefato permanecem exigidos. Sem APK híbrido, teste físico ou acesso ao feed.
+
+
+## 27/11/2026 — DEX híbrido compilado e montagem portátil privada (#366)
+
+- Run [46051673935](https://github.com/LucianoToscano/PGBR/actions/runs/46051673935) passou: SDK 36, 4 testes, DEX compilado de 16.604 bytes SHA-256 `79c69d28642683e18ca873779c6eaf0ac9521a9479aa22cbbcb0e7cb51ca98db`; artefato 15224522369 baixado e checksum conferido, 15 classes permitidas. QA PGSharp e governança verdes, CI geral 46051673788 em andamento na conferência.
+- Para montar localmente sem SDK completo, receita portátil usa biblioteca Apache-2.0 oficial apksig 8.7.3 (POM e licença no artefato), assinatura PKCS12 de teste separada e validações de APK e alinhamento. O CI testa a ferramenta em fixture sintética com apksigner e zipalign oficiais. Nunca enviar o APK PGSharp ao GitHub público nem alterar suas proteções. Compilação da ferramenta/fixture, montagem real e execução ainda não confirmadas. device_tested=false, provider_connected=false.

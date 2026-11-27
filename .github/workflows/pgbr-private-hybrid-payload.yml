@@ -37,6 +37,36 @@ jobs:
           cd dist/private-hybrid-payload
           sha256sum pgbr-panel.dex > SHA256SUMS.txt
           cat SHA256SUMS.txt
+      - name: Bundle Apache-licensed signing library and test portable signing
+        shell: bash
+        run: |
+          set -euo pipefail
+          bundle=dist/private-hybrid-payload
+          repo=https://dl.google.com/dl/android/maven2/com/android/tools/build/apksig/8.7.3
+          curl --fail --location --retry 2 "$repo/apksig-8.7.3.jar" -o "$bundle/apksig.jar"
+          curl --fail --location --retry 2 "$repo/apksig-8.7.3.pom" -o "$bundle/apksig.pom"
+          grep -qi 'Apache.*2.0' "$bundle/apksig.pom"
+          curl --fail --location --retry 2 https://www.apache.org/licenses/LICENSE-2.0.txt -o "$bundle/APKSIG-LICENSE.txt"
+          cp tools/pgsharp_hybrid/{PrivateApkSign.java,portable_assemble.py,private_build.py,hybrid_audit.py} "$bundle/"
+          cp pgrazor/axml.py "$bundle/"
+          sdk="${ANDROID_SDK_ROOT:-${ANDROID_HOME:?Android SDK required}}"
+          build_tools="$sdk/build-tools/36.0.0"
+          fixture=$(mktemp -d)
+          trap 'rm -rf "$fixture"' EXIT
+          printf '%s\n' '<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="dev.pgbr.hybrid.fixture"><uses-sdk android:minSdkVersion="28" android:targetSdkVersion="35"/><application android:label="Fixture"/></manifest>' > "$fixture/AndroidManifest.xml"
+          "$build_tools/aapt2" link -I "$sdk/platforms/android-36/android.jar" --manifest "$fixture/AndroidManifest.xml" -o "$fixture/fixture.apk"
+          python - "$fixture/fixture.apk" <<'PY'
+          import sys, zipfile
+          with zipfile.ZipFile(sys.argv[1], 'a') as z:
+              z.writestr('lib/arm64-v8a/libfixture.so', b'synthetic fixture only', compress_type=zipfile.ZIP_STORED)
+          PY
+          export PGBR_HYBRID_STORE_PASS=$(openssl rand -hex 20)
+          keytool -genkeypair -storetype PKCS12 -keystore "$fixture/test.p12" -alias test -keyalg RSA -keysize 2048 -validity 3 -dname "CN=PGBR CI fixture" -storepass:env PGBR_HYBRID_STORE_PASS
+          java --class-path "$bundle/apksig.jar" "$bundle/PrivateApkSign.java" sign "$fixture/fixture.apk" "$fixture/signed.apk" "$fixture/test.p12" test
+          java --class-path "$bundle/apksig.jar" "$bundle/PrivateApkSign.java" verify "$fixture/signed.apk"
+          "$build_tools/apksigner" verify --verbose "$fixture/signed.apk"
+          "$build_tools/zipalign" -c -P 16 4 "$fixture/signed.apk"
+          (cd "$bundle" && sha256sum pgbr-panel.dex apksig.jar PrivateApkSign.java portable_assemble.py hybrid_audit.py private_build.py axml.py APKSIG-LICENSE.txt apksig.pom > SHA256SUMS.txt)
       - uses: actions/upload-artifact@v4
         with:
           name: PGBR-private-hybrid-owned-payload

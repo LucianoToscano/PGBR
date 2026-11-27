@@ -46,3 +46,7 @@ At code HEAD c8a045f580438cd0a46f6876c949b306a20dd696, the governance and PGShar
 The PR-only `pgbr-private-hybrid-payload.yml` workflow compiles and tests only the PGBR-owned panel on Linux, then uploads the DEX and SHA-256 as a seven-day QA artifact. No proprietary host, signing key, APK or production changes are included. This is a build aid, not a hybrid APK. The workflow must succeed before the artifact can be used.
 
 The first isolated run 46051500585 failed before compilation: setup-android attempted the obsolete `tools` package. The workflow now explicitly requests platform-tools with the pinned action already used by successful PGBR CI, before installing API 36 and build-tools 36.0.0.
+
+### Portable private assembly
+
+The isolated payload build succeeded in run 46051673935: four tests passed, 16,604-byte DEX SHA-256 79c69d28642683e18ca873779c6eaf0ac9521a9479aa22cbbcb0e7cb51ca98db, artifact 15224522369. To avoid uploading the private PGSharp input to public GitHub, the workflow also prepares a portable assembly bundle using the official Apache-2.0 apksig Maven library 8.7.3, with license and POM. The helper signs only with an independent local PKCS12 test key, verifies input and output, checks 16 KiB alignment, hashes and CRC, and never changes host authentication or integrity code. The workflow tests signing/alignment on a synthetic fixture using SDK tools before uploading. The actual private candidate has not yet been assembled or device-tested.
