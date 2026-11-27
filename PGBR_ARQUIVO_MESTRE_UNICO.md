@@ -2998,3 +2998,8 @@ Merges efetivos: #357 (Gemini 0015, catálogo offline) 7bcfcbfdb0db5cba852e7cfd1
 ## 27/11/2026 — QA e artefato isolado do DEX híbrido (#366)
 
 - HEAD anterior `61cdce835fdce5a7c971e7f24554053958dc852f`: governança e QA PGSharp concluídos com sucesso (46051221745 e 46051221758); CI geral 46051221859 ainda em execução na conferência, quatro jobs concluídos. Criado workflow direcionado `pgbr-private-hybrid-payload.yml` em Linux com SDK 36 / JDK 17, teste real do payload e upload somente do DEX de autoria PGBR mais checksum. Sem acesso a binários PGSharp, secrets de assinatura, produção, publicação de APK ou acesso remoto ao feed. Resultado do novo workflow ainda não confirmado; device_tested=false, provider_connected=false.
+
+
+## 27/11/2026 — correção do setup Android no workflow isolado #366
+
+- Run [46051500585](https://github.com/LucianoToscano/PGBR/actions/runs/46051500585), job 140683673892, falhou antes de compilar: ação setup-android solicitou pacote obsoleto `tools`. Ajustado para ação fixada e `packages: platform-tools`, como nos workflows aprovados do PGBR; SDK API 36/build-tools 36.0.0 continuam obrigatórios. Teste de compilação e artefato permanecem exigidos. Sem APK híbrido, teste físico ou acesso ao feed.

@@ -44,3 +44,5 @@ At code HEAD c8a045f580438cd0a46f6876c949b306a20dd696, the governance and PGShar
 ### Isolated payload artifact
 
 The PR-only `pgbr-private-hybrid-payload.yml` workflow compiles and tests only the PGBR-owned panel on Linux, then uploads the DEX and SHA-256 as a seven-day QA artifact. No proprietary host, signing key, APK or production changes are included. This is a build aid, not a hybrid APK. The workflow must succeed before the artifact can be used.
+
+The first isolated run 46051500585 failed before compilation: setup-android attempted the obsolete `tools` package. The workflow now explicitly requests platform-tools with the pinned action already used by successful PGBR CI, before installing API 36 and build-tools 36.0.0.

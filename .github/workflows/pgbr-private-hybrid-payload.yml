@@ -23,14 +23,17 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - uses: android-actions/setup-android@v3
+      - uses: android-actions/setup-android@9fc6c4e9069bf8d3d10b2204b1fb8f6ef7065407 # v3
+        with:
+          packages: platform-tools
+          log-accepted-android-sdk-licenses: false
       - name: Install pinned Android platform and tools
         run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
       - name: Compile and validate PGBR-owned payload only
         run: |
           python -B pgrazor/test/test_pgsharp_hybrid_private.py
           mkdir -p dist/private-hybrid-payload
-          python -B tools/pgsharp_hybrid/private_build.py --sdk "$ANDROID_SDK_ROOT" compile-payload --output dist/private-hybrid-payload/pgbr-panel.dex
+          python -B tools/pgsharp_hybrid/private_build.py --sdk "${ANDROID_SDK_ROOT:-${ANDROID_HOME:?Android SDK required}}" compile-payload --output dist/private-hybrid-payload/pgbr-panel.dex
           cd dist/private-hybrid-payload
           sha256sum pgbr-panel.dex > SHA256SUMS.txt
           cat SHA256SUMS.txt
