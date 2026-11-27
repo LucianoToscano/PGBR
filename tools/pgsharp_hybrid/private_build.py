@@ -59,9 +59,16 @@ def compile_payload(sdk, output):
         temp = Path(td); classes = temp/'classes'; classes.mkdir(); dex = temp/'dex'; dex.mkdir()
         src = HERE/'java/dev/pgrazor'
         bridge = ROOT/'pgrazor/src/dev/pgrazor/PgSharpHundoBridge.java'
-        run('javac', '-encoding','UTF-8','-source','8','-target','8','-bootclasspath',jar,'-d',classes,
+        run('javac', '-encoding','UTF-8','-source','8','-target','8','-classpath',jar,'-d',classes,
             bridge,src/'BootstrapProvider.java',src/'LogActivity.java')
-        run(tool(tools,'d8'), '--min-api','28','--lib',jar,'--output',dex,*sorted(classes.rglob('*.class')))
+        # Match the ordinary Android build: compile against the SDK as a
+        # classpath, then supply a JAR to D8 for desugaring. This avoids
+        # replacing javac's JDK lambda metafactory with Android stubs.
+        payload_jar = temp/'payload.jar'
+        with zipfile.ZipFile(payload_jar, 'w', compression=zipfile.ZIP_DEFLATED) as archive:
+            for item in sorted(classes.rglob('*.class')):
+                archive.write(item, item.relative_to(classes).as_posix())
+        run(tool(tools,'d8'), '--min-api','28','--lib',jar,'--output',dex,payload_jar)
         files = list(dex.glob('*.dex'))
         if len(files) != 1 or files[0].name != 'classes.dex':
             raise ValueError('expected a single minimal DEX')

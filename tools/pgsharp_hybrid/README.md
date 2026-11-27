@@ -36,3 +36,7 @@ The separate build is not connected to production packaging or releases. The And
 ## Test record
 
 Actual offline APK comparison completed on the pinned pair. Python syntax checks passed. Three local unit tests passed; Android payload compilation test skipped because Android SDK is absent. No signed hybrid APK assembled, no device execution, provider_connected=false. Existing PR CI results apply to earlier HEAD only. CI must verify the new sources; a physical private test is still needed before declaring coexistence or feed compatibility. Do not merge or publish this branch as a functional hybrid.
+
+### Follow-up CI correction
+
+At code HEAD c8a045f580438cd0a46f6876c949b306a20dd696, the governance and PGSharp policy workflows passed; the full suite ran 673 tests (671 passed, one error, one skipped). Run [46050475979](https://github.com/LucianoToscano/PGBR/actions/runs/46050475979), job 140680238063, failed during the real minimal-payload compilation with a javac LambdaMetafactory.metafactory resolution error. The experimental builder now uses the same javac classpath configuration as the normal PGBR build and passes a temporary JAR to D8. The existing real Android SDK compilation test is retained, not skipped or weakened. New CI is required; the correction has not yet been verified by Android compilation. No APK assembly or provider execution is claimed.
